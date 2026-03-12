@@ -194,7 +194,7 @@ class _UserStoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return CustomClick(
       onTap: () {
         final chronologicalUsersStories = allStories.map((us) {
           return us.copyWith(stories: us.stories.reversed.toList());

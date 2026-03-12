@@ -23,6 +23,7 @@ export 'package:tayseer/core/widgets/custom_loding_app.dart';
 export 'package:tayseer/core/widgets/custom_drawer.dart';
 export 'package:tayseer/core/widgets/custom_show_dialog.dart';
 export 'package:tayseer/core/widgets/custom_error_view.dart';
+export 'package:tayseer/core/widgets/custom_click.dart';
 export 'package:tayseer/core/dependancy_injection/get_it.dart';
 export 'package:tayseer/core/widgets/custom_snakbar.dart';
 export 'package:tayseer/core/widgets/snack_bar_service.dart';

@@ -144,7 +144,7 @@ class ProfileHeader extends StatelessWidget {
               final isUploading =
                   storyState.createStoryState == CubitStates.loading;
 
-              return GestureDetector(
+              return CustomClick(
                 onTap: isUploading
                     ? null
                     : () async {

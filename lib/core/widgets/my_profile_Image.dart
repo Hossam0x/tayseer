@@ -44,7 +44,7 @@ class MyProfileImage extends StatelessWidget {
 
     // Make tappable if onTap is provided
     if (onTap != null) {
-      return GestureDetector(onTap: onTap, child: heroWrappedWidget);
+      return CustomClick(onTap: onTap, child: heroWrappedWidget);
     }
 
     return heroWrappedWidget;

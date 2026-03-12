@@ -456,7 +456,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
     required UserAdvisorProfileModel profile,
     required bool isSmall,
   }) {
-    return GestureDetector(
+    return CustomClick(
       onTap: isSomeActionLoading
           ? null
           : () {
@@ -466,28 +466,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
                 );
                 return;
               }
-              if (isGuest) {
-                CustomshowDialogWithImage(
-                  context,
-                  title: context.tr('joinUs'),
-                  supTitle: context.tr("guest_login_first"),
-                  icon: Icons.lock_person_outlined,
-                  iconColor: AppColors.kprimaryColor,
-                  bottonText: context.tr("login"),
-                  showCancelButton: true,
-                  cancelText: context.tr('skip'),
-                  onPressed: () {
-                    CachNetwork.removeData(key: ktoken);
-                    context.pushNamedAndRemoveUntil(
-                      AppRouter.kRegisrationView,
-                      predicate: (_) => false,
-                    );
-                  },
-                  onCancel: () {},
-                );
-              } else {
-                context.read<UserAdvisorProfileCubit>().toggleFollow();
-              }
+              context.read<UserAdvisorProfileCubit>().toggleFollow();
             },
       child: Container(
         height: 54.h,
@@ -566,32 +545,10 @@ class UserAdvisorBioInformation extends StatelessWidget {
     bool isSomeActionLoading,
     UserAdvisorProfileModel profile,
   ) {
-    return GestureDetector(
+    return CustomClick(
       onTap: isSomeActionLoading
           ? null
           : () {
-              if (isGuest) {
-                CustomshowDialogWithImage(
-                  context,
-                  title: context.tr('joinUs'),
-                  supTitle: context.tr("guest_login_first"),
-                  icon: Icons.lock_person_outlined,
-                  iconColor: AppColors.kprimaryColor,
-                  bottonText: context.tr("login"),
-                  showCancelButton: true,
-                  cancelText: context.tr('skip'),
-                  onPressed: () {
-                    CachNetwork.removeData(key: ktoken);
-                    context.pushNamedAndRemoveUntil(
-                      AppRouter.kRegisrationView,
-                      predicate: (_) => false,
-                    );
-                  },
-                  onCancel: () {},
-                );
-                return;
-              }
-
               Navigator.pushNamed(
                 context,
                 AppRouter.advisorchatprofile,
@@ -626,32 +583,10 @@ class UserAdvisorBioInformation extends StatelessWidget {
     bool isChatLoading, {
     required bool isSmall,
   }) {
-    return GestureDetector(
+    return CustomClick(
       onTap: isSomeActionLoading
           ? null
           : () {
-              if (isGuest) {
-                CustomshowDialogWithImage(
-                  context,
-                  title: context.tr('joinUs'),
-                  supTitle: context.tr("guest_login_first"),
-                  icon: Icons.lock_person_outlined,
-                  iconColor: AppColors.kprimaryColor,
-                  bottonText: context.tr("login"),
-                  showCancelButton: true,
-                  cancelText: context.tr('skip'),
-                  onPressed: () {
-                    CachNetwork.removeData(key: ktoken);
-                    context.pushNamedAndRemoveUntil(
-                      AppRouter.kRegisrationView,
-                      predicate: (_) => false,
-                    );
-                  },
-                  onCancel: () {},
-                );
-                return;
-              }
-
               final cubit = context.read<UserAdvisorProfileCubit>();
               cubit.startChat();
             },

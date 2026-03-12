@@ -170,30 +170,8 @@ class _UserStoryItem extends StatelessWidget {
       builder: (context, userStoryModel) {
         if (userStoryModel == null) return const SizedBox.shrink();
 
-        return GestureDetector(
+        return CustomClick(
           onTap: () {
-            if (isGuest) {
-              CustomshowDialogWithImage(
-                context,
-                title: context.tr('joinUs'),
-                supTitle: context.tr("guest_login_first"),
-                icon: Icons.lock_person_outlined,
-                iconColor: AppColors.kprimaryColor,
-                bottonText: context.tr("login"),
-                showCancelButton: true,
-                cancelText: context.tr('skip'),
-                onPressed: () {
-                  CachNetwork.removeData(key: ktoken);
-                  context.pushNamedAndRemoveUntil(
-                    AppRouter.kRegisrationView,
-                    predicate: (_) => false,
-                  );
-                },
-                onCancel: () {},
-              );
-              return;
-            }
-
             final myUserId = kCurrentUserData?.id;
             final allStories = context
                 .read<StoriesCubit>()
@@ -321,42 +299,6 @@ class _StoriesLoadingShimmer extends StatelessWidget {
   }
 }
 
-class _StoriesErrorWidget extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-
-  const _StoriesErrorWidget({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            message.isEmpty
-                ? context.tr(AppStrings.errorLoadingStories)
-                : message,
-            style: Styles.textStyle12.copyWith(color: AppColors.kGreyB3),
-            textAlign: TextAlign.center,
-          ),
-          Gap(context.responsiveHeight(8)),
-          GestureDetector(
-            onTap: onRetry,
-            child: Text(
-              context.tr(AppStrings.retry),
-              style: Styles.textStyle12.copyWith(
-                color: AppColors.kprimaryColor,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _AddStoryItem extends StatelessWidget {
   const _AddStoryItem();
 
@@ -407,7 +349,7 @@ class _AddStoryItem extends StatelessWidget {
                         ),
                       ),
 
-                    GestureDetector(
+                    CustomClick(
                       onTap: () {
                         if (isUploading) return;
                         if (myStory != null) {
@@ -494,7 +436,7 @@ class _AddStoryItem extends StatelessWidget {
                       Positioned(
                         bottom: 0,
                         right: 0,
-                        child: GestureDetector(
+                        child: CustomClick(
                           onTap: () {
                             if (context.mounted) {
                               final storiesCubit = context.read<StoriesCubit>();
