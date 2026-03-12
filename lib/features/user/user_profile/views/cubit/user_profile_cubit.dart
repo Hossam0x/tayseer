@@ -492,8 +492,12 @@ class UserProfileCubit extends Cubit<UserProfileState> {
           );
         },
         (_) {
+          final updatedProfile = currentState.userProfile?.copyWith(
+            imageBlur: blurEnabled,
+          );
           emit(
             currentState.copyWith(
+              userProfile: updatedProfile,
               actionMessage: blurEnabled ? "blur_enabled" : "blur_disabled",
               isActionSuccess: true,
               actionTimestamp: DateTime.now().millisecondsSinceEpoch,

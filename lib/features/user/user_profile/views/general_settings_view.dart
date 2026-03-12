@@ -344,7 +344,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
         InkWell(
           onTap: () async {
             final currentStatus = _getProfilePicStatus(
-              userProfile?.isAnonymous,
+              userProfile?.imageBlur,
             );
             final result = await Navigator.push(
               context,
@@ -375,7 +375,7 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
           },
           child: _buildSettingRow(
             label: context.tr('profile_picture_visibility'),
-            value: context.tr(_getProfilePicStatus(userProfile?.isAnonymous)),
+            value: context.tr(_getProfilePicStatus(userProfile?.imageBlur)),
           ),
         ),
         InkWell(
@@ -531,9 +531,9 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
     return isAnonymous ? 'hidden' : 'everyone';
   }
 
-  String _getProfilePicStatus(bool? isAnonymous) {
-    if (isAnonymous == null) return 'everyone';
-    return isAnonymous ? 'blur_val' : 'show_val';
+  String _getProfilePicStatus(bool? imageBlur) {
+    if (imageBlur == null) return 'show_val'; // Default to shown if null
+    return imageBlur ? 'blur_val' : 'show_val';
   }
 
   String _getContactsStatus(bool? isAnonymous) {
