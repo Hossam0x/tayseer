@@ -230,8 +230,11 @@ class HomeCubit extends Cubit<HomeState> {
             state.copyWith(
               fetchNameAndImageState: CubitStates.success,
               homeInfo: data,
+              currentAdvisorStatus: advisorStatus,
             ),
           );
+        } else if (isAdvisor && state.currentAdvisorStatus != advisorStatus) {
+          emit(state.copyWith(currentAdvisorStatus: advisorStatus));
         }
       },
     );

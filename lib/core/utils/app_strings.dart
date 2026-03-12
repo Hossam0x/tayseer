@@ -139,4 +139,11 @@ class AppStrings {
   static const String cannotDoThisAction = "cannot_do_this_action";
   static const String accountDisApprovedMessage = "account_disapproved_message";
   static const String contactSupport = "contact_support";
+
+  static const String yourAccountUnderReview = "your_account_under_review";
+  static const String yourAccountDisapproved = "your_account_disapproved";
+  static const String accountUnderReviewDescription =
+      "account_under_review_description";
+  static const String accountDisapprovedDescription =
+      "account_disapproved_description";
 }
