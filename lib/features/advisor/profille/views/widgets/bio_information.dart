@@ -275,14 +275,14 @@ class BioInformation extends StatelessWidget {
         // استخراج إجمالي المشاهدات من الـ API
         final totalViews = state.analytics?.overview.views ?? 0;
 
-        return InkWell(
+        return CustomClick(
           onTap: () {
             Navigator.pushNamed(
               context,
               AppRouter.kProfessionalInfoDashboardView,
             );
           },
-          borderRadius: BorderRadius.circular(10.r),
+          // borderRadius: BorderRadius.circular(10.r),
           child: Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
