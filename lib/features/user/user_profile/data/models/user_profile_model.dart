@@ -21,6 +21,7 @@ class UserProfileModel extends Equatable {
   final String? email;
   final String? phone;
   final bool? dataCompleted;
+  final bool? imageBlur;
 
   const UserProfileModel({
     required this.id,
@@ -43,6 +44,7 @@ class UserProfileModel extends Equatable {
     this.email = '',
     this.phone = '',
     this.dataCompleted,
+    this.imageBlur,
   });
 
   /// Helper method to build full image URL from filename
@@ -99,6 +101,7 @@ class UserProfileModel extends Equatable {
           : {},
 
       dataCompleted: json['dataCompleted'],
+      imageBlur: json['imageBlur'],
     );
   }
 
@@ -117,6 +120,7 @@ class UserProfileModel extends Equatable {
     'email': email,
     'phone': phone,
     "dataCompleted": dataCompleted,
+    "imageBlur": imageBlur,
   };
 
   UserProfileModel copyWith({
@@ -139,6 +143,7 @@ class UserProfileModel extends Equatable {
     bool? dataCompleted,
     List<dynamic>? isBlocked,
     Map<String, dynamic>? room,
+    bool? imageBlur,
   }) {
     return UserProfileModel(
       id: id ?? this.id,
@@ -160,6 +165,7 @@ class UserProfileModel extends Equatable {
       isBlocked: isBlocked ?? this.isBlocked,
       room: room ?? this.room,
       dataCompleted: dataCompleted ?? this.dataCompleted,
+      imageBlur: imageBlur ?? this.imageBlur,
     );
   }
 
@@ -186,5 +192,6 @@ class UserProfileModel extends Equatable {
     email,
     phone,
     dataCompleted,
+    imageBlur,
   ];
 }
