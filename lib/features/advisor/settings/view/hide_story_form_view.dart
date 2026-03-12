@@ -110,8 +110,9 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
                         enabledBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: Colors.grey.shade200),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 8,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 20.h,
                         ),
                         suffixIcon: state.isLoading
                             ? SizedBox(
