@@ -281,6 +281,7 @@ class SliverProfileHeader extends StatelessWidget {
   final String? height;
   final Widget? toggleWidget;
   final String? reportId;
+  final bool shouldBlur; // ✅ جديد
 
   // ---------- الكارت اللي بعده (الخلفي) ----------
   final List<String>? nextImages;
@@ -293,14 +294,9 @@ class SliverProfileHeader extends StatelessWidget {
   final String? nextNationality;
   final String? nextHeight;
 
-  ///  1  = يمين (قلب)
-  /// -1  = شمال (X)
   final double swipeDirection;
-
-  /// من 0 → 1 : تقدم الأنيميشن (0 مفيش حركة، 1 خارج الشاشة)
   final double swipeProgress;
 
-  // ✅ القلب
   final VoidCallback? onFavoriteTap;
   final bool isFavorited;
 
@@ -317,6 +313,7 @@ class SliverProfileHeader extends StatelessWidget {
     this.height,
     this.toggleWidget,
     this.reportId,
+    this.shouldBlur = false, // ✅
     this.nextImages,
     this.nextName,
     this.nextAge,
@@ -328,11 +325,10 @@ class SliverProfileHeader extends StatelessWidget {
     this.nextHeight,
     this.swipeDirection = 0,
     this.swipeProgress = 0,
-    this.onFavoriteTap, // ✅
-    this.isFavorited = false, // ✅
+    this.onFavoriteTap,
+    this.isFavorited = false,
   });
 
-  // ✅ هل الأنيميشن شغالة دلوقتي؟
   bool get _isAnimating => swipeProgress > 0.01;
 
   @override
@@ -391,12 +387,10 @@ class SliverProfileHeader extends StatelessWidget {
       flexibleSpace: FlexibleSpaceBar(
         collapseMode: CollapseMode.pin,
         background: RepaintBoundary(
-          // ✅ يعزل الـ repaint عن باقي الـ tree
           child: Stack(
             fit: StackFit.expand,
             children: [
               // ========= الكارت الخلفي =========
-              // ✅ يتبني بس لما الأنيميشن شغالة
               if (hasNext && _isAnimating)
                 RepaintBoundary(
                   child: _BackProfileCard(
@@ -413,7 +407,6 @@ class SliverProfileHeader extends StatelessWidget {
                 ),
 
               // ========= الكارت الأمامي =========
-              // ✅ نستخدم Transform واحد بدل اتنين
               Transform(
                 alignment: Alignment.center,
                 transform: Matrix4.identity()
@@ -434,8 +427,9 @@ class SliverProfileHeader extends StatelessWidget {
                     height: height,
                     swipeProgress: swipeProgress,
                     isAnimating: _isAnimating,
-                    onFavoriteTap: onFavoriteTap, // ✅
-                    isFavorited: isFavorited, // ✅
+                    onFavoriteTap: onFavoriteTap,
+                    isFavorited: isFavorited,
+                    shouldBlur: shouldBlur, // ✅
                   ),
                 ),
               ),
@@ -448,7 +442,7 @@ class SliverProfileHeader extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// ✅ FRONT CARD — Widget مستقلة
+// FRONT CARD
 // ═══════════════════════════════════════════════════════════════
 class _FrontProfileCard extends StatelessWidget {
   final List<String> images;
@@ -464,8 +458,9 @@ class _FrontProfileCard extends StatelessWidget {
   final String? height;
   final double swipeProgress;
   final bool isAnimating;
-  final VoidCallback? onFavoriteTap; // ✅
-  final bool isFavorited; // ✅
+  final VoidCallback? onFavoriteTap;
+  final bool isFavorited;
+  final bool shouldBlur; // ✅
 
   const _FrontProfileCard({
     required this.images,
@@ -481,8 +476,9 @@ class _FrontProfileCard extends StatelessWidget {
     this.height,
     required this.swipeProgress,
     required this.isAnimating,
-    this.onFavoriteTap, // ✅
-    this.isFavorited = false, // ✅
+    this.onFavoriteTap,
+    this.isFavorited = false,
+    this.shouldBlur = false, // ✅
   });
 
   @override
@@ -492,7 +488,7 @@ class _FrontProfileCard extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // ✅ الصورة
+        // ✅ الصورة مع دعم الـ blur
         GestureDetector(
           onTap: () {
             if (images.isNotEmpty) {
@@ -513,13 +509,35 @@ class _FrontProfileCard extends StatelessWidget {
               bottomLeft: Radius.circular(bottomRadius),
               bottomRight: Radius.circular(bottomRadius),
             ),
-            // ✅ Hero بس لما مفيش أنيميشن — يمنع conflict
-            child: isAnimating
-                ? AppImage(coverImage, fit: BoxFit.cover)
-                : Hero(
-                    tag: coverImage,
-                    child: AppImage(coverImage, fit: BoxFit.cover),
-                  ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // ✅ الصورة (blur أو عادية)
+                shouldBlur
+                    ? ImageFiltered(
+                        imageFilter: ImageFilter.blur(
+                          sigmaX: 15,
+                          sigmaY: 15,
+                        ),
+                        child: isAnimating
+                            ? AppImage(coverImage, fit: BoxFit.cover)
+                            : Hero(
+                                tag: coverImage,
+                                child: AppImage(coverImage, fit: BoxFit.cover),
+                              ),
+                      )
+                    : (isAnimating
+                        ? AppImage(coverImage, fit: BoxFit.cover)
+                        : Hero(
+                            tag: coverImage,
+                            child: AppImage(coverImage, fit: BoxFit.cover),
+                          )),
+
+                // ✅ تعتيم فوق الـ blur
+                if (shouldBlur)
+                  Container(color: Colors.black.withOpacity(0.2)),
+              ],
+            ),
           ),
         ),
 
@@ -537,11 +555,10 @@ class _FrontProfileCard extends StatelessWidget {
             religiousCommitment: religiousCommitment,
             nationality: nationality,
             height: height,
-            // ✅ أثناء الأنيميشن — نخفف الـ blur أو نشيله
             useBlur: !isAnimating,
             opacity: 0.18,
-            onFavoriteTap: onFavoriteTap, // ✅
-            isFavorited: isFavorited, // ✅
+            onFavoriteTap: onFavoriteTap,
+            isFavorited: isFavorited,
           ),
         ),
       ],
@@ -550,7 +567,7 @@ class _FrontProfileCard extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// ✅ BACK CARD — Widget مستقلة
+// BACK CARD
 // ═══════════════════════════════════════════════════════════════
 class _BackProfileCard extends StatelessWidget {
   final List<String>? nextImages;
@@ -585,9 +602,7 @@ class _BackProfileCard extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         if (backCover.isNotEmpty) AppImage(backCover, fit: BoxFit.cover),
-        // ✅ ColoredBox أخف من Container
         const ColoredBox(color: Color(0x40000000)),
-
         Positioned(
           bottom: 60.h,
           right: 16.w,
@@ -601,10 +616,8 @@ class _BackProfileCard extends StatelessWidget {
             religiousCommitment: nextReligiousCommitment,
             nationality: nextNationality,
             height: nextHeight,
-            // ✅ الكارت الخلفي — بدون blur دايماً (مش هيبان)
             useBlur: false,
             opacity: 0.14,
-            // ✅ الكارت الخلفي — مفيش قلب
             onFavoriteTap: null,
             isFavorited: false,
           ),
@@ -615,8 +628,7 @@ class _BackProfileCard extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// ✅ INFO CARD — الجزء اللي فيه الاسم والتاجات
-//    بتتحكم في الـ blur حسب الأنيميشن
+// INFO CARD
 // ═══════════════════════════════════════════════════════════════
 class _InfoCard extends StatelessWidget {
   final String name;
@@ -629,8 +641,8 @@ class _InfoCard extends StatelessWidget {
   final String? height;
   final bool useBlur;
   final double opacity;
-  final VoidCallback? onFavoriteTap; // ✅
-  final bool isFavorited; // ✅
+  final VoidCallback? onFavoriteTap;
+  final bool isFavorited;
 
   const _InfoCard({
     required this.name,
@@ -643,8 +655,8 @@ class _InfoCard extends StatelessWidget {
     this.height,
     required this.useBlur,
     required this.opacity,
-    this.onFavoriteTap, // ✅
-    this.isFavorited = false, // ✅
+    this.onFavoriteTap,
+    this.isFavorited = false,
   });
 
   @override
@@ -659,7 +671,6 @@ class _InfoCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              // ✅ الاسم + السن + verified
               Expanded(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -677,17 +688,21 @@ class _InfoCard extends StatelessWidget {
                     if (age.isNotEmpty)
                       Text(
                         "$age ${context.tr("age")}",
-                        style: Styles.textStyle14.copyWith(color: Colors.white),
+                        style: Styles.textStyle14.copyWith(
+                          color: Colors.white,
+                        ),
                       ),
                     if (name.isNotEmpty) ...[
                       Gap(8.w),
-                      const Icon(Icons.verified, color: Colors.blue, size: 20),
+                      const Icon(
+                        Icons.verified,
+                        color: Colors.blue,
+                        size: 20,
+                      ),
                     ],
                   ],
                 ),
               ),
-
-              // ✅ القلب — بيظهر بس لو في onFavoriteTap
               if (onFavoriteTap != null) ...[
                 Gap(8.w),
                 GestureDetector(
@@ -727,7 +742,8 @@ class _InfoCard extends StatelessWidget {
             spacing: 8.w,
             runSpacing: 8.h,
             children: [
-              if (tagsjob != null && tagsjob!.isNotEmpty) _buildTag(tagsjob!),
+              if (tagsjob != null && tagsjob!.isNotEmpty)
+                _buildTag(tagsjob!),
               if (educationLevel != null && educationLevel!.isNotEmpty)
                 _buildTag(educationLevel!),
               if (religiousCommitment != null &&
@@ -743,7 +759,6 @@ class _InfoCard extends StatelessWidget {
   }
 
   Widget _buildTag(String text) {
-    // ✅ التاجات — بدون blur نهائي (مش محتاج + بيأثر على الأداء)
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
@@ -778,7 +793,6 @@ class _InfoCard extends StatelessWidget {
       border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.2),
     );
 
-    // ✅ لو مفيش blur — نشيل BackdropFilter خالص
     if (blur <= 0) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius),

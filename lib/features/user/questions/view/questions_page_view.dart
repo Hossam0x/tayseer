@@ -29,10 +29,10 @@ class QuestionsPageView extends StatelessWidget {
   // ✅ متغير لتخزين الإجابات (key) للمنطق الشرطي
   final Map<String, dynamic> _answers = {};
 
-  /// ✅ خريطة الهوايات مع الأيقونات
-  /// ✅ خريطة الاهتمامات المقسمة حسب الفئات
+  // ===============================================================
+  // ✅ خريطة الاهتمامات المقسمة حسب الفئات
+  // ===============================================================
   static final Map<String, Map<String, String>> _interestsWithCategories = {
-    // =============== الرياضة ===============
     'category_sports': {
       'interest_baseball': '⚾',
       'interest_running': '🏃',
@@ -55,8 +55,6 @@ class QuestionsPageView extends StatelessWidget {
       'interest_archery': '🏹',
       'interest_horse_riding': '🏇',
     },
-
-    // =============== فنون وثقافة ===============
     'category_arts_culture': {
       'interest_theater': '🎭',
       'interest_magic': '🪄',
@@ -75,8 +73,6 @@ class QuestionsPageView extends StatelessWidget {
       'interest_design': '🎯',
       'interest_fashion': '👗',
     },
-
-    // =============== المجتمع ===============
     'category_community': {
       'interest_volunteering': '🤝',
       'interest_charity': '💝',
@@ -91,8 +87,6 @@ class QuestionsPageView extends StatelessWidget {
       'interest_social_work': '💼',
       'interest_human_rights': '⚖️',
     },
-
-    // =============== التكنولوجيا ===============
     'category_technology': {
       'interest_programming': '💻',
       'interest_gaming': '🎮',
@@ -109,8 +103,6 @@ class QuestionsPageView extends StatelessWidget {
       'interest_smart_home': '🏠',
       'interest_blockchain': '⛓️',
     },
-
-    // =============== النزهات ===============
     'category_outdoors': {
       'interest_hiking': '🥾',
       'interest_camping': '🏕️',
@@ -129,8 +121,6 @@ class QuestionsPageView extends StatelessWidget {
       'interest_rock_climbing': '🧗',
       'interest_paragliding': '🪂',
     },
-
-    // =============== الطعام والمشروبات ===============
     'category_food_drinks': {
       'interest_cooking': '👨‍🍳',
       'interest_baking': '🧁',
@@ -150,7 +140,9 @@ class QuestionsPageView extends StatelessWidget {
     },
   };
 
-  /// ✅ خريطة الإيمان مع الإيموجي
+  // ===============================================================
+  // ✅ خريطة الإيمان مع الإيموجي
+  // ===============================================================
   static final Map<String, String> _faithWithEmoji = {
     'faith_dua': '🙏',
     'faith_umrah': '🕋',
@@ -172,25 +164,22 @@ class QuestionsPageView extends StatelessWidget {
     'faith_friday_prayer': '🕌',
   };
 
-  /// ✅ خريطة نوايا الزواج
+  // ===============================================================
+  // ✅ خريطة نوايا الزواج
+  // ===============================================================
   static final Map<String, Map<String, String>> _marriageIntentions = {
-    // اود التواصل مع الشخص خلال
     'intention_contact_period': {
       'period_1_3_months': '',
       'period_4_7_months': '',
       'period_7_12_months': '',
       'period_1_2_years': '',
     },
-
-    // فترة الخطوبة ستكون
     'intention_engagement_period': {
       'period_1_3_months': '',
       'period_4_7_months': '',
       'period_7_12_months': '',
       'period_1_2_years': '',
     },
-
-    // ارغب في الزواج
     'intention_marriage_period': {
       'period_1_3_months': '',
       'period_4_7_months': '',
@@ -199,8 +188,11 @@ class QuestionsPageView extends StatelessWidget {
     },
   };
 
+  // ===============================================================
+  // ✅ قائمة الأسئلة
+  // ===============================================================
   List<QuestionPageConfig> _getQuestions(BuildContext context) {
-    final List<QuestionPageConfig> questions = [
+    return [
       // 1. الجنسية
       QuestionPageConfig(
         titleKey: 'choose_nationality',
@@ -346,7 +338,7 @@ class QuestionsPageView extends StatelessWidget {
         showSearch: false,
       ),
 
-      // ✅ 11. عدد الأطفال (يظهر فقط إذا كان hasChildren = yes)
+      // 11. عدد الأطفال (يظهر فقط إذا كان hasChildren = yes)
       QuestionPageConfig(
         titleKey: 'children_number',
         questionNumber: 12,
@@ -358,7 +350,7 @@ class QuestionsPageView extends StatelessWidget {
         requiredAnswer: 'yes',
       ),
 
-      // ✅ 12. حالة إقامة الأطفال (يظهر فقط إذا كان hasChildren = yes)
+      // 12. حالة إقامة الأطفال (يظهر فقط إذا كان hasChildren = yes)
       QuestionPageConfig(
         titleKey: 'children_living_status',
         questionNumber: 13,
@@ -458,7 +450,7 @@ class QuestionsPageView extends StatelessWidget {
         showSearch: false,
       ),
 
-      // ✅ 19. الهوايات (Multi-Select)
+      // 18. الهوايات (Multi-Select)
       QuestionPageConfig(
         titleKey: 'choose_hobbies',
         questionNumber: 19,
@@ -466,7 +458,8 @@ class QuestionsPageView extends StatelessWidget {
         type: QuestionType.categorizedMultiSelectChips,
         categorizedItems: _interestsWithCategories,
       ),
-      // ✅ 20. الإيمان (Multi-Select)
+
+      // 19. الإيمان (Multi-Select)
       QuestionPageConfig(
         titleKey: 'choose_faith',
         subtitleKey: 'faith_subtitle',
@@ -476,7 +469,7 @@ class QuestionsPageView extends StatelessWidget {
         itemsWithIcons: _faithWithEmoji,
       ),
 
-      // 21. الحجاب (للإناث فقط)
+      // 20. الحجاب (للإناث فقط)
       if (selectedGender == Gender.female)
         QuestionPageConfig(
           titleKey: 'do_you_wear_hijab',
@@ -487,14 +480,15 @@ class QuestionsPageView extends StatelessWidget {
           showSearch: false,
         ),
 
-      // 22. Add Your CV
+      // 21. السيرة الذاتية
       QuestionPageConfig(
         titleKey: 'add_your_cv',
         questionNumber: 22,
         questionCategoryEnum: AuthEnum.addYourCv.name,
         type: QuestionType.textInput,
       ),
-      // ✅ 23. نوايا الزواج (Categorized Single Select) - جديد
+
+      // 22. نوايا الزواج (Categorized Single Select)
       QuestionPageConfig(
         titleKey: 'marriage_intentions',
         questionNumber: 23,
@@ -502,7 +496,8 @@ class QuestionsPageView extends StatelessWidget {
         type: QuestionType.categorizedSingleSelectChips,
         categorizedItems: _marriageIntentions,
       ),
-      // الاسره 24
+
+      // 23. الأسرة
       QuestionPageConfig(
         titleKey: 'family',
         questionNumber: 24,
@@ -512,7 +507,7 @@ class QuestionsPageView extends StatelessWidget {
         showSearch: false,
       ),
 
-      // 25. السفر للخارج
+      // 24. السفر للخارج
       QuestionPageConfig(
         titleKey: 'travel',
         questionNumber: 25,
@@ -522,7 +517,7 @@ class QuestionsPageView extends StatelessWidget {
         showSearch: false,
       ),
 
-      // 26. هل تأكل فقط الطعام الحلال؟
+      // 25. هل تأكل فقط الطعام الحلال؟
       QuestionPageConfig(
         titleKey: 'eat_halal_only',
         questionNumber: 26,
@@ -531,7 +526,8 @@ class QuestionsPageView extends StatelessWidget {
         type: QuestionType.selectableList,
         showSearch: false,
       ),
-      // 27. هل تشرب الكحول؟
+
+      // 26. هل تشرب الكحول؟
       QuestionPageConfig(
         titleKey: 'drink_alcohol',
         questionNumber: 27,
@@ -541,39 +537,39 @@ class QuestionsPageView extends StatelessWidget {
         showSearch: false,
       ),
     ];
-
-    return questions;
   }
 
+  // ===============================================================
   // ✅ دالة للتحقق هل السؤال يجب عرضه بناءً على الشروط
+  // ===============================================================
   bool _shouldShowQuestion(QuestionPageConfig config) {
-    if (config.dependsOnQuestion == null) {
-      return true; // لا يوجد شرط، اعرض السؤال
-    }
-
+    if (config.dependsOnQuestion == null) return true;
     final dependsOnAnswer = _answers[config.dependsOnQuestion];
     return dependsOnAnswer == config.requiredAnswer;
   }
 
+  // ===============================================================
   // ✅ دالة للحصول على الصفحة التالية المتاحة
+  // ===============================================================
   int _getNextAvailablePage(
     List<QuestionPageConfig> questions,
     int currentIndex,
   ) {
     for (int i = currentIndex + 1; i < questions.length; i++) {
-      if (_shouldShowQuestion(questions[i])) {
-        return i;
-      }
+      if (_shouldShowQuestion(questions[i])) return i;
     }
-    return -1; // لا توجد صفحات متاحة (انتهت الأسئلة)
+    return -1;
   }
 
+  // ===============================================================
+  // ✅ BUILD
+  // ===============================================================
   @override
   Widget build(BuildContext context) {
     final questions = _getQuestions(context);
     final totalPages = questions.length;
 
-    // إذا تم تمرير آخر رقم سؤال من السيرفر، نحدد الصفحة التي تحتوي على السؤال التالي
+    // تحديد نقطة البداية بناءً على آخر سؤال تم الإجابة عليه
     final targetQuestionNumber = lastQuestionNumber + 1;
     final startIndex = questions.indexWhere(
       (q) => q.questionNumber == targetQuestionNumber,
@@ -631,9 +627,7 @@ class QuestionsPageView extends StatelessWidget {
                   controller: _pageController,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: totalPages,
-                  onPageChanged: (index) {
-                    _currentPage.value = index;
-                  },
+                  onPageChanged: (index) => _currentPage.value = index,
                   itemBuilder: (context, index) {
                     return QuestionPage(
                       config: questions[index],
@@ -651,12 +645,14 @@ class QuestionsPageView extends StatelessWidget {
     );
   }
 
+  // ===============================================================
+  // ✅ إرسال الإجابة
+  // ===============================================================
   void _submitAnswer(
     BuildContext context,
     QuestionPageConfig config,
     dynamic answer,
   ) {
-    // ✅ استخراج الـ key والـ value
     final dynamic answerKey;
     final dynamic answerValue;
 
@@ -668,17 +664,23 @@ class QuestionsPageView extends StatelessWidget {
       answerValue = answer;
     }
 
-    // ✅ حفظ الـ key في _answers للمنطق الشرطي
+    // حفظ الـ key في _answers للمنطق الشرطي
     _answers[config.questionCategoryEnum] = answerKey;
 
-    // ✅ إرسال الـ value (النص المترجم) للـ Backend
+    // ✅ بناء الـ answers list بحسب نوع السؤال
     List<Map<String, dynamic>> answers;
 
-    if (answerValue is List<String>) {
-      answers = answerValue.map((e) => {'answer': e}).toList();
+    if (answerKey is List<String>) {
+      // multiSelectChips / categorizedMultiSelectChips
+      answers = answerKey.map((e) => {'answer': e}).toList();
+    } else if (answerKey is Map<String, String>) {
+      // ✅ FIX: categorizedSingleSelectChips
+      // الـ backend يقبل فقط { answer: "selectedItemKey" } بدون category
+      answers = answerKey.values.map((value) => {'answer': value}).toList();
     } else {
+      // selectableList / picker / textInput
       answers = [
-        {'answer': answerValue.toString()},
+        {'answer': answerKey.toString()},
       ];
     }
 
@@ -690,7 +692,9 @@ class QuestionsPageView extends StatelessWidget {
     );
   }
 
-  // ✅ دالة الانتقال للصفحة التالية
+  // ===============================================================
+  // ✅ الانتقال للصفحة التالية
+  // ===============================================================
   void _goToNextPage(List<QuestionPageConfig> questions, BuildContext context) {
     final nextPageIndex = _getNextAvailablePage(questions, _currentPage.value);
 
@@ -701,7 +705,7 @@ class QuestionsPageView extends StatelessWidget {
         curve: Curves.easeInOut,
       );
     } else {
-      // ✅ انتهت الأسئلة
+      // انتهت الأسئلة → الانتقال للصفحة التالية
       context.pushReplacementNamed(AppRouter.kPersonalInfoView);
     }
   }
