@@ -60,6 +60,7 @@ class UserAdvisorProfileModel extends Equatable {
   final String? professionalSpecialization;
   final String? jobGrade;
   final RoomInfoModel? room; // ⭐ إضافة Room
+  final bool? imageBlur;
 
   const UserAdvisorProfileModel({
     required this.id,
@@ -79,6 +80,7 @@ class UserAdvisorProfileModel extends Equatable {
     this.professionalSpecialization,
     this.jobGrade,
     this.room, // ⭐ إضافة Room
+    this.imageBlur,
   });
 
   factory UserAdvisorProfileModel.fromJson(Map<String, dynamic> json) {
@@ -123,6 +125,7 @@ class UserAdvisorProfileModel extends Equatable {
           json['ProfessionalSpecialization']?.toString(),
       jobGrade: json['jobGrade']?.toString() ?? json['JobGrade']?.toString(),
       room: roomData,
+      imageBlur: json['imageBlur'],
     );
   }
 
@@ -144,6 +147,7 @@ class UserAdvisorProfileModel extends Equatable {
     'professionalSpecialization': professionalSpecialization,
     'jobGrade': jobGrade,
     'room': room?.toJson(), // ⭐ إضافة Room
+    'imageBlur': imageBlur,
   };
 
   UserAdvisorProfileModel copyWith({
@@ -164,6 +168,7 @@ class UserAdvisorProfileModel extends Equatable {
     String? professionalSpecialization,
     String? jobGrade,
     RoomInfoModel? room, // ⭐ إضافة Room
+    bool? imageBlur,
   }) {
     return UserAdvisorProfileModel(
       id: id ?? this.id,
@@ -184,6 +189,7 @@ class UserAdvisorProfileModel extends Equatable {
           professionalSpecialization ?? this.professionalSpecialization,
       jobGrade: jobGrade ?? this.jobGrade,
       room: room ?? this.room, // ⭐ إضافة Room
+      imageBlur: imageBlur ?? this.imageBlur,
     );
   }
 
@@ -212,6 +218,7 @@ class UserAdvisorProfileModel extends Equatable {
     professionalSpecialization,
     jobGrade,
     room, // ⭐ إضافة Room
+    imageBlur,
   ];
 }
 

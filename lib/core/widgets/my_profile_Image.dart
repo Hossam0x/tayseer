@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:tayseer/my_import.dart';
 
 class MyProfileImage extends StatelessWidget {
@@ -7,6 +8,7 @@ class MyProfileImage extends StatelessWidget {
   final String? heroTag;
   final VoidCallback? onTap;
   final bool isAnnonymous;
+  final bool isBlur;
 
   const MyProfileImage({
     super.key,
@@ -16,6 +18,7 @@ class MyProfileImage extends StatelessWidget {
     this.heroTag,
     this.onTap,
     this.isAnnonymous = false,
+    this.isBlur = false,
   });
 
   @override
@@ -29,11 +32,20 @@ class MyProfileImage extends StatelessWidget {
       height: width ?? size.r,
       width: width ?? size.r,
       child: ClipOval(
-        child: AppImage(
-          isAnnonymous ? AssetsData.anonymousProfile : image,
-          fit: BoxFit.cover,
-          isAvatar: true,
-        ),
+        child: isBlur
+            ? ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: AppImage(
+                  isAnnonymous ? AssetsData.anonymousProfile : image,
+                  fit: BoxFit.cover,
+                  isAvatar: true,
+                ),
+              )
+            : AppImage(
+                isAnnonymous ? AssetsData.anonymousProfile : image,
+                fit: BoxFit.cover,
+                isAvatar: true,
+              ),
       ),
     );
 

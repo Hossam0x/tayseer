@@ -69,6 +69,7 @@ class UserAdvisorProfileHeader extends StatelessWidget {
       context: context,
       profileId: profile.id,
       profileName: profile.name,
+      imageBlur: profile.imageBlur ?? false,
     );
   }
 
@@ -80,6 +81,7 @@ class UserAdvisorProfileHeader extends StatelessWidget {
     required BuildContext context,
     required String profileId,
     String? profileName,
+    bool imageBlur = false,
   }) {
     final isBlocked = context.select<UserAdvisorProfileCubit, bool>(
       (cubit) => cubit.state.profile?.room?.isBlocked ?? false,
@@ -108,8 +110,9 @@ class UserAdvisorProfileHeader extends StatelessWidget {
               MyProfileImage(
                 width: 85.w,
                 imageUrl: imageUrl,
+                isBlur: imageBlur,
                 heroTag: 'advisor_profile_image_$profileId',
-                onTap: imageUrl.isNotEmpty && !isBlocked
+                onTap: imageUrl.isNotEmpty && !isBlocked && !imageBlur
                     ? () {
                         Navigator.push(
                           context,
