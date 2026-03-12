@@ -1,11 +1,5 @@
 import 'dart:async';
-import 'package:tayseer/core/models/post_model.dart';
-import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
-import 'package:tayseer/core/widgets/post_card/post_card.dart';
-import 'package:tayseer/features/shared/event/view/widget/event_cart_item.dart';
-import 'package:tayseer/features/advisor/search/data/models/search_advisor_model.dart';
-import 'package:tayseer/features/advisor/search/data/models/search_event_model.dart';
-import 'package:tayseer/features/advisor/search/data/models/search_user_model.dart';
+import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/advisor/search/data/repos/search_repository.dart';
 import 'package:tayseer/features/advisor/search/presentation/cubit/search_cubit.dart';
 import 'package:tayseer/features/advisor/search/presentation/cubit/search_state.dart';
@@ -13,13 +7,24 @@ import 'package:tayseer/features/advisor/search/presentation/cubit/advisor_searc
 import 'package:tayseer/features/advisor/search/presentation/widgets/search_empty_state.dart';
 import 'package:tayseer/features/advisor/search/presentation/widgets/search_loading_state.dart';
 import 'package:tayseer/features/advisor/search/presentation/widgets/search_error_state.dart';
-import 'package:tayseer/features/shared/followers/data/models/follower_model.dart';
-import 'package:tayseer/features/shared/followers/widgets/follower_item.dart';
+import 'package:tayseer/features/advisor/search/presentation/widgets/advisor_search_bar.dart';
+import 'package:tayseer/features/advisor/search/presentation/widgets/advisor_search_tabs_widget.dart';
+import 'package:tayseer/features/advisor/search/presentation/widgets/advisor_search_advisor_item.dart';
+import 'package:tayseer/features/advisor/search/presentation/widgets/advisor_search_user_item.dart';
+import 'package:tayseer/features/advisor/search/presentation/widgets/advisor_search_event_item.dart';
+import 'package:tayseer/features/advisor/search/presentation/widgets/advisor_search_post_item.dart';
+import 'package:tayseer/features/advisor/search/presentation/widgets/advisor_search_section_header.dart';
+import 'package:tayseer/features/advisor/search/presentation/widgets/advisor_search_pagination_indicator.dart';
 import 'package:tayseer/features/shared/followers/data/repositories/followers_repository.dart';
 import 'package:tayseer/features/shared/followers/data/repositories/user_followings_repository.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
-import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
-import 'package:tayseer/my_import.dart';
+
+class SearchTab {
+  final String id;
+  final String title;
+
+  const SearchTab({required this.id, required this.title});
+}
 
 class AdvisorSearchView extends StatefulWidget {
   final String? initialQuery;
@@ -77,13 +82,13 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     _searchController = TextEditingController(text: widget.initialQuery);
     _searchFocusNode = FocusNode();
 
-    // ✅ استماع لتغيير التبويب من خلال السحب
+    // استماع لتغيير التبويب من خلال السحب
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
-        // هذا يعني أن التغيير حصل من خلال السحب
-        // Update UI Cubit instead of setState
-        _uiCubit.updateIndex(_tabController.index);
-        _performSearch();
+        if (_uiCubit.state.selectedIndex != _tabController.index) {
+          _uiCubit.updateIndex(_tabController.index);
+          _performSearch(showLoading: false);
+        }
       }
     });
 
@@ -94,12 +99,9 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
         _searchCubit.loadInitialData();
       }
 
-      // ✅ نستخدم تأخير أطول قليلاً لضمان انتهاء انتقال الـ Hero بشكل كامل
-      // الأجهزة المختلفة قد تستغرق أوقاتاً متفاوتة في الأنميشن
       Future.delayed(const Duration(milliseconds: 600), () {
         if (mounted) {
           _searchFocusNode.requestFocus();
-          // نكرر الطلب بعد فترة بسيطة جداً للتأكيد في حال تم سحب التركيز بواسطة الـ Hero
           Future.delayed(const Duration(milliseconds: 200), () {
             if (mounted && !_searchFocusNode.hasFocus) {
               _searchFocusNode.requestFocus();
@@ -113,9 +115,6 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
   @override
   void dispose() {
     _scrollController.dispose();
-    _tabController.removeListener(
-      _onTabChanged,
-    ); // remove listener if added, though we added anonymous closure above
     _tabController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
@@ -140,14 +139,6 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     return 0;
   }
 
-  // Not used since we added anonymous listener, but kept for reference if needed
-  void _onTabChanged() {
-    if (_tabController.indexIsChanging) {
-      _uiCubit.updateIndex(_tabController.index);
-      _performSearch();
-    }
-  }
-
   void _onSearchChanged() {
     if (_searchDebounce?.isActive ?? false) {
       _searchDebounce?.cancel();
@@ -158,10 +149,15 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     });
   }
 
-  void _performSearch({bool debounce = true}) {
+  void _performSearch({bool debounce = true, bool showLoading = true}) {
     final query = _searchController.text.trim();
     final currentTab = _tabs[_tabController.index];
-    _searchCubit.search(query: query, type: currentTab.id, debounce: debounce);
+    _searchCubit.search(
+      query: query,
+      type: currentTab.id,
+      debounce: debounce,
+      showLoading: showLoading,
+    );
   }
 
   void _clearSearch() {
@@ -180,18 +176,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
       child: Scaffold(
         body: AdvisorBackground(
           child: SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // شريط البحث
-                _buildSearchBar(),
-
-                // تبويبات البحث
-                _buildSearchTabs(),
-
-                // محتوى البحث
-                Expanded(
-                  child: BlocListener<SearchCubit, SearchState>(
+            child: BlocListener<SearchCubit, SearchState>(
                     bloc: _searchCubit,
                     listener: (context, state) {
                       if (state.actionStatus == CubitStates.success) {
@@ -209,193 +194,49 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
                       }
                     },
                     child: BlocBuilder<SearchCubit, SearchState>(
-                      bloc: _searchCubit, // ✅ تمرير الـ cubit مباشرة هنا
+                      bloc: _searchCubit,
                       builder: (context, searchState) {
-                        return BlocBuilder<
-                          AdvisorSearchUiCubit,
-                          AdvisorSearchUiState
-                        >(
-                          bloc: _uiCubit,
-                          builder: (context, uiState) {
-                            return _buildSearchContent(
-                              context,
-                              searchState,
-                              uiState,
-                            );
-                          },
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AdvisorSearchBar(
+                              searchController: _searchController,
+                              searchFocusNode: _searchFocusNode,
+                              initialQuery: widget.initialQuery,
+                              onSearchChanged: _onSearchChanged,
+                              onClearSearch: _clearSearch,
+                              state: searchState,
+                            ),
+                            AdvisorSearchTabsWidget(
+                              tabs: _tabs,
+                              tabController: _tabController,
+                              onTabTap: (index) {
+                                if (_uiCubit.state.selectedIndex != index) {
+                                  _uiCubit.updateIndex(index);
+                                  _performSearch(showLoading: false);
+                                }
+                              },
+                            ),
+                            Expanded(
+                              child: BlocBuilder<AdvisorSearchUiCubit, AdvisorSearchUiState>(
+                                bloc: _uiCubit,
+                                builder: (context, uiState) {
+                                  return _buildSearchContent(
+                                    context,
+                                    searchState,
+                                    uiState,
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
                         );
                       },
                     ),
                   ),
-                ),
-              ],
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSearchBar() {
-    return Hero(
-      tag: 'search_bar_tag',
-      child: Material(
-        color: Colors.transparent,
-        child: Padding(
-          padding: EdgeInsetsDirectional.only(
-            end: 20.w,
-            top: 12.h,
-            bottom: 12.h,
-          ),
-          child: Row(
-            children: [
-              // زر الرجوع
-              IconButton(
-                icon: Icon(
-                  Icons.arrow_back_ios_new,
-                  size: 24.w,
-                  color: Colors.black,
-                ),
-                onPressed: () => Navigator.pop(context),
-              ),
-              Expanded(
-                child: BlocBuilder<SearchCubit, SearchState>(
-                  bloc: _searchCubit,
-                  builder: (context, state) {
-                    return Container(
-                      height: 47.h,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20.r),
-                      ),
-                      child: Row(
-                        children: [
-                          // أيقونة البحث / اللودينج
-                          Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12.w,
-                              vertical: 12.h,
-                            ),
-                            child: state.isLoading
-                                ? SizedBox(
-                                    width: 20.w,
-                                    height: 20.w,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppColors.kprimaryColor,
-                                    ),
-                                  )
-                                : Icon(
-                                    Icons.search,
-                                    color: AppColors.kGreyB3,
-                                    size: 20.sp,
-                                  ),
-                          ),
-
-                          // حقل النص
-                          Expanded(
-                            child: TextField(
-                              controller: _searchController,
-                              focusNode: _searchFocusNode,
-                              autofocus:
-                                  false, // ✅ تم تعطيلها لصالح الطلب اليدوي بتأخير
-                              textAlign: TextAlign.start,
-                              style: Styles.textStyle14SemiBold,
-                              onChanged: (_) => _onSearchChanged(),
-                              decoration: InputDecoration(
-                                hintText:
-                                    widget.initialQuery?.isNotEmpty == true
-                                    ? widget.initialQuery
-                                    : context.tr("search_hint"),
-                                hintStyle: Styles.textStyle14.copyWith(
-                                  color: AppColors.kGreyB3,
-                                ),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsetsDirectional.symmetric(
-                                  vertical: 15.h,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // زر المسح
-                          if (_searchController.text.isNotEmpty)
-                            IconButton(
-                              icon: Icon(
-                                Icons.clear,
-                                size: 20.w,
-                                color: Colors.grey,
-                              ),
-                              onPressed: _clearSearch,
-                            ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchTabs() {
-    return BlocBuilder<AdvisorSearchUiCubit, AdvisorSearchUiState>(
-      bloc: _uiCubit,
-      builder: (context, state) {
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Container(
-            padding: EdgeInsetsDirectional.only(bottom: 10.h, start: 20.w),
-            child: Row(
-              children: [
-                // جميع التبويبات
-                ..._tabs.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final tab = entry.value;
-                  final isSelected = index == state.selectedIndex;
-
-                  return Padding(
-                    padding: EdgeInsets.only(left: 10.w),
-                    child: GestureDetector(
-                      onTap: () {
-                        _tabController.animateTo(index);
-                        _uiCubit.updateIndex(index);
-                        _performSearch();
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12.w,
-                          vertical: 8.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.primary100
-                              : const Color(0xB8F9F8EC),
-                          borderRadius: BorderRadius.circular(6.r),
-                        ),
-                        child: Text(
-                          context.tr(tab.title),
-                          style: isSelected
-                              ? Styles.textStyle14Meduim.copyWith(
-                                  color: AppColors.secondary800,
-                                )
-                              : Styles.textStyle14.copyWith(
-                                  color: AppColors.secondary600,
-                                ),
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 
@@ -466,7 +307,6 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
       return SearchEmptyState(message: message, iconPath: iconPath);
     }
 
-    // ✅ استخدام TabBarView مع listener للتحديث
     return TabBarView(
       controller: _tabController,
       children: _tabs.map((tab) {
@@ -501,7 +341,6 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // المستشارين
           if (state.advisors.isNotEmpty) ...[
             _buildSectionHeader(
               title: context.tr("advisors"),
@@ -510,44 +349,58 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
             ...state.advisors.map(
               (advisor) => Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-                child: _buildAdvisorItem(context, advisor),
+                child: AdvisorSearchAdvisorItem(advisor: advisor),
               ),
             ),
             SizedBox(height: 20.h),
           ],
 
-          // المستخدمين
           if (state.users.isNotEmpty) ...[
             _buildSectionHeader(title: context.tr("users"), tabId: 'users'),
             ...state.users.map(
               (user) => Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-                child: _buildUserItem(context, user),
+                child: AdvisorSearchUserItem(user: user),
               ),
             ),
             SizedBox(height: 20.h),
           ],
 
-          // المنشورات
           if (state.posts.isNotEmpty) ...[
             _buildSectionHeader(title: context.tr("posts"), tabId: 'posts'),
-            ...state.posts.map((post) => _buildPostItem(context, post)),
+            ...state.posts.map((post) => AdvisorSearchPostItem(post: post)),
             SizedBox(height: 20.h),
           ],
 
-          // الأحداث
           if (state.events.isNotEmpty) ...[
             _buildSectionHeader(title: context.tr("events"), tabId: 'events'),
             ...state.events.map(
               (event) => Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-                child: _buildEventItem(event),
+                child: AdvisorSearchEventItem(event: event),
               ),
             ),
             SizedBox(height: 20.h),
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildSectionHeader({
+    required String title,
+    required String tabId,
+  }) {
+    return AdvisorSearchSectionHeader(
+      title: title,
+      onSeeAll: () {
+        final index = _tabs.indexWhere((tab) => tab.id == tabId);
+        if (index >= 0) {
+          _tabController.animateTo(index);
+          _uiCubit.updateIndex(index);
+          _performSearch(showLoading: false);
+        }
+      },
     );
   }
 
@@ -561,10 +414,10 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
         if (index < advisors.length) {
           return Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-            child: _buildAdvisorItem(context, advisors[index]),
+            child: AdvisorSearchAdvisorItem(advisor: advisors[index]),
           );
         }
-        return _buildPaginationIndicator(state);
+        return AdvisorSearchPaginationIndicator(state: state);
       },
     );
   }
@@ -579,58 +432,10 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
         if (index < users.length) {
           return Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-            child: _buildUserItem(context, users[index]),
+            child: AdvisorSearchUserItem(user: users[index]),
           );
         }
-        return _buildPaginationIndicator(state);
-      },
-    );
-  }
-
-  Widget _buildUserItem(BuildContext context, SearchUser user) {
-    final follower = FollowerModel(
-      id: user.id,
-      name: user.name,
-      username: user.username != null && user.username!.isNotEmpty
-          ? (user.username!.startsWith('@')
-                ? user.username!
-                : '@${user.username}')
-          : '',
-      imageUrl: user.imageUrl,
-      isFollowing: false,
-      isVerified: false,
-      userType: 'User',
-      isMe: false,
-    );
-
-    return FollowerItem(
-      follower: follower,
-      onToggleFollow: () {
-        _searchCubit.toggleFollow(id: user.id, userType: 'User');
-      },
-    );
-  }
-
-  Widget _buildAdvisorItem(BuildContext context, SearchAdvisor advisor) {
-    final follower = FollowerModel(
-      id: advisor.id,
-      name: advisor.name,
-      username: advisor.username != null && advisor.username!.isNotEmpty
-          ? (advisor.username!.startsWith('@')
-                ? advisor.username!
-                : '@${advisor.username}')
-          : '@${advisor.name.replaceAll(' ', '_').toLowerCase()}',
-      imageUrl: advisor.imageUrl,
-      isFollowing: advisor.isFollowing,
-      isVerified: advisor.isVerified,
-      userType: 'Advisor',
-      isMe: advisor.isMe,
-    );
-
-    return FollowerItem(
-      follower: follower,
-      onToggleFollow: () {
-        _searchCubit.toggleFollow(id: advisor.id, userType: 'Advisor');
+        return AdvisorSearchPaginationIndicator(state: state);
       },
     );
   }
@@ -643,125 +448,10 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
       itemCount: posts.length + 1,
       itemBuilder: (context, index) {
         if (index < posts.length) {
-          return _buildPostItem(context, posts[index]);
+          return AdvisorSearchPostItem(post: posts[index]);
         }
-        return _buildPaginationIndicator(state);
+        return AdvisorSearchPaginationIndicator(state: state);
       },
-    );
-  }
-
-  void _onNavigateToDetails(
-    BuildContext ctx,
-    PostModel post,
-    VideoPlayerController? controller,
-  ) {
-    Navigator.push(
-      ctx,
-      MaterialPageRoute(
-        builder: (_) => PostDetailsView(
-          isFromProfile: false,
-          heroPrefix: 'search_advisor',
-          post: post,
-          cachedController: controller,
-          callbacks: PostCallbacks(
-            onReactionChanged: (postId, type) {
-              _searchCubit.reactToPost(postId: postId, reactionType: type);
-            },
-            onShareTap: (postId) {
-              _searchCubit.toggleSharePost(postId: postId);
-            },
-            onSave: (postId) {
-              _searchCubit.toggleSavePost(postId: postId);
-            },
-            onDelete: (postId) {
-              _searchCubit.deletePost(postId: postId);
-            },
-            onArchive: (postId) {
-              _searchCubit.archivePost(postId: postId);
-            },
-            onHide: (postId) {
-              _searchCubit.toggleHidePost(postId: postId);
-            },
-            onBlock: (postId, advisorId) {
-              _searchCubit.blockUser(
-                visiblePostId: postId,
-                advisorId: advisorId,
-              );
-            },
-            onHashtagTap: (hashtag) {
-              final cleanHashtag = hashtag.startsWith('#')
-                  ? hashtag.substring(1)
-                  : hashtag;
-
-              Navigator.push(
-                ctx,
-                MaterialPageRoute(
-                  builder: (_) => AdvisorSearchView(
-                    initialQuery: cleanHashtag,
-                    initialTab: 'posts',
-                  ),
-                ),
-              );
-            },
-            onPollVote: (postId, choiceText) {
-              _searchCubit.voteInPoll(postId: postId, choiceText: choiceText);
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPostItem(BuildContext context, PostModel post) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 10.w),
-      child: PostCard(
-        post: post,
-        isFromProfile: false,
-        heroPrefix: 'search_advisor',
-        onNavigateToDetails: _onNavigateToDetails,
-        callbacks: PostCallbacks(
-          onReactionChanged: (postId, type) {
-            _searchCubit.reactToPost(postId: postId, reactionType: type);
-          },
-          onShareTap: (postId) {
-            _searchCubit.toggleSharePost(postId: postId);
-          },
-          onSave: (postId) {
-            _searchCubit.toggleSavePost(postId: postId);
-          },
-          onDelete: (postId) {
-            _searchCubit.deletePost(postId: postId);
-          },
-          onArchive: (postId) {
-            _searchCubit.archivePost(postId: postId);
-          },
-          onHide: (postId) {
-            _searchCubit.toggleHidePost(postId: postId);
-          },
-          onBlock: (postId, advisorId) {
-            _searchCubit.blockUser(visiblePostId: postId, advisorId: advisorId);
-          },
-          onHashtagTap: (hashtag) {
-            final cleanHashtag = hashtag.startsWith('#')
-                ? hashtag.substring(1)
-                : hashtag;
-
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => AdvisorSearchView(
-                  initialQuery: cleanHashtag,
-                  initialTab: 'posts',
-                ),
-              ),
-            );
-          },
-          onPollVote: (postId, choiceText) {
-            _searchCubit.voteInPoll(postId: postId, choiceText: choiceText);
-          },
-        ),
-      ),
     );
   }
 
@@ -775,116 +465,11 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
         if (index < events.length) {
           return Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-            child: _buildEventItem(events[index]),
+            child: AdvisorSearchEventItem(event: events[index]),
           );
         }
-        return _buildPaginationIndicator(state);
+        return AdvisorSearchPaginationIndicator(state: state);
       },
     );
   }
-
-  Widget _buildSectionHeader({required String title, required String tabId}) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: Styles.textStyle16Bold.copyWith(
-              color: AppColors.kprimaryColor,
-            ),
-          ),
-          GestureDetector(
-            onTap: () {
-              final index = _tabs.indexWhere((tab) => tab.id == tabId);
-              if (index >= 0) {
-                _tabController.animateTo(index);
-                _uiCubit.updateIndex(index);
-                _performSearch();
-              }
-            },
-            child: Row(
-              children: [
-                Text(
-                  context.tr("see_all"),
-                  style: Styles.textStyle14.copyWith(
-                    color: AppColors.kprimaryColor,
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 12.sp,
-                  color: AppColors.kprimaryColor,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPaginationIndicator(SearchState state) {
-    if (state.isLoadingMore) {
-      return Padding(
-        padding: EdgeInsets.symmetric(vertical: 20.h),
-        child: const Center(child: CircularProgressIndicator()),
-      );
-    }
-    if (!state.hasMore && state.lastSearchType != 'all') {
-      return Padding(
-        padding: EdgeInsets.symmetric(vertical: 40.h, horizontal: 20.w),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AppImage(AssetsData.postsEndIcon, height: 110.h),
-            Text(
-              context.tr("end_of_results_search"),
-              style: Styles.textStyle14.copyWith(
-                color: Colors.grey.shade500,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            Gap(4.h),
-            Container(
-              width: 4.w,
-              height: 4.w,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                shape: BoxShape.circle,
-              ),
-            ),
-            Gap(32.h),
-          ],
-        ),
-      );
-    }
-    return const SizedBox.shrink();
-  }
-
-  Widget _buildEventItem(SearchEvent event) {
-    return EventCardItem(
-      imageUrl: event.imageUrl,
-      sessionTitle: event.title,
-      location: event.location,
-      advisorName: event.advisorName,
-      dateTime: event.dateTime,
-      price: event.price,
-      oldPrice: event.oldPrice,
-      attendeesCount: event.attendeesCount,
-      attendeesImages: event.attendeesImages,
-      isFeatured: event.isFeatured,
-      enableTapAnimation: true,
-      enableLongPress: false,
-      showMoreOptions: false,
-    );
-  }
-}
-
-class SearchTab {
-  final String id;
-  final String title;
-
-  const SearchTab({required this.id, required this.title});
 }
