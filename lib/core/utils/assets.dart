@@ -300,4 +300,7 @@ abstract class AssetsData {
   static const String defaultProfileImage =
       "assets/images/default_profile_image.png";
   static const String noInternet = "assets/images/no_internet_image.png";
+  static const String appErrorIcon = "assets/images/appErrorIcon.png";
+
+  static const String pendingIcon = "assets/icons/pending.svg";
 }

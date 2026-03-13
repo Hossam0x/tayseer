@@ -1,4 +1,3 @@
-import 'package:tayseer/core/widgets/account_review_content.dart';
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_model.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
@@ -144,36 +143,11 @@ class ProfileHeader extends StatelessWidget {
               final isUploading =
                   storyState.createStoryState == CubitStates.loading;
 
-              return GestureDetector(
+              return CustomClick(
                 onTap: isUploading
                     ? null
                     : () async {
                         if (context.mounted) {
-                          // ⭐ فحص isApproved قبل فتح صفحة إضافة story
-                          final profileState = context
-                              .read<ProfileCubit>()
-                              .state;
-                          final isApproved =
-                              profileState.profile?.isApproved ?? true;
-
-                          if (!isApproved) {
-                            // عرض الـ dialog
-                            showDialog(
-                              context: context,
-                              barrierDismissible: true,
-                              builder: (dialogContext) => Dialog(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16.r),
-                                ),
-                                child: const AccountReviewContent(
-                                  isDialog: true,
-                                  showButton: true,
-                                ),
-                              ),
-                            );
-                            return;
-                          }
-
                           final storiesCubit = context.read<StoriesCubit>();
                           Navigator.push(
                             context,

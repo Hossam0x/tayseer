@@ -8,42 +8,45 @@ class AddStoryCubit extends Cubit<AddStoryState> {
   final contentController = TextEditingController();
 
   AddStoryCubit(this.storiesRepository) : super(const AddStoryState()) {
-    requestAllPermissions();
+    _initPermissions();
   }
 
-  Future<void> requestAllPermissions() async {
+  Future<void> _initPermissions() async {
+    await requestGalleryPermission();
+    await checkAndRequestCamera();
+  }
+
+  Future<bool> checkAndRequestCamera() async {
+    final Map<Permission, PermissionStatus> camMicResults = await [
+      Permission.camera,
+      Permission.microphone,
+    ].request();
+
+    final bool isCamGranted =
+        camMicResults[Permission.camera]?.isGranted ?? false;
+    final bool isMicGranted =
+        camMicResults[Permission.microphone]?.isGranted ?? false;
+
+    final cameraGranted = isCamGranted && isMicGranted;
+    emit(state.copyWith(isCameraGranted: cameraGranted));
+    return cameraGranted;
+  }
+
+  Future<void> requestGalleryPermission() async {
     emit(state.copyWith(isLoadingAssets: true));
     try {
-      // 1. PhotoManager request (Gallery)
       final PermissionState ps = await PhotoManager.requestPermissionExtend();
       final bool isGalleryGranted = ps.isAuth || ps.hasAccess;
-
-      // 2. Camera + Mic using permission_handler
-      final Map<Permission, PermissionStatus> camMicResults = await [
-        Permission.camera,
-        Permission.microphone,
-      ].request();
-
-      final bool isCamGranted =
-          camMicResults[Permission.camera]?.isGranted ?? false;
-      final bool isMicGranted =
-          camMicResults[Permission.microphone]?.isGranted ?? false;
-
-      emit(
-        state.copyWith(
-          permissionsGranted: isCamGranted && isMicGranted && isGalleryGranted,
-        ),
-      );
-
-      // Load assets if gallery granted
+      emit(state.copyWith(isGalleryGranted: isGalleryGranted));
+      
       if (isGalleryGranted) {
         await loadGalleryAssets(refresh: true);
       } else {
         emit(state.copyWith(isLoadingAssets: false));
       }
     } catch (e) {
-      debugPrint("Error in permission request: $e");
-      emit(state.copyWith(isLoadingAssets: false, permissionsGranted: false));
+      debugPrint("Error in gallery permission request: $e");
+      emit(state.copyWith(isLoadingAssets: false, isGalleryGranted: false));
     }
   }
 

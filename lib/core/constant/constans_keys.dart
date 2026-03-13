@@ -8,6 +8,7 @@ const String kuserData = "user_data";
 const String kMarriageSectionDeactivatedKey = 'marriage_section_deactivated';
 
 const String kAdvisorProfileCache = 'advisor_profile_cache';
+const String kAdvisorStatus = 'advisor_status';
 const String kUserProfileCache = 'user_profile_cache';
 
 const String kGuestName = 'guest_name';

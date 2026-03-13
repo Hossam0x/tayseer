@@ -3,7 +3,6 @@ import 'package:tayseer/features/advisor/settings/data/models/blocked_user_model
 import 'package:tayseer/features/advisor/settings/data/repositories/blocked_users_repository.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/blocked_users_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/blocked_users_state.dart';
-import 'package:tayseer/features/advisor/settings/view/widgets/custom_error_widget.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/features/advisor/settings/data/models/blocked_user_item.dart';
@@ -114,7 +113,8 @@ class _BlockedUsersViewState extends State<BlockedUsersView> {
     }
 
     if (state is BlockedUsersError) {
-      return CustomErrorWidget(
+      return CustomErrorView(
+        verticalPadding: 100,
         message: state.message,
         onRetry: () => context.read<BlockedUsersCubit>().refresh(),
       );

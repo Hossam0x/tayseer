@@ -4,7 +4,7 @@ import 'package:tayseer/features/user/interactions/presentation/Interactions_cub
 import 'package:tayseer/features/user/interactions/presentation/view/get_dummy_interaction.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/category_detail_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/empty_Exploration.dart';
-import 'package:tayseer/features/user/interactions/presentation/view/widget/Interaction_ProfileCard.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_profilecard.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/greeting_interaction_card.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/recently_joined.dart';
 import 'package:tayseer/my_import.dart';
@@ -41,6 +41,7 @@ class ExplorationState extends State<Exploration> {
     required Widget showMoreWidget,
   }) {
     final row = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         titleWidget,
         SizedBox(width: 12.w),
@@ -177,32 +178,6 @@ class ExplorationState extends State<Exploration> {
                 ),
                 SizedBox(height: 24.h),
               ],
-
-              // // ✅ 1. من ضمن اختياراتك
-              // if (state.explorationData["من ضمن اختياراتك"]?.isNotEmpty ??
-              //     false) ...[
-              //   _buildSection(
-              //     title: context.tr("likes_from_your_choices"),
-              //     subtitle: context.tr("suggested_based_on_interests"),
-              //     data: state.explorationData["من ضمن اختياراتك"]!,
-              //     isSubscribed: state.isSubscribed,
-              //     limit: 5,
-              //   ),
-              //   SizedBox(height: 24.h),
-              // ],
-
-              // // ✅ 2. من خارج اختياراتك
-              // if (state.explorationData["من خارج اختياراتك"]?.isNotEmpty ??
-              //     false) ...[
-              //   _buildSection(
-              //     title: context.tr("likes_outside_choices"),
-              //     subtitle: context.tr("outside_preferences"),
-              //     data: state.explorationData["من خارج اختياراتك"]!,
-              //     isSubscribed: state.isSubscribed,
-              //     limit: 5,
-              //   ),
-              //   SizedBox(height: 24.h),
-              // ],
 
               // ✅ 3. يرغبون في التفاعل معك
               if (state.explorationData["يرغبون في التفاعل معك"]?.isNotEmpty ??
@@ -352,7 +327,6 @@ class ExplorationState extends State<Exploration> {
                     ),
                   ),
                 ),
-                // SizedBox(height: 16.h),
                 ListView.builder(
                   scrollDirection: Axis.vertical,
                   physics: const NeverScrollableScrollPhysics(),
@@ -398,8 +372,8 @@ class ExplorationState extends State<Exploration> {
           .map(
             (user) => user.copyWith(
               likedMe: true,
-              likedHim: false, // ✅ أضف
-              sentCompliment: false, // ✅ أضف
+              likedHim: false,
+              sentCompliment: false,
             ),
           )
           .toList();
@@ -410,8 +384,8 @@ class ExplorationState extends State<Exploration> {
               .map(
                 (user) => user.copyWith(
                   likedMe: true,
-                  likedHim: false, // ✅ أضف
-                  sentCompliment: false, // ✅ أضف
+                  likedHim: false,
+                  sentCompliment: false,
                 ),
               )
               .toList()
@@ -420,7 +394,7 @@ class ExplorationState extends State<Exploration> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = screenWidth >= 600;
     final cardWidth = isTablet ? 220.w : 190.w;
-    final cardHeight = isTablet ? 260.0 : 245.0; 
+    final cardHeight = isTablet ? 260.0 : 245.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -428,11 +402,23 @@ class ExplorationState extends State<Exploration> {
         if (showMoreButton)
           _buildHeaderRow(
             titleWidget: Expanded(
-              child: Text(
-                title,
-                style: Styles.textStyle18SemiBold,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Styles.textStyle18SemiBold,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    subtitle,
+                    style: Styles.textStyle14.copyWith(
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.secondary600,
+                    ),
+                  ),
+                ],
               ),
             ),
             showMoreWidget: InkWell(
@@ -443,7 +429,7 @@ class ExplorationState extends State<Exploration> {
                     builder: (context) => CategoryDetailPage(
                       title: title,
                       subtitle: subtitle,
-                      data: navigationData, // ✅ بدل data
+                      data: navigationData,
                       isSubscribed: isSubscribed,
                       isRecentlyJoinedCategory: false,
                     ),
@@ -462,20 +448,24 @@ class ExplorationState extends State<Exploration> {
             ),
           )
         else
-          Text(
-            title,
-            style: Styles.textStyle18SemiBold,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Styles.textStyle18SemiBold,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                subtitle,
+                style: Styles.textStyle14.copyWith(
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.secondary600,
+                ),
+              ),
+            ],
           ),
-        SizedBox(height: 4.h),
-        Text(
-          subtitle,
-          style: Styles.textStyle14.copyWith(
-            fontWeight: FontWeight.w400,
-            color: AppColors.secondary600,
-          ),
-        ),
         SizedBox(height: 16.h),
         SizedBox(
           height: cardHeight,
@@ -493,6 +483,11 @@ class ExplorationState extends State<Exploration> {
                     child: InteractionProfileCard(
                       item: limitedData[index],
                       forceBlur: !isSubscribed,
+                      showRibbon:
+                          forceShowLikedMe, // ✅ يظهر الشعار بس في سكشن الإعجابات
+                      selectedFilter: forceShowLikedMe
+                          ? "liked_Me"
+                          : "", // ✅ يحدد نوع الشعار
                     ),
                   ),
                 );

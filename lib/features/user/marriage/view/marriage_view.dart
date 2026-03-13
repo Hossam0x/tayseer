@@ -1,4 +1,5 @@
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
+import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
 import 'package:tayseer/features/user/marriage/view/widget/marriage_body.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
 import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
@@ -10,27 +11,33 @@ class MarriageView extends StatelessWidget {
     super.key,
     this.personId,
     this.fromInteractions = false,
-    this.initialIsFavorite = false, // ✅ أضف هذا
+    this.initialIsFavorite = false,
+    this.interactionUser, // ✅ اليوزر الكامل من الـ interactions
     this.onScroll,
   });
 
   final String? personId;
   final Function(bool isScrollingDown)? onScroll;
   final bool fromInteractions;
-  final bool initialIsFavorite; // ✅ أضف هذا
+  final bool initialIsFavorite;
+  final InteractionUserModel? interactionUser; // ✅
 
   @override
   Widget build(BuildContext context) {
     final completed = kCurrentUserData?.compeletedData == true;
-
     return Scaffold(
       body: completed
           ? BlocProvider(
-              create: (context) => MarriageCubit(),
+              create: (context) => MarriageCubit(
+                // ✅ نمرر الـ seed للـ cubit مباشرة عند الإنشاء
+                seedPersonId: personId,
+                seedIsFavorite: initialIsFavorite,
+                interactionUser: interactionUser,
+              ),
               child: MarriageBody(
                 personId: personId,
                 fromInteractions: fromInteractions,
-                initialIsFavorite: initialIsFavorite, // ✅ مرره
+                initialIsFavorite: initialIsFavorite,
                 onScroll: onScroll,
               ),
             )
@@ -43,7 +50,6 @@ class MarriageView extends StatelessWidget {
                     final lastQuestionNumber =
                         state.lastQuestionNumberResponse?.lastQuestionNumber ??
                         0;
-
                     if (lastQuestionNumber >= 29) {
                       context.pushNamed(AppRouter.kAccountReviewUserView);
                     } else if (lastQuestionNumber >= 28) {

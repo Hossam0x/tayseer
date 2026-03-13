@@ -121,9 +121,9 @@ class _ReelsItemState extends State<ReelsItem>
       child: GestureDetector(
         behavior: HitTestBehavior.translucent,
         onTap: _togglePlay,
-        onDoubleTapDown: isGuest
-            ? null
-            : (details) => _handleDoubleTap(details.globalPosition),
+        onDoubleTapDown: canAct
+            ? (details) => _handleDoubleTap(details.globalPosition)
+            : null,
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -136,7 +136,7 @@ class _ReelsItemState extends State<ReelsItem>
                 shouldPlay: _shouldPlay,
                 shouldInitialize: widget.shouldInitialize,
                 onTap: _togglePlay,
-                onDoubleTap: isGuest ? null : _handleDoubleTap,
+                onDoubleTap: canAct ? _handleDoubleTap : null,
                 showProgressBar: true,
                 sharedController: widget.sharedController,
                 onControllerCreated: (controller) {

@@ -56,25 +56,10 @@ class ProfileVisitorsView extends StatelessWidget {
                           >(
                             builder: (context, state) {
                               if (state is ProfileVisitorsFailure) {
-                                return Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        state.errorMessage,
-                                        style: Styles.textStyle14.copyWith(
-                                          color: AppColors.kRedColor,
-                                        ),
-                                      ),
-                                      Gap(10.h),
-                                      ElevatedButton(
-                                        onPressed: () => context
-                                            .read<ProfileVisitorsCubit>()
-                                            .fetchVisitors(),
-                                        child: Text(context.tr('retry')),
-                                      ),
-                                    ],
-                                  ),
+                                return CustomErrorView(
+                                  onRetry: () => context
+                                      .read<ProfileVisitorsCubit>()
+                                      .fetchVisitors(),
                                 );
                               }
 

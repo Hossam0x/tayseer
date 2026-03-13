@@ -56,9 +56,9 @@ class UserItem {
     "answers": answers?.toJson(),
   };
 }
-
 class User {
   String? id;
+   bool? imageBlur;
   String? name;
   bool? isLiked;
   bool? isVerified;
@@ -67,11 +67,14 @@ class User {
   int? similarity;
   List<MatchingTag>? matchingTags;
   bool? isNew;
-  int? age; // ✅ تمت الإضافة
-  UserAbout? about; // ✅ تمت الإضافة
+  int? age;
+  UserAbout? about;
+  bool? isFavorite;
+  bool? isBlocked; // ✅ جديد
 
   User({
     this.id,
+      this.imageBlur,
     this.name,
     this.isLiked,
     this.isVerified,
@@ -82,10 +85,13 @@ class User {
     this.isNew,
     this.age,
     this.about,
+    this.isFavorite,
+    this.isBlocked, // ✅
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
     id: json["id"],
+    imageBlur: json["imageBlur"],
     name: json["name"],
     isLiked: json["isLiked"],
     isVerified: json["isVerified"],
@@ -100,6 +106,8 @@ class User {
     isNew: json["isNew"],
     age: json["age"],
     about: json["about"] != null ? UserAbout.fromJson(json["about"]) : null,
+    isFavorite: json["isFavorite"],
+    isBlocked: json["isBlocked"], // ✅
   );
 
   Map<String, dynamic> toJson() => {
@@ -114,9 +122,11 @@ class User {
     "isNew": isNew,
     "age": age,
     "about": about?.toJson(),
+    "isFavorite": isFavorite,
+    "isBlocked": isBlocked, // ✅
+    "imageBlur": imageBlur, // ✅
   };
 }
-
 class UserAbout {
   String? job;
   String? educationLevel;

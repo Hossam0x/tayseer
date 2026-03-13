@@ -1,4 +1,6 @@
 import 'package:flutter/cupertino.dart';
+import 'package:tayseer/core/services/connectivity_cubit.dart';
+import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
@@ -34,12 +36,16 @@ class _UserProfileViewState extends State<UserProfileView> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      // ✅ BlocProvider بيعمل الـ cubit ويتحكم في lifecycle بشكل صح
-      create: (context) {
-        _cubit = UserProfileCubit(getIt<UserProfileRepository>());
-        return _cubit!;
-      },
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<UserProfileCubit>(
+          create: (context) {
+            _cubit = UserProfileCubit(getIt<UserProfileRepository>());
+            return _cubit!;
+          },
+        ),
+        BlocProvider.value(value: getIt<ConnectivityCubit>()),
+      ],
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Stack(
@@ -144,6 +150,13 @@ class _UserProfileViewState extends State<UserProfileView> {
                       }
                     },
                   ),
+                  BlocListener<ConnectivityCubit, ConnectivityState>(
+                    listenWhen: (prev, curr) =>
+                        !prev.isConnected && curr.isConnected,
+                    listener: (context, state) {
+                      context.read<UserProfileCubit>().refresh();
+                    },
+                  ),
                 ],
                 child: BlocBuilder<UserProfileCubit, UserProfileState>(
                   builder: (context, state) {
@@ -159,8 +172,10 @@ class _UserProfileViewState extends State<UserProfileView> {
   }
 
   Widget _buildBodyContent(BuildContext context, UserProfileState state) {
-    return RefreshIndicator.adaptive(
+    return RefreshIndicator(
       onRefresh: () async {
+        if (getIt<ConnectivityCubit>().isOffline) return;
+        VideoManager.instance.stopAll();
         final cubit = context.read<UserProfileCubit>();
         await cubit.refresh();
       },
@@ -307,61 +322,15 @@ class _UserProfileViewState extends State<UserProfileView> {
   }
 
   Widget _buildProfileErrorSection(BuildContext context, SettingsError state) {
-    return Column(
-      children: [
-        Container(
-          width: 120.w,
-          height: 120.w,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.secondary100,
-            border: Border.all(color: AppColors.kRedColor, width: 2),
-          ),
-          child: Center(
-            child: Icon(
-              Icons.error_outline,
-              color: AppColors.kRedColor,
-              size: 48.w,
-            ),
-          ),
-        ),
-        Gap(12.h),
-        Text(
-          context.tr("error_loading_data"),
-          style: Styles.textStyle16.copyWith(color: AppColors.kRedColor),
-          textAlign: TextAlign.center,
-        ),
-        Gap(4.h),
-        Text(
-          state.message,
-          style: Styles.textStyle14.copyWith(color: AppColors.secondary600),
-          textAlign: TextAlign.center,
-          maxLines: 2,
-        ),
-        Gap(16.h),
-        ElevatedButton(
-          onPressed: () async {
-            final cubit = context.read<UserProfileCubit>();
-            try {
-              await cubit.refresh();
-            } catch (e) {}
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary100,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-          ),
-          child: Text(
-            context.tr("retry"),
-            style: Styles.textStyle16Meduim.copyWith(
-              color: AppColors.kWhiteColor,
-            ),
-          ),
-        ),
-        Gap(20.h),
-      ],
+    return CustomErrorView(
+      message: state.message,
+      verticalPadding: 40.h,
+      onRetry: () async {
+        final cubit = context.read<UserProfileCubit>();
+        try {
+          await cubit.refresh();
+        } catch (e) {}
+      },
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
+import 'package:tayseer/core/enum/advisor_status.dart';
 import 'package:tayseer/core/models/category_model.dart';
-import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
+import 'package:tayseer/features/shared/home/model/image_and_name_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
 
@@ -34,6 +35,7 @@ class HomeState extends Equatable {
   // ─────────────────────────────────────────────────────────────────────────
   final ImageAndNameModel? homeInfo;
   final CubitStates fetchNameAndImageState;
+  final AdvisorStatus? currentAdvisorStatus;
 
   // ─────────────────────────────────────────────────────────────────────────
   // 🔧 Getters - للوصول السهل لبيانات الكاتيجوري الحالية
@@ -110,6 +112,7 @@ class HomeState extends Equatable {
     // User Info
     this.homeInfo,
     this.fetchNameAndImageState = CubitStates.initial,
+    this.currentAdvisorStatus,
 
     // Save
     this.saveActionState = CubitStates.initial,
@@ -164,6 +167,7 @@ class HomeState extends Equatable {
     // User Info
     ImageAndNameModel? homeInfo,
     CubitStates? fetchNameAndImageState,
+    AdvisorStatus? currentAdvisorStatus,
 
     // Save
     CubitStates? saveActionState,
@@ -219,6 +223,7 @@ class HomeState extends Equatable {
       homeInfo: homeInfo ?? this.homeInfo,
       fetchNameAndImageState:
           fetchNameAndImageState ?? this.fetchNameAndImageState,
+      currentAdvisorStatus: currentAdvisorStatus ?? this.currentAdvisorStatus,
 
       // Save
       saveActionState: saveActionState ?? this.saveActionState,
@@ -366,6 +371,7 @@ class HomeState extends Equatable {
     // User Info
     homeInfo,
     fetchNameAndImageState,
+    currentAdvisorStatus,
     // Save
     saveActionState,
     saveMessage,

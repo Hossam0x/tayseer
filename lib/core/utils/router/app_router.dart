@@ -986,6 +986,7 @@ return MaterialPageRoute(
             personId: args?['personId'],
             fromInteractions: args?['fromInteractions'] ?? false, // ✅
             initialIsFavorite: args?['isFavorite'] ?? false, // ✅
+             interactionUser: args?['interactionUser'], // ✅
           ),
         );
       case AppRouter.kOrderManagementView:

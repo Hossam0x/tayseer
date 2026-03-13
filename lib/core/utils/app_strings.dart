@@ -147,4 +147,19 @@ class AppStrings {
   static const String agoMinutes = "ago_minutes";
   static const String agoHours = "ago_hours";
   static const String agoDays = "ago_days";
+
+  static const String accountUnderReview = "account_under_review";
+  static const String accountUnderReviewMessage =
+      "account_under_review_message";
+  static const String gotIt = "got_it";
+  static const String cannotDoThisAction = "cannot_do_this_action";
+  static const String accountDisApprovedMessage = "account_disapproved_message";
+  static const String contactSupport = "contact_support";
+
+  static const String yourAccountUnderReview = "your_account_under_review";
+  static const String yourAccountDisapproved = "your_account_disapproved";
+  static const String accountUnderReviewDescription =
+      "account_under_review_description";
+  static const String accountDisapprovedDescription =
+      "account_disapproved_description";
 }

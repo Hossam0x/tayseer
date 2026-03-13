@@ -193,11 +193,11 @@ class HistorypageState extends State<Historypage> {
                             SliverGrid(
                               gridDelegate:
                                   SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: crossAxisCount,
-                                crossAxisSpacing: 12.w,
-                                mainAxisSpacing: 12.h,
-                                childAspectRatio: childAspectRatio,
-                              ),
+                                    crossAxisCount: crossAxisCount,
+                                    crossAxisSpacing: 12.w,
+                                    mainAxisSpacing: 12.h,
+                                    childAspectRatio: childAspectRatio,
+                                  ),
                               delegate: SliverChildBuilderDelegate(
                                 (context, index) {
                                   if (index >= data.length) {
@@ -209,7 +209,11 @@ class HistorypageState extends State<Historypage> {
                                         widget.selectedFilter == "favorites",
                                     forceBlur: !state.isSubscribed,
                                     showRibbon:
-                                        widget.selectedFilter != "met_them",
+                                        widget.selectedFilter != "met_them" &&
+                                        widget.selectedFilter !=
+                                            "favorites", // ✅ عدّل هذا
+                                    selectedFilter:
+                                        widget.selectedFilter, // ✅ أضف هذا
                                   );
                                 },
                                 childCount:

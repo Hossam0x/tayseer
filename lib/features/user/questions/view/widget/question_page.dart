@@ -169,17 +169,12 @@ class _QuestionPageState extends State<QuestionPage> {
         return CategorizedSingleSelectWidget(
           categorizedItems: widget.config.categorizedItems ?? {},
           onChanged: (selectedItems) {
-            final valuesWithEmoji = selectedItems.entries.map((entry) {
-              final categoryKey = entry.key;
-              final itemKey = entry.value;
-              final emoji =
-                  widget.config.categorizedItems?[categoryKey]?[itemKey] ?? '';
-              return '${context.tr(categoryKey)}: $emoji ${context.tr(itemKey)}';
-            }).toList();
-
+            // selectedItems هنا Map<String, String>
+            // ✅ تأكد إنك بتبعت الـ keys مش الترجمة
             _selectedValue.value = {
-              'key': selectedItems,
-              'value': valuesWithEmoji,
+              'key':
+                  selectedItems, // Map<String, String> {categoryKey: itemKey}
+              'value': selectedItems, // نفس الـ key
             };
           },
           primaryColor: AppColors.kprimaryColor,

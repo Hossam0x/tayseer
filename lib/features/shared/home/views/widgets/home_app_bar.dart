@@ -1,4 +1,3 @@
-import 'package:tayseer/core/widgets/custom_click.dart';
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
@@ -38,8 +37,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                 ),
                 child: Row(
                   children: [
-                    // ⭐ Use state.homeInfo?.image which updates reactively via HomeCubit
-                    CustomClick(
+                    GestureDetector(
                       onTap: () {
                         if (isUser) {
                           context.read<LayoutCubit>().changeIndex(4);
@@ -75,49 +73,19 @@ class _HomeAppBarState extends State<HomeAppBar> {
 
                     IconButton(
                       onPressed: () {
-                        //TODO: Navigate to notifications screen
+                        context.pushNamed(AppRouter.notification);
                       },
                       icon: Stack(
                         clipBehavior: Clip.none,
 
                         children: [
-                          GestureDetector(
-                            onTap: () {
-                              if (isGuest) {
-                                CustomshowDialogWithImage(
-                                  context,
-                                  title: context.tr('joinUs'),
-                                  supTitle: context.tr("guest_login_first"),
-                                  icon: Icons.lock_person_outlined,
-                                  iconColor: AppColors.kprimaryColor,
-                                  bottonText: context.tr("login"),
-                                  showCancelButton: true,
-                                  cancelText: context.tr('skip'),
-                                  onPressed: () {
-                                    // ✅ مسح كاش البروفايل القديم عشان اللوجن الجديد يبدأ نضيف
-                                    CachNetwork.clearGuestAndProfileCache();
-                                    // ✅ ريسيت الـ HomeCubit Singleton
-                                    if (getIt.isRegistered<HomeCubit>()) {
-                                      getIt.resetLazySingleton<HomeCubit>();
-                                    }
-                                    context.pushNamedAndRemoveUntil(
-                                      AppRouter.kRegisrationView,
-                                      predicate: (_) => false,
-                                    );
-                                  },
-                                  onCancel: () {},
-                                );
-                              } else {
-                                context.pushNamed(AppRouter.notification);
-                              }
-                            },
-                            child: AppImage(
-                              AssetsData.notificationIcon,
-                              height: context.responsiveHeight(23),
-                              width: context.responsiveWidth(23),
-                              fit: BoxFit.fill,
-                            ),
+                          AppImage(
+                            AssetsData.notificationIcon,
+                            height: context.responsiveHeight(23),
+                            width: context.responsiveWidth(23),
+                            fit: BoxFit.fill,
                           ),
+
                           if (widget.notificationCount > 0)
                             Positioned(
                               top: context.responsiveHeight(-8),

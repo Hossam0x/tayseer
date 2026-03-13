@@ -48,30 +48,8 @@ class UserPublicProfileView extends StatelessWidget {
 
         return Padding(
           padding: EdgeInsets.only(bottom: 10.h),
-          child: FloatingActionButton(
-            onPressed: () {
-              if (isGuest) {
-                CustomshowDialogWithImage(
-                  context,
-                  title: context.tr('joinUs'),
-                  supTitle: context.tr("guest_login_first"),
-                  icon: Icons.lock_person_outlined,
-                  iconColor: AppColors.kprimaryColor,
-                  bottonText: context.tr("login"),
-                  showCancelButton: true,
-                  cancelText: context.tr('skip'),
-                  onPressed: () {
-                    CachNetwork.removeData(key: ktoken);
-                    context.pushNamedAndRemoveUntil(
-                      AppRouter.kRegisrationView,
-                      predicate: (_) => false,
-                    );
-                  },
-                  onCancel: () {},
-                );
-                return;
-              }
-
+          child: CustomClick(
+            onTap: () {
               final cubit = context.read<UserPublicProfileCubit>();
               SendGreetingDialog.show(
                 context,
@@ -80,31 +58,34 @@ class UserPublicProfileView extends StatelessWidget {
                 cubit: cubit,
               );
             },
-            backgroundColor: AppColors.kprimaryColor,
-            shape: const CircleBorder(),
-            elevation: 4,
-            child: Container(
-              width: 56.w,
-              height: 56.w,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.kprimaryColor.withOpacity(0.9),
-                    AppColors.kprimaryColor,
-                  ],
+            child: FloatingActionButton(
+              onPressed: null, // Handled by CustomClick
+              backgroundColor: AppColors.kprimaryColor,
+              shape: const CircleBorder(),
+              elevation: 4,
+              child: Container(
+                width: 56.w,
+                height: 56.w,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      AppColors.kprimaryColor.withOpacity(0.9),
+                      AppColors.kprimaryColor,
+                    ],
+                  ),
                 ),
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(10.w),
-                child: SvgPicture.asset(
-                  AssetsData.icSendGreeting,
-                  width: 26.w,
-                  height: 26.w,
-                  color: Colors.white,
-                  fit: BoxFit.contain,
+                child: Padding(
+                  padding: EdgeInsets.all(10.w),
+                  child: SvgPicture.asset(
+                    AssetsData.icSendGreeting,
+                    width: 26.w,
+                    height: 26.w,
+                    color: Colors.white,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
             ),

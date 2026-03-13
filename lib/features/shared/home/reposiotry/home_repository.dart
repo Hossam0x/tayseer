@@ -2,7 +2,7 @@
 
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/errors/failure.dart';
-import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
+import 'package:tayseer/features/shared/home/model/image_and_name_model.dart';
 import 'package:tayseer/features/shared/home/model/categories_response_model.dart';
 import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/features/shared/home/model/comments_response_model.dart';

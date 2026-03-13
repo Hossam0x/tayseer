@@ -4,10 +4,12 @@ import 'package:tayseer/features/advisor/add_post/view/widget/upload_post_banner
 import 'package:tayseer/features/advisor/add_post/view_model/upload_post/upload_post_cubit.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/upload_post/upload_post_state.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_app_bar.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_filter_section.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_search_bar.dart';
+import 'package:tayseer/features/shared/home/views/widgets/advisor_status_home_banner.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/widgets/stories_section.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/shared/home/views/widgets/session_started_listener.dart';
@@ -149,6 +151,13 @@ class HomeViewBodyState extends State<HomeViewBody> {
                 slivers: [
                   const HomeAppBar(notificationCount: 3),
                   const HomeSearchBar(),
+                  BlocBuilder<HomeCubit, HomeState>(
+                    buildWhen: (prev, curr) =>
+                        prev.currentAdvisorStatus != curr.currentAdvisorStatus,
+                    builder: (context, state) => AdvisorStatusHomeBanner(
+                      status: state.currentAdvisorStatus,
+                    ),
+                  ),
                   const StoriesSection(),
 
                   // ────────────────────────────────────

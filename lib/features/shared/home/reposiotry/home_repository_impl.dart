@@ -2,7 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/services/connectivity_service.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_remote_datasource.dart';
-import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
+import 'package:tayseer/features/shared/home/model/image_and_name_model.dart';
 import 'package:tayseer/features/shared/home/model/categories_response_model.dart';
 import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
