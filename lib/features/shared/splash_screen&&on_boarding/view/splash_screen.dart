@@ -50,6 +50,7 @@ class _SplashScreenState extends State<SplashScreen>
           kCurrentUserData?.isNew == false
               ? context.pushReplacementNamed(AppRouter.kUserLayoutView)
               : context.pushReplacementNamed(AppRouter.kRegisrationView);
+          
         }
       } else {
         navigatorKey.currentState?.pushReplacementNamed(

@@ -32,6 +32,13 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
     emit(state.copyWith(selectedAnonymous: value));
   }
 
+  /// ✅ Lock anonymous state after first comment (called from _notifyCommented)
+  void lockAnonymousState(bool isAnonymous) {
+    emit(
+      state.copyWith(isAnonymousLocked: true, selectedAnonymous: isAnonymous),
+    );
+  }
+
   // ═══════════════════════════════════════════════════════════
   // 📌 LOAD POST FROM API (from Notification)
   // ═══════════════════════════════════════════════════════════
@@ -56,6 +63,9 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
           state.copyWith(
             postLoadingState: CubitStates.success,
             loadedPost: post,
+            // ✅ تحديث حالة الـ anonymous من البوست المحمل
+            isAnonymousLocked: post.isCommented,
+            selectedAnonymous: post.isAnonymous ?? false,
           ),
         );
       },

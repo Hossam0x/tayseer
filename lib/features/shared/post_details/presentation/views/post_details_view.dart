@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/custom_error_widget.dart';
 import 'package:tayseer/features/shared/post_details/presentation/manager/post_details_cubit/post_details_cubit.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/widgets/comment_input_area.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/widgets/post_details_body.dart';
@@ -202,22 +203,12 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
-              body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      state.postLoadingError ??
-                          context.tr(AppStrings.failedToLoadPost),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () => context
-                          .read<PostDetailsCubit>()
-                          .loadPostFromAPI(widget.postId_fromNotifc!),
-                      child: Text(context.tr(AppStrings.retry)),
-                    ),
-                  ],
+              body: CustomErrorWidget(
+                message:
+                    state.postLoadingError ??
+                    context.tr(AppStrings.failedToLoadPost),
+                onRetry: () => context.read<PostDetailsCubit>().loadPostFromAPI(
+                  widget.postId_fromNotifc!,
                 ),
               ),
             );
@@ -297,6 +288,10 @@ class _PostDetailsViewState extends State<PostDetailsView> {
         commentsCount: (_currentPost?.commentsCount ?? 0) + 1,
       );
     });
+
+    // ✅ Lock anonymous state in cubit (for notification entry)
+    _postDetailsCubit.lockAnonymousState(isAnonymous);
+
     _effectiveCallbacks.onCommented?.call(_currentPost!.postId, isAnonymous);
   }
 
