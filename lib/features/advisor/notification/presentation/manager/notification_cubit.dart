@@ -113,6 +113,7 @@ class NotificationCubit extends Cubit<NotificationState> {
           description: notif.description,
           dateTime: notif.dateTime,
           isRead: true,
+          likeType: notif.likeType,
           senderImage: notif.senderImage,
           data: notif.data,
         );
@@ -133,6 +134,8 @@ class NotificationCubit extends Cubit<NotificationState> {
         description: notif.description,
         dateTime: notif.dateTime,
         isRead: true,
+        likeType: notif.likeType,
+
         senderImage: notif.senderImage,
         data: notif.data,
       );

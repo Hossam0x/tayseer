@@ -1,6 +1,11 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayseer/core/constant/constans.dart';
+import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/core/utils/router/app_router.dart';
+import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
+import 'package:tayseer/features/advisor/stories/presentation/views/story_details_view.dart';
 import 'package:tayseer/main.dart';
 
 class NotificationHelper {
@@ -34,6 +39,7 @@ class NotificationHelper {
     final type = data['type'] as String?;
     final postId = data['postId'] as String?;
     final commentId = data['commentId'] as String?;
+    final storyId = data["storyId"] as String?;
     final eventId = data['eventId'] as String?;
     final sessionId = data['sessionId'] as String?;
     final senderId = data['senderId'] as String?;
@@ -83,6 +89,18 @@ class NotificationHelper {
         break;
 
       case 'story_like':
+        if (storyId != null && storyId.isNotEmpty) {
+          _navigateToStory(storyId);
+        } else {
+          navigatorKey.currentState!.pushNamed(
+            isAdvisor
+                ? AppRouter.kAdvisorLayoutView
+                : AppRouter.kUserLayoutView,
+            arguments: {'receiverRef': receiverRef},
+          );
+        }
+        break;
+
       case 'story_view':
         navigatorKey.currentState!.pushNamed(
           isAdvisor ? AppRouter.kAdvisorLayoutView : AppRouter.kUserLayoutView,
@@ -144,5 +162,40 @@ class NotificationHelper {
     }
 
     debugPrint('✅ Navigated for type: $type');
+  }
+
+  static Future<void> _navigateToStory(String storyId) async {
+    final context = navigatorKey.currentContext;
+    if (context == null) return;
+
+    final storiesCubit = getIt<StoriesCubit>();
+    final userStories = await storiesCubit.fetchStoriesForNavigation(
+      advisorId: kCurrentUserData?.id,
+    );
+
+    if (userStories.isEmpty || !context.mounted) return;
+
+    int userIndex = userStories.indexWhere(
+      (us) => us.stories.any((s) => s.id == storyId),
+    );
+    if (userIndex == -1) userIndex = 0;
+
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        opaque: false,
+        pageBuilder: (newContext, animation, secondaryAnimation) =>
+            BlocProvider.value(
+              value: storiesCubit,
+              child: StoryDetailsView(
+                usersStories: userStories,
+                initialUserIndex: userIndex,
+                initialStoryId: storyId,
+              ),
+            ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+            FadeTransition(opacity: animation, child: child),
+      ),
+    );
   }
 }

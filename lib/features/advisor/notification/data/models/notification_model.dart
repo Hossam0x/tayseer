@@ -54,6 +54,7 @@ class NotificationModel {
     required this.description,
     required this.dateTime,
     required this.isRead,
+    required this.likeType,
     required this.senderImage,
     required this.data,
   });
@@ -61,6 +62,7 @@ class NotificationModel {
   final String? id;
   final NotificationType type;
   final String? key;
+  final String? likeType;
   final String? title;
   final String? description;
   final DateTime? dateTime;
@@ -73,6 +75,7 @@ class NotificationModel {
       id: json["id"],
       type:NotificationType.fromType(json["type"]),
       key: json["key"],
+      likeType:json["likeType"],
       title: json["title"],
       description: json["description"],
       dateTime: DateTime.tryParse(json["dateTime"] ?? ""),

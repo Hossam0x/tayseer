@@ -169,10 +169,25 @@ class NotificationItem extends StatelessWidget {
       case NotificationType.commentLike:
       case NotificationType.commentReply:
         return AssetsData.commentIcon;
-      case NotificationType.postLike:
+
       case NotificationType.storyLike:
+
+      case
+      NotificationType.postLike:
       case NotificationType.replyLike:
-        return AssetsData.careIcon;
+          if(notification.likeType=="dislike")
+            {
+              return AssetsData.disLikeIcon;
+            }else if(notification.likeType=="love")
+              {
+                return AssetsData.loveIcon;
+
+              }else if(notification.likeType==null)
+                {
+                  return AssetsData.loveIcon;
+
+                }else {return AssetsData.careIcon;}
+
       case NotificationType.postShare:
       case NotificationType.eventShare:
         return AssetsData.shareIcon;

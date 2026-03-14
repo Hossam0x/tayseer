@@ -100,6 +100,21 @@ class StoriesCubit extends Cubit<StoriesState> {
     }
   }
 
+  /// Fetch stories for navigation purposes without affecting cubit state.
+  /// Returns the list directly; used e.g. when navigating from notifications.
+  Future<List<UserStoriesModel>> fetchStoriesForNavigation({
+    String? advisorId,
+    bool isSpecial = false,
+  }) async {
+    final result = await storiesRepository.fetchStoriesSilent(
+      page: 1,
+      limit: 100,
+      advisorId: advisorId,
+      isSpecial: isSpecial,
+    );
+    return result.fold((_) => [], (list) => list);
+  }
+
   /// Silent fetch that doesn't require a [BuildContext].
   /// Used after adding a story when the original context is already popped.
   Future<void> fetchStoriesSilent() async {

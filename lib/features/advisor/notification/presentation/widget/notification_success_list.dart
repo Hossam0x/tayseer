@@ -1,5 +1,8 @@
+import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/features/advisor/notification/presentation/manager/notification_cubit.dart';
 import 'package:tayseer/features/advisor/notification/presentation/widget/notification_item.dart';
+import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
+import 'package:tayseer/features/advisor/stories/presentation/views/story_details_view.dart';
 
 import 'package:tayseer/my_import.dart';
 
@@ -104,13 +107,8 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
       // );
     } else if (notification.type == NotificationType.storyLike ||
         notification.type == NotificationType.storyView) {
-      // context.pushNamedAndRemoveUntil(
-      //   isAdvisor ? AppRouter.kAdvisorLayoutView : AppRouter.kUserLayoutView,
-      //   predicate: (route) => false,
-      //   arguments: {
-      //     'receiverRef': kCurrentUserData!.id,
-      //   },
-      // );
+      final storyId = notification.data?.storyId;
+      if (storyId != null) _navigateToStory(context, storyId);
     } else if (notification.type == NotificationType.eventShare ||
         notification.type == NotificationType.eventReservation) {
       context.pushNamed(
@@ -122,6 +120,39 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
 
   void _handleSubscribe(BuildContext context) {
     // TODO: Navigate to subscription screen
+  }
+
+  Future<void> _navigateToStory(BuildContext context, String storyId) async {
+    final storiesCubit = getIt<StoriesCubit>();
+    final userStories = await storiesCubit.fetchStoriesForNavigation(
+      advisorId: kCurrentUserData?.id,
+    );
+
+    if (userStories.isEmpty || !context.mounted) return;
+
+    // Find which user's story list contains this storyId
+    int userIndex = userStories.indexWhere(
+      (us) => us.stories.any((s) => s.id == storyId),
+    );
+    if (userIndex == -1) userIndex = 0;
+
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        opaque: false,
+        pageBuilder: (newContext, animation, secondaryAnimation) =>
+            BlocProvider.value(
+              value: storiesCubit,
+              child: StoryDetailsView(
+                usersStories: userStories,
+                initialUserIndex: userIndex,
+                initialStoryId: storyId,
+              ),
+            ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+            FadeTransition(opacity: animation, child: child),
+      ),
+    );
   }
 
   List<NotificationModel> _uniqueNotifications(List<NotificationModel> items) {
