@@ -22,8 +22,6 @@ import 'package:tayseer/features/user/marriage/view/widget/message_input_section
 import 'package:tayseer/features/user/marriage/view/widget/religious.dart';
 import 'package:tayseer/features/user/marriage/view/widget/sliver_profile_header.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
-
-// ✅ NEW IMPORT
 import 'package:tayseer/features/user/user_profile/views/widgets/marriage_life_events_section.dart';
 import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart'
     as marriageModel;
@@ -129,36 +127,44 @@ class MarriageBodyState extends State<MarriageBody>
     return context.tr(value.trim());
   }
 
-  // ✅ NEW: بناء timeline events من answers
+  // ✅ بناء timeline events من الـ API fields الصح
   List<Map<String, dynamic>> _buildTimelineEventsFromAnswers(
     marriageModel.YourGoals goals,
   ) {
     final List<Map<String, dynamic>> events = [];
 
-    if (goals.marry != null && goals.marry.toString().isNotEmpty) {
+    // ✅ الزواج: marriageIntentions هو الـ field الصح، marry fallback
+    final marriageValue = goals.marriageIntentions ?? goals.marry;
+    if (marriageValue != null && marriageValue.toString().trim().isNotEmpty) {
       events.add({
-        'timeLabel': _tr(goals.marry.toString()),
-        'goalType': 'marriage_intentions', // ✅ موجود في switch
+        'timeLabel': _tr(marriageValue.toString()),
+        'goalType': 'marriage_intentions',
       });
     }
-    if (goals.engagment != null && goals.engagment.toString().isNotEmpty) {
+
+    // ✅ الخطوبة: engagment
+    if (goals.engagment != null &&
+        goals.engagment.toString().trim().isNotEmpty) {
       events.add({
         'timeLabel': _tr(goals.engagment.toString()),
-        'goalType': 'engagement', // ✅ موجود في switch
+        'goalType': 'engagement',
       });
     }
-    if (goals.children != null && goals.children.toString().isNotEmpty) {
+
+    // ✅ الأسرة: familyAcceptance هو الـ field الصح، children fallback
+    final familyValue = goals.familyAcceptance ?? goals.children;
+    if (familyValue != null && familyValue.toString().trim().isNotEmpty) {
       events.add({
-        'timeLabel': _tr(goals.children.toString()),
-        'goalType':
-            'familyAcceptance', // ✅ بيتحول لـ 'familyacceptance' بعد toLowerCase
+        'timeLabel': _tr(familyValue.toString()),
+        'goalType': 'familyAcceptance',
       });
     }
-    if (goals.travel != null && goals.travel.toString().isNotEmpty) {
+
+    // ✅ السفر: travel
+    if (goals.travel != null && goals.travel.toString().trim().isNotEmpty) {
       events.add({
         'timeLabel': _tr(goals.travel.toString()),
-        'goalType':
-            'intendTravelAbroad', // ✅ بيتحول لـ 'intendtravelabroad' بعد toLowerCase
+        'goalType': 'intendTravelAbroad',
       });
     }
 
@@ -244,7 +250,7 @@ class MarriageBodyState extends State<MarriageBody>
             child: state.isMarriageTab
                 ? _buildWithAppBar(
                     key: const ValueKey('empty_marriage'),
-                    child: _buildEmptyMarriage(),
+                    child: _buildEmptyMarriage(context.read<MarriageCubit>()),
                   )
                 : _buildInteractionsContent(
                     key: const ValueKey('interactions'),
@@ -332,29 +338,36 @@ class MarriageBodyState extends State<MarriageBody>
     );
   }
 
-  Widget _buildEmptyMarriage() {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 32.w),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AppImage(AssetsData.noPersonsBlocked, width: 180.w, height: 180.h),
-            Gap(24.h),
-            Text(
-              context.tr('no_marriage_users'),
-              style: Styles.textStyle18Bold.copyWith(
-                color: AppColors.kprimaryTextColor,
+  Widget _buildEmptyMarriage(cubit) {
+    return RefreshIndicator.adaptive(
+      onRefresh: () => cubit.refreshProfile(),
+      child: Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 32.w),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AppImage(
+                AssetsData.noPersonsBlocked,
+                width: 180.w,
+                height: 180.h,
               ),
-              textAlign: TextAlign.center,
-            ),
-            Gap(12.h),
-            Text(
-              context.tr('share_app_to_find_users'),
-              style: Styles.textStyle14.copyWith(color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
-          ],
+              Gap(24.h),
+              Text(
+                context.tr('no_marriage_users'),
+                style: Styles.textStyle18Bold.copyWith(
+                  color: AppColors.kprimaryTextColor,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              Gap(12.h),
+              Text(
+                context.tr('share_app_to_find_users'),
+                style: Styles.textStyle14.copyWith(color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -392,6 +405,11 @@ class MarriageBodyState extends State<MarriageBody>
     final nextUser = nextProfile?.user;
     final nextAnswers = nextProfile?.answers;
     final List<String> nextImages = nextAnswers?.userMedia?.image ?? [];
+
+    // ✅ بناء events مرة واحدة
+    final timelineEvents = answers?.yourGoals != null
+        ? _buildTimelineEventsFromAnswers(answers!.yourGoals!)
+        : <Map<String, dynamic>>[];
 
     return Directionality(
       key: key,
@@ -581,8 +599,8 @@ class MarriageBodyState extends State<MarriageBody>
                       ),
                     ),
 
-                  // ✅ REPLACED: LifeEventsSection → MarriageLifeEventsSection
-                  if (answers?.yourGoals != null)
+                  // ✅ MarriageLifeEventsSection مع الـ events الصح
+                  if (timelineEvents.isNotEmpty)
                     SliverPadding(
                       padding: EdgeInsets.symmetric(
                         horizontal: 16.w,
@@ -592,12 +610,11 @@ class MarriageBodyState extends State<MarriageBody>
                         child: MarriageLifeEventsSection(
                           titleName:
                               "${user?.name ?? ''} ${context.tr('goals')}",
-                          events: _buildTimelineEventsFromAnswers(
-                            answers!.yourGoals!,
-                          ),
+                          events: timelineEvents,
                         ),
                       ),
                     ),
+
                   if (displayImages.isNotEmpty)
                     SliverPadding(
                       padding: EdgeInsets.symmetric(
@@ -729,11 +746,18 @@ class MarriageBodyState extends State<MarriageBody>
                             onPressed: () async {
                               Navigator.pop(context);
                               if (isBlocked) {
+                                // ✅ إلغاء الحظر - مش محتاج scroll
                                 await cubit.unblockUser(
                                   personId: user?.id ?? '',
                                 );
                               } else {
+                                // ✅ حظر - شيل اليوزر وجيب التالي
                                 await cubit.blockUser(personId: user?.id ?? '');
+                                // ✅ ارجع للأعلى عشان تشوف البروفايل الجديد
+                                if (widget.personId == null) {
+                                  _resetScrollTracking();
+                                  scrollToTop();
+                                }
                               }
                               final newState = cubit.state;
                               if (!context.mounted) return;

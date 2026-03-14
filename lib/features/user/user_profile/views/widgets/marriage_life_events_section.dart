@@ -165,7 +165,7 @@ class MarriageLifeEventsSection extends StatelessWidget {
                         child: Text(
                           // ⭐⭐⭐ استخدام goalType للترجمة الصحيحة
                           _getGoalDisplayName(event['goalType'], context),
-                          style: Styles.textStyle14Bold.copyWith(
+                          style: Styles.textStyle12Bold.copyWith(
                             color: const Color(0xFF9E1C36),
                             height: 1.2,
                           ),
