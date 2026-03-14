@@ -1,6 +1,7 @@
 import 'package:pin_code_fields/pin_code_fields.dart';
+import 'package:flutter/services.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
-import 'package:tayseer/features/user/user_profile/views/repos/otp_repository.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/otp_repository.dart';
 import 'package:tayseer/my_import.dart' hide PinTheme;
 
 class OtpViewUser extends StatefulWidget {
@@ -23,16 +24,19 @@ class OtpViewUser extends StatefulWidget {
 
 class _OtpViewUserState extends State<OtpViewUser> {
   late TextEditingController _otpController;
+  late FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
     _otpController = TextEditingController();
+    _focusNode = FocusNode();
   }
 
   @override
   void dispose() {
     _otpController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -205,9 +209,27 @@ class _OtpViewUserState extends State<OtpViewUser> {
   }
 
   Widget _buildPinCodeField(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: PinCodeTextField(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        print('🫳 Outer GestureDetector tap');
+        if (!_focusNode.hasFocus) {
+          _focusNode.requestFocus();
+          SystemChannels.textInput.invokeMethod('TextInput.show');
+        } else {
+          // Force refresh even if focused
+          _focusNode.unfocus();
+          Future.delayed(const Duration(milliseconds: 50), () {
+            if (mounted) {
+              _focusNode.requestFocus();
+              SystemChannels.textInput.invokeMethod('TextInput.show');
+            }
+          });
+        }
+      },
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: PinCodeTextField(
         appContext: context,
         length: 6,
         controller: _otpController,
@@ -226,7 +248,29 @@ class _OtpViewUserState extends State<OtpViewUser> {
           }
         },
 
+        onTap: () {
+          print('🎯 OTP Tap detected');
+          // Force keyboard to show on tap regardless of current focus state
+          if (_focusNode.hasFocus) {
+            print('🔄 Already has focus, recycling focus');
+            _focusNode.unfocus();
+            Future.delayed(const Duration(milliseconds: 50), () {
+              if (mounted) {
+                _focusNode.requestFocus();
+                SystemChannels.textInput.invokeMethod('TextInput.show');
+                print('🎹 Keyboard requested after recycling');
+              }
+            });
+          } else {
+            print('🆕 Requesting focus');
+            _focusNode.requestFocus();
+            SystemChannels.textInput.invokeMethod('TextInput.show');
+            print('🎹 Keyboard requested');
+          }
+        },
+
         // ⭐⭐ الإعدادات الأساسية
+        focusNode: _focusNode,
         autoFocus: true,
         keyboardType: TextInputType.number,
         textInputAction: TextInputAction.done,
@@ -234,7 +278,7 @@ class _OtpViewUserState extends State<OtpViewUser> {
         // ⭐⭐ إعدادات المسح
         enableActiveFill: true,
         autoDisposeControllers: false,
-        autoDismissKeyboard: false, // ⭐⭐ هذا هو الـ parameter الصحيح
+        autoDismissKeyboard: true, 
 
         pinTheme: PinTheme(
           shape: PinCodeFieldShape.box,
@@ -277,11 +321,12 @@ class _OtpViewUserState extends State<OtpViewUser> {
         },
 
         // ⭐⭐ السماح بالمسح بشكل كامل
-        autoUnfocus: false,
+        autoUnfocus: true,
         blinkWhenObscuring: true,
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildResendSection(BuildContext context, OtpState state) {
     if (state.canResend) {

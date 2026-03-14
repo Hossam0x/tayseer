@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:dartz/dartz.dart';
-import 'package:tayseer/features/user/user_profile/views/repos/otp_repository.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/otp_repository.dart';
 import 'package:tayseer/my_import.dart';
 part 'otp_state.dart';
 
