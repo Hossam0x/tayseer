@@ -237,22 +237,10 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
   }
 
   Future<void> _restorePosition() async {
-    if (_controller == null) return;
-
-    try {
-      if (!_controller!.value.isInitialized) return;
-
-      final lastPosition = _stateManager.getLastPosition(_videoId);
-      if (lastPosition != null && lastPosition.inSeconds > 0) {
-        // لا نستعيد إذا كان قريب جداً من البداية أو النهاية
-        final duration = _controller!.value.duration;
-        if (lastPosition < duration - const Duration(seconds: 2)) {
-          await _controller!.seekTo(lastPosition);
-        }
-      }
-    } catch (e) {
-      debugPrint('⚠️ Cannot restore position, controller disposed');
-    }
+    // Reels should always start from the beginning (position 0:00)
+    // Position restoration is disabled for reels feed to ensure
+    // videos restart from the beginning when users scroll back to them
+    return;
   }
 
   void _savePosition() {
