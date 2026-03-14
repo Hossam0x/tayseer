@@ -159,7 +159,7 @@ class StoriesCubit extends Cubit<StoriesState> {
       },
     );
     // Also refresh my own stories silently
-    await fetchMyStories();
+    await fetchMyStories(isSilent: true);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -168,8 +168,10 @@ class StoriesCubit extends Cubit<StoriesState> {
   /// Fetches only the current advisor's own stories.
   /// Call this on profile load and after opening a story to refresh
   /// view counts and likers without affecting the main stories list.
-  Future<void> fetchMyStories() async {
-    emit(state.copyWith(myStoriesState: CubitStates.loading));
+  Future<void> fetchMyStories({bool isSilent = false}) async {
+    if (!isSilent) {
+      emit(state.copyWith(myStoriesState: CubitStates.loading));
+    }
 
     final result = await storiesRepository.fetchMyStories();
 
@@ -644,7 +646,7 @@ class StoriesCubit extends Cubit<StoriesState> {
         }
 
         // ── Re-fetch my stories in the background to get accurate data ──────
-        fetchMyStories();
+        fetchMyStories(isSilent: true);
 
         if (context != null && context.mounted) {
           AppToast.success(context, context.tr('story_created_success'));

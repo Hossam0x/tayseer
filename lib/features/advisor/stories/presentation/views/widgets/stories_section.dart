@@ -345,18 +345,13 @@ class _AddStoryItem extends StatelessWidget {
                         if (myStory != null) {
                           final storiesCubit = context.read<StoriesCubit>();
 
-                          // Show a loading indicator
-                          CustomloadingApp.show(context);
+// Open my story fast without blocking the transition with a loading indicator.
+                          // It will use the current story data instantly.
+                          
+                          // We still request a quiet refetch in the background to keep data fresh later
+                          storiesCubit.fetchMyStories(isSilent: true);
 
-                          // Fetch the latest stories to get up-to-date views & likers
-                          await storiesCubit.fetchMyStories();
-
-                          // Hide loading
-                          if (context.mounted) {
-                            CustomloadingApp.hide(context);
-                          }
-
-                          // Ensure we use the freshly fetched data if it exists
+                          // Use current cached stories
                           final latestMyStories =
                               storiesCubit.state.myStories ?? myStory;
 
@@ -398,7 +393,7 @@ class _AddStoryItem extends StatelessWidget {
                               // Re-fetch my stories when viewer is closed so the
                               // ring border and counters reflect the latest data.
                               if (context.mounted) {
-                                context.read<StoriesCubit>().fetchMyStories();
+                                context.read<StoriesCubit>().fetchMyStories(isSilent: true);
                               }
                             });
                           }

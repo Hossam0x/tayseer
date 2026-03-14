@@ -349,16 +349,9 @@ class _ProfileStoryRing extends StatelessWidget {
   void _openMyStories(BuildContext context, UserStoriesModel myStories) async {
     final storiesCubit = context.read<StoriesCubit>();
 
-    // Show a loading indicator
-    CustomloadingApp.show(context);
-
-    // Fetch the latest stories to get up-to-date views & likers
-    await storiesCubit.fetchMyStories();
-
-    // Hide loading
-    if (context.mounted) {
-      CustomloadingApp.hide(context);
-    }
+    // Open my story fast without blocking the transition.
+    // We still request a quiet refetch in the background.
+    storiesCubit.fetchMyStories(isSilent: true);
 
     final latestMyStories = storiesCubit.state.myStories ?? myStories;
 
@@ -387,7 +380,7 @@ class _ProfileStoryRing extends StatelessWidget {
       ).then((_) {
         // Re-fetch after the viewer closes
         if (context.mounted) {
-          context.read<StoriesCubit>().fetchMyStories();
+          context.read<StoriesCubit>().fetchMyStories(isSilent: true);
         }
       });
     }
