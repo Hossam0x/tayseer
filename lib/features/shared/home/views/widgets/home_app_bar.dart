@@ -4,8 +4,7 @@ import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class HomeAppBar extends StatefulWidget {
-  const HomeAppBar({super.key, required this.notificationCount});
-  final int notificationCount;
+  const HomeAppBar({super.key});
 
   @override
   State<HomeAppBar> createState() => _HomeAppBarState();
@@ -18,7 +17,8 @@ class _HomeAppBarState extends State<HomeAppBar> {
       child: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, state) {
           final userName = state.homeInfo?.name ?? '';
-          final notifications_count =state.homeInfo?.notifications??0;
+          final notificationsCount = state.homeInfo?.notifications ?? 0;
+
           return Container(
             width: context.width,
             decoration: BoxDecoration(
@@ -85,7 +85,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                             fit: BoxFit.fill,
                           ),
 
-                          if (notifications_count > 0)
+                          if (notificationsCount > 0)
                             Positioned(
                               top: context.responsiveHeight(-8),
                               right: context.responsiveWidth(-6),
@@ -97,14 +97,10 @@ class _HomeAppBarState extends State<HomeAppBar> {
                                   shape: BoxShape.circle,
                                 ),
                                 child: Center(
-                                  child: FittedBox(   // ← prevents text overflow
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(
-                                      notifications_count > 99 ? "99+" : "$notifications_count",
-                                      style: Styles.textStyle10Bold.copyWith(
-                                        color: Colors.white,
-                                        fontSize: context.responsiveWidth(7), // ← responsive font
-                                      ),
+                                  child: Text(
+                                    "$notificationsCount",
+                                    style: Styles.textStyle10Bold.copyWith(
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ),
