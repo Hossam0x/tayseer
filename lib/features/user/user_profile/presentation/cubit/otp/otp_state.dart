@@ -4,51 +4,50 @@ enum OtpStatus { initial, loading, success, failure }
 
 class OtpState {
   final OtpStatus otpStatus;
+  final String otpCode;
   final String phoneNumber;
   final bool isPhoneUpdate;
   final bool isEmailUpdate;
-  final String otpCode;
-  final String errorMessage;
-  final String successMessage;
   final int resendSeconds;
   final bool canResend;
+  final String errorMessage;
+  final String successMessage;
 
-  const OtpState({
-    this.otpStatus = OtpStatus.initial,
+  OtpState({
+    required this.otpStatus,
+    required this.otpCode,
     required this.phoneNumber,
-    this.isPhoneUpdate = false,
-    this.isEmailUpdate = false,
-    this.otpCode = '',
-    this.errorMessage = '',
-    this.successMessage = '',
-    this.resendSeconds = 300,
-    this.canResend = false,
+    required this.isPhoneUpdate,
+    required this.isEmailUpdate,
+    required this.resendSeconds,
+    required this.canResend,
+    required this.errorMessage,
+    required this.successMessage,
   });
 
   bool get isLoading => otpStatus == OtpStatus.loading;
-  bool get canSubmit => otpCode.length == 6 && !isLoading;
 
   OtpState copyWith({
     OtpStatus? otpStatus,
+    String? otpCode,
     String? phoneNumber,
     bool? isPhoneUpdate,
     bool? isEmailUpdate,
-    String? otpCode,
-    String? errorMessage,
-    String? successMessage,
     int? resendSeconds,
     bool? canResend,
+    String? errorMessage,
+    String? successMessage,
   }) {
     return OtpState(
       otpStatus: otpStatus ?? this.otpStatus,
+      otpCode: otpCode ?? this.otpCode,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       isPhoneUpdate: isPhoneUpdate ?? this.isPhoneUpdate,
       isEmailUpdate: isEmailUpdate ?? this.isEmailUpdate,
-      otpCode: otpCode ?? this.otpCode,
-      errorMessage: errorMessage ?? this.errorMessage,
-      successMessage: successMessage ?? this.successMessage,
       resendSeconds: resendSeconds ?? this.resendSeconds,
       canResend: canResend ?? this.canResend,
+      errorMessage: errorMessage ?? this.errorMessage,
+      successMessage: successMessage ?? this.successMessage,
     );
   }
 }
@@ -57,7 +56,13 @@ class OtpInitial extends OtpState {
   OtpInitial({
     required super.phoneNumber,
     required super.isPhoneUpdate,
-    super.isEmailUpdate = false,
-    super.resendSeconds = 300,
-  });
+    required super.isEmailUpdate,
+    required super.resendSeconds,
+  }) : super(
+          otpStatus: OtpStatus.initial,
+          otpCode: '',
+          canResend: false,
+          errorMessage: '',
+          successMessage: '',
+        );
 }

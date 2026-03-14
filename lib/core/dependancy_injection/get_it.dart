@@ -91,6 +91,11 @@ import 'package:tayseer/features/advisor/settings/view/cubit/order_management_cu
 import 'package:tayseer/features/advisor/wallet/data/datasources/wallet_remote_data_source.dart';
 import 'package:tayseer/features/advisor/wallet/data/repos/wallet_repo.dart';
 import 'package:tayseer/features/advisor/wallet/data/cubit/wallet_cubit.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/otp_repository.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_settings_repository.dart';
+import 'package:tayseer/features/user/user_profile/presentation/cubit/email/email_edit_cubit.dart';
+import 'package:tayseer/features/user/user_profile/presentation/cubit/otp/otp_cubit.dart';
+import 'package:tayseer/features/user/user_profile/presentation/cubit/phone/phone_edit_cubit.dart';
 
 import '../../my_import.dart';
 
@@ -472,4 +477,48 @@ Future<void> setupGetIt() async {
 
   /// Update Post Cubit
   getIt.registerFactory(() => UpdatePostCubit());
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // User Profile Settings (Phone/Email/OTP)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  getIt.registerLazySingleton<OtpRepository>(
+    () => OtpRepositoryImpl(getIt<Dio>()),
+  );
+
+  getIt.registerLazySingleton<UserSettingsRepository>(
+    () => UserSettingsRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerFactory<PhoneEditCubit>(
+    () => PhoneEditCubit(getIt<UserSettingsRepository>()),
+  );
+
+  getIt.registerFactory<EmailEditCubit>(
+    () => EmailEditCubit(getIt<UserSettingsRepository>()),
+  );
+
+  getIt.registerFactoryParam<OtpCubit, OtpCubitParams, void>(
+    (params, _) => OtpCubit(
+      phoneNumber: params.phoneNumber,
+      isPhoneUpdate: params.isPhoneUpdate,
+      isEmailUpdate: params.isEmailUpdate,
+      otpRepository: getIt<OtpRepository>(),
+      otpSource: params.otpSource,
+    ),
+  );
+}
+
+class OtpCubitParams {
+  final String phoneNumber;
+  final bool isPhoneUpdate;
+  final bool isEmailUpdate;
+  final OtpSource otpSource;
+
+  OtpCubitParams({
+    required this.phoneNumber,
+    required this.isPhoneUpdate,
+    required this.isEmailUpdate,
+    required this.otpSource,
+  });
 }

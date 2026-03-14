@@ -1,40 +1,39 @@
-// email_edit_state.dart
 part of 'email_edit_cubit.dart';
 
 class EmailEditState {
-  final CubitStates status;
   final String email;
   final String emailError;
-  final String errorMessage;
+  final CubitStates status;
   final String successMessage;
+  final String errorMessage;
   final String fullEmail;
 
-  const EmailEditState({
-    this.status = CubitStates.initial,
+  EmailEditState({
     this.email = '',
     this.emailError = '',
-    this.errorMessage = '',
+    this.status = CubitStates.initial,
     this.successMessage = '',
+    this.errorMessage = '',
     this.fullEmail = '',
   });
 
-  bool get canProceed => email.isNotEmpty && emailError.isEmpty;
   bool get isLoading => status == CubitStates.loading;
+  bool get canProceed => email.isNotEmpty && emailError.isEmpty;
 
   EmailEditState copyWith({
-    CubitStates? status,
     String? email,
     String? emailError,
-    String? errorMessage,
+    CubitStates? status,
     String? successMessage,
+    String? errorMessage,
     String? fullEmail,
   }) {
     return EmailEditState(
-      status: status ?? this.status,
       email: email ?? this.email,
       emailError: emailError ?? this.emailError,
-      errorMessage: errorMessage ?? this.errorMessage,
+      status: status ?? this.status,
       successMessage: successMessage ?? this.successMessage,
+      errorMessage: errorMessage ?? this.errorMessage,
       fullEmail: fullEmail ?? this.fullEmail,
     );
   }

@@ -2,7 +2,10 @@ import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/otp_repository.dart';
 import 'package:tayseer/my_import.dart';
+
 part 'otp_state.dart';
+
+enum OtpSource { phone, editPhone, email }
 
 class OtpCubit extends Cubit<OtpState> {
   final OtpRepository _otpRepository;
@@ -30,7 +33,6 @@ class OtpCubit extends Cubit<OtpState> {
 
   void updateOtpCode(String code) {
     emit(state.copyWith(otpCode: code));
-    // No auto-verify on 6 digits here to avoid context/dialog complexity
   }
 
   void _startResendTimer() {
@@ -96,29 +98,8 @@ class OtpCubit extends Cubit<OtpState> {
       final result = await _otpRepository.resendEmailOtp(
         email: state.phoneNumber,
       );
-      result.fold(
-        (failure) {
-          emit(
-            state.copyWith(
-              otpStatus: OtpStatus.failure,
-              errorMessage: failure.message,
-              canResend: true,
-            ),
-          );
-        },
-        (_) {
-          emit(
-            state.copyWith(
-              resendSeconds: 300,
-              otpStatus: OtpStatus.initial,
-              successMessage: 'otp_sent_success',
-              canResend: false,
-            ),
-          );
-          _startResendTimer();
-        },
-      );
-    } else if (_otpSource == OtpSource.editPhone) {
+      _handleResendResult(result);
+    } else if (_otpSource == OtpSource.editPhone || _otpSource == OtpSource.phone) {
       final phoneParts = _extractPhoneParts(state.phoneNumber);
       if (phoneParts == null || phoneParts.countryCode.isEmpty) {
         emit(
@@ -135,29 +116,7 @@ class OtpCubit extends Cubit<OtpState> {
         countryCode: phoneParts.countryCode,
         phoneNumber: phoneParts.phoneNumber,
       );
-
-      result.fold(
-        (failure) {
-          emit(
-            state.copyWith(
-              otpStatus: OtpStatus.failure,
-              errorMessage: failure.message,
-              canResend: true,
-            ),
-          );
-        },
-        (_) {
-          emit(
-            state.copyWith(
-              resendSeconds: 300,
-              otpStatus: OtpStatus.initial,
-              successMessage: 'otp_sent_success',
-              canResend: false,
-            ),
-          );
-          _startResendTimer();
-        },
-      );
+      _handleResendResult(result);
     } else {
       emit(
         state.copyWith(
@@ -169,9 +128,35 @@ class OtpCubit extends Cubit<OtpState> {
     }
   }
 
+  void _handleResendResult(Either<Failure, bool> result) {
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            otpStatus: OtpStatus.failure,
+            errorMessage: failure.message,
+            canResend: true,
+          ),
+        );
+      },
+      (_) {
+        emit(
+          state.copyWith(
+            resendSeconds: 300,
+            otpStatus: OtpStatus.initial,
+            successMessage: 'otp_sent_success',
+            canResend: false,
+          ),
+        );
+        _startResendTimer();
+      },
+    );
+  }
+
   Future<void> verifyOtp() async {
-    if (state.otpCode.length != 6 || state.otpStatus == OtpStatus.loading)
+    if (state.otpCode.length != 6 || state.otpStatus == OtpStatus.loading) {
       return;
+    }
 
     emit(
       state.copyWith(
@@ -188,10 +173,6 @@ class OtpCubit extends Cubit<OtpState> {
         break;
 
       case OtpSource.editPhone:
-        final result = await _otpRepository.verifyEditPhoneOtp(state.otpCode);
-        _handleVerificationResult(result, 'otp_verify_success');
-        break;
-
       case OtpSource.phone:
         final result = await _otpRepository.verifyEditPhoneOtp(state.otpCode);
         _handleVerificationResult(result, 'otp_verify_success');
@@ -237,5 +218,3 @@ class OtpCubit extends Cubit<OtpState> {
     return super.close();
   }
 }
-
-enum OtpSource { phone, editPhone, email }

@@ -3,13 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:tayseer/features/user/user_profile/presentation/cubit/otp/otp_cubit.dart';
 import 'package:tayseer/my_import.dart' hide PinTheme;
 
-class OtpViewUser extends StatefulWidget {
+class OtpUserScreen extends StatefulWidget {
   final String phoneNumber;
   final bool isPhoneUpdate;
   final bool isEmailUpdate;
   final OtpSource otpSource;
 
-  const OtpViewUser({
+  const OtpUserScreen({
     super.key,
     required this.phoneNumber,
     this.isPhoneUpdate = false,
@@ -18,10 +18,10 @@ class OtpViewUser extends StatefulWidget {
   });
 
   @override
-  State<OtpViewUser> createState() => _OtpViewUserState();
+  State<OtpUserScreen> createState() => _OtpUserScreenState();
 }
 
-class _OtpViewUserState extends State<OtpViewUser> {
+class _OtpUserScreenState extends State<OtpUserScreen> {
   late TextEditingController _otpController;
   late FocusNode _focusNode;
 
@@ -63,7 +63,7 @@ class _OtpViewUserState extends State<OtpViewUser> {
 
                 Future.delayed(const Duration(milliseconds: 1500), () {
                   if (mounted) {
-                    Navigator.pop(context, true);
+                    Navigator.pop(context);
                     context.read<OtpCubit>().resetError();
                   }
                 });
@@ -74,15 +74,12 @@ class _OtpViewUserState extends State<OtpViewUser> {
               }
             },
             builder: (context, state) {
-              // Sync controller with state if needed (e.g. after resend)
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted && _otpController.text != state.otpCode) {
-                  _otpController.text = state.otpCode;
-                  _otpController.selection = TextSelection.fromPosition(
-                    TextPosition(offset: state.otpCode.length),
-                  );
-                }
-              });
+              if (_otpController.text != state.otpCode) {
+                _otpController.text = state.otpCode;
+                _otpController.selection = TextSelection.fromPosition(
+                  TextPosition(offset: state.otpCode.length),
+                );
+              }
 
               return SingleChildScrollView(
                 child: Column(
@@ -127,12 +124,12 @@ class _OtpViewUserState extends State<OtpViewUser> {
   }
 
   Widget _buildTitle(BuildContext context, OtpState state) {
-    String titleKey = 'otp_title';
-    if (state.isPhoneUpdate) titleKey = 'confirm_new_phone';
-    if (state.isEmailUpdate) titleKey = 'confirm_new_email';
+    String title = context.tr('otp_title');
+    if (state.isPhoneUpdate) title = context.tr('confirm_new_phone');
+    if (state.isEmailUpdate) title = context.tr('confirm_new_email');
 
     return Text(
-      context.tr(titleKey),
+      title,
       style: Styles.textStyle24.copyWith(color: HexColor('590d1c')),
     );
   }
@@ -171,7 +168,20 @@ class _OtpViewUserState extends State<OtpViewUser> {
   Widget _buildPinCodeField(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => _handleKeyboardOpen(),
+      onTap: () {
+        if (_focusNode.hasFocus) {
+          _focusNode.unfocus();
+          Future.delayed(const Duration(milliseconds: 50), () {
+            if (mounted) {
+              _focusNode.requestFocus();
+              SystemChannels.textInput.invokeMethod('TextInput.show');
+            }
+          });
+        } else {
+          _focusNode.requestFocus();
+          SystemChannels.textInput.invokeMethod('TextInput.show');
+        }
+      },
       child: Directionality(
         textDirection: TextDirection.ltr,
         child: PinCodeTextField(
@@ -187,7 +197,6 @@ class _OtpViewUserState extends State<OtpViewUser> {
               });
             }
           },
-          onTap: () => _handleKeyboardOpen(),
           autoFocus: true,
           keyboardType: TextInputType.number,
           textInputAction: TextInputAction.done,
@@ -219,21 +228,6 @@ class _OtpViewUserState extends State<OtpViewUser> {
         ),
       ),
     );
-  }
-
-  void _handleKeyboardOpen() {
-    if (_focusNode.hasFocus) {
-      _focusNode.unfocus();
-      Future.delayed(const Duration(milliseconds: 50), () {
-        if (mounted) {
-          _focusNode.requestFocus();
-          SystemChannels.textInput.invokeMethod('TextInput.show');
-        }
-      });
-    } else {
-      _focusNode.requestFocus();
-      SystemChannels.textInput.invokeMethod('TextInput.show');
-    }
   }
 
   Widget _buildResendSection(BuildContext context, OtpState state) {
