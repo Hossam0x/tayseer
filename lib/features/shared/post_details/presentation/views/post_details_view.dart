@@ -218,7 +218,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
-              body: CustomErrorWidget(
+              body: CustomErrorView(
                 message:
                     state.postLoadingError ??
                     context.tr(AppStrings.failedToLoadPost),
@@ -241,7 +241,14 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
-              body: Center(child: Text(context.tr(AppStrings.noPostData))),
+              body: CustomErrorView(
+                message:
+
+                    context.tr(AppStrings.noPostData),
+                onRetry: () => context.read<PostDetailsCubit>().loadPostFromAPI(
+                  widget.postId_fromNotifc!,
+                ),
+              ),
             );
           }
 
