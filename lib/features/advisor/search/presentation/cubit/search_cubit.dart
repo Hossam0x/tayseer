@@ -30,6 +30,7 @@ class SearchCubit extends Cubit<SearchState> {
     required String query,
     String type = 'all',
     bool debounce = true,
+    bool showLoading = true,
   }) async {
     if (query.isEmpty) {
       clearSearch();
@@ -39,25 +40,35 @@ class SearchCubit extends Cubit<SearchState> {
     _searchDebounce?.cancel();
 
     if (!debounce) {
-      _emitLoading(query);
+      _emitLoading(query, showLoading);
       await _executeSearch(query, type);
       return;
     }
 
     _searchDebounce = Timer(const Duration(milliseconds: 500), () async {
-      _emitLoading(query);
+      _emitLoading(query, showLoading);
       await _executeSearch(query, type);
     });
   }
 
-  void _emitLoading(String query) {
-    emit(
-      state.copyWith(
-        query: query,
-        searchStatus: CubitStates.loading,
-        errorMessage: null,
-      ),
-    );
+  void _emitLoading(String query, bool showLoading) {
+    if (showLoading) {
+      emit(
+        state.copyWith(
+          query: query,
+          searchStatus: CubitStates.loading,
+          errorMessage: null,
+        ),
+      );
+    } else {
+      // Just update query and reset error to start silent loading
+      emit(
+        state.copyWith(
+          query: query,
+          errorMessage: null,
+        ),
+      );
+    }
   }
 
   Future<void> _executeSearch(String query, String type) async {
@@ -95,8 +106,9 @@ class SearchCubit extends Cubit<SearchState> {
   Future<void> loadMore() async {
     if (state.searchStatus == CubitStates.loading ||
         state.isLoadingMore ||
-        !state.hasMore)
+        !state.hasMore) {
       return;
+    }
 
     if (state.lastSearchType == 'all') return;
 

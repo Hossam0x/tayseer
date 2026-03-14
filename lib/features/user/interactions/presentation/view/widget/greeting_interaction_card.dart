@@ -148,7 +148,7 @@ class GreetingProfileCard extends StatelessWidget {
                             Flexible(
                               // ✅
                               child: _buildBadge(
-                                text: item.country,
+                                text:  context.tr(item.country),
                                 icon: AssetsData.EgyFlagIcon,
                               ),
                             ),

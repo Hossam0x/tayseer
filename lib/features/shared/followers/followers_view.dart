@@ -153,6 +153,10 @@ class _FollowersViewState extends State<FollowersView> {
                           hintStyle: Styles.textStyle14.copyWith(
                             color: Colors.grey,
                           ),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 8.w,
+                            vertical: 14.h,
+                          ),
                           border: InputBorder.none,
                           suffixIcon: state.searchQuery.isNotEmpty
                               ?

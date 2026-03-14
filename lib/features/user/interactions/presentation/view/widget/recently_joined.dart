@@ -124,7 +124,7 @@ class RecentlyJoined extends StatelessWidget {
                       SizedBox(height: isCompact ? 4.h : 8.h), // ✅ مسافة مصغرة
                       if (item.country.isNotEmpty) ...[
                         _buildBadge(
-                          text: item.country,
+                          text:  context.tr(item.country),
                           icon: "",
                           isCompact: isCompact,
                         ),
