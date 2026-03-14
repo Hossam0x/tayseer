@@ -48,7 +48,8 @@ class UserItem {
 
   factory UserItem.fromJson(Map<String, dynamic> json) => UserItem(
     user: json["user"] != null ? User.fromJson(json["user"]) : null,
-    answers: json["answers"] != null ? Answers.fromJson(json["answers"]) : null,
+    answers:
+        json["answers"] != null ? Answers.fromJson(json["answers"]) : null,
   );
 
   Map<String, dynamic> toJson() => {
@@ -56,9 +57,10 @@ class UserItem {
     "answers": answers?.toJson(),
   };
 }
+
 class User {
   String? id;
-   bool? imageBlur;
+  bool? imageBlur;
   String? name;
   bool? isLiked;
   bool? isVerified;
@@ -70,11 +72,11 @@ class User {
   int? age;
   UserAbout? about;
   bool? isFavorite;
-  bool? isBlocked; // ✅ جديد
+  bool? isBlocked;
 
   User({
     this.id,
-      this.imageBlur,
+    this.imageBlur,
     this.name,
     this.isLiked,
     this.isVerified,
@@ -86,7 +88,7 @@ class User {
     this.age,
     this.about,
     this.isFavorite,
-    this.isBlocked, // ✅
+    this.isBlocked,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
@@ -107,7 +109,7 @@ class User {
     age: json["age"],
     about: json["about"] != null ? UserAbout.fromJson(json["about"]) : null,
     isFavorite: json["isFavorite"],
-    isBlocked: json["isBlocked"], // ✅
+    isBlocked: json["isBlocked"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -123,10 +125,11 @@ class User {
     "age": age,
     "about": about?.toJson(),
     "isFavorite": isFavorite,
-    "isBlocked": isBlocked, // ✅
-    "imageBlur": imageBlur, // ✅
+    "isBlocked": isBlocked,
+    "imageBlur": imageBlur,
   };
 }
+
 class UserAbout {
   String? job;
   String? educationLevel;
@@ -193,7 +196,8 @@ class Answers {
   });
 
   factory Answers.fromJson(Map<String, dynamic> json) => Answers(
-    aboutMe: json["aboutMe"] != null ? AboutMe.fromJson(json["aboutMe"]) : null,
+    aboutMe:
+        json["aboutMe"] != null ? AboutMe.fromJson(json["aboutMe"]) : null,
     professionalLife: json["professionalLife"] != null
         ? ProfessionalLife.fromJson(json["professionalLife"])
         : null,
@@ -234,6 +238,9 @@ class AboutMe {
   String? healthStatus;
   String? smoker;
   String? religiousCommitment;
+  String? drinkAlcohol;
+  String? wearHijab;
+  String? eatHalalOnly;
 
   AboutMe({
     this.weight,
@@ -246,6 +253,9 @@ class AboutMe {
     this.healthStatus,
     this.smoker,
     this.religiousCommitment,
+    this.drinkAlcohol,
+    this.wearHijab,
+    this.eatHalalOnly,
   });
 
   factory AboutMe.fromJson(Map<String, dynamic> json) => AboutMe(
@@ -259,6 +269,9 @@ class AboutMe {
     healthStatus: json["healthStatus"],
     smoker: json["smoker"],
     religiousCommitment: json["religiousCommitment"],
+    drinkAlcohol: json["drinkAlcohol"],
+    wearHijab: json["wearHijab"],
+    eatHalalOnly: json["eatHalalOnly"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -272,6 +285,9 @@ class AboutMe {
     "healthStatus": healthStatus,
     "smoker": smoker,
     "religiousCommitment": religiousCommitment,
+    "drinkAlcohol": drinkAlcohol,
+    "wearHijab": wearHijab,
+    "eatHalalOnly": eatHalalOnly,
   };
 }
 
@@ -336,19 +352,31 @@ class UserMedia {
   };
 }
 
+// ✅ UPDATED: يدعم كل الـ fields الجاية من الـ API
 class YourGoals {
   dynamic travel;
   dynamic children;
   dynamic marry;
   dynamic engagment;
+  dynamic marriageIntentions; // ✅ الـ field الصح للزواج من الـ API
+  dynamic familyAcceptance;   // ✅ الـ field الصح للأسرة من الـ API
 
-  YourGoals({this.travel, this.children, this.marry, this.engagment});
+  YourGoals({
+    this.travel,
+    this.children,
+    this.marry,
+    this.engagment,
+    this.marriageIntentions,
+    this.familyAcceptance,
+  });
 
   factory YourGoals.fromJson(Map<String, dynamic> json) => YourGoals(
     travel: json["travel"],
     children: json["children"],
     marry: json["marry"],
     engagment: json["engagment"],
+    marriageIntentions: json["marriageIntentions"], // ✅
+    familyAcceptance: json["familyAcceptance"],     // ✅
   );
 
   Map<String, dynamic> toJson() => {
@@ -356,6 +384,8 @@ class YourGoals {
     "children": children,
     "marry": marry,
     "engagment": engagment,
+    "marriageIntentions": marriageIntentions, // ✅
+    "familyAcceptance": familyAcceptance,     // ✅
   };
 }
 

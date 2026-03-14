@@ -224,7 +224,7 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                                 SizedBox(width: 4.w),
                                 Flexible(
                                   child: _buildBadge(
-                                    text: widget.item.country,
+                                    text: context.tr(widget.item.country),
                                     icon: "",
                                   ),
                                 ),
@@ -235,7 +235,7 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                           if (widget.item.job.isNotEmpty) ...[
                             SizedBox(height: 6.h),
                             _buildBadge(
-                              text: widget.item.job,
+                              text: context.tr(widget.item.job),
                               icon: AssetsData.workIcon,
                             ),
                             SizedBox(height: 6.h),

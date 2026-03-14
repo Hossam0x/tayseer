@@ -140,7 +140,7 @@ Future<Either<Failure, List<String>>> getFavoriteIds() async {
 Future<Either<Failure, String>> blockUser({required String personId}) async {
   try {
     final response = await _apiService.post(
-      endPoint: '/user/block',
+      endPoint: ApiEndPoint.blockuser,
       data: {'blockedUserId': personId},
     );
     if (response['success'] == true) {

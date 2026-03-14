@@ -440,15 +440,28 @@ class MarriageCubit extends Cubit<MarriageState> {
         blockMessage: failure.message,
       )),
       (message) {
-        // ✅ شيل اليوزر من الـ list بعد الحظر
+        // ✅ شيل اليوزر المحظور من اللست
         final updatedUsers = state.allUsers
             .where((u) => u.user?.id != personId)
             .toList();
+
+        final newLength = updatedUsers.length;
+
+        // ✅ احسب الـ index الصح بعد الحذف (نفس منطق swipe)
+        int newIndex = state.currentIndex;
+        if (newIndex >= newLength) {
+          newIndex = newLength > 0 ? newLength - 1 : 0;
+        }
+
+        // ✅ لو باقي عدد قليل، جيب المزيد من السيرفر
+        if (newLength <= 3) loadMoreUsers();
+
         emit(state.copyWith(
           blockActionState: CubitStates.success,
           blockMessage: message,
           allUsers: updatedUsers,
-          currentIndex: 0,
+          currentIndex: newIndex,
+          isScrollingDown: false, // ✅ reset scroll state
         ));
       },
     );
