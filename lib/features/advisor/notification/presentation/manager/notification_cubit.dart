@@ -8,14 +8,13 @@ class NotificationCubit extends Cubit<NotificationState> {
   final NotificationRepo notificationRepo;
 
   NotificationCubit({required this.notificationRepo})
-      : super(NotificationState(notificationState: CubitStates.initial));
+    : super(NotificationState(notificationState: CubitStates.initial));
 
   // ─── Getters ───────────────────────────────────────────────
   List<NotificationModel> get notifications =>
       state.notificationsModel?.data?.notifications ?? [];
 
-  int get unreadCount =>
-      notifications.where((n) => n.isRead == false).length;
+  int get unreadCount => notifications.where((n) => n.isRead == false).length;
 
   bool get hasNextPage {
     final pagination = state.notificationsModel?.data?.pagination;
@@ -37,18 +36,19 @@ class NotificationCubit extends Cubit<NotificationState> {
 
     final result = await notificationRepo.getAllNotification(page);
     result.fold(
-          (failure) => emit(state.copyWith(
-        notificationState: CubitStates.failure,
-        errorText: failure.message,
-      )),
-          (data) {
-        final oldList =
-        page == 1 ? <NotificationModel>[] : notifications;
+      (failure) => emit(
+        state.copyWith(
+          notificationState: CubitStates.failure,
+          errorText: failure.message,
+        ),
+      ),
+      (data) {
+        final oldList = page == 1 ? <NotificationModel>[] : notifications;
 
-        final newList = [
+        final newList = _deduplicateNotifications([
           ...oldList,
           ...?data.data?.notifications,
-        ];
+        ]);
 
         final updatedModel = NotificationsModel(
           success: data.success,
@@ -59,10 +59,12 @@ class NotificationCubit extends Cubit<NotificationState> {
           ),
         );
 
-        emit(state.copyWith(
-          notificationState: CubitStates.success,
-          notificationsModel: updatedModel,
-        ));
+        emit(
+          state.copyWith(
+            notificationState: CubitStates.success,
+            notificationsModel: updatedModel,
+          ),
+        );
       },
     );
   }
@@ -78,7 +80,10 @@ class NotificationCubit extends Cubit<NotificationState> {
 
   // ─── Add New Notification (Real-time) ─────────────────────
   void addNewNotification(NotificationModel notification) {
-    final updatedList = [notification, ...notifications];
+    final updatedList = _deduplicateNotifications([
+      notification,
+      ...notifications,
+    ]);
 
     final updatedModel = NotificationsModel(
       success: state.notificationsModel?.success,
@@ -89,10 +94,12 @@ class NotificationCubit extends Cubit<NotificationState> {
       ),
     );
 
-    emit(state.copyWith(
-      notificationState: CubitStates.success,
-      notificationsModel: updatedModel,
-    ));
+    emit(
+      state.copyWith(
+        notificationState: CubitStates.success,
+        notificationsModel: updatedModel,
+      ),
+    );
   }
 
   // ─── Mark As Read ──────────────────────────────────────────
@@ -136,21 +143,34 @@ class NotificationCubit extends Cubit<NotificationState> {
 
   // ─── Delete Notification ───────────────────────────────────
   void deleteNotification(String notificationId) {
-    final updatedList =
-    notifications.where((n) => n.id != notificationId).toList();
+    final updatedList = notifications
+        .where((n) => n.id != notificationId)
+        .toList();
     _emitUpdatedList(updatedList);
   }
 
   // ─── Helper ────────────────────────────────────────────────
   void _emitUpdatedList(List<NotificationModel> updatedList) {
+    final deduplicatedList = _deduplicateNotifications(updatedList);
     final updatedModel = NotificationsModel(
       success: state.notificationsModel?.success,
       message: state.notificationsModel?.message,
       data: NotificationsModelData(
-        notifications: updatedList,
+        notifications: deduplicatedList,
         pagination: state.notificationsModel?.data?.pagination,
       ),
     );
     emit(state.copyWith(notificationsModel: updatedModel));
+  }
+
+  List<NotificationModel> _deduplicateNotifications(
+    List<NotificationModel> items,
+  ) {
+    final seen = <String>{};
+    return items.where((item) {
+      final dedupKey = item.id ?? item.key;
+      if (dedupKey == null || dedupKey.isEmpty) return true;
+      return seen.add(dedupKey);
+    }).toList();
   }
 }

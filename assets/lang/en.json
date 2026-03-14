@@ -1642,7 +1642,7 @@
   "ago_prefix": "since",
   "ago_minutes": "min ago",
   "ago_hours": "h ago",
-  "ago_days": "day ago"
+  "ago_days": "day ago",
   "people_liked_you": "People who liked you",
   "account_under_review" : "Your account is under review",
   "account_under_review_message" : "Your account is currently under review by our team. We will notify you once the review process is complete. Thank you for your patience",

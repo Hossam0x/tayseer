@@ -42,6 +42,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
   StreamSubscription<PostModel?>? _postSubscription;
   late PostDetailsCubit _postDetailsCubit;
   late PostCallbacks _effectiveCallbacks;
+  bool _isNotificationMode = false;
 
   @override
   void initState() {
@@ -64,6 +65,13 @@ class _PostDetailsViewState extends State<PostDetailsView> {
 
     // ✅ إنشاء callbacks من HomeCubit إذا كان الدخول من الإشعارات
     _effectiveCallbacks = _buildEffectiveCallbacks();
+
+    // ✅ إذا كنا في notification mode و البوست متاح، حقنه في HomeCubit
+    if (_isNotificationMode && _currentPost != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) getIt<HomeCubit>().injectPost(_currentPost!);
+      });
+    }
 
     // ✅ الاشتراك في الـ Stream
     _postSubscription = _effectiveCallbacks.postUpdatesStream?.listen(
@@ -112,6 +120,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
     }
 
     // 🔔 دخول من الإشعارات -> إنشاء callbacks من HomeCubit
+    _isNotificationMode = true;
     final homeCubit = getIt<HomeCubit>();
     final String postId = widget.post?.postId ?? widget.postId_fromNotifc ?? '';
 
@@ -173,6 +182,12 @@ class _PostDetailsViewState extends State<PostDetailsView> {
           // ✅ تحديث _currentPost عندما يتم جلب البوست من API
           if (state.loadedPost != null && _currentPost == null) {
             _currentPost = state.loadedPost;
+            // حقن البوست في HomeCubit حتى تعمل التفاعلات والمشاركة
+            if (_isNotificationMode) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) getIt<HomeCubit>().injectPost(_currentPost!);
+              });
+            }
           }
 
           // ✅ إذا كان التحميل جاري

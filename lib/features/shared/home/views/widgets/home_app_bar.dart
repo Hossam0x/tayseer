@@ -18,7 +18,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
       child: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, state) {
           final userName = state.homeInfo?.name ?? '';
-
+          final notifications_count =state.homeInfo?.notifications??0;
           return Container(
             width: context.width,
             decoration: BoxDecoration(
@@ -77,7 +77,6 @@ class _HomeAppBarState extends State<HomeAppBar> {
                       },
                       icon: Stack(
                         clipBehavior: Clip.none,
-
                         children: [
                           AppImage(
                             AssetsData.notificationIcon,
@@ -86,22 +85,26 @@ class _HomeAppBarState extends State<HomeAppBar> {
                             fit: BoxFit.fill,
                           ),
 
-                          if (widget.notificationCount > 0)
+                          if (notifications_count > 0)
                             Positioned(
                               top: context.responsiveHeight(-8),
                               right: context.responsiveWidth(-6),
-
                               child: Container(
-                                padding: EdgeInsets.all(4.r),
+                                width: context.responsiveWidth(16),   // ← fixed width
+                                height: context.responsiveHeight(16), // ← fixed height
                                 decoration: BoxDecoration(
                                   color: AppColors.kprimaryColor,
                                   shape: BoxShape.circle,
                                 ),
                                 child: Center(
-                                  child: Text(
-                                    "${widget.notificationCount}",
-                                    style: Styles.textStyle10Bold.copyWith(
-                                      color: Colors.white,
+                                  child: FittedBox(   // ← prevents text overflow
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      notifications_count > 99 ? "99+" : "$notifications_count",
+                                      style: Styles.textStyle10Bold.copyWith(
+                                        color: Colors.white,
+                                        fontSize: context.responsiveWidth(7), // ← responsive font
+                                      ),
                                     ),
                                   ),
                                 ),
