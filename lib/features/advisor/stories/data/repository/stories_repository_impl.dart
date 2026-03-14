@@ -200,6 +200,47 @@ class StoriesRepositoryImpl implements StoriesRepository {
   }
 
   @override
+  Future<Either<Failure, UserStoriesModel?>> fetchMyStories() async {
+    try {
+      final response = await apiService.get(endPoint: ApiEndPoint.myStories);
+      final data = response['data'];
+
+      if (data == null) return const Right(null);
+
+      if (data is Map<String, dynamic>) {
+        // The response is a single user-stories object:
+        // { userId, name, image, storiesCount, stories, allViewed }
+        final stories = (data['stories'] as List? ?? [])
+            .map((s) => StoryModel.fromJson(s as Map<String, dynamic>))
+            .toList();
+
+        if (stories.isEmpty) return const Right(null);
+
+        final allViewed = data['allViewed'] as bool? ?? false;
+
+        final myUserStories = UserStoriesModel(
+          userId: data['userId'] as String? ?? '',
+          name: data['name'] as String? ?? '',
+          image: data['image'] as String? ?? '',
+          isFollowed: false,
+          isViewedByMe: false,
+          allViewed: allViewed,
+          storiesCount: data['storiesCount'] as int? ?? stories.length,
+          stories: stories,
+        );
+
+        return Right(myUserStories);
+      }
+
+      return const Right(null);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('فشل تحميل قصصي: ${e.toString()}'));
+    }
+  }
+
+  @override
   void likeStory({required String storyId}) {
     apiService.post(
       isAuth: true,

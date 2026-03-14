@@ -49,7 +49,8 @@ class ProfileView extends StatelessWidget {
                         isSpecial: true,
                         advisorId: null,
                         context: context,
-                      ),
+                      )
+                      ..fetchMyStories(),
                   ),
                   BlocProvider.value(value: getIt<ConnectivityCubit>()),
                 ],
@@ -122,6 +123,7 @@ class _ProfileContentState extends State<_ProfileContent> {
               advisorId: null,
               context: context,
             ),
+            context.read<StoriesCubit>().fetchMyStories(),
           ]);
         },
         color: AppColors.kprimaryColor,
