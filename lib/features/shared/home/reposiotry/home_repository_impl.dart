@@ -399,22 +399,55 @@ class HomeRepositoryImpl implements HomeRepository {
         );
       }
 
-      final endPoint = isAdvisor ? ApiEndPoint.nameAndImage : '/user/profile';
-      final response = await apiService.get(endPoint: endPoint);
+      // إرسال الطلب لنفس الـ Endpoint لجميع المستخدمين (مستخدمين ومستشارين)
+      final response = await apiService.get(endPoint: ApiEndPoint.nameAndImage);
+      final data = (response['data'] as Map<String, dynamic>?) ?? {};
 
-      if (isAdvisor) {
-        return Right(ImageAndNameModel.fromJson(response['data']));
-      } else {
-        final data = response['data'] as Map<String, dynamic>;
+      // قراءة الإشعارات سواء من notifications أو notifyCount
+      int notifications = 0;
+      if (data['notifications'] != null) {
+        notifications = data['notifications'] is int
+            ? data['notifications']
+            : int.tryParse(data['notifications'].toString()) ?? 0;
+      } else if (data['notifyCount'] != null) {
+        notifications = data['notifyCount'] is int
+            ? data['notifyCount']
+            : int.tryParse(data['notifyCount'].toString()) ?? 0;
+      }
+
+      final name = data['name'] as String? ?? '';
+      final image = data['image'] as String? ?? '';
+      final approvalKey = data['approvalKey'] as String? ?? '';
+
+      // حفظ الاسم والصورة في الكاش عند النجاح لضمان العرض في وضع عدم الاتصال (أوفلاين)
+      await CachNetwork.setData(key: kMyProfileName, value: name);
+      await CachNetwork.setData(key: kMyProfileImage, value: image);
+
+      return Right(
+        ImageAndNameModel(
+          image: image,
+          name: name,
+          notifications: notifications,
+          approvalKey: approvalKey,
+        ),
+      );
+    } on DioException catch (e) {
+      // في حالة وجود خطأ في الاتصال، نعرض أحدث بيانات محفوظة في الكاش
+      final cachedName =
+          (await CachNetwork.getData(key: kMyProfileName)) as String? ?? '';
+      final cachedImage =
+          (await CachNetwork.getData(key: kMyProfileImage)) as String? ?? '';
+
+      if (cachedName.isNotEmpty || cachedImage.isNotEmpty) {
         return Right(
           ImageAndNameModel(
-            image: data['image'] as String? ?? '',
-            name: data['name'] as String? ?? '',
-            notifications: data['notifyCount'] as int? ?? 0,
+            image: cachedImage,
+            name: cachedName,
+            notifications: 0,
+            approvalKey: '',
           ),
         );
       }
-    } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }
   }

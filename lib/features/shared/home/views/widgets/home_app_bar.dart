@@ -4,8 +4,7 @@ import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class HomeAppBar extends StatefulWidget {
-  const HomeAppBar({super.key, required this.notificationCount});
-  final int notificationCount;
+  const HomeAppBar({super.key});
 
   @override
   State<HomeAppBar> createState() => _HomeAppBarState();
@@ -18,6 +17,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
       child: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, state) {
           final userName = state.homeInfo?.name ?? '';
+          final notificationsCount = state.homeInfo?.notifications ?? 0;
 
           return Container(
             width: context.width,
@@ -86,7 +86,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                             fit: BoxFit.fill,
                           ),
 
-                          if (widget.notificationCount > 0)
+                          if (notificationsCount > 0)
                             Positioned(
                               top: context.responsiveHeight(-8),
                               right: context.responsiveWidth(-6),
@@ -99,7 +99,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
                                 ),
                                 child: Center(
                                   child: Text(
-                                    "${widget.notificationCount}",
+                                    "$notificationsCount",
                                     style: Styles.textStyle10Bold.copyWith(
                                       color: Colors.white,
                                     ),

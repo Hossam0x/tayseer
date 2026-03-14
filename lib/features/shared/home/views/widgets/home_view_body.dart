@@ -149,7 +149,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
                 cacheExtent: 1000,
                 controller: _scrollController,
                 slivers: [
-                  const HomeAppBar(notificationCount: 3),
+                  const HomeAppBar(),
                   const HomeSearchBar(),
                   BlocBuilder<HomeCubit, HomeState>(
                     buildWhen: (prev, curr) =>
