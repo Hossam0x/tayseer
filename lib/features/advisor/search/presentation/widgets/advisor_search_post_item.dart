@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayseer/my_import.dart';
 import 'package:video_player/video_player.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
@@ -11,10 +12,7 @@ import 'package:tayseer/features/shared/post_details/presentation/views/post_det
 class AdvisorSearchPostItem extends StatelessWidget {
   final PostModel post;
 
-  const AdvisorSearchPostItem({
-    super.key,
-    required this.post,
-  });
+  const AdvisorSearchPostItem({super.key, required this.post});
 
   void _onNavigateToDetails(
     BuildContext ctx,
@@ -60,8 +58,9 @@ class AdvisorSearchPostItem extends StatelessWidget {
         searchCubit.blockUser(visiblePostId: postId, advisorId: advisorId);
       },
       onHashtagTap: (hashtag) {
-        final cleanHashtag =
-            hashtag.startsWith('#') ? hashtag.substring(1) : hashtag;
+        final cleanHashtag = hashtag.startsWith('#')
+            ? hashtag.substring(1)
+            : hashtag;
 
         Navigator.push(
           context,
@@ -81,12 +80,15 @@ class AdvisorSearchPostItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PostCard(
-      post: post,
-      isFromProfile: false,
-      heroPrefix: 'search_advisor',
-      onNavigateToDetails: _onNavigateToDetails,
-      callbacks: _buildCallbacks(context),
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12.h),
+      child: PostCard(
+        post: post,
+        isFromProfile: false,
+        heroPrefix: 'search_advisor',
+        onNavigateToDetails: _onNavigateToDetails,
+        callbacks: _buildCallbacks(context),
+      ),
     );
   }
 }
