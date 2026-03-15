@@ -73,11 +73,14 @@ class CertificateItemCard extends StatelessWidget {
         transitionsBuilder: _slideTransition,
       ),
     ).then((result) {
-      if (result != null && result is Map && result['updated'] == true) {
+      if (result != null && result is CertificateModel) {
+        certificatesCubit.updateCertificateLocally(result);
+        // Removed refresh call to avoid full refetch
+      } else if (result != null && result is Map && result['updated'] == true) {
         if (result['certificate'] != null) {
           certificatesCubit.updateCertificateLocally(result['certificate']);
         }
-        certificatesCubit.refresh(advisorId: advisorId);
+        // certificatesCubit.refresh(advisorId: advisorId); // Avoid refreshing if possible
       }
     });
   }
@@ -204,7 +207,9 @@ void navigateToAddCertificate(BuildContext context, String advisorId) {
       },
     ),
   ).then((result) {
-    if (result == true && context.mounted) {
+    if (result != null && result is CertificateModel && context.mounted) {
+      context.read<CertificatesCubit>().addCertificate(result);
+    } else if (result == true && context.mounted) {
       context.read<CertificatesCubit>().refresh(advisorId: advisorId);
     }
   });

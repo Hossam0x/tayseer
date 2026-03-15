@@ -45,6 +45,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
     _scrollController = ScrollController()..addListener(_scrollListener);
     _filterScrollController = ScrollController();
     storiesCubit.fetchStories(context: context);
+    if (isAdvisor) storiesCubit.fetchMyStories();
     homeCubit.initHome();
     homeCubit.sessionStart();
   }
@@ -139,6 +140,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
             VideoManager.instance.stopAll();
             await Future.wait([
               storiesCubit.fetchStories(context: context),
+              if (isAdvisor) storiesCubit.fetchMyStories(),
               homeCubit.refreshHome(),
             ]);
           },

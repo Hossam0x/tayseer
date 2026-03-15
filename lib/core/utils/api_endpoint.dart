@@ -1,5 +1,6 @@
 class ApiEndPoint {
   static const String allStories = '/stories/all';
+  static const String myStories = '/stories/my-stories';
   static String specialStories([String? advisorId]) =>
       '/stories/special/${advisorId ?? ''}';
   static const String guestLogin = '/guest/login';

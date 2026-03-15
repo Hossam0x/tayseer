@@ -1,11 +1,13 @@
 import 'dart:developer';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_settings_repository.dart';
 import 'package:tayseer/my_import.dart';
+
 part 'phone_edit_state.dart';
 
 class PhoneEditCubit extends Cubit<PhoneEditState> {
-  final ApiService _apiService;
+  final UserSettingsRepository _repository;
 
-  PhoneEditCubit() : _apiService = ApiService(Dio()), super(PhoneEditInitial());
+  PhoneEditCubit(this._repository) : super(PhoneEditInitial());
 
   final List<Map<String, String>> countries = [
     {"name": "السعودية", "code": "+966", "flag": "🇸🇦"},
@@ -79,7 +81,6 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
     } else if (phone.length > 15) {
       error = 'invalid_phone';
     } else {
-      // تحقق حسب رمز الدولة
       if (state.selectedCountryCode == "+966" && !phone.startsWith('5')) {
         error = 'invalid_phone';
       } else if (state.selectedCountryCode == "+20" && !phone.startsWith('1')) {
@@ -103,16 +104,24 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
       ),
     );
 
-    try {
-      final cleanedPhone = state.phoneNumber.replaceAll(RegExp(r'\D'), '');
-      log('طلب تحديث الهاتف: ${state.selectedCountryCode}$cleanedPhone');
+    final cleanedPhone = state.phoneNumber.replaceAll(RegExp(r'\D'), '');
+    log('طلب تحديث الهاتف: ${state.selectedCountryCode}$cleanedPhone');
 
-      final response = await _apiService.post(
-        endPoint: '/user/update-phone-number',
-        data: {'countryCode': state.selectedCountryCode, 'phone': cleanedPhone},
-      );
+    final result = await _repository.updatePhoneNumber(
+      countryCode: state.selectedCountryCode,
+      phoneNumber: cleanedPhone,
+    );
 
-      if (response['success'] == true) {
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            updatePhoneStatus: CubitStates.failure,
+            errorMessage: failure.message,
+          ),
+        );
+      },
+      (_) {
         final fullPhoneNumber = '${state.selectedCountryCode}$cleanedPhone';
         emit(
           state.copyWith(
@@ -122,30 +131,8 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
             errorMessage: '',
           ),
         );
-      } else {
-        emit(
-          state.copyWith(
-            updatePhoneStatus: CubitStates.failure,
-            errorMessage: response['message'] ?? 'update_phone_failed',
-          ),
-        );
-      }
-    } on DioException catch (e) {
-      final failure = ServerFailure.fromDioError(e);
-      emit(
-        state.copyWith(
-          updatePhoneStatus: CubitStates.failure,
-          errorMessage: failure.message,
-        ),
-      );
-    } catch (e) {
-      emit(
-        state.copyWith(
-          updatePhoneStatus: CubitStates.failure,
-          errorMessage: 'error_occurred',
-        ),
-      );
-    }
+      },
+    );
   }
 
   void clearMessages() {

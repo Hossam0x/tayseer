@@ -55,7 +55,11 @@ class EditCertificateView extends StatelessWidget {
                 // Try to update local list if CertificatesCubit is available
                 try {
                   final certificatesCubit = context.read<CertificatesCubit>();
-                  if (state.selectedCertificateId != null) {
+                  if (state.updatedCertificate != null) {
+                    certificatesCubit.updateCertificateLocally(
+                      state.updatedCertificate!,
+                    );
+                  } else if (state.selectedCertificateId != null) {
                     final updatedCertificate = CertificateModel(
                       id: state.selectedCertificateId!,
                       nameCertificate: state.nameCertificate,
@@ -72,7 +76,9 @@ class EditCertificateView extends StatelessWidget {
                 }
 
                 Future.delayed(const Duration(milliseconds: 500), () {
-                  if (context.mounted) Navigator.pop(context, true);
+                  if (context.mounted) {
+                    Navigator.pop(context, state.updatedCertificate ?? true);
+                  }
                 });
               }
               context.read<EditCertificateCubit>().clearMessages();

@@ -177,66 +177,70 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
         body: AdvisorBackground(
           child: SafeArea(
             child: BlocListener<SearchCubit, SearchState>(
-                    bloc: _searchCubit,
-                    listener: (context, state) {
-                      if (state.actionStatus == CubitStates.success) {
-                        AppToast.success(
-                          context,
-                          state.actionMessage ?? "تمت العملية بنجاح",
-                        );
-                        _searchCubit.resetActionStatus();
-                      } else if (state.actionStatus == CubitStates.failure) {
-                        AppToast.error(
-                          context,
-                          state.actionMessage ?? "فشلت العملية",
-                        );
-                        _searchCubit.resetActionStatus();
-                      }
-                    },
-                    child: BlocBuilder<SearchCubit, SearchState>(
-                      bloc: _searchCubit,
-                      builder: (context, searchState) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AdvisorSearchBar(
-                              searchController: _searchController,
-                              searchFocusNode: _searchFocusNode,
-                              initialQuery: widget.initialQuery,
-                              onSearchChanged: _onSearchChanged,
-                              onClearSearch: _clearSearch,
-                              state: searchState,
-                            ),
-                            AdvisorSearchTabsWidget(
-                              tabs: _tabs,
-                              tabController: _tabController,
-                              onTabTap: (index) {
-                                if (_uiCubit.state.selectedIndex != index) {
-                                  _uiCubit.updateIndex(index);
-                                  _performSearch(showLoading: false);
-                                }
+              bloc: _searchCubit,
+              listener: (context, state) {
+                if (state.actionStatus == CubitStates.success) {
+                  AppToast.success(
+                    context,
+                    state.actionMessage ?? "تمت العملية بنجاح",
+                  );
+                  _searchCubit.resetActionStatus();
+                } else if (state.actionStatus == CubitStates.failure) {
+                  AppToast.error(
+                    context,
+                    state.actionMessage ?? "فشلت العملية",
+                  );
+                  _searchCubit.resetActionStatus();
+                }
+              },
+              child: BlocBuilder<SearchCubit, SearchState>(
+                bloc: _searchCubit,
+                builder: (context, searchState) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AdvisorSearchBar(
+                        searchController: _searchController,
+                        searchFocusNode: _searchFocusNode,
+                        initialQuery: widget.initialQuery,
+                        onSearchChanged: _onSearchChanged,
+                        onClearSearch: _clearSearch,
+                        state: searchState,
+                      ),
+                      AdvisorSearchTabsWidget(
+                        tabs: _tabs,
+                        tabController: _tabController,
+                        onTabTap: (index) {
+                          if (_uiCubit.state.selectedIndex != index) {
+                            _uiCubit.updateIndex(index);
+                            _performSearch(showLoading: false);
+                          }
+                        },
+                      ),
+                      Expanded(
+                        child:
+                            BlocBuilder<
+                              AdvisorSearchUiCubit,
+                              AdvisorSearchUiState
+                            >(
+                              bloc: _uiCubit,
+                              builder: (context, uiState) {
+                                return _buildSearchContent(
+                                  context,
+                                  searchState,
+                                  uiState,
+                                );
                               },
                             ),
-                            Expanded(
-                              child: BlocBuilder<AdvisorSearchUiCubit, AdvisorSearchUiState>(
-                                bloc: _uiCubit,
-                                builder: (context, uiState) {
-                                  return _buildSearchContent(
-                                    context,
-                                    searchState,
-                                    uiState,
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
         ),
+      ),
     );
   }
 
@@ -387,10 +391,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     );
   }
 
-  Widget _buildSectionHeader({
-    required String title,
-    required String tabId,
-  }) {
+  Widget _buildSectionHeader({required String title, required String tabId}) {
     return AdvisorSearchSectionHeader(
       title: title,
       onSeeAll: () {

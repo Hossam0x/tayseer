@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import '../../my_import.dart';
 
@@ -9,6 +10,7 @@ class AppImage extends StatelessWidget {
   final Gradient? gradientColorSvg;
   final String? placeholderImage;
   final bool flipOnLtr;
+  final double? blur; // ✅ Add blur sigma
 
   /// لو true → الـ errorWidget تبقى Icons.person (للأفاتار/البروفايل)
   final bool isAvatar;
@@ -24,6 +26,7 @@ class AppImage extends StatelessWidget {
     this.gradientColorSvg,
     this.flipOnLtr = false,
     this.isAvatar = false,
+    this.blur, // ✅ Add to constructor
   });
 
   Widget _flipIfLtr(Widget child, BuildContext context) {
@@ -119,6 +122,7 @@ class AppImage extends StatelessWidget {
           isAvatar: isAvatar,
           loadingPlaceholder: _buildLoadingPlaceholder(),
           memCacheWidth: 600,
+          blur: blur, // ✅ Pass blur
         );
       } else {
         return _flipIfLtr(
@@ -140,6 +144,7 @@ class AppImage extends StatelessWidget {
         isAvatar: isAvatar,
         loadingPlaceholder: _buildLoadingPlaceholder(),
         memCacheWidth: 600,
+        blur: blur, // ✅ Pass blur
       );
     }
 
@@ -172,6 +177,7 @@ class _ConnectivityNetworkImage extends StatefulWidget {
   final bool isAvatar;
   final Widget loadingPlaceholder;
   final int? memCacheWidth;
+  final double? blur; // ✅ Add blur
 
   const _ConnectivityNetworkImage({
     required this.imageUrl,
@@ -183,6 +189,7 @@ class _ConnectivityNetworkImage extends StatefulWidget {
     required this.isAvatar,
     required this.loadingPlaceholder,
     this.memCacheWidth,
+    this.blur, // ✅ Add to constructor
   });
 
   @override
@@ -224,6 +231,25 @@ class _ConnectivityNetworkImageState extends State<_ConnectivityNetworkImage> {
           });
           return _buildErrorWidget();
         },
+        imageBuilder: widget.blur != null
+            ? (context, imageProvider) => ImageFiltered(
+                  imageFilter: ImageFilter.blur(
+                    sigmaX: widget.blur!,
+                    sigmaY: widget.blur!,
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: imageProvider,
+                        fit: widget.fit,
+                        colorFilter: widget.color != null
+                            ? ColorFilter.mode(widget.color!, BlendMode.srcIn)
+                            : null,
+                      ),
+                    ),
+                  ),
+                )
+            : null,
       ),
     );
   }

@@ -309,23 +309,13 @@ class _AddStoryItem extends StatelessWidget {
       builder: (context, profileImage) {
         return BlocBuilder<StoriesCubit, StoriesState>(
           buildWhen: (previous, current) {
-            final myUserId = kCurrentUserData?.id;
-            final prevMyStory = previous.storiesList
-                .where((s) => s.userId == myUserId)
-                .firstOrNull;
-            final currentMyStory = current.storiesList
-                .where((s) => s.userId == myUserId)
-                .firstOrNull;
-
             return previous.createStoryState != current.createStoryState ||
                 previous.uploadProgress != current.uploadProgress ||
-                prevMyStory != currentMyStory;
+                previous.myStories != current.myStories ||
+                previous.myStoriesState != current.myStoriesState;
           },
           builder: (context, storyState) {
-            final myUserId = kCurrentUserData?.id;
-            final myStory = storyState.storiesList
-                .where((s) => s.userId == myUserId)
-                .firstOrNull;
+            final myStory = storyState.myStories;
             final isUploading =
                 storyState.createStoryState == CubitStates.loading;
 
@@ -350,42 +340,63 @@ class _AddStoryItem extends StatelessWidget {
                       ),
 
                     CustomClick(
-                      onTap: () {
+                      onTap: () async {
                         if (isUploading) return;
                         if (myStory != null) {
-                          // Open my story
-                          final chronologicalUserStory = myStory.copyWith(
-                            stories: myStory.stories.reversed.toList(),
+                          final storiesCubit = context.read<StoriesCubit>();
+
+// Open my story fast without blocking the transition with a loading indicator.
+                          // It will use the current story data instantly.
+                          
+                          // We still request a quiet refetch in the background to keep data fresh later
+                          storiesCubit.fetchMyStories(isSilent: true);
+
+                          // Use current cached stories
+                          final latestMyStories =
+                              storiesCubit.state.myStories ?? myStory;
+
+                          // Open my story in chronological order
+                          final chronologicalUserStory = latestMyStories.copyWith(
+                            stories: latestMyStories.stories.reversed.toList(),
                           );
-                          Navigator.push(
-                            context,
-                            PageRouteBuilder(
-                              opaque: false,
-                              pageBuilder:
-                                  (newContext, animation, secondaryAnimation) =>
-                                      BlocProvider.value(
-                                        value: context.read<StoriesCubit>(),
-                                        child: StoryDetailsView(
-                                          usersStories: [
-                                            chronologicalUserStory,
-                                          ],
-                                          initialUserIndex: 0,
-                                        ),
+                          
+                          if (context.mounted) {
+                            Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                opaque: false,
+                                pageBuilder: (
+                                  newContext,
+                                  animation,
+                                  secondaryAnimation,
+                                ) =>
+                                    BlocProvider.value(
+                                      value: storiesCubit,
+                                      child: StoryDetailsView(
+                                        usersStories: [chronologicalUserStory],
+                                        initialUserIndex: 0,
                                       ),
-                              transitionsBuilder:
-                                  (
-                                    context,
-                                    animation,
-                                    secondaryAnimation,
-                                    child,
-                                  ) {
-                                    return FadeTransition(
-                                      opacity: animation,
-                                      child: child,
-                                    );
-                                  },
-                            ),
-                          );
+                                    ),
+                                transitionsBuilder: (
+                                  context,
+                                  animation,
+                                  secondaryAnimation,
+                                  child,
+                                ) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  );
+                                },
+                              ),
+                            ).then((_) {
+                              // Re-fetch my stories when viewer is closed so the
+                              // ring border and counters reflect the latest data.
+                              if (context.mounted) {
+                                context.read<StoriesCubit>().fetchMyStories(isSilent: true);
+                              }
+                            });
+                          }
                         } else {
                           // Open add story
                           if (context.mounted) {

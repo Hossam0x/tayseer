@@ -33,6 +33,7 @@ import 'package:tayseer/features/shared/auth/view/purpose_selection_view.dart';
 import 'package:tayseer/features/shared/packages/presentation/views/advisor_subscription_view.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/advisor_subscription_cubit.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
+import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
 import 'package:tayseer/features/shared/event/view/event_view.dart';
 import 'package:tayseer/features/shared/event/view/creat_event_view.dart';
 import 'package:tayseer/features/shared/event_detail/view/event_detail_view.dart';
@@ -114,6 +115,8 @@ import 'package:tayseer/features/user/user_profile/views/user_archive_chats_view
 import 'package:tayseer/features/user/user_profile/views/user_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/features/user/user_profile/views/general_settings_view.dart';
+import 'package:tayseer/features/user/user_profile/views/user_packages_view.dart';
+import 'package:tayseer/features/user/user_profile/views/user_package_details_view.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubit.dart';
 import '../../../my_import.dart';
 import 'package:tayseer/features/advisor/settings/view/order_management_view.dart';
@@ -239,6 +242,8 @@ abstract class AppRouter {
   static const kOrderManagementView = '/order_management_view';
   static const kAdvisorSubscriptionView = '/advisor_subscription_view';
   static const kEventView = '/event-view';
+  static const kUserPackagesView = '/user-packages-view';
+  static const kUserPackageDetailsView = '/user-package-details-view';
   ///// report screens /////
   static const kReportsView = '/reportsView';
   static const kReportDetailsView = '/reportDetailsView';
@@ -464,6 +469,19 @@ abstract class AppRouter {
         final userId = settings.arguments as String;
         return MaterialPageRoute(
           builder: (_) => UserFollowingsView(userId: userId),
+        );
+
+      case AppRouter.kUserPackagesView:
+        return SlideLeftRoute(
+          page: const UserPackagesView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kUserPackageDetailsView:
+        final packageType = settings.arguments as PackageType;
+        return SlideLeftRoute(
+          page: UserPackageDetailsView(packageType: packageType),
+          routeSettings: settings,
         );
 
       case kHomeScreen:

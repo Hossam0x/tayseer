@@ -6,12 +6,14 @@ class SearchUser extends Equatable {
   final String name;
   final String? username;
   final String imageUrl;
+  final bool imageBlur;
 
   const SearchUser({
     required this.id,
     required this.name,
     this.username,
     required this.imageUrl,
+    this.imageBlur = false,
   });
 
   factory SearchUser.fromJson(Map<String, dynamic> json) {
@@ -20,9 +22,10 @@ class SearchUser extends Equatable {
       name: json['name'] ?? '',
       username: json['username'] ?? json['userName'],
       imageUrl: json['image'] ?? '',
+      imageBlur: json['imageBlur'] ?? false,
     );
   }
 
   @override
-  List<Object?> get props => [id, name, username, imageUrl];
+  List<Object?> get props => [id, name, username, imageUrl, imageBlur];
 }

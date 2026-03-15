@@ -60,6 +60,7 @@ class SearchResponseModel {
               postData['isVerified'] = e['advisor']['isVerified'] ?? false;
               postData['userName'] =
                   e['advisor']['username'] ?? e['advisor']['userName'] ?? '';
+              postData['imageBlur'] = e['advisor']['imageBlur'] ?? false;
             }
 
             if (e['image'] != null) {

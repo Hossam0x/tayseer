@@ -15,6 +15,13 @@ class StoriesState extends Equatable {
   final String createStoryMessage;
   final double uploadProgress;
 
+  // ── My Stories (profile / home self-story section) ─────────────────────────
+  /// The current advisor's own stories fetched from /stories/my-stories.
+  /// null = not yet fetched.
+  final UserStoriesModel? myStories;
+  final CubitStates myStoriesState;
+  final String myStoriesMessage;
+
   const StoriesState({
     this.storiesMessage = '',
     this.storiesState = CubitStates.initial,
@@ -27,6 +34,9 @@ class StoriesState extends Equatable {
     this.createStoryState = CubitStates.initial,
     this.createStoryMessage = '',
     this.uploadProgress = 0.0,
+    this.myStories,
+    this.myStoriesState = CubitStates.initial,
+    this.myStoriesMessage = '',
   });
 
   StoriesState copyWith({
@@ -41,6 +51,10 @@ class StoriesState extends Equatable {
     CubitStates? createStoryState,
     String? createStoryMessage,
     double? uploadProgress,
+    // Use a sentinel to allow explicitly setting myStories to null
+    Object? myStories = _sentinel,
+    CubitStates? myStoriesState,
+    String? myStoriesMessage,
   }) {
     return StoriesState(
       storiesMessage: storiesMessage ?? this.storiesMessage,
@@ -54,6 +68,11 @@ class StoriesState extends Equatable {
       createStoryState: createStoryState ?? this.createStoryState,
       createStoryMessage: createStoryMessage ?? this.createStoryMessage,
       uploadProgress: uploadProgress ?? this.uploadProgress,
+      myStories: myStories == _sentinel
+          ? this.myStories
+          : myStories as UserStoriesModel?,
+      myStoriesState: myStoriesState ?? this.myStoriesState,
+      myStoriesMessage: myStoriesMessage ?? this.myStoriesMessage,
     );
   }
 
@@ -70,5 +89,11 @@ class StoriesState extends Equatable {
     createStoryState,
     createStoryMessage,
     uploadProgress,
+    myStories,
+    myStoriesState,
+    myStoriesMessage,
   ];
 }
+
+/// Internal sentinel so `copyWith(myStories: null)` works correctly.
+const _sentinel = Object();
