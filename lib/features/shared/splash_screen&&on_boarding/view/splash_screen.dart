@@ -42,39 +42,70 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _initializeSocket() async {
     try {
-      final socketHelper = getIt<tayseerSocketHelper>();
+      // التحقق من نوع المستخدم قبل الاتصال
+      final userType = CachNetwork.getStringData(key: kUserType);
+      final token = CachNetwork.getStringData(key: ktoken);
 
+      // لا نحاول الاتصال إذا كان guest أو لا يوجد token
+      if (userType == UserTypeEnum.guest.name || token.isEmpty) {
+        log('⏭️ Skipping socket connection for guest or no token');
+        return;
+      }
+
+      final socketHelper = getIt<tayseerSocketHelper>();
       final connected = await socketHelper.connect();
 
       if (connected) {
         log('✅ Socket connected successfully');
+      } else {
+        log('⚠️ Socket connection failed, but continuing...');
       }
     } catch (e) {
       log('❌ Socket initialization error: $e');
+      // لا نوقف التطبيق إذا فشل الاتصال بالـ socket
     }
   }
 
   Future<void> _navigateBasedOnToken() async {
     await Future.delayed(const Duration(seconds: 5));
     if (!mounted) return;
+
     String? token = CachNetwork.getStringData(key: ktoken);
-    if (mounted) {
-      if (token.isNotEmpty) {
-        if (selectedUserType == UserTypeEnum.asConsultant) {
-          if (kCurrentUserData?.compeletedData == true) {
-            context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
-          } else {
-            context.pushReplacementNamed(AppRouter.kRegisrationView);
-          }
-        } else if (selectedUserType == UserTypeEnum.user) {
-          kCurrentUserData?.isNew == false
-              ? context.pushReplacementNamed(AppRouter.kUserLayoutView)
-              : context.pushReplacementNamed(AppRouter.kRegisrationView);
-          
+    String? userType = CachNetwork.getStringData(key: kUserType);
+
+    log(
+      '🔍 Navigation check - Token: ${token.isNotEmpty}, UserType: $userType, selectedUserType: $selectedUserType',
+    );
+
+    if (!mounted) return;
+
+    if (token.isNotEmpty) {
+      // المستخدم لديه token
+      if (selectedUserType == UserTypeEnum.asConsultant) {
+        if (kCurrentUserData?.compeletedData == true) {
+          context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
+        } else {
+          context.pushReplacementNamed(AppRouter.kRegisrationView);
         }
+      } else if (selectedUserType == UserTypeEnum.user) {
+        if (kCurrentUserData?.isNew == false) {
+          context.pushReplacementNamed(AppRouter.kUserLayoutView);
+        } else {
+          context.pushReplacementNamed(AppRouter.kRegisrationView);
+        }
+      } else if (selectedUserType == UserTypeEnum.guest) {
+        // Guest user - go directly to user layout
+        log('✅ Guest user detected, navigating to user layout');
+        context.pushReplacementNamed(AppRouter.kUserLayoutView);
       } else {
+        // Unknown user type, go to registration
+        log('⚠️ Unknown user type, navigating to registration');
         context.pushReplacementNamed(AppRouter.kRegisrationView);
       }
+    } else {
+      // لا يوجد token، اذهب للتسجيل
+      log('⚠️ No token found, navigating to registration');
+      context.pushReplacementNamed(AppRouter.kRegisrationView);
     }
   }
   // @override
