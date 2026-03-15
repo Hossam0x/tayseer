@@ -1,3 +1,4 @@
+import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
@@ -820,6 +821,14 @@ class MarriageBodyState extends State<MarriageBody>
                     ),
                     sliver: SliverToBoxAdapter(
                       child: BottomActionsSection(
+                      
+                        onShare: () {
+                          DeepLinkService.shareProfile(
+                            personId: user?.id ?? '',
+                            userName: user?.name ?? '',
+                          );
+                        },
+
                         onBlock: () {
                           CustomshowDialogWithImage(
                             context,
