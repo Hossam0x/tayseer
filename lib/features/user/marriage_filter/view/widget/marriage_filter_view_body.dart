@@ -37,7 +37,7 @@ class MarriageFilterBody extends StatelessWidget {
             slivers: [
               _buildSliverAppBar(context),
 
-              // ✅ استخدام الـ Custom Widget
+              // ✅ قسم العمر والبلد
               SliverToBoxAdapter(
                 child: CustomAgeAndCountrySection(
                   ageRange: state.ageRange,
@@ -60,54 +60,69 @@ class MarriageFilterBody extends StatelessWidget {
                 ),
               ),
 
+              // ✅ قسم البيانات والأنشطة — إصلاح: إزالة "goalMarry" المكرر واستبداله بـ "goldAccount"
               SliverToBoxAdapter(
                 child: CustomDataCard(
                   sectionTitle: context.tr('data_and_activities'),
                   items: [
-                    _buildRow(context, "verified_id", "isVerified"),
-                    _buildRow(context, "new_member", "isNew"),
-                    _buildRow(context, "photo_status", "imageBlur"),
-                    _buildRow(context, "gold_account", "goalMarry"),
+                    _buildRow(context, state, "verified_id", "isVerified"),
+                    _buildRow(context, state, "new_member", "isNew"),
+                    _buildRow(context, state, "photo_status", "imageBlur"),
+                    _buildRow(
+                      context,
+                      state,
+                      "gold_account",
+                      "goldAccount",
+                    ), // ✅ إصلاح: key مختلف
                   ],
                 ),
               ),
 
+              // ✅ قسم البيانات الشخصية — إصلاح: تمرير state لكل _buildRow
               SliverToBoxAdapter(
                 child: CustomDataCard(
                   sectionTitle: context.tr('personal_data'),
                   items: [
-                    _buildRow(context, "height", "height"),
-                    _buildRow(context, "marital_status", "maritalStatus"),
-                    _buildRow(context, "job", "job"),
-                    _buildRow(context, "education", "educationLevel"),
-                    _buildRow(context, "hobbies", "hobbies"),
+                    _buildRow(context, state, "height", "height"),
+                    _buildRow(
+                      context,
+                      state,
+                      "marital_status",
+                      "maritalStatus",
+                    ),
+                    _buildRow(context, state, "job", "job"),
+                    _buildRow(context, state, "education", "educationLevel"),
+                    _buildRow(context, state, "hobbies", "hobbies"),
                   ],
                 ),
               ),
 
+              // ✅ قسم الأهداف — "goalMarry" هنا صح في مكانه
               SliverToBoxAdapter(
                 child: CustomDataCard(
                   sectionTitle: context.tr('goals'),
                   items: [
-                    _buildRow(context, "marriage", "goalMarry"),
-                    _buildRow(context, "engagement", "goalEngagment"),
-                    _buildRow(context, "travel", "goalTravel"),
-                    _buildRow(context, "family", "goalChildren"),
+                    _buildRow(context, state, "marriage", "goalMarry"),
+                    _buildRow(context, state, "engagement", "goalEngagment"),
+                    _buildRow(context, state, "travel", "goalTravel"),
+                    _buildRow(context, state, "family", "goalChildren"),
                   ],
                 ),
               ),
 
+              // ✅ قسم الدين والعادات
               SliverToBoxAdapter(
                 child: CustomDataCard(
                   sectionTitle: context.tr('religion_and_habits'),
                   items: [
                     _buildRow(
                       context,
+                      state,
                       "religious_commitment",
                       "religiousCommitment",
                     ),
-                    _buildRow(context, "smoking", "smoker"),
-                    _buildRow(context, "hijab", "wearHijab"),
+                    _buildRow(context, state, "smoking", "smoker"),
+                    _buildRow(context, state, "hijab", "wearHijab"),
                   ],
                 ),
               ),
@@ -142,19 +157,20 @@ class MarriageFilterBody extends StatelessWidget {
     }
   }
 
+  // ✅ إصلاح: إضافة state كـ parameter بدل context.read داخل الدالة
   FilterItemModel _buildRow(
     BuildContext context,
+    MarriageFilterState state,
     String title,
     String fieldKey,
   ) {
-    final state = context.read<MarriageFilterCubit>().state;
     final value = state.selectedFilters[fieldKey];
 
     String displayValue = context.tr('no_preference');
-    if (value is String) {
+    if (value is String && value.isNotEmpty && value != 'no_preference') {
       displayValue = value.contains('_') ? context.tr(value) : value;
     }
-    if (value is List) {
+    if (value is List && value.isNotEmpty) {
       displayValue = "${value.length} ${context.tr('selected')}";
     }
 
