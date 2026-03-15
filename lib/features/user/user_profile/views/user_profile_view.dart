@@ -25,11 +25,8 @@ class _UserProfileViewState extends State<UserProfileView> {
   int _rating = 0;
   UserProfileCubit? _cubit;
 
-  // ✅ حذف _userProfileCubit - BlocProvider هيتحكم في الـ lifecycle
-
   @override
   void dispose() {
-    // ✅ حذف _userProfileCubit.close() - BlocProvider بيعمل ده تلقائياً
     _scrollController.dispose();
     super.dispose();
   }
@@ -159,6 +156,21 @@ class _UserProfileViewState extends State<UserProfileView> {
                   ),
                 ],
                 child: BlocBuilder<UserProfileCubit, UserProfileState>(
+                  // ✅ تجنّب إعادة البناء عند تغييرات لا تؤثر على الـ UI الرئيسي
+                  // مثل: actionTimestamp, isNotificationEnabled وحدهم
+                  buildWhen: (previous, current) {
+                    // دائماً نبني عند تغيير نوع الـ state
+                    if (previous.runtimeType != current.runtimeType) return true;
+
+                    if (previous is SettingsLoaded && current is SettingsLoaded) {
+                      // أعد البناء فقط عند تغيير البيانات الجوهرية للـ UI
+                      return previous.userProfile != current.userProfile ||
+                          previous.settings != current.settings ||
+                          previous.isMarriageSectionDeactivated != current.isMarriageSectionDeactivated ||
+                          previous.isMarriageProfileComplete != current.isMarriageProfileComplete;
+                    }
+                    return true;
+                  },
                   builder: (context, state) {
                     return _buildBodyContent(context, state);
                   },
@@ -201,16 +213,20 @@ class _UserProfileViewState extends State<UserProfileView> {
                 children: [
                   Gap(18.h),
                   if (_selectedTabIndex == 0)
-                    BlocSelector<
-                      UserProfileCubit,
-                      UserProfileState,
-                      UserProfileModel?
-                    >(
-                      selector: (state) {
-                        if (state is SettingsLoaded) return state.userProfile;
-                        return null;
+                    BlocBuilder<UserProfileCubit, UserProfileState>(
+                      buildWhen: (previous, current) {
+                        if (previous.runtimeType != current.runtimeType) return true;
+                        if (previous is SettingsLoaded && current is SettingsLoaded) {
+                          // أعد البناء فقط عند تغيير بيانات Profile المهمة للعرض
+                          return previous.userProfile?.image != current.userProfile?.image ||
+                              previous.userProfile?.name != current.userProfile?.name ||
+                              previous.userProfile?.username != current.userProfile?.username ||
+                              previous.userProfile?.id != current.userProfile?.id;
+                        }
+                        return true;
                       },
-                      builder: (context, userProfile) {
+                      builder: (context, state) {
+                        final userProfile = state is SettingsLoaded ? state.userProfile : null;
                         return _buildProfileSection(
                           context,
                           state,
@@ -386,6 +402,9 @@ class _UserProfileViewState extends State<UserProfileView> {
                         child: CachedNetworkImage(
                           imageUrl: imageUrl,
                           fit: BoxFit.cover,
+                          // ✅ منع الـ fade animation التي تُظهر placeholder مؤقتاً حتى من الكاش
+                          fadeInDuration: Duration.zero,
+                          fadeOutDuration: Duration.zero,
                           placeholder: (context, url) => Container(
                             width: double.infinity,
                             height: double.infinity,

@@ -11,9 +11,24 @@ class BioInformation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ProfileCubit, ProfileState>(
-      buildWhen: (previous, current) =>
-          previous.profileState != current.profileState ||
-          previous.profile != current.profile,
+      buildWhen: (previous, current) {
+        if (previous.profileState != current.profileState) return true;
+        if (previous.profile == null && current.profile != null) return true;
+        if (previous.profile != null && current.profile == null) return true;
+
+        // ✅ أعد البناء فقط عند تغيير الحقول المهمة للـ bio
+        if (previous.profile != null && current.profile != null) {
+          return previous.profile!.name != current.profile!.name ||
+              previous.profile!.username != current.profile!.username ||
+              previous.profile!.aboutYou != current.profile!.aboutYou ||
+              previous.profile!.location != current.profile!.location ||
+              previous.profile!.professionalSpecialization !=
+                  current.profile!.professionalSpecialization ||
+              previous.profile!.yearsOfExperience !=
+                  current.profile!.yearsOfExperience;
+        }
+        return false;
+      },
       builder: (context, state) {
         switch (state.profileState) {
           case CubitStates.loading:
@@ -276,11 +291,12 @@ class BioInformation extends StatelessWidget {
         final totalViews = state.analytics?.overview.views ?? 0;
 
         return CustomClick(
-          onTap: () {
-            Navigator.pushNamed(
+          onTap: () async {
+            await Navigator.pushNamed(
               context,
               AppRouter.kProfessionalInfoDashboardView,
             );
+            // Professional info updates are handled by the dashboard itself
           },
           // borderRadius: BorderRadius.circular(10.r),
           child: Container(

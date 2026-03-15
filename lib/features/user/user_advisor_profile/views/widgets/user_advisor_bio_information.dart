@@ -39,9 +39,24 @@ class UserAdvisorBioInformation extends StatelessWidget {
         ),
       ],
       child: BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
-        buildWhen: (previous, current) =>
-            previous.profileState != current.profileState ||
-            previous.profile != current.profile,
+        buildWhen: (previous, current) {
+          if (previous.profileState != current.profileState) return true;
+          if (previous.profile == null && current.profile != null) return true;
+          if (previous.profile != null && current.profile == null) return true;
+
+          if (previous.profile != null && current.profile != null) {
+            return previous.profile!.name != current.profile!.name ||
+                previous.profile!.username != current.profile!.username ||
+                previous.profile!.aboutYou != current.profile!.aboutYou ||
+                previous.profile!.professionalSpecialization !=
+                    current.profile!.professionalSpecialization ||
+                previous.profile!.yearsOfExperience !=
+                    current.profile!.yearsOfExperience ||
+                previous.profile!.location != current.profile!.location ||
+                previous.profile!.isMe != current.profile!.isMe;
+          }
+          return false;
+        },
         builder: (context, state) {
           switch (state.profileState) {
             case CubitStates.loading:

@@ -13,9 +13,23 @@ class UserAdvisorProfileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
-      buildWhen: (previous, current) =>
-          previous.profileState != current.profileState ||
-          previous.profile != current.profile,
+      buildWhen: (previous, current) {
+        if (previous.profileState != current.profileState) return true;
+        if (previous.profile == null && current.profile != null) return true;
+        if (previous.profile != null && current.profile == null) return true;
+
+        if (previous.profile != null && current.profile != null) {
+          final oldImage = previous.profile!.image.split('?').first;
+          final newImage = current.profile!.image.split('?').first;
+          return oldImage != newImage ||
+              previous.profile!.followers != current.profile!.followers ||
+              previous.profile!.following != current.profile!.following ||
+              previous.profile!.isVerified != current.profile!.isVerified ||
+              previous.profile!.room?.isBlocked !=
+                  current.profile!.room?.isBlocked;
+        }
+        return false;
+      },
       builder: (context, state) {
         switch (state.profileState) {
           case CubitStates.loading:

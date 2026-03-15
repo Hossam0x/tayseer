@@ -19,32 +19,43 @@ class GeneralSettingsView extends StatefulWidget {
 class _GeneralSettingsViewState extends State<GeneralSettingsView> {
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<UserProfileCubit, UserProfileState>(
-      builder: (context, state) {
-        return Scaffold(
-          body: AdvisorBackground(
-            child: SafeArea(
-              child: Column(
-                children: [
-                  Gap(16.h),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24.w),
-                    child: SimpleAppBar(
-                      title: context.tr('settings'),
-                      isLargeTitle: true,
-                    ),
-                  ),
-                  Expanded(child: _buildContent(context, state)),
-                ],
+    return Scaffold(
+      body: AdvisorBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Gap(16.h),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                child: SimpleAppBar(
+                  title: context.tr('settings'),
+                  isLargeTitle: true,
+                ),
               ),
-            ),
+              Expanded(
+                child: BlocSelector<UserProfileCubit, UserProfileState, UserProfileModel?>(
+                  selector: (state) {
+                    if (state is SettingsLoaded) return state.userProfile;
+                    return null;
+                  },
+                  builder: (context, userProfile) {
+                    final state = context.read<UserProfileCubit>().state;
+                    return _buildContent(context, state, userProfile);
+                  },
+                ),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _buildContent(BuildContext context, UserProfileState state) {
+  Widget _buildContent(
+    BuildContext context,
+    UserProfileState state,
+    UserProfileModel? userProfile,
+  ) {
     if (state is SettingsLoading || state is SettingsInitial) {
       return _buildLoadingSkeleton();
     }
@@ -88,23 +99,18 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
       );
     }
 
-    if (state is SettingsLoaded) {
-      final userProfile = state.userProfile;
-      return SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 24.w),
-        child: Column(
-          children: [
-            Gap(30.h),
-            _buildPersonalSection(context, userProfile),
-            Gap(30.h),
-            _buildPrivacySection(context, userProfile),
-            Gap(40.h),
-          ],
-        ),
-      );
-    }
-
-    return const SizedBox();
+    return SingleChildScrollView(
+      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      child: Column(
+        children: [
+          Gap(30.h),
+          _buildPersonalSection(context, userProfile),
+          Gap(30.h),
+          _buildPrivacySection(context, userProfile),
+          Gap(40.h),
+        ],
+      ),
+    );
   }
 
   Widget _buildLoadingSkeleton() {
@@ -260,9 +266,9 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
                     EmailEditScreen(initialEmail: userProfile?.email ?? ''),
               ),
             );
-            // Refresh data after returning
+            // Silent update: fetch only the profile without emitting SettingsLoading
             if (mounted) {
-              context.read<UserProfileCubit>().refresh();
+              context.read<UserProfileCubit>().fetchUserProfile();
             }
           },
           child: _buildSettingRow(label: context.tr('email'), value: ''),
@@ -276,9 +282,9 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
                     PhoneEditScreen(initialPhone: userProfile?.phone ?? ''),
               ),
             );
-            // Refresh data after returning
+            // Silent update: fetch only the profile without emitting SettingsLoading
             if (mounted) {
-              context.read<UserProfileCubit>().refresh();
+              context.read<UserProfileCubit>().fetchUserProfile();
             }
           },
           child: _buildSettingRow(

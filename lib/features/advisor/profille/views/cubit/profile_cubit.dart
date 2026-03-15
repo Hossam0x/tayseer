@@ -255,6 +255,24 @@ class ProfileCubit extends Cubit<ProfileState> {
   }
 
   // ═══════════════════════════════════════════════════════════
+  // 📌 REFRESH PROFILE FROM CACHE ONLY (no API call)
+  // ═══════════════════════════════════════════════════════════
+  void refreshProfileFromCache() {
+    final cachedData = CachNetwork.getStringData(key: kAdvisorProfileCache);
+    if (cachedData.isNotEmpty) {
+      try {
+        final profile = ProfileModel.fromJson(jsonDecode(cachedData));
+        if (isClosed) return;
+        emit(
+          state.copyWith(profile: profile, profileState: CubitStates.success),
+        );
+      } catch (e) {
+        debugPrint('❌ Error refreshing profile from cache: $e');
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
   // 📌 CLEAR ERRORS
   // ═══════════════════════════════════════════════════════════
   void clearProfileError() {
