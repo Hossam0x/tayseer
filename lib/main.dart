@@ -51,9 +51,9 @@ void _initDeepLinks() async {
   // Cold start — التطبيق كان مقفولاً
   final uri = await appLinks.getInitialLink();
   if (uri != null) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _handleDeepLink(uri);
-    });
+    // ✅ ننتظر الـ navigator يكون جاهز فعلاً (مش بس frame واحد)
+    await _waitForNavigator();
+    _handleDeepLink(uri);
   }
 
   // Warm start — التطبيق في الخلفية
@@ -61,6 +61,16 @@ void _initDeepLinks() async {
     _handleDeepLink,
     onError: (e) => debugPrint('DeepLink stream error: $e'),
   );
+}
+
+/// ينتظر حتى يكون الـ navigator جاهز — بحد أقصى 10 ثواني
+Future<void> _waitForNavigator() async {
+  int attempts = 0;
+  while (navigatorKey.currentState == null && attempts < 20) {
+    await Future.delayed(const Duration(milliseconds: 500));
+    attempts++;
+  }
+  debugPrint('🔗 Navigator ready after ${attempts * 500}ms');
 }
 
 void _handleDeepLink(Uri uri) {
@@ -89,10 +99,10 @@ void _navigateToProfile(String personId) {
   final hasToken = token != null && token.isNotEmpty;
 
   if (!hasToken || isGuest || isUserAnonymous) {
-    // ✅ احفظ الـ personId عشان نفتحه بعد اللوجن
+    // احفظ الـ personId — الـ splash سيفتحه بعد اللوجن
     pendingDeepLinkPersonId = personId;
     debugPrint('🔗 Deep link saved for after login: $personId');
-    return; // لا تعمل navigate — الـ splash سيتولى الأمر
+    return;
   }
 
   // المستخدم مسجل → روح البروفايل مباشرة
@@ -102,14 +112,14 @@ void _navigateToProfile(String personId) {
   );
 }
 
-/// استدعيها بعد نجاح اللوجن (في RegisrationView أو SplashScreen)
+/// استدعيها بعد نجاح اللوجن في SplashScreen و RegisrationView
 void consumePendingDeepLink() {
   final personId = pendingDeepLinkPersonId;
   if (personId == null) return;
 
-  pendingDeepLinkPersonId = null; // امسح بعد الاستخدام
-
+  pendingDeepLinkPersonId = null;
   debugPrint('🔗 Consuming pending deep link: $personId');
+
   navigatorKey.currentState?.pushNamed(
     AppRouter.kMarriageView,
     arguments: {'personId': personId},
