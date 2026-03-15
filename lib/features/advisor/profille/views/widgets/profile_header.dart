@@ -19,9 +19,23 @@ class ProfileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ProfileCubit, ProfileState>(
-      buildWhen: (previous, current) =>
-          previous.profileState != current.profileState ||
-          previous.profile != current.profile,
+      buildWhen: (previous, current) {
+        // ✅ تجنّب الـ rebuild إذا كانت بيانات العرض لم تتغير حتى لو تغيّر الـ state
+        if (previous.profileState != current.profileState) return true;
+        if (previous.profile == null && current.profile != null) return true;
+        if (previous.profile != null && current.profile == null) return true;
+
+        // كلاهما موجودين → اقارن فقط الحقول المهمة للـ UI
+        if (previous.profile != null && current.profile != null) {
+          final oldImage = previous.profile!.image.split('?').first;
+          final newImage = current.profile!.image.split('?').first;
+          return oldImage != newImage ||
+              previous.profile!.followers != current.profile!.followers ||
+              previous.profile!.following != current.profile!.following ||
+              previous.profile!.isVerified != current.profile!.isVerified;
+        }
+        return false;
+      },
       builder: (context, state) {
         switch (state.profileState) {
           case CubitStates.loading:
@@ -141,7 +155,7 @@ class ProfileHeader extends StatelessWidget {
 
           // Top bar with followers/following
           GestureDetector(
-            onTap: () => Navigator.pushNamed(context, AppRouter.kFollowingView),
+            onTap: () => _openFollowing(context),
             child: Column(
               children: [
                 Text(following, style: Styles.textStyle16SemiBold),
@@ -150,7 +164,7 @@ class ProfileHeader extends StatelessWidget {
             ),
           ),
           GestureDetector(
-            onTap: () => Navigator.pushNamed(context, AppRouter.kFollowersView),
+            onTap: () => _openFollowers(context),
             child: Column(
               children: [
                 Text(followers, style: Styles.textStyle16SemiBold),
@@ -193,7 +207,7 @@ class ProfileHeader extends StatelessWidget {
 
   void _openSettings(BuildContext context) async {
     // ⭐ انتظار الرجوع من صفحة الإعدادات
-    await Navigator.push(
+    final result = await Navigator.push(
       context,
       SlideLeftRoute(
         page: const SettingsView(),
@@ -201,12 +215,23 @@ class ProfileHeader extends StatelessWidget {
       ),
     );
 
-    // ⭐ تحديث البروفايل بعد الرجوع من الإعدادات
-    if (context.mounted) {
+    // ⭐ تحديث البروفايل فقط إذا تم تغيير البيانات
+    if (context.mounted && result == true) {
+      // Only fetch from API (silent update) - no cache refresh to avoid rebuild
       context.read<ProfileCubit>().fetchProfile();
       // تحديث بيانات الهوم من الكاش أيضاً لضمان التزامن
       getIt<HomeCubit>().refreshUserInfoFromCache();
     }
+  }
+
+  void _openFollowing(BuildContext context) async {
+    await Navigator.pushNamed(context, AppRouter.kFollowingView);
+    // No need to reload data when returning from following list
+  }
+
+  void _openFollowers(BuildContext context) async {
+    await Navigator.pushNamed(context, AppRouter.kFollowersView);
+    // No need to reload - followers count rarely changes
   }
 }
 
@@ -228,11 +253,9 @@ class _ProfileStoryRing extends StatelessWidget {
           previous.myStories != current.myStories ||
           previous.myStoriesState != current.myStoriesState,
       builder: (context, storyState) {
-        final isUploading =
-            storyState.createStoryState == CubitStates.loading;
+        final isUploading = storyState.createStoryState == CubitStates.loading;
         final myStories = storyState.myStories;
-        final hasStories =
-            myStories != null && myStories.stories.isNotEmpty;
+        final hasStories = myStories != null && myStories.stories.isNotEmpty;
 
         return CustomClick(
           onTap: isUploading
@@ -277,9 +300,12 @@ class _ProfileStoryRing extends StatelessWidget {
                 padding: hasStories && !isUploading
                     ? EdgeInsets.all(4.r)
                     : EdgeInsets.zero,
-                child: MyProfileImage(
-                  width: hasStories && !isUploading ? 79.w : 85.w,
-                  imageUrl: fallbackImageUrl,
+                child: Hero(
+                  tag: 'profile_image_main',
+                  child: MyProfileImage(
+                    width: hasStories && !isUploading ? 79.w : 85.w,
+                    imageUrl: fallbackImageUrl,
+                  ),
                 ),
               ),
 
@@ -311,10 +337,7 @@ class _ProfileStoryRing extends StatelessWidget {
               // ── Upload percentage overlay ─────────────────────────────────
               if (isUploading)
                 Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 6.w,
-                    vertical: 2.h,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.6),
                     borderRadius: BorderRadius.circular(12.r),

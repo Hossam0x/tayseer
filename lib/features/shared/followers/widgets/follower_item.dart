@@ -161,25 +161,10 @@ class FollowerItem extends StatelessWidget {
                         sigmaX: follower.imageBlur ? 10.0 : 0.0,
                         sigmaY: follower.imageBlur ? 10.0 : 0.0,
                       ),
-                      child: CachedNetworkImage(
-                        imageUrl: follower.imageUrl!,
+                      child: AppImage(
+                        follower.imageUrl!,
                         fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: Colors.grey.shade200,
-                          child: Icon(
-                            Icons.person,
-                            size: 24.w,
-                            color: Colors.grey.shade400,
-                          ),
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          color: Colors.grey.shade200,
-                          child: Icon(
-                            Icons.person,
-                            size: 24.w,
-                            color: Colors.grey.shade400,
-                          ),
-                        ),
+                        isAvatar: true,
                       ),
                     )
                   : Container(
