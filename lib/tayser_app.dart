@@ -2,6 +2,7 @@ import 'package:tayseer/core/appLocalizations/appLocalizations.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
+import 'package:tayseer/main.dart'; // ← navigatorKey
 import 'package:tayseer/my_import.dart';
 
 class TayseerApp extends StatelessWidget {
@@ -27,6 +28,8 @@ class TayseerApp extends StatelessWidget {
                 final pendingRoute = cubit.consumePendingRoute();
 
                 return MaterialApp(
+                  // ✅ مهم جداً — بدونه الـ deep link مش هيشتغل
+                  navigatorKey: navigatorKey,
                   key: ValueKey(state.languageCode),
                   builder: (context, child) {
                     return MediaQuery(
