@@ -1640,6 +1640,14 @@
   "your_account_under_review":"Your account is under review",
   "account_under_review_description":"Thank you for registering with Taysir! Your account is currently under review by our team. We will notify you once the review process is complete. We look forward to having you join our community soon!",
   "your_account_disapproved":"Your account is disapproved",
-  "account_disapproved_description":"We are sorry to inform you that your account has not been approved after review. If you believe this is a mistake, please contact our support team for further assistance."
+  "account_disapproved_description":"We are sorry to inform you that your account has not been approved after review. If you believe this is a mistake, please contact our support team for further assistance.",
+  "you_cannot_see_who_liked": "You cannot see who liked you",
+  "there_are_no_free_boosts": "There are no free boosts",
+  "limited_number_of_likes": "Limited number of likes",
+  "you_can_see_who_liked": "You can see who liked you",
+  "two_free_boosts_every_week": "Two free boosts every week",
+  "unlimited_number_of_likes": "Unlimited number of likes",
+  "enjoy_more_benefits_title": "To enjoy more benefits",
+  "view_all_benefits": "View all benefits"
 
 }
