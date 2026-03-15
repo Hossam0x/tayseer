@@ -141,7 +141,7 @@ Future<Either<Failure, String>> blockUser({required String personId}) async {
   try {
     final response = await _apiService.post(
       endPoint: ApiEndPoint.blockuser,
-      data: {'blockedUserId': personId},
+      data: {'blockedId': personId},
     );
     if (response['success'] == true) {
       return Right(response['message'] ?? 'تم الحظر بنجاح');
@@ -155,21 +155,4 @@ Future<Either<Failure, String>> blockUser({required String personId}) async {
   }
 }
 
-@override
-Future<Either<Failure, String>> unblockUser({required String personId}) async {
-  try {
-    final response = await _apiService.delete(
-      endPoint: '/user/block/$personId',
-    );
-    if (response['success'] == true) {
-      return Right(response['message'] ?? 'تم رفع الحظر بنجاح');
-    } else {
-      return Left(ServerFailure(response['message'] ?? 'فشل رفع الحظر'));
-    }
-  } on DioException catch (e) {
-    return Left(ServerFailure.fromDioError(e));
-  } catch (e) {
-    return Left(ServerFailure(e.toString()));
-  }
-}
 }

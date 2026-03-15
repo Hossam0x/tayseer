@@ -258,10 +258,6 @@
 //     );
 //   }
 // }
-// lib/features/user/marriage/view/widget/sliver_profile_header.dart
-
-// sliver_profile_header.dart
-// sliver_profile_header.dart
 import 'dart:ui';
 import 'dart:math' as math;
 import 'package:tayseer/features/user/marriage/view/widget/animated_be_first_button.dart';
@@ -281,7 +277,8 @@ class SliverProfileHeader extends StatelessWidget {
   final String? height;
   final Widget? toggleWidget;
   final String? reportId;
-  final bool shouldBlur; // ✅ جديد
+  final bool shouldBlur;
+  final bool isVerified; // ✅
 
   // ---------- الكارت اللي بعده (الخلفي) ----------
   final List<String>? nextImages;
@@ -293,6 +290,7 @@ class SliverProfileHeader extends StatelessWidget {
   final String? nextReligiousCommitment;
   final String? nextNationality;
   final String? nextHeight;
+  final bool? nextIsVerified; // ✅
 
   final double swipeDirection;
   final double swipeProgress;
@@ -313,7 +311,8 @@ class SliverProfileHeader extends StatelessWidget {
     this.height,
     this.toggleWidget,
     this.reportId,
-    this.shouldBlur = false, // ✅
+    this.shouldBlur = false,
+    this.isVerified = false, // ✅
     this.nextImages,
     this.nextName,
     this.nextAge,
@@ -323,6 +322,7 @@ class SliverProfileHeader extends StatelessWidget {
     this.nextReligiousCommitment,
     this.nextNationality,
     this.nextHeight,
+    this.nextIsVerified, // ✅
     this.swipeDirection = 0,
     this.swipeProgress = 0,
     this.onFavoriteTap,
@@ -403,6 +403,7 @@ class SliverProfileHeader extends StatelessWidget {
                     nextReligiousCommitment: nextReligiousCommitment,
                     nextNationality: nextNationality,
                     nextHeight: nextHeight,
+                    nextIsVerified: nextIsVerified ?? false, // ✅
                   ),
                 ),
 
@@ -429,7 +430,8 @@ class SliverProfileHeader extends StatelessWidget {
                     isAnimating: _isAnimating,
                     onFavoriteTap: onFavoriteTap,
                     isFavorited: isFavorited,
-                    shouldBlur: shouldBlur, // ✅
+                    shouldBlur: shouldBlur,
+                    isVerified: isVerified, // ✅
                   ),
                 ),
               ),
@@ -460,7 +462,8 @@ class _FrontProfileCard extends StatelessWidget {
   final bool isAnimating;
   final VoidCallback? onFavoriteTap;
   final bool isFavorited;
-  final bool shouldBlur; // ✅
+  final bool shouldBlur;
+  final bool isVerified; // ✅
 
   const _FrontProfileCard({
     required this.images,
@@ -478,7 +481,8 @@ class _FrontProfileCard extends StatelessWidget {
     required this.isAnimating,
     this.onFavoriteTap,
     this.isFavorited = false,
-    this.shouldBlur = false, // ✅
+    this.shouldBlur = false,
+    this.isVerified = false, // ✅
   });
 
   @override
@@ -488,7 +492,6 @@ class _FrontProfileCard extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // ✅ الصورة مع دعم الـ blur
         GestureDetector(
           onTap: () {
             if (images.isNotEmpty) {
@@ -512,13 +515,9 @@ class _FrontProfileCard extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // ✅ الصورة (blur أو عادية)
                 shouldBlur
                     ? ImageFiltered(
-                        imageFilter: ImageFilter.blur(
-                          sigmaX: 15,
-                          sigmaY: 15,
-                        ),
+                        imageFilter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                         child: isAnimating
                             ? AppImage(coverImage, fit: BoxFit.cover)
                             : Hero(
@@ -532,16 +531,12 @@ class _FrontProfileCard extends StatelessWidget {
                             tag: coverImage,
                             child: AppImage(coverImage, fit: BoxFit.cover),
                           )),
-
-                // ✅ تعتيم فوق الـ blur
                 if (shouldBlur)
                   Container(color: Colors.black.withOpacity(0.2)),
               ],
             ),
           ),
         ),
-
-        // ✅ معلومات اليوزر
         Positioned(
           bottom: 60.h,
           right: 16.w,
@@ -559,6 +554,7 @@ class _FrontProfileCard extends StatelessWidget {
             opacity: 0.18,
             onFavoriteTap: onFavoriteTap,
             isFavorited: isFavorited,
+            isVerified: isVerified, // ✅
           ),
         ),
       ],
@@ -579,6 +575,7 @@ class _BackProfileCard extends StatelessWidget {
   final String? nextReligiousCommitment;
   final String? nextNationality;
   final String? nextHeight;
+  final bool nextIsVerified; // ✅
 
   const _BackProfileCard({
     this.nextImages,
@@ -590,6 +587,7 @@ class _BackProfileCard extends StatelessWidget {
     this.nextReligiousCommitment,
     this.nextNationality,
     this.nextHeight,
+    this.nextIsVerified = false, // ✅
   });
 
   @override
@@ -620,6 +618,7 @@ class _BackProfileCard extends StatelessWidget {
             opacity: 0.14,
             onFavoriteTap: null,
             isFavorited: false,
+            isVerified: nextIsVerified, // ✅
           ),
         ),
       ],
@@ -643,6 +642,7 @@ class _InfoCard extends StatelessWidget {
   final double opacity;
   final VoidCallback? onFavoriteTap;
   final bool isFavorited;
+  final bool isVerified; // ✅
 
   const _InfoCard({
     required this.name,
@@ -657,6 +657,7 @@ class _InfoCard extends StatelessWidget {
     required this.opacity,
     this.onFavoriteTap,
     this.isFavorited = false,
+    this.isVerified = false, // ✅
   });
 
   @override
@@ -692,7 +693,8 @@ class _InfoCard extends StatelessWidget {
                           color: Colors.white,
                         ),
                       ),
-                    if (name.isNotEmpty) ...[
+                    // ✅ يظهر فقط لو isVerified = true
+                    if (isVerified) ...[
                       Gap(8.w),
                       const Icon(
                         Icons.verified,
