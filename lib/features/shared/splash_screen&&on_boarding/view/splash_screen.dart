@@ -26,29 +26,16 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     _initializeSocket();
     super.initState();
-    // _controller = AnimationController(
-    //   duration: const Duration(seconds: 2),
-    //   vsync: this,
-    // )..repeat();
-    // Future.delayed(const Duration(seconds: 1), () {
-    //   // if (mounted) {
-    //   //   setState(() {
-    //   //     _opacity = 1.0;
-    //   //   });
-    //   // }
-    // });
+
     _navigateBasedOnToken();
   }
 
   Future<void> _initializeSocket() async {
     try {
-      // التحقق من نوع المستخدم قبل الاتصال
       final userType = CachNetwork.getStringData(key: kUserType);
       final token = CachNetwork.getStringData(key: ktoken);
 
-      // لا نحاول الاتصال إذا كان guest أو لا يوجد token
       if (userType == UserTypeEnum.guest.name || token.isEmpty) {
-        log('⏭️ Skipping socket connection for guest or no token');
         return;
       }
 
@@ -62,7 +49,6 @@ class _SplashScreenState extends State<SplashScreen>
       }
     } catch (e) {
       log('❌ Socket initialization error: $e');
-      // لا نوقف التطبيق إذا فشل الاتصال بالـ socket
     }
   }
 
@@ -80,7 +66,6 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     if (token.isNotEmpty) {
-      // المستخدم لديه token
       if (selectedUserType == UserTypeEnum.asConsultant) {
         if (kCurrentUserData?.compeletedData == true) {
           context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
@@ -94,25 +79,17 @@ class _SplashScreenState extends State<SplashScreen>
           context.pushReplacementNamed(AppRouter.kRegisrationView);
         }
       } else if (selectedUserType == UserTypeEnum.guest) {
-        // Guest user - go directly to user layout
         log('✅ Guest user detected, navigating to user layout');
         context.pushReplacementNamed(AppRouter.kUserLayoutView);
       } else {
-        // Unknown user type, go to registration
         log('⚠️ Unknown user type, navigating to registration');
         context.pushReplacementNamed(AppRouter.kRegisrationView);
       }
     } else {
-      // لا يوجد token، اذهب للتسجيل
       log('⚠️ No token found, navigating to registration');
       context.pushReplacementNamed(AppRouter.kRegisrationView);
     }
   }
-  // @override
-  // void dispose() {
-  //   _controller.dispose();
-  //   super.dispose();
-  // }
 
   @override
   Widget build(BuildContext context) {
