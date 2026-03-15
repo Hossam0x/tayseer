@@ -26,28 +26,26 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     _initializeSocket();
     super.initState();
-    // _controller = AnimationController(
-    //   duration: const Duration(seconds: 2),
-    //   vsync: this,
-    // )..repeat();
-    // Future.delayed(const Duration(seconds: 1), () {
-    //   // if (mounted) {
-    //   //   setState(() {
-    //   //     _opacity = 1.0;
-    //   //   });
-    //   // }
-    // });
+
     _navigateBasedOnToken();
   }
 
   Future<void> _initializeSocket() async {
     try {
-      final socketHelper = getIt<tayseerSocketHelper>();
+      final userType = CachNetwork.getStringData(key: kUserType);
+      final token = CachNetwork.getStringData(key: ktoken);
 
+      if (userType == UserTypeEnum.guest.name || token.isEmpty) {
+        return;
+      }
+
+      final socketHelper = getIt<tayseerSocketHelper>();
       final connected = await socketHelper.connect();
 
       if (connected) {
         log('✅ Socket connected successfully');
+      } else {
+        log('⚠️ Socket connection failed, but continuing...');
       }
     } catch (e) {
       log('❌ Socket initialization error: $e');
@@ -57,31 +55,41 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _navigateBasedOnToken() async {
     await Future.delayed(const Duration(seconds: 5));
     if (!mounted) return;
+
     String? token = CachNetwork.getStringData(key: ktoken);
-    if (mounted) {
-      if (token.isNotEmpty) {
-        if (selectedUserType == UserTypeEnum.asConsultant) {
-          if (kCurrentUserData?.compeletedData == true) {
-            context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
-          } else {
-            context.pushReplacementNamed(AppRouter.kRegisrationView);
-          }
-        } else if (selectedUserType == UserTypeEnum.user) {
-          kCurrentUserData?.isNew == false
-              ? context.pushReplacementNamed(AppRouter.kUserLayoutView)
-              : context.pushReplacementNamed(AppRouter.kRegisrationView);
-          
+    String? userType = CachNetwork.getStringData(key: kUserType);
+
+    log(
+      '🔍 Navigation check - Token: ${token.isNotEmpty}, UserType: $userType, selectedUserType: $selectedUserType',
+    );
+
+    if (!mounted) return;
+
+    if (token.isNotEmpty) {
+      if (selectedUserType == UserTypeEnum.asConsultant) {
+        if (kCurrentUserData?.compeletedData == true) {
+          context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
+        } else {
+          context.pushReplacementNamed(AppRouter.kRegisrationView);
         }
+      } else if (selectedUserType == UserTypeEnum.user) {
+        if (kCurrentUserData?.isNew == false) {
+          context.pushReplacementNamed(AppRouter.kUserLayoutView);
+        } else {
+          context.pushReplacementNamed(AppRouter.kRegisrationView);
+        }
+      } else if (selectedUserType == UserTypeEnum.guest) {
+        log('✅ Guest user detected, navigating to user layout');
+        context.pushReplacementNamed(AppRouter.kUserLayoutView);
       } else {
+        log('⚠️ Unknown user type, navigating to registration');
         context.pushReplacementNamed(AppRouter.kRegisrationView);
       }
+    } else {
+      log('⚠️ No token found, navigating to registration');
+      context.pushReplacementNamed(AppRouter.kRegisrationView);
     }
   }
-  // @override
-  // void dispose() {
-  //   _controller.dispose();
-  //   super.dispose();
-  // }
 
   @override
   Widget build(BuildContext context) {
