@@ -282,6 +282,8 @@ class PostModel {
 
     bool? isCommented,
     bool? isAnonymous,
+
+    VideoModel? videoData,
   }) {
     return PostModel(
       postId: postId ?? this.postId,
@@ -313,6 +315,7 @@ class PostModel {
       event: event ?? this.event,
       isCommented: isCommented ?? this.isCommented,
       isAnonymous: isAnonymous ?? this.isAnonymous,
+      videoData: videoData ?? this.videoData,
     );
   }
 }
