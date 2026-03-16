@@ -39,14 +39,22 @@ class AppImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (path == null || path!.isEmpty) {
-      return placeholderImage != null
-          ? Image.asset(
-              placeholderImage!,
-              height: height,
-              width: width,
-              fit: fit,
-            )
-          : const SizedBox.shrink();
+      if (placeholderImage != null) {
+        return Image.asset(
+          placeholderImage!,
+          height: height,
+          width: width,
+          fit: fit,
+        );
+      } else if (isAvatar) {
+        return Image.asset(
+          AssetsData.defaultProfileImage,
+          height: height,
+          width: width,
+          fit: fit,
+        );
+      }
+      return const SizedBox.shrink();
     }
 
     // SVG
@@ -221,9 +229,10 @@ class _ConnectivityNetworkImageState extends State<_ConnectivityNetworkImage> {
         height: widget.height,
         width: widget.width,
         color: widget.color,
-        fadeInDuration: Duration.zero,
-        fadeOutDuration: Duration.zero,
+        fadeOutDuration: const Duration(milliseconds: 300),
+        fadeInDuration: const Duration(milliseconds: 300),
         placeholderFadeInDuration: Duration.zero,
+        useOldImageOnUrlChange: true, // ⭐ Keep old image while loading new one
         placeholder: (_, __) => _buildPlaceholder(),
         errorWidget: (_, __, ___) {
           WidgetsBinding.instance.addPostFrameCallback((_) {

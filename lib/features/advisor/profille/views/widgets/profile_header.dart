@@ -6,7 +6,6 @@ import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
 import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
-import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/add_story_view.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_state.dart';
@@ -27,9 +26,7 @@ class ProfileHeader extends StatelessWidget {
 
         // كلاهما موجودين → اقارن فقط الحقول المهمة للـ UI
         if (previous.profile != null && current.profile != null) {
-          final oldImage = previous.profile!.image.split('?').first;
-          final newImage = current.profile!.image.split('?').first;
-          return oldImage != newImage ||
+          return previous.profile!.image != current.profile!.image ||
               previous.profile!.followers != current.profile!.followers ||
               previous.profile!.following != current.profile!.following ||
               previous.profile!.isVerified != current.profile!.isVerified;
@@ -217,10 +214,9 @@ class ProfileHeader extends StatelessWidget {
 
     // ⭐ تحديث البروفايل فقط إذا تم تغيير البيانات
     if (context.mounted && result == true) {
-      // Only fetch from API (silent update) - no cache refresh to avoid rebuild
+      // تم الاعتماد على الـ EventBus للمزامنة الفورية
+      // لكن بنطلب تحديث صامت من الـ API لضمان بقية البيانات (مثل عدد المتابعين إلخ)
       context.read<ProfileCubit>().fetchProfile();
-      // تحديث بيانات الهوم من الكاش أيضاً لضمان التزامن
-      getIt<HomeCubit>().refreshUserInfoFromCache();
     }
   }
 

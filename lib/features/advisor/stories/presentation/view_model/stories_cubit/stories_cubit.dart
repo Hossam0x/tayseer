@@ -4,6 +4,7 @@ import 'package:tayseer/features/advisor/stories/data/models/stories_response_mo
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_state.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_event_bus.dart';
+import 'package:tayseer/core/utils/profile_event_bus.dart';
 import 'package:tayseer/my_import.dart';
 
 class StoriesCubit extends Cubit<StoriesState> {
@@ -12,6 +13,7 @@ class StoriesCubit extends Cubit<StoriesState> {
   
   StreamSubscription? _myStoriesSub;
   StreamSubscription? _uploadSub;
+  late StreamSubscription<ProfileUpdateEvent> _profileSub;
 
   StoriesCubit(this.storiesRepository) : super(const StoriesState()) {
     // ── Listen to EventBus to sync myStories and uploadProgress ──
@@ -29,12 +31,73 @@ class StoriesCubit extends Cubit<StoriesState> {
         emit(state.copyWith(createStoryState: event.state, uploadProgress: event.progress));
       }
     });
+
+    _listenToProfileUpdates();
+  }
+
+  void _listenToProfileUpdates() {
+    _profileSub = ProfileEventBus.instance.onProfileUpdated.listen((event) {
+      final myId = kCurrentUserData?.id;
+
+      // 1. Update myStories
+      if (state.myStories != null) {
+        final updatedMyStories = state.myStories!.copyWith(
+          name: event.name,
+          image: event.image,
+        );
+        emit(state.copyWith(myStories: updatedMyStories));
+        _syncMyStoriesIntoMainList(updatedMyStories);
+      }
+
+      // 2. Update in storiesList (Home Feed)
+      final currentList = state.storiesList;
+      final myIndexInList = currentList.indexWhere(
+        (us) => us.userId == myId,
+      );
+      if (myIndexInList != -1) {
+        final updatedList = List<UserStoriesModel>.from(currentList);
+        updatedList[myIndexInList] = updatedList[myIndexInList].copyWith(
+          name: event.name,
+          image: event.image,
+        );
+        emit(state.copyWith(storiesList: updatedList));
+      }
+
+      // 3. Update in mySpecialStories (My Profile)
+      final currentMySpecialList = state.mySpecialStories;
+      final myIndexInMySpecial = currentMySpecialList.indexWhere(
+        (us) => us.userId == myId,
+      );
+      if (myIndexInMySpecial != -1) {
+        final updatedList = List<UserStoriesModel>.from(currentMySpecialList);
+        updatedList[myIndexInMySpecial] = updatedList[myIndexInMySpecial].copyWith(
+          name: event.name,
+          image: event.image,
+        );
+        emit(state.copyWith(mySpecialStories: updatedList));
+      }
+
+      // 4. Update in advisorSpecialStories (Other Advisor Profile)
+      final currentAdvisorSpecialList = state.advisorSpecialStories;
+      final myIndexInAdvisorSpecial = currentAdvisorSpecialList.indexWhere(
+        (us) => us.userId == myId,
+      );
+      if (myIndexInAdvisorSpecial != -1) {
+        final updatedList = List<UserStoriesModel>.from(currentAdvisorSpecialList);
+        updatedList[myIndexInAdvisorSpecial] = updatedList[myIndexInAdvisorSpecial].copyWith(
+          name: event.name,
+          image: event.image,
+        );
+        emit(state.copyWith(advisorSpecialStories: updatedList));
+      }
+    });
   }
 
   @override
   Future<void> close() {
     _myStoriesSub?.cancel();
     _uploadSub?.cancel();
+    _profileSub.cancel();
     return super.close();
   }
 
@@ -45,14 +108,47 @@ class StoriesCubit extends Cubit<StoriesState> {
     bool isSilent = false,
     required BuildContext context,
   }) async {
-    final effectiveAdvisorId = advisorId ?? state.advisorId;
-    final effectiveIsSpecial = isSpecial ?? state.isSpecial;
+    final bool effectiveIsSpecial =
+        isSpecial ?? (loadMore ? state.isSpecial : false);
+    final String? effectiveAdvisorId =
+        loadMore ? (advisorId ?? state.advisorId) : advisorId;
+
+    // Determine target state fields based on whether it's My Profile or Advisor Profile
+    final bool isMySpecialProfile =
+        effectiveIsSpecial && effectiveAdvisorId == null;
+    final bool isOtherAdvisorProfile =
+        effectiveIsSpecial && effectiveAdvisorId != null;
 
     if (loadMore) {
-      if (state.isLoadingMore || !state.hasMore) return;
-      emit(state.copyWith(isLoadingMore: true));
+      final bool isLoading = isMySpecialProfile
+          ? state.mySpecialIsLoadingMore
+          : (isOtherAdvisorProfile
+              ? state.advisorSpecialIsLoadingMore
+              : state.isLoadingMore);
 
-      final nextPage = state.currentPage + 1;
+      final bool hasMore = isMySpecialProfile
+          ? state.mySpecialHasMore
+          : (isOtherAdvisorProfile
+              ? state.advisorSpecialHasMore
+              : state.hasMore);
+
+      if (isLoading || !hasMore) return;
+
+      if (isMySpecialProfile) {
+        emit(state.copyWith(mySpecialIsLoadingMore: true));
+      } else if (isOtherAdvisorProfile) {
+        emit(state.copyWith(advisorSpecialIsLoadingMore: true));
+      } else {
+        emit(state.copyWith(isLoadingMore: true));
+      }
+
+      final int nextPage = (isMySpecialProfile
+              ? state.mySpecialCurrentPage
+              : (isOtherAdvisorProfile
+                  ? state.advisorSpecialCurrentPage
+                  : state.currentPage)) +
+          1;
+
       final result = await storiesRepository.fetchStories(
         page: nextPage,
         limit: pageSize,
@@ -63,39 +159,82 @@ class StoriesCubit extends Cubit<StoriesState> {
 
       result.fold(
         (failure) {
-          emit(
-            state.copyWith(
-              isLoadingMore: false,
-              storiesMessage: failure.message,
-            ),
-          );
+          emit(state.copyWith(
+            isLoadingMore: false,
+            mySpecialIsLoadingMore: false,
+            advisorSpecialIsLoadingMore: false,
+            storiesMessage: failure.message,
+          ));
         },
         (newStories) {
-          final updatedList = [...state.storiesList, ...newStories];
-          emit(
-            state.copyWith(
-              storiesList: updatedList,
+          if (isMySpecialProfile) {
+            emit(state.copyWith(
+              mySpecialStories: [...state.mySpecialStories, ...newStories],
+              mySpecialCurrentPage: nextPage,
+              mySpecialHasMore: newStories.length >= pageSize,
+              mySpecialIsLoadingMore: false,
+              isSpecial: true,
+              advisorId: null,
+            ));
+          } else if (isOtherAdvisorProfile) {
+            emit(state.copyWith(
+              advisorSpecialStories: [
+                ...state.advisorSpecialStories,
+                ...newStories
+              ],
+              advisorSpecialCurrentPage: nextPage,
+              advisorSpecialHasMore: newStories.length >= pageSize,
+              advisorSpecialIsLoadingMore: false,
+              isSpecial: true,
+              advisorId: effectiveAdvisorId,
+              activeAdvisorId: effectiveAdvisorId,
+            ));
+          } else {
+            emit(state.copyWith(
+              storiesList: [...state.storiesList, ...newStories],
               currentPage: nextPage,
               hasMore: newStories.length >= pageSize,
               isLoadingMore: false,
+              isSpecial: false,
               advisorId: effectiveAdvisorId,
-              isSpecial: effectiveIsSpecial,
-            ),
-          );
+            ));
+          }
         },
       );
     } else {
+      // ── FRESH FETCH ──
       if (!isSilent) {
-        emit(
-          state.copyWith(
+        if (isMySpecialProfile) {
+          emit(state.copyWith(
+            mySpecialStoriesState: CubitStates.loading,
+            mySpecialCurrentPage: 1,
+            mySpecialHasMore: true,
+            mySpecialStories: const [],
+            isSpecial: true,
+            advisorId: null,
+          ));
+        } else if (isOtherAdvisorProfile) {
+          emit(state.copyWith(
+            advisorSpecialStoriesState: CubitStates.loading,
+            advisorSpecialCurrentPage: 1,
+            advisorSpecialHasMore: true,
+            advisorSpecialStories: const [],
+            isSpecial: true,
+            advisorId: effectiveAdvisorId,
+            activeAdvisorId: effectiveAdvisorId,
+          ));
+        } else {
+          emit(state.copyWith(
             storiesState: CubitStates.loading,
             currentPage: 1,
             hasMore: true,
-            advisorId: advisorId,
-            isSpecial: isSpecial,
-          ),
-        );
+            storiesList: const [],
+            isSpecial: false,
+            advisorId: effectiveAdvisorId,
+          ));
+        }
       }
+
       final result = await storiesRepository.fetchStories(
         page: 1,
         limit: pageSize,
@@ -103,26 +242,63 @@ class StoriesCubit extends Cubit<StoriesState> {
         isSpecial: effectiveIsSpecial,
         context: context,
       );
+
       result.fold(
         (failure) {
-          emit(
-            state.copyWith(
+          if (isMySpecialProfile) {
+            emit(state.copyWith(
+              mySpecialStoriesState: CubitStates.failure,
+              storiesMessage: failure.message,
+              isSpecial: true,
+              advisorId: null,
+            ));
+          } else if (isOtherAdvisorProfile) {
+            emit(state.copyWith(
+              advisorSpecialStoriesState: CubitStates.failure,
+              storiesMessage: failure.message,
+              isSpecial: true,
+              advisorId: effectiveAdvisorId,
+              activeAdvisorId: effectiveAdvisorId,
+            ));
+          } else {
+            emit(state.copyWith(
               storiesState: CubitStates.failure,
               storiesMessage: failure.message,
-            ),
-          );
-        },
-        (storiesList) {
-          emit(
-            state.copyWith(
-              storiesState: CubitStates.success,
-              storiesList: storiesList,
-              currentPage: 1,
-              hasMore: storiesList.length >= pageSize,
+              isSpecial: false,
               advisorId: effectiveAdvisorId,
-              isSpecial: effectiveIsSpecial,
-            ),
-          );
+            ));
+          }
+        },
+        (storiesFetched) {
+          if (isMySpecialProfile) {
+            emit(state.copyWith(
+              mySpecialStoriesState: CubitStates.success,
+              mySpecialStories: storiesFetched,
+              mySpecialCurrentPage: 1,
+              mySpecialHasMore: storiesFetched.length >= pageSize,
+              isSpecial: true,
+              advisorId: null,
+            ));
+          } else if (isOtherAdvisorProfile) {
+            emit(state.copyWith(
+              advisorSpecialStoriesState: CubitStates.success,
+              advisorSpecialStories: storiesFetched,
+              advisorSpecialCurrentPage: 1,
+              advisorSpecialHasMore: storiesFetched.length >= pageSize,
+              isSpecial: true,
+              advisorId: effectiveAdvisorId,
+              activeAdvisorId: effectiveAdvisorId,
+            ));
+          } else {
+            emit(state.copyWith(
+              storiesState: CubitStates.success,
+              storiesList: storiesFetched,
+              currentPage: 1,
+              hasMore: storiesFetched.length >= pageSize,
+              isSpecial: false,
+              advisorId: effectiveAdvisorId,
+            ));
+          }
         },
       );
     }
@@ -145,17 +321,35 @@ class StoriesCubit extends Cubit<StoriesState> {
       (failure) {
         debugPrint('Silent story fetch failed: ${failure.message}');
       },
-      (storiesList) {
-        emit(
-          state.copyWith(
+      (storiesFetched) {
+        final bool isMySpecialProfile =
+            effectiveIsSpecial && effectiveAdvisorId == null;
+        final bool isOtherAdvisorProfile =
+            effectiveIsSpecial && effectiveAdvisorId != null;
+
+        if (isMySpecialProfile) {
+          emit(state.copyWith(
+            mySpecialStoriesState: CubitStates.success,
+            mySpecialStories: storiesFetched,
+            mySpecialCurrentPage: 1,
+            mySpecialHasMore: storiesFetched.length >= pageSize,
+          ));
+        } else if (isOtherAdvisorProfile) {
+          emit(state.copyWith(
+            advisorSpecialStoriesState: CubitStates.success,
+            advisorSpecialStories: storiesFetched,
+            advisorSpecialCurrentPage: 1,
+            advisorSpecialHasMore: storiesFetched.length >= pageSize,
+            activeAdvisorId: effectiveAdvisorId,
+          ));
+        } else {
+          emit(state.copyWith(
             storiesState: CubitStates.success,
-            storiesList: storiesList,
+            storiesList: storiesFetched,
             currentPage: 1,
-            hasMore: storiesList.length >= pageSize,
-            advisorId: effectiveAdvisorId,
-            isSpecial: effectiveIsSpecial,
-          ),
-        );
+            hasMore: storiesFetched.length >= pageSize,
+          ));
+        }
       },
     );
     // Also refresh my own stories silently
@@ -204,20 +398,49 @@ class StoriesCubit extends Cubit<StoriesState> {
     );
   }
 
-  void _syncMyStoriesIntoMainList(UserStoriesModel myStories) {
-    if (state.isSpecial == true) return;
-
-    final myUserId = myStories.userId;
+  void _syncMyStoriesIntoMainList(UserStoriesModel myUserStories) {
+    final myUserId = myUserStories.userId;
     if (myUserId.isEmpty) return;
 
+    // 1. Sync into Home List
     final currentList = state.storiesList;
     final myIndex = currentList.indexWhere((us) => us.userId == myUserId);
+    List<UserStoriesModel>? updatedHomeList;
 
-    if (myIndex == -1) return; // advisor not in the public list — fine
+    if (myIndex != -1) {
+      updatedHomeList = List<UserStoriesModel>.from(currentList);
+      updatedHomeList[myIndex] = myUserStories;
+    }
 
-    final updatedList = List<UserStoriesModel>.from(currentList);
-    updatedList[myIndex] = myStories;
-    emit(state.copyWith(storiesList: updatedList));
+    // 2. Sync into My Special List (My Profile)
+    final currentMySpecialList = state.mySpecialStories;
+    final mySpecialIndex =
+        currentMySpecialList.indexWhere((us) => us.userId == myUserId);
+    List<UserStoriesModel>? updatedMySpecialList;
+
+    if (mySpecialIndex != -1) {
+      updatedMySpecialList = List<UserStoriesModel>.from(currentMySpecialList);
+      updatedMySpecialList[mySpecialIndex] = myUserStories;
+    }
+
+    // 3. Sync into Advisor Special List (if I'm viewing myself as advisor)
+    final currentAdvisorSpecialList = state.advisorSpecialStories;
+    final advisorSpecialIndex =
+        currentAdvisorSpecialList.indexWhere((us) => us.userId == myUserId);
+    List<UserStoriesModel>? updatedAdvisorSpecialList;
+
+    if (advisorSpecialIndex != -1) {
+      updatedAdvisorSpecialList =
+          List<UserStoriesModel>.from(currentAdvisorSpecialList);
+      updatedAdvisorSpecialList[advisorSpecialIndex] = myUserStories;
+    }
+
+    emit(state.copyWith(
+      storiesList: updatedHomeList ?? state.storiesList,
+      mySpecialStories: updatedMySpecialList ?? state.mySpecialStories,
+      advisorSpecialStories:
+          updatedAdvisorSpecialList ?? state.advisorSpecialStories,
+    ));
   }
 
   void markStoryAsViewed({required String storyId, required String userId}) {
@@ -279,9 +502,66 @@ class StoriesCubit extends Cubit<StoriesState> {
       }
     }
 
+    // ── 3. Update mySpecialStories (My Profile) ───────────────────────────
+    List<UserStoriesModel>? updatedMySpecialList;
+    final mySpecialIndex = state.mySpecialStories.indexWhere(
+      (us) => us.userId == userId,
+    );
+    if (mySpecialIndex != -1) {
+      final userStory = state.mySpecialStories[mySpecialIndex];
+      final storyIndex = userStory.stories.indexWhere((s) => s.id == storyId);
+      if (storyIndex != -1) {
+        final story = userStory.stories[storyIndex];
+        final List<StoryModel> updatedStories = List.from(userStory.stories);
+        if (!story.isViewedByMe) {
+          updatedStories[storyIndex] = story.copyWith(
+            isViewedByMe: true,
+            viewsCount: story.viewsCount == 0 ? 1 : story.viewsCount,
+          );
+        }
+        final allViewed = updatedStories.every((s) => s.isViewedByMe);
+        updatedMySpecialList = List.from(state.mySpecialStories);
+        updatedMySpecialList[mySpecialIndex] = userStory.copyWith(
+          stories: updatedStories,
+          allViewed: allViewed,
+          isViewedByMe: true,
+        );
+      }
+    }
+
+    // ── 4. Update advisorSpecialStories (Other Advisor Profile) ────────────
+    List<UserStoriesModel>? updatedAdvisorSpecialList;
+    final advisorSpecialIndex = state.advisorSpecialStories.indexWhere(
+      (us) => us.userId == userId,
+    );
+    if (advisorSpecialIndex != -1) {
+      final userStory = state.advisorSpecialStories[advisorSpecialIndex];
+      final storyIndex = userStory.stories.indexWhere((s) => s.id == storyId);
+      if (storyIndex != -1) {
+        final story = userStory.stories[storyIndex];
+        final List<StoryModel> updatedStories = List.from(userStory.stories);
+        if (!story.isViewedByMe) {
+          updatedStories[storyIndex] = story.copyWith(
+            isViewedByMe: true,
+            viewsCount: story.viewsCount == 0 ? 1 : story.viewsCount,
+          );
+        }
+        final allViewed = updatedStories.every((s) => s.isViewedByMe);
+        updatedAdvisorSpecialList = List.from(state.advisorSpecialStories);
+        updatedAdvisorSpecialList[advisorSpecialIndex] = userStory.copyWith(
+          stories: updatedStories,
+          allViewed: allViewed,
+          isViewedByMe: true,
+        );
+      }
+    }
+
     emit(
       state.copyWith(
         storiesList: updatedList ?? state.storiesList,
+        mySpecialStories: updatedMySpecialList ?? state.mySpecialStories,
+        advisorSpecialStories:
+            updatedAdvisorSpecialList ?? state.advisorSpecialStories,
         myStories: updatedMyStories ?? state.myStories,
       ),
     );
@@ -295,6 +575,18 @@ class StoriesCubit extends Cubit<StoriesState> {
           .where((s) => s.id == storyId)
           .firstOrNull;
     }
+    originalStory ??= state.mySpecialStories
+        .where((us) => us.userId == userId)
+        .firstOrNull
+        ?.stories
+        .where((s) => s.id == storyId)
+        .firstOrNull;
+    originalStory ??= state.advisorSpecialStories
+        .where((us) => us.userId == userId)
+        .firstOrNull
+        ?.stories
+        .where((s) => s.id == storyId)
+        .firstOrNull;
     originalStory ??= state.myStories?.stories
         .where((s) => s.id == storyId)
         .firstOrNull;
@@ -330,28 +622,74 @@ class StoriesCubit extends Cubit<StoriesState> {
       }
     }
 
-    // ── Also update myStories if this story is mine ────────────────────────
-    UserStoriesModel? updatedMyStories;
-    if (isMine && state.myStories != null) {
-      final myStories = state.myStories!;
-      final myStoryIndex =
-          myStories.stories.indexWhere((s) => s.id == storyId);
-      if (myStoryIndex != -1) {
-        final story = myStories.stories[myStoryIndex];
-        final updatedStories = List<StoryModel>.from(myStories.stories);
-        updatedStories[myStoryIndex] = story.copyWith(
+    // ── 3. Update mySpecialStories (My Profile) ───────────────────────────
+    List<UserStoriesModel>? updatedMySpecialList;
+    final mySpecialIndex = state.mySpecialStories.indexWhere(
+      (us) => us.userId == userId,
+    );
+    if (mySpecialIndex != -1) {
+      final userStory = state.mySpecialStories[mySpecialIndex];
+      final storyIndex = userStory.stories.indexWhere((s) => s.id == storyId);
+      if (storyIndex != -1) {
+        final story = userStory.stories[storyIndex];
+        final updatedStories = List<StoryModel>.from(userStory.stories);
+        updatedStories[storyIndex] = story.copyWith(
           isLiked: !story.isLiked,
           likesCount:
               story.isLiked ? story.likesCount - 1 : story.likesCount + 1,
         );
-        updatedMyStories = myStories.copyWith(stories: updatedStories);
+        updatedMySpecialList = List.from(state.mySpecialStories);
+        updatedMySpecialList[mySpecialIndex] =
+            userStory.copyWith(stories: updatedStories);
+      }
+    }
+
+    // ── 4. Update advisorSpecialStories (Other Advisor Profile) ────────────
+    List<UserStoriesModel>? updatedAdvisorSpecialList;
+    final advisorSpecialIndex = state.advisorSpecialStories.indexWhere(
+      (us) => us.userId == userId,
+    );
+    if (advisorSpecialIndex != -1) {
+      final userStory = state.advisorSpecialStories[advisorSpecialIndex];
+      final storyIndex = userStory.stories.indexWhere((s) => s.id == storyId);
+      if (storyIndex != -1) {
+        final story = userStory.stories[storyIndex];
+        final updatedStories = List<StoryModel>.from(userStory.stories);
+        updatedStories[storyIndex] = story.copyWith(
+          isLiked: !story.isLiked,
+          likesCount:
+              story.isLiked ? story.likesCount - 1 : story.likesCount + 1,
+        );
+        updatedAdvisorSpecialList = List.from(state.advisorSpecialStories);
+        updatedAdvisorSpecialList[advisorSpecialIndex] =
+            userStory.copyWith(stories: updatedStories);
+      }
+    }
+
+    // ── 5. Update myStories (for self-story ring) ─────────────────────────
+    UserStoriesModel? updatedMyStories = state.myStories;
+    if (isMine && updatedMyStories != null) {
+      final storyIndex =
+          updatedMyStories.stories.indexWhere((s) => s.id == storyId);
+      if (storyIndex != -1) {
+        final story = updatedMyStories.stories[storyIndex];
+        final updatedStories = List<StoryModel>.from(updatedMyStories.stories);
+        updatedStories[storyIndex] = story.copyWith(
+          isLiked: !story.isLiked,
+          likesCount:
+              story.isLiked ? story.likesCount - 1 : story.likesCount + 1,
+        );
+        updatedMyStories = updatedMyStories.copyWith(stories: updatedStories);
       }
     }
 
     emit(
       state.copyWith(
         storiesList: updatedList ?? state.storiesList,
-        myStories: updatedMyStories ?? state.myStories,
+        mySpecialStories: updatedMySpecialList ?? state.mySpecialStories,
+        advisorSpecialStories:
+            updatedAdvisorSpecialList ?? state.advisorSpecialStories,
+        myStories: updatedMyStories,
       ),
     );
     storiesRepository.likeStory(storyId: storyId);
@@ -372,27 +710,72 @@ class StoriesCubit extends Cubit<StoriesState> {
         }
       },
       (_) {
+        // 1. Update storiesList (Home)
         final userStoryIndex = state.storiesList.indexWhere(
           (us) => us.userId == userId,
         );
-        if (userStoryIndex == -1) return;
-
-        final userStory = state.storiesList[userStoryIndex];
-        final updatedStories = userStory.stories
-            .where((s) => s.id != storyId)
-            .toList();
-
-        final updatedList = List<UserStoriesModel>.from(state.storiesList);
-        if (updatedStories.isEmpty) {
-          updatedList.removeAt(userStoryIndex);
-        } else {
-          updatedList[userStoryIndex] = userStory.copyWith(
-            stories: updatedStories,
-            storiesCount: updatedStories.length,
-          );
+        List<UserStoriesModel>? updatedList;
+        if (userStoryIndex != -1) {
+          final userStory = state.storiesList[userStoryIndex];
+          final updatedStories =
+              userStory.stories.where((s) => s.id != storyId).toList();
+          updatedList = List<UserStoriesModel>.from(state.storiesList);
+          if (updatedStories.isEmpty) {
+            updatedList.removeAt(userStoryIndex);
+          } else {
+            updatedList[userStoryIndex] = userStory.copyWith(
+              stories: updatedStories,
+              storiesCount: updatedStories.length,
+            );
+          }
         }
 
-        emit(state.copyWith(storiesList: updatedList));
+        // 2. Update mySpecialStories (My Profile)
+        final mySpecialIndex = state.mySpecialStories.indexWhere(
+          (us) => us.userId == userId,
+        );
+        List<UserStoriesModel>? updatedMySpecialList;
+        if (mySpecialIndex != -1) {
+          final userStory = state.mySpecialStories[mySpecialIndex];
+          final updatedStories =
+              userStory.stories.where((s) => s.id != storyId).toList();
+          updatedMySpecialList = List<UserStoriesModel>.from(state.mySpecialStories);
+          if (updatedStories.isEmpty) {
+            updatedMySpecialList.removeAt(mySpecialIndex);
+          } else {
+            updatedMySpecialList[mySpecialIndex] = userStory.copyWith(
+              stories: updatedStories,
+              storiesCount: updatedStories.length,
+            );
+          }
+        }
+
+        // 3. Update advisorSpecialStories (Other Advisor Profile)
+        final advisorSpecialIndex = state.advisorSpecialStories.indexWhere(
+          (us) => us.userId == userId,
+        );
+        List<UserStoriesModel>? updatedAdvisorSpecialList;
+        if (advisorSpecialIndex != -1) {
+          final userStory = state.advisorSpecialStories[advisorSpecialIndex];
+          final updatedStories =
+              userStory.stories.where((s) => s.id != storyId).toList();
+          updatedAdvisorSpecialList = List<UserStoriesModel>.from(state.advisorSpecialStories);
+          if (updatedStories.isEmpty) {
+            updatedAdvisorSpecialList.removeAt(advisorSpecialIndex);
+          } else {
+            updatedAdvisorSpecialList[advisorSpecialIndex] = userStory.copyWith(
+              stories: updatedStories,
+              storiesCount: updatedStories.length,
+            );
+          }
+        }
+
+        emit(state.copyWith(
+          storiesList: updatedList ?? state.storiesList,
+          mySpecialStories: updatedMySpecialList ?? state.mySpecialStories,
+          advisorSpecialStories: updatedAdvisorSpecialList ?? state.advisorSpecialStories,
+        ));
+
         if (context.mounted) {
           AppToast.success(context, context.tr('story_deleted_success'));
         }
@@ -420,26 +803,74 @@ class StoriesCubit extends Cubit<StoriesState> {
       },
       (_) {
         if (isArchive) {
+          // 1. Update storiesList (Home)
           final userStoryIndex = state.storiesList.indexWhere(
             (us) => us.userId == userId,
           );
-          if (userStoryIndex == -1) return;
-
-          final userStory = state.storiesList[userStoryIndex];
-          final updatedStories = userStory.stories
-              .where((s) => s.id != storyId)
-              .toList();
-
-          final updatedList = List<UserStoriesModel>.from(state.storiesList);
-          if (updatedStories.isEmpty) {
-            updatedList.removeAt(userStoryIndex);
-          } else {
-            updatedList[userStoryIndex] = userStory.copyWith(
-              stories: updatedStories,
-              storiesCount: updatedStories.length,
-            );
+          List<UserStoriesModel>? updatedList;
+          if (userStoryIndex != -1) {
+            final userStory = state.storiesList[userStoryIndex];
+            final updatedStories =
+                userStory.stories.where((s) => s.id != storyId).toList();
+            updatedList = List<UserStoriesModel>.from(state.storiesList);
+            if (updatedStories.isEmpty) {
+              updatedList.removeAt(userStoryIndex);
+            } else {
+              updatedList[userStoryIndex] = userStory.copyWith(
+                stories: updatedStories,
+                storiesCount: updatedStories.length,
+              );
+            }
           }
-          emit(state.copyWith(storiesList: updatedList));
+
+          // 2. Update mySpecialStories (My Profile)
+          final mySpecialIndex = state.mySpecialStories.indexWhere(
+            (us) => us.userId == userId,
+          );
+          List<UserStoriesModel>? updatedMySpecialList;
+          if (mySpecialIndex != -1) {
+            final userStory = state.mySpecialStories[mySpecialIndex];
+            final updatedStories =
+                userStory.stories.where((s) => s.id != storyId).toList();
+            updatedMySpecialList = List<UserStoriesModel>.from(state.mySpecialStories);
+            if (updatedStories.isEmpty) {
+              updatedMySpecialList.removeAt(mySpecialIndex);
+            } else {
+              updatedMySpecialList[mySpecialIndex] = userStory.copyWith(
+                stories: updatedStories,
+                storiesCount: updatedStories.length,
+              );
+            }
+          }
+
+          // 3. Update advisorSpecialStories (Other Advisor Profile)
+          final advisorSpecialIndex = state.advisorSpecialStories.indexWhere(
+            (us) => us.userId == userId,
+          );
+          List<UserStoriesModel>? updatedAdvisorSpecialList;
+          if (advisorSpecialIndex != -1) {
+            final userStory = state.advisorSpecialStories[advisorSpecialIndex];
+            final updatedStories =
+                userStory.stories.where((s) => s.id != storyId).toList();
+            updatedAdvisorSpecialList =
+                List<UserStoriesModel>.from(state.advisorSpecialStories);
+            if (updatedStories.isEmpty) {
+              updatedAdvisorSpecialList.removeAt(advisorSpecialIndex);
+            } else {
+              updatedAdvisorSpecialList[advisorSpecialIndex] = userStory.copyWith(
+                stories: updatedStories,
+                storiesCount: updatedStories.length,
+              );
+            }
+          }
+
+          emit(state.copyWith(
+            storiesList: updatedList ?? state.storiesList,
+            mySpecialStories: updatedMySpecialList ?? state.mySpecialStories,
+            advisorSpecialStories:
+                updatedAdvisorSpecialList ?? state.advisorSpecialStories,
+          ));
+
           if (context.mounted) {
             AppToast.success(context, context.tr('story_archived_success'));
           }
@@ -464,16 +895,16 @@ class StoriesCubit extends Cubit<StoriesState> {
         return Left(failure);
       },
       (_) {
+        // 1. Update storiesList (Home)
         final userStoryIndex = state.storiesList.indexWhere(
           (us) => us.userId == userId,
         );
+        List<UserStoriesModel>? updatedList;
         if (userStoryIndex != -1) {
           final userStory = state.storiesList[userStoryIndex];
-          final updatedStories = userStory.stories
-              .where((s) => s.id != storyId)
-              .toList();
-
-          final updatedList = List<UserStoriesModel>.from(state.storiesList);
+          final updatedStories =
+              userStory.stories.where((s) => s.id != storyId).toList();
+          updatedList = List<UserStoriesModel>.from(state.storiesList);
           if (updatedStories.isEmpty) {
             updatedList.removeAt(userStoryIndex);
           } else {
@@ -482,8 +913,56 @@ class StoriesCubit extends Cubit<StoriesState> {
               storiesCount: updatedStories.length,
             );
           }
-          emit(state.copyWith(storiesList: updatedList));
         }
+
+        // 2. Update mySpecialStories (My Profile)
+        final mySpecialIndex = state.mySpecialStories.indexWhere(
+          (us) => us.userId == userId,
+        );
+        List<UserStoriesModel>? updatedMySpecialList;
+        if (mySpecialIndex != -1) {
+          final userStory = state.mySpecialStories[mySpecialIndex];
+          final updatedStories =
+              userStory.stories.where((s) => s.id != storyId).toList();
+          updatedMySpecialList = List<UserStoriesModel>.from(state.mySpecialStories);
+          if (updatedStories.isEmpty) {
+            updatedMySpecialList.removeAt(mySpecialIndex);
+          } else {
+            updatedMySpecialList[mySpecialIndex] = userStory.copyWith(
+              stories: updatedStories,
+              storiesCount: updatedStories.length,
+            );
+          }
+        }
+
+        // 3. Update advisorSpecialStories (Other Advisor Profile)
+        final advisorSpecialIndex = state.advisorSpecialStories.indexWhere(
+          (us) => us.userId == userId,
+        );
+        List<UserStoriesModel>? updatedAdvisorSpecialList;
+        if (advisorSpecialIndex != -1) {
+          final userStory = state.advisorSpecialStories[advisorSpecialIndex];
+          final updatedStories =
+              userStory.stories.where((s) => s.id != storyId).toList();
+          updatedAdvisorSpecialList =
+              List<UserStoriesModel>.from(state.advisorSpecialStories);
+          if (updatedStories.isEmpty) {
+            updatedAdvisorSpecialList.removeAt(advisorSpecialIndex);
+          } else {
+            updatedAdvisorSpecialList[advisorSpecialIndex] = userStory.copyWith(
+              stories: updatedStories,
+              storiesCount: updatedStories.length,
+            );
+          }
+        }
+
+        emit(state.copyWith(
+          storiesList: updatedList ?? state.storiesList,
+          mySpecialStories: updatedMySpecialList ?? state.mySpecialStories,
+          advisorSpecialStories:
+              updatedAdvisorSpecialList ?? state.advisorSpecialStories,
+        ));
+
         if (context.mounted) {
           AppToast.success(context, context.tr('story_hidden_success'));
         }
@@ -507,26 +986,68 @@ class StoriesCubit extends Cubit<StoriesState> {
         }
       },
       (_) {
+        // 1. Update storiesList (Home)
         final userStoryIndex = state.storiesList.indexWhere(
           (us) => us.userId == userId,
         );
-        if (userStoryIndex == -1) return;
+        List<UserStoriesModel>? updatedList;
+        if (userStoryIndex != -1) {
+          final userStory = state.storiesList[userStoryIndex];
+          final storyIndex = userStory.stories.indexWhere((s) => s.id == storyId);
+          if (storyIndex != -1) {
+            final updatedStories = List<StoryModel>.from(userStory.stories);
+            updatedStories[storyIndex] =
+                updatedStories[storyIndex].copyWith(isSpecial: true);
+            updatedList = List<UserStoriesModel>.from(state.storiesList);
+            updatedList[userStoryIndex] =
+                userStory.copyWith(stories: updatedStories);
+          }
+        }
 
-        final userStory = state.storiesList[userStoryIndex];
-        final storyIndex = userStory.stories.indexWhere((s) => s.id == storyId);
-        if (storyIndex == -1) return;
-
-        final updatedStories = List<StoryModel>.from(userStory.stories);
-        updatedStories[storyIndex] = updatedStories[storyIndex].copyWith(
-          isSpecial: true,
+        // 2. Update mySpecialStories (My Profile)
+        final mySpecialIndex = state.mySpecialStories.indexWhere(
+          (us) => us.userId == userId,
         );
+        List<UserStoriesModel>? updatedMySpecialList;
+        if (mySpecialIndex != -1) {
+          final userStory = state.mySpecialStories[mySpecialIndex];
+          final storyIndex = userStory.stories.indexWhere((s) => s.id == storyId);
+          if (storyIndex != -1) {
+            final updatedStories = List<StoryModel>.from(userStory.stories);
+            updatedStories[storyIndex] =
+                updatedStories[storyIndex].copyWith(isSpecial: true);
+            updatedMySpecialList = List<UserStoriesModel>.from(state.mySpecialStories);
+            updatedMySpecialList[mySpecialIndex] =
+                userStory.copyWith(stories: updatedStories);
+          }
+        }
 
-        final List<UserStoriesModel> updatedList = List.from(state.storiesList);
-        updatedList[userStoryIndex] = userStory.copyWith(
-          stories: updatedStories,
+        // 3. Update advisorSpecialStories (Other Advisor Profile)
+        final advisorSpecialIndex = state.advisorSpecialStories.indexWhere(
+          (us) => us.userId == userId,
         );
+        List<UserStoriesModel>? updatedAdvisorSpecialList;
+        if (advisorSpecialIndex != -1) {
+          final userStory = state.advisorSpecialStories[advisorSpecialIndex];
+          final storyIndex = userStory.stories.indexWhere((s) => s.id == storyId);
+          if (storyIndex != -1) {
+            final updatedStories = List<StoryModel>.from(userStory.stories);
+            updatedStories[storyIndex] =
+                updatedStories[storyIndex].copyWith(isSpecial: true);
+            updatedAdvisorSpecialList =
+                List<UserStoriesModel>.from(state.advisorSpecialStories);
+            updatedAdvisorSpecialList[advisorSpecialIndex] =
+                userStory.copyWith(stories: updatedStories);
+          }
+        }
 
-        emit(state.copyWith(storiesList: updatedList));
+        emit(state.copyWith(
+          storiesList: updatedList ?? state.storiesList,
+          mySpecialStories: updatedMySpecialList ?? state.mySpecialStories,
+          advisorSpecialStories:
+              updatedAdvisorSpecialList ?? state.advisorSpecialStories,
+        ));
+
         if (context.mounted) {
           AppToast.success(context, context.tr('story_special_success'));
         }
@@ -591,36 +1112,82 @@ class StoriesCubit extends Cubit<StoriesState> {
         // ── Optimistically add the new story to state ──────────────────────
         final myUserId = kCurrentUserData?.id;
         if (myUserId != null) {
-          if (state.isSpecial != true) {
-            // Update main storiesList
-            final currentList = List<UserStoriesModel>.from(state.storiesList);
-            final myStoryIndex = currentList.indexWhere(
-              (userStory) => userStory.userId == myUserId,
+          // 1. Update main storiesList
+          final currentList = List<UserStoriesModel>.from(state.storiesList);
+          final myStoryIndex = currentList.indexWhere(
+            (userStory) => userStory.userId == myUserId,
+          );
+          if (myStoryIndex != -1) {
+            final myUserStory = currentList[myStoryIndex];
+            final updatedStories = [createdStory, ...myUserStory.stories];
+            currentList[myStoryIndex] = myUserStory.copyWith(
+              stories: updatedStories,
+              storiesCount: updatedStories.length,
             );
-            if (myStoryIndex != -1) {
-              final myUserStory = currentList[myStoryIndex];
-              final updatedStories = [createdStory, ...myUserStory.stories];
-              currentList[myStoryIndex] = myUserStory.copyWith(
-                stories: updatedStories,
-                storiesCount: updatedStories.length,
-              );
-            } else {
-              final newUserStory = UserStoriesModel(
-                userId: myUserId,
-                name: kCurrentUserData?.name ?? '',
-                image: kCurrentUserData?.image ?? '',
-                isFollowed: false,
-                isViewedByMe: false,
-                allViewed: false,
-                storiesCount: 1,
-                stories: [createdStory],
-              );
-              currentList.insert(0, newUserStory);
-            }
-            emit(state.copyWith(storiesList: currentList));
+          } else {
+            final newUserStory = UserStoriesModel(
+              userId: myUserId,
+              name: kCurrentUserData?.name ?? '',
+              image: kCurrentUserData?.image ?? '',
+              isFollowed: false,
+              isViewedByMe: false,
+              allViewed: false,
+              storiesCount: 1,
+              stories: [createdStory],
+            );
+            currentList.insert(0, newUserStory);
           }
 
-          // ── Also update myStories optimistically ──────────────────────────
+          // 2. Update mySpecialStories (My Profile)
+          final currentMySpecialList =
+              List<UserStoriesModel>.from(state.mySpecialStories);
+          final mySpecialIndex = currentMySpecialList.indexWhere(
+            (userStory) => userStory.userId == myUserId,
+          );
+          if (mySpecialIndex != -1) {
+            final myUserStory = currentMySpecialList[mySpecialIndex];
+            final updatedStories = [createdStory, ...myUserStory.stories];
+            currentMySpecialList[mySpecialIndex] = myUserStory.copyWith(
+              stories: updatedStories,
+              storiesCount: updatedStories.length,
+            );
+          } else if (state.isSpecial && state.advisorId == null) {
+            // If we are on my profile and list is empty or doesn't have me yet
+            final newUserStory = UserStoriesModel(
+              userId: myUserId,
+              name: kCurrentUserData?.name ?? '',
+              image: kCurrentUserData?.image ?? '',
+              isFollowed: false,
+              isViewedByMe: false,
+              allViewed: false,
+              storiesCount: 1,
+              stories: [createdStory],
+            );
+            currentMySpecialList.insert(0, newUserStory);
+          }
+
+          // 3. Update advisorSpecialStories (Advisor Profile)
+          final currentAdvisorSpecialList =
+              List<UserStoriesModel>.from(state.advisorSpecialStories);
+          final advisorSpecialIndex = currentAdvisorSpecialList.indexWhere(
+            (userStory) => userStory.userId == myUserId,
+          );
+          if (advisorSpecialIndex != -1) {
+            final myUserStory = currentAdvisorSpecialList[advisorSpecialIndex];
+            final updatedStories = [createdStory, ...myUserStory.stories];
+            currentAdvisorSpecialList[advisorSpecialIndex] = myUserStory.copyWith(
+              stories: updatedStories,
+              storiesCount: updatedStories.length,
+            );
+          }
+
+          emit(state.copyWith(
+            storiesList: currentList,
+            mySpecialStories: currentMySpecialList,
+            advisorSpecialStories: currentAdvisorSpecialList,
+          ));
+
+          // 4. Also update myStories optimistically
           final currentMyStories = state.myStories;
           if (currentMyStories != null) {
             final updatedMyStories = currentMyStories.copyWith(

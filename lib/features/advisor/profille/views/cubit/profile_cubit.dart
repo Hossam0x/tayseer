@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:tayseer/core/utils/profile_event_bus.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/functions/set_advisor_status.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
@@ -11,8 +13,55 @@ class ProfileCubit extends Cubit<ProfileState> {
   final ProfileRepository _profileRepository;
   final int _pageSize = 10;
 
+  late StreamSubscription<ProfileUpdateEvent> _profileSubscription;
+
   ProfileCubit(this._profileRepository) : super(const ProfileState()) {
     _initializeProfile();
+    _listenToProfileUpdates();
+  }
+
+  void _listenToProfileUpdates() {
+    _profileSubscription =
+        ProfileEventBus.instance.onProfileUpdated.listen((event) {
+      if (state.profile != null) {
+        // 1. تحديث بيانات البروفايل
+        final updatedProfile = state.profile!.copyWith(
+          name: event.name,
+          image: event.image,
+          username: event.username,
+        );
+
+        // 2. تحديث بيانات اليوزر في كل البوستات المعروضة في البروفايل
+        final updatedPosts = state.posts.map((p) {
+          return p.copyWith(
+            name: event.name,
+            avatar: event.image,
+            userName: event.username,
+          );
+        }).toList();
+
+        emit(state.copyWith(
+          profile: updatedProfile,
+          posts: updatedPosts,
+        ));
+
+        // 3. تحديث الكاش المحلي أيضاً لضمان الثبات
+        try {
+          CachNetwork.setData(
+            key: kAdvisorProfileCache,
+            value: jsonEncode(updatedProfile.toJson()),
+          );
+        } catch (e) {
+          debugPrint('❌ Error updating cached profile: $e');
+        }
+      }
+    });
+  }
+
+  @override
+  Future<void> close() {
+    _profileSubscription.cancel();
+    return super.close();
   }
   // ═══════════════════════════════════════════════════════════
   // 📌 INITIALIZE PROFILE
