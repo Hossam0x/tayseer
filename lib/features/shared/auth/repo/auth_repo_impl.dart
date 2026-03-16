@@ -78,7 +78,16 @@ class AuthRepoImpl implements AuthRepo {
       final success = response['success'] ?? false;
       if (success) {
         final registerResponse = RegisterResponse.fromJson(response);
-        token = registerResponse.data?.token;
+
+        // حفظ الـ token في الكاش والمتغير المحلي
+        final receivedToken = registerResponse.data?.token ?? '';
+        token = receivedToken;
+
+        if (receivedToken.isNotEmpty) {
+          await CachNetwork.setData(key: ktoken, value: receivedToken);
+          log('✅ Token saved to cache: ${receivedToken.substring(0, 20)}...');
+        }
+
         return right(registerResponse);
       } else {
         final message =
@@ -100,12 +109,17 @@ class AuthRepoImpl implements AuthRepo {
     required String otp,
   }) async {
     try {
+      // الحصول على الـ token من الكاش
+      final cachedToken = CachNetwork.getStringData(key: ktoken);
+
       final response = await apiService.post(
         endPoint: selectedUserType == UserTypeEnum.asConsultant
             ? "/advisor/verifyOtp"
             : '/auth/verify-account',
         data: {'otp': otp},
-        headers: {'Authorization': "Bearer $token"},
+        headers: cachedToken.isNotEmpty
+            ? {'Authorization': "Bearer $cachedToken"}
+            : {},
       );
       log('otp response $response');
       final success = response['success'] ?? false;
@@ -306,11 +320,16 @@ class AuthRepoImpl implements AuthRepo {
   @override
   Future<Either<Failure, void>> resendOtp() async {
     try {
+      // الحصول على الـ token من الكاش
+      final cachedToken = CachNetwork.getStringData(key: ktoken);
+
       final response = await apiService.post(
         endPoint: selectedUserType == UserTypeEnum.asConsultant
             ? "/advisor/reSendOtp"
             : '/auth/re-send-otp',
-        headers: {'Authorization': "Bearer $token"},
+        headers: cachedToken.isNotEmpty
+            ? {'Authorization': "Bearer $cachedToken"}
+            : {},
       );
 
       final success = response['success'] ?? false;

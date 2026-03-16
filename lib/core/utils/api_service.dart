@@ -13,8 +13,10 @@ class ApiService {
   }) async {
     try {
       final headers = <String, dynamic>{'lang': selectedLanguage ?? 'ar'};
-      headers['Authorization'] =
-          'Bearer ${CachNetwork.getStringData(key: 'token')}';
+      final token = CachNetwork.getStringData(key: 'token');
+      if (token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
       headers["Accept"] = "application/json";
       final response = await _dio.get(
         "$kbaseUrl$endPoint",
@@ -47,9 +49,13 @@ class ApiService {
         // 'Accept-Language': selectedLanguage ?? 'ar',
         // 'Accept': 'application/json',
         "lang": selectedLanguage ?? 'ar',
-        'Authorization': 'Bearer ${CachNetwork.getStringData(key: 'token')}',
         ...?headers,
       };
+
+      final token = CachNetwork.getStringData(key: 'token');
+      if (token.isNotEmpty) {
+        mergedHeaders['Authorization'] = 'Bearer $token';
+      }
 
       var response = await _dio.post(
         "$kbaseUrl$endPoint",
@@ -76,8 +82,10 @@ class ApiService {
   }) async {
     try {
       final mergedHeaders = <String, dynamic>{'lang': selectedLanguage ?? 'ar'};
-      mergedHeaders['Authorization'] =
-          'Bearer ${CachNetwork.getStringData(key: 'token')}';
+      final token = CachNetwork.getStringData(key: 'token');
+      if (token.isNotEmpty) {
+        mergedHeaders['Authorization'] = 'Bearer $token';
+      }
       mergedHeaders["Accept"] = "application/json";
 
       if (headers != null) {
@@ -113,10 +121,14 @@ class ApiService {
     try {
       final mergedHeaders = <String, dynamic>{
         'lang': selectedLanguage ?? 'ar',
-        'Authorization': 'Bearer ${CachNetwork.getStringData(key: 'token')}',
         'Accept': 'application/json',
         ...?headers,
       };
+
+      final token = CachNetwork.getStringData(key: 'token');
+      if (token.isNotEmpty) {
+        mergedHeaders['Authorization'] = 'Bearer $token';
+      }
 
       var response = await _dio.delete(
         "$kbaseUrl$endPoint",
