@@ -14,8 +14,7 @@ class MarriageFilterBody extends StatelessWidget {
       child: BlocConsumer<MarriageFilterCubit, MarriageFilterState>(
         listener: (context, state) {
           if (state.marriageFilterStatus == CubitStates.success) {
-            context.pop();
-            context.pop();
+            Navigator.of(context).popUntil((route) => route.isFirst);
           } else if (state.marriageFilterStatus == CubitStates.failure) {
             context.pop();
             ScaffoldMessenger.of(context).showSnackBar(
@@ -33,111 +32,122 @@ class MarriageFilterBody extends StatelessWidget {
           }
         },
         builder: (context, state) {
-          return CustomScrollView(
-            slivers: [
-              _buildSliverAppBar(context),
+          final countryRaw = state.selectedFilters['country']?.toString();
+          final nationalityRaw = state.selectedFilters['nationality']
+              ?.toString();
 
-              // ✅ قسم العمر والبلد
-              SliverToBoxAdapter(
-                child: CustomAgeAndCountrySection(
-                  ageRange: state.ageRange,
-                  onAgeRangeChanged: (values) {
-                    context.read<MarriageFilterCubit>().updateAgeRange(values);
-                  },
-                  countryValue: state.selectedFilters['country']?.toString(),
-                  nationalityValue: state.selectedFilters['nationality']
-                      ?.toString(),
-                  onCountryTap: () => _navigateToSelection(
-                    context,
-                    fieldKey: 'country',
-                    currentValue: state.selectedFilters['country'],
-                  ),
-                  onNationalityTap: () => _navigateToSelection(
-                    context,
-                    fieldKey: 'nationality',
-                    currentValue: state.selectedFilters['nationality'],
-                  ),
-                ),
-              ),
+          final countryDisplay =
+              (countryRaw != null &&
+                  countryRaw.isNotEmpty &&
+                  countryRaw != 'no_preference')
+              ? context.tr(countryRaw)
+              : null;
 
-              // ✅ قسم البيانات والأنشطة — إصلاح: إزالة "goalMarry" المكرر واستبداله بـ "goldAccount"
-              SliverToBoxAdapter(
-                child: CustomDataCard(
-                  sectionTitle: context.tr('data_and_activities'),
-                  items: [
-                    _buildRow(context, state, "verified_id", "isVerified"),
-                    _buildRow(context, state, "new_member", "isNew"),
-                    _buildRow(context, state, "photo_status", "imageBlur"),
-                    _buildRow(
+          final nationalityDisplay =
+              (nationalityRaw != null &&
+                  nationalityRaw.isNotEmpty &&
+                  nationalityRaw != 'no_preference')
+              ? context.tr(nationalityRaw)
+              : null;
+
+          return Directionality(
+            textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+            child: CustomScrollView(
+              slivers: [
+                _buildSliverAppBar(context),
+
+                SliverToBoxAdapter(
+                  child: CustomAgeAndCountrySection(
+                    ageRange: state.ageRange,
+                    onAgeRangeChanged: (values) {
+                      context.read<MarriageFilterCubit>().updateAgeRange(
+                        values,
+                      );
+                    },
+                    countryValue: countryDisplay,
+                    nationalityValue: nationalityDisplay,
+                    onCountryTap: () => _navigateToSelection(
                       context,
-                      state,
-                      "gold_account",
-                      "goldAccount",
-                    ), // ✅ إصلاح: key مختلف
-                  ],
-                ),
-              ),
-
-              // ✅ قسم البيانات الشخصية — إصلاح: تمرير state لكل _buildRow
-              SliverToBoxAdapter(
-                child: CustomDataCard(
-                  sectionTitle: context.tr('personal_data'),
-                  items: [
-                    _buildRow(context, state, "height", "height"),
-                    _buildRow(
-                      context,
-                      state,
-                      "marital_status",
-                      "maritalStatus",
+                      fieldKey: 'country',
+                      currentValue: countryRaw,
                     ),
-                    _buildRow(context, state, "job", "job"),
-                    _buildRow(context, state, "education", "educationLevel"),
-                    _buildRow(context, state, "hobbies", "hobbies"),
-                  ],
-                ),
-              ),
-
-              // ✅ قسم الأهداف — "goalMarry" هنا صح في مكانه
-              SliverToBoxAdapter(
-                child: CustomDataCard(
-                  sectionTitle: context.tr('goals'),
-                  items: [
-                    _buildRow(context, state, "marriage", "goalMarry"),
-                    _buildRow(context, state, "engagement", "goalEngagment"),
-                    _buildRow(context, state, "travel", "goalTravel"),
-                    _buildRow(context, state, "family", "goalChildren"),
-                  ],
-                ),
-              ),
-
-              // ✅ قسم الدين والعادات
-              SliverToBoxAdapter(
-                child: CustomDataCard(
-                  sectionTitle: context.tr('religion_and_habits'),
-                  items: [
-                    _buildRow(
+                    onNationalityTap: () => _navigateToSelection(
                       context,
-                      state,
-                      "religious_commitment",
-                      "religiousCommitment",
+                      fieldKey: 'nationality',
+                      currentValue: nationalityRaw,
                     ),
-                    _buildRow(context, state, "smoking", "smoker"),
-                    _buildRow(context, state, "hijab", "wearHijab"),
-                  ],
+                  ),
                 ),
-              ),
 
-              const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
+                SliverToBoxAdapter(
+                  child: CustomDataCard(
+                    sectionTitle: context.tr('data_and_activities'),
+                    items: [
+                      _buildRow(context, state, 'verified_id', 'isVerified'),
+                      _buildRow(context, state, 'new_member', 'isNew'),
+                      _buildRow(context, state, 'photo_status', 'imageBlur'),
+                      _buildRow(context, state, 'gold_account', 'goldAccount'),
+                    ],
+                  ),
+                ),
 
-              _buildApplyButton(context, state),
-            ],
+                SliverToBoxAdapter(
+                  child: CustomDataCard(
+                    sectionTitle: context.tr('personal_data'),
+                    items: [
+                      _buildRow(context, state, 'height', 'height'),
+                      _buildRow(
+                        context,
+                        state,
+                        'marital_status',
+                        'maritalStatus',
+                      ),
+                      _buildRow(context, state, 'job', 'job'),
+                      _buildRow(context, state, 'education', 'educationLevel'),
+                      _buildRow(context, state, 'hobbies', 'hobbies'),
+                    ],
+                  ),
+                ),
+
+                SliverToBoxAdapter(
+                  child: CustomDataCard(
+                    sectionTitle: context.tr('goals'),
+                    items: [
+                      _buildRow(context, state, 'marriage', 'goalMarry'),
+                      _buildRow(context, state, 'engagement', 'goalEngagment'),
+                      _buildRow(context, state, 'travel', 'goalTravel'),
+                      _buildRow(context, state, 'family', 'goalChildren'),
+                    ],
+                  ),
+                ),
+
+                SliverToBoxAdapter(
+                  child: CustomDataCard(
+                    sectionTitle: context.tr('religion_and_habits'),
+                    items: [
+                      _buildRow(
+                        context,
+                        state,
+                        'religious_commitment',
+                        'religiousCommitment',
+                      ),
+                      _buildRow(context, state, 'smoking', 'smoker'),
+                      _buildRow(context, state, 'hijab', 'wearHijab'),
+                    ],
+                  ),
+                ),
+
+                const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
+
+                _buildApplyButton(context, state),
+              ],
+            ),
           );
         },
       ),
     );
   }
 
-  /// ✅ دالة للتنقل إلى شاشة الاختيار
   Future<void> _navigateToSelection(
     BuildContext context, {
     required String fieldKey,
@@ -157,7 +167,6 @@ class MarriageFilterBody extends StatelessWidget {
     }
   }
 
-  // ✅ إصلاح: إضافة state كـ parameter بدل context.read داخل الدالة
   FilterItemModel _buildRow(
     BuildContext context,
     MarriageFilterState state,
@@ -167,11 +176,15 @@ class MarriageFilterBody extends StatelessWidget {
     final value = state.selectedFilters[fieldKey];
 
     String displayValue = context.tr('no_preference');
-    if (value is String && value.isNotEmpty && value != 'no_preference') {
-      displayValue = value.contains('_') ? context.tr(value) : value;
-    }
-    if (value is List && value.isNotEmpty) {
-      displayValue = "${value.length} ${context.tr('selected')}";
+
+    if (value is int) {
+      displayValue = '$value ${context.tr('cm')}';
+    } else if (value is String &&
+        value.isNotEmpty &&
+        value != 'no_preference') {
+      displayValue = context.tr(value);
+    } else if (value is List && value.isNotEmpty) {
+      displayValue = '${value.length} ${context.tr('selected')}';
     }
 
     return FilterItemModel(

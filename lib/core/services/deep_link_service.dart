@@ -1,7 +1,7 @@
 import 'package:share_plus/share_plus.dart';
 
 class DeepLinkService {
-  static const _baseUrl = 'https://tayseer.app';
+  static const _baseUrl = 'https://tayser-app.net';
 
   // ─────────────────────────────────────────────
   // Outgoing — بناء وإرسال الرابط

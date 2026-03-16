@@ -16,13 +16,19 @@ class MarriageCubit extends Cubit<MarriageState> {
     this.interactionUser,
   }) : _repo = repository ?? getIt<MarriageRepository>(),
        super(const MarriageState()) {
+    // ✅ استمع لأحداث الـ EventBus
     _filterSubscription = MarriageEventBus.instance.onFilterApplied.listen(
       (filters) => fetchMarriageProfile(filters: filters),
     );
+
+    // ✅ استمع للتحويل لتاب الزواج — هنا في الـ constructor مش في دالة منفصلة
+    _switchToMarriageTabSub = MarriageEventBus.instance.onSwitchToMarriageTab
+        .listen((_) => setMarriageTab(true));
   }
 
   final MarriageRepository _repo;
   late final StreamSubscription<Map<String, dynamic>> _filterSubscription;
+  StreamSubscription? _switchToMarriageTabSub;
 
   final String? seedPersonId;
   final bool seedIsFavorite;
@@ -152,7 +158,7 @@ class MarriageCubit extends Cubit<MarriageState> {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // REFRESH SILENTLY — بدون loading state عشان ما يسببش shimmer
+  // REFRESH SILENTLY
   // ═══════════════════════════════════════════════════════════
   Future<void> refreshProfileSilently() async {
     final results = await Future.wait([
@@ -458,52 +464,32 @@ class MarriageCubit extends Cubit<MarriageState> {
   // ═══════════════════════════════════════════════════════════
   // BLOCK USER
   // ═══════════════════════════════════════════════════════════
-Future<void> blockUser({required String personId}) async {
-  _repo.blockUser(personId: personId);
+  Future<void> blockUser({required String personId}) async {
+    _repo.blockUser(personId: personId);
 
-  if (isClosed) return;
+    if (isClosed) return;
 
-  // ✅ شيل اليوزر من اللست مباشرة بدون animation
-  final updatedUsers = state.allUsers
-      .where((u) => u.user?.id != personId)
-      .toList();
+    final updatedUsers = state.allUsers
+        .where((u) => u.user?.id != personId)
+        .toList();
 
-  final newLength = updatedUsers.length;
-  int newIndex = state.currentIndex;
-  if (newIndex >= newLength) {
-    newIndex = newLength > 0 ? newLength - 1 : 0;
+    final newLength = updatedUsers.length;
+    int newIndex = state.currentIndex;
+    if (newIndex >= newLength) {
+      newIndex = newLength > 0 ? newLength - 1 : 0;
+    }
+
+    emit(
+      state.copyWith(
+        allUsers: updatedUsers,
+        currentIndex: newIndex,
+        isScrollingDown: false,
+      ),
+    );
+
+    if (newLength <= 3) loadMoreUsers();
+    if (newLength == 0) refreshProfileSilently();
   }
-
-  emit(state.copyWith(
-    allUsers: updatedUsers,
-    currentIndex: newIndex,
-    isScrollingDown: false,
-  ));
-
-  if (newLength <= 3) loadMoreUsers();
-  if (newLength == 0) refreshProfileSilently();
-}
-// UNBLOCK USER
-  // ═══════════════════════════════════════════════════════════
-  // Future<void> unblockUser({required String personId}) async {
-  //   final result = await _repo.unblockUser(personId: personId);
-  //   if (isClosed) return;
-
-  //   result.fold(
-  //     (failure) => emit(
-  //       state.copyWith(
-  //         blockActionState: CubitStates.initial,
-  //         blockMessage: null,
-  //       ),
-  //     ),
-  //     (message) => emit(
-  //       state.copyWith(
-  //         blockActionState: CubitStates.initial,
-  //         blockMessage: null,
-  //       ),
-  //     ),
-  //   );
-  // }
 
   // ═══════════════════════════════════════════════════════════
   // TOGGLE FAVORITE
@@ -564,6 +550,7 @@ Future<void> blockUser({required String personId}) async {
   @override
   Future<void> close() {
     _filterSubscription.cancel();
+    _switchToMarriageTabSub?.cancel(); // ✅
     _cardController?.removeListener(_onAnimationTick);
     _cardController?.dispose();
     return super.close();

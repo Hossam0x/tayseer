@@ -107,7 +107,7 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="https"
-                      android:host="tayseer.app"
+                      android:host="tayser-app.net"
                       android:pathPattern="/marriage/profile/.*"/>
             </intent-filter>
 

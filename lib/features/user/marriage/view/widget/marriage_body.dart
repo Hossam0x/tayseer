@@ -444,7 +444,7 @@ class MarriageBodyState extends State<MarriageBody>
                     context.tr(
                       'verified_profile_desc',
                     ), // "تم التأكد من صحة جميع البيانات الشخصية من قبل التطبيق"
-                    textAlign: TextAlign.right,
+                    textAlign: isArabic ? TextAlign.right : TextAlign.left,
                     style: Styles.textStyle16Bold.copyWith(
                       fontWeight: FontWeight.w400,
                       color: AppColors.secondary400,

@@ -10,6 +10,32 @@ class MarriageFilterCubit extends Cubit<MarriageFilterState> {
 
   final MarriageFilterRepo _repo;
 
+  static const Map<String, String> _keyMapping = {
+    'maritalStatus': 'socialStatus',
+    'religiousCommitment': 'religiousCommitment',
+    'goalMarry': 'marriageIntentions',
+    'goalEngagment': 'engagment',
+    'goalTravel': 'intendTravelAbroad',
+    'goalChildren': 'familyAcceptance',
+    'educationLevel': 'educationLevel',
+    'smoker': 'smoker',
+    'wearHijab': 'wearHijab',
+    'job': 'job',
+    'country': 'country',
+    'nationality': 'nationality',
+    'isVerified': 'isVerified',
+    'isNew': 'isNew',
+    'imageBlur': 'imageBlur',
+    'goldAccount': 'goldAccount',
+    'hobbies': 'hobbies',
+    'height': 'height',
+  };
+
+  static const Map<String, bool> _imageBlurValueMap = {
+    'visible_photo': false,
+    'hidden_photo': true,
+  };
+
   void updateAgeRange(RangeValues values) =>
       emit(state.copyWith(ageRange: values));
 
@@ -43,8 +69,12 @@ class MarriageFilterCubit extends Cubit<MarriageFilterState> {
       ),
       (_) {
         emit(state.copyWith(marriageFilterStatus: CubitStates.success));
-        // ✅ نبعت الفلاتر عبر الـ Event Bus
+
+        // ✅ بعت الفلاتر للـ MarriageCubit
         MarriageEventBus.instance.applyFilter(filtersToSend);
+
+        // ✅ حول لتاب الزواج لو المستخدم كان في التفاعلات
+        MarriageEventBus.instance.switchToMarriageTab();
       },
     );
   }
@@ -57,20 +87,36 @@ class MarriageFilterCubit extends Cubit<MarriageFilterState> {
 
     state.selectedFilters.forEach((key, value) {
       if (value == null) return;
-
-      // ✅ إصلاح: التحقق من الـ key الصحيح وليس النص العربي
       if (value == 'no_preference') return;
-
       if (value is String && value.trim().isEmpty) return;
-
-      // ✅ إصلاح: تصفية القوائم التي كلها no_preference أو فارغة
       if (value is List &&
           (value.isEmpty || value.every((e) => e == 'no_preference')))
         return;
 
-      filters[key] = value;
+      final apiKey = _keyMapping[key] ?? key;
+
+      // ── imageBlur: visible/hidden → bool ──
+      if (key == 'imageBlur' && value is String) {
+        final boolValue = _imageBlurValueMap[value];
+        if (boolValue != null) filters[apiKey] = boolValue;
+        return;
+      }
+
+      // ── isVerified: yes→true | no→false ──
+      if (key == 'isVerified' && value is String) {
+        if (value == 'yes') {
+          filters[apiKey] = true;
+        } else if (value == 'no') {
+          filters[apiKey] = false;
+        }
+        return;
+      }
+
+      // ── كل الباقي يتبعت كما هو ──
+      filters[apiKey] = value;
     });
 
+    debugPrint('📦 Final filters: $filters');
     return filters;
   }
 }

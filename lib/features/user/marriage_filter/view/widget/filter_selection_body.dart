@@ -1,3 +1,4 @@
+import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/user/questions/view/widget/question_page_config.dart';
 import 'package:tayseer/features/user/questions/view/widget/custom_selectable_list.dart';
@@ -25,6 +26,12 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
   void initState() {
     super.initState();
     tempValue = widget.initialValue;
+
+    // ✅ إصلاح الطول: لو الـ fieldKey هو height والقيمة null
+    // نحط القيمة الافتراضية مباشرة عشان لو المستخدم ماحركش الـ picker يتحفظ
+    if (widget.fieldKey == 'height' && tempValue == null) {
+      tempValue = 170;
+    }
   }
 
   @override
@@ -35,7 +42,6 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
       body: CustomBackground(
         child: CustomScrollView(
           slivers: [
-            // ===== AppBar =====
             SliverAppBar(
               leading: IconButton(
                 icon: const Icon(Icons.close),
@@ -55,7 +61,6 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
               ),
             ),
 
-            // ===== Content =====
             SliverPadding(
               padding: EdgeInsets.only(top: 16.h),
               sliver: SliverFillRemaining(
@@ -63,8 +68,6 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
                 child: Column(
                   children: [
                     Expanded(child: _buildContent(config, context)),
-
-                    // ===== Confirm Button =====
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: CustomBotton(
@@ -89,33 +92,33 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
       case QuestionType.selectableList:
         return SelectableListWidget(
           items: config.items ?? [],
-          selectedKey: tempValue, // 🔥 التحكم هنا
+          selectedKey: tempValue,
           showSearch: config.showSearch,
           searchHintKey: config.searchHintKey,
           onChanged: (key, value) {
-            setState(() {
-              tempValue = key; // نخزن الـ key مش الترجمة
-            });
+            setState(() => tempValue = key);
           },
         );
 
       case QuestionType.multiSelectChips:
         return MultiSelectChipsWidget(
           itemsWithEmoji: config.itemsWithIcons ?? {},
+          initialSelected: tempValue is List<String>
+              ? tempValue as List<String>
+              : [],
           onChanged: (List<String> values) {
-            setState(() {
-              tempValue = values;
-            });
+            setState(() => tempValue = values);
           },
         );
 
       case QuestionType.picker:
         return CustomIosPicker(
-          initialValue: tempValue ?? config.initialValue ?? 160,
-          minValue: config.minValue ?? 100,
+          initialValue: tempValue ?? config.initialValue ?? 170,
+          minValue: config.minValue ?? 140,
           maxValue: config.maxValue ?? 220,
           unit: config.unit != null ? context.tr(config.unit!) : null,
           onSelectedItemChanged: (value) {
+            // ✅ يتحدث في كل حركة بدون setState لأنه مش بيحتاج rebuild
             tempValue = value;
           },
         );
@@ -128,7 +131,7 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
   QuestionPageConfig _getConfig(BuildContext context) {
     switch (widget.fieldKey) {
       // ============================================
-      // قسم العمر والبلد
+      // البلد والجنسية — ✅ بدون no_preference
       // ============================================
       case 'country':
         return const QuestionPageConfig(
@@ -143,8 +146,10 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
             'country_kuwait',
             'country_qatar',
             'country_bahrain',
-            'country_oman',
-            'country_other',
+            'country_jordan',
+            'country_palestine',
+            'country_morocco',
+            'country_tunisia',
           ],
           showSearch: true,
         );
@@ -156,15 +161,22 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
           questionCategoryEnum: 'location',
           type: QuestionType.selectableList,
           items: [
-            'nationality_egyptian',
             'nationality_saudi',
+            'nationality_egyptian',
             'nationality_emirati',
+            'nationality_kuwaiti',
+            'nationality_qatari',
+            'nationality_bahraini',
+            'nationality_jordanian',
+            'nationality_palestinian',
+            'nationality_moroccan',
+            'nationality_tunisian',
           ],
           showSearch: true,
         );
 
       // ============================================
-      // بيانات وأنشطة 🔥
+      // بيانات وأنشطة
       // ============================================
       case 'isVerified':
         return const QuestionPageConfig(
@@ -193,7 +205,6 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
           items: ['visible_photo', 'hidden_photo', 'no_preference'],
         );
 
-      // ✅ إصلاح: إضافة case جديد لـ goldAccount بدل تكرار goalMarry
       case 'goldAccount':
         return const QuestionPageConfig(
           titleKey: 'gold_members',
@@ -224,7 +235,13 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
           questionNumber: 3,
           questionCategoryEnum: 'personal',
           type: QuestionType.selectableList,
-          items: ['single', 'married', 'divorced', 'widowed', 'no_preference'],
+          items: [
+            'social_single',
+            'social_married',
+            'social_divorced',
+            'social_widowed',
+            'no_preference',
+          ],
         );
 
       case 'job':
@@ -274,14 +291,7 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
           questionNumber: 19,
           questionCategoryEnum: 'personal',
           type: QuestionType.multiSelectChips,
-          itemsWithIcons: {
-            'hobby_music': AssetsData.kmusicIcon,
-            'hobby_sports': AssetsData.ksportsIcon,
-            'hobby_travel': AssetsData.ktravelIcon,
-            'hobby_reading': AssetsData.kreadingIcon,
-            'hobby_cooking': AssetsData.kcookingIcon,
-            'hobby_drawing': AssetsData.kdrawingIcon,
-          },
+          itemsWithIcons: MarriageConstants.hobbyEmojiMap,
         );
 
       // ============================================
@@ -293,7 +303,13 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
           questionNumber: 10,
           questionCategoryEnum: 'goals',
           type: QuestionType.selectableList,
-          items: ['gold_account', 'no_preference'],
+          items: [
+            'period_1_3_months',
+            'period_4_7_months',
+            'period_7_12_months',
+            'period_1_2_years',
+            'no_preference',
+          ],
         );
 
       case 'goalEngagment':
@@ -302,7 +318,13 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
           questionNumber: 11,
           questionCategoryEnum: 'goals',
           type: QuestionType.selectableList,
-          items: ['year', '2_years', '3_years', 'no_preference'],
+          items: [
+            'timeline_immediate',
+            'timeline_three_months',
+            'timeline_six_months',
+            'timeline_year',
+            'no_preference',
+          ],
         );
 
       case 'goalTravel':
@@ -311,7 +333,11 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
           questionNumber: 12,
           questionCategoryEnum: 'goals',
           type: QuestionType.selectableList,
-          items: ['yes_travel', 'no_travel', 'no_preference'],
+          items: [
+            'intend_travel_abroad',
+            'do_not_intend_travel',
+            'no_preference',
+          ],
         );
 
       case 'goalChildren':
@@ -320,7 +346,11 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
           questionNumber: 13,
           questionCategoryEnum: 'goals',
           type: QuestionType.selectableList,
-          items: ['yes_children', 'no_children', 'no_preference'],
+          items: [
+            'no_problem_children',
+            'do_not_want_children',
+            'no_preference',
+          ],
         );
 
       // ============================================
@@ -333,9 +363,10 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
           questionCategoryEnum: 'religion',
           type: QuestionType.selectableList,
           items: [
-            'religious_none',
-            'religious_strict',
-            'religious_practicing',
+            'religion_full',
+            'religion_partial',
+            'religion_sometimes',
+            'religion_none',
             'no_preference',
           ],
         );
@@ -346,7 +377,7 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
           questionNumber: 17,
           questionCategoryEnum: 'religion',
           type: QuestionType.selectableList,
-          items: ['smoking_yes', 'smoking_no', 'no_preference'],
+          items: ['yes', 'no', 'no_preference'],
         );
 
       case 'wearHijab':
@@ -355,7 +386,7 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
           questionNumber: 18,
           questionCategoryEnum: 'religion',
           type: QuestionType.selectableList,
-          items: ['hijab_yes', 'hijab_no', 'no_preference'],
+          items: ['yes', 'no', 'no_preference'],
         );
 
       default:

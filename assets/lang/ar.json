@@ -1644,6 +1644,26 @@
   "two_free_boosts_every_week": "تعزيزين مجاناً كل أسبوع",
   "unlimited_number_of_likes": "عدد لا محدود من الإعجابات",
   "enjoy_more_benefits_title": "للاستمتاع بمزايا أكثر",
-  "view_all_benefits": "عرض كل المزايا"
+  "view_all_benefits": "عرض كل المزايا",
+  "interest_singing": "الغناء",
+  "interest_dancing_ballroom": "رقص الصالون",
+  "interest_opera": "الأوبرا",
+  "interest_ballet": "الباليه",
+  "interest_acting": "التمثيل",
+  "interest_filmmaking": "صناعة الأفلام",
+  "interest_journalism": "الصحافة",
+  "interest_blogging": "التدوين",
+  "interest_podcasting": "البودكاست",
+  "interest_storytelling": "فن القصص",
+  "interest_archeology": "علم الآثار",
+  "interest_astronomy": "علم الفلك",
+  "interest_philosophy": "الفلسفة",
+  "interest_literature": "الأدب",
+  "interest_crafts": "الحرف اليدوية",
+  "interest_knitting": "الحياكة",
+  "interest_sewing": "الخياطة",
+  "interest_pottery": "الفخار",
+  "interest_woodworking": "النجارة",
+  "interest_origami": "الأوريغامي"
 
 }

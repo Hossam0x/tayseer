@@ -75,7 +75,7 @@ class CustomAgeAndCountrySection extends StatelessWidget {
             context: context,
             title: context.tr('country'),
             value: countryValue,
-            defaultValue: context.tr('egypt'),
+            // defaultValue: context.tr('egypt'),
             onTap: onCountryTap,
           ),
 
@@ -85,7 +85,7 @@ class CustomAgeAndCountrySection extends StatelessWidget {
             context: context,
             title: context.tr('nationality'),
             value: nationalityValue,
-            defaultValue: context.tr('egyptian'),
+            // defaultValue: context.tr('egyptian'),
             onTap: onNationalityTap,
           ),
         ],
