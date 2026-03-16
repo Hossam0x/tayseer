@@ -28,6 +28,7 @@ class AdvisorSearchAdvisorItem extends StatelessWidget {
       isVerified: advisor.isVerified,
       userType: 'Advisor',
       isMe: advisor.isMe,
+      imageBlur: advisor.imageBlur,
     );
 
     return FollowerItem(

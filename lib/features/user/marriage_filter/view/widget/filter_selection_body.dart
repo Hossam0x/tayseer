@@ -193,11 +193,12 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
           items: ['visible_photo', 'hidden_photo', 'no_preference'],
         );
 
-      case 'goalMarry':
+      // ✅ إصلاح: إضافة case جديد لـ goldAccount بدل تكرار goalMarry
+      case 'goldAccount':
         return const QuestionPageConfig(
           titleKey: 'gold_members',
-          questionNumber: 10,
-          questionCategoryEnum: 'goals',
+          questionNumber: 0,
+          questionCategoryEnum: 'activity',
           type: QuestionType.selectableList,
           items: ['gold_account', 'no_preference'],
         );
@@ -286,6 +287,15 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
       // ============================================
       // الأهداف
       // ============================================
+      case 'goalMarry':
+        return const QuestionPageConfig(
+          titleKey: 'marriage',
+          questionNumber: 10,
+          questionCategoryEnum: 'goals',
+          type: QuestionType.selectableList,
+          items: ['gold_account', 'no_preference'],
+        );
+
       case 'goalEngagment':
         return const QuestionPageConfig(
           titleKey: 'engagement',

@@ -303,4 +303,20 @@ abstract class AssetsData {
   static const String appErrorIcon = "assets/images/appErrorIcon.png";
 
   static const String pendingIcon = "assets/icons/pending.svg";
+
+  // User pckages icons
+  // For Basic
+  static const String youNotSeeWhoLiked = "assets/icons/youNotSeeWhoLiked.svg";
+  static const String thereAreNoFreeBoosts =
+      "assets/icons/thereAreNoFreeBoosts.svg";
+  static const String limitedNumberOfLikes =
+      "assets/icons/limitedNumberOfLikes.svg";
+  // For Pro and Elite
+  static const String youCanSeeWhoLiked = "assets/icons/youCanSeeWhoLiked.svg";
+  static const String twoFreeCondolencesEveryWeek =
+      "assets/icons/twoFreeCondolencesEveryWeek.svg";
+  static const String unlimitedNumberOfLikes =
+      "assets/icons/unlimitedNumberOfLikes.svg";
+
+  static const String checkPackageItems = "assets/icons/checkPackageItems.svg";
 }

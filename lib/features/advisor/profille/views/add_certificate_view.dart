@@ -35,7 +35,7 @@ class AddCertificateView extends StatelessWidget {
                 isSuccess: true,
               );
               context.read<AddCertificateCubit>().clearMessage();
-              Navigator.pop(context, true);
+              Navigator.pop(context, state.addedCertificate);
             }
           },
           child: const _AddCertificateBody(),

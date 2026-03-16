@@ -57,9 +57,17 @@ class MarriageFilterCubit extends Cubit<MarriageFilterState> {
 
     state.selectedFilters.forEach((key, value) {
       if (value == null) return;
-      if (value == 'لا يوجد تفضيل') return;
+
+      // ✅ إصلاح: التحقق من الـ key الصحيح وليس النص العربي
+      if (value == 'no_preference') return;
+
       if (value is String && value.trim().isEmpty) return;
-      if (value is List && value.isEmpty) return;
+
+      // ✅ إصلاح: تصفية القوائم التي كلها no_preference أو فارغة
+      if (value is List &&
+          (value.isEmpty || value.every((e) => e == 'no_preference')))
+        return;
+
       filters[key] = value;
     });
 

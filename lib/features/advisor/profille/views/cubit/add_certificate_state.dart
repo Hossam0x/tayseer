@@ -1,3 +1,4 @@
+import 'package:tayseer/features/advisor/profille/data/models/certificate_model.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
 
@@ -12,6 +13,7 @@ class AddCertificateState {
   final TextEditingController? fromWhereController;
   final String? errorMessage;
   final String? successMessage;
+  final CertificateModel? addedCertificate;
 
   const AddCertificateState({
     this.state = CubitStates.initial,
@@ -24,6 +26,7 @@ class AddCertificateState {
     this.fromWhereController,
     this.errorMessage,
     this.successMessage,
+    this.addedCertificate,
   });
 
   AddCertificateState copyWith({
@@ -37,6 +40,7 @@ class AddCertificateState {
     TextEditingController? fromWhereController,
     String? errorMessage,
     String? successMessage,
+    CertificateModel? addedCertificate,
   }) {
     return AddCertificateState(
       state: state ?? this.state,
@@ -52,6 +56,7 @@ class AddCertificateState {
           errorMessage, // Intentionally not keeping the previous error message
       successMessage:
           successMessage, // Intentionally not keeping the previous success message
+      addedCertificate: addedCertificate ?? this.addedCertificate,
     );
   }
 }

@@ -10,6 +10,8 @@ import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/add_story_view.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_state.dart';
+import 'package:tayseer/features/advisor/stories/presentation/views/story_details_view.dart';
+import 'package:tayseer/features/advisor/stories/data/models/stories_response_model.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({super.key});
@@ -17,9 +19,23 @@ class ProfileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ProfileCubit, ProfileState>(
-      buildWhen: (previous, current) =>
-          previous.profileState != current.profileState ||
-          previous.profile != current.profile,
+      buildWhen: (previous, current) {
+        // ✅ تجنّب الـ rebuild إذا كانت بيانات العرض لم تتغير حتى لو تغيّر الـ state
+        if (previous.profileState != current.profileState) return true;
+        if (previous.profile == null && current.profile != null) return true;
+        if (previous.profile != null && current.profile == null) return true;
+
+        // كلاهما موجودين → اقارن فقط الحقول المهمة للـ UI
+        if (previous.profile != null && current.profile != null) {
+          final oldImage = previous.profile!.image.split('?').first;
+          final newImage = current.profile!.image.split('?').first;
+          return oldImage != newImage ||
+              previous.profile!.followers != current.profile!.followers ||
+              previous.profile!.following != current.profile!.following ||
+              previous.profile!.isVerified != current.profile!.isVerified;
+        }
+        return false;
+      },
       builder: (context, state) {
         switch (state.profileState) {
           case CubitStates.loading:
@@ -134,102 +150,12 @@ class ProfileHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Profile picture with Upload Indicator
-          BlocBuilder<StoriesCubit, StoriesState>(
-            buildWhen: (previous, current) =>
-                previous.createStoryState != current.createStoryState ||
-                previous.uploadProgress != current.uploadProgress,
-            builder: (context, storyState) {
-              final isUploading =
-                  storyState.createStoryState == CubitStates.loading;
-
-              return CustomClick(
-                onTap: isUploading
-                    ? null
-                    : () async {
-                        if (context.mounted) {
-                          final storiesCubit = context.read<StoriesCubit>();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => BlocProvider.value(
-                                value: storiesCubit,
-                                child: const AddStoryView(),
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Upload Progress Ring
-                    if (isUploading)
-                      SizedBox(
-                        width: 92.w,
-                        height: 92.w,
-                        child: CircularProgressIndicator(
-                          value: storyState.uploadProgress > 0
-                              ? storyState.uploadProgress
-                              : null,
-                          strokeWidth: 4,
-                          color: AppColors.kprimaryColor,
-                          backgroundColor: AppColors.secondary200,
-                        ),
-                      ),
-
-                    MyProfileImage(width: 85.w, imageUrl: imageUrl),
-
-                    // Add Icon (Hidden when uploading)
-                    if (!isUploading)
-                      Positioned(
-                        bottom: 2,
-                        right: 2,
-                        child: Container(
-                          width: 22.w,
-                          height: 22.w,
-                          decoration: BoxDecoration(
-                            color: AppColors.kprimaryColor,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: AppImage(
-                              width: 12.w,
-                              AssetsData.icAdd,
-                              color: AppColors.kWhiteColor,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                    // Percentage Text Overlay
-                    if (isUploading)
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 6.w,
-                          vertical: 2.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        child: Text(
-                          '${(storyState.uploadProgress * 100).toInt()}%',
-                          style: Styles.textStyle12.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              );
-            },
-          ),
+          // ── Profile picture with Stories ring ──────────────────────────────
+          _ProfileStoryRing(fallbackImageUrl: imageUrl),
 
           // Top bar with followers/following
           GestureDetector(
-            onTap: () => Navigator.pushNamed(context, AppRouter.kFollowingView),
+            onTap: () => _openFollowing(context),
             child: Column(
               children: [
                 Text(following, style: Styles.textStyle16SemiBold),
@@ -238,7 +164,7 @@ class ProfileHeader extends StatelessWidget {
             ),
           ),
           GestureDetector(
-            onTap: () => Navigator.pushNamed(context, AppRouter.kFollowersView),
+            onTap: () => _openFollowers(context),
             child: Column(
               children: [
                 Text(followers, style: Styles.textStyle16SemiBold),
@@ -281,7 +207,7 @@ class ProfileHeader extends StatelessWidget {
 
   void _openSettings(BuildContext context) async {
     // ⭐ انتظار الرجوع من صفحة الإعدادات
-    await Navigator.push(
+    final result = await Navigator.push(
       context,
       SlideLeftRoute(
         page: const SettingsView(),
@@ -289,11 +215,211 @@ class ProfileHeader extends StatelessWidget {
       ),
     );
 
-    // ⭐ تحديث البروفايل بعد الرجوع من الإعدادات
-    if (context.mounted) {
+    // ⭐ تحديث البروفايل فقط إذا تم تغيير البيانات
+    if (context.mounted && result == true) {
+      // Only fetch from API (silent update) - no cache refresh to avoid rebuild
       context.read<ProfileCubit>().fetchProfile();
       // تحديث بيانات الهوم من الكاش أيضاً لضمان التزامن
       getIt<HomeCubit>().refreshUserInfoFromCache();
     }
+  }
+
+  void _openFollowing(BuildContext context) async {
+    await Navigator.pushNamed(context, AppRouter.kFollowingView);
+    // No need to reload data when returning from following list
+  }
+
+  void _openFollowers(BuildContext context) async {
+    await Navigator.pushNamed(context, AppRouter.kFollowersView);
+    // No need to reload - followers count rarely changes
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Profile Story Ring — shows the my-stories ring in the profile header.
+// Reads from StoriesCubit.state.myStories (the /stories/my-stories endpoint).
+// ─────────────────────────────────────────────────────────────────────────────
+class _ProfileStoryRing extends StatelessWidget {
+  final String fallbackImageUrl;
+
+  const _ProfileStoryRing({required this.fallbackImageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<StoriesCubit, StoriesState>(
+      buildWhen: (previous, current) =>
+          previous.createStoryState != current.createStoryState ||
+          previous.uploadProgress != current.uploadProgress ||
+          previous.myStories != current.myStories ||
+          previous.myStoriesState != current.myStoriesState,
+      builder: (context, storyState) {
+        final isUploading = storyState.createStoryState == CubitStates.loading;
+        final myStories = storyState.myStories;
+        final hasStories = myStories != null && myStories.stories.isNotEmpty;
+
+        return CustomClick(
+          onTap: isUploading
+              ? null
+              : () => _handleTap(context, storyState, myStories),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // ── Upload Progress Ring ──────────────────────────────────────
+              if (isUploading)
+                SizedBox(
+                  width: 92.w,
+                  height: 92.w,
+                  child: CircularProgressIndicator(
+                    value: storyState.uploadProgress > 0
+                        ? storyState.uploadProgress
+                        : null,
+                    strokeWidth: 4,
+                    color: AppColors.kprimaryColor,
+                    backgroundColor: AppColors.secondary200,
+                  ),
+                ),
+
+              // ── Story ring decoration ─────────────────────────────────────
+              if (hasStories && !isUploading)
+                Container(
+                  width: 95.w,
+                  height: 95.w,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: myStories.allViewed
+                          ? AppColors.kGreyB3
+                          : AppColors.kprimaryColor,
+                      width: 3.sp,
+                    ),
+                  ),
+                ),
+
+              // ── Profile image ─────────────────────────────────────────────
+              Padding(
+                padding: hasStories && !isUploading
+                    ? EdgeInsets.all(4.r)
+                    : EdgeInsets.zero,
+                child: Hero(
+                  tag: 'profile_image_main',
+                  child: MyProfileImage(
+                    width: hasStories && !isUploading ? 79.w : 85.w,
+                    imageUrl: fallbackImageUrl,
+                  ),
+                ),
+              ),
+
+              // ── Add story button (hidden while uploading) ─────────────────
+              if (!isUploading)
+                Positioned(
+                  bottom: 2,
+                  right: 2,
+                  child: GestureDetector(
+                    onTap: () => _openAddStory(context),
+                    child: Container(
+                      width: 22.w,
+                      height: 22.w,
+                      decoration: BoxDecoration(
+                        color: AppColors.kprimaryColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: AppImage(
+                          width: 12.w,
+                          AssetsData.icAdd,
+                          color: AppColors.kWhiteColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+              // ── Upload percentage overlay ─────────────────────────────────
+              if (isUploading)
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Text(
+                    '${(storyState.uploadProgress * 100).toInt()}%',
+                    style: Styles.textStyle12.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _handleTap(
+    BuildContext context,
+    StoriesState storyState,
+    UserStoriesModel? myStories,
+  ) {
+    if (myStories != null && myStories.stories.isNotEmpty) {
+      _openMyStories(context, myStories);
+    } else {
+      _openAddStory(context);
+    }
+  }
+
+  void _openMyStories(BuildContext context, UserStoriesModel myStories) async {
+    final storiesCubit = context.read<StoriesCubit>();
+
+    // Open my story fast without blocking the transition.
+    // We still request a quiet refetch in the background.
+    storiesCubit.fetchMyStories(isSilent: true);
+
+    final latestMyStories = storiesCubit.state.myStories ?? myStories;
+
+    // Show stories in chronological order (oldest first)
+    final chronological = latestMyStories.copyWith(
+      stories: latestMyStories.stories.reversed.toList(),
+    );
+
+    if (context.mounted) {
+      Navigator.push(
+        context,
+        PageRouteBuilder(
+          opaque: false,
+          pageBuilder: (newContext, animation, secondaryAnimation) =>
+              BlocProvider.value(
+                value: storiesCubit,
+                child: StoryDetailsView(
+                  usersStories: [chronological],
+                  initialUserIndex: 0,
+                ),
+              ),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        ),
+      ).then((_) {
+        // Re-fetch after the viewer closes
+        if (context.mounted) {
+          context.read<StoriesCubit>().fetchMyStories(isSilent: true);
+        }
+      });
+    }
+  }
+
+  void _openAddStory(BuildContext context) {
+    if (!context.mounted) return;
+    final storiesCubit = context.read<StoriesCubit>();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BlocProvider.value(
+          value: storiesCubit,
+          child: const AddStoryView(),
+        ),
+      ),
+    );
   }
 }

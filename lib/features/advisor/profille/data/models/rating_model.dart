@@ -82,7 +82,7 @@ class RatingModel extends Equatable {
 }
 
 class RatingsResponseModel extends Equatable {
-  final RatingSummaryModel summary;
+  final RatingSummaryModel? summary;
   final List<RatingModel> ratings;
   final int currentPage;
   final int totalPages;
@@ -90,7 +90,7 @@ class RatingsResponseModel extends Equatable {
   final bool hasMore;
 
   const RatingsResponseModel({
-    required this.summary,
+    this.summary,
     required this.ratings,
     required this.currentPage,
     required this.totalPages,
@@ -99,9 +99,11 @@ class RatingsResponseModel extends Equatable {
   });
 
   factory RatingsResponseModel.fromJson(Map<String, dynamic> json) {
-    final summary = RatingSummaryModel.fromJson(
-      Map<String, dynamic>.from(json['summary']),
-    );
+    final summary = json['summary'] != null
+        ? RatingSummaryModel.fromJson(
+            Map<String, dynamic>.from(json['summary']),
+          )
+        : null;
 
     final ratingsList = (json['ratings'] as List)
         .map(

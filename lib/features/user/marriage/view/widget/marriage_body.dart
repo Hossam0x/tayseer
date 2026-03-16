@@ -1,3 +1,4 @@
+import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
@@ -9,6 +10,7 @@ import 'package:tayseer/features/user/marriage/view/widget/section_toggle.dart';
 import 'package:tayseer/features/user/marriage/view/widget/animated_be_first_button.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_state.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/dash_border.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/user/marriage/view/widget/about_me.dart';
 import 'package:tayseer/features/user/marriage/view/widget/additional_image.dart';
@@ -119,6 +121,7 @@ class MarriageBodyState extends State<MarriageBody>
   void _resetScrollTracking() {
     _lastOffset = 0;
     _scrollDelta = 0;
+    if (!mounted) return;
     context.read<MarriageCubit>().setScrollingDown(false);
   }
 
@@ -127,13 +130,11 @@ class MarriageBodyState extends State<MarriageBody>
     return context.tr(value.trim());
   }
 
-  // ✅ بناء timeline events من الـ API fields الصح
   List<Map<String, dynamic>> _buildTimelineEventsFromAnswers(
     marriageModel.YourGoals goals,
   ) {
     final List<Map<String, dynamic>> events = [];
 
-    // ✅ الزواج: marriageIntentions هو الـ field الصح، marry fallback
     final marriageValue = goals.marriageIntentions ?? goals.marry;
     if (marriageValue != null && marriageValue.toString().trim().isNotEmpty) {
       events.add({
@@ -142,7 +143,6 @@ class MarriageBodyState extends State<MarriageBody>
       });
     }
 
-    // ✅ الخطوبة: engagment
     if (goals.engagment != null &&
         goals.engagment.toString().trim().isNotEmpty) {
       events.add({
@@ -151,7 +151,6 @@ class MarriageBodyState extends State<MarriageBody>
       });
     }
 
-    // ✅ الأسرة: familyAcceptance هو الـ field الصح، children fallback
     final familyValue = goals.familyAcceptance ?? goals.children;
     if (familyValue != null && familyValue.toString().trim().isNotEmpty) {
       events.add({
@@ -160,7 +159,6 @@ class MarriageBodyState extends State<MarriageBody>
       });
     }
 
-    // ✅ السفر: travel
     if (goals.travel != null && goals.travel.toString().trim().isNotEmpty) {
       events.add({
         'timeLabel': _tr(goals.travel.toString()),
@@ -188,13 +186,30 @@ class MarriageBodyState extends State<MarriageBody>
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<MarriageCubit, MarriageState>(
+      // ✅ block مش موجود في listenWhen خالص
       listenWhen: (previous, current) =>
           previous.marriageProfileState != current.marriageProfileState ||
           (previous.sendRegardState != current.sendRegardState &&
               current.showActionSnackbar) ||
           (previous.sendRegardTextState != current.sendRegardTextState &&
               current.showActionSnackbar),
+
+      buildWhen: (previous, current) =>
+          previous.marriageProfileState != current.marriageProfileState ||
+          previous.allUsers != current.allUsers ||
+          previous.currentIndex != current.currentIndex ||
+          previous.isMarriageTab != current.isMarriageTab ||
+          previous.isScrollingDown != current.isScrollingDown ||
+          previous.swipeDirection != current.swipeDirection ||
+          previous.swipeProgress != current.swipeProgress ||
+          previous.isAnimating != current.isAnimating ||
+          previous.showHistory != current.showHistory ||
+          previous.selectedHistoryFilter != current.selectedHistoryFilter ||
+          previous.favoritedIds != current.favoritedIds ||
+          previous.isLoadingMore != current.isLoadingMore,
+
       listener: (context, state) {
+        // ✅ Regard failure
         if ((state.sendRegardState == CubitStates.failure ||
                 state.sendRegardTextState == CubitStates.failure) &&
             state.showActionSnackbar) {
@@ -208,6 +223,7 @@ class MarriageBodyState extends State<MarriageBody>
           context.read<MarriageCubit>().resetState();
         }
 
+        // ✅ Regard success
         if (state.sendRegardState == CubitStates.success &&
             state.showActionSnackbar) {
           showDialog(
@@ -222,7 +238,11 @@ class MarriageBodyState extends State<MarriageBody>
           });
           context.read<MarriageCubit>().resetState();
         }
+
+        // ✅ block مفيش listener له خالص —
+        // الـ cubit بنفسه بيعمل كل حاجة ويعمل reset
       },
+
       builder: (context, state) {
         if (state.marriageProfileState == CubitStates.loading) {
           return _buildShimmerScreen();
@@ -288,10 +308,13 @@ class MarriageBodyState extends State<MarriageBody>
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  // APP BAR WRAPPER
+  // ═══════════════════════════════════════════════════════════════
   Widget _buildWithAppBar({Key? key, required Widget child}) {
     return Directionality(
       key: key,
-      textDirection: TextDirection.rtl,
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: CustomBackground(
         child: Column(
           children: [
@@ -338,36 +361,99 @@ class MarriageBodyState extends State<MarriageBody>
     );
   }
 
-  Widget _buildEmptyMarriage(cubit) {
+  // ═══════════════════════════════════════════════════════════════
+  // EMPTY STATE
+  // ═══════════════════════════════════════════════════════════════
+  Widget _buildEmptyMarriage(MarriageCubit cubit) {
     return RefreshIndicator.adaptive(
       onRefresh: () => cubit.refreshProfile(),
-      child: Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 32.w),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AppImage(
-                AssetsData.noPersonsBlocked,
-                width: 180.w,
-                height: 180.h,
-              ),
-              Gap(24.h),
-              Text(
-                context.tr('no_marriage_users'),
-                style: Styles.textStyle18Bold.copyWith(
-                  color: AppColors.kprimaryTextColor,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.7,
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 32.w),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    AppImage(
+                      AssetsData.noPersonsBlocked,
+                      width: 180.w,
+                      height: 180.h,
+                    ),
+                    Gap(24.h),
+                    Text(
+                      context.tr('no_marriage_users'),
+                      style: Styles.textStyle18Bold.copyWith(
+                        color: AppColors.kprimaryTextColor,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    Gap(12.h),
+                    Text(
+                      context.tr('share_app_to_find_users'),
+                      style: Styles.textStyle14.copyWith(color: Colors.grey),
+                      textAlign: TextAlign.center,
+                    ),
+                    Gap(24.h),
+                  ],
                 ),
-                textAlign: TextAlign.center,
               ),
-              Gap(12.h),
-              Text(
-                context.tr('share_app_to_find_users'),
-                style: Styles.textStyle14.copyWith(color: Colors.grey),
-                textAlign: TextAlign.center,
-              ),
-            ],
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerifiedCard() {
+    return CustomPaint(
+      painter: DashedBorderPainter(
+        color: Color(0xFFE91E63).withOpacity(0.4),
+        strokeWidth: 1.5,
+        dashWidth: 6,
+        dashSpace: 4,
+        borderRadius: 12.r,
+      ),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 14.h),
+        decoration: BoxDecoration(
+          color: Color(0xFFFFF0F3),
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            SvgPicture.asset(AssetsData.verIcon, height: 80.h),
+            // SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.tr('verified_profile_title'), // "هذا الملف موثق"
+                    style: Styles.textStyle16Bold.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary400,
+                    ),
+                  ),
+                  SizedBox(height: 6.h),
+                  Text(
+                    context.tr(
+                      'verified_profile_desc',
+                    ), // "تم التأكد من صحة جميع البيانات الشخصية من قبل التطبيق"
+                    textAlign: TextAlign.right,
+                    style: Styles.textStyle16Bold.copyWith(
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.secondary400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -397,7 +483,9 @@ class MarriageBodyState extends State<MarriageBody>
     final bool shouldBlurImages = widget.fromInteractions
         ? (cubit.interactionUser?.isImageBlurred ?? user?.imageBlur ?? false)
         : (user?.imageBlur ?? false);
-
+    final bool isVerifiedUser = widget.fromInteractions
+        ? (cubit.interactionUser?.isverified ?? user?.isVerified ?? false)
+        : (user?.isVerified ?? false);
     final bool hasNext =
         widget.personId == null && profileIndex + 1 < users.length;
 
@@ -406,14 +494,13 @@ class MarriageBodyState extends State<MarriageBody>
     final nextAnswers = nextProfile?.answers;
     final List<String> nextImages = nextAnswers?.userMedia?.image ?? [];
 
-    // ✅ بناء events مرة واحدة
     final timelineEvents = answers?.yourGoals != null
         ? _buildTimelineEventsFromAnswers(answers!.yourGoals!)
         : <Map<String, dynamic>>[];
 
     return Directionality(
       key: key,
-      textDirection: TextDirection.rtl,
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: CustomBackground(
         child: Stack(
           children: [
@@ -425,6 +512,10 @@ class MarriageBodyState extends State<MarriageBody>
                 controller: _mainScrollController,
                 slivers: [
                   SliverProfileHeader(
+                    isVerified: isVerifiedUser,
+                    nextIsVerified: hasNext
+                        ? (nextUser?.isVerified ?? false)
+                        : null,
                     reportId: user?.id,
                     images: displayImages,
                     name: user?.name ?? '',
@@ -599,7 +690,6 @@ class MarriageBodyState extends State<MarriageBody>
                       ),
                     ),
 
-                  // ✅ MarriageLifeEventsSection مع الـ events الصح
                   if (timelineEvents.isNotEmpty)
                     SliverPadding(
                       padding: EdgeInsets.symmetric(
@@ -731,48 +821,31 @@ class MarriageBodyState extends State<MarriageBody>
                     ),
                     sliver: SliverToBoxAdapter(
                       child: BottomActionsSection(
+                      
+                        onShare: () {
+                          DeepLinkService.shareProfile(
+                            personId: user?.id ?? '',
+                            userName: user?.name ?? '',
+                          );
+                        },
+
                         onBlock: () {
-                          final isBlocked = user?.isBlocked ?? false;
                           CustomshowDialogWithImage(
                             context,
-                            title: isBlocked
-                                ? context.tr('unblock_user')
-                                : context.tr(AppStrings.blockUser),
-                            supTitle: isBlocked
-                                ? context.tr('unblock_user_confirmation')
-                                : context.tr(AppStrings.blockUserConfirmation),
+                            title: context.tr(AppStrings.blockUser),
+                            supTitle: context.tr(
+                              AppStrings.blockUserConfirmation,
+                            ),
                             icon: Icons.block,
                             bottonText: context.tr(AppStrings.yes),
                             onPressed: () async {
-                              Navigator.pop(context);
-                              if (isBlocked) {
-                                // ✅ إلغاء الحظر - مش محتاج scroll
-                                await cubit.unblockUser(
-                                  personId: user?.id ?? '',
-                                );
-                              } else {
-                                // ✅ حظر - شيل اليوزر وجيب التالي
-                                await cubit.blockUser(personId: user?.id ?? '');
-                                // ✅ ارجع للأعلى عشان تشوف البروفايل الجديد
-                                if (widget.personId == null) {
-                                  _resetScrollTracking();
-                                  scrollToTop();
-                                }
+                              cubit.blockUser(personId: user?.id ?? '');
+
+                              if (!mounted) return;
+                              if (widget.personId == null) {
+                                _resetScrollTracking();
+                                scrollToTop();
                               }
-                              final newState = cubit.state;
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                CustomSnackBar(
-                                  context,
-                                  text: newState.blockMessage ?? '',
-                                  isSuccess:
-                                      newState.blockActionState ==
-                                      CubitStates.success,
-                                  isError:
-                                      newState.blockActionState ==
-                                      CubitStates.failure,
-                                ),
-                              );
                             },
                             showCancelButton: true,
                             cancelText: context.tr(AppStrings.no),
@@ -791,7 +864,13 @@ class MarriageBodyState extends State<MarriageBody>
                       ),
                     ),
                   ),
-
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.w,
+                      vertical: 20.h,
+                    ),
+                    sliver: SliverToBoxAdapter(child: _buildVerifiedCard()),
+                  ),
                   SliverToBoxAdapter(child: SizedBox(height: 150.h)),
                 ],
               ),
@@ -873,7 +952,7 @@ class MarriageBodyState extends State<MarriageBody>
 
     return Directionality(
       key: key,
-      textDirection: TextDirection.rtl,
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: CustomBackground(
         child: Column(
           children: [
@@ -990,6 +1069,9 @@ class MarriageBodyState extends State<MarriageBody>
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  // CIRCLE BUTTON
+  // ═══════════════════════════════════════════════════════════════
   Widget buildCircleButton(
     IconData icon,
     Color iconColor,
@@ -1006,9 +1088,12 @@ class MarriageBodyState extends State<MarriageBody>
     );
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  // SHIMMER
+  // ═══════════════════════════════════════════════════════════════
   Widget _buildShimmerScreen() {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: CustomBackground(
         child: CustomScrollView(
           slivers: [

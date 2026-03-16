@@ -78,27 +78,46 @@ class _RatingsContent extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () =>
           context.read<RatingsCubit>().refresh(advisorId: advisorId),
-      child: Column(
-        children: [
-          if (!isMe && isUser)
-            RatingsAddButton(
-              advisorId: advisorId,
-              reviewController: reviewController,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          children: [
+            if (!isMe && isUser)
+              RatingsAddButton(
+                advisorId: advisorId,
+                reviewController: reviewController,
+              ),
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+              child: state.summary == null && state.ratings.isEmpty
+                  ? Padding(
+                      padding: EdgeInsets.only(top: 80.h),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            AppImage(AssetsData.icNoContentSeach, height: 150.h),
+                            Gap(16.h),
+                            Text(
+                              context.tr('no_results'),
+                              style: Styles.textStyle16.copyWith(color: AppColors.kGreyB3),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : Column(
+                      children: [
+                        RatingsSummarySection(state: state),
+                        Gap(20.h),
+                        RatingsList(state: state),
+                      ],
+                    ),
             ),
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
-            child: Column(
-              children: [
-                RatingsSummarySection(state: state),
-                Gap(20.h),
-                RatingsList(state: state),
-              ],
-            ),
-          ),
-          if (state.hasMore)
-            RatingsLoadMoreButton(advisorId: advisorId, state: state),
-          Gap(20.h),
-        ],
+            if (state.hasMore)
+              RatingsLoadMoreButton(advisorId: advisorId, state: state),
+            Gap(20.h),
+          ],
+        ),
       ),
     );
   }

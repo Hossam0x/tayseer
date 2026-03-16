@@ -159,6 +159,12 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         routeName: AppRouter.kLanguageSelectionView,
       ),
       SettingItemModel(
+        id: 'packages',
+        title: 'packages',
+        iconAsset: AssetsData.icPackesSettinngs,
+        routeName: AppRouter.kUserPackagesView,
+      ),
+      SettingItemModel(
         id: 'archive',
         title: 'archived_chats',
         iconAsset: AssetsData.icArchiveSettings,

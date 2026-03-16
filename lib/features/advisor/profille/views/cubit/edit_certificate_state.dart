@@ -1,3 +1,4 @@
+import 'package:tayseer/features/advisor/profille/data/models/certificate_model.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/enum/cubit_states.dart'; // Ensure enum is imported
 
@@ -16,6 +17,7 @@ class EditCertificateState {
   final String? successMessage; // Add successMessage
   final bool isImageRemoved;
   final bool isNavigationSuccess; // Add helper for navigation
+  final CertificateModel? updatedCertificate;
 
   const EditCertificateState({
     this.state = CubitStates.initial,
@@ -32,6 +34,7 @@ class EditCertificateState {
     this.successMessage,
     this.isImageRemoved = false,
     this.isNavigationSuccess = false,
+    this.updatedCertificate,
   });
 
   EditCertificateState copyWith({
@@ -51,6 +54,7 @@ class EditCertificateState {
     bool clearImageUrl = false,
     bool? isImageRemoved,
     bool? isNavigationSuccess,
+    CertificateModel? updatedCertificate,
   }) {
     return EditCertificateState(
       state: state ?? this.state,
@@ -73,6 +77,7 @@ class EditCertificateState {
       successMessage: successMessage, // Intentionally not keeping previous
       isImageRemoved: isImageRemoved ?? this.isImageRemoved,
       isNavigationSuccess: isNavigationSuccess ?? false,
+      updatedCertificate: updatedCertificate ?? this.updatedCertificate,
     );
   }
 }

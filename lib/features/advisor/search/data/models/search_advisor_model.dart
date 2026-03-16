@@ -11,6 +11,7 @@ class SearchAdvisor extends Equatable {
   final bool isFollowing;
   final bool isVerified;
   final bool isMe;
+  final bool imageBlur;
 
   const SearchAdvisor({
     required this.id,
@@ -22,6 +23,7 @@ class SearchAdvisor extends Equatable {
     required this.isFollowing,
     this.isVerified = false,
     required this.isMe,
+    this.imageBlur = false,
   });
 
   factory SearchAdvisor.fromJson(Map<String, dynamic> json) {
@@ -35,6 +37,7 @@ class SearchAdvisor extends Equatable {
       isFollowing: json['isFollowing'] ?? false,
       isVerified: json['isVerified'] ?? false,
       isMe: json['isMe'],
+      imageBlur: json['imageBlur'] ?? false,
     );
   }
 
@@ -48,6 +51,7 @@ class SearchAdvisor extends Equatable {
     bool? isFollowing,
     bool? isVerified,
     bool? isMe,
+    bool? imageBlur,
   }) {
     return SearchAdvisor(
       id: id ?? this.id,
@@ -59,6 +63,7 @@ class SearchAdvisor extends Equatable {
       isFollowing: isFollowing ?? this.isFollowing,
       isVerified: isVerified ?? this.isVerified,
       isMe: isMe ?? this.isMe,
+      imageBlur: imageBlur ?? this.imageBlur,
     );
   }
 
@@ -73,5 +78,6 @@ class SearchAdvisor extends Equatable {
     isFollowing,
     isVerified,
     isMe,
+    imageBlur,
   ];
 }

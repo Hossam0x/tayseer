@@ -131,12 +131,21 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
         );
       },
       (response) {
+        CertificateModel? addedCertificate;
+        if (response['data'] != null &&
+            response['data']['certificate'] != null) {
+          addedCertificate = CertificateModel.fromJson(
+            Map<String, dynamic>.from(response['data']['certificate']),
+          );
+        }
+
         emit(
           state.copyWith(
             isLoading: false,
             successMessage: 'certificateAdded',
             state: CubitStates.success,
             isNavigationSuccess: true,
+            updatedCertificate: addedCertificate,
           ),
         );
       },
@@ -215,7 +224,15 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
       },
       (response) {
         String? newImageUrl = state.certificateImageUrl;
-        if (response['data'] != null && response['data']['image'] != null) {
+        CertificateModel? updatedCertificate;
+
+        if (response['data'] != null &&
+            response['data']['certificate'] != null) {
+          final certJson =
+              Map<String, dynamic>.from(response['data']['certificate']);
+          updatedCertificate = CertificateModel.fromJson(certJson);
+          newImageUrl = updatedCertificate.image;
+        } else if (response['data'] != null && response['data']['image'] != null) {
           newImageUrl = response['data']['image'];
         }
 
@@ -226,6 +243,7 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
             successMessage: 'update_success',
             state: CubitStates.success,
             isNavigationSuccess: true,
+            updatedCertificate: updatedCertificate,
           ),
         );
       },

@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
+import 'package:tayseer/features/user/user_profile/presentation/screens/email_edit_screen.dart';
+import 'package:tayseer/features/user/user_profile/presentation/screens/phone_edit_screen.dart';
 import 'package:tayseer/features/user/user_profile/views/age_selection_view.dart';
-import 'package:tayseer/features/user/user_profile/views/email_edit_view.dart';
-import 'package:tayseer/features/user/user_profile/views/phone_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/privacy_selection_view.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
@@ -19,32 +19,43 @@ class GeneralSettingsView extends StatefulWidget {
 class _GeneralSettingsViewState extends State<GeneralSettingsView> {
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<UserProfileCubit, UserProfileState>(
-      builder: (context, state) {
-        return Scaffold(
-          body: AdvisorBackground(
-            child: SafeArea(
-              child: Column(
-                children: [
-                  Gap(16.h),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24.w),
-                    child: SimpleAppBar(
-                      title: context.tr('settings'),
-                      isLargeTitle: true,
-                    ),
-                  ),
-                  Expanded(child: _buildContent(context, state)),
-                ],
+    return Scaffold(
+      body: AdvisorBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Gap(16.h),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                child: SimpleAppBar(
+                  title: context.tr('settings'),
+                  isLargeTitle: true,
+                ),
               ),
-            ),
+              Expanded(
+                child: BlocSelector<UserProfileCubit, UserProfileState, UserProfileModel?>(
+                  selector: (state) {
+                    if (state is SettingsLoaded) return state.userProfile;
+                    return null;
+                  },
+                  builder: (context, userProfile) {
+                    final state = context.read<UserProfileCubit>().state;
+                    return _buildContent(context, state, userProfile);
+                  },
+                ),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _buildContent(BuildContext context, UserProfileState state) {
+  Widget _buildContent(
+    BuildContext context,
+    UserProfileState state,
+    UserProfileModel? userProfile,
+  ) {
     if (state is SettingsLoading || state is SettingsInitial) {
       return _buildLoadingSkeleton();
     }
@@ -88,23 +99,18 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
       );
     }
 
-    if (state is SettingsLoaded) {
-      final userProfile = state.userProfile;
-      return SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 24.w),
-        child: Column(
-          children: [
-            Gap(30.h),
-            _buildPersonalSection(context, userProfile),
-            Gap(30.h),
-            _buildPrivacySection(context, userProfile),
-            Gap(40.h),
-          ],
-        ),
-      );
-    }
-
-    return const SizedBox();
+    return SingleChildScrollView(
+      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      child: Column(
+        children: [
+          Gap(30.h),
+          _buildPersonalSection(context, userProfile),
+          Gap(30.h),
+          _buildPrivacySection(context, userProfile),
+          Gap(40.h),
+        ],
+      ),
+    );
   }
 
   Widget _buildLoadingSkeleton() {
@@ -257,12 +263,12 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
               context,
               MaterialPageRoute(
                 builder: (context) =>
-                    EmailEditView(initialEmail: userProfile?.email ?? ''),
+                    EmailEditScreen(initialEmail: userProfile?.email ?? ''),
               ),
             );
-            // Refresh data after returning
+            // Silent update: fetch only the profile without emitting SettingsLoading
             if (mounted) {
-              context.read<UserProfileCubit>().refresh();
+              context.read<UserProfileCubit>().fetchUserProfile();
             }
           },
           child: _buildSettingRow(label: context.tr('email'), value: ''),
@@ -273,12 +279,12 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
               context,
               MaterialPageRoute(
                 builder: (context) =>
-                    PhoneEditView(initialPhone: userProfile?.phone ?? ''),
+                    PhoneEditScreen(initialPhone: userProfile?.phone ?? ''),
               ),
             );
-            // Refresh data after returning
+            // Silent update: fetch only the profile without emitting SettingsLoading
             if (mounted) {
-              context.read<UserProfileCubit>().refresh();
+              context.read<UserProfileCubit>().fetchUserProfile();
             }
           },
           child: _buildSettingRow(

@@ -1,3 +1,4 @@
+import 'package:tayseer/features/advisor/profille/data/models/certificate_model.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/add_certificate_state.dart';
 import 'package:tayseer/my_import.dart';
@@ -105,11 +106,21 @@ class AddCertificateCubit extends Cubit<AddCertificateState> {
         // ⭐ مسح النموذج بعد الإضافة الناجحة
         _clearForm();
 
+        // Extract certificate from response
+        CertificateModel? addedCertificate;
+        if (response['data'] != null &&
+            response['data']['certificate'] != null) {
+          addedCertificate = CertificateModel.fromJson(
+            Map<String, dynamic>.from(response['data']['certificate']),
+          );
+        }
+
         emit(
           state.copyWith(
             isLoading: false,
             successMessage: 'تم إضافة الشهادة بنجاح',
             state: CubitStates.success,
+            addedCertificate: addedCertificate,
           ),
         );
       },

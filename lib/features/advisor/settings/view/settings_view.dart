@@ -23,6 +23,7 @@ class SettingsView extends StatefulWidget {
 
 class _SettingsViewState extends State<SettingsView> {
   late SettingsCubit _settingsCubit;
+  bool _hasDataChanged = false;
 
   @override
   void initState() {
@@ -36,62 +37,78 @@ class _SettingsViewState extends State<SettingsView> {
     super.dispose();
   }
 
+  void _markDataChanged() {
+    _hasDataChanged = true;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _settingsCubit,
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: AdvisorBackground(
-          child: BlocListener<SettingsCubit, SettingsState>(
-            listenWhen: (previous, current) {
-              if (current is SettingsLoaded && previous is SettingsLoaded) {
-                return current.actionTimestamp != previous.actionTimestamp;
-              }
-              // Handle first action when state becomes loaded
-              if (current is SettingsLoaded &&
-                  (current.actionSuccess != null ||
-                      current.actionError != null)) {
-                return true;
-              }
-              return false;
-            },
-            listener: (context, state) {
-              if (state is SettingsLoaded) {
-                if (state.actionSuccess != null) {
-                  if (state.actionSuccess == "update_language_success") {
-                    // Update language without showing toast
-                    SharedPreferences.getInstance().then((p) {
-                      final lang = p.getString(kAppLanguage) ?? 'ar';
-                      if (context.mounted) {
-                        context.read<LanguageCubit>().setLanguage(
-                          lang,
-                          context,
-                        );
-                      }
-                    });
-                  } else {
-                    AppToast.success(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (!didPop) {
+          // Pop with result indicating if data changed
+          Navigator.of(context).pop(_hasDataChanged);
+        }
+      },
+      child: BlocProvider.value(
+        value: _settingsCubit,
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: AdvisorBackground(
+            child: BlocListener<SettingsCubit, SettingsState>(
+              listenWhen: (previous, current) {
+                if (current is SettingsLoaded && previous is SettingsLoaded) {
+                  return current.actionTimestamp != previous.actionTimestamp;
+                }
+                // Handle first action when state becomes loaded
+                if (current is SettingsLoaded &&
+                    (current.actionSuccess != null ||
+                        current.actionError != null)) {
+                  return true;
+                }
+                return false;
+              },
+              listener: (context, state) {
+                if (state is SettingsLoaded) {
+                  if (state.actionSuccess != null) {
+                    // Mark data as changed when any setting is updated
+                    _markDataChanged();
+
+                    if (state.actionSuccess == "update_language_success") {
+                      // Update language without showing toast
+                      SharedPreferences.getInstance().then((p) {
+                        final lang = p.getString(kAppLanguage) ?? 'ar';
+                        if (context.mounted) {
+                          context.read<LanguageCubit>().setLanguage(
+                            lang,
+                            context,
+                          );
+                        }
+                      });
+                    } else {
+                      AppToast.success(
+                        context,
+                        state.isActionKey
+                            ? context.tr(state.actionSuccess!)
+                            : state.actionSuccess!,
+                      );
+                    }
+                    context.read<SettingsCubit>().clearMessages();
+                  } else if (state.actionError != null) {
+                    // Convert to APP toast
+                    AppToast.error(
                       context,
                       state.isActionKey
-                          ? context.tr(state.actionSuccess!)
-                          : state.actionSuccess!,
+                          ? context.tr(state.actionError!)
+                          : state.actionError!,
                     );
+                    context.read<SettingsCubit>().clearMessages();
                   }
-                  context.read<SettingsCubit>().clearMessages();
-                } else if (state.actionError != null) {
-                  // Convert to APP toast
-                  AppToast.error(
-                    context,
-                    state.isActionKey
-                        ? context.tr(state.actionError!)
-                        : state.actionError!,
-                  );
-                  context.read<SettingsCubit>().clearMessages();
                 }
-              }
-            },
-            child: _buildBody(context),
+              },
+              child: _buildBody(context),
+            ),
           ),
         ),
       ),
@@ -349,6 +366,7 @@ class _SettingsViewState extends State<SettingsView> {
                                   activeColor: const Color(0xFFF06C88),
                                   trackColor: AppColors.dropDownArrow,
                                   onChanged: (value) {
+                                    _markDataChanged();
                                     context.read<SettingsCubit>().updateSwitch(
                                       setting.id,
                                       value,
@@ -513,10 +531,17 @@ class _SettingsViewState extends State<SettingsView> {
       if (setting.id == 'language') {
         final result = await Navigator.pushNamed(context, setting.routeName);
         if (result != null && result is String) {
-          context.read<SettingsCubit>().updateLanguage(result);
+          _markDataChanged();
+          if (context.mounted) {
+            context.read<SettingsCubit>().updateLanguage(result);
+          }
         }
       } else {
-        Navigator.pushNamed(context, setting.routeName);
+        final result = await Navigator.pushNamed(context, setting.routeName);
+        // Mark data changed if any sub-screen returns true
+        if (result == true) {
+          _markDataChanged();
+        }
       }
     }
   }

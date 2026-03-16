@@ -49,6 +49,12 @@ class PostsTab extends StatelessWidget {
         ),
       ],
       child: BlocBuilder<ProfileCubit, ProfileState>(
+        // ✅ أعد البناء فقط عند تغيير بيانات البوستات — لا عند profile أو analytics
+        buildWhen: (previous, current) =>
+            previous.postsState != current.postsState ||
+            previous.posts != current.posts ||
+            previous.isLoadingMore != current.isLoadingMore ||
+            previous.hasMore != current.hasMore,
         builder: (context, state) {
           if (state.postsState == CubitStates.loading && state.posts.isEmpty) {
             return _buildShimmerList();
