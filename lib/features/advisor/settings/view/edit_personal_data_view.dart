@@ -407,7 +407,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
             if (state.successMessage != null) {
               showSafeSnackBar(
                 context: context,
-                text: state.successMessage!,
+                text: context.tr(state.successMessage!),
                 isSuccess: true,
               );
               context.read<EditPersonalDataCubit>().clearSuccess();
