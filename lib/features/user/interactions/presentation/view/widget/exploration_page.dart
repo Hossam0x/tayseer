@@ -8,7 +8,6 @@ import 'package:tayseer/features/user/interactions/presentation/view/widget/inte
 import 'package:tayseer/features/user/interactions/presentation/view/widget/greeting_interaction_card.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/recently_joined.dart';
 import 'package:tayseer/my_import.dart';
-
 import '../../../data/Model/interaction_usermodel .dart';
 
 class Exploration extends StatefulWidget {
@@ -335,7 +334,7 @@ class ExplorationState extends State<Exploration> {
                   itemBuilder: (context, index) {
                     final item = state.explorationData["ارسل تحية"]![index];
                     return Padding(
-                      padding: EdgeInsetsDirectional.only(bottom: 12.w),
+                      padding: EdgeInsetsDirectional.only(bottom: 12.h),
                       child: GreetingProfileCard(
                         item: item,
                         forceBlur: !state.isSubscribed,
@@ -349,7 +348,7 @@ class ExplorationState extends State<Exploration> {
         ),
 
         SliverPadding(
-          padding: EdgeInsets.only(bottom: 100.h),
+          padding: EdgeInsets.only(bottom: 140.h),
           sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
         ),
       ],

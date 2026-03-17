@@ -15,7 +15,10 @@ import 'package:tayseer/my_import.dart';
 /// Global navigator key
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-/// لو وصل deep link والمستخدم مش مسجل — نحفظه هنا ونفتحه بعد اللوجن
+/// الـ URI الخام — يُحفظ هنا فقط، الـ SplashScreen هو اللي يتعامل معه
+Uri? pendingDeepLinkUri;
+
+/// personId بعد ما يسجل دخول
 String? pendingDeepLinkPersonId;
 
 void main() async {
@@ -27,92 +30,112 @@ void main() async {
   await dotenv.load(fileName: '.env');
   await Hive.initFlutter();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  LocalNotification().initialize();
   await CachNetwork.cacheInitializaion();
   await setupGetIt();
   await getIt<ConnectivityService>().initialize();
   await _initializeVideoSystem();
   await GlobalMuteManager.instance.init();
 
+  // ✅ نحفظ الـ cold start URI قبل runApp — بدون أي navigation هنا
+  await _captureColdStartLink();
+
   Bloc.observer = SimpleBlocObserver();
+
+
   runApp(const TayseerApp());
 
-  // ✅ Deep Links — بعد runApp
-  _initDeepLinks();
+  // ✅ بعد runApp — عشان Navigator يكون جاهز قبل أي notification navigation
+  LocalNotification().initialize();
+
+  // ✅ Warm start فقط — التطبيق في الخلفية
+  _listenToWarmStartLinks();
 }
 
 // ─────────────────────────────────────────────
 // Deep Links
 // ─────────────────────────────────────────────
 
-void _initDeepLinks() async {
+Future<void> _captureColdStartLink() async {
+  try {
+    final appLinks = AppLinks();
+    final uri = await appLinks.getInitialLink();
+    if (uri != null) {
+      pendingDeepLinkUri = uri;
+      debugPrint('🔗 Cold start URI captured: $uri');
+    }
+  } catch (e) {
+    debugPrint('⚠️ Failed to capture cold start link: $e');
+  }
+}
+
+void _listenToWarmStartLinks() {
   final appLinks = AppLinks();
+  appLinks.uriLinkStream.listen((uri) {
+    debugPrint('🔗 Warm start DeepLink received: $uri');
 
-  // Cold start — التطبيق كان مقفولاً
-  final uri = await appLinks.getInitialLink();
-  if (uri != null) {
-    // ✅ ننتظر الـ navigator يكون جاهز فعلاً (مش بس frame واحد)
-    await _waitForNavigator();
-    _handleDeepLink(uri);
-  }
+    // ✅ تجاهل لو نفس الـ cold start URI
+    if (pendingDeepLinkUri != null &&
+        uri.toString() == pendingDeepLinkUri.toString()) {
+      debugPrint('🔗 Ignoring duplicate warm start (same as cold start)');
+      return;
+    }
 
-  // Warm start — التطبيق في الخلفية
-  appLinks.uriLinkStream.listen(
-    _handleDeepLink,
-    onError: (e) => debugPrint('DeepLink stream error: $e'),
-  );
+    // ✅ delay + postFrameCallback عشان Navigator يكون جاهز
+    Future.delayed(const Duration(milliseconds: 300), () {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _navigateFromUri(uri);
+      });
+    });
+  }, onError: (e) => debugPrint('DeepLink stream error: $e'));
 }
 
-/// ينتظر حتى يكون الـ navigator جاهز — بحد أقصى 10 ثواني
-Future<void> _waitForNavigator() async {
-  int attempts = 0;
-  while (navigatorKey.currentState == null && attempts < 20) {
-    await Future.delayed(const Duration(milliseconds: 500));
-    attempts++;
-  }
-  debugPrint('🔗 Navigator ready after ${attempts * 500}ms');
-}
-
-void _handleDeepLink(Uri uri) {
-  debugPrint('🔗 DeepLink received: $uri');
-
+String? _extractPersonId(Uri uri) {
   final segments = uri.pathSegments;
 
-  // https://tayseer.app/marriage/profile/{personId}
   if (segments.length >= 3 &&
       segments[0] == 'marriage' &&
       segments[1] == 'profile') {
-    _navigateToProfile(segments[2]);
-    return;
+    return segments[2];
   }
 
-  // tayseer://marriage?profileId={personId}
   if (uri.scheme == 'tayseer' && uri.host == 'marriage') {
-    final personId = uri.queryParameters['profileId'];
-    if (personId != null) _navigateToProfile(personId);
-    return;
+    return uri.queryParameters['profileId'];
   }
+
+  return null;
 }
 
-void _navigateToProfile(String personId) {
+void _navigateFromUri(Uri uri) {
+  final personId = _extractPersonId(uri);
+  if (personId == null) return;
+
   final token = CachNetwork.getStringData(key: ktoken);
   final hasToken = token != null && token.isNotEmpty;
 
   if (!hasToken || isGuest || isUserAnonymous) {
-    // احفظ الـ personId — الـ splash سيفتحه بعد اللوجن
     pendingDeepLinkPersonId = personId;
-    debugPrint('🔗 Deep link saved for after login: $personId');
+    debugPrint('🔗 Warm start: saved for after login: $personId');
     return;
   }
 
-  // المستخدم مسجل → روح البروفايل مباشرة
-  navigatorKey.currentState?.pushNamed(
-    AppRouter.kMarriageView,
-    arguments: {'personId': personId},
-  );
+  _navigateSafely(personId);
 }
 
-/// استدعيها بعد نجاح اللوجن في SplashScreen و RegisrationView
+void _navigateSafely(String personId) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (navigatorKey.currentState != null) {
+      navigatorKey.currentState!.pushNamed(
+        AppRouter.kMarriageView,
+        arguments: {'personId': personId},
+      );
+    } else {
+      pendingDeepLinkPersonId = personId;
+      debugPrint('🔗 Navigator not ready, saved as pending: $personId');
+    }
+  });
+}
+
+/// ✅ استدعيها بعد نجاح اللوجن في RegistrationView
 void consumePendingDeepLink() {
   final personId = pendingDeepLinkPersonId;
   if (personId == null) return;
@@ -120,10 +143,12 @@ void consumePendingDeepLink() {
   pendingDeepLinkPersonId = null;
   debugPrint('🔗 Consuming pending deep link: $personId');
 
-  navigatorKey.currentState?.pushNamed(
-    AppRouter.kMarriageView,
-    arguments: {'personId': personId},
-  );
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    navigatorKey.currentState?.pushNamed(
+      AppRouter.kMarriageView,
+      arguments: {'personId': personId},
+    );
+  });
 }
 
 Future<void> _initializeVideoSystem() async {
