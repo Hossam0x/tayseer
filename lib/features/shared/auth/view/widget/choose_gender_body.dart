@@ -2,7 +2,7 @@ import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
-
+import 'package:tayseer/main.dart'; // ✅ consumePendingDeepLink
 import '../../../../../my_import.dart';
 
 class ChooseGenderBody extends StatelessWidget {
@@ -135,6 +135,7 @@ class ChooseGenderBody extends StatelessWidget {
               previous.setGenderState != current.setGenderState,
           listener: (context, state) {
             if (state.setGenderState == CubitStates.success) {
+              // ✅ بيروح PurposeSelectionView — الـ deep link هيتنفذ في نهاية الـ onboarding
               context.pushReplacementNamed(AppRouter.kPurposeSelectionView);
 
               // ✅ لو Guest - روح مباشرة
@@ -160,7 +161,8 @@ class ChooseGenderBody extends StatelessWidget {
               onPressed: isEnabled && !isLoading
                   ? () {
                       if (currentUserType == UserTypeEnum.guest) {
-                        // Guest - روح مباشرة
+                        // ✅ Guest — روح مباشرة للـ layout
+                        // Guest مش بيوصله deep link للزواج
                         context.pushReplacementNamed(
                           AppRouter.kAdvisorLayoutView,
                           arguments: {'currentUserType': UserTypeEnum.guest},

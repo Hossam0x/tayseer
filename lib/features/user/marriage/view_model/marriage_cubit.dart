@@ -89,12 +89,33 @@ class MarriageCubit extends Cubit<MarriageState> {
     profileResult.fold(
       (failure) {
         if (isClosed) return;
+
         if (interactionUser != null) {
+          // ✅ جاي من interactions — نبني من interactionUser
           _emitFromInteractionUser(
             fetchedFavoriteIds: fetchedFavoriteIds,
             seedFavoriteId: seedFavoriteId,
           );
+        } else if (seedPersonId != null && seedPersonId!.isNotEmpty) {
+          // ✅ جاي من deeplink أو نفس الـ gender — نعمل placeholder ونجيب البيانات
+          final placeholder = UserItem(
+            user: User(id: seedPersonId),
+            answers: null,
+          );
+          emit(
+            state.copyWith(
+              marriageProfileState: CubitStates.success,
+              currentIndex: 0,
+              allUsers: [placeholder],
+              currentPage: 1,
+              totalPages: 1,
+              favoritedIds: fetchedFavoriteIds,
+            ),
+          );
+          // ✅ اجيب البيانات الحقيقية بعدها
+          fetchSpecificProfile(seedPersonId!);
         } else {
+          // ✅ مفيش seed — عرض الـ error
           emit(
             state.copyWith(
               marriageProfileState: CubitStates.failure,
@@ -125,13 +146,26 @@ class MarriageCubit extends Cubit<MarriageState> {
         };
 
         final serverUsers = profile.data?.users ?? [];
-
         List<UserItem> finalUsers = serverUsers;
-        if (interactionUser != null && seedPersonId != null) {
+
+        // ✅ لو في seedPersonId ومش موجود في النتايج
+        if (seedPersonId != null) {
           final found = serverUsers.any((u) => u.user?.id == seedPersonId);
           if (!found) {
-            final seededItem = _buildUserItemFromInteraction(interactionUser!);
-            finalUsers = [seededItem, ...serverUsers];
+            if (interactionUser != null) {
+              // ✅ عندنا interactionUser — نبني منه
+              final seededItem = _buildUserItemFromInteraction(
+                interactionUser!,
+              );
+              finalUsers = [seededItem, ...serverUsers];
+            } else {
+              // ✅ مفيش interactionUser — نحط placeholder بـ seedPersonId
+              final placeholder = UserItem(
+                user: User(id: seedPersonId),
+                answers: null,
+              );
+              finalUsers = [placeholder, ...serverUsers];
+            }
           }
         }
 
@@ -146,10 +180,132 @@ class MarriageCubit extends Cubit<MarriageState> {
             favoritedIds: mergedFavorites,
           ),
         );
+
+        // ✅ لو في placeholder (answers == null) — اجيب البيانات الحقيقية
+        if (seedPersonId != null) {
+          final hasPlaceholder = finalUsers.any(
+            (u) => u.user?.id == seedPersonId && u.answers == null,
+          );
+          if (hasPlaceholder) {
+            fetchSpecificProfile(seedPersonId!);
+          }
+        }
       },
     );
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // FETCH SPECIFIC PROFILE
+  // ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// FETCH SPECIFIC PROFILE
+// ═══════════════════════════════════════════════════════════════
+Future<void> fetchSpecificProfile(String targetPersonId) async {
+  // ✅ لو موجود بالفعل مع answers — مش محتاج نعمل حاجة
+  final alreadyHasData = state.allUsers.any(
+    (u) => u.user?.id == targetPersonId && u.answers != null,
+  );
+  if (alreadyHasData) return;
+
+  // ✅ تأكد إن في placeholder — لو مش موجود خالص ضيفه
+  final hasPlaceholder = state.allUsers.any(
+    (u) => u.user?.id == targetPersonId,
+  );
+  if (!hasPlaceholder) {
+    final placeholder = UserItem(
+      user: User(id: targetPersonId),
+      answers: null,
+    );
+    emit(
+      state.copyWith(
+        allUsers: [
+          placeholder,
+          ...state.allUsers
+              .where((u) => u.user?.id != targetPersonId)
+              .toList(),
+        ],
+        currentIndex: 0,
+      ),
+    );
+  }
+
+  // ✅ جرب تجيب البيانات بـ user_id filter
+  final result = await _repo.getMarriageProfile(
+    "1",
+    filters: {'user_id': targetPersonId},
+  );
+
+  result.fold(
+    (_) {
+      // ✅ الـ API مش بيدعم user_id filter — جرب بدون filter
+      _fetchSpecificProfileFallback(targetPersonId);
+    },
+    (profile) {
+      if (isClosed) return;
+
+      final users = profile.data?.users ?? [];
+
+      UserItem specificUser;
+      try {
+        specificUser = users.firstWhere(
+          (u) => u.user?.id == targetPersonId,
+        );
+      } catch (_) {
+        // ✅ مش موجود في النتايج بالـ filter — جرب الـ fallback
+        _fetchSpecificProfileFallback(targetPersonId);
+        return;
+      }
+
+      final updatedUsers = <UserItem>[
+        specificUser,
+        ...state.allUsers.where((u) => u.user?.id != targetPersonId),
+      ];
+
+      emit(state.copyWith(allUsers: updatedUsers, currentIndex: 0));
+    },
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FETCH SPECIFIC PROFILE FALLBACK — لما الـ filter مش شغال
+// ═══════════════════════════════════════════════════════════════
+Future<void> _fetchSpecificProfileFallback(String targetPersonId) async {
+  if (isClosed) return;
+
+  // ✅ جيب أول صفحة بدون filter وابحث عن اليوزر
+  final result = await _repo.getMarriageProfile("1", filters: {});
+
+  result.fold(
+    (_) {
+      // ✅ فشل كمان — placeholder يفضل، الـ UI شغال بالبيانات الموجودة
+    },
+    (profile) {
+      if (isClosed) return;
+
+      final users = profile.data?.users ?? [];
+
+      UserItem specificUser;
+      try {
+        specificUser = users.firstWhere(
+          (u) => u.user?.id == targetPersonId,
+        );
+      } catch (_) {
+        // ✅ مش موجود في الـ list العادية
+        // ممكن الـ user ده من نفس الـ gender أو محذوف
+        // placeholder يفضل — الـ UI بيشتغل بالبيانات المتاحة
+        return;
+      }
+
+      // ✅ لقيناه — استبدل الـ placeholder
+      final updatedUsers = <UserItem>[
+        specificUser,
+        ...state.allUsers.where((u) => u.user?.id != targetPersonId),
+      ];
+
+      emit(state.copyWith(allUsers: updatedUsers, currentIndex: 0));
+    },
+  );
+}
   // ═══════════════════════════════════════════════════════════
   // REFRESH
   // ═══════════════════════════════════════════════════════════
@@ -193,7 +349,7 @@ class MarriageCubit extends Cubit<MarriageState> {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // HELPERS
+  // HELPERS — BUILD USER ITEM FROM INTERACTION
   // ═══════════════════════════════════════════════════════════
   UserItem _buildUserItemFromInteraction(InteractionUserModel item) {
     return UserItem(
@@ -234,6 +390,9 @@ class MarriageCubit extends Cubit<MarriageState> {
         favoritedIds: mergedFavorites,
       ),
     );
+
+    // ✅ اجيب البيانات الحقيقية للـ interactionUser
+    fetchSpecificProfile(item.userId);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -524,7 +683,7 @@ class MarriageCubit extends Cubit<MarriageState> {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // HELPERS
+  // CLAMP INDEX
   // ═══════════════════════════════════════════════════════════
   void clampCurrentIndex({required int usersLength}) {
     if (usersLength <= 0) return;
@@ -533,6 +692,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     }
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // RESET STATE
+  // ═══════════════════════════════════════════════════════════
   void resetState() {
     emit(
       state.copyWith(
@@ -547,10 +709,13 @@ class MarriageCubit extends Cubit<MarriageState> {
     );
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // DISPOSE
+  // ═══════════════════════════════════════════════════════════
   @override
   Future<void> close() {
     _filterSubscription.cancel();
-    _switchToMarriageTabSub?.cancel(); // ✅
+    _switchToMarriageTabSub?.cancel();
     _cardController?.removeListener(_onAnimationTick);
     _cardController?.dispose();
     return super.close();

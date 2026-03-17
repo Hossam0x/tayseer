@@ -105,6 +105,17 @@ class MarriageBodyState extends State<MarriageBody>
       widget.onScroll?.call(isDown);
       _scrollDelta = 0;
     }
+
+    // ✅ لو وصل للأعلى خالص — اجبر إظهار الـ navbar فوراً
+    if (currentOffset <= 0) {
+      _scrollDelta = 0;
+      final cubit = context.read<MarriageCubit>();
+      if (cubit.state.isScrollingDown) {
+        cubit.setScrollingDown(false);
+        widget.onScroll?.call(false);
+      }
+    }
+
     _lastOffset = currentOffset;
   }
 
@@ -259,9 +270,24 @@ class MarriageBodyState extends State<MarriageBody>
           );
         }
 
+        // ✅ في الـ builder — غير الـ users filter
         final List<UserItem> allUsers = state.allUsers;
         final List<UserItem> users = widget.personId != null
-            ? allUsers.where((p) => p.user?.id == widget.personId).toList()
+            ? () {
+                final filtered = allUsers
+                    .where((p) => p.user?.id == widget.personId)
+                    .toList();
+                // ✅ لو مش موجود في النتايج، اطلب إضافته وارجع كل الـ users مؤقتاً
+                if (filtered.isEmpty &&
+                    state.marriageProfileState == CubitStates.success) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    context.read<MarriageCubit>().fetchSpecificProfile(
+                      widget.personId!,
+                    );
+                  });
+                }
+                return filtered.isNotEmpty ? filtered : allUsers;
+              }()
             : allUsers;
 
         if (users.isEmpty) {
@@ -821,7 +847,6 @@ class MarriageBodyState extends State<MarriageBody>
                     ),
                     sliver: SliverToBoxAdapter(
                       child: BottomActionsSection(
-                      
                         onShare: () {
                           DeepLinkService.shareProfile(
                             personId: user?.id ?? '',

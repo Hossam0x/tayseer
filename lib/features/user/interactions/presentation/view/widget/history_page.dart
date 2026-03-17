@@ -221,7 +221,9 @@ class HistorypageState extends State<Historypage> {
                               ),
                             ),
                             SliverPadding(
-                              padding: EdgeInsets.only(bottom: 20.h),
+                              padding: EdgeInsets.only(
+                                bottom: showOverlay ? 70.h : 110.h,
+                              ),
                               sliver: SliverToBoxAdapter(
                                 child: SizedBox.shrink(),
                               ),

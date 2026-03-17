@@ -6,6 +6,7 @@ import 'dart:developer';
 
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/main.dart';
 
 import '../../../../my_import.dart';
 
@@ -24,9 +25,8 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void initState() {
-    _initializeSocket();
     super.initState();
-
+    _initializeSocket();
     _navigateBasedOnToken();
   }
 
@@ -35,9 +35,7 @@ class _SplashScreenState extends State<SplashScreen>
       final userType = CachNetwork.getStringData(key: kUserType);
       final token = CachNetwork.getStringData(key: ktoken);
 
-      if (userType == UserTypeEnum.guest.name || token.isEmpty) {
-        return;
-      }
+      if (userType == UserTypeEnum.guest.name || token.isEmpty) return;
 
       final socketHelper = getIt<tayseerSocketHelper>();
       final connected = await socketHelper.connect();
@@ -56,39 +54,99 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(seconds: 5));
     if (!mounted) return;
 
-    String? token = CachNetwork.getStringData(key: ktoken);
-    String? userType = CachNetwork.getStringData(key: kUserType);
+    final String? token = CachNetwork.getStringData(key: ktoken);
+    final String? userType = CachNetwork.getStringData(key: kUserType);
 
     log(
-      '🔍 Navigation check - Token: ${token.isNotEmpty}, UserType: $userType, selectedUserType: $selectedUserType',
+      '🔍 Navigation check - Token: ${token?.isNotEmpty}, '
+      'UserType: $userType, selectedUserType: $selectedUserType',
     );
+
+    // ✅ نسحب الـ cold start URI ونمسحه فوراً
+    final coldUri = pendingDeepLinkUri;
+    pendingDeepLinkUri = null;
 
     if (!mounted) return;
 
-    if (token.isNotEmpty) {
+    if (token != null && token.isNotEmpty) {
+      // ─── المستخدم مسجل دخول ───
+      String destination;
+
       if (selectedUserType == UserTypeEnum.asConsultant) {
-        if (kCurrentUserData?.compeletedData == true) {
-          context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
-        } else {
-          context.pushReplacementNamed(AppRouter.kRegisrationView);
-        }
+        destination = kCurrentUserData?.compeletedData == true
+            ? AppRouter.kAdvisorLayoutView
+            : AppRouter.kRegisrationView;
       } else if (selectedUserType == UserTypeEnum.user) {
-        if (kCurrentUserData?.isNew == false) {
-          context.pushReplacementNamed(AppRouter.kUserLayoutView);
-        } else {
-          context.pushReplacementNamed(AppRouter.kRegisrationView);
-        }
+        destination = kCurrentUserData?.isNew == false
+            ? AppRouter.kUserLayoutView
+            : AppRouter.kRegisrationView;
       } else if (selectedUserType == UserTypeEnum.guest) {
         log('✅ Guest user detected, navigating to user layout');
-        context.pushReplacementNamed(AppRouter.kUserLayoutView);
+        destination = AppRouter.kUserLayoutView;
       } else {
         log('⚠️ Unknown user type, navigating to registration');
-        context.pushReplacementNamed(AppRouter.kRegisrationView);
+        destination = AppRouter.kRegisrationView;
+      }
+
+      if (!mounted) return;
+      await context.pushReplacementNamed(destination);
+
+      // ✅ بعد الـ navigation، نعالج الـ deep link بـ delay أكبر
+      if (coldUri != null) {
+        _handleDeepLinkAfterLogin(coldUri);
+      } else {
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          consumePendingDeepLink();
+        });
       }
     } else {
+      // ─── مش مسجل ───
       log('⚠️ No token found, navigating to registration');
+
+      // ✅ حفظ الـ cold start deep link لما يسجل دخول
+      if (coldUri != null) {
+        final personId = _extractPersonId(coldUri);
+        if (personId != null) {
+          pendingDeepLinkPersonId = personId;
+          debugPrint('🔗 Cold start: saved for after login: $personId');
+        }
+      }
+
+      if (!mounted) return;
       context.pushReplacementNamed(AppRouter.kRegisrationView);
     }
+  }
+
+  void _handleDeepLinkAfterLogin(Uri uri) {
+    final personId = _extractPersonId(uri);
+    if (personId == null) return;
+
+    // ✅ delay أكبر عشان الـ destination screen يتبني خالص
+    Future.delayed(const Duration(milliseconds: 1000), () {
+      if (!mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        navigatorKey.currentState?.pushNamed(
+          AppRouter.kMarriageView,
+          arguments: {'personId': personId},
+        );
+      });
+    });
+  }
+
+  String? _extractPersonId(Uri uri) {
+    final segments = uri.pathSegments;
+
+    if (segments.length >= 3 &&
+        segments[0] == 'marriage' &&
+        segments[1] == 'profile') {
+      return segments[2];
+    }
+
+    if (uri.scheme == 'tayseer' && uri.host == 'marriage') {
+      return uri.queryParameters['profileId'];
+    }
+
+    return null;
   }
 
   @override
