@@ -1,4 +1,7 @@
 import 'package:chewie/chewie.dart';
+import 'package:tayseer/core/utils/advisor_video_cache.dart';
+import 'package:tayseer/core/utils/advisor_video_event_bus.dart';
+import 'package:tayseer/core/widgets/advisor_video_player/advisor_video_player_widget.dart';
 import 'package:tayseer/core/widgets/custtom_glass_button.dart';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/profile_text_field.dart';
@@ -143,6 +146,12 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     _currentVideoUrl = videoUrl;
 
     if (!mounted) return;
+
+    // لو URL من السيرفر → نحدث الـ AdvisorVideoCache فقط (الـ widget يتعامل معاه)
+    if (videoUrl.startsWith('http')) {
+      AdvisorVideoCache.instance.updateUrl(videoUrl);
+      return;
+    }
 
     _uiCubit.setVideoLoading(true);
     _uiCubit.updateProgress(0.0);
@@ -402,6 +411,14 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                 isSuccess: true,
               );
               context.read<EditPersonalDataCubit>().clearSuccess();
+
+              // ⭐ بعت event بالـ video URL الجديد للـ ProfileView
+              final newVideoUrl = state.videoPreviewUrl ?? '';
+              if (newVideoUrl.isNotEmpty && newVideoUrl.startsWith('http')) {
+                AdvisorVideoCache.instance.updateUrl(newVideoUrl);
+                AdvisorVideoEventBus.instance.fire(newVideoUrl);
+              }
+
               // ⭐ إرجاع البروفايل المحدث للصفحة السابقة
               if (state.profile != null) {
                 Navigator.pop(context, state.profile);
@@ -1130,7 +1147,8 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
             (!isVideoDeleted &&
                 videoPreviewUrl != null &&
                 videoPreviewUrl.isNotEmpty &&
-                _chewieController != null);
+                (videoPreviewUrl.startsWith('http') ||
+                    _chewieController != null));
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1197,52 +1215,65 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: AppColors.kWhiteColor,
-                  borderRadius: BorderRadius.circular(10.r),
+                  borderRadius: BorderRadius.circular(16.r),
                   border: Border.all(color: AppColors.primary100, width: 1.0),
                 ),
                 child: Column(
                   children: [
                     Stack(
                       children: [
-                        Container(
-                          width: double.infinity,
-                          height: 250.h,
-                          decoration: BoxDecoration(
-                            color: Colors.black,
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child:
-                              _chewieController != null &&
-                                  _chewieController!
-                                      .videoPlayerController
-                                      .value
-                                      .isInitialized
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(8.r),
-                                  child: Chewie(controller: _chewieController!),
-                                )
-                              : Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.video_library_rounded,
-                                        size: 50.w,
-                                        color: Colors.white70,
-                                      ),
-                                      Gap(8.h),
-                                      Text(
-                                        videoFile != null
-                                            ? context.tr("loading_new_video")
-                                            : context.tr("loading_video"),
-                                        style: Styles.textStyle14.copyWith(
+                        // لو local file جديد → Chewie
+                        // لو URL من السيرفر → AdvisorVideoPlayerWidget (shared cache)
+                        if (videoFile != null)
+                          Container(
+                            width: double.infinity,
+                            height: 250.h,
+                            decoration: BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.circular(16.r),
+                            ),
+                            child:
+                                _chewieController != null &&
+                                    _chewieController!
+                                        .videoPlayerController
+                                        .value
+                                        .isInitialized
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(16.r),
+                                    child: Chewie(
+                                      controller: _chewieController!,
+                                    ),
+                                  )
+                                : Center(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.video_library_rounded,
+                                          size: 50.w,
                                           color: Colors.white70,
                                         ),
-                                      ),
-                                    ],
+                                        Gap(8.h),
+                                        Text(
+                                          context.tr("loading_new_video"),
+                                          style: Styles.textStyle14.copyWith(
+                                            color: Colors.white70,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                        ),
+                          )
+                        else if (videoPreviewUrl != null &&
+                            videoPreviewUrl.startsWith('http'))
+                          SizedBox(
+                            height: 250.h,
+                            child: AdvisorVideoPlayerWidget(
+                              videoUrl: videoPreviewUrl,
+                              showFullScreenButton: true,
+                            ),
+                          ),
                         Positioned(
                           top: 10,
                           right: 10,
