@@ -9,7 +9,11 @@ import 'package:tayseer/my_import.dart';
 class ProfileStoriesSection extends StatelessWidget {
   final String? advisorId;
   final bool isBlocked;
-  const ProfileStoriesSection({super.key, this.advisorId, this.isBlocked = false});
+  const ProfileStoriesSection({
+    super.key,
+    this.advisorId,
+    this.isBlocked = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -36,10 +40,12 @@ class ProfileStoriesSection extends StatelessWidget {
       buildWhen: (previous, current) {
         final bool isMyProfile = advisorId == null;
         if (isMyProfile) {
-          return previous.mySpecialStoriesState != current.mySpecialStoriesState ||
+          return previous.mySpecialStoriesState !=
+                  current.mySpecialStoriesState ||
               previous.mySpecialStories != current.mySpecialStories;
         } else {
-          return previous.advisorSpecialStoriesState != current.advisorSpecialStoriesState ||
+          return previous.advisorSpecialStoriesState !=
+                  current.advisorSpecialStoriesState ||
               previous.advisorSpecialStories != current.advisorSpecialStories ||
               previous.activeAdvisorId != current.activeAdvisorId;
         }
@@ -50,22 +56,29 @@ class ProfileStoriesSection extends StatelessWidget {
         }
 
         final bool isMyProfile = advisorId == null;
-        final CubitStates currentState =
-            isMyProfile ? state.mySpecialStoriesState : state.advisorSpecialStoriesState;
-        final List<UserStoriesModel> currentStories =
-            isMyProfile ? state.mySpecialStories : state.advisorSpecialStories;
+        final CubitStates currentState = isMyProfile
+            ? state.mySpecialStoriesState
+            : state.advisorSpecialStoriesState;
+        final List<UserStoriesModel> currentStories = isMyProfile
+            ? state.mySpecialStories
+            : state.advisorSpecialStories;
 
         // ✅ Hide if offline and empty
         final isOffline = getIt<ConnectivityCubit>().isOffline;
 
         // For Advisor Profile, ensure we are looking at the right advisor's data
-        final bool isCorrectAdvisor = isMyProfile || state.activeAdvisorId == advisorId;
+        final bool isCorrectAdvisor =
+            isMyProfile || state.activeAdvisorId == advisorId;
 
-        final bool isEmpty = isCorrectAdvisor &&
-            (currentState == CubitStates.success || currentState == CubitStates.initial) &&
+        final bool isEmpty =
+            isCorrectAdvisor &&
+            (currentState == CubitStates.success ||
+                currentState == CubitStates.initial) &&
             currentStories.isEmpty;
 
-        if (!isCorrectAdvisor || isEmpty || (isOffline && currentStories.isEmpty)) {
+        if (!isCorrectAdvisor ||
+            isEmpty ||
+            (isOffline && currentStories.isEmpty)) {
           if (!isCorrectAdvisor && currentState == CubitStates.loading) {
             return SliverToBoxAdapter(
               child: Padding(
@@ -86,7 +99,12 @@ class ProfileStoriesSection extends StatelessWidget {
               vertical: context.responsiveHeight(12),
               horizontal: context.responsiveWidth(30),
             ),
-            child: _buildContent(context, currentState, currentStories, state.storiesMessage),
+            child: _buildContent(
+              context,
+              currentState,
+              currentStories,
+              state.storiesMessage,
+            ),
           ),
         );
       },
@@ -106,20 +124,17 @@ class ProfileStoriesSection extends StatelessWidget {
         return _StoriesErrorWidget(
           message: errorMessage,
           onRetry: () => context.read<StoriesCubit>().fetchStories(
-                isSpecial: true,
-                advisorId: advisorId,
-                context: context,
-              ),
+            isSpecial: true,
+            advisorId: advisorId,
+            context: context,
+          ),
         );
       case CubitStates.success:
       case CubitStates.initial:
         if (currentStories.isEmpty) {
           return const SizedBox.shrink();
         }
-        return _StoriesListView(
-          stories: currentStories,
-          advisorId: advisorId,
-        );
+        return _StoriesListView(stories: currentStories, advisorId: advisorId);
     }
   }
 }
@@ -168,28 +183,41 @@ class _StoriesListViewState extends State<_StoriesListView> {
     return currentScroll >= (maxScroll * 0.9);
   }
 
+  // Flatten all individual stories with their parent UserStoriesModel
+  // Stories come newest-first from API, so we keep that order as-is
+  List<MapEntry<UserStoriesModel, StoryModel>> get _flatStories {
+    final result = <MapEntry<UserStoriesModel, StoryModel>>[];
+    for (final userStory in widget.stories) {
+      for (final story in userStory.stories) {
+        result.add(MapEntry(userStory, story));
+      }
+    }
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final flatStories = _flatStories;
+
     return SingleChildScrollView(
       controller: _scrollController,
       scrollDirection: Axis.horizontal,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ...List.generate(widget.stories.length, (index) {
-            final userStory = widget.stories[index];
+          ...List.generate(flatStories.length, (index) {
+            final parentUserStory = flatStories[index].key;
+            final story = flatStories[index].value;
             return Padding(
-              key: ValueKey('story_profile_${userStory.userId}'),
+              key: ValueKey('story_profile_${story.id}'),
               padding: EdgeInsetsDirectional.only(
                 end: context.responsiveWidth(14),
               ),
-              child: _UserStoryItem(
-                key: ValueKey(
-                  'story_profile_${userStory.userId}_${userStory.allViewed}',
-                ),
-                userStoryModel: userStory,
+              child: _SingleStoryItem(
+                key: ValueKey('story_profile_item_${story.id}'),
+                story: story,
+                parentUserStory: parentUserStory,
                 allStories: widget.stories,
-                userIndex: index,
               ),
             );
           }),
@@ -197,9 +225,11 @@ class _StoriesListViewState extends State<_StoriesListView> {
             buildWhen: (previous, current) {
               final bool isMyProfile = widget.advisorId == null;
               if (isMyProfile) {
-                return previous.mySpecialIsLoadingMore != current.mySpecialIsLoadingMore;
+                return previous.mySpecialIsLoadingMore !=
+                    current.mySpecialIsLoadingMore;
               } else {
-                return previous.advisorSpecialIsLoadingMore != current.advisorSpecialIsLoadingMore;
+                return previous.advisorSpecialIsLoadingMore !=
+                    current.advisorSpecialIsLoadingMore;
               }
             },
             builder: (context, state) {
@@ -225,25 +255,28 @@ class _StoriesListViewState extends State<_StoriesListView> {
   }
 }
 
-class _UserStoryItem extends StatelessWidget {
-  final UserStoriesModel userStoryModel;
+class _SingleStoryItem extends StatelessWidget {
+  final StoryModel story;
+  final UserStoriesModel parentUserStory;
   final List<UserStoriesModel> allStories;
-  final int userIndex;
 
-  const _UserStoryItem({
+  const _SingleStoryItem({
     super.key,
-    required this.userStoryModel,
+    required this.story,
+    required this.parentUserStory,
     required this.allStories,
-    required this.userIndex,
   });
 
   @override
   Widget build(BuildContext context) {
+    final heroTag = 'profile_story_${story.id}';
+
     return CustomClick(
       onTap: () {
-        final chronologicalUsersStories = allStories.map((us) {
-          return us.copyWith(stories: us.stories.reversed.toList());
-        }).toList();
+        // Keep original API order (newest first) — no reverse
+        final singleStoryUser = parentUserStory.copyWith(
+          stories: parentUserStory.stories.toList(),
+        );
 
         Navigator.push(
           context,
@@ -253,9 +286,10 @@ class _UserStoryItem extends StatelessWidget {
                 BlocProvider.value(
                   value: context.read<StoriesCubit>(),
                   child: StoryDetailsView(
-                    usersStories: chronologicalUsersStories,
-                    initialUserIndex: userIndex,
-                    heroTag: 'profile_story_${userStoryModel.userId}',
+                    usersStories: [singleStoryUser],
+                    initialUserIndex: 0,
+                    heroTag: heroTag,
+                    initialStoryId: story.id,
                   ),
                 ),
             transitionsBuilder:
@@ -268,7 +302,7 @@ class _UserStoryItem extends StatelessWidget {
       child: Column(
         children: [
           Hero(
-            tag: 'profile_story_${userStoryModel.userId}',
+            tag: heroTag,
             child: Container(
               width: context.responsiveWidth(76),
               height: context.responsiveWidth(76),
@@ -276,22 +310,20 @@ class _UserStoryItem extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: (userStoryModel.allViewed)
+                  color: (parentUserStory.allViewed)
                       ? AppColors.kGreyB3
                       : AppColors.kprimaryColor,
                   width: 2.sp,
                 ),
               ),
-              child: ClipOval(
-                child: AppImage(userStoryModel.image, fit: BoxFit.cover),
-              ),
+              child: ClipOval(child: AppImage(story.image, fit: BoxFit.cover)),
             ),
           ),
           Gap(context.responsiveHeight(6)),
           SizedBox(
             width: context.responsiveWidth(76),
             child: Text(
-              userStoryModel.name,
+              parentUserStory.name,
               textAlign: TextAlign.center,
               style: Styles.textStyle10.copyWith(color: AppColors.kGreyB3),
               maxLines: 1,

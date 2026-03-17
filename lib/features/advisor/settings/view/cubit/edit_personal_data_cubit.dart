@@ -1,31 +1,31 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/core/utils/profile_event_bus.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/models/edit_personal_data_models.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_state.dart';
-import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
   final EditPersonalDataRepository _repository;
 
-  EditPersonalDataCubit(this._repository) : super(EditPersonalDataState.initial());
+  EditPersonalDataCubit(this._repository)
+    : super(EditPersonalDataState.initial());
 
   // Changed to optional parameter for backward compatibility and to support UI retry calls
   Future<void> loadProfileData([AdvisorProfileModel? profile]) async {
     if (profile != null) {
-      emit(state.copyWith(
-        profile: profile,
-        currentData: profile.toRequest(),
-        state: CubitStates.success,
-        imagePreviewUrl: profile.image,
-        videoPreviewUrl: profile.video,
-      ));
+      emit(
+        state.copyWith(
+          profile: profile,
+          currentData: profile.toRequest(),
+          state: CubitStates.success,
+          imagePreviewUrl: profile.image,
+          videoPreviewUrl: profile.video,
+        ),
+      );
     } else {
       await fetchProfileData();
     }
@@ -34,22 +34,26 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
   Future<void> fetchProfileData() async {
     emit(state.copyWith(state: CubitStates.loading));
     final result = await _repository.getAdvisorProfile();
-    
+
     result.fold(
       (failure) {
-        emit(state.copyWith(
-          state: CubitStates.failure,
-          errorMessage: failure.message,
-        ));
+        emit(
+          state.copyWith(
+            state: CubitStates.failure,
+            errorMessage: failure.message,
+          ),
+        );
       },
       (profile) {
-        emit(state.copyWith(
-          profile: profile,
-          currentData: profile.toRequest(),
-          state: CubitStates.success,
-          imagePreviewUrl: profile.image,
-          videoPreviewUrl: profile.video,
-        ));
+        emit(
+          state.copyWith(
+            profile: profile,
+            currentData: profile.toRequest(),
+            state: CubitStates.success,
+            imagePreviewUrl: profile.image,
+            videoPreviewUrl: profile.video,
+          ),
+        );
       },
     );
   }
@@ -59,70 +63,131 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
   }
 
   void updateUsername(String username) {
-    emit(state.copyWith(currentData: state.currentData.copyWith(username: username)));
+    emit(
+      state.copyWith(
+        currentData: state.currentData.copyWith(username: username),
+      ),
+    );
   }
 
   void updateBio(String bio) {
-    emit(state.copyWith(currentData: state.currentData.copyWith(aboutYou: bio)));
+    emit(
+      state.copyWith(currentData: state.currentData.copyWith(aboutYou: bio)),
+    );
   }
 
   void updateSpecialization(String specialization) {
-    emit(state.copyWith(
-        currentData: state.currentData.copyWith(professionalSpecialization: specialization)));
+    emit(
+      state.copyWith(
+        currentData: state.currentData.copyWith(
+          professionalSpecialization: specialization,
+        ),
+      ),
+    );
   }
 
   void updateJobGrade(String jobGrade) {
-    emit(state.copyWith(currentData: state.currentData.copyWith(jobGrade: jobGrade)));
+    emit(
+      state.copyWith(
+        currentData: state.currentData.copyWith(jobGrade: jobGrade),
+      ),
+    );
   }
 
   void updateExperience(String experience) {
-    emit(state.copyWith(currentData: state.currentData.copyWith(yearsOfExperience: experience)));
+    emit(
+      state.copyWith(
+        currentData: state.currentData.copyWith(yearsOfExperience: experience),
+      ),
+    );
   }
 
   void updatePosition(String position) {
-     // Usually mapped to specialization or job grade depending on app logic
-     updateJobGrade(position);
+    // Usually mapped to specialization or job grade depending on app logic
+    updateJobGrade(position);
   }
 
   void updateImageFile(File file) {
-    emit(state.copyWith(
-      imageFile: file,
-      clearImage: false,
-      imagePreviewUrl: file.path,
-    ));
+    emit(
+      state.copyWith(
+        imageFile: file,
+        clearImage: false,
+        imagePreviewUrl: file.path,
+      ),
+    );
   }
 
   void updateVideoFile(File file, {String? previewUrl}) {
-    emit(state.copyWith(
-      videoFile: file,
-      clearVideo: false,
-      videoPreviewUrl: previewUrl ?? file.path,
-    ));
+    emit(
+      state.copyWith(
+        videoFile: file,
+        clearVideo: false,
+        videoPreviewUrl: previewUrl ?? file.path,
+      ),
+    );
   }
 
   void removeImage() {
-    emit(state.copyWith(
-      clearImage: true,
-      imageFile: null,
-      currentData: state.currentData.copyWith(clearImage: true),
-    ));
+    emit(
+      state.copyWith(
+        clearImage: true,
+        imageFile: null,
+        currentData: state.currentData.copyWith(clearImage: true),
+      ),
+    );
   }
 
   void removeVideo() {
-    emit(state.copyWith(
-      clearVideo: true,
-      videoFile: null,
-      currentData: state.currentData.copyWith(clearVideo: true),
-    ));
+    emit(
+      state.copyWith(
+        clearVideo: true,
+        videoFile: null,
+        currentData: state.currentData.copyWith(clearVideo: true),
+      ),
+    );
   }
 
   Future<void> saveChanges() async {
     if (state.isSaving || !state.hasChanges) return;
 
-    emit(state.copyWith(isSaving: true, errorMessage: null, uploadProgress: 0.0));
+    emit(
+      state.copyWith(isSaving: true, errorMessage: null, uploadProgress: 0.0),
+    );
 
     try {
-      final requestToSend = state.currentData;
+      // Build a diff request — only include fields that actually changed
+      final profile = state.profile;
+      final current = state.currentData;
+      final requestToSend = UpdatePersonalDataRequest(
+        name: (current.name != null && current.name != profile?.name)
+            ? current.name
+            : null,
+        username:
+            (current.username != null && current.username != profile?.userName)
+            ? current.username
+            : null,
+        professionalSpecialization:
+            (current.professionalSpecialization != null &&
+                current.professionalSpecialization !=
+                    profile?.professionalSpecialization)
+            ? current.professionalSpecialization
+            : null,
+        jobGrade:
+            (current.jobGrade != null && current.jobGrade != profile?.jobGrade)
+            ? current.jobGrade
+            : null,
+        yearsOfExperience:
+            (current.yearsOfExperience != null &&
+                current.yearsOfExperience != profile?.yearsOfExperience)
+            ? current.yearsOfExperience
+            : null,
+        aboutYou:
+            (current.aboutYou != null && current.aboutYou != profile?.aboutYou)
+            ? current.aboutYou
+            : null,
+        image: current.image,
+        video: current.video,
+      );
 
       final result = await _repository.updatePersonalData(
         request: requestToSend,
@@ -131,7 +196,8 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
         onSendProgress: (sent, total) {
           if (total > 0) {
             final progress = sent / total;
-            if ((progress - state.uploadProgress).abs() > 0.01 || progress == 1.0) {
+            if ((progress - state.uploadProgress).abs() > 0.01 ||
+                progress == 1.0) {
               emit(state.copyWith(uploadProgress: progress));
             }
           }
@@ -144,23 +210,28 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
         },
         (response) {
           if (response.success) {
-            final newImageUrl = response.data?['image'] as String? ?? state.profile?.image;
+            final newImageUrl =
+                response.data?['image'] as String? ?? state.profile?.image;
             final oldImageUrl = state.profile?.image;
 
             // Build final new URL with versioning if needed to force update without blinking
             String finalImageUrl = newImageUrl ?? '';
             if (finalImageUrl == oldImageUrl && finalImageUrl.isNotEmpty) {
-              finalImageUrl = "$finalImageUrl${finalImageUrl.contains('?') ? '&' : '?'}v=${DateTime.now().millisecondsSinceEpoch}";
+              finalImageUrl =
+                  "$finalImageUrl${finalImageUrl.contains('?') ? '&' : '?'}v=${DateTime.now().millisecondsSinceEpoch}";
             }
 
             // تحديث البروفايل بعد الحفظ الناجح
             final updatedProfile = state.profile?.copyWith(
               name: state.currentData.name ?? state.profile!.name,
               userName: state.currentData.username ?? state.profile!.userName,
-              professionalSpecialization: state.currentData.professionalSpecialization ??
+              professionalSpecialization:
+                  state.currentData.professionalSpecialization ??
                   state.profile!.professionalSpecialization,
               jobGrade: state.currentData.jobGrade ?? state.profile!.jobGrade,
-              yearsOfExperience: state.currentData.yearsOfExperience ?? state.profile!.yearsOfExperience,
+              yearsOfExperience:
+                  state.currentData.yearsOfExperience ??
+                  state.profile!.yearsOfExperience,
               aboutYou: state.currentData.aboutYou ?? state.profile!.aboutYou,
               image: finalImageUrl,
               video: response.data?['videoLink'] ?? state.profile!.video,
@@ -173,61 +244,146 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
                 image: updatedProfile.image,
                 username: updatedProfile.userName,
               );
-              
+
               // حفظ في SharedPreferences
-              CachNetwork.setData(key: kuserData, value: jsonEncode(kCurrentUserData?.toJson()));
+              CachNetwork.setData(
+                key: kuserData,
+                value: jsonEncode(kCurrentUserData?.toJson()),
+              );
 
               // تحديث الكاش المحلي للحقول الفردية (للتوافق)
-              CachNetwork.setData(key: kMyProfileImage, value: updatedProfile.image ?? '');
-              CachNetwork.setData(key: kMyProfileName, value: updatedProfile.name);
+              CachNetwork.setData(
+                key: kMyProfileImage,
+                value: updatedProfile.image ?? '',
+              );
+              CachNetwork.setData(
+                key: kMyProfileName,
+                value: updatedProfile.name,
+              );
 
-              // تحديث الـ HomeCubit فوراً
-              getIt<HomeCubit>().refreshUserInfoFromCache();
+              // مسح الـ cache للصورة القديمة قبل التحديث
+              if (oldImageUrl != null && oldImageUrl.isNotEmpty) {
+                try {
+                  // مسح الـ URL الأصلي والـ URL مع versioning
+                  CachedNetworkImage.evictFromCache(oldImageUrl);
+                  final baseUrl = oldImageUrl.contains('?')
+                      ? oldImageUrl.split('?').first
+                      : oldImageUrl;
+                  if (baseUrl != oldImageUrl) {
+                    CachedNetworkImage.evictFromCache(baseUrl);
+                  }
+                } catch (e) {
+                  debugPrint('⚠️ خطأ في مسح cache الصورة: $e');
+                }
+              }
 
-              // إطلاق حدث التحديث للمزامنة العالمية
+              // إطلاق حدث التحديث للمزامنة العالمية (يتولى HomeCubit تحديث نفسه)
               ProfileEventBus.instance.fire(
                 ProfileUpdateEvent(
                   name: updatedProfile.name,
                   image: updatedProfile.image ?? '',
                   username: updatedProfile.userName,
+                  userId: kCurrentUserData?.id,
+                  userType: ProfileEventUserType.advisor,
                 ),
               );
-            }
+              getIt<StoriesCubit>().fetchStoriesSilent();
 
-            // ⭐ إطلاق حدث التحديث للمزامنة الفورية في التطبيق
-            if (updatedProfile != null) {
+              // لو الصورة اتغيرت، نجيب الـ URL الجديد من الـ backend بعد ثانية
+              // عشان نضمن إن الـ HomeAppBar يعرض الصورة الجديدة الصح
+              if (state.imageFile != null) {
+                Future.delayed(const Duration(seconds: 1), () async {
+                  if (isClosed) return;
+                  final freshResult = await _repository.getAdvisorProfile();
+                  freshResult.fold((_) {}, (freshProfile) {
+                    if (isClosed) return;
+                    final freshImage = freshProfile.image ?? '';
+                    if (freshImage.isNotEmpty) {
+                      kCurrentUserData = kCurrentUserData?.copyWith(
+                        image: freshImage,
+                      );
+                      CachNetwork.setData(
+                        key: kMyProfileImage,
+                        value: freshImage,
+                      );
+                      try {
+                        CachedNetworkImage.evictFromCache(
+                          updatedProfile.image ?? '',
+                        );
+                      } catch (_) {}
+                      ProfileEventBus.instance.fire(
+                        ProfileUpdateEvent(
+                          name: freshProfile.name,
+                          image: freshImage,
+                          username: freshProfile.userName,
+                          userId: kCurrentUserData?.id,
+                          userType: ProfileEventUserType.advisor,
+                        ),
+                      );
+                    }
+                  });
+                });
+              }
+            } else {
+              // fallback: لو updatedProfile كان null، نبعت الـ event بالبيانات المتاحة
+              final fallbackImage = finalImageUrl.isNotEmpty
+                  ? finalImageUrl
+                  : (kCurrentUserData?.image ?? '');
+              final fallbackName =
+                  state.currentData.name ?? kCurrentUserData?.name ?? '';
+              final fallbackUsername =
+                  state.currentData.username ??
+                  kCurrentUserData?.username ??
+                  '';
+
+              if (oldImageUrl != null && oldImageUrl.isNotEmpty) {
+                try {
+                  CachedNetworkImage.evictFromCache(oldImageUrl);
+                } catch (_) {}
+              }
+
+              CachNetwork.setData(key: kMyProfileImage, value: fallbackImage);
+              CachNetwork.setData(key: kMyProfileName, value: fallbackName);
+
               ProfileEventBus.instance.fire(
                 ProfileUpdateEvent(
-                  name: updatedProfile.name,
-                  image: updatedProfile.image ?? '',
-                  username: updatedProfile.userName,
+                  name: fallbackName,
+                  image: fallbackImage,
+                  username: fallbackUsername,
+                  userId: kCurrentUserData?.id,
+                  userType: ProfileEventUserType.advisor,
                 ),
               );
+              getIt<StoriesCubit>().fetchStoriesSilent();
             }
 
-            emit(state.copyWith(
-              isSaving: false,
-              errorMessage: null,
-              profile: updatedProfile,
-              state: CubitStates.success,
-              successMessage: 'data_updated_successfully',
-              imagePreviewUrl: updatedProfile?.image,
-              videoPreviewUrl: updatedProfile?.video,
-              imageFile: null,
-              videoFile: null,
-              clearImage: false,
-              clearVideo: false,
-            ));
+            emit(
+              state.copyWith(
+                isSaving: false,
+                errorMessage: null,
+                profile: updatedProfile,
+                state: CubitStates.success,
+                successMessage: 'data_updated_successfully',
+                imagePreviewUrl: updatedProfile?.image,
+                videoPreviewUrl: updatedProfile?.video,
+                imageFile: null,
+                videoFile: null,
+                clearImage: false,
+                clearVideo: false,
+              ),
+            );
           } else {
             emit(state.copyWith(isSaving: false, errorMessage: 'save_failed'));
           }
         },
       );
     } catch (e) {
-      emit(state.copyWith(
-        isSaving: false,
-        errorMessage: 'error_during_save: ${e.toString()}',
-      ));
+      emit(
+        state.copyWith(
+          isSaving: false,
+          errorMessage: 'error_during_save: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -265,7 +421,8 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
 
     try {
       final model = GenerativeModel(model: 'gemma-3-4b-it', apiKey: apiKey);
-      final prompt = '''
+      final prompt =
+          '''
 أنت كاتب محتوى متخصص في كتابة السِّيَر الذاتية (Bio) للمستشارين والمرشدين الأسريين.
 المطلوب: بايو احترافي لمستشار/مرشد في العلاقات الأسرية.
 النص المُدخل: "$currentText"
@@ -284,7 +441,11 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
       debugPrint('Gemini AI error: $e');
       emit(state.copyWith(isAiState: CubitStates.failure));
       ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(context, text: 'AI Error: ${e.toString()}', isError: true),
+        CustomSnackBar(
+          context,
+          text: 'AI Error: ${e.toString()}',
+          isError: true,
+        ),
       );
       emit(state.copyWith(isAiState: CubitStates.initial));
     }

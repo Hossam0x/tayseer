@@ -21,31 +21,26 @@ class ProfileCubit extends Cubit<ProfileState> {
   }
 
   void _listenToProfileUpdates() {
-    _profileSubscription =
-        ProfileEventBus.instance.onProfileUpdated.listen((event) {
+    _profileSubscription = ProfileEventBus.instance.onProfileUpdated.listen((
+      event,
+    ) {
+      // فقط نستجيب لأحداث الـ advisor — أحداث الـ user لا تخص هذه الشاشة
+      if (event.userType != ProfileEventUserType.advisor) return;
+
+      // لو الـ event فيه userId، تأكد إنه بتاع نفس الـ advisor الحالي
+      if (event.userId != null && event.userId != kCurrentUserData?.id) return;
+
       if (state.profile != null) {
-        // 1. تحديث بيانات البروفايل
+        // تحديث بيانات البروفايل فقط — الـ posts لا تتحدث هنا (تتحدث عند refresh فقط)
         final updatedProfile = state.profile!.copyWith(
           name: event.name,
           image: event.image,
           username: event.username,
         );
 
-        // 2. تحديث بيانات اليوزر في كل البوستات المعروضة في البروفايل
-        final updatedPosts = state.posts.map((p) {
-          return p.copyWith(
-            name: event.name,
-            avatar: event.image,
-            userName: event.username,
-          );
-        }).toList();
+        emit(state.copyWith(profile: updatedProfile));
 
-        emit(state.copyWith(
-          profile: updatedProfile,
-          posts: updatedPosts,
-        ));
-
-        // 3. تحديث الكاش المحلي أيضاً لضمان الثبات
+        // تحديث الكاش المحلي أيضاً لضمان الثبات
         try {
           CachNetwork.setData(
             key: kAdvisorProfileCache,
@@ -63,6 +58,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     _profileSubscription.cancel();
     return super.close();
   }
+
   // ═══════════════════════════════════════════════════════════
   // 📌 INITIALIZE PROFILE
   // ═══════════════════════════════════════════════════════════
@@ -79,7 +75,14 @@ class ProfileCubit extends Cubit<ProfileState> {
     final cachedData = CachNetwork.getStringData(key: kAdvisorProfileCache);
     if (cachedData.isNotEmpty) {
       try {
-        final profile = ProfileModel.fromJson(jsonDecode(cachedData));
+        var profile = ProfileModel.fromJson(jsonDecode(cachedData));
+
+        // أولوية الصورة: لو kMyProfileImage فيه صورة أحدث، استخدمها
+        final cachedImage = CachNetwork.getStringData(key: kMyProfileImage);
+        if (cachedImage.isNotEmpty && cachedImage != profile.image) {
+          profile = profile.copyWith(image: cachedImage);
+        }
+
         emit(
           state.copyWith(profile: profile, profileState: CubitStates.success),
         );
@@ -151,21 +154,28 @@ class ProfileCubit extends Cubit<ProfileState> {
         ),
       ),
       (profileModel) {
+        // أولوية الصورة: لو kMyProfileImage فيه صورة أحدث من الـ API، استخدمها
+        final cachedImage = CachNetwork.getStringData(key: kMyProfileImage);
+        final finalModel =
+            (cachedImage.isNotEmpty && cachedImage != profileModel.image)
+            ? profileModel.copyWith(image: cachedImage)
+            : profileModel;
+
         // حفظ في الكاش
         try {
           CachNetwork.setData(
             key: kAdvisorProfileCache,
-            value: jsonEncode(profileModel.toJson()),
+            value: jsonEncode(finalModel.toJson()),
           );
         } catch (e) {
           debugPrint('❌ Error caching advisor profile: $e');
         }
-        setAdvisorStatus(profileModel.approvalKey);
+        setAdvisorStatus(finalModel.approvalKey);
         emit(
           state.copyWith(
             profileState: CubitStates.success,
-            profile: profileModel,
-            profileErrorMessage: null, // تنظيف رسالة الخطأ عند النجاح
+            profile: finalModel,
+            profileErrorMessage: null,
           ),
         );
       },

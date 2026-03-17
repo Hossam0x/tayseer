@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:tayseer/core/functions/get_language_code_name.dart';
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/core/utils/profile_event_bus.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
@@ -16,9 +17,39 @@ import 'package:tayseer/core/notifications/message_config.dart';
 class UserProfileCubit extends Cubit<UserProfileState> {
   final LocalNotification _notificationService = LocalNotification();
   final UserProfileRepository _userProfileRepository;
+  late StreamSubscription<ProfileUpdateEvent> _profileSubscription;
 
   UserProfileCubit(this._userProfileRepository) : super(SettingsInitial()) {
     _loadInitialData();
+    _listenToProfileUpdates();
+  }
+
+  void _listenToProfileUpdates() {
+    _profileSubscription = ProfileEventBus.instance.onProfileUpdated.listen((
+      event,
+    ) {
+      // فقط نستجيب لأحداث الـ user — أحداث الـ advisor لا تخص هذه الشاشة
+      if (event.userType != ProfileEventUserType.user) return;
+
+      final currentState = state;
+      if (currentState is! SettingsLoaded) return;
+
+      final updatedProfile = currentState.userProfile?.copyWith(
+        name: event.name,
+        image: event.image,
+        username: event.username,
+      );
+
+      if (updatedProfile != null) {
+        emit(currentState.copyWith(userProfile: updatedProfile));
+      }
+    });
+  }
+
+  @override
+  Future<void> close() {
+    _profileSubscription.cancel();
+    return super.close();
   }
 
   Future<UserProfileModel> _fetchUserProfile() async {
@@ -29,16 +60,23 @@ class UserProfileCubit extends Cubit<UserProfileState> {
           throw Exception(failure.message);
         },
         (profile) {
+          // أولوية الصورة: لو kMyProfileImage فيه صورة أحدث من الـ API، استخدمها
+          final cachedImage = CachNetwork.getStringData(key: kMyProfileImage);
+          final finalProfile =
+              (cachedImage.isNotEmpty && cachedImage != profile.image)
+              ? profile.copyWith(image: cachedImage)
+              : profile;
+
           // حفظ في الكاش
           try {
             CachNetwork.setData(
               key: kUserProfileCache,
-              value: jsonEncode(profile.toJson()),
+              value: jsonEncode(finalProfile.toJson()),
             );
           } catch (e) {
             debugPrint('❌ Error caching user profile: $e');
           }
-          return profile;
+          return finalProfile;
         },
       );
     } catch (e) {
@@ -50,14 +88,20 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     final cachedData = CachNetwork.getStringData(key: kUserProfileCache);
     if (cachedData.isNotEmpty) {
       try {
-        final profile = UserProfileModel.fromJson(jsonDecode(cachedData));
+        var profile = UserProfileModel.fromJson(jsonDecode(cachedData));
+
+        // أولوية الصورة: لو kMyProfileImage فيه صورة أحدث، استخدمها
+        final cachedImage = CachNetwork.getStringData(key: kMyProfileImage);
+        if (cachedImage.isNotEmpty && cachedImage != profile.image) {
+          profile = profile.copyWith(image: cachedImage);
+        }
+
         final notificationStatus = await _getNotificationStatus();
-        final isMarriageDeactivated =
-            await _getMarriageSectionDeactivated(); // ✅ أضف هذا
-        final isMarriageComplete = await _getMarriageComplete(); // ✅ أضف هذا
+        final isMarriageDeactivated = await _getMarriageSectionDeactivated();
+        final isMarriageComplete = await _getMarriageComplete();
 
         final settings = await _loadSettings(
-          isProfileComplete: isMarriageComplete, // ✅ استخدم القيمة الصح
+          isProfileComplete: isMarriageComplete,
         );
 
         emit(
@@ -65,8 +109,8 @@ class UserProfileCubit extends Cubit<UserProfileState> {
             settings: settings,
             userProfile: profile,
             isNotificationEnabled: notificationStatus,
-            isMarriageSectionDeactivated: isMarriageDeactivated, // ✅ أضف هذا
-            isMarriageProfileComplete: isMarriageComplete, // ✅ أضف هذا
+            isMarriageSectionDeactivated: isMarriageDeactivated,
+            isMarriageProfileComplete: isMarriageComplete,
           ),
         );
         return true;
@@ -751,6 +795,20 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
     try {
       await _notificationService.clearAllNotifications();
+
+      // مسح صورة البروفايل من كاش الصور قبل الـ logout
+      final profileImage = CachNetwork.getStringData(key: kMyProfileImage);
+      if (profileImage.isNotEmpty) {
+        try {
+          CachedNetworkImage.evictFromCache(profileImage);
+        } catch (_) {}
+      }
+
+      // مسح كاش البروفايل المحلي
+      await CachNetwork.removeData(key: kUserProfileCache);
+      await CachNetwork.removeData(key: kMyProfileImage);
+      await CachNetwork.removeData(key: kMyProfileName);
+
       _userProfileRepository.logout();
 
       await CachNetwork.clearCache();

@@ -222,20 +222,6 @@ class _UserProfileEditContent extends StatelessWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Upload Progress Ring
-                  if (state.isLoading)
-                    SizedBox(
-                      width: 160.w,
-                      height: 160.h,
-                      child: CircularProgressIndicator(
-                        value: state.uploadProgress > 0
-                            ? state.uploadProgress
-                            : null,
-                        strokeWidth: 4,
-                        color: AppColors.kprimaryColor,
-                        backgroundColor: AppColors.secondary200,
-                      ),
-                    ),
                   Container(
                     height: 150.h,
                     width: 155.w,
@@ -275,22 +261,44 @@ class _UserProfileEditContent extends StatelessWidget {
                           : _buildDefaultAvatar(),
                     ),
                   ),
-                  // Percentage Text Overlay
+                  // Upload Progress Overlay (same style as EditPersonalDataView)
                   if (state.isLoading)
                     Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 8.w,
-                        vertical: 4.h,
-                      ),
+                      height: 150.h,
+                      width: 155.w,
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
-                        borderRadius: BorderRadius.circular(16.r),
+                        color: Colors.black.withOpacity(0.45),
+                        borderRadius: BorderRadius.circular(32.r),
                       ),
-                      child: Text(
-                        '${(state.uploadProgress * 100).toInt()}%',
-                        style: Styles.textStyle14.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 56.w,
+                              height: 56.w,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  CircularProgressIndicator(
+                                    value: state.uploadProgress > 0
+                                        ? state.uploadProgress
+                                        : null,
+                                    strokeWidth: 4,
+                                    color: AppColors.kprimaryColor,
+                                    backgroundColor: Colors.white24,
+                                  ),
+                                  Text(
+                                    '${(state.uploadProgress * 100).toInt()}%',
+                                    style: Styles.textStyle12.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
