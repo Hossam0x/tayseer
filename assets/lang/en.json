@@ -1668,6 +1668,11 @@
   "interest_sewing": "Sewing",
   "interest_pottery": "Pottery",
   "interest_woodworking": "Woodworking",
-  "interest_origami": "Origami"
-
+  "interest_origami": "Origami",
+  "F_social_single" :"Single",
+  "F_social_divorced" :"Divorced",
+  "F_social_widowed" :"Widowed",
+  "do_you_want_to_get_married_again" : "Do you want to get married again?",
+  "child_6_plus":"+6 children",
+  "do_you_want_to_have_more_than_one_wife" : "Do you want to have more than one wife?"
 }

@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:developer';
+
 import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
@@ -137,7 +140,17 @@ class ChooseGenderBody extends StatelessWidget {
             if (state.setGenderState == CubitStates.success) {
               // ✅ بيروح PurposeSelectionView — الـ deep link هيتنفذ في نهاية الـ onboarding
               context.pushReplacementNamed(AppRouter.kPurposeSelectionView);
+              kCurrentUserData = kCurrentUserData?.copyWith(
+                gender: gender?.name,
+              );
 
+              CachNetwork.setData(
+                key: kuserData,
+                value: jsonEncode(kCurrentUserData?.toJson() ?? {}),
+              );
+              log(
+                '>>>>>>>>>>>>>>>>>>>.Gender set successfully ${kCurrentUserData?.gender}',
+              );
               // ✅ لو Guest - روح مباشرة
             } else if (state.setGenderState == CubitStates.failure) {
               ScaffoldMessenger.of(context).showSnackBar(
