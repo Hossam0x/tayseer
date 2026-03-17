@@ -33,22 +33,50 @@ class ProfileStoriesSection extends StatelessWidget {
           );
         }
       },
-      buildWhen: (previous, current) =>
-          previous.storiesState != current.storiesState ||
-          previous.storiesList != current.storiesList,
+      buildWhen: (previous, current) {
+        final bool isMyProfile = advisorId == null;
+        if (isMyProfile) {
+          return previous.mySpecialStoriesState != current.mySpecialStoriesState ||
+              previous.mySpecialStories != current.mySpecialStories;
+        } else {
+          return previous.advisorSpecialStoriesState != current.advisorSpecialStoriesState ||
+              previous.advisorSpecialStories != current.advisorSpecialStories ||
+              previous.activeAdvisorId != current.activeAdvisorId;
+        }
+      },
       builder: (context, state) {
         if (isBlocked) {
           return const BlockedProfilePlaceholder(isSliver: true);
         }
 
-        // ✅ Hide if offline and empty or if it's explicitly requested by the user
-        final isOffline = getIt<ConnectivityCubit>().isOffline;
-        final isEmpty =
-            (state.storiesState == CubitStates.success ||
-                state.storiesState == CubitStates.initial) &&
-            state.storiesList.isEmpty;
+        final bool isMyProfile = advisorId == null;
+        final CubitStates currentState =
+            isMyProfile ? state.mySpecialStoriesState : state.advisorSpecialStoriesState;
+        final List<UserStoriesModel> currentStories =
+            isMyProfile ? state.mySpecialStories : state.advisorSpecialStories;
 
-        if (isEmpty || (isOffline && state.storiesList.isEmpty)) {
+        // ✅ Hide if offline and empty
+        final isOffline = getIt<ConnectivityCubit>().isOffline;
+
+        // For Advisor Profile, ensure we are looking at the right advisor's data
+        final bool isCorrectAdvisor = isMyProfile || state.activeAdvisorId == advisorId;
+
+        final bool isEmpty = isCorrectAdvisor &&
+            (currentState == CubitStates.success || currentState == CubitStates.initial) &&
+            currentStories.isEmpty;
+
+        if (!isCorrectAdvisor || isEmpty || (isOffline && currentStories.isEmpty)) {
+          if (!isCorrectAdvisor && currentState == CubitStates.loading) {
+            return SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  vertical: context.responsiveHeight(12),
+                  horizontal: context.responsiveWidth(30),
+                ),
+                child: const _StoriesLoadingShimmer(),
+              ),
+            );
+          }
           return const SliverToBoxAdapter(child: SizedBox.shrink());
         }
 
@@ -58,32 +86,38 @@ class ProfileStoriesSection extends StatelessWidget {
               vertical: context.responsiveHeight(12),
               horizontal: context.responsiveWidth(30),
             ),
-            child: _buildContent(context, state),
+            child: _buildContent(context, currentState, currentStories, state.storiesMessage),
           ),
         );
       },
     );
   }
-  Widget _buildContent(BuildContext context, StoriesState state) {
-    switch (state.storiesState) {
+
+  Widget _buildContent(
+    BuildContext context,
+    CubitStates currentState,
+    List<UserStoriesModel> currentStories,
+    String errorMessage,
+  ) {
+    switch (currentState) {
       case CubitStates.loading:
         return const _StoriesLoadingShimmer();
       case CubitStates.failure:
         return _StoriesErrorWidget(
-          message: state.storiesMessage,
+          message: errorMessage,
           onRetry: () => context.read<StoriesCubit>().fetchStories(
-            isSpecial: true,
-            advisorId: advisorId,
-            context: context,
-          ),
+                isSpecial: true,
+                advisorId: advisorId,
+                context: context,
+              ),
         );
       case CubitStates.success:
       case CubitStates.initial:
-        if (state.storiesList.isEmpty) {
+        if (currentStories.isEmpty) {
           return const SizedBox.shrink();
         }
         return _StoriesListView(
-          stories: state.storiesList,
+          stories: currentStories,
           advisorId: advisorId,
         );
     }
@@ -160,10 +194,21 @@ class _StoriesListViewState extends State<_StoriesListView> {
             );
           }),
           BlocBuilder<StoriesCubit, StoriesState>(
-            buildWhen: (previous, current) =>
-                previous.isLoadingMore != current.isLoadingMore,
+            buildWhen: (previous, current) {
+              final bool isMyProfile = widget.advisorId == null;
+              if (isMyProfile) {
+                return previous.mySpecialIsLoadingMore != current.mySpecialIsLoadingMore;
+              } else {
+                return previous.advisorSpecialIsLoadingMore != current.advisorSpecialIsLoadingMore;
+              }
+            },
             builder: (context, state) {
-              if (state.isLoadingMore) {
+              final bool isMyProfile = widget.advisorId == null;
+              final bool isLoadingMore = isMyProfile
+                  ? state.mySpecialIsLoadingMore
+                  : state.advisorSpecialIsLoadingMore;
+
+              if (isLoadingMore) {
                 return Padding(
                   padding: EdgeInsetsDirectional.only(
                     end: context.responsiveWidth(14),
@@ -276,8 +321,8 @@ class _StoriesLoadingShimmer extends StatelessWidget {
               end: context.responsiveWidth(14),
             ),
             child: Shimmer.fromColors(
-              baseColor: Colors.grey[300]!,
-              highlightColor: Colors.grey[100]!,
+              baseColor: AppColors.secondary100,
+              highlightColor: AppColors.kWhiteColor.withOpacity(0.5),
               child: Column(
                 children: [
                   Container(

@@ -33,8 +33,7 @@ class _ProfileViewState extends State<ProfileView>
 
   @override
   void dispose() {
-    _profileCubit.close();
-    _storiesCubit.close();
+    // DO NOT close singleton cubits here as they are managed by GetIt
     super.dispose();
   }
 
@@ -118,8 +117,8 @@ class _ProfileContentState extends State<_ProfileContent> {
           listenWhen: (prev, curr) => !prev.isConnected && curr.isConnected,
           listener: (context, state) {
             final storiesCubit = context.read<StoriesCubit>();
-            if (storiesCubit.state.storiesState == CubitStates.failure ||
-                storiesCubit.state.storiesList.isEmpty) {
+            if (storiesCubit.state.mySpecialStoriesState == CubitStates.failure ||
+                storiesCubit.state.mySpecialStories.isEmpty) {
               storiesCubit.fetchStories(
                 isSpecial: true,
                 advisorId: null,

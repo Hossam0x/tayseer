@@ -378,7 +378,9 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => getIt<EditPersonalDataCubit>()),
+        BlocProvider(
+          create: (_) => getIt<EditPersonalDataCubit>()..loadProfileData(),
+        ),
         BlocProvider.value(value: _uiCubit),
       ],
       child: BlocConsumer<EditPersonalDataCubit, EditPersonalDataState>(
@@ -480,7 +482,14 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                   children: [
                                     Gap(32.h),
                                     if (state.state == CubitStates.loading)
-                                      _buildSkeletonLoading()
+                                      Shimmer.fromColors(
+                                        baseColor: AppColors.secondary100,
+                                        highlightColor:
+                                            AppColors.kWhiteColor.withOpacity(
+                                              0.5,
+                                            ),
+                                        child: _buildSkeletonLoading(),
+                                      )
                                     else if (state.state == CubitStates.failure)
                                       CustomErrorView(
                                         verticalPadding: 100,

@@ -190,7 +190,7 @@ Future<void> setupGetIt() async {
     () => StoriesRepositoryImpl(getIt<ApiService>()),
   );
 
-  getIt.registerFactory<StoriesCubit>(
+  getIt.registerLazySingleton<StoriesCubit>(
     () => StoriesCubit(getIt<StoriesRepository>()),
   );
 
@@ -229,7 +229,7 @@ Future<void> setupGetIt() async {
   );
 
   /// Profile Cubit
-  getIt.registerFactory<ProfileCubit>(
+  getIt.registerLazySingleton<ProfileCubit>(
     () => ProfileCubit(getIt<ProfileRepository>()),
   );
 

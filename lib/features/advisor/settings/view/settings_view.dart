@@ -538,8 +538,8 @@ class _SettingsViewState extends State<SettingsView> {
         }
       } else {
         final result = await Navigator.pushNamed(context, setting.routeName);
-        // Mark data changed if any sub-screen returns true
-        if (result == true) {
+        // Mark data changed if any sub-screen returns true or non-null data
+        if (result != null && result != false) {
           _markDataChanged();
         }
       }

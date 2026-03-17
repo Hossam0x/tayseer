@@ -73,6 +73,7 @@ class _StoriesListViewState extends State<_StoriesListView> {
     if (_isBottom) {
       context.read<StoriesCubit>().fetchStories(
         loadMore: true,
+        isSpecial: false,
         context: context,
       );
     }
