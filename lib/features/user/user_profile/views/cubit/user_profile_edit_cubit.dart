@@ -183,6 +183,8 @@ class UserProfileEditCubit extends Cubit<UserProfileEditState> {
                 name: updatedProfile.name,
                 image: updatedProfile.image ?? '',
                 username: updatedProfile.username,
+                userId: kCurrentUserData?.id,
+                userType: ProfileEventUserType.user,
               ),
             );
             getIt<StoriesCubit>().fetchStoriesSilent();
@@ -258,6 +260,8 @@ class UserProfileEditCubit extends Cubit<UserProfileEditState> {
               name: updatedProfile.name,
               image: updatedProfile.image ?? '',
               username: updatedProfile.username,
+              userId: kCurrentUserData?.id,
+              userType: ProfileEventUserType.user,
             ),
           );
           getIt<StoriesCubit>().fetchStoriesSilent();

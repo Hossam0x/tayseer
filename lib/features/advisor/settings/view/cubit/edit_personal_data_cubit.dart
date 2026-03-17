@@ -283,6 +283,8 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
                   name: updatedProfile.name,
                   image: updatedProfile.image ?? '',
                   username: updatedProfile.userName,
+                  userId: kCurrentUserData?.id,
+                  userType: ProfileEventUserType.advisor,
                 ),
               );
               getIt<StoriesCubit>().fetchStoriesSilent();
@@ -314,6 +316,8 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
                           name: freshProfile.name,
                           image: freshImage,
                           username: freshProfile.userName,
+                          userId: kCurrentUserData?.id,
+                          userType: ProfileEventUserType.advisor,
                         ),
                       );
                     }
@@ -346,6 +350,8 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
                   name: fallbackName,
                   image: fallbackImage,
                   username: fallbackUsername,
+                  userId: kCurrentUserData?.id,
+                  userType: ProfileEventUserType.advisor,
                 ),
               );
               getIt<StoriesCubit>().fetchStoriesSilent();
