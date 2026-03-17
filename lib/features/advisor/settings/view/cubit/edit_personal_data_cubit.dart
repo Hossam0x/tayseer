@@ -1,14 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/core/utils/profile_event_bus.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/models/edit_personal_data_models.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_state.dart';
-import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
@@ -264,10 +261,23 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
                 value: updatedProfile.name,
               );
 
-              // تحديث الـ HomeCubit فوراً
-              getIt<HomeCubit>().refreshUserInfoFromCache();
+              // مسح الـ cache للصورة القديمة قبل التحديث
+              if (oldImageUrl != null && oldImageUrl.isNotEmpty) {
+                try {
+                  // مسح الـ URL الأصلي والـ URL مع versioning
+                  CachedNetworkImage.evictFromCache(oldImageUrl);
+                  final baseUrl = oldImageUrl.contains('?')
+                      ? oldImageUrl.split('?').first
+                      : oldImageUrl;
+                  if (baseUrl != oldImageUrl) {
+                    CachedNetworkImage.evictFromCache(baseUrl);
+                  }
+                } catch (e) {
+                  debugPrint('⚠️ خطأ في مسح cache الصورة: $e');
+                }
+              }
 
-              // إطلاق حدث التحديث للمزامنة العالمية
+              // إطلاق حدث التحديث للمزامنة العالمية (يتولى HomeCubit تحديث نفسه)
               ProfileEventBus.instance.fire(
                 ProfileUpdateEvent(
                   name: updatedProfile.name,
@@ -275,17 +285,70 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
                   username: updatedProfile.userName,
                 ),
               );
-            }
+              getIt<StoriesCubit>().fetchStoriesSilent();
 
-            // ⭐ إطلاق حدث التحديث للمزامنة الفورية في التطبيق
-            if (updatedProfile != null) {
+              // لو الصورة اتغيرت، نجيب الـ URL الجديد من الـ backend بعد ثانية
+              // عشان نضمن إن الـ HomeAppBar يعرض الصورة الجديدة الصح
+              if (state.imageFile != null) {
+                Future.delayed(const Duration(seconds: 1), () async {
+                  if (isClosed) return;
+                  final freshResult = await _repository.getAdvisorProfile();
+                  freshResult.fold((_) {}, (freshProfile) {
+                    if (isClosed) return;
+                    final freshImage = freshProfile.image ?? '';
+                    if (freshImage.isNotEmpty) {
+                      kCurrentUserData = kCurrentUserData?.copyWith(
+                        image: freshImage,
+                      );
+                      CachNetwork.setData(
+                        key: kMyProfileImage,
+                        value: freshImage,
+                      );
+                      try {
+                        CachedNetworkImage.evictFromCache(
+                          updatedProfile.image ?? '',
+                        );
+                      } catch (_) {}
+                      ProfileEventBus.instance.fire(
+                        ProfileUpdateEvent(
+                          name: freshProfile.name,
+                          image: freshImage,
+                          username: freshProfile.userName,
+                        ),
+                      );
+                    }
+                  });
+                });
+              }
+            } else {
+              // fallback: لو updatedProfile كان null، نبعت الـ event بالبيانات المتاحة
+              final fallbackImage = finalImageUrl.isNotEmpty
+                  ? finalImageUrl
+                  : (kCurrentUserData?.image ?? '');
+              final fallbackName =
+                  state.currentData.name ?? kCurrentUserData?.name ?? '';
+              final fallbackUsername =
+                  state.currentData.username ??
+                  kCurrentUserData?.username ??
+                  '';
+
+              if (oldImageUrl != null && oldImageUrl.isNotEmpty) {
+                try {
+                  CachedNetworkImage.evictFromCache(oldImageUrl);
+                } catch (_) {}
+              }
+
+              CachNetwork.setData(key: kMyProfileImage, value: fallbackImage);
+              CachNetwork.setData(key: kMyProfileName, value: fallbackName);
+
               ProfileEventBus.instance.fire(
                 ProfileUpdateEvent(
-                  name: updatedProfile.name,
-                  image: updatedProfile.image ?? '',
-                  username: updatedProfile.userName,
+                  name: fallbackName,
+                  image: fallbackImage,
+                  username: fallbackUsername,
                 ),
               );
+              getIt<StoriesCubit>().fetchStoriesSilent();
             }
 
             emit(

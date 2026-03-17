@@ -36,8 +36,11 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   void _listenToProfileUpdates() {
-    _profileSubscription =
-        ProfileEventBus.instance.onProfileUpdated.listen((event) {
+    _profileSubscription = ProfileEventBus.instance.onProfileUpdated.listen((
+      event,
+    ) {
+      if (isClosed) return;
+
       // 1. تحديث الكاش المحلي
       CachNetwork.setData(key: kMyProfileImage, value: event.image);
       CachNetwork.setData(key: kMyProfileName, value: event.name);
@@ -58,7 +61,9 @@ class HomeCubit extends Cubit<HomeState> {
       // 3. تحديث صور اليوزر في البوستات الخاصة به (لو كان مستشار)
       final myId = kCurrentUserData?.id;
       if (myId != null) {
-        final updatedMap = Map<String?, CategoryPostsData>.from(state.categoryPostsMap);
+        final updatedMap = Map<String?, CategoryPostsData>.from(
+          state.categoryPostsMap,
+        );
         bool anyChanged = false;
 
         updatedMap.forEach((catId, data) {
@@ -66,10 +71,7 @@ class HomeCubit extends Cubit<HomeState> {
           if (postIndex != -1) {
             final updatedPosts = data.posts.map((p) {
               if (p.advisorId == myId) {
-                return p.copyWith(
-                  name: event.name,
-                  avatar: event.image,
-                );
+                return p.copyWith(name: event.name, avatar: event.image);
               }
               return p;
             }).toList();

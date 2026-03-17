@@ -1,7 +1,7 @@
+import 'package:tayseer/core/utils/profile_event_bus.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_edit_state.dart';
-import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -177,8 +177,14 @@ class UserProfileEditCubit extends Cubit<UserProfileEditState> {
               value: updatedProfile.name,
             );
 
-            // ⭐ تحديث الـ HomeCubit والـ StoriesCubit فوراً
-            getIt<HomeCubit>().refreshUserInfoFromCache();
+            // ⭐ تحديث الـ HomeCubit والـ StoriesCubit فوراً عبر ProfileEventBus
+            ProfileEventBus.instance.fire(
+              ProfileUpdateEvent(
+                name: updatedProfile.name,
+                image: updatedProfile.image ?? '',
+                username: updatedProfile.username,
+              ),
+            );
             getIt<StoriesCubit>().fetchStoriesSilent();
 
             debugPrint('✅ تم تحديث كاش الصورة والاسم والـ HomeCubit');
@@ -246,8 +252,14 @@ class UserProfileEditCubit extends Cubit<UserProfileEditState> {
           );
           CachNetwork.setData(key: kMyProfileName, value: updatedProfile.name);
 
-          // ⭐ تحديث الـ HomeCubit والـ StoriesCubit فوراً
-          getIt<HomeCubit>().refreshUserInfoFromCache();
+          // ⭐ تحديث الـ HomeCubit والـ StoriesCubit فوراً عبر ProfileEventBus
+          ProfileEventBus.instance.fire(
+            ProfileUpdateEvent(
+              name: updatedProfile.name,
+              image: updatedProfile.image ?? '',
+              username: updatedProfile.username,
+            ),
+          );
           getIt<StoriesCubit>().fetchStoriesSilent();
 
           emit(
