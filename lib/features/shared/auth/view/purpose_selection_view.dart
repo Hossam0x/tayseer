@@ -1,6 +1,6 @@
 // lib/features/user/purpose/view/purpose_selection_view.dart
 
-import 'package:tayseer/features/user/questions/view/widget/custom_selectable_list.dart';
+import 'package:tayseer/features/user/questions/presentation/widgets/custom_selectable_list.dart';
 import 'package:tayseer/my_import.dart';
 
 class PurposeSelectionView extends StatefulWidget {

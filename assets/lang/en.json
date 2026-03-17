@@ -1668,6 +1668,9 @@
   "interest_sewing": "Sewing",
   "interest_pottery": "Pottery",
   "interest_woodworking": "Woodworking",
-  "interest_origami": "Origami"
+  "interest_origami": "Origami",
+  "F_social_single" :"Single",
+  "F_social_divorced" :"Divorced",
+  "F_social_widowed" :"Widowed"
 
 }

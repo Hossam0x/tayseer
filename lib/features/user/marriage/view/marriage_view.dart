@@ -2,8 +2,8 @@ import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
 import 'package:tayseer/features/user/marriage/view/widget/marriage_body.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
-import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
-import 'package:tayseer/features/user/questions/view_model/questions_state.dart';
+import 'package:tayseer/features/user/questions/presentation/manager/questions_cubit.dart';
+import 'package:tayseer/features/user/questions/presentation/manager/questions_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class MarriageView extends StatelessWidget {

@@ -1664,6 +1664,9 @@
   "interest_sewing": "الخياطة",
   "interest_pottery": "الفخار",
   "interest_woodworking": "النجارة",
-  "interest_origami": "الأوريغامي"
+  "interest_origami": "الأوريغامي",
+  "F_social_single" :"آنسة",
+  "F_social_divorced" :"مطلقة",
+  "F_social_widowed" :"أرملة"
 
 }
