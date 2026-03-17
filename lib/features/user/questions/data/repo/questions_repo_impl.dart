@@ -99,6 +99,21 @@ class QuestionsRepoImpl implements QuestionsRepo {
           value: jsonEncode(userToCache.toJson()),
         );
         log(">>>>>>>>>>>>>>>>>> status ${kCurrentUserData?.socialStatus}");
+      } else if (questionCategoryEnum == 'hasChildren') {
+        final selectedStatus = normalizedAnswers.isNotEmpty
+            ? normalizedAnswers.first['answer']?.toString()
+            : null;
+        final hasChildren = selectedStatus == 'yes';
+
+        final userToCache = (kCurrentUserData ?? data).copyWith(
+          hasChildren: hasChildren,
+        );
+        kCurrentUserData = userToCache;
+        await CachNetwork.setData(
+          key: kuserData,
+          value: jsonEncode(userToCache.toJson()),
+        );
+        log(">>>>>>>>>>>>>>>>>> hasChildren ${kCurrentUserData?.hasChildren}");
       }
       if (answerCompleted == true) {
         await CachNetwork.setData(

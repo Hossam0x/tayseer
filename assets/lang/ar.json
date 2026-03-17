@@ -68,7 +68,7 @@
   "kg": "كجم",
   "choose_height": "حدد طولك",
   "cm": "سم",
-  "are_you_smoker": "هل انت مدخن؟",
+  "are_you_smoker": "هل انت مدخن/ة؟",
   "do_you_wear_hijab": "هل ترتدين الحجاب؟",
   "skin_very_light": "فاتحة جدًا",
   "skin_light": "فاتحة",
@@ -1667,6 +1667,9 @@
   "interest_origami": "الأوريغامي",
   "F_social_single" :"آنسة",
   "F_social_divorced" :"مطلقة",
-  "F_social_widowed" :"أرملة"
+  "F_social_widowed" :"أرملة",
+  "do_you_want_to_get_married_again" :"هل تنوى الزواج مرة اخرى؟",
+  "child_6_plus" :"6 اطفال او أكثر",
+  "do_you_want_to_have_more_than_one_wife" :"هل تنوى الزواج بأكثر من زوجة؟"
 
 }

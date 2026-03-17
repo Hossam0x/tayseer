@@ -249,6 +249,7 @@ class QuestionsData {
     'child_3',
     'child_4',
     'child_5',
+    'child_6_plus',
   ];
 
   // ─────────────────────────────────────────────────────

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:tayseer/core/enum/auth_enum.dart';
 import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
@@ -73,8 +75,8 @@ class QuestionsPageView extends StatelessWidget {
         questionCategoryEnum: 'weight',
         type: QuestionType.picker,
         minValue: 40,
-        maxValue: 150,
-        initialValue: 70,
+        maxValue: 160,
+        initialValue: 55,
         unit: 'kg',
       ),
       QuestionPageConfig(
@@ -82,9 +84,9 @@ class QuestionsPageView extends StatelessWidget {
         questionNumber: 7,
         questionCategoryEnum: 'height',
         type: QuestionType.picker,
-        minValue: 100,
+        minValue: 120,
         maxValue: 220,
-        initialValue: 170,
+        initialValue: 160,
         unit: 'cm',
       ),
       QuestionPageConfig(
@@ -108,31 +110,36 @@ class QuestionsPageView extends StatelessWidget {
         items: QuestionsData.religiousCommitments,
         type: QuestionType.selectableList,
       ),
-      QuestionPageConfig(
-        titleKey: 'has_children',
-        questionNumber: 11,
-        questionCategoryEnum: 'hasChildren',
-        items: QuestionsData.yesNo,
-        type: QuestionType.selectableList,
-      ),
-      QuestionPageConfig(
-        titleKey: 'children_number',
-        questionNumber: 12,
-        questionCategoryEnum: 'childrenNumber',
-        items: QuestionsData.childrenNumbers,
-        type: QuestionType.selectableList,
-        dependsOnQuestion: 'hasChildren',
-        requiredAnswer: 'yes',
-      ),
-      QuestionPageConfig(
-        titleKey: 'children_living_status',
-        questionNumber: 13,
-        questionCategoryEnum: 'childrenLivingStatus',
-        items: QuestionsData.childrenLivingStatuses,
-        type: QuestionType.selectableList,
-        dependsOnQuestion: 'hasChildren',
-        requiredAnswer: 'yes',
-      ),
+      if (kCurrentUserData?.socialStatus != 'single')
+        QuestionPageConfig(
+          titleKey: 'has_children',
+          questionNumber: 11,
+          questionCategoryEnum: 'hasChildren',
+          items: QuestionsData.yesNo,
+          type: QuestionType.selectableList,
+        ),
+      if (kCurrentUserData?.socialStatus != 'single' &&
+          kCurrentUserData?.hasChildren == true)
+        QuestionPageConfig(
+          titleKey: 'children_number',
+          questionNumber: 12,
+          questionCategoryEnum: 'childrenNumber',
+          items: QuestionsData.childrenNumbers,
+          type: QuestionType.selectableList,
+          dependsOnQuestion: 'hasChildren',
+          requiredAnswer: 'yes',
+        ),
+      if (kCurrentUserData?.socialStatus != 'single' &&
+          kCurrentUserData?.hasChildren == true)
+        QuestionPageConfig(
+          titleKey: 'children_living_status',
+          questionNumber: 13,
+          questionCategoryEnum: 'childrenLivingStatus',
+          items: QuestionsData.childrenLivingStatuses,
+          type: QuestionType.selectableList,
+          dependsOnQuestion: 'hasChildren',
+          requiredAnswer: 'yes',
+        ),
       QuestionPageConfig(
         titleKey: 'education_level',
         questionNumber: 14,
@@ -158,9 +165,13 @@ class QuestionsPageView extends StatelessWidget {
         showSearch: true,
         searchHintKey: 'search_employer',
       ),
-      if (selectedGender == Gender.female)
+      if (selectedGender == Gender.female ||
+          (kCurrentUserData?.socialStatus != 'single' &&
+              selectedGender == Gender.male))
         QuestionPageConfig(
-          titleKey: 'accept_married',
+          titleKey: kCurrentUserData?.gender == "male"
+              ? 'do_you_want_to_have_more_than_one_wife'
+              : 'accept_married',
           questionNumber: 17,
           questionCategoryEnum: 'acceptMarried',
           items: QuestionsData.yesNo,
@@ -224,15 +235,8 @@ class QuestionsPageView extends StatelessWidget {
         type: QuestionType.selectableList,
       ),
       QuestionPageConfig(
-        titleKey: 'eat_halal_only',
-        questionNumber: 26,
-        questionCategoryEnum: 'eatHalalOnly',
-        items: QuestionsData.yesNo,
-        type: QuestionType.selectableList,
-      ),
-      QuestionPageConfig(
         titleKey: 'drink_alcohol',
-        questionNumber: 27,
+        questionNumber: 26,
         questionCategoryEnum: 'drinkAlcohol',
         items: QuestionsData.yesNo,
         type: QuestionType.selectableList,
@@ -269,16 +273,18 @@ class QuestionsPageView extends StatelessWidget {
     final questions = _getQuestions();
     final totalPages = questions.length;
 
-    final targetQuestionNumber = lastQuestionNumber + 1;
     final startIndex = questions.indexWhere(
-      (q) => q.questionNumber == targetQuestionNumber,
+      (q) => q.questionNumber == lastQuestionNumber,
     );
-
+    log(
+      ">>>>>>>>>... startIndex: $startIndex, lastQuestionNumber: $lastQuestionNumber",
+    );
+    log(">>>>>>>>>>>>>.. ${kCurrentUserData?.toJson()}");
     if (startIndex != -1 && _currentPage.value == 0) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_pageController.hasClients) {
-          _pageController.jumpToPage(startIndex);
-          _currentPage.value = startIndex;
+          _pageController.jumpToPage(startIndex + 1);
+          _currentPage.value = startIndex + 1;
         }
       });
     }
