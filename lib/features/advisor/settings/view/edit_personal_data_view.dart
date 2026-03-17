@@ -484,10 +484,8 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                     if (state.state == CubitStates.loading)
                                       Shimmer.fromColors(
                                         baseColor: AppColors.secondary100,
-                                        highlightColor:
-                                            AppColors.kWhiteColor.withOpacity(
-                                              0.5,
-                                            ),
+                                        highlightColor: AppColors.kWhiteColor
+                                            .withOpacity(0.5),
                                         child: _buildSkeletonLoading(),
                                       )
                                     else if (state.state == CubitStates.failure)
@@ -587,19 +585,24 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                             EditPersonalDataUiState
                                           >(
                                             builder: (context, uiState) {
-                                              return CustomBotton(
-                                                height: 54.h,
-                                                width: double.infinity,
-                                                useGradient: true,
-                                                title: state.isSaving
-                                                    ? context.tr("saving")
-                                                    : context.tr("save"),
-                                                onPressed:
-                                                    state.isSaving ||
-                                                        !state.hasChanges ||
-                                                        !_isFormValid
-                                                    ? null
-                                                    : () => cubit.saveChanges(),
+                                              final bool canSave =
+                                                  !state.isSaving &&
+                                                  state.hasChanges &&
+                                                  _isFormValid;
+                                              return Opacity(
+                                                opacity: canSave ? 1.0 : 0.4,
+                                                child: CustomBotton(
+                                                  height: 54.h,
+                                                  width: double.infinity,
+                                                  useGradient: true,
+                                                  title: state.isSaving
+                                                      ? context.tr("saving")
+                                                      : context.tr("save"),
+                                                  onPressed: canSave
+                                                      ? () =>
+                                                            cubit.saveChanges()
+                                                      : null,
+                                                ),
                                               );
                                             },
                                           ),
@@ -628,6 +631,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     BuildContext context,
     EditPersonalDataCubit cubit,
   ) async {
+    final bool canSave = _isFormValid;
     final result = await showDialog<String>(
       context: context,
       barrierDismissible: false,
@@ -654,12 +658,17 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CustomBotton(
-                  height: 48.h,
-                  width: double.infinity,
-                  useGradient: true,
-                  title: context.tr("save_and_exit"),
-                  onPressed: () => Navigator.pop(context, 'save'),
+                Opacity(
+                  opacity: canSave ? 1.0 : 0.4,
+                  child: CustomBotton(
+                    height: 48.h,
+                    width: double.infinity,
+                    useGradient: true,
+                    title: context.tr("save_and_exit"),
+                    onPressed: canSave
+                        ? () => Navigator.pop(context, 'save')
+                        : null,
+                  ),
                 ),
                 Gap(12.h),
                 Row(
@@ -909,20 +918,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Upload Progress Ring (Like Add Story)
-                    if (state.isSaving)
-                      SizedBox(
-                        width: 160.w,
-                        height: 160.h,
-                        child: CircularProgressIndicator(
-                          value: state.uploadProgress > 0
-                              ? state.uploadProgress
-                              : null,
-                          strokeWidth: 4,
-                          color: AppColors.kprimaryColor,
-                          backgroundColor: AppColors.secondary200,
-                        ),
-                      ),
                     Container(
                       height: 150.h,
                       width: 155.w,
@@ -958,22 +953,44 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                             )
                           : _buildDefaultAvatar(),
                     ),
-                    // Percentage Text Overlay
+                    // Upload Progress — frame that follows the image shape
                     if (state.isSaving)
                       Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8.w,
-                          vertical: 4.h,
-                        ),
+                        height: 150.h,
+                        width: 155.w,
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
-                          borderRadius: BorderRadius.circular(16.r),
+                          color: Colors.black.withOpacity(0.45),
+                          borderRadius: BorderRadius.circular(32.r),
                         ),
-                        child: Text(
-                          '${(state.uploadProgress * 100).toInt()}%',
-                          style: Styles.textStyle14.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 56.w,
+                                height: 56.w,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    CircularProgressIndicator(
+                                      value: state.uploadProgress > 0
+                                          ? state.uploadProgress
+                                          : null,
+                                      strokeWidth: 4,
+                                      color: AppColors.kprimaryColor,
+                                      backgroundColor: Colors.white24,
+                                    ),
+                                    Text(
+                                      '${(state.uploadProgress * 100).toInt()}%',
+                                      style: Styles.textStyle12.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
