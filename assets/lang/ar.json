@@ -1664,6 +1664,7 @@
   "interest_sewing": "الخياطة",
   "interest_pottery": "الفخار",
   "interest_woodworking": "النجارة",
-  "interest_origami": "الأوريغامي"
+  "interest_origami": "الأوريغامي",
+"no_advisors_found": "لا يوجد مستشارين متاحين"
 
 }
