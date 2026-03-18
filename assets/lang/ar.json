@@ -1665,6 +1665,10 @@
   "interest_pottery": "الفخار",
   "interest_woodworking": "النجارة",
   "interest_origami": "الأوريغامي",
-"no_advisors_found": "لا يوجد مستشارين متاحين"
+"no_advisors_found": "لا يوجد مستشارين متاحين",
+"like": "إعجاب",
+"dislike": "تجاهل",
+"favorite": "مفضلة",
+"regard": "تحية"
 
 }
