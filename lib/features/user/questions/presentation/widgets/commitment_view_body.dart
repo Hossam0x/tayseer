@@ -39,6 +39,39 @@ class _CommitmentViewBodyState extends State<CommitmentViewBody> {
     }
   }
 
+  // ✅ Validator للاسم
+  String? _validateName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return context.tr('name_required');
+    }
+
+    final trimmed = value.trim();
+
+    // حروف فقط (أي لغة) + مسافات — بدون أرقام / رموز / إيموجي
+    final validNameRegex = RegExp(r'^[\p{L}\s]+$', unicode: true);
+    if (!validNameRegex.hasMatch(trimmed)) {
+      return context.tr('invalid_name_characters');
+    }
+
+    // لازم كلمتين على الأقل (اسم أول + اسم تاني)
+    final words = trimmed
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .toList();
+    if (words.length < 2) {
+      return context.tr('enter_full_name');
+    }
+
+    // كل كلمة لازم تكون حرفين على الأقل
+    for (final word in words) {
+      if (word.length < 2) {
+        return context.tr('name_too_short');
+      }
+    }
+
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -54,11 +87,9 @@ class _CommitmentViewBodyState extends State<CommitmentViewBody> {
               builder: (_) => const Center(child: CustomloadingApp()),
             );
           } else if (state.answerQuestionsState == CubitStates.success) {
-            // close loading dialog only (don't pop the current route)
             if (Navigator.canPop(context)) Navigator.pop(context);
             context.pushReplacementNamed(AppRouter.kAccountReviewUserView);
           } else if (state.answerQuestionsState == CubitStates.failure) {
-            // close loading dialog only (don't pop the current route)
             if (Navigator.canPop(context)) Navigator.pop(context);
             ScaffoldMessenger.of(context).showSnackBar(
               CustomSnackBar(
@@ -75,13 +106,8 @@ class _CommitmentViewBodyState extends State<CommitmentViewBody> {
               onTap: () => FocusScope.of(context).unfocus(),
               child: Stack(
                 children: [
-                  // ✅ الخلفية
                   _buildBackground(context),
-
-                  // ✅ المحتوى
                   _buildMainContent(context),
-
-                  // ✅ زر الرجوع
                   _buildBackButton(context),
                 ],
               ),
@@ -95,7 +121,6 @@ class _CommitmentViewBodyState extends State<CommitmentViewBody> {
   Widget _buildBackground(BuildContext context) {
     return Column(
       children: [
-        // الصورة العلوية
         AppImage(
           width: context.width,
           height: context.height * 0.4,
@@ -133,10 +158,7 @@ class _CommitmentViewBodyState extends State<CommitmentViewBody> {
   Widget _buildMainContent(BuildContext context) {
     return Column(
       children: [
-        // مساحة للصورة
         SizedBox(height: context.height * 0.4),
-
-        // المحتوى
         Expanded(
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
@@ -150,27 +172,14 @@ class _CommitmentViewBodyState extends State<CommitmentViewBody> {
               key: _formKey,
               child: Column(
                 children: [
-                  // العنوان
                   _buildTitle(context),
-
                   SizedBox(height: context.height * 0.025),
-
-                  // قائمة التعهدات
                   _buildCommitments(context),
-
                   SizedBox(height: context.height * 0.035),
-
-                  // حقل الاسم باستخدام CustomTextFormField
                   _buildNameInput(context),
-
                   SizedBox(height: context.height * 0.025),
-
-                  // زر التالي
                   _buildSubmitButton(context),
-
                   SizedBox(height: context.height * 0.015),
-
-                  // نص الموافقة
                   AgreementText(),
                   SizedBox(height: context.height * 0.02),
                 ],
@@ -183,14 +192,19 @@ class _CommitmentViewBodyState extends State<CommitmentViewBody> {
   }
 
   Widget _buildTitle(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: Text(
-        context.tr('commitment_title'),
-        style: Styles.textStyle22Bold.copyWith(
-          color: AppColors.kscandryTextColor,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+
+      children: [
+        Gap(8.w),
+        Text(
+          context.tr('commitment_title'),
+          style: Styles.textStyle22Bold.copyWith(
+            color: AppColors.kscandryTextColor,
+          ),
+          textAlign: TextAlign.start,
         ),
-      ),
+      ],
     );
   }
 
@@ -231,6 +245,7 @@ class _CommitmentViewBodyState extends State<CommitmentViewBody> {
     );
   }
 
+  // ✅ تم إضافة الـ validator هنا
   Widget _buildNameInput(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: context.width * 0.1),
@@ -239,6 +254,7 @@ class _CommitmentViewBodyState extends State<CommitmentViewBody> {
         isName: true,
         textInputAction: TextInputAction.done,
         onChanged: (_) => _onNameChanged(),
+        validator: _validateName,
       ),
     );
   }

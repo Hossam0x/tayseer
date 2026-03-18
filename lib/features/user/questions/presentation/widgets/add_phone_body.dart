@@ -20,7 +20,7 @@ class AddPhoneBody extends StatelessWidget {
             );
           } else if (state.phoneNumberState == CubitStates.success) {
             context.pop();
-            context.pushNamed(AppRouter.kOtpPhoneUserQuestion);
+            context.pushReplacementNamed(AppRouter.kCommitmentView);
           } else if (state.phoneNumberState == CubitStates.loading) {
             showDialog(
               context: context,

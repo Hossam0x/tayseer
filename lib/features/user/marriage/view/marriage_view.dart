@@ -55,10 +55,12 @@ class MarriageView extends StatelessWidget {
                         AppRouter.kQuestionsPageView,
                         arguments: {'lastQuestionNumber': lastQuestionNumber},
                       );
-                    } else if (lastQuestionNumber >= 26) {
+                    } else if (lastQuestionNumber <= 26) {
                       context.pushNamed(AppRouter.kPersonalInfoView);
-                    } else if (lastQuestionNumber >= 28) {
+                    } else if (lastQuestionNumber <= 27) {
                       context.pushNamed(AppRouter.kCommitmentView);
+                    } else if (lastQuestionNumber >= 29) {
+                      context.pushNamed(AppRouter.kPartnerFilterView);
                     }
                   } else if (state.lastQuestionNumberState ==
                       CubitStates.failure) {

@@ -219,7 +219,11 @@ class QuestionsRepoImpl implements QuestionsRepo {
     return _safeApiCall(() async {
       final response = await apiService.post(
         endPoint: '/user/update-phone-number',
-        data: {'countryCode': countryCode, 'phone': phoneNumber},
+        data: {
+          'countryCode': countryCode,
+          'phone': phoneNumber,
+          "updateQuestionNumber": true,
+        },
       );
 
       final success = response['success'] ?? false;

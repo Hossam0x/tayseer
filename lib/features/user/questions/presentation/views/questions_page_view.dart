@@ -11,26 +11,56 @@ import 'package:tayseer/features/user/questions/presentation/manager/questions_c
 import 'package:tayseer/features/user/questions/presentation/manager/questions_state.dart';
 import 'package:tayseer/my_import.dart';
 
-class QuestionsPageView extends StatelessWidget {
+class QuestionsPageView extends StatefulWidget {
   final UserTypeEnum currentUserType;
   final Gender selectedGender;
   final int lastQuestionNumber;
 
-  QuestionsPageView({
+  const QuestionsPageView({
     super.key,
     required this.currentUserType,
     required this.selectedGender,
     required this.lastQuestionNumber,
   });
 
-  final PageController _pageController = PageController();
-  final ValueNotifier<int> _currentPage = ValueNotifier<int>(0);
+  @override
+  State<QuestionsPageView> createState() => _QuestionsPageViewState();
+}
 
-  /// Stores answer keys for conditional logic between questions.
+class _QuestionsPageViewState extends State<QuestionsPageView> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
+  /// ✅ هنا بنخزن كل الإجابات اللي المستخدم اختارها في الجلسة الحالية
   final Map<String, dynamic> _answers = {};
 
+  @override
+  void initState() {
+    super.initState();
+    _jumpToLastQuestion();
+  }
+
+  void _jumpToLastQuestion() {
+    final questions = _getQuestions();
+    final startIndex = questions.indexWhere(
+      (q) => q.questionNumber == widget.lastQuestionNumber,
+    );
+    log(
+      ">>>>>>>>>... startIndex: $startIndex, lastQuestionNumber: ${widget.lastQuestionNumber}",
+    );
+
+    if (startIndex != -1) {
+      _currentPage = startIndex + 1;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_pageController.hasClients) {
+          _pageController.jumpToPage(_currentPage);
+        }
+      });
+    }
+  }
+
   // ─────────────────────────────────────────────────────
-  // Question List Builder
+  // ✅ Question List Builder - بيتبني كل مرة setState تتنادى
   // ─────────────────────────────────────────────────────
 
   List<QuestionPageConfig> _getQuestions() {
@@ -243,27 +273,6 @@ class QuestionsPageView extends StatelessWidget {
       ),
     ];
   }
-
-  // ─────────────────────────────────────────────────────
-  // Conditional Question Logic
-  // ─────────────────────────────────────────────────────
-
-  bool _shouldShowQuestion(QuestionPageConfig config) {
-    if (config.dependsOnQuestion == null) return true;
-    final dependsOnAnswer = _answers[config.dependsOnQuestion];
-    return dependsOnAnswer == config.requiredAnswer;
-  }
-
-  int _getNextAvailablePage(
-    List<QuestionPageConfig> questions,
-    int currentIndex,
-  ) {
-    for (int i = currentIndex + 1; i < questions.length; i++) {
-      if (_shouldShowQuestion(questions[i])) return i;
-    }
-    return -1;
-  }
-
   // ─────────────────────────────────────────────────────
   // Build
   // ─────────────────────────────────────────────────────
@@ -273,20 +282,9 @@ class QuestionsPageView extends StatelessWidget {
     final questions = _getQuestions();
     final totalPages = questions.length;
 
-    final startIndex = questions.indexWhere(
-      (q) => q.questionNumber == lastQuestionNumber,
-    );
-    log(
-      ">>>>>>>>>... startIndex: $startIndex, lastQuestionNumber: $lastQuestionNumber",
-    );
-    log(">>>>>>>>>>>>>.. ${kCurrentUserData?.toJson()}");
-    if (startIndex != -1 && _currentPage.value == 0) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_pageController.hasClients) {
-          _pageController.jumpToPage(startIndex + 1);
-          _currentPage.value = startIndex + 1;
-        }
-      });
+    // حماية: لو الصفحة الحالية أكبر من عدد الأسئلة
+    if (_currentPage >= totalPages) {
+      _currentPage = totalPages - 1;
     }
 
     return Scaffold(
@@ -312,13 +310,12 @@ class QuestionsPageView extends StatelessWidget {
               SizedBox(height: context.height * 0.06),
 
               /// Header with progress
-              ValueListenableBuilder<int>(
-                valueListenable: _currentPage,
-                builder: (context, currentPage, _) {
-                  final progress = (currentPage + 1) / totalPages;
+              Builder(
+                builder: (context) {
+                  final progress = (_currentPage + 1) / totalPages;
                   return QuestionHeader(
                     progress: progress,
-                    titleKey: questions[currentPage].titleKey,
+                    titleKey: questions[_currentPage].titleKey,
                     showBackButton: true,
                   );
                 },
@@ -332,7 +329,11 @@ class QuestionsPageView extends StatelessWidget {
                   controller: _pageController,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: totalPages,
-                  onPageChanged: (index) => _currentPage.value = index,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentPage = index;
+                    });
+                  },
                   itemBuilder: (context, index) {
                     return QuestionPage(
                       config: questions[index],
@@ -351,7 +352,7 @@ class QuestionsPageView extends StatelessWidget {
   }
 
   // ─────────────────────────────────────────────────────
-  // Answer Submission
+  // ✅ Answer Submission - بيعمل setState عشان القائمة تتحدث
   // ─────────────────────────────────────────────────────
 
   void _submitAnswer(
@@ -367,8 +368,13 @@ class QuestionsPageView extends StatelessWidget {
       answerKey = answer;
     }
 
+    // ✅ 1) نخزن الإجابة في الـ map
     _answers[config.questionCategoryEnum] = answerKey;
 
+    // ✅ 2) نعمل setState عشان _getQuestions() تتنفذ تاني بالشروط الجديدة
+    setState(() {});
+
+    // 3) نجهز الإجابات للـ API
     List<Map<String, dynamic>> answers;
 
     if (answerKey is List<String>) {
@@ -381,6 +387,7 @@ class QuestionsPageView extends StatelessWidget {
       ];
     }
 
+    // 4) نبعت للـ API
     context.read<QuestionsCubit>().sendAnswerQuestions(
       question: context.tr(config.titleKey),
       questionCategoryEnum: config.questionCategoryEnum,
@@ -394,15 +401,14 @@ class QuestionsPageView extends StatelessWidget {
   // ─────────────────────────────────────────────────────
 
   void _goToNextPage(List<QuestionPageConfig> questions, BuildContext context) {
-    final nextPageIndex = _getNextAvailablePage(questions, _currentPage.value);
-
-    if (nextPageIndex != -1) {
+    if (_currentPage + 1 < questions.length) {
       _pageController.animateToPage(
-        nextPageIndex,
+        _currentPage + 1,
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
       );
     } else {
+      // آخر سؤال → روح للصفحة اللي بعد كده
       context.pushReplacementNamed(AppRouter.kPersonalInfoView);
     }
   }
