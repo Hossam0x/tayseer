@@ -3,8 +3,25 @@ import '../../../../my_import.dart';
 import '../cubit/advisor_filter_cubit.dart';
 import '../cubit/advisor_filter_state.dart';
 
+// ✅ Model لفصل الـ value عن الـ display label
+class _ExperienceOption {
+  final String value;  // القيمة اللي بتتبعت للـ API  (رقم string)
+  final String label;  // النص اللي بيتعرض للمستخدم
+
+  const _ExperienceOption({required this.value, required this.label});
+}
+
 class ExperienceDropdown extends StatelessWidget {
   const ExperienceDropdown({super.key});
+
+  // ✅ values صريحة — كل value هي الرقم الأول من النطاق
+  // الـ cubit هيحولها لـ "1_years", "3_years", etc.
+  static const List<_ExperienceOption> _options = [
+    _ExperienceOption(value: '1',  label: '1 - 3 years'),
+    _ExperienceOption(value: '3',  label: '3 - 5 years'),
+    _ExperienceOption(value: '5',  label: '5 - 10 years'),
+    _ExperienceOption(value: '10', label: '10+ years'),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -35,11 +52,12 @@ class ExperienceDropdown extends StatelessWidget {
                   color: AppColors.secondary400,
                 ),
               ),
-              items: ['1-3 years', '3-5 years', '5-10 years', '10+ years']
+              // ✅ value = الرقم فقط ("1", "3", "5", "10")
+              items: _options
                   .map(
-                    (item) => DropdownMenuItem<String>(
-                      value: item,
-                      child: Text(item, style: Styles.textStyle14),
+                    (option) => DropdownMenuItem<String>(
+                      value: option.value,
+                      child: Text(option.label, style: Styles.textStyle14),
                     ),
                   )
                   .toList(),

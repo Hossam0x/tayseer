@@ -22,4 +22,5 @@ abstract class MarriageRepository {
   required bool isAdd,
 });
 Future<Either<Failure, List<String>>> getFavoriteIds();
+Future<Either<Failure, UserItem>> getProfileById(String userId);
 }

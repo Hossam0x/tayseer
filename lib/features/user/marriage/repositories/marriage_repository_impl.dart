@@ -154,5 +154,24 @@ Future<Either<Failure, String>> blockUser({required String personId}) async {
     return Left(ServerFailure(e.toString()));
   }
 }
-
+@override
+Future<Either<Failure, UserItem>> getProfileById(String userId) async {
+  try {
+    final response = await _apiService.get(
+      endPoint: '/user/one-user-for-marry/$userId',
+    );
+    if (response['success'] == true) {
+      // ✅ الـ response بيرجع userData مش users array
+      final userData = response['data']['userData'];
+      final userItem = UserItem.fromJson(userData);
+      return Right(userItem);
+    } else {
+      return Left(ServerFailure(response['message'] ?? ''));
+    }
+  } on DioException catch (e) {
+    return Left(ServerFailure.fromDioError(e));
+  } catch (e) {
+    return Left(ServerFailure(e.toString()));
+  }
+}
 }
