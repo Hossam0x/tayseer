@@ -51,7 +51,15 @@ class AdvisorFilterBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> languages = ['arabic', 'english', 'french', 'german'];
+    // ✅ الـ value = كود اللغة اللي بيتبعت للـ API (ar, en, fr, de)
+    // الـ label = مفتاح الترجمة اللي بيتعرض للمستخدم
+    final List<_LangOption> languages = [
+      _LangOption(apiCode: 'ar',  labelKey: 'arabic'),
+      _LangOption(apiCode: 'en',  labelKey: 'english'),
+      _LangOption(apiCode: 'fr',  labelKey: 'french'),
+      _LangOption(apiCode: 'de',  labelKey: 'german'),
+    ];
+
     final List<String> badges = [
       'influencer',
       'expert',
@@ -78,7 +86,12 @@ class AdvisorFilterBody extends StatelessWidget {
           const RatingSelection(),
           Gap(30.h),
           FilterSectionTitle(title: context.tr("language")),
-          FilterChipsSection(items: languages, isLanguages: true),
+          // ✅ بنبعت apiCode للـ cubit، ونعرض الترجمة للمستخدم
+          FilterChipsSection(
+            items: languages.map((l) => l.apiCode).toList(),
+            labelKeys: languages.map((l) => l.labelKey).toList(),
+            isLanguages: true,
+          ),
           Gap(30.h),
           FilterSectionTitle(title: context.tr("Medals")),
           FilterChipsSection(items: badges, isLanguages: false),
@@ -92,6 +105,13 @@ class AdvisorFilterBody extends StatelessWidget {
       ),
     );
   }
+}
+
+// ✅ helper model — apiCode للـ API، labelKey للترجمة
+class _LangOption {
+  final String apiCode;
+  final String labelKey;
+  const _LangOption({required this.apiCode, required this.labelKey});
 }
 
 class ClearFiltersButton extends StatelessWidget {
@@ -129,11 +149,11 @@ class ApplyFiltersButton extends StatelessWidget {
       builder: (context, state) {
         return CustomBotton(
           title: state.isLoading ? '...' : context.tr("apply_filters"),
-          onPressed: (state.isLoading || !state.isFilterComplete) ?  null
+          onPressed: (state.isLoading || !state.isFilterComplete)
+              ? null
               : () => context.read<AdvisorFilterCubit>().applyFilters(context),
-          // ✅ لو كل حاجة اتحددت → اللون الأساسي، غير كده → رمادي
           backGroundcolor: state.isFilterComplete
-              ? null // null = AppColors.kprimaryColor الافتراضي
+              ? null
               : const Color(0xff9E9E9E),
           width: double.infinity,
         );

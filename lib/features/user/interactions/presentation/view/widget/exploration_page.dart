@@ -102,7 +102,7 @@ class ExplorationState extends State<Exploration> {
           return const EmptyExploration();
         }
 
-        return RefreshIndicator(
+        return RefreshIndicator.adaptive(
           onRefresh: _onRefresh,
           color: AppColors.primary400,
           backgroundColor: Colors.white,

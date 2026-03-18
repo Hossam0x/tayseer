@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/enum/report_type.dart';
@@ -8,6 +10,7 @@ import 'package:tayseer/features/user/interactions/presentation/view/widget/inte
 import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
 import 'package:tayseer/features/user/marriage/view/widget/section_toggle.dart';
 import 'package:tayseer/features/user/marriage/view/widget/animated_be_first_button.dart';
+import 'package:tayseer/features/user/marriage/view/widget/swipe_action_pop_up.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_state.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/dash_border.dart';
@@ -58,6 +61,8 @@ class MarriageBodyState extends State<MarriageBody>
   double _lastOffset = 0;
   double _scrollDelta = 0;
   static const double _scrollThreshold = 20.0;
+  Timer? _scrollIdleTimer;
+  static const Duration _scrollIdleDelay = Duration(milliseconds: 800);
 
   InteractionsCubit get interactionsCubit {
     if (_interactionsCubit == null) {
@@ -84,7 +89,9 @@ class MarriageBodyState extends State<MarriageBody>
   }
 
   @override
+  @override
   void dispose() {
+    _scrollIdleTimer?.cancel(); // ✅ أضف دي
     _mainScrollController.removeListener(_scrollListener);
     _mainScrollController.dispose();
     _interactionsCubit?.close();
@@ -106,7 +113,6 @@ class MarriageBodyState extends State<MarriageBody>
       _scrollDelta = 0;
     }
 
-    // ✅ لو وصل للأعلى خالص — اجبر إظهار الـ navbar فوراً
     if (currentOffset <= 0) {
       _scrollDelta = 0;
       final cubit = context.read<MarriageCubit>();
@@ -117,6 +123,37 @@ class MarriageBodyState extends State<MarriageBody>
     }
 
     _lastOffset = currentOffset;
+
+    // ✅ الجديد — idle timer
+    _scrollIdleTimer?.cancel();
+    _scrollIdleTimer = Timer(_scrollIdleDelay, () {
+      if (!mounted) return;
+      final cubit = context.read<MarriageCubit>();
+      if (cubit.state.isScrollingDown) {
+        cubit.setScrollingDown(false);
+        widget.onScroll?.call(false);
+      }
+    });
+  }
+
+  Future<void> _showSwipePopup(
+    BuildContext context,
+    SwipeActionType type,
+  ) async {
+    final overlay = Overlay.of(context);
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (_) => Positioned.fill(
+        child: IgnorePointer(child: SwipeActionPopup(type: type)),
+      ),
+    );
+
+    overlay.insert(entry);
+
+    // ✅ بعد 900ms اشيل الـ popup
+    await Future.delayed(const Duration(milliseconds: 900));
+    entry.remove();
   }
 
   void scrollToTop() {
@@ -500,8 +537,12 @@ class MarriageBodyState extends State<MarriageBody>
     final answers = profile.answers;
     final images = answers?.userMedia?.image ?? [];
 
-    final List<String> displayImages = images.isNotEmpty
-        ? images
+    final List<String> validImages = images
+        .where((img) => img.isNotEmpty)
+        .toList();
+
+    final List<String> displayImages = validImages.isNotEmpty
+        ? validImages
         : (user?.image != null && user!.image!.isNotEmpty ? [user.image!] : []);
 
     final cubit = context.read<MarriageCubit>();
@@ -583,8 +624,13 @@ class MarriageBodyState extends State<MarriageBody>
                         ? "📏 ${nextUser?.about?.height ?? ''}"
                         : null,
                     isFavorited: state.favoritedIds.contains(user?.id ?? ''),
-                    onFavoriteTap: () {
-                      cubit.toggleLocalFavorite(user?.id ?? '');
+                    // ✅ زرار الـ favorite في الـ SliverProfileHeader
+                    onFavoriteTap: () async {
+                      await _showSwipePopup(context, SwipeActionType.favorite);
+                      cubit.toggleLocalFavorite(
+                        user?.id ?? '',
+                        removeFromList: widget.personId == null,
+                      );
                     },
                   ),
 
@@ -913,47 +959,49 @@ class MarriageBodyState extends State<MarriageBody>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
+                    // ✅ Like
                     buildCircleButton(
-                      onTap: () {
-                        cubit
-                            .swipeLike(
-                              personId: profile.user?.id ?? '',
-                              usersLength: users.length,
-                              hasSinglePerson: widget.personId != null,
-                            )
-                            .then((_) {
-                              if (widget.personId == null) {
-                                _resetScrollTracking();
-                                scrollToTop();
-                              }
-                            });
+                      onTap: () async {
+                        await _showSwipePopup(context, SwipeActionType.like);
+                        await cubit.swipeLike(
+                          personId: profile.user?.id ?? '',
+                          usersLength: users.length,
+                          hasSinglePerson: widget.personId != null,
+                        );
+                        if (widget.personId == null && mounted) {
+                          _resetScrollTracking();
+                          scrollToTop();
+                        }
                       },
                       Icons.check,
                       AppColors.kprimaryTextColor,
                       HexColor('f8d3da'),
                     ),
+
+                    // ✅ Star (regard)
                     buildCircleButton(
-                      onTap: () {
+                      onTap: () async {
+                      
                         cubit.sendRegard(personId: profile.user?.id ?? '');
                       },
                       Icons.star,
                       Colors.white,
                       HexColor('cccab3'),
                     ),
+
+                    // ✅ Dislike
                     buildCircleButton(
-                      onTap: () {
-                        cubit
-                            .swipeDislike(
-                              personId: profile.user?.id ?? '',
-                              usersLength: users.length,
-                              hasSinglePerson: widget.personId != null,
-                            )
-                            .then((_) {
-                              if (widget.personId == null) {
-                                _resetScrollTracking();
-                                scrollToTop();
-                              }
-                            });
+                      onTap: () async {
+                        await _showSwipePopup(context, SwipeActionType.dislike);
+                        await cubit.swipeDislike(
+                          personId: profile.user?.id ?? '',
+                          usersLength: users.length,
+                          hasSinglePerson: widget.personId != null,
+                        );
+                        if (widget.personId == null && mounted) {
+                          _resetScrollTracking();
+                          scrollToTop();
+                        }
                       },
                       Icons.close,
                       Colors.white,

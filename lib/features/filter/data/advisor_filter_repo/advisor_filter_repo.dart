@@ -20,17 +20,7 @@ class AdvisorFilterRepoImpl implements AdvisorFilterRepo {
     AdvisorFilterRequestModel request,
   ) async {
     // ✅ طباعة البيانات في الـ log
-    log('====== FILTER REQUEST ======', name: 'AdvisorFilter');
-    log('min_price   : ${request.minPrice}', name: 'AdvisorFilter');
-    log('max_price   : ${request.maxPrice}', name: 'AdvisorFilter');
-    log('experience  : ${request.experience}', name: 'AdvisorFilter');
-    log('rating      : ${request.rating}', name: 'AdvisorFilter');
-    log('languages   : ${request.languages}', name: 'AdvisorFilter');
-    log('badges      : ${request.badges}', name: 'AdvisorFilter');
-    log('date        : ${request.date}', name: 'AdvisorFilter');
-    log('page        : ${request.page}', name: 'AdvisorFilter');
-    log('full JSON   : ${request.toJson()}', name: 'AdvisorFilter');
-    log('============================', name: 'AdvisorFilter');
+    
 
     // TODO: استبدل الـ log بالـ API call لما الـ backend يجهز الـ endpoint
     // final response = await _client.post(
