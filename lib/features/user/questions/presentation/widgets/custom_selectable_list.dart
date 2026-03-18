@@ -43,7 +43,7 @@ class _SelectableListWidgetState extends State<SelectableListWidget> {
       children: [
         if (widget.showSearch)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: TextField(
               onTapOutside: (event) {
                 SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -54,7 +54,7 @@ class _SelectableListWidgetState extends State<SelectableListWidget> {
               decoration: InputDecoration(
                 hintText: widget.searchHintKey != null
                     ? context.tr(widget.searchHintKey!)
-                    : 'Search...',
+                    : context.tr('search'),
                 prefixIcon: const Icon(Icons.search),
                 border: const UnderlineInputBorder(),
               ),
@@ -64,6 +64,7 @@ class _SelectableListWidgetState extends State<SelectableListWidget> {
         Expanded(
           child: ListView.separated(
             itemCount: filteredList.length,
+            padding: EdgeInsets.only(bottom: 8.h),
             separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
               final itemKey = filteredList[index];
@@ -75,10 +76,10 @@ class _SelectableListWidgetState extends State<SelectableListWidget> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
+                  margin: EdgeInsets.symmetric(horizontal: 20.w),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 14.h,
                   ),
                   decoration: BoxDecoration(
                     color: isSelected

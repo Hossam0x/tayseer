@@ -7,14 +7,14 @@ class MultiSelectChipsWidget extends StatefulWidget {
   final ValueChanged<List<String>> onChanged;
   final Color primaryColor;
   final Color? defaultBackgroundColor;
-final List<String> initialSelected;
+  final List<String> initialSelected;
   const MultiSelectChipsWidget({
     super.key,
     required this.itemsWithEmoji,
     required this.onChanged,
     this.primaryColor = Colors.pink,
     this.defaultBackgroundColor,
-     this.initialSelected = const [],
+    this.initialSelected = const [],
   });
 
   @override
@@ -23,8 +23,9 @@ final List<String> initialSelected;
 
 class _MultiSelectChipsWidgetState extends State<MultiSelectChipsWidget> {
   final Set<String> _selectedKeys = {};
+  // ignore: unused_field
   late List<String> _selected;
-   @override
+  @override
   void initState() {
     super.initState();
     // ✅ ابدأ بالقيم السابقة
