@@ -25,7 +25,7 @@ class _SwipeActionPopupState extends State<SwipeActionPopup>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 1100),
     );
 
     // ✅ الـ popup بيظهر ويكبر
@@ -118,28 +118,28 @@ class _SwipeActionPopupState extends State<SwipeActionPopup>
           icon: Icons.check,
           color: HexColor('f8d3da'),
           iconColor: AppColors.kprimaryTextColor,
-          label: 'like',
+          label: 'like_action',
         );
       case SwipeActionType.dislike:
         return _ActionConfig(
           icon: Icons.close,
           color: HexColor('e44e6c'),
           iconColor: Colors.white,
-          label: 'dislike',
+          label: 'dislike_action',
         );
       case SwipeActionType.favorite:
         return _ActionConfig(
           icon: Icons.favorite,
           color: Colors.white,
           iconColor: Colors.red,
-          label: 'favorite',
+          label: 'favorite_action',
         );
       case SwipeActionType.regard:
         return _ActionConfig(
           icon: Icons.star,
           color: HexColor('cccab3'),
           iconColor: Colors.white,
-          label: 'regard',
+          label: 'regard_action',
         );
     }
   }
@@ -157,8 +157,8 @@ class _SwipeActionPopupState extends State<SwipeActionPopup>
             child: ScaleTransition(
               scale: _scaleAnim,
               child: Container(
-                width: 170.w,  // ✅ أكبر
-                height: 170.w, // ✅ أكبر
+                width: 190.w,  
+                height: 190.h, 
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.80),
                   shape: BoxShape.circle,
@@ -184,12 +184,12 @@ class _SwipeActionPopupState extends State<SwipeActionPopup>
                       child: Transform.scale(
                         scale: _iconScaleAnim.value,
                         child: CircleAvatar(
-                          radius: 38.r, // ✅ أكبر
+                          radius: 40.r, 
                           backgroundColor: config.color,
                           child: Icon(
                             config.icon,
                             color: config.iconColor,
-                            size: 38, // ✅ أكبر
+                            size: 40.r, 
                           ),
                         ),
                       ),
@@ -197,7 +197,7 @@ class _SwipeActionPopupState extends State<SwipeActionPopup>
                     SizedBox(height: 12.h),
                     Text(
                       context.tr(config.label),
-                      style: Styles.textStyle16Bold.copyWith(
+                      style: Styles.textStyle18Bold.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.5,

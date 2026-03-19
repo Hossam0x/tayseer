@@ -59,4 +59,7 @@ class ConsultationCubit extends Cubit<ConsultationState> {
       )),
     );
   }
+  Future<void> refresh() async {
+  await applyFilter(const AdvisorFilterRequestModel(page: 1));
+}
 }

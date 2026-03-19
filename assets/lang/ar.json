@@ -1665,10 +1665,12 @@
   "interest_pottery": "الفخار",
   "interest_woodworking": "النجارة",
   "interest_origami": "الأوريغامي",
-"no_advisors_found": "لا يوجد مستشارين متاحين",
-"like": "إعجاب",
-"dislike": "تجاهل",
-"favorite": "مفضلة",
-"regard": "تحية"
-
+  "no_advisors_found": "لا يوجد مستشارين متاحين",
+  "like_action": "إعجاب",
+  "dislike_action": "تجاهل", 
+  "favorite_action": "مفضلة",
+  "regard_action": "تحية",
+  "expand_filter": "توسيع الفلتر",
+"seen_all_recommendations": "لقد رأيت كل الأشخاص وفق ترشيحاتك",
+"try_expanding_filter": "لقد رأيت كل من يطابق فلاترك، حاول توسيعها لعرض المزيد."
 }

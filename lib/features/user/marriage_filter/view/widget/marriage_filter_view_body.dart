@@ -6,7 +6,9 @@ import 'package:tayseer/features/user/marriage_filter/view_models/marriage_filte
 import 'package:tayseer/my_import.dart';
 
 class MarriageFilterBody extends StatelessWidget {
-  const MarriageFilterBody({super.key});
+  const MarriageFilterBody({super.key, this.onBackPressed});
+
+  final VoidCallback? onBackPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -33,8 +35,8 @@ class MarriageFilterBody extends StatelessWidget {
         },
         builder: (context, state) {
           final countryRaw = state.selectedFilters['country']?.toString();
-          final nationalityRaw = state.selectedFilters['nationality']
-              ?.toString();
+          final nationalityRaw =
+              state.selectedFilters['nationality']?.toString();
 
           final countryDisplay =
               (countryRaw != null &&
@@ -60,9 +62,9 @@ class MarriageFilterBody extends StatelessWidget {
                   child: CustomAgeAndCountrySection(
                     ageRange: state.ageRange,
                     onAgeRangeChanged: (values) {
-                      context.read<MarriageFilterCubit>().updateAgeRange(
-                        values,
-                      );
+                      context
+                          .read<MarriageFilterCubit>()
+                          .updateAgeRange(values);
                     },
                     countryValue: countryDisplay,
                     nationalityValue: nationalityDisplay,
@@ -97,13 +99,10 @@ class MarriageFilterBody extends StatelessWidget {
                     items: [
                       _buildRow(context, state, 'height', 'height'),
                       _buildRow(
-                        context,
-                        state,
-                        'marital_status',
-                        'maritalStatus',
-                      ),
+                          context, state, 'marital_status', 'maritalStatus'),
                       _buildRow(context, state, 'job', 'job'),
-                      _buildRow(context, state, 'education', 'educationLevel'),
+                      _buildRow(
+                          context, state, 'education', 'educationLevel'),
                       _buildRow(context, state, 'hobbies', 'hobbies'),
                     ],
                   ),
@@ -114,7 +113,8 @@ class MarriageFilterBody extends StatelessWidget {
                     sectionTitle: context.tr('goals'),
                     items: [
                       _buildRow(context, state, 'marriage', 'goalMarry'),
-                      _buildRow(context, state, 'engagement', 'goalEngagment'),
+                      _buildRow(
+                          context, state, 'engagement', 'goalEngagment'),
                       _buildRow(context, state, 'travel', 'goalTravel'),
                       _buildRow(context, state, 'family', 'goalChildren'),
                     ],
@@ -125,12 +125,8 @@ class MarriageFilterBody extends StatelessWidget {
                   child: CustomDataCard(
                     sectionTitle: context.tr('religion_and_habits'),
                     items: [
-                      _buildRow(
-                        context,
-                        state,
-                        'religious_commitment',
-                        'religiousCommitment',
-                      ),
+                      _buildRow(context, state, 'religious_commitment',
+                          'religiousCommitment'),
                       _buildRow(context, state, 'smoking', 'smoker'),
                       _buildRow(context, state, 'hijab', 'wearHijab'),
                     ],
@@ -207,11 +203,12 @@ class MarriageFilterBody extends StatelessWidget {
       title: Text(context.tr('filter_profiles'), style: Styles.textStyle18Bold),
       leading: IconButton(
         icon: const Icon(Icons.close, color: Colors.grey),
-        onPressed: () => context.pop(),
+        onPressed: onBackPressed ?? () => context.pop(), // ✅ استخدم الـ callback
       ),
       actions: [
         TextButton(
-          onPressed: () => context.read<MarriageFilterCubit>().resetFilters(),
+          onPressed: () =>
+              context.read<MarriageFilterCubit>().resetFilters(),
           child: Text(
             context.tr('clear_filters'),
             style: Styles.textStyle14.copyWith(

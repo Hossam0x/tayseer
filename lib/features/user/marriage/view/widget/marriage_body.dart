@@ -152,7 +152,7 @@ class MarriageBodyState extends State<MarriageBody>
     overlay.insert(entry);
 
     // ✅ بعد 900ms اشيل الـ popup
-    await Future.delayed(const Duration(milliseconds: 900));
+    await Future.delayed(const Duration(milliseconds: 1100));
     entry.remove();
   }
 

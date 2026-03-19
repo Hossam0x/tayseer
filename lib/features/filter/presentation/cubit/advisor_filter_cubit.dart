@@ -1,17 +1,11 @@
-// lib/features/filter/presentation/cubit/advisor_filter_cubit.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tayseer/features/filter/data/advisor_filter_repo/advisor_filter_repo.dart';
 import '../../data/models/advisor_filter_request_model.dart';
 import 'advisor_filter_state.dart';
 
 class AdvisorFilterCubit extends Cubit<AdvisorFilterState> {
-  final AdvisorFilterRepo _repo;
 
-  AdvisorFilterCubit({AdvisorFilterRepo? repo})
-    : _repo = repo ?? AdvisorFilterRepoImpl(),
-      super(AdvisorFilterState.initial());
+  AdvisorFilterCubit() : super(AdvisorFilterState.initial());
 
   // ─── UI updates ───────────────────────────────────────────────────────────
 
@@ -82,7 +76,6 @@ class AdvisorFilterCubit extends Cubit<AdvisorFilterState> {
       language: state.selectedLanguages.isNotEmpty
           ? state.selectedLanguages.first
           : null,
-      // ✅ تحويل صح: Saturday=0, Sunday=1, Monday=2, ..., Friday=6
       dayOfWeek: _convertDayOfWeek(state.selectedDate.weekday),
       page: 1,
     );
@@ -93,36 +86,19 @@ class AdvisorFilterCubit extends Cubit<AdvisorFilterState> {
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
-  /// تحويل DateTime.weekday للـ format المطلوب من الـ API
-  ///
-  /// DateTime.weekday → Monday=1, Tuesday=2, ..., Saturday=6, Sunday=7
-  /// المطلوب          → Saturday=0, Sunday=1, Monday=2, ..., Friday=6
-  ///
-  /// ┌──────────┬─────────┬─────────┐
-  /// │ Dart val │   Day   │ API val │
-  /// ├──────────┼─────────┼─────────┤
-  /// │    6     │ Saturday│    0    │
-  /// │    7     │ Sunday  │    1    │
-  /// │    1     │ Monday  │    2    │
-  /// │    2     │ Tuesday │    3    │
-  /// │    3     │Wednesday│    4    │
-  /// │    4     │Thursday │    5    │
-  /// │    5     │ Friday  │    6    │
-  /// └──────────┴─────────┴─────────┘
   int _convertDayOfWeek(int dartWeekday) {
     const Map<int, int> dayMap = {
-      6: 0, // Saturday
-      7: 1, // Sunday
-      1: 2, // Monday
-      2: 3, // Tuesday
-      3: 4, // Wednesday
-      4: 5, // Thursday
-      5: 6, // Friday
+      6: 0,
+      7: 1,
+      1: 2,
+      2: 3,
+      3: 4,
+      4: 5,
+      5: 6,
     };
     return dayMap[dartWeekday] ?? 0;
   }
 
-  /// ✅ value من الـ dropdown رقم صريح ("1","3","5","10") → int
   int? _parseExperience(String? experience) {
     if (experience == null || experience.isEmpty) return null;
     return int.tryParse(experience);
