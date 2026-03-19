@@ -292,16 +292,21 @@ class _SingleStoryItemState extends State<_SingleStoryItem> {
 
     return CustomClick(
       onTap: () {
-        // بناء قائمة كل الـ users بترتيب chronological (زي StoriesSection)
-        final chronologicalUsersStories = widget.allStories.map((us) {
-          return us.copyWith(stories: us.stories.reversed.toList());
-        }).toList();
+        // كل story تتحول لـ UserStoriesModel منفردة → كل page في PageView = story واحدة
+        final flatList = <UserStoriesModel>[];
+        for (final us in widget.allStories) {
+          // الأحدث أول
+          final sorted = [...us.stories]
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          for (final s in sorted) {
+            flatList.add(us.copyWith(stories: [s]));
+          }
+        }
 
-        // إيجاد الـ index الصح للـ user اللي اتضغط عليه
-        final correctIndex = chronologicalUsersStories.indexWhere(
-          (us) => us.userId == widget.parentUserStory.userId,
+        final initialIndex = flatList.indexWhere(
+          (us) => us.stories.first.id == widget.story.id,
         );
-        final safeIndex = correctIndex != -1 ? correctIndex : 0;
+        final safeIndex = initialIndex != -1 ? initialIndex : 0;
 
         Navigator.push(
           context,
@@ -311,11 +316,9 @@ class _SingleStoryItemState extends State<_SingleStoryItem> {
                 BlocProvider.value(
                   value: context.read<StoriesCubit>(),
                   child: StoryDetailsView(
-                    usersStories: chronologicalUsersStories,
+                    usersStories: flatList,
                     initialUserIndex: safeIndex,
                     heroTag: heroTag,
-                    initialStoryId: widget.story.id,
-                    newestFirst: true,
                   ),
                 ),
             transitionsBuilder:
