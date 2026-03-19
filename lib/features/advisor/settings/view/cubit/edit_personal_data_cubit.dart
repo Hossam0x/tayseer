@@ -5,7 +5,6 @@ import 'package:tayseer/core/utils/profile_event_bus.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/models/edit_personal_data_models.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_state.dart';
-import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
@@ -287,7 +286,6 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
                   userType: ProfileEventUserType.advisor,
                 ),
               );
-              getIt<StoriesCubit>().fetchStoriesSilent();
 
               // لو الصورة اتغيرت، نجيب الـ URL الجديد من الـ backend بعد ثانية
               // عشان نضمن إن الـ HomeAppBar يعرض الصورة الجديدة الصح
@@ -354,7 +352,6 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
                   userType: ProfileEventUserType.advisor,
                 ),
               );
-              getIt<StoriesCubit>().fetchStoriesSilent();
             }
 
             emit(

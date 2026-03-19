@@ -316,7 +316,26 @@ class _SingleStoryItem extends StatelessWidget {
                   width: 2.sp,
                 ),
               ),
-              child: ClipOval(child: AppImage(story.image, fit: BoxFit.cover)),
+              child: ClipOval(
+                child: CachedNetworkImage(
+                  imageUrl: story.image,
+                  fit: BoxFit.cover,
+                  width: context.responsiveWidth(76),
+                  height: context.responsiveWidth(76),
+                  fadeInDuration: Duration.zero,
+                  fadeOutDuration: Duration.zero,
+                  placeholder: (context, url) =>
+                      Container(color: AppColors.secondary200),
+                  errorWidget: (context, url, error) => Container(
+                    color: AppColors.secondary200,
+                    child: Icon(
+                      Icons.image_not_supported_outlined,
+                      color: AppColors.secondary400,
+                      size: 24,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
           Gap(context.responsiveHeight(6)),
