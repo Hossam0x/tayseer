@@ -24,14 +24,20 @@ class ProfileCubit extends Cubit<ProfileState> {
     _profileSubscription = ProfileEventBus.instance.onProfileUpdated.listen((
       event,
     ) {
-      // فقط نستجيب لأحداث الـ advisor — أحداث الـ user لا تخص هذه الشاشة
       if (event.userType != ProfileEventUserType.advisor) return;
-
-      // لو الـ event فيه userId، تأكد إنه بتاع نفس الـ advisor الحالي
       if (event.userId != null && event.userId != kCurrentUserData?.id) return;
 
       if (state.profile != null) {
-        // تحديث بيانات البروفايل فقط — الـ posts لا تتحدث هنا (تتحدث عند refresh فقط)
+        debugPrint('🔄 ProfileCubit: updating profile image → ${event.image}');
+
+        // مسح الـ URL القديم من الكاش عشان CachedNetworkImage يحمل الجديد
+        final oldImage = state.profile!.image;
+        if (oldImage.isNotEmpty && oldImage != event.image) {
+          try {
+            CachedNetworkImage.evictFromCache(oldImage);
+          } catch (_) {}
+        }
+
         final updatedProfile = state.profile!.copyWith(
           name: event.name,
           image: event.image,
@@ -40,7 +46,6 @@ class ProfileCubit extends Cubit<ProfileState> {
 
         emit(state.copyWith(profile: updatedProfile));
 
-        // تحديث الكاش المحلي أيضاً لضمان الثبات
         try {
           CachNetwork.setData(
             key: kAdvisorProfileCache,

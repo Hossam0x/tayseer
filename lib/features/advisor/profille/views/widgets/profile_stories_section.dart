@@ -255,7 +255,7 @@ class _StoriesListViewState extends State<_StoriesListView> {
   }
 }
 
-class _SingleStoryItem extends StatelessWidget {
+class _SingleStoryItem extends StatefulWidget {
   final StoryModel story;
   final UserStoriesModel parentUserStory;
   final List<UserStoriesModel> allStories;
@@ -268,14 +268,28 @@ class _SingleStoryItem extends StatelessWidget {
   });
 
   @override
+  State<_SingleStoryItem> createState() => _SingleStoryItemState();
+}
+
+class _SingleStoryItemState extends State<_SingleStoryItem> {
+  String? _previousImageUrl;
+
+  @override
+  void didUpdateWidget(_SingleStoryItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.parentUserStory.image != widget.parentUserStory.image) {
+      _previousImageUrl = oldWidget.parentUserStory.image;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final heroTag = 'profile_story_${story.id}';
+    final heroTag = 'profile_story_${widget.story.id}';
 
     return CustomClick(
       onTap: () {
-        // Keep original API order (newest first) — no reverse
-        final singleStoryUser = parentUserStory.copyWith(
-          stories: parentUserStory.stories.toList(),
+        final singleStoryUser = widget.parentUserStory.copyWith(
+          stories: widget.parentUserStory.stories.toList(),
         );
 
         Navigator.push(
@@ -289,7 +303,7 @@ class _SingleStoryItem extends StatelessWidget {
                     usersStories: [singleStoryUser],
                     initialUserIndex: 0,
                     heroTag: heroTag,
-                    initialStoryId: story.id,
+                    initialStoryId: widget.story.id,
                   ),
                 ),
             transitionsBuilder:
@@ -310,7 +324,7 @@ class _SingleStoryItem extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: (parentUserStory.allViewed)
+                  color: (widget.parentUserStory.allViewed)
                       ? AppColors.kGreyB3
                       : AppColors.kprimaryColor,
                   width: 2.sp,
@@ -318,14 +332,27 @@ class _SingleStoryItem extends StatelessWidget {
               ),
               child: ClipOval(
                 child: CachedNetworkImage(
-                  imageUrl: story.image,
+                  imageUrl: widget.story.image,
                   fit: BoxFit.cover,
                   width: context.responsiveWidth(76),
                   height: context.responsiveWidth(76),
                   fadeInDuration: Duration.zero,
                   fadeOutDuration: Duration.zero,
+                  useOldImageOnUrlChange: true,
+                  // ⭐ لو فيه URL قديم، استخدمه كـ placeholder بدل الـ shimmer
                   placeholder: (context, url) =>
-                      Container(color: AppColors.secondary200),
+                      _previousImageUrl != null && _previousImageUrl!.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: _previousImageUrl!,
+                          fit: BoxFit.cover,
+                          width: context.responsiveWidth(76),
+                          height: context.responsiveWidth(76),
+                          fadeInDuration: Duration.zero,
+                          fadeOutDuration: Duration.zero,
+                          errorWidget: (_, __, ___) =>
+                              Container(color: AppColors.secondary200),
+                        )
+                      : Container(color: AppColors.secondary200),
                   errorWidget: (context, url, error) => Container(
                     color: AppColors.secondary200,
                     child: Icon(
@@ -342,7 +369,7 @@ class _SingleStoryItem extends StatelessWidget {
           SizedBox(
             width: context.responsiveWidth(76),
             child: Text(
-              parentUserStory.name,
+              widget.parentUserStory.name,
               textAlign: TextAlign.center,
               style: Styles.textStyle10.copyWith(color: AppColors.kGreyB3),
               maxLines: 1,
