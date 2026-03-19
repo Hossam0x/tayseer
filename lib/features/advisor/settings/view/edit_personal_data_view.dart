@@ -959,11 +959,11 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                           : imageUrl != null && imageUrl.isNotEmpty
                           ? ClipRRect(
                               borderRadius: BorderRadius.circular(32.r),
-                              child: Image.network(
-                                imageUrl,
+                              child: CachedNetworkImage(
+                                imageUrl: imageUrl,
                                 fit: BoxFit.cover,
                                 width: double.infinity,
-                                errorBuilder: (context, error, stackTrace) {
+                                errorWidget: (context, url, error) {
                                   return _buildDefaultAvatar();
                                 },
                               ),

@@ -199,46 +199,37 @@ class _StoriesListViewState extends State<_StoriesListView> {
   Widget build(BuildContext context) {
     final flatStories = _flatStories;
 
-    return SingleChildScrollView(
-      controller: _scrollController,
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ...List.generate(flatStories.length, (index) {
-            final parentUserStory = flatStories[index].key;
-            final story = flatStories[index].value;
-            return Padding(
-              key: ValueKey('story_profile_${story.id}'),
-              padding: EdgeInsetsDirectional.only(
-                end: context.responsiveWidth(14),
-              ),
-              child: _SingleStoryItem(
-                key: ValueKey('story_profile_item_${story.id}'),
-                story: story,
-                parentUserStory: parentUserStory,
-                allStories: widget.stories,
-              ),
-            );
-          }),
-          BlocBuilder<StoriesCubit, StoriesState>(
-            buildWhen: (previous, current) {
-              final bool isMyProfile = widget.advisorId == null;
-              if (isMyProfile) {
-                return previous.mySpecialIsLoadingMore !=
-                    current.mySpecialIsLoadingMore;
-              } else {
-                return previous.advisorSpecialIsLoadingMore !=
-                    current.advisorSpecialIsLoadingMore;
-              }
-            },
-            builder: (context, state) {
-              final bool isMyProfile = widget.advisorId == null;
-              final bool isLoadingMore = isMyProfile
-                  ? state.mySpecialIsLoadingMore
-                  : state.advisorSpecialIsLoadingMore;
+    return BlocBuilder<StoriesCubit, StoriesState>(
+      buildWhen: (previous, current) {
+        final bool isMyProfile = widget.advisorId == null;
+        if (isMyProfile) {
+          return previous.mySpecialIsLoadingMore !=
+              current.mySpecialIsLoadingMore;
+        } else {
+          return previous.advisorSpecialIsLoadingMore !=
+              current.advisorSpecialIsLoadingMore;
+        }
+      },
+      builder: (context, state) {
+        final bool isMyProfile = widget.advisorId == null;
+        final bool isLoadingMore = isMyProfile
+            ? state.mySpecialIsLoadingMore
+            : state.advisorSpecialIsLoadingMore;
 
-              if (isLoadingMore) {
+        final int itemCount = flatStories.length + (isLoadingMore ? 1 : 0);
+
+        return SizedBox(
+          height:
+              context.responsiveWidth(76) +
+              context.responsiveHeight(6) +
+              context.responsiveHeight(16),
+          child: ListView.builder(
+            controller: _scrollController,
+            scrollDirection: Axis.horizontal,
+            physics: const ClampingScrollPhysics(),
+            itemCount: itemCount,
+            itemBuilder: (context, index) {
+              if (index == flatStories.length) {
                 return Padding(
                   padding: EdgeInsetsDirectional.only(
                     end: context.responsiveWidth(14),
@@ -246,11 +237,24 @@ class _StoriesListViewState extends State<_StoriesListView> {
                   child: const _StoriesLoadingShimmer(count: 1),
                 );
               }
-              return const SizedBox.shrink();
+              final parentUserStory = flatStories[index].key;
+              final story = flatStories[index].value;
+              return Padding(
+                key: ValueKey('story_profile_${story.id}'),
+                padding: EdgeInsetsDirectional.only(
+                  end: context.responsiveWidth(14),
+                ),
+                child: _SingleStoryItem(
+                  key: ValueKey('story_profile_item_${story.id}'),
+                  story: story,
+                  parentUserStory: parentUserStory,
+                  allStories: widget.stories,
+                ),
+              );
             },
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -288,9 +292,16 @@ class _SingleStoryItemState extends State<_SingleStoryItem> {
 
     return CustomClick(
       onTap: () {
-        final singleStoryUser = widget.parentUserStory.copyWith(
-          stories: widget.parentUserStory.stories.toList(),
+        // بناء قائمة كل الـ users بترتيب chronological (زي StoriesSection)
+        final chronologicalUsersStories = widget.allStories.map((us) {
+          return us.copyWith(stories: us.stories.reversed.toList());
+        }).toList();
+
+        // إيجاد الـ index الصح للـ user اللي اتضغط عليه
+        final correctIndex = chronologicalUsersStories.indexWhere(
+          (us) => us.userId == widget.parentUserStory.userId,
         );
+        final safeIndex = correctIndex != -1 ? correctIndex : 0;
 
         Navigator.push(
           context,
@@ -300,10 +311,11 @@ class _SingleStoryItemState extends State<_SingleStoryItem> {
                 BlocProvider.value(
                   value: context.read<StoriesCubit>(),
                   child: StoryDetailsView(
-                    usersStories: [singleStoryUser],
-                    initialUserIndex: 0,
+                    usersStories: chronologicalUsersStories,
+                    initialUserIndex: safeIndex,
                     heroTag: heroTag,
                     initialStoryId: widget.story.id,
+                    newestFirst: true,
                   ),
                 ),
             transitionsBuilder:
