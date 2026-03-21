@@ -154,6 +154,7 @@ Future<Either<Failure, String>> blockUser({required String personId}) async {
     return Left(ServerFailure(e.toString()));
   }
 }
+
 @override
 Future<Either<Failure, UserItem>> getProfileById(String userId) async {
   try {
@@ -161,9 +162,14 @@ Future<Either<Failure, UserItem>> getProfileById(String userId) async {
       endPoint: '/user/one-user-for-marry/$userId',
     );
     if (response['success'] == true) {
-      // ✅ الـ response بيرجع userData مش users array
-      final userData = response['data']['userData'];
-      final userItem = UserItem.fromJson(userData);
+      final data = response['data'];
+      final userData = data['userData'];
+      final allowInteractions = data['allowInteractions'] as bool? ?? true; // ✅
+
+      final userItem = UserItem.fromJson({
+        ...userData,
+        'allowInteractions': allowInteractions, // ✅ حطه في الـ UserItem
+      });
       return Right(userItem);
     } else {
       return Left(ServerFailure(response['message'] ?? ''));

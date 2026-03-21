@@ -15,10 +15,26 @@ class MarriageFilterBody extends StatelessWidget {
     return CustomBackground(
       child: BlocConsumer<MarriageFilterCubit, MarriageFilterState>(
         listener: (context, state) {
-          if (state.marriageFilterStatus == CubitStates.success) {
-            Navigator.of(context).popUntil((route) => route.isFirst);
+          if (state.marriageFilterStatus == CubitStates.loading) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => const Center(child: CustomloadingApp()),
+            );
+          } else if (state.marriageFilterStatus == CubitStates.success) {
+            // ✅ أغلق الـ loading dialog
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+            // ✅ ارجع من صفحة الفلتر
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
           } else if (state.marriageFilterStatus == CubitStates.failure) {
-            context.pop();
+            // ✅ أغلق الـ loading dialog
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
             ScaffoldMessenger.of(context).showSnackBar(
               CustomSnackBar(
                 context,
@@ -26,17 +42,12 @@ class MarriageFilterBody extends StatelessWidget {
                 isError: true,
               ),
             );
-          } else if (state.marriageFilterStatus == CubitStates.loading) {
-            showDialog(
-              context: context,
-              builder: (context) => const Center(child: CustomloadingApp()),
-            );
           }
         },
         builder: (context, state) {
           final countryRaw = state.selectedFilters['country']?.toString();
-          final nationalityRaw =
-              state.selectedFilters['nationality']?.toString();
+          final nationalityRaw = state.selectedFilters['nationality']
+              ?.toString();
 
           final countryDisplay =
               (countryRaw != null &&
@@ -62,9 +73,9 @@ class MarriageFilterBody extends StatelessWidget {
                   child: CustomAgeAndCountrySection(
                     ageRange: state.ageRange,
                     onAgeRangeChanged: (values) {
-                      context
-                          .read<MarriageFilterCubit>()
-                          .updateAgeRange(values);
+                      context.read<MarriageFilterCubit>().updateAgeRange(
+                        values,
+                      );
                     },
                     countryValue: countryDisplay,
                     nationalityValue: nationalityDisplay,
@@ -99,10 +110,13 @@ class MarriageFilterBody extends StatelessWidget {
                     items: [
                       _buildRow(context, state, 'height', 'height'),
                       _buildRow(
-                          context, state, 'marital_status', 'maritalStatus'),
+                        context,
+                        state,
+                        'marital_status',
+                        'maritalStatus',
+                      ),
                       _buildRow(context, state, 'job', 'job'),
-                      _buildRow(
-                          context, state, 'education', 'educationLevel'),
+                      _buildRow(context, state, 'education', 'educationLevel'),
                       _buildRow(context, state, 'hobbies', 'hobbies'),
                     ],
                   ),
@@ -113,8 +127,7 @@ class MarriageFilterBody extends StatelessWidget {
                     sectionTitle: context.tr('goals'),
                     items: [
                       _buildRow(context, state, 'marriage', 'goalMarry'),
-                      _buildRow(
-                          context, state, 'engagement', 'goalEngagment'),
+                      _buildRow(context, state, 'engagement', 'goalEngagment'),
                       _buildRow(context, state, 'travel', 'goalTravel'),
                       _buildRow(context, state, 'family', 'goalChildren'),
                     ],
@@ -125,8 +138,12 @@ class MarriageFilterBody extends StatelessWidget {
                   child: CustomDataCard(
                     sectionTitle: context.tr('religion_and_habits'),
                     items: [
-                      _buildRow(context, state, 'religious_commitment',
-                          'religiousCommitment'),
+                      _buildRow(
+                        context,
+                        state,
+                        'religious_commitment',
+                        'religiousCommitment',
+                      ),
                       _buildRow(context, state, 'smoking', 'smoker'),
                       _buildRow(context, state, 'hijab', 'wearHijab'),
                     ],
@@ -203,12 +220,12 @@ class MarriageFilterBody extends StatelessWidget {
       title: Text(context.tr('filter_profiles'), style: Styles.textStyle18Bold),
       leading: IconButton(
         icon: const Icon(Icons.close, color: Colors.grey),
-        onPressed: onBackPressed ?? () => context.pop(), // ✅ استخدم الـ callback
+        onPressed:
+            onBackPressed ?? () => context.pop(), // ✅ استخدم الـ callback
       ),
       actions: [
         TextButton(
-          onPressed: () =>
-              context.read<MarriageFilterCubit>().resetFilters(),
+          onPressed: () => context.read<MarriageFilterCubit>().resetFilters(),
           child: Text(
             context.tr('clear_filters'),
             style: Styles.textStyle14.copyWith(

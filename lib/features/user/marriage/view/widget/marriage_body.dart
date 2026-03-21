@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/enum/report_type.dart';
@@ -79,6 +80,43 @@ class MarriageBodyState extends State<MarriageBody>
     super.initState();
     _mainScrollController.addListener(_scrollListener);
 
+    // ✅ لو مستشار وجه من deep link — أظهر رسالة وارجع
+    if (widget.personId != null &&
+        selectedUserType == UserTypeEnum.asConsultant) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(
+              context.tr('cannot_do_this_action'),
+              textAlign: TextAlign.center,
+              style: Styles.textStyle18Bold,
+            ),
+            content: Text(
+              'هذه الميزة متاحة فقط لمستخدمي تطبيق تيسير.\nيرجى تسجيل الدخول بحساب مستخدم.',
+              textAlign: TextAlign.center,
+              style: Styles.textStyle14,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // أغلق الـ dialog
+                  context.pop(); // ارجع من صفحة الزواج
+                },
+                child: Text(context.tr('okay_understood')),
+              ),
+            ],
+          ),
+        );
+      });
+      return; // ✅ وقف الـ initState هنا
+    }
+
     final cubit = context.read<MarriageCubit>();
     cubit.fetchMarriageProfile(
       seedFavoriteId: (cubit.seedPersonId != null && cubit.seedIsFavorite)
@@ -88,7 +126,6 @@ class MarriageBodyState extends State<MarriageBody>
     cubit.initAnimation(this);
   }
 
-  @override
   @override
   void dispose() {
     _scrollIdleTimer?.cancel(); // ✅ أضف دي
@@ -141,17 +178,29 @@ class MarriageBodyState extends State<MarriageBody>
     SwipeActionType type,
   ) async {
     final overlay = Overlay.of(context);
+
+    // ✅ احفظ النص قبل ما تدخل الـ overlay عشان الـ context صح
+    final String labelOverride = switch (type) {
+      SwipeActionType.like => context.tr('like_action'),
+      SwipeActionType.dislike => context.tr('dislike_action'),
+      SwipeActionType.favorite => context.tr('favorite_action'),
+      SwipeActionType.regard => context.tr('regard_action'),
+    };
+
     late OverlayEntry entry;
 
     entry = OverlayEntry(
       builder: (_) => Positioned.fill(
-        child: IgnorePointer(child: SwipeActionPopup(type: type)),
+        child: IgnorePointer(
+          child: SwipeActionPopup(
+            type: type,
+            labelOverride: labelOverride, // ✅ مرّر النص الجاهز
+          ),
+        ),
       ),
     );
 
     overlay.insert(entry);
-
-    // ✅ بعد 900ms اشيل الـ popup
     await Future.delayed(const Duration(milliseconds: 1100));
     entry.remove();
   }
@@ -428,6 +477,8 @@ class MarriageBodyState extends State<MarriageBody>
   // EMPTY STATE
   // ═══════════════════════════════════════════════════════════════
   Widget _buildEmptyMarriage(MarriageCubit cubit) {
+    final hasActiveFilters = cubit.state.activeFilters.isNotEmpty;
+
     return RefreshIndicator.adaptive(
       onRefresh: () => cubit.refreshProfile(),
       child: ListView(
@@ -442,25 +493,49 @@ class MarriageBodyState extends State<MarriageBody>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     AppImage(
-                      AssetsData.noPersonsBlocked,
+                      hasActiveFilters
+                          ? AssetsData.emptyFilter
+                          : AssetsData.noPersonsBlocked,
                       width: 180.w,
                       height: 180.h,
                     ),
                     Gap(24.h),
-                    Text(
-                      context.tr('no_marriage_users'),
-                      style: Styles.textStyle18Bold.copyWith(
-                        color: AppColors.kprimaryTextColor,
+                    if (hasActiveFilters) ...[
+                      Text(
+                        context.tr('seen_all_recommendations'),
+                        style: Styles.textStyle18Bold.copyWith(
+                          color: AppColors.kprimaryTextColor,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    Gap(12.h),
-                    Text(
-                      context.tr('share_app_to_find_users'),
-                      style: Styles.textStyle14.copyWith(color: Colors.grey),
-                      textAlign: TextAlign.center,
-                    ),
-                    Gap(24.h),
+                      Gap(12.h),
+                      Text(
+                        context.tr('try_expanding_filter'),
+                        style: Styles.textStyle14.copyWith(color: Colors.grey),
+                        textAlign: TextAlign.center,
+                      ),
+                      Gap(24.h),
+                      CustomBotton(
+                        title: context.tr('expand_filter'),
+                        width: context.width * 0.7,
+                        onPressed: () =>
+                            context.pushNamed(AppRouter.kMarriageFilterView),
+                      ),
+                    ] else ...[
+                      Text(
+                        context.tr('no_marriage_users'),
+                        style: Styles.textStyle18Bold.copyWith(
+                          color: AppColors.kprimaryTextColor,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      Gap(12.h),
+                      Text(
+                        context.tr('share_app_to_find_users'),
+                        style: Styles.textStyle14.copyWith(color: Colors.grey),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -564,7 +639,7 @@ class MarriageBodyState extends State<MarriageBody>
     final timelineEvents = answers?.yourGoals != null
         ? _buildTimelineEventsFromAnswers(answers!.yourGoals!)
         : <Map<String, dynamic>>[];
-
+    final bool canInteract = profile.allowInteractions ?? true;
     return Directionality(
       key: key,
       textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
@@ -624,14 +699,19 @@ class MarriageBodyState extends State<MarriageBody>
                         ? "📏 ${nextUser?.about?.height ?? ''}"
                         : null,
                     isFavorited: state.favoritedIds.contains(user?.id ?? ''),
-                    // ✅ زرار الـ favorite في الـ SliverProfileHeader
-                    onFavoriteTap: () async {
-                      await _showSwipePopup(context, SwipeActionType.favorite);
-                      cubit.toggleLocalFavorite(
-                        user?.id ?? '',
-                        removeFromList: widget.personId == null,
-                      );
-                    },
+                    // ✅ لو مش مسموح بالتفاعل، القلب يختفي
+                    onFavoriteTap: canInteract
+                        ? () async {
+                            await _showSwipePopup(
+                              context,
+                              SwipeActionType.favorite,
+                            );
+                            cubit.toggleLocalFavorite(
+                              user?.id ?? '',
+                              removeFromList: widget.personId == null,
+                            );
+                          }
+                        : null,
                   ),
 
                   SliverPadding(
@@ -954,62 +1034,67 @@ class MarriageBodyState extends State<MarriageBody>
               bottom: state.isScrollingDown ? 30.h : 130.h,
               left: 0,
               right: 0,
-              child: IgnorePointer(
-                ignoring: state.isAnimating,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // ✅ Like
-                    buildCircleButton(
-                      onTap: () async {
-                        await _showSwipePopup(context, SwipeActionType.like);
-                        await cubit.swipeLike(
-                          personId: profile.user?.id ?? '',
-                          usersLength: users.length,
-                          hasSinglePerson: widget.personId != null,
-                        );
-                        if (widget.personId == null && mounted) {
-                          _resetScrollTracking();
-                          scrollToTop();
-                        }
-                      },
-                      Icons.check,
-                      AppColors.kprimaryTextColor,
-                      HexColor('f8d3da'),
-                    ),
-
-                    // ✅ Star (regard)
-                    buildCircleButton(
-                      onTap: () async {
-                      
-                        cubit.sendRegard(personId: profile.user?.id ?? '');
-                      },
-                      Icons.star,
-                      Colors.white,
-                      HexColor('cccab3'),
-                    ),
-
-                    // ✅ Dislike
-                    buildCircleButton(
-                      onTap: () async {
-                        await _showSwipePopup(context, SwipeActionType.dislike);
-                        await cubit.swipeDislike(
-                          personId: profile.user?.id ?? '',
-                          usersLength: users.length,
-                          hasSinglePerson: widget.personId != null,
-                        );
-                        if (widget.personId == null && mounted) {
-                          _resetScrollTracking();
-                          scrollToTop();
-                        }
-                      },
-                      Icons.close,
-                      Colors.white,
-                      HexColor('e44e6c'),
-                    ),
-                  ],
-                ),
-              ),
+              child:
+                  canInteract // ✅ لو مش مسموح بالتفاعل اخفي الأزرار
+                  ? IgnorePointer(
+                      ignoring: state.isAnimating,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          buildCircleButton(
+                            onTap: () async {
+                              await _showSwipePopup(
+                                context,
+                                SwipeActionType.like,
+                              );
+                              await cubit.swipeLike(
+                                personId: profile.user?.id ?? '',
+                                usersLength: users.length,
+                                hasSinglePerson: widget.personId != null,
+                              );
+                              if (widget.personId == null && mounted) {
+                                _resetScrollTracking();
+                                scrollToTop();
+                              }
+                            },
+                            Icons.check,
+                            AppColors.kprimaryTextColor,
+                            HexColor('f8d3da'),
+                          ),
+                          buildCircleButton(
+                            onTap: () async {
+                              cubit.sendRegard(
+                                personId: profile.user?.id ?? '',
+                              );
+                            },
+                            Icons.star,
+                            Colors.white,
+                            HexColor('cccab3'),
+                          ),
+                          buildCircleButton(
+                            onTap: () async {
+                              await _showSwipePopup(
+                                context,
+                                SwipeActionType.dislike,
+                              );
+                              await cubit.swipeDislike(
+                                personId: profile.user?.id ?? '',
+                                usersLength: users.length,
+                                hasSinglePerson: widget.personId != null,
+                              );
+                              if (widget.personId == null && mounted) {
+                                _resetScrollTracking();
+                                scrollToTop();
+                              }
+                            },
+                            Icons.close,
+                            Colors.white,
+                            HexColor('e44e6c'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : const SizedBox.shrink(), // ✅ اخفي الأزرار
             ),
           ],
         ),

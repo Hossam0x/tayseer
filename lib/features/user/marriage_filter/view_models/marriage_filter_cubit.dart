@@ -48,6 +48,7 @@ class MarriageFilterCubit extends Cubit<MarriageFilterState> {
   void resetFilters() => emit(const MarriageFilterState());
 
   Future<void> sendMarriageFilter() async {
+    if (state.marriageFilterStatus == CubitStates.loading) return;
     emit(
       state.copyWith(
         marriageFilterStatus: CubitStates.loading,

@@ -1,6 +1,5 @@
 import 'package:tayseer/features/user/marriage_filter/view/widget/marriage_filter_view_body.dart';
 import 'package:tayseer/features/user/marriage_filter/view_models/marriage_filter_cubit.dart';
-import 'package:tayseer/features/user/marriage_filter/view_models/marriage_filter_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class MarriageFilterView extends StatelessWidget {
@@ -28,13 +27,11 @@ class MarriageFilterView extends StatelessWidget {
       cancelText: context.tr("yes"),
       showCancelButton: true,
       onPressed: () {
-        // لا — اخرج بدون تنفيذ
-      
-        Navigator.pop(context); // ارجع من صفحة الفلتر
+        Navigator.pop(context); // ✅ ارجع من صفحة الفلتر
       },
       onCancel: () {
-      
-        cubit.sendMarriageFilter();
+        cubit
+            .sendMarriageFilter(); // ✅ الـ listener في MarriageFilterBody هيعمل pop تلقائي
       },
     );
   }
@@ -48,8 +45,12 @@ class MarriageFilterView extends StatelessWidget {
           builder: (context) {
             return WillPopScope(
               onWillPop: () async {
+                final cubit = context.read<MarriageFilterCubit>();
+                if (cubit.state.marriageFilterStatus == CubitStates.success) {
+                  return true; // ✅ ارجع عادي
+                }
                 _onBackPressed(context);
-                return false; // ✅ نمنع الـ pop التلقائي
+                return false;
               },
               child: MarriageFilterBody(
                 onBackPressed: () => _onBackPressed(context),
