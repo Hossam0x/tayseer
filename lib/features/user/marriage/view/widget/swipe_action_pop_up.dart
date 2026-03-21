@@ -203,6 +203,7 @@ class _SwipeActionPopupState extends State<SwipeActionPopup>
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.5,
+                         decoration: TextDecoration.none, 
                       ),
                     ),
                   ],

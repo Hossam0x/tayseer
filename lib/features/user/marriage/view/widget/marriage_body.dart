@@ -708,8 +708,15 @@ class MarriageBodyState extends State<MarriageBody>
                             );
                             cubit.toggleLocalFavorite(
                               user?.id ?? '',
-                              removeFromList: widget.personId == null,
+                              // ✅ لو جاي من interactions مش بنشيله من القائمة
+                              removeFromList:
+                                  widget.personId == null &&
+                                  !widget.fromInteractions,
                             );
+                            // ✅ لو جاي من interactions ارجع للخلف
+                            if (widget.fromInteractions && mounted) {
+                              context.pop();
+                            }
                           }
                         : null,
                   ),
@@ -1041,20 +1048,34 @@ class MarriageBodyState extends State<MarriageBody>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
+                          // Like button
                           buildCircleButton(
                             onTap: () async {
                               await _showSwipePopup(
                                 context,
                                 SwipeActionType.like,
                               );
-                              await cubit.swipeLike(
-                                personId: profile.user?.id ?? '',
-                                usersLength: users.length,
-                                hasSinglePerson: widget.personId != null,
-                              );
-                              if (widget.personId == null && mounted) {
-                                _resetScrollTracking();
-                                scrollToTop();
+
+                              if (widget.fromInteractions) {
+                                // ✅ بس ابعت التفاعل للـ API بدون ما تشيل من القائمة
+                                cubit.userInteraction(
+                                  personId: profile.user?.id ?? '',
+                                  interactionType: 'like',
+                                );
+                              } else {
+                                await cubit.swipeLike(
+                                  personId: profile.user?.id ?? '',
+                                  usersLength: users.length,
+                                  hasSinglePerson: widget.personId != null,
+                                );
+                                if (widget.personId == null && mounted) {
+                                  _resetScrollTracking();
+                                  scrollToTop();
+                                }
+                              }
+
+                              if (widget.fromInteractions && mounted) {
+                                context.pop();
                               }
                             },
                             Icons.check,
@@ -1071,20 +1092,34 @@ class MarriageBodyState extends State<MarriageBody>
                             Colors.white,
                             HexColor('cccab3'),
                           ),
+                          // Dislike button
                           buildCircleButton(
                             onTap: () async {
                               await _showSwipePopup(
                                 context,
                                 SwipeActionType.dislike,
                               );
-                              await cubit.swipeDislike(
-                                personId: profile.user?.id ?? '',
-                                usersLength: users.length,
-                                hasSinglePerson: widget.personId != null,
-                              );
-                              if (widget.personId == null && mounted) {
-                                _resetScrollTracking();
-                                scrollToTop();
+
+                              if (widget.fromInteractions) {
+                                // ✅ بس ابعت التفاعل للـ API بدون ما تشيل من القائمة
+                                cubit.userInteraction(
+                                  personId: profile.user?.id ?? '',
+                                  interactionType: 'dislike',
+                                );
+                              } else {
+                                await cubit.swipeDislike(
+                                  personId: profile.user?.id ?? '',
+                                  usersLength: users.length,
+                                  hasSinglePerson: widget.personId != null,
+                                );
+                                if (widget.personId == null && mounted) {
+                                  _resetScrollTracking();
+                                  scrollToTop();
+                                }
+                              }
+
+                              if (widget.fromInteractions && mounted) {
+                                context.pop();
                               }
                             },
                             Icons.close,
