@@ -45,6 +45,9 @@ class StoriesCubit extends Cubit<StoriesState> {
 
   void _listenToProfileUpdates() {
     _profileSub = ProfileEventBus.instance.onProfileUpdated.listen((event) {
+      // فقط نستجيب لأحداث الـ advisor — أحداث الـ user لا تخص الـ stories
+      if (event.userType != ProfileEventUserType.advisor) return;
+
       final myId = kCurrentUserData?.id;
 
       // 1. Update myStories

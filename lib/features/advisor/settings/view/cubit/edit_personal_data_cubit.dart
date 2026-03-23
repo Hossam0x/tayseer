@@ -5,7 +5,6 @@ import 'package:tayseer/core/utils/profile_event_bus.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/models/edit_personal_data_models.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_state.dart';
-import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
@@ -204,179 +203,92 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
         },
       );
 
-      result.fold(
-        (failure) {
-          emit(state.copyWith(isSaving: false, errorMessage: failure.message));
-        },
-        (response) {
-          if (response.success) {
-            final newImageUrl =
-                response.data?['image'] as String? ?? state.profile?.image;
-            final oldImageUrl = state.profile?.image;
-
-            // Build final new URL with versioning if needed to force update without blinking
-            String finalImageUrl = newImageUrl ?? '';
-            if (finalImageUrl == oldImageUrl && finalImageUrl.isNotEmpty) {
-              finalImageUrl =
-                  "$finalImageUrl${finalImageUrl.contains('?') ? '&' : '?'}v=${DateTime.now().millisecondsSinceEpoch}";
-            }
-
-            // تحديث البروفايل بعد الحفظ الناجح
-            final updatedProfile = state.profile?.copyWith(
-              name: state.currentData.name ?? state.profile!.name,
-              userName: state.currentData.username ?? state.profile!.userName,
-              professionalSpecialization:
-                  state.currentData.professionalSpecialization ??
-                  state.profile!.professionalSpecialization,
-              jobGrade: state.currentData.jobGrade ?? state.profile!.jobGrade,
-              yearsOfExperience:
-                  state.currentData.yearsOfExperience ??
-                  state.profile!.yearsOfExperience,
-              aboutYou: state.currentData.aboutYou ?? state.profile!.aboutYou,
-              image: finalImageUrl,
-              video: response.data?['videoLink'] ?? state.profile!.video,
-            );
-
-            if (updatedProfile != null) {
-              // تحديث الـ Singleton العالمي
-              kCurrentUserData = kCurrentUserData?.copyWith(
-                name: updatedProfile.name,
-                image: updatedProfile.image,
-                username: updatedProfile.userName,
-              );
-
-              // حفظ في SharedPreferences
-              CachNetwork.setData(
-                key: kuserData,
-                value: jsonEncode(kCurrentUserData?.toJson()),
-              );
-
-              // تحديث الكاش المحلي للحقول الفردية (للتوافق)
-              CachNetwork.setData(
-                key: kMyProfileImage,
-                value: updatedProfile.image ?? '',
-              );
-              CachNetwork.setData(
-                key: kMyProfileName,
-                value: updatedProfile.name,
-              );
-
-              // مسح الـ cache للصورة القديمة قبل التحديث
-              if (oldImageUrl != null && oldImageUrl.isNotEmpty) {
-                try {
-                  // مسح الـ URL الأصلي والـ URL مع versioning
-                  CachedNetworkImage.evictFromCache(oldImageUrl);
-                  final baseUrl = oldImageUrl.contains('?')
-                      ? oldImageUrl.split('?').first
-                      : oldImageUrl;
-                  if (baseUrl != oldImageUrl) {
-                    CachedNetworkImage.evictFromCache(baseUrl);
-                  }
-                } catch (e) {
-                  debugPrint('⚠️ خطأ في مسح cache الصورة: $e');
-                }
-              }
-
-              // إطلاق حدث التحديث للمزامنة العالمية (يتولى HomeCubit تحديث نفسه)
-              ProfileEventBus.instance.fire(
-                ProfileUpdateEvent(
-                  name: updatedProfile.name,
-                  image: updatedProfile.image ?? '',
-                  username: updatedProfile.userName,
-                  userId: kCurrentUserData?.id,
-                  userType: ProfileEventUserType.advisor,
-                ),
-              );
-              getIt<StoriesCubit>().fetchStoriesSilent();
-
-              // لو الصورة اتغيرت، نجيب الـ URL الجديد من الـ backend بعد ثانية
-              // عشان نضمن إن الـ HomeAppBar يعرض الصورة الجديدة الصح
-              if (state.imageFile != null) {
-                Future.delayed(const Duration(seconds: 1), () async {
-                  if (isClosed) return;
-                  final freshResult = await _repository.getAdvisorProfile();
-                  freshResult.fold((_) {}, (freshProfile) {
-                    if (isClosed) return;
-                    final freshImage = freshProfile.image ?? '';
-                    if (freshImage.isNotEmpty) {
-                      kCurrentUserData = kCurrentUserData?.copyWith(
-                        image: freshImage,
-                      );
-                      CachNetwork.setData(
-                        key: kMyProfileImage,
-                        value: freshImage,
-                      );
-                      try {
-                        CachedNetworkImage.evictFromCache(
-                          updatedProfile.image ?? '',
-                        );
-                      } catch (_) {}
-                      ProfileEventBus.instance.fire(
-                        ProfileUpdateEvent(
-                          name: freshProfile.name,
-                          image: freshImage,
-                          username: freshProfile.userName,
-                          userId: kCurrentUserData?.id,
-                          userType: ProfileEventUserType.advisor,
-                        ),
-                      );
-                    }
-                  });
-                });
-              }
-            } else {
-              // fallback: لو updatedProfile كان null، نبعت الـ event بالبيانات المتاحة
-              final fallbackImage = finalImageUrl.isNotEmpty
-                  ? finalImageUrl
-                  : (kCurrentUserData?.image ?? '');
-              final fallbackName =
-                  state.currentData.name ?? kCurrentUserData?.name ?? '';
-              final fallbackUsername =
-                  state.currentData.username ??
-                  kCurrentUserData?.username ??
-                  '';
-
-              if (oldImageUrl != null && oldImageUrl.isNotEmpty) {
-                try {
-                  CachedNetworkImage.evictFromCache(oldImageUrl);
-                } catch (_) {}
-              }
-
-              CachNetwork.setData(key: kMyProfileImage, value: fallbackImage);
-              CachNetwork.setData(key: kMyProfileName, value: fallbackName);
-
-              ProfileEventBus.instance.fire(
-                ProfileUpdateEvent(
-                  name: fallbackName,
-                  image: fallbackImage,
-                  username: fallbackUsername,
-                  userId: kCurrentUserData?.id,
-                  userType: ProfileEventUserType.advisor,
-                ),
-              );
-              getIt<StoriesCubit>().fetchStoriesSilent();
-            }
-
-            emit(
-              state.copyWith(
-                isSaving: false,
-                errorMessage: null,
-                profile: updatedProfile,
-                state: CubitStates.success,
-                successMessage: 'data_updated_successfully',
-                imagePreviewUrl: updatedProfile?.image,
-                videoPreviewUrl: updatedProfile?.video,
-                imageFile: null,
-                videoFile: null,
-                clearImage: false,
-                clearVideo: false,
-              ),
-            );
-          } else {
-            emit(state.copyWith(isSaving: false, errorMessage: 'save_failed'));
-          }
-        },
+      debugPrint('📤 EditPersonalDataCubit → request sent:');
+      debugPrint('   name: ${requestToSend.name}');
+      debugPrint('   username: ${requestToSend.username}');
+      debugPrint(
+        '   specialization: ${requestToSend.professionalSpecialization}',
       );
+      debugPrint('   jobGrade: ${requestToSend.jobGrade}');
+      debugPrint('   yearsOfExperience: ${requestToSend.yearsOfExperience}');
+      debugPrint('   aboutYou: ${requestToSend.aboutYou}');
+      debugPrint('   imageFile: ${state.imageFile?.path ?? 'none'}');
+      debugPrint('   videoFile: ${state.videoFile?.path ?? 'none'}');
+
+      // استخدام fold للتحقق من النتيجة بدون await داخل callback
+      final failure = result.fold((f) => f, (_) => null);
+      final response = result.fold((_) => null, (r) => r);
+
+      if (failure != null) {
+        debugPrint('❌ EditPersonalDataCubit → save failed: ${failure.message}');
+        emit(state.copyWith(isSaving: false, errorMessage: failure.message));
+      } else if (response != null) {
+        debugPrint('✅ EditPersonalDataCubit → save response:');
+        debugPrint('   success: ${response.success}');
+        debugPrint('   data: ${response.data}');
+
+        if (response.success) {
+          final oldImageUrl = state.profile?.image;
+
+          final updatedProfile = state.profile?.copyWith(
+            name: state.currentData.name ?? state.profile!.name,
+            userName: state.currentData.username ?? state.profile!.userName,
+            professionalSpecialization:
+                state.currentData.professionalSpecialization ??
+                state.profile!.professionalSpecialization,
+            jobGrade: state.currentData.jobGrade ?? state.profile!.jobGrade,
+            yearsOfExperience:
+                state.currentData.yearsOfExperience ??
+                state.profile!.yearsOfExperience,
+            aboutYou: state.currentData.aboutYou ?? state.profile!.aboutYou,
+            image: state.profile!.image,
+            video: response.data?['videoLink'] ?? state.profile!.video,
+          );
+
+          final profileName =
+              updatedProfile?.name ?? kCurrentUserData?.name ?? '';
+          final profileUsername =
+              updatedProfile?.userName ?? kCurrentUserData?.username ?? '';
+
+          kCurrentUserData = kCurrentUserData?.copyWith(
+            name: profileName,
+            username: profileUsername,
+          );
+          CachNetwork.setData(
+            key: kuserData,
+            value: jsonEncode(kCurrentUserData?.toJson()),
+          );
+          CachNetwork.setData(key: kMyProfileName, value: profileName);
+
+          // ⭐ أولاً: جلب الصورة الجديدة وإطلاق الـ event قبل إغلاق الصفحة
+          await _fetchAndFireFreshImage(
+            oldImageUrl: oldImageUrl,
+            profileName: profileName,
+            profileUsername: profileUsername,
+          );
+
+          if (isClosed) return;
+
+          // ⭐ ثانياً: بعد ما الـ event اتبعت، نبعت successMessage فيتعمل pop
+          emit(
+            state.copyWith(
+              isSaving: false,
+              errorMessage: null,
+              profile: updatedProfile,
+              state: CubitStates.success,
+              successMessage: 'data_updated_successfully',
+              imagePreviewUrl: updatedProfile?.image,
+              videoPreviewUrl: updatedProfile?.video,
+              imageFile: null,
+              videoFile: null,
+              clearImage: false,
+              clearVideo: false,
+            ),
+          );
+        } else {
+          emit(state.copyWith(isSaving: false, errorMessage: 'save_failed'));
+        }
+      }
     } catch (e) {
       emit(
         state.copyWith(
@@ -385,6 +297,76 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
         ),
       );
     }
+  }
+
+  /// يجيب الـ URL الصح من getNameAndImage ويحدث الكاش ويبعت الـ event
+  /// يُستدعى قبل emit(successMessage) عشان الـ Cubit ما يتغلقش قبل ما الـ event يتبعت
+  Future<void> _fetchAndFireFreshImage({
+    required String? oldImageUrl,
+    required String profileName,
+    required String profileUsername,
+  }) async {
+    if (isClosed) return;
+
+    final result = await _repository.fetchNameAndImage();
+
+    result.fold(
+      (_) {
+        // فشل الـ fetch — نبعت event بالبيانات المتاحة من الكاش
+        final currentImage = CachNetwork.getStringData(key: kMyProfileImage);
+        ProfileEventBus.instance.fire(
+          ProfileUpdateEvent(
+            name: profileName,
+            image: currentImage,
+            username: profileUsername,
+            userId: kCurrentUserData?.id,
+            userType: ProfileEventUserType.advisor,
+          ),
+        );
+      },
+      (data) {
+        if (isClosed) return;
+        final freshImage = data['image'] ?? '';
+        final freshName = data['name'] ?? profileName;
+
+        if (freshImage.isEmpty) return;
+
+        // مسح الـ URL القديم من disk cache و memory cache
+        if (oldImageUrl != null &&
+            oldImageUrl.isNotEmpty &&
+            oldImageUrl != freshImage) {
+          try {
+            CachedNetworkImage.evictFromCache(oldImageUrl);
+            imageCache.evict(NetworkImage(oldImageUrl));
+          } catch (_) {}
+        }
+
+        // حفظ الـ URL الجديد في الكاش
+        kCurrentUserData = kCurrentUserData?.copyWith(
+          image: freshImage,
+          name: freshName,
+        );
+        CachNetwork.setData(
+          key: kuserData,
+          value: jsonEncode(kCurrentUserData?.toJson()),
+        );
+        CachNetwork.setData(key: kMyProfileImage, value: freshImage);
+        CachNetwork.setData(key: kMyProfileName, value: freshName);
+
+        debugPrint('🔄 fresh image from getNameAndImage: $freshImage');
+
+        // إطلاق الـ event بالـ URL الجديد
+        ProfileEventBus.instance.fire(
+          ProfileUpdateEvent(
+            name: freshName,
+            image: freshImage,
+            username: profileUsername,
+            userId: kCurrentUserData?.id,
+            userType: ProfileEventUserType.advisor,
+          ),
+        );
+      },
+    );
   }
 
   void clearError() {

@@ -13,13 +13,17 @@ class ProfileUpdateEvent {
   /// Type of the user who fired the event
   final ProfileEventUserType userType;
 
+  /// Timestamp used to bust CachedNetworkImage cache — appended as ?v=... in UI
+  final int imageVersion;
+
   ProfileUpdateEvent({
     required this.name,
     required this.image,
     required this.username,
     this.userId,
     this.userType = ProfileEventUserType.advisor,
-  });
+    int? imageVersion,
+  }) : imageVersion = imageVersion ?? DateTime.now().millisecondsSinceEpoch;
 }
 
 class ProfileEventBus {

@@ -187,7 +187,6 @@ class UserProfileEditCubit extends Cubit<UserProfileEditState> {
                 userType: ProfileEventUserType.user,
               ),
             );
-            getIt<StoriesCubit>().fetchStoriesSilent();
 
             debugPrint('✅ تم تحديث كاش الصورة والاسم والـ HomeCubit');
 
@@ -264,7 +263,6 @@ class UserProfileEditCubit extends Cubit<UserProfileEditState> {
               userType: ProfileEventUserType.user,
             ),
           );
-          getIt<StoriesCubit>().fetchStoriesSilent();
 
           emit(
             state.copyWith(

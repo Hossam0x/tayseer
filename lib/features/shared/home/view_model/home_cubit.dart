@@ -41,6 +41,8 @@ class HomeCubit extends Cubit<HomeState> {
     ) {
       if (isClosed) return;
 
+      debugPrint('🏠 HomeCubit: profile update received → ${event.image}');
+
       // 1. تحديث الكاش المحلي
       CachNetwork.setData(key: kMyProfileImage, value: event.image);
       CachNetwork.setData(key: kMyProfileName, value: event.name);

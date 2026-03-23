@@ -199,46 +199,37 @@ class _StoriesListViewState extends State<_StoriesListView> {
   Widget build(BuildContext context) {
     final flatStories = _flatStories;
 
-    return SingleChildScrollView(
-      controller: _scrollController,
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ...List.generate(flatStories.length, (index) {
-            final parentUserStory = flatStories[index].key;
-            final story = flatStories[index].value;
-            return Padding(
-              key: ValueKey('story_profile_${story.id}'),
-              padding: EdgeInsetsDirectional.only(
-                end: context.responsiveWidth(14),
-              ),
-              child: _SingleStoryItem(
-                key: ValueKey('story_profile_item_${story.id}'),
-                story: story,
-                parentUserStory: parentUserStory,
-                allStories: widget.stories,
-              ),
-            );
-          }),
-          BlocBuilder<StoriesCubit, StoriesState>(
-            buildWhen: (previous, current) {
-              final bool isMyProfile = widget.advisorId == null;
-              if (isMyProfile) {
-                return previous.mySpecialIsLoadingMore !=
-                    current.mySpecialIsLoadingMore;
-              } else {
-                return previous.advisorSpecialIsLoadingMore !=
-                    current.advisorSpecialIsLoadingMore;
-              }
-            },
-            builder: (context, state) {
-              final bool isMyProfile = widget.advisorId == null;
-              final bool isLoadingMore = isMyProfile
-                  ? state.mySpecialIsLoadingMore
-                  : state.advisorSpecialIsLoadingMore;
+    return BlocBuilder<StoriesCubit, StoriesState>(
+      buildWhen: (previous, current) {
+        final bool isMyProfile = widget.advisorId == null;
+        if (isMyProfile) {
+          return previous.mySpecialIsLoadingMore !=
+              current.mySpecialIsLoadingMore;
+        } else {
+          return previous.advisorSpecialIsLoadingMore !=
+              current.advisorSpecialIsLoadingMore;
+        }
+      },
+      builder: (context, state) {
+        final bool isMyProfile = widget.advisorId == null;
+        final bool isLoadingMore = isMyProfile
+            ? state.mySpecialIsLoadingMore
+            : state.advisorSpecialIsLoadingMore;
 
-              if (isLoadingMore) {
+        final int itemCount = flatStories.length + (isLoadingMore ? 1 : 0);
+
+        return SizedBox(
+          height:
+              context.responsiveWidth(76) +
+              context.responsiveHeight(6) +
+              context.responsiveHeight(16),
+          child: ListView.builder(
+            controller: _scrollController,
+            scrollDirection: Axis.horizontal,
+            physics: const ClampingScrollPhysics(),
+            itemCount: itemCount,
+            itemBuilder: (context, index) {
+              if (index == flatStories.length) {
                 return Padding(
                   padding: EdgeInsetsDirectional.only(
                     end: context.responsiveWidth(14),
@@ -246,16 +237,29 @@ class _StoriesListViewState extends State<_StoriesListView> {
                   child: const _StoriesLoadingShimmer(count: 1),
                 );
               }
-              return const SizedBox.shrink();
+              final parentUserStory = flatStories[index].key;
+              final story = flatStories[index].value;
+              return Padding(
+                key: ValueKey('story_profile_${story.id}'),
+                padding: EdgeInsetsDirectional.only(
+                  end: context.responsiveWidth(14),
+                ),
+                child: _SingleStoryItem(
+                  key: ValueKey('story_profile_item_${story.id}'),
+                  story: story,
+                  parentUserStory: parentUserStory,
+                  allStories: widget.stories,
+                ),
+              );
             },
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
-class _SingleStoryItem extends StatelessWidget {
+class _SingleStoryItem extends StatefulWidget {
   final StoryModel story;
   final UserStoriesModel parentUserStory;
   final List<UserStoriesModel> allStories;
@@ -268,15 +272,41 @@ class _SingleStoryItem extends StatelessWidget {
   });
 
   @override
+  State<_SingleStoryItem> createState() => _SingleStoryItemState();
+}
+
+class _SingleStoryItemState extends State<_SingleStoryItem> {
+  String? _previousImageUrl;
+
+  @override
+  void didUpdateWidget(_SingleStoryItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.parentUserStory.image != widget.parentUserStory.image) {
+      _previousImageUrl = oldWidget.parentUserStory.image;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final heroTag = 'profile_story_${story.id}';
+    final heroTag = 'profile_story_${widget.story.id}';
 
     return CustomClick(
       onTap: () {
-        // Keep original API order (newest first) — no reverse
-        final singleStoryUser = parentUserStory.copyWith(
-          stories: parentUserStory.stories.toList(),
+        // كل story تتحول لـ UserStoriesModel منفردة → كل page في PageView = story واحدة
+        final flatList = <UserStoriesModel>[];
+        for (final us in widget.allStories) {
+          // الأحدث أول
+          final sorted = [...us.stories]
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          for (final s in sorted) {
+            flatList.add(us.copyWith(stories: [s]));
+          }
+        }
+
+        final initialIndex = flatList.indexWhere(
+          (us) => us.stories.first.id == widget.story.id,
         );
+        final safeIndex = initialIndex != -1 ? initialIndex : 0;
 
         Navigator.push(
           context,
@@ -286,10 +316,9 @@ class _SingleStoryItem extends StatelessWidget {
                 BlocProvider.value(
                   value: context.read<StoriesCubit>(),
                   child: StoryDetailsView(
-                    usersStories: [singleStoryUser],
-                    initialUserIndex: 0,
+                    usersStories: flatList,
+                    initialUserIndex: safeIndex,
                     heroTag: heroTag,
-                    initialStoryId: story.id,
                   ),
                 ),
             transitionsBuilder:
@@ -310,20 +339,52 @@ class _SingleStoryItem extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: (parentUserStory.allViewed)
+                  color: (widget.parentUserStory.allViewed)
                       ? AppColors.kGreyB3
                       : AppColors.kprimaryColor,
                   width: 2.sp,
                 ),
               ),
-              child: ClipOval(child: AppImage(story.image, fit: BoxFit.cover)),
+              child: ClipOval(
+                child: CachedNetworkImage(
+                  imageUrl: widget.story.image,
+                  fit: BoxFit.cover,
+                  width: context.responsiveWidth(76),
+                  height: context.responsiveWidth(76),
+                  fadeInDuration: Duration.zero,
+                  fadeOutDuration: Duration.zero,
+                  useOldImageOnUrlChange: true,
+                  // ⭐ لو فيه URL قديم، استخدمه كـ placeholder بدل الـ shimmer
+                  placeholder: (context, url) =>
+                      _previousImageUrl != null && _previousImageUrl!.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: _previousImageUrl!,
+                          fit: BoxFit.cover,
+                          width: context.responsiveWidth(76),
+                          height: context.responsiveWidth(76),
+                          fadeInDuration: Duration.zero,
+                          fadeOutDuration: Duration.zero,
+                          errorWidget: (_, __, ___) =>
+                              Container(color: AppColors.secondary200),
+                        )
+                      : Container(color: AppColors.secondary200),
+                  errorWidget: (context, url, error) => Container(
+                    color: AppColors.secondary200,
+                    child: Icon(
+                      Icons.image_not_supported_outlined,
+                      color: AppColors.secondary400,
+                      size: 24,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
           Gap(context.responsiveHeight(6)),
           SizedBox(
             width: context.responsiveWidth(76),
             child: Text(
-              parentUserStory.name,
+              widget.parentUserStory.name,
               textAlign: TextAlign.center,
               style: Styles.textStyle10.copyWith(color: AppColors.kGreyB3),
               maxLines: 1,
