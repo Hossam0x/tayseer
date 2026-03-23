@@ -2,7 +2,6 @@ import 'package:tayseer/features/advisor/profille/data/models/certificate_model.
 import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/edit_certificate_state.dart';
 import 'package:tayseer/my_import.dart';
-import 'package:tayseer/core/enum/cubit_states.dart';
 
 class EditCertificateCubit extends Cubit<EditCertificateState> {
   final CertificatesRepository _repository;
