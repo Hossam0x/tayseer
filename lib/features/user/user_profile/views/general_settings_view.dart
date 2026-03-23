@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
-import 'package:tayseer/features/user/user_profile/presentation/screens/email_edit_screen.dart';
-import 'package:tayseer/features/user/user_profile/presentation/screens/phone_edit_screen.dart';
+import 'package:tayseer/features/user/user_profile/views/email_edit_screen.dart';
+import 'package:tayseer/features/user/user_profile/views/phone_edit_screen.dart';
 import 'package:tayseer/features/user/user_profile/views/age_selection_view.dart';
 import 'package:tayseer/features/user/user_profile/views/privacy_selection_view.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubit.dart';

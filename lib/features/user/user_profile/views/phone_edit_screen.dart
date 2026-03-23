@@ -1,8 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/user/user_profile/presentation/cubit/phone/phone_edit_cubit.dart';
-import 'package:tayseer/features/user/user_profile/presentation/screens/otp_user_screen.dart';
-import 'package:tayseer/features/user/user_profile/presentation/cubit/otp/otp_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/phone/phone_edit_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/otp_user_screen.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class PhoneEditScreen extends StatefulWidget {

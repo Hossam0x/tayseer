@@ -93,9 +93,9 @@ import 'package:tayseer/features/advisor/wallet/data/repos/wallet_repo.dart';
 import 'package:tayseer/features/advisor/wallet/data/cubit/wallet_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/otp_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_settings_repository.dart';
-import 'package:tayseer/features/user/user_profile/presentation/cubit/email/email_edit_cubit.dart';
-import 'package:tayseer/features/user/user_profile/presentation/cubit/otp/otp_cubit.dart';
-import 'package:tayseer/features/user/user_profile/presentation/cubit/phone/phone_edit_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/email/email_edit_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/phone/phone_edit_cubit.dart';
 
 import '../../my_import.dart';
 
