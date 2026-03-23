@@ -6,28 +6,41 @@ import 'package:tayseer/features/user/marriage_filter/view_models/marriage_filte
 import 'package:tayseer/my_import.dart';
 
 class MarriageFilterBody extends StatelessWidget {
-  const MarriageFilterBody({super.key});
+  const MarriageFilterBody({super.key, this.onBackPressed});
+
+  final VoidCallback? onBackPressed;
 
   @override
   Widget build(BuildContext context) {
     return CustomBackground(
       child: BlocConsumer<MarriageFilterCubit, MarriageFilterState>(
         listener: (context, state) {
-          if (state.marriageFilterStatus == CubitStates.success) {
-            Navigator.of(context).popUntil((route) => route.isFirst);
+          if (state.marriageFilterStatus == CubitStates.loading) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => const Center(child: CustomloadingApp()),
+            );
+          } else if (state.marriageFilterStatus == CubitStates.success) {
+            // ✅ أغلق الـ loading dialog
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+            // ✅ ارجع من صفحة الفلتر
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
           } else if (state.marriageFilterStatus == CubitStates.failure) {
-            context.pop();
+            // ✅ أغلق الـ loading dialog
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
             ScaffoldMessenger.of(context).showSnackBar(
               CustomSnackBar(
                 context,
                 text: state.errorMessage ?? context.tr('error_occurred'),
                 isError: true,
               ),
-            );
-          } else if (state.marriageFilterStatus == CubitStates.loading) {
-            showDialog(
-              context: context,
-              builder: (context) => const Center(child: CustomloadingApp()),
             );
           }
         },
@@ -207,7 +220,8 @@ class MarriageFilterBody extends StatelessWidget {
       title: Text(context.tr('filter_profiles'), style: Styles.textStyle18Bold),
       leading: IconButton(
         icon: const Icon(Icons.close, color: Colors.grey),
-        onPressed: () => context.pop(),
+        onPressed:
+            onBackPressed ?? () => context.pop(), // ✅ استخدم الـ callback
       ),
       actions: [
         TextButton(

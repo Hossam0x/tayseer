@@ -5,8 +5,13 @@ enum SwipeActionType { like, dislike, favorite, regard }
 
 class SwipeActionPopup extends StatefulWidget {
   final SwipeActionType type;
+  final String? labelOverride; // ✅ أضف دي
 
-  const SwipeActionPopup({super.key, required this.type});
+  const SwipeActionPopup({
+    super.key,
+    required this.type,
+    this.labelOverride, // ✅
+  });
 
   @override
   State<SwipeActionPopup> createState() => _SwipeActionPopupState();
@@ -25,10 +30,9 @@ class _SwipeActionPopupState extends State<SwipeActionPopup>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 1100),
     );
 
-    // ✅ الـ popup بيظهر ويكبر
     _scaleAnim = TweenSequence([
       TweenSequenceItem(
         tween: Tween<double>(begin: 0.0, end: 1.15)
@@ -50,7 +54,6 @@ class _SwipeActionPopupState extends State<SwipeActionPopup>
       ),
     ]).animate(_controller);
 
-    // ✅ fade للـ popup كله
     _fadeAnim = TweenSequence([
       TweenSequenceItem(
         tween: Tween<double>(begin: 0.0, end: 1.0),
@@ -66,10 +69,9 @@ class _SwipeActionPopupState extends State<SwipeActionPopup>
       ),
     ]).animate(_controller);
 
-    // ✅ الـ icon بيلف 360 مرتين كاملتين بشكل سلس
     _rotationAnim = Tween<double>(
       begin: 0,
-      end: 4 * math.pi, // ✅ لفتين كاملتين
+      end: 4 * math.pi,
     ).animate(
       CurvedAnimation(
         parent: _controller,
@@ -77,7 +79,6 @@ class _SwipeActionPopupState extends State<SwipeActionPopup>
       ),
     );
 
-    // ✅ الـ icon بيكبر وبيصغر مع اللفة
     _iconScaleAnim = TweenSequence([
       TweenSequenceItem(
         tween: Tween<double>(begin: 1.0, end: 1.3),
@@ -118,28 +119,28 @@ class _SwipeActionPopupState extends State<SwipeActionPopup>
           icon: Icons.check,
           color: HexColor('f8d3da'),
           iconColor: AppColors.kprimaryTextColor,
-          label: 'like',
+          label: 'like_action',
         );
       case SwipeActionType.dislike:
         return _ActionConfig(
           icon: Icons.close,
           color: HexColor('e44e6c'),
           iconColor: Colors.white,
-          label: 'dislike',
+          label: 'dislike_action',
         );
       case SwipeActionType.favorite:
         return _ActionConfig(
           icon: Icons.favorite,
           color: Colors.white,
           iconColor: Colors.red,
-          label: 'favorite',
+          label: 'favorite_action',
         );
       case SwipeActionType.regard:
         return _ActionConfig(
           icon: Icons.star,
           color: HexColor('cccab3'),
           iconColor: Colors.white,
-          label: 'regard',
+          label: 'regard_action',
         );
     }
   }
@@ -147,6 +148,8 @@ class _SwipeActionPopupState extends State<SwipeActionPopup>
   @override
   Widget build(BuildContext context) {
     final config = _config;
+    // ✅ استخدم الـ labelOverride لو موجود، غير كده جرب context.tr
+    final label = widget.labelOverride ?? context.tr(config.label);
 
     return AnimatedBuilder(
       animation: _controller,
@@ -157,8 +160,8 @@ class _SwipeActionPopupState extends State<SwipeActionPopup>
             child: ScaleTransition(
               scale: _scaleAnim,
               child: Container(
-                width: 170.w,  // ✅ أكبر
-                height: 170.w, // ✅ أكبر
+                width: 190.w,
+                height: 190.h,
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.80),
                   shape: BoxShape.circle,
@@ -178,29 +181,29 @@ class _SwipeActionPopupState extends State<SwipeActionPopup>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // ✅ الـ icon بيلف مع scale animation
                     Transform.rotate(
                       angle: _rotationAnim.value,
                       child: Transform.scale(
                         scale: _iconScaleAnim.value,
                         child: CircleAvatar(
-                          radius: 38.r, // ✅ أكبر
+                          radius: 40.r,
                           backgroundColor: config.color,
                           child: Icon(
                             config.icon,
                             color: config.iconColor,
-                            size: 38, // ✅ أكبر
+                            size: 40.r,
                           ),
                         ),
                       ),
                     ),
                     SizedBox(height: 12.h),
                     Text(
-                      context.tr(config.label),
-                      style: Styles.textStyle16Bold.copyWith(
+                      label, // ✅ استخدم الـ label المحلول
+                      style: Styles.textStyle18Bold.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.5,
+                         decoration: TextDecoration.none, 
                       ),
                     ),
                   ],

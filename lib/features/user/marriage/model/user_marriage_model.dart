@@ -43,18 +43,20 @@ class UsersData {
 class UserItem {
   User? user;
   Answers? answers;
-
-  UserItem({this.user, this.answers});
+ bool? allowInteractions;
+  UserItem({this.user, this.answers, this.allowInteractions});
 
   factory UserItem.fromJson(Map<String, dynamic> json) => UserItem(
     user: json["user"] != null ? User.fromJson(json["user"]) : null,
     answers:
         json["answers"] != null ? Answers.fromJson(json["answers"]) : null,
+   allowInteractions: json["allowInteractions"],      
   );
 
   Map<String, dynamic> toJson() => {
     "user": user?.toJson(),
     "answers": answers?.toJson(),
+    "allowInteractions": allowInteractions,
   };
 }
 

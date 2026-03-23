@@ -1003,23 +1003,23 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       if (profile.aboutMe?.socialStatus != null)
         {
           'icon': AssetsData.kdrawingIcon,
-          'label': _translateValue(profile.aboutMe!.socialStatus),
+          'label': "💍 ${_translateValue(profile.aboutMe!.socialStatus)}",
         },
       if (profile.aboutMe?.age != null)
         {
           'icon': AssetsData.kdrawingIcon,
-          'label': "${context.tr('age')} ${profile.aboutMe?.age}",
+          'label': "🎂 ${context.tr('age')} ${profile.aboutMe?.age}",
         },
       if (profile.aboutMe?.skinColor != null)
         {
           'icon': AssetsData.kdrawingIcon,
           'label':
-              "${context.tr('Skin')} ${_translateValue(profile.aboutMe!.skinColor)}",
+              "🎨 ${context.tr('Skin')} ${_translateValue(profile.aboutMe!.skinColor)}",
         },
       if (profile.aboutMe?.healthStatus != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': _translateValue(profile.aboutMe!.healthStatus),
+          'label': "🩺 ${_translateValue(profile.aboutMe!.healthStatus)}",
         },
     ];
   }
@@ -1031,12 +1031,13 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       if (profile.professionalLife?.educationLevel != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': _translateValue(profile.professionalLife!.educationLevel),
+          'label':
+              "🎓 ${_translateValue(profile.professionalLife!.educationLevel)}",
         },
       if (profile.professionalLife?.job != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': _translateValue(profile.professionalLife!.job),
+          'label': "💼 ${_translateValue(profile.professionalLife!.job)}",
         },
     ];
   }
@@ -1082,12 +1083,13 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       if (profile.aboutMe?.religiousCommitment != null)
         {
           'icon': AssetsData.kdrawingIcon,
-          'label': _translateValue(profile.aboutMe!.religiousCommitment),
+          'label':
+              "🕌 ${_translateValue(profile.aboutMe!.religiousCommitment)}",
         },
       if (profile.aboutMe?.smoker != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': _translateValue(profile.aboutMe!.smoker),
+          'label': "🚬 ${_translateValue(profile.aboutMe!.smoker)}",
         },
     ];
   }

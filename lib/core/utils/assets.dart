@@ -205,6 +205,8 @@ abstract class AssetsData {
   static const String logoIcon = "assets/icons/logoIcon.svg";
   static const String boostFinish = "assets/icons/boostFinish.svg";
   static const String uplaodCertificate = "assets/icons/uplaodCertificate.svg";
+  static const String emptyFilter = "assets/icons/empty_filtter.svg";
+
 
   // Settings assets
   static const String icNotificationSettings =
