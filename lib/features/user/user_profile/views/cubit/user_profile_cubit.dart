@@ -6,6 +6,7 @@ import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/core/utils/profile_event_bus.dart';
 import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
@@ -815,9 +816,12 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       await getIt<CacheCleanupService>().clearAllUserCache();
       getIt<tayseerSocketHelper>().disconnect();
 
-      // ✅ ريسيت الـ HomeCubit Singleton عشان يتعمل instance جديد بعد اللوجن الجديد
+      // ✅ ريسيت الـ Singletons عشان يتعملوا instance جديد بعد اللوجن الجديد
       if (getIt.isRegistered<HomeCubit>()) {
         getIt.resetLazySingleton<HomeCubit>();
+      }
+      if (getIt.isRegistered<ProfileCubit>()) {
+        getIt.resetLazySingleton<ProfileCubit>();
       }
 
       emit(

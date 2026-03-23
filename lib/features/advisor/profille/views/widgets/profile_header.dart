@@ -11,6 +11,7 @@ import 'package:tayseer/features/advisor/stories/presentation/view_model/stories
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_state.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/story_details_view.dart';
 import 'package:tayseer/features/advisor/stories/data/models/stories_response_model.dart';
+import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({super.key});
@@ -253,10 +254,11 @@ class _ProfileStoryRing extends StatelessWidget {
         final myStories = storyState.myStories;
         final hasStories = myStories != null && myStories.stories.isNotEmpty;
 
-        return CustomClick(
+        return GestureDetector(
           onTap: isUploading
               ? null
               : () => _handleTap(context, storyState, myStories),
+          onLongPress: () => _openFullScreenImage(context, fallbackImageUrl),
           child: Stack(
             alignment: Alignment.center,
             children: [
@@ -415,6 +417,23 @@ class _ProfileStoryRing extends StatelessWidget {
           value: storiesCubit,
           child: const AddStoryView(),
         ),
+      ),
+    );
+  }
+
+  void _openFullScreenImage(BuildContext context, String imageUrl) {
+    if (imageUrl.isEmpty) return;
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black,
+        pageBuilder: (_, __, ___) => FullScreenImageView(
+          imageUrl: imageUrl,
+          heroTag: 'profile_image_main',
+        ),
+        transitionsBuilder: (_, animation, __, child) =>
+            FadeTransition(opacity: animation, child: child),
       ),
     );
   }

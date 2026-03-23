@@ -162,7 +162,7 @@ class ArchiveChatRoomModel extends Equatable {
             .toList();
       }
     } catch (e) {
-      print('❌ Error parsing users: $e');
+      // ignore parse error for users
     }
 
     // معالجة lastMessage
@@ -174,7 +174,7 @@ class ArchiveChatRoomModel extends Equatable {
         );
       }
     } catch (e) {
-      print('❌ Error parsing lastMessage: $e');
+      // ignore parse error for lastMessage
     }
 
     // معالجة sender
@@ -186,7 +186,7 @@ class ArchiveChatRoomModel extends Equatable {
         );
       }
     } catch (e) {
-      print('❌ Error parsing sender: $e');
+      // ignore parse error for sender
     }
 
     return ArchiveChatRoomModel(
@@ -223,8 +223,7 @@ class ArchiveChatRoomModel extends Equatable {
 
       // إذا كان sender هو نفس المستخدم الحالي، نعود بـ null
       return null;
-    } catch (e) {
-      print('❌ Error in getOtherUser: $e');
+    } catch (_) {
       return null;
     }
   }
@@ -253,8 +252,7 @@ class ArchiveChatRoomModel extends Equatable {
       }
 
       return users.isNotEmpty ? users.first : null;
-    } catch (e) {
-      print('❌ Error in getOtherUserBasedOnSender: $e');
+    } catch (_) {
       return null;
     }
   }
@@ -387,8 +385,8 @@ class ArchivedChatsResponseModel extends Equatable {
           );
         }).toList();
       }
-    } catch (e) {
-      print('❌ Error parsing chatRooms list: $e');
+    } catch (_) {
+      // ignore chatRooms parse error
     }
 
     // معالجة pagination
@@ -397,8 +395,8 @@ class ArchivedChatsResponseModel extends Equatable {
       if (json['pagination'] is Map) {
         pagination = (json['pagination'] as Map).cast<String, dynamic>();
       }
-    } catch (e) {
-      print('❌ Error parsing pagination: $e');
+    } catch (_) {
+      // ignore pagination parse error
     }
 
     return ArchivedChatsResponseModel(
@@ -461,8 +459,6 @@ class ArchivePostModel extends Equatable {
   });
 
   factory ArchivePostModel.fromJson(Map<String, dynamic> json) {
-    print('📌 Parsing ArchivePostModel: $json');
-
     try {
       // Parse images list
       List<String>? imagesList;
@@ -512,7 +508,7 @@ class ArchivePostModel extends Equatable {
         advisorId: json['advisorId']?.toString(),
         content: json['content']?.toString(),
         images: imagesList
-            ?.map((url) => ImageModel(image: '', width: 0, height: 0))
+            ?.map((_) => ImageModel(image: '', width: 0, height: 0))
             .toList(),
         video: json['video']?.toString(),
         contentType: parsedContentType,
@@ -526,8 +522,6 @@ class ArchivePostModel extends Equatable {
         isRepostedByMe: json['isRepostedByMe'] as bool? ?? false,
       );
     } catch (e) {
-      print('❌ Error parsing ArchivePostModel: $e');
-      print('❌ Problematic JSON: $json');
       rethrow;
     }
   }
@@ -651,9 +645,6 @@ class ArchivedPostsResponseModel extends Equatable {
   });
 
   factory ArchivedPostsResponseModel.fromJson(Map<String, dynamic> json) {
-    print('📦 Parsing ArchivedPostsResponseModel');
-
-    // معالجة posts
     List<ArchivePostModel> postsList = [];
     try {
       if (json['posts'] is List) {
@@ -664,9 +655,7 @@ class ArchivedPostsResponseModel extends Equatable {
                   ? post
                   : (post as Map).cast<String, dynamic>(),
             );
-          } catch (e) {
-            print('❌ Error parsing individual post: $e');
-            print('❌ Post data: $post');
+          } catch (_) {
             return ArchivePostModel(
               id: '',
               userName: 'مستخدم',
@@ -675,22 +664,20 @@ class ArchivedPostsResponseModel extends Equatable {
           }
         }).toList();
       }
-    } catch (e) {
-      print('❌ Error parsing posts list: $e');
+    } catch (_) {
+      // ignore posts parse error
     }
 
-    // معالجة pagination
     Map<String, dynamic> pagination = {};
     try {
       if (json['pagination'] is Map) {
         pagination = (json['pagination'] as Map).cast<String, dynamic>();
-      } else if (json['data'] != null && json['data']['pagination'] is Map) {
-        // محاولة بديلة إذا كان الـ pagination داخل data
+      } else if (json['data']?['pagination'] is Map) {
         pagination = (json['data']['pagination'] as Map)
             .cast<String, dynamic>();
       }
-    } catch (e) {
-      print('❌ Error parsing pagination: $e');
+    } catch (_) {
+      // ignore pagination parse error
     }
 
     return ArchivedPostsResponseModel(
@@ -751,8 +738,6 @@ class ArchiveStoryModel extends Equatable {
   });
 
   factory ArchiveStoryModel.fromJson(Map<String, dynamic> json) {
-    print('📌 Parsing story: $json');
-
     try {
       return ArchiveStoryModel(
         id: json['id']?.toString() ?? '',
@@ -775,8 +760,6 @@ class ArchiveStoryModel extends Equatable {
             [],
       );
     } catch (e) {
-      print('❌ Error parsing ArchiveStoryModel: $e');
-      print('❌ Problematic JSON: $json');
       rethrow;
     }
   }

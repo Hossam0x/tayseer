@@ -270,16 +270,19 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
 
         return Expanded(
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              SvgPicture.asset(icon, height: 90.h, width: 90.w),
-              Gap(12.h),
-              Text(
-                context.tr(title),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Styles.textStyle14.copyWith(
-                  color: isElite ? Colors.white : Colors.black87,
+              SvgPicture.asset(icon, height: 80.h, width: 80.w),
+              Gap(8.h),
+              Flexible(
+                child: Text(
+                  context.tr(title),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Styles.textStyle14.copyWith(
+                    color: isElite ? Colors.white : Colors.black87,
+                  ),
                 ),
               ),
             ],

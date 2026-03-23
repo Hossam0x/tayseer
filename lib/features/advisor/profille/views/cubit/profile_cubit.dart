@@ -30,14 +30,6 @@ class ProfileCubit extends Cubit<ProfileState> {
       if (state.profile != null) {
         debugPrint('🔄 ProfileCubit: updating profile image → ${event.image}');
 
-        // مسح الـ URL القديم من الكاش عشان CachedNetworkImage يحمل الجديد
-        final oldImage = state.profile!.image;
-        if (oldImage.isNotEmpty && oldImage != event.image) {
-          try {
-            CachedNetworkImage.evictFromCache(oldImage);
-          } catch (_) {}
-        }
-
         final updatedProfile = state.profile!.copyWith(
           name: event.name,
           image: event.image,

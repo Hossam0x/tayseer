@@ -1,6 +1,6 @@
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:flutter/services.dart';
-import 'package:tayseer/features/user/user_profile/presentation/cubit/otp/otp_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
 import 'package:tayseer/my_import.dart' hide PinTheme;
 
 class OtpUserScreen extends StatefulWidget {

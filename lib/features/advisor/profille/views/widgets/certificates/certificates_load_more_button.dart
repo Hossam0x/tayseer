@@ -1,5 +1,5 @@
-import 'package:tayseer/features/advisor/profille/views/cubit/certificates_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/certificates_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/certificates_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/certificates_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class CertificatesLoadMoreButton extends StatelessWidget {

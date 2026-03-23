@@ -177,7 +177,10 @@ class _PostsTabBody extends StatelessWidget {
               return const SizedBox.shrink();
             }
 
-            return _PostItem(post: state.posts[index]);
+            return _PostItem(
+              key: ValueKey(state.posts[index].postId),
+              post: state.posts[index],
+            );
           },
         ),
       ),
@@ -187,7 +190,7 @@ class _PostsTabBody extends StatelessWidget {
 
 class _PostItem extends StatelessWidget {
   final PostModel post;
-  const _PostItem({required this.post});
+  const _PostItem({super.key, required this.post});
 
   @override
   Widget build(BuildContext context) {
@@ -213,6 +216,7 @@ class _PostItem extends StatelessWidget {
               onSave: (postId) => cubit.toggleSavePost(postId: postId),
               onDelete: (postId) => cubit.deletePost(postId: postId),
               onArchive: (postId) => cubit.unarchivePost(postId),
+
               onHide: (postId) => cubit.toggleHidePost(postId: postId),
               onBlock: (postId, advisorId) =>
                   cubit.blockUser(visiblePostId: postId, advisorId: advisorId),

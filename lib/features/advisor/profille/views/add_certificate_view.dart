@@ -1,8 +1,8 @@
 import 'package:tayseer/core/widgets/profile_text_field.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/add_certificate_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/add_certificate_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/add_certificate_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/add_certificate_state.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/add_certificate/add_certificate_action_button.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/add_certificate/add_certificate_date_picker.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/add_certificate/add_certificate_image_picker.dart';
@@ -13,17 +13,15 @@ class AddCertificateView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final certificatesRepository = getIt<CertificatesRepository>();
-
     return BlocProvider(
-      create: (context) => AddCertificateCubit(certificatesRepository),
+      create: (_) => AddCertificateCubit(getIt<CertificatesRepository>()),
       child: Scaffold(
         body: BlocListener<AddCertificateCubit, AddCertificateState>(
           listener: (context, state) {
             if (state.errorMessage != null) {
               showSafeSnackBar(
                 context: context,
-                text: state.errorMessage!,
+                text: context.tr(state.errorMessage!),
                 isError: true,
               );
               context.read<AddCertificateCubit>().clearMessage();
@@ -31,7 +29,7 @@ class AddCertificateView extends StatelessWidget {
                 state.state == CubitStates.success) {
               showSafeSnackBar(
                 context: context,
-                text: state.successMessage!,
+                text: context.tr(state.successMessage!),
                 isSuccess: true,
               );
               context.read<AddCertificateCubit>().clearMessage();
@@ -45,12 +43,33 @@ class AddCertificateView extends StatelessWidget {
   }
 }
 
-class _AddCertificateBody extends StatelessWidget {
+class _AddCertificateBody extends StatefulWidget {
   const _AddCertificateBody();
 
   @override
+  State<_AddCertificateBody> createState() => _AddCertificateBodyState();
+}
+
+class _AddCertificateBodyState extends State<_AddCertificateBody> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _fromWhereController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController();
+    _fromWhereController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _fromWhereController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Avoid rebuilding the entire page, use isolated builders in widgets
     final cubit = context.read<AddCertificateCubit>();
 
     return AdvisorBackground(
@@ -77,19 +96,17 @@ class _AddCertificateBody extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    SimpleAppBar(
-                      title: context.tr('add_certificate'),
-                    ),
+                    SimpleAppBar(title: context.tr('add_certificate')),
                     const AddCertificateImagePicker(),
                     Gap(32.h),
                     ProfileTextField(
-                      controller: cubit.state.nameCertificateController!,
+                      controller: _nameController,
                       onChanged: cubit.updateNameCertificate,
                       hint: context.tr('certificate_name_hint'),
                     ),
                     Gap(20.h),
                     ProfileTextField(
-                      controller: cubit.state.fromWhereController!,
+                      controller: _fromWhereController,
                       onChanged: cubit.updateFromWhere,
                       hint: context.tr('certificate_from_where_hint'),
                     ),

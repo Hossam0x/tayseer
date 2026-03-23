@@ -1,47 +1,19 @@
 import 'package:tayseer/features/advisor/profille/data/models/certificate_model.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/edit_certificate_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/edit_certificate_state.dart';
 import 'package:tayseer/my_import.dart';
-import 'package:tayseer/core/enum/cubit_states.dart';
 
 class EditCertificateCubit extends Cubit<EditCertificateState> {
   final CertificatesRepository _repository;
-  late TextEditingController nameCertificateController;
-  late TextEditingController fromWhereController;
 
   EditCertificateCubit(this._repository, {CertificateModel? initialCertificate})
     : super(const EditCertificateState()) {
-    nameCertificateController = TextEditingController();
-    fromWhereController = TextEditingController();
-
     if (initialCertificate != null) {
       _loadCertificateData(initialCertificate);
     }
-
-    emit(
-      state.copyWith(
-        nameCertificateController: nameCertificateController,
-        fromWhereController: fromWhereController,
-      ),
-    );
-  }
-
-  void clearForm() {
-    nameCertificateController.clear();
-    fromWhereController.clear();
-
-    emit(
-      EditCertificateState(
-        nameCertificateController: nameCertificateController,
-        fromWhereController: fromWhereController,
-      ),
-    );
   }
 
   void _loadCertificateData(CertificateModel certificate) {
-    nameCertificateController.text = certificate.nameCertificate;
-    fromWhereController.text = certificate.fromWhere;
-
     emit(
       state.copyWith(
         nameCertificate: certificate.nameCertificate,
@@ -61,9 +33,7 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
   void updateFromWhere(String value) =>
       emit(state.copyWith(fromWhere: value.trim()));
 
-  void updateDate(DateTime date) {
-    emit(state.copyWith(date: date));
-  }
+  void updateDate(DateTime date) => emit(state.copyWith(date: date));
 
   Future<void> pickCertificateImage() async {
     final ImagePicker picker = ImagePicker();
@@ -85,6 +55,20 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
         clearImageFile: true,
         clearImageUrl: true,
         isImageRemoved: true,
+      ),
+    );
+  }
+
+  void selectCertificate(CertificateModel cert) {
+    emit(
+      state.copyWith(
+        nameCertificate: cert.nameCertificate,
+        fromWhere: cert.fromWhere,
+        date: cert.date,
+        certificateImageUrl: cert.image,
+        selectedCertificateId: cert.id,
+        clearImageFile: true,
+        isImageRemoved: false,
       ),
     );
   }
@@ -121,24 +105,20 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
     if (isClosed) return;
 
     result.fold(
-      (failure) {
-        emit(
-          state.copyWith(
-            isLoading: false,
-            errorMessage: failure.message,
-            state: CubitStates.failure,
-          ),
-        );
-      },
+      (failure) => emit(
+        state.copyWith(
+          isLoading: false,
+          errorMessage: failure.message,
+          state: CubitStates.failure,
+        ),
+      ),
       (response) {
         CertificateModel? addedCertificate;
-        if (response['data'] != null &&
-            response['data']['certificate'] != null) {
+        if (response['data']?['certificate'] != null) {
           addedCertificate = CertificateModel.fromJson(
             Map<String, dynamic>.from(response['data']['certificate']),
           );
         }
-
         emit(
           state.copyWith(
             isLoading: false,
@@ -149,23 +129,6 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
           ),
         );
       },
-    );
-  }
-
-  void selectCertificate(CertificateModel cert) {
-    nameCertificateController.text = cert.nameCertificate;
-    fromWhereController.text = cert.fromWhere;
-
-    emit(
-      state.copyWith(
-        nameCertificate: cert.nameCertificate,
-        fromWhere: cert.fromWhere,
-        date: cert.date,
-        certificateImageUrl: cert.image,
-        selectedCertificateId: cert.id,
-        clearImageFile: true,
-        isImageRemoved: false,
-      ),
     );
   }
 
@@ -213,27 +176,24 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
     if (isClosed) return;
 
     result.fold(
-      (failure) {
-        emit(
-          state.copyWith(
-            isLoading: false,
-            errorMessage: failure.message,
-            state: CubitStates.failure,
-          ),
-        );
-      },
+      (failure) => emit(
+        state.copyWith(
+          isLoading: false,
+          errorMessage: failure.message,
+          state: CubitStates.failure,
+        ),
+      ),
       (response) {
         String? newImageUrl = state.certificateImageUrl;
         CertificateModel? updatedCertificate;
 
-        if (response['data'] != null &&
-            response['data']['certificate'] != null) {
-          final certJson =
-              Map<String, dynamic>.from(response['data']['certificate']);
-          updatedCertificate = CertificateModel.fromJson(certJson);
+        if (response['data']?['certificate'] != null) {
+          updatedCertificate = CertificateModel.fromJson(
+            Map<String, dynamic>.from(response['data']['certificate']),
+          );
           newImageUrl = updatedCertificate.image;
-        } else if (response['data'] != null && response['data']['image'] != null) {
-          newImageUrl = response['data']['image'];
+        } else if (response['data']?['image'] != null) {
+          newImageUrl = response['data']['image'] as String?;
         }
 
         emit(
@@ -258,12 +218,5 @@ class EditCertificateCubit extends Cubit<EditCertificateState> {
         isNavigationSuccess: false,
       ),
     );
-  }
-
-  @override
-  Future<void> close() {
-    nameCertificateController.dispose();
-    fromWhereController.dispose();
-    return super.close();
   }
 }

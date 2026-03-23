@@ -1,6 +1,6 @@
-import 'package:tayseer/features/advisor/profille/views/cubit/certificates_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/certificates_state.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/boost_button_sliver.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/certificates_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/certificates_state.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/boost/boost_button_sliver.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/certificates/certificates_error_section.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/certificates/certificates_header.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/certificates/certificates_list.dart';

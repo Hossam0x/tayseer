@@ -1,6 +1,6 @@
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/edit_certificate_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/edit_certificate_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/edit_certificate_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/edit_certificate_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class EditCertificateImagePicker extends StatelessWidget {
@@ -91,26 +91,26 @@ class EditCertificateImagePicker extends StatelessWidget {
                     child: AppImage(AssetsData.addCertificateImage, width: 32.w),
                   ),
                 ),
-                if (hasAnyImage)
-                  Positioned(
-                    top: 12.r,
-                    right: 12.r,
-                    child: GestureDetector(
-                      onTap: cubit.removeCertificateImage,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.kWhiteColor,
-                        ),
-                        child: Icon(
-                          Icons.close,
-                          color: AppColors.kRedColor,
-                          size: 20.w,
-                        ),
-                      ),
-                    ),
-                  ),
+                // if (hasAnyImage)
+                //   Positioned(
+                //     top: 12.r,
+                //     right: 12.r,
+                //     child: GestureDetector(
+                //       onTap: cubit.removeCertificateImage,
+                //       child: Container(
+                //         padding: const EdgeInsets.all(4),
+                //         decoration: BoxDecoration(
+                //           shape: BoxShape.circle,
+                //           color: AppColors.kWhiteColor,
+                //         ),
+                //         child: Icon(
+                //           Icons.close,
+                //           color: AppColors.kRedColor,
+                //           size: 20.w,
+                //         ),
+                //       ),
+                //     ),
+                //   ),
               ],
             ),
             Gap(8.h),

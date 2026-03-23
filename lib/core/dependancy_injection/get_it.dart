@@ -38,8 +38,8 @@ import 'package:tayseer/features/advisor/profille/data/repositories/profile_repo
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository_impl.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/certificates_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/edit_certificate_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/certificates_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/edit_certificate_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository.dart';
@@ -93,9 +93,9 @@ import 'package:tayseer/features/advisor/wallet/data/repos/wallet_repo.dart';
 import 'package:tayseer/features/advisor/wallet/data/cubit/wallet_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/otp_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_settings_repository.dart';
-import 'package:tayseer/features/user/user_profile/presentation/cubit/email/email_edit_cubit.dart';
-import 'package:tayseer/features/user/user_profile/presentation/cubit/otp/otp_cubit.dart';
-import 'package:tayseer/features/user/user_profile/presentation/cubit/phone/phone_edit_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/email/email_edit_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/phone/phone_edit_cubit.dart';
 
 import '../../my_import.dart';
 

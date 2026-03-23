@@ -282,13 +282,12 @@ class BioInformation extends StatelessWidget {
   }
 
   Widget _buildConsultationCard(BuildContext context) {
-    return BlocBuilder<ProfileCubit, ProfileState>(
-      buildWhen: (previous, current) =>
-          previous.analyticsState != current.analyticsState ||
-          previous.analytics != current.analytics,
-      builder: (context, state) {
-        // استخراج إجمالي المشاهدات من الـ API
-        final totalViews = state.analytics?.overview.views ?? 0;
+    return BlocSelector<ProfileCubit, ProfileState, int>(
+      selector: (state) => state.analytics?.overview.views ?? 0,
+      builder: (context, totalViews) {
+        final isLoading =
+            context.read<ProfileCubit>().state.analyticsState ==
+            CubitStates.loading;
 
         return CustomClick(
           onTap: () async {
@@ -296,9 +295,7 @@ class BioInformation extends StatelessWidget {
               context,
               AppRouter.kProfessionalInfoDashboardView,
             );
-            // Professional info updates are handled by the dashboard itself
           },
-          // borderRadius: BorderRadius.circular(10.r),
           child: Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
@@ -328,7 +325,7 @@ class BioInformation extends StatelessWidget {
                     ),
                     Gap(8.w),
                     Expanded(
-                      child: state.analyticsState == CubitStates.loading
+                      child: isLoading
                           ? _buildLoadingViews()
                           : Text(
                               '$totalViews ${context.tr('views_last_30_days')}',
