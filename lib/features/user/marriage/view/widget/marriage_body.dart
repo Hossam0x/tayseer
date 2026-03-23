@@ -303,7 +303,8 @@ class MarriageBodyState extends State<MarriageBody>
           previous.showHistory != current.showHistory ||
           previous.selectedHistoryFilter != current.selectedHistoryFilter ||
           previous.favoritedIds != current.favoritedIds ||
-          previous.isLoadingMore != current.isLoadingMore,
+          previous.isLoadingMore != current.isLoadingMore ||
+          previous.userHistory != current.userHistory,
 
       listener: (context, state) {
         // ✅ Regard failure
@@ -1126,59 +1127,27 @@ class MarriageBodyState extends State<MarriageBody>
                             Colors.white,
                             HexColor('e44e6c'),
                           ),
-                          // back button
-                          // ✅ back button — عدّل الـ onTap بس
-                          buildCircleButton(
-                            onTap: () async {
-                              final cubit = context.read<MarriageCubit>();
 
-                              // ✅ لو في history — ارجع للـ user السابق بدون popup
-                              if (cubit.state.userHistory.isNotEmpty) {
+                          // back button
+                          // ✅ اخفيه لو أول يوزر في القائمة ومفيش history
+                          if (state.userHistory.isNotEmpty)
+                            buildCircleButton(
+                              onTap: () async {
+                                final cubit = context.read<MarriageCubit>();
                                 cubit.goBackToPreviousUser();
                                 _resetScrollTracking();
                                 scrollToTop();
-                                return;
-                              }
-
-                              // ✅ مفيش history — نفس السلوك القديم
-                              await _showSwipePopup(
-                                context,
-                                SwipeActionType.dislike,
-                              );
-
-                              if (widget.fromInteractions) {
-                                cubit.userInteraction(
-                                  personId: profile.user?.id ?? '',
-                                  interactionType: 'dislike',
-                                );
-                              } else {
-                                await cubit.swipeDislike(
-                                  personId: profile.user?.id ?? '',
-                                  usersLength: users.length,
-                                  hasSinglePerson: widget.personId != null,
-                                );
-                                if (widget.personId == null && mounted) {
-                                  _resetScrollTracking();
-                                  scrollToTop();
-                                }
-                              }
-
-                              if (widget.fromInteractions && mounted)
-                                context.pop();
-                            },
-                            isArabic
-                                ? Icons.subdirectory_arrow_left_outlined
-                                : Icons.subdirectory_arrow_right_outlined,
-                            Colors.white,
-                            // ✅ لون مختلف لما يكون في history
-                            context
-                                    .read<MarriageCubit>()
-                                    .state
-                                    .userHistory
-                                    .isNotEmpty
-                                ? HexColor('4CAF50') // أخضر — يعني متاح الرجوع
-                                : HexColor('e44e6c'), // أحمر — مفيش رجوع
-                          ),
+                              },
+                              isArabic
+                                  ? Icons.subdirectory_arrow_left_outlined
+                                  : Icons.subdirectory_arrow_right_outlined,
+                              Colors.white,
+                              flipVertical: true,
+                              AppColors.primary200,
+                            )
+                          else
+                            // ✅ placeholder بنفس الحجم عشان الـ layout ميتأثرش
+                           const SizedBox.shrink(),
                         ],
                       ),
                     )
@@ -1323,13 +1292,19 @@ class MarriageBodyState extends State<MarriageBody>
     Color iconColor,
     Color bgColor, {
     VoidCallback? onTap,
+      bool flipVertical = false,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: CircleAvatar(
         radius: 28.r,
         backgroundColor: bgColor,
-        child: Icon(icon, color: iconColor, size: 30),
+        child: Transform(
+        alignment: Alignment.center,
+        transform: flipVertical
+            ? (Matrix4.identity()..scale(1.0, -1.0)) // ✅ يقلب رأساً على عقب
+            : Matrix4.identity(),
+          child: Icon(icon, color: iconColor, size: 30)),
       ),
     );
   }
