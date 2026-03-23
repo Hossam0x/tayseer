@@ -1127,15 +1127,26 @@ class MarriageBodyState extends State<MarriageBody>
                             HexColor('e44e6c'),
                           ),
                           // back button
+                          // ✅ back button — عدّل الـ onTap بس
                           buildCircleButton(
                             onTap: () async {
+                              final cubit = context.read<MarriageCubit>();
+
+                              // ✅ لو في history — ارجع للـ user السابق بدون popup
+                              if (cubit.state.userHistory.isNotEmpty) {
+                                cubit.goBackToPreviousUser();
+                                _resetScrollTracking();
+                                scrollToTop();
+                                return;
+                              }
+
+                              // ✅ مفيش history — نفس السلوك القديم
                               await _showSwipePopup(
                                 context,
                                 SwipeActionType.dislike,
                               );
 
                               if (widget.fromInteractions) {
-                                // ✅ بس ابعت التفاعل للـ API بدون ما تشيل من القائمة
                                 cubit.userInteraction(
                                   personId: profile.user?.id ?? '',
                                   interactionType: 'dislike',
@@ -1152,15 +1163,21 @@ class MarriageBodyState extends State<MarriageBody>
                                 }
                               }
 
-                              if (widget.fromInteractions && mounted) {
+                              if (widget.fromInteractions && mounted)
                                 context.pop();
-                              }
                             },
                             isArabic
                                 ? Icons.subdirectory_arrow_left_outlined
                                 : Icons.subdirectory_arrow_right_outlined,
                             Colors.white,
-                            HexColor('e44e6c'),
+                            // ✅ لون مختلف لما يكون في history
+                            context
+                                    .read<MarriageCubit>()
+                                    .state
+                                    .userHistory
+                                    .isNotEmpty
+                                ? HexColor('4CAF50') // أخضر — يعني متاح الرجوع
+                                : HexColor('e44e6c'), // أحمر — مفيش رجوع
                           ),
                         ],
                       ),
