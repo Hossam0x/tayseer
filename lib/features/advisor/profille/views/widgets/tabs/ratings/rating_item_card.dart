@@ -1,5 +1,5 @@
+import 'package:tayseer/core/utils/helper/date_time_helper.dart';
 import 'package:tayseer/features/advisor/profille/data/models/rating_model.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings/expandable_review_text.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/my_import.dart';
@@ -74,7 +74,7 @@ class _ReviewHeader extends StatelessWidget {
           textAlign: TextAlign.right,
         ),
         Text(
-          context.read<RatingsCubit>().formatDate(rating.createdAt, langCode),
+          DateTimeHelper.formatRatingDate(rating.createdAt, langCode),
           style: Styles.textStyle12.copyWith(color: AppColors.secondaryText),
         ),
       ],

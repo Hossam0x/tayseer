@@ -71,12 +71,9 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
         query: {'page': page, 'limit': limit},
       );
 
-      print('✅ Archived Chats Response received');
-
       if (response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>?;
         if (data == null) {
-          print('⚠️ Data is null in archived chats');
           return Right(
             ArchivedChatsResponseModel(
               chatRooms: [],
@@ -88,25 +85,15 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
           );
         }
 
-        final chatsResponse = ArchivedChatsResponseModel.fromJson(data);
-        print('✅ Parsed ${chatsResponse.chatRooms.length} archived chats');
-
-        return Right(chatsResponse);
+        return Right(ArchivedChatsResponseModel.fromJson(data));
       } else {
         final errorMessage =
             response['message']?.toString() ?? 'فشل جلب المحادثات المؤرشفة';
-        print('❌ Archived chats error: $errorMessage');
         return Left(ServerFailure(errorMessage));
       }
     } on DioException catch (e) {
-      print('❌ Dio Error in archived chats: ${e.message}');
-      if (e.response != null) {
-        print('❌ Response: ${e.response?.data}');
-      }
       return Left(ServerFailure.fromDioError(e));
-    } catch (e, stackTrace) {
-      print('❌ Error in archived chats: $e');
-      print('Stack Trace: $stackTrace');
+    } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
   }
@@ -118,8 +105,6 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
         endPoint: '/chat/$chatId/unarchive', // ✅ تصحيح المسار
       );
 
-      print('✅ Unarchive response: $response');
-
       if (response['success'] == true) {
         return const Right(null);
       } else {
@@ -127,30 +112,6 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
           ServerFailure(
             response['message']?.toString() ?? 'فشل إلغاء أرشفة المحادثة',
           ),
-        );
-      }
-    } on DioException catch (e) {
-      print('❌ Dio Error in unarchiveChat: ${e.message}');
-      print('❌ Response data: ${e.response?.data}');
-      return Left(ServerFailure.fromDioError(e));
-    } catch (e) {
-      print('❌ General Error in unarchiveChat: $e');
-      return Left(ServerFailure(e.toString()));
-    }
-  }
-
-  @override
-  Future<Either<Failure, void>> deleteChatRoom(String chatId) async {
-    try {
-      final response = await _apiService.delete(
-        endPoint: ApiEndPoint.deleteChatRoom(chatId),
-      );
-
-      if (response['success'] == true) {
-        return const Right(null);
-      } else {
-        return Left(
-          ServerFailure(response['message']?.toString() ?? 'فشل حذف المحادثة'),
         );
       }
     } on DioException catch (e) {
@@ -171,17 +132,12 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
         query: {'page': page, 'limit': limit},
       );
 
-      print('🔍 API Response for archived posts: ${response.toString()}');
-
       if (response['success'] == true) {
-        // ⭐️ استخدم نفس parsing مثل Home
         final postsList =
             (response['data']?['postsDto'] as List<dynamic>?)
                 ?.map((e) => PostModel.fromJson(e))
                 .toList() ??
             [];
-
-        print('🔍 Parsed ${postsList.length} archived posts');
         return Right(postsList);
       } else {
         return Left(
@@ -351,8 +307,6 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
         query: {'page': page, 'limit': limit},
       );
 
-      print('📌 Archived Stories Response: $response');
-
       if (response['success'] != true) {
         final errorMsg =
             response['message']?.toString() ?? 'فشل جلب القصص المؤرشفة';
@@ -360,22 +314,16 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
       }
 
       final dataObj = response['data'] as Map<String, dynamic>?;
-
-      if (dataObj == null) {
-        return const Right([]);
-      }
+      if (dataObj == null) return const Right([]);
 
       final List<dynamic> resultList =
           dataObj['result'] as List<dynamic>? ?? [];
-
-      print('📦 عدد مجموعات القصص المؤرشفة: ${resultList.length}');
 
       final userStories = resultList
           .map((item) {
             try {
               return UserStoriesModel.fromJson(item as Map<String, dynamic>);
-            } catch (e) {
-              print('❌ فشل تحليل مجموعة قصص مؤرشفة: $e');
+            } catch (_) {
               return null;
             }
           })
@@ -383,6 +331,23 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
           .toList();
 
       return Right(userStories);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteChatRoom(String chatId) async {
+    try {
+      final response = await _apiService.delete(endPoint: '/chat/$chatId');
+      if (response['success'] == true) {
+        return const Right(null);
+      }
+      return Left(
+        ServerFailure(response['message']?.toString() ?? 'فشل حذف المحادثة'),
+      );
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {

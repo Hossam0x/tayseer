@@ -1,6 +1,6 @@
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/add_certificate_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/add_certificate_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/add_certificate_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/add_certificate_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class AddCertificateImagePicker extends StatelessWidget {

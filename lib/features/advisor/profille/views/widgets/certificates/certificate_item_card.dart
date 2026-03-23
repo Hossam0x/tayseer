@@ -2,7 +2,7 @@ import 'package:intl/intl.dart';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/features/advisor/profille/data/models/certificate_model.dart';
 import 'package:tayseer/features/advisor/profille/views/add_certificate_view.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/certificates_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/certificates_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/edit_certificate_view.dart';
 import 'package:tayseer/my_import.dart';
 

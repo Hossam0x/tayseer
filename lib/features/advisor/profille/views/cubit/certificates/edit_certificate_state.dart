@@ -1,9 +1,9 @@
+import 'package:equatable/equatable.dart';
 import 'package:tayseer/features/advisor/profille/data/models/certificate_model.dart';
 import 'package:tayseer/my_import.dart';
-import 'package:tayseer/core/enum/cubit_states.dart'; // Ensure enum is imported
 
-class EditCertificateState {
-  final CubitStates state; // Add CubitStates
+class EditCertificateState extends Equatable {
+  final CubitStates state;
   final String nameCertificate;
   final String fromWhere;
   final DateTime? date;
@@ -11,12 +11,10 @@ class EditCertificateState {
   final String? certificateImageUrl;
   final bool isLoading;
   final String? selectedCertificateId;
-  final TextEditingController? nameCertificateController;
-  final TextEditingController? fromWhereController;
-  final String? errorMessage; // Add errorMessage
-  final String? successMessage; // Add successMessage
+  final String? errorMessage;
+  final String? successMessage;
   final bool isImageRemoved;
-  final bool isNavigationSuccess; // Add helper for navigation
+  final bool isNavigationSuccess;
   final CertificateModel? updatedCertificate;
 
   const EditCertificateState({
@@ -28,8 +26,6 @@ class EditCertificateState {
     this.certificateImageUrl,
     this.isLoading = false,
     this.selectedCertificateId,
-    this.nameCertificateController,
-    this.fromWhereController,
     this.errorMessage,
     this.successMessage,
     this.isImageRemoved = false,
@@ -46,8 +42,6 @@ class EditCertificateState {
     String? certificateImageUrl,
     bool? isLoading,
     String? selectedCertificateId,
-    TextEditingController? nameCertificateController,
-    TextEditingController? fromWhereController,
     String? errorMessage,
     String? successMessage,
     bool clearImageFile = false,
@@ -70,14 +64,28 @@ class EditCertificateState {
       isLoading: isLoading ?? this.isLoading,
       selectedCertificateId:
           selectedCertificateId ?? this.selectedCertificateId,
-      nameCertificateController:
-          nameCertificateController ?? this.nameCertificateController,
-      fromWhereController: fromWhereController ?? this.fromWhereController,
-      errorMessage: errorMessage, // Intentionally not keeping previous
-      successMessage: successMessage, // Intentionally not keeping previous
+      errorMessage: errorMessage,
+      successMessage: successMessage,
       isImageRemoved: isImageRemoved ?? this.isImageRemoved,
       isNavigationSuccess: isNavigationSuccess ?? false,
       updatedCertificate: updatedCertificate ?? this.updatedCertificate,
     );
   }
+
+  @override
+  List<Object?> get props => [
+    state,
+    nameCertificate,
+    fromWhere,
+    date,
+    certificateImageFile,
+    certificateImageUrl,
+    isLoading,
+    selectedCertificateId,
+    errorMessage,
+    successMessage,
+    isImageRemoved,
+    isNavigationSuccess,
+    updatedCertificate,
+  ];
 }

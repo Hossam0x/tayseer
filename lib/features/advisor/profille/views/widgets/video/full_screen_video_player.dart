@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:video_player/video_player.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/video/cubit/fullscreen_video_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/video/fullscreen_video_cubit.dart';
 
 class FullscreenResult {
   final Duration position;

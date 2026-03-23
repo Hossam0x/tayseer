@@ -1,14 +1,12 @@
-import 'dart:developer';
-
 import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/certificates_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/certificates_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_tabs_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_tabs_state.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/profile_certificates_section.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/posts_tab.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/tabs/profile_certificates_section.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings_tab.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/my_import.dart';
@@ -49,48 +47,26 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
 
   void _onTabControllerChanged() {
     if (!_tabController.indexIsChanging) {
-      // Update Cubit index when swipe completes
       _tabsCubit.updateIndex(_tabController.index);
     }
   }
 
-  Future<void> _loadDataForTab(int index) async {
-    log('Loading data for tab: $index');
+  Future<void> _loadDataForTabIfNeeded(int index) async {
     switch (index) {
-      case 0: // Posts
-        // Standard flow: ProfileCubit manages this.
-        // We only fetch if needed or if refresh requested.
-        // On tab switch, maybe we don't force fetch if already loaded?
-        // But for consistency with previous logic, we can leave it to the user's "refresh" action.
-        // However, previous code called fetchPosts() on every tab switch.
-        // To improve performance, we might skip if we have data?
-        // But user asked for "rebuild/fetch only on tap same tab".
-        // So on Switch, we might just show what we have.
-        // Let's check what user requested: "not rebuild every time I switch... only on tap same tab".
-        // SO: We should NOT call fetchPosts() on TAB SWITCH, only on REFRESH.
-        break;
-      case 1: // Certificates
+      case 1:
         if (!_certificatesCubit.state.hasLoadedOnce) {
-          await _certificatesCubit.fetchCertificatesAndVideos(
-            loadMore: false,
-            isSilent: false,
-          );
+          await _certificatesCubit.fetchCertificatesAndVideos();
         }
         break;
-      case 2: // Ratings
+      case 2:
         if (!_ratingsCubit.state.hasLoadedOnce) {
-          await _ratingsCubit.fetchRatings(
-            advisorId: '',
-            loadMore: false,
-            isSilent: false,
-          );
+          await _ratingsCubit.fetchRatings(advisorId: '');
         }
         break;
     }
   }
 
   void _refreshCurrentTab(int index) {
-    log('Refreshing tab: $index');
     switch (index) {
       case 0:
         context.read<ProfileCubit>().fetchPosts();
@@ -124,22 +100,17 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
       ],
       child: BlocListener<ProfileTabsCubit, ProfileTabsState>(
         listener: (context, state) {
-          // Listen for Refresh triggers (timestamp change)
           if (state.refreshTimestamp != 0) {
             _refreshCurrentTab(state.selectedIndex);
           }
-          // Listen for Index changes (load initial data if needed)
           if (state.selectedIndex != _tabController.index) {
-            // Sync controller if state changed externally (rare here but good practice)
             _tabController.animateTo(state.selectedIndex);
           }
-          _loadDataForTab(state.selectedIndex);
+          _loadDataForTabIfNeeded(state.selectedIndex);
         },
-        listenWhen: (previous, current) {
-          // We trigger on index change OR refresh
-          return previous.selectedIndex != current.selectedIndex ||
-              previous.refreshTimestamp != current.refreshTimestamp;
-        },
+        listenWhen: (previous, current) =>
+            previous.selectedIndex != current.selectedIndex ||
+            previous.refreshTimestamp != current.refreshTimestamp,
         child: SliverToBoxAdapter(
           child: Column(children: [_buildTabsHeader(), _buildTabContent()]),
         ),

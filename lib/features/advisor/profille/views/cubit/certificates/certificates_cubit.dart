@@ -1,6 +1,6 @@
 import 'package:tayseer/features/advisor/profille/data/models/certificate_model.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/certificates_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/certificates_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class CertificatesCubit extends Cubit<CertificatesState> {

@@ -1,4 +1,4 @@
-import 'package:tayseer/features/advisor/profille/views/widgets/video/cubit/video_player_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/video/video_player_cubit.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/core/utils/video_cache_manager.dart';

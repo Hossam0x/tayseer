@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tayseer/features/advisor/profille/data/repo/profile_visitors_repo.dart';
+import 'package:tayseer/features/advisor/profille/data/repositories/profile_visitors_repo.dart';
 import 'profile_visitors_state.dart';
 
 class ProfileVisitorsCubit extends Cubit<ProfileVisitorsState> {
