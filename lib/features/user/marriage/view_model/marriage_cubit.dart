@@ -677,6 +677,8 @@ class MarriageCubit extends Cubit<MarriageState> {
         allUsers: updatedUsers,
         currentIndex: newIndex,
         isScrollingDown: false,
+        blockActionState: CubitStates.success, // ✅ جديد
+        showActionSnackbar: true, // ✅ جديد
       ),
     );
 

@@ -288,6 +288,8 @@ class MarriageBodyState extends State<MarriageBody>
           previous.marriageProfileState != current.marriageProfileState ||
           (previous.sendRegardState != current.sendRegardState &&
               current.showActionSnackbar) ||
+          (previous.blockActionState != current.blockActionState && // ✅ جديد
+              current.showActionSnackbar) ||
           (previous.sendRegardTextState != current.sendRegardTextState &&
               current.showActionSnackbar),
 
@@ -336,7 +338,31 @@ class MarriageBodyState extends State<MarriageBody>
           });
           context.read<MarriageCubit>().resetState();
         }
+        // ✅ Block success
+        if (state.blockActionState == CubitStates.success &&
+            state.showActionSnackbar) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('user_blocked_successfully'),
+              isError: false,
+            ),
+          );
+          context.read<MarriageCubit>().resetState();
+        }
 
+        // ✅ Block failure
+        if (state.blockActionState == CubitStates.failure &&
+            state.showActionSnackbar) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: state.blockMessage ?? context.tr('error_occurred'),
+              isError: true,
+            ),
+          );
+          context.read<MarriageCubit>().resetState();
+        }
         // ✅ block مفيش listener له خالص —
         // الـ cubit بنفسه بيعمل كل حاجة ويعمل reset
       },
@@ -623,9 +649,6 @@ class MarriageBodyState extends State<MarriageBody>
 
     final cubit = context.read<MarriageCubit>();
 
-    final bool shouldBlurImages = widget.fromInteractions
-        ? (cubit.interactionUser?.isImageBlurred ?? user?.imageBlur ?? false)
-        : (user?.imageBlur ?? false);
     final bool isVerifiedUser = widget.fromInteractions
         ? (cubit.interactionUser?.isverified ?? user?.isVerified ?? false)
         : (user?.isVerified ?? false);
@@ -636,6 +659,14 @@ class MarriageBodyState extends State<MarriageBody>
     final nextUser = nextProfile?.user;
     final nextAnswers = nextProfile?.answers;
     final List<String> nextImages = nextAnswers?.userMedia?.image ?? [];
+    final bool isSubscribed = _interactionsCubit?.state.isSubscribed ?? false;
+
+    final bool shouldBlurImages = widget.fromInteractions
+        ? (!isSubscribed ||
+              (cubit.interactionUser?.isImageBlurred ??
+                  user?.imageBlur ??
+                  false))
+        : (user?.imageBlur ?? false);
 
     final timelineEvents = answers?.yourGoals != null
         ? _buildTimelineEventsFromAnswers(answers!.yourGoals!)
@@ -1047,7 +1078,11 @@ class MarriageBodyState extends State<MarriageBody>
                   ? IgnorePointer(
                       ignoring: state.isAnimating,
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        mainAxisAlignment: state.userHistory.isEmpty
+                            ? MainAxisAlignment
+                                  .spaceAround // ✅ وسط لما مفيش history
+                            : MainAxisAlignment
+                                  .spaceEvenly, // ✅ موزع لما في history
                         children: [
                           // Like button
                           buildCircleButton(
@@ -1147,7 +1182,7 @@ class MarriageBodyState extends State<MarriageBody>
                             )
                           else
                             // ✅ placeholder بنفس الحجم عشان الـ layout ميتأثرش
-                           const SizedBox.shrink(),
+                            const SizedBox.shrink(),
                         ],
                       ),
                     )
@@ -1292,7 +1327,7 @@ class MarriageBodyState extends State<MarriageBody>
     Color iconColor,
     Color bgColor, {
     VoidCallback? onTap,
-      bool flipVertical = false,
+    bool flipVertical = false,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -1300,11 +1335,12 @@ class MarriageBodyState extends State<MarriageBody>
         radius: 28.r,
         backgroundColor: bgColor,
         child: Transform(
-        alignment: Alignment.center,
-        transform: flipVertical
-            ? (Matrix4.identity()..scale(1.0, -1.0)) // ✅ يقلب رأساً على عقب
-            : Matrix4.identity(),
-          child: Icon(icon, color: iconColor, size: 30)),
+          alignment: Alignment.center,
+          transform: flipVertical
+              ? (Matrix4.identity()..scale(1.0, -1.0)) // ✅ يقلب رأساً على عقب
+              : Matrix4.identity(),
+          child: Icon(icon, color: iconColor, size: 30),
+        ),
       ),
     );
   }

@@ -526,13 +526,12 @@ class _FrontProfileCard extends StatelessWidget {
                               ),
                       )
                     : (isAnimating
-                        ? AppImage(coverImage, fit: BoxFit.cover)
-                        : Hero(
-                            tag: coverImage,
-                            child: AppImage(coverImage, fit: BoxFit.cover),
-                          )),
-                if (shouldBlur)
-                  Container(color: Colors.black.withOpacity(0.2)),
+                          ? AppImage(coverImage, fit: BoxFit.cover)
+                          : Hero(
+                              tag: coverImage,
+                              child: AppImage(coverImage, fit: BoxFit.cover),
+                            )),
+                if (shouldBlur) Container(color: Colors.black.withOpacity(0.2)),
               ],
             ),
           ),
@@ -689,18 +688,12 @@ class _InfoCard extends StatelessWidget {
                     if (age.isNotEmpty)
                       Text(
                         "$age ${context.tr("age")}",
-                        style: Styles.textStyle14.copyWith(
-                          color: Colors.white,
-                        ),
+                        style: Styles.textStyle14.copyWith(color: Colors.white),
                       ),
                     // ✅ يظهر فقط لو isVerified = true
                     if (isVerified) ...[
                       Gap(8.w),
-                      const Icon(
-                        Icons.verified,
-                        color: Colors.blue,
-                        size: 20,
-                      ),
+                      const Icon(Icons.verified, color: Colors.blue, size: 20),
                     ],
                   ],
                 ),
@@ -713,11 +706,18 @@ class _InfoCard extends StatelessWidget {
                     duration: const Duration(milliseconds: 300),
                     transitionBuilder: (child, animation) =>
                         ScaleTransition(scale: animation, child: child),
-                    child: Icon(
-                      isFavorited ? Icons.favorite : Icons.favorite_border,
+                    child: Container(
                       key: ValueKey(isFavorited),
-                      color: isFavorited ? Colors.red : Colors.white,
-                      size: 30.r,
+                      padding: EdgeInsets.all(6.r),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isFavorited ? Icons.favorite : Icons.favorite_border,
+                        color: isFavorited ? Colors.red : Colors.white,
+                        size: 30.r,
+                      ),
                     ),
                   ),
                 ),
@@ -744,8 +744,7 @@ class _InfoCard extends StatelessWidget {
             spacing: 8.w,
             runSpacing: 8.h,
             children: [
-              if (tagsjob != null && tagsjob!.isNotEmpty)
-                _buildTag(tagsjob!),
+              if (tagsjob != null && tagsjob!.isNotEmpty) _buildTag(tagsjob!),
               if (educationLevel != null && educationLevel!.isNotEmpty)
                 _buildTag(educationLevel!),
               if (religiousCommitment != null &&
