@@ -102,48 +102,56 @@ class UserAdvisorProfileHeader extends StatelessWidget {
     );
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      padding: EdgeInsetsDirectional.only(
+        start: 20.w,
+        end: 20.w,
+        top: 12.h,
+        bottom: 12.h,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          InkWell(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              child: Icon(
-                Icons.arrow_back_ios,
-                color: AppColors.secondary600,
-                size: 20.sp,
-              ),
-            ),
-          ),
-          // Profile picture with Hero animation
-          Stack(
+          Row(
             children: [
-              MyProfileImage(
-                width: 85.w,
-                imageUrl: imageUrl,
-                isBlur: imageBlur,
-                heroTag: 'advisor_profile_image_$profileId',
-                onTap: imageUrl.isNotEmpty && !isBlocked && !imageBlur
-                    ? () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => FullScreenImageView(
-                              imageUrl: imageUrl,
-                              heroTag: 'advisor_profile_image_$profileId',
-                              userName: profileName,
-                            ),
-                          ),
-                        );
-                      }
-                    : null,
+              InkWell(
+                onTap: () => Navigator.pop(context),
+                child: Padding(
+                  padding: EdgeInsets.all(8.w),
+                  child: Icon(
+                    Icons.arrow_back_ios,
+                    color: AppColors.secondary600,
+                    size: 20.sp,
+                  ),
+                ),
+              ),
+              // Profile picture with Hero animation
+              Stack(
+                children: [
+                  MyProfileImage(
+                    width: 85.w,
+                    imageUrl: imageUrl,
+                    isBlur: imageBlur,
+                    heroTag: 'advisor_profile_image_$profileId',
+                    onTap: imageUrl.isNotEmpty && !isBlocked && !imageBlur
+                        ? () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FullScreenImageView(
+                                  imageUrl: imageUrl,
+                                  heroTag: 'advisor_profile_image_$profileId',
+                                  userName: profileName,
+                                ),
+                              ),
+                            );
+                          }
+                        : null,
+                  ),
+                ],
               ),
             ],
           ),
-          Gap(10.w),
+          Gap(20.w),
           // Stats
           CustomClick(
             onTap: isBlocked
@@ -160,7 +168,7 @@ class UserAdvisorProfileHeader extends StatelessWidget {
               ],
             ),
           ),
-          Gap(20.w),
+          Gap(40.w),
           CustomClick(
             onTap: isBlocked
                 ? null
@@ -176,7 +184,7 @@ class UserAdvisorProfileHeader extends StatelessWidget {
               ],
             ),
           ),
-          Gap(10.w),
+          Gap(40.w),
 
           // More button
           Column(
