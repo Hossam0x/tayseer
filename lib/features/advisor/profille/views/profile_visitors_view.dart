@@ -1,7 +1,11 @@
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
+import 'package:tayseer/features/advisor/profille/data/models/profile_visitors_model.dart';
+import 'package:tayseer/features/advisor/profille/data/models/visitor_itemm.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_visitors_repo.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_visitors_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/visitors/visitors_list.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile_visitors_state.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/boost/boost_button_sliver.dart';
 import 'package:tayseer/my_import.dart';
 
 class ProfileVisitorsView extends StatelessWidget {
@@ -10,7 +14,7 @@ class ProfileVisitorsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) =>
+      create: (context) =>
           ProfileVisitorsCubit(ProfileVisitorsRepoImpl(getIt<ApiService>()))
             ..fetchVisitors(),
       child: Scaffold(
@@ -22,7 +26,7 @@ class ProfileVisitorsView extends StatelessWidget {
                 left: 0,
                 right: 0,
                 height: 110.h,
-                child: DecoratedBox(
+                child: Container(
                   decoration: BoxDecoration(
                     image: DecorationImage(
                       image: AssetImage(AssetsData.homeBarBackgroundImage),
@@ -31,6 +35,7 @@ class ProfileVisitorsView extends StatelessWidget {
                   ),
                 ),
               ),
+
               SafeArea(
                 child: Column(
                   children: [
@@ -43,7 +48,107 @@ class ProfileVisitorsView extends StatelessWidget {
                       ),
                     ),
                     Gap(20.h),
-                    const Expanded(child: VisitorsList()),
+                    Expanded(
+                      child:
+                          BlocBuilder<
+                            ProfileVisitorsCubit,
+                            ProfileVisitorsState
+                          >(
+                            builder: (context, state) {
+                              if (state is ProfileVisitorsFailure) {
+                                return CustomErrorView(
+                                  onRetry: () => context
+                                      .read<ProfileVisitorsCubit>()
+                                      .fetchVisitors(),
+                                );
+                              }
+
+                              // Prepare data for Skeleton or Success
+                              final bool isLoading =
+                                  state is ProfileVisitorsLoading;
+                              final bool isSubscribed =
+                                  state is ProfileVisitorsSuccess
+                                  ? state.isSubscribed
+                                  : false;
+
+                              final List<ProfileVisitorModel> visitors =
+                                  state is ProfileVisitorsSuccess
+                                  ? state.visitors
+                                  : List.generate(
+                                      6,
+                                      (index) => ProfileVisitorModel(
+                                        id: '1',
+                                        name: 'Loading User Name',
+                                        userType: 'User',
+                                        lastVisitedAt: DateTime.now()
+                                            .toIso8601String(),
+                                        image: '',
+                                        email: '',
+                                        username: '',
+                                      ),
+                                    );
+
+                              if (state is ProfileVisitorsSuccess &&
+                                  visitors.isEmpty) {
+                                return Center(
+                                  child: Text(
+                                    context.tr('no_visitors_yet'),
+                                    style: Styles.textStyle16.copyWith(
+                                      color: AppColors.secondary600,
+                                    ),
+                                  ),
+                                );
+                              }
+
+                              return Skeletonizer(
+                                enabled: isLoading,
+                                child: ListView.separated(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 24.w,
+                                    vertical: 10.h,
+                                  ),
+                                  itemCount: visitors.length,
+                                  itemBuilder: (context, index) {
+                                    if (index == visitors.length - 1) {
+                                      return Column(
+                                        children: [
+                                          VisitorItem(
+                                            visitor: visitors[index],
+                                            isSubscribed: isSubscribed,
+                                          ),
+                                          Gap(24.h),
+                                          Padding(
+                                            padding: EdgeInsets.only(
+                                              bottom: 30.h,
+                                              left: 50.w,
+                                              right: 50.w,
+                                            ),
+                                            child: BoostButton(
+                                              text: context.tr('boost_button'),
+                                              onPressed: () {
+                                                Navigator.pushNamed(
+                                                  context,
+                                                  AppRouter.kPackagesView,
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    }
+                                    return VisitorItem(
+                                      visitor: visitors[index],
+                                      isSubscribed: isSubscribed,
+                                    );
+                                  },
+                                  separatorBuilder: (context, index) {
+                                    return Divider(color: Colors.grey[300]);
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                    ),
                   ],
                 ),
               ),

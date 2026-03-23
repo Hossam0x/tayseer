@@ -1,6 +1,7 @@
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/account_management_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_account_management_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_account_management_cubit.dart';
@@ -304,9 +305,12 @@ class _UserAccountManagementViewState extends State<UserAccountManagementView> {
       await CachNetwork.clearCache();
       await getIt<CacheCleanupService>().clearAllUserCache();
 
-      // ✅ ريسيت الـ HomeCubit Singleton عشان يتعمل instance جديد بعد اللوجن الجديد
+      // ✅ ريسيت الـ Singletons عشان يتعملوا instance جديد بعد اللوجن الجديد
       if (getIt.isRegistered<HomeCubit>()) {
         getIt.resetLazySingleton<HomeCubit>();
+      }
+      if (getIt.isRegistered<ProfileCubit>()) {
+        getIt.resetLazySingleton<ProfileCubit>();
       }
 
       // 2. إعادة التوجيه إلى شاشة التسجيل/تسجيل الدخول
