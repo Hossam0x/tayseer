@@ -24,9 +24,7 @@ class MyProfileImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String image = imageUrl ?? kCurrentUserData?.image ?? '';
-    if (image.isEmpty) {
-      return const SizedBox();
-    }
+    // Remove early return to allow AppImage to handle default avatar
 
     final imageWidget = SizedBox(
       height: width ?? size.r,

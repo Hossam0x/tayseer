@@ -9,7 +9,11 @@ import 'package:tayseer/my_import.dart';
 class ProfileStoriesSection extends StatelessWidget {
   final String? advisorId;
   final bool isBlocked;
-  const ProfileStoriesSection({super.key, this.advisorId, this.isBlocked = false});
+  const ProfileStoriesSection({
+    super.key,
+    this.advisorId,
+    this.isBlocked = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -33,22 +37,59 @@ class ProfileStoriesSection extends StatelessWidget {
           );
         }
       },
-      buildWhen: (previous, current) =>
-          previous.storiesState != current.storiesState ||
-          previous.storiesList != current.storiesList,
+      buildWhen: (previous, current) {
+        final bool isMyProfile = advisorId == null;
+        if (isMyProfile) {
+          return previous.mySpecialStoriesState !=
+                  current.mySpecialStoriesState ||
+              previous.mySpecialStories != current.mySpecialStories;
+        } else {
+          return previous.advisorSpecialStoriesState !=
+                  current.advisorSpecialStoriesState ||
+              previous.advisorSpecialStories != current.advisorSpecialStories ||
+              previous.activeAdvisorId != current.activeAdvisorId;
+        }
+      },
       builder: (context, state) {
         if (isBlocked) {
           return const BlockedProfilePlaceholder(isSliver: true);
         }
 
-        // ✅ Hide if offline and empty or if it's explicitly requested by the user
-        final isOffline = getIt<ConnectivityCubit>().isOffline;
-        final isEmpty =
-            (state.storiesState == CubitStates.success ||
-                state.storiesState == CubitStates.initial) &&
-            state.storiesList.isEmpty;
+        final bool isMyProfile = advisorId == null;
+        final CubitStates currentState = isMyProfile
+            ? state.mySpecialStoriesState
+            : state.advisorSpecialStoriesState;
+        final List<UserStoriesModel> currentStories = isMyProfile
+            ? state.mySpecialStories
+            : state.advisorSpecialStories;
 
-        if (isEmpty || (isOffline && state.storiesList.isEmpty)) {
+        // ✅ Hide if offline and empty
+        final isOffline = getIt<ConnectivityCubit>().isOffline;
+
+        // For Advisor Profile, ensure we are looking at the right advisor's data
+        final bool isCorrectAdvisor =
+            isMyProfile || state.activeAdvisorId == advisorId;
+
+        final bool isEmpty =
+            isCorrectAdvisor &&
+            (currentState == CubitStates.success ||
+                currentState == CubitStates.initial) &&
+            currentStories.isEmpty;
+
+        if (!isCorrectAdvisor ||
+            isEmpty ||
+            (isOffline && currentStories.isEmpty)) {
+          if (!isCorrectAdvisor && currentState == CubitStates.loading) {
+            return SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  vertical: context.responsiveHeight(12),
+                  horizontal: context.responsiveWidth(30),
+                ),
+                child: const _StoriesLoadingShimmer(),
+              ),
+            );
+          }
           return const SliverToBoxAdapter(child: SizedBox.shrink());
         }
 
@@ -58,19 +99,30 @@ class ProfileStoriesSection extends StatelessWidget {
               vertical: context.responsiveHeight(12),
               horizontal: context.responsiveWidth(30),
             ),
-            child: _buildContent(context, state),
+            child: _buildContent(
+              context,
+              currentState,
+              currentStories,
+              state.storiesMessage,
+            ),
           ),
         );
       },
     );
   }
-  Widget _buildContent(BuildContext context, StoriesState state) {
-    switch (state.storiesState) {
+
+  Widget _buildContent(
+    BuildContext context,
+    CubitStates currentState,
+    List<UserStoriesModel> currentStories,
+    String errorMessage,
+  ) {
+    switch (currentState) {
       case CubitStates.loading:
         return const _StoriesLoadingShimmer();
       case CubitStates.failure:
         return _StoriesErrorWidget(
-          message: state.storiesMessage,
+          message: errorMessage,
           onRetry: () => context.read<StoriesCubit>().fetchStories(
             isSpecial: true,
             advisorId: advisorId,
@@ -79,13 +131,10 @@ class ProfileStoriesSection extends StatelessWidget {
         );
       case CubitStates.success:
       case CubitStates.initial:
-        if (state.storiesList.isEmpty) {
+        if (currentStories.isEmpty) {
           return const SizedBox.shrink();
         }
-        return _StoriesListView(
-          stories: state.storiesList,
-          advisorId: advisorId,
-        );
+        return _StoriesListView(stories: currentStories, advisorId: advisorId);
     }
   }
 }
@@ -134,36 +183,53 @@ class _StoriesListViewState extends State<_StoriesListView> {
     return currentScroll >= (maxScroll * 0.9);
   }
 
+  // Flatten all individual stories with their parent UserStoriesModel
+  // Stories come newest-first from API, so we keep that order as-is
+  List<MapEntry<UserStoriesModel, StoryModel>> get _flatStories {
+    final result = <MapEntry<UserStoriesModel, StoryModel>>[];
+    for (final userStory in widget.stories) {
+      for (final story in userStory.stories) {
+        result.add(MapEntry(userStory, story));
+      }
+    }
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      controller: _scrollController,
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ...List.generate(widget.stories.length, (index) {
-            final userStory = widget.stories[index];
-            return Padding(
-              key: ValueKey('story_profile_${userStory.userId}'),
-              padding: EdgeInsetsDirectional.only(
-                end: context.responsiveWidth(14),
-              ),
-              child: _UserStoryItem(
-                key: ValueKey(
-                  'story_profile_${userStory.userId}_${userStory.allViewed}',
-                ),
-                userStoryModel: userStory,
-                allStories: widget.stories,
-                userIndex: index,
-              ),
-            );
-          }),
-          BlocBuilder<StoriesCubit, StoriesState>(
-            buildWhen: (previous, current) =>
-                previous.isLoadingMore != current.isLoadingMore,
-            builder: (context, state) {
-              if (state.isLoadingMore) {
+    final flatStories = _flatStories;
+
+    return BlocBuilder<StoriesCubit, StoriesState>(
+      buildWhen: (previous, current) {
+        final bool isMyProfile = widget.advisorId == null;
+        if (isMyProfile) {
+          return previous.mySpecialIsLoadingMore !=
+              current.mySpecialIsLoadingMore;
+        } else {
+          return previous.advisorSpecialIsLoadingMore !=
+              current.advisorSpecialIsLoadingMore;
+        }
+      },
+      builder: (context, state) {
+        final bool isMyProfile = widget.advisorId == null;
+        final bool isLoadingMore = isMyProfile
+            ? state.mySpecialIsLoadingMore
+            : state.advisorSpecialIsLoadingMore;
+
+        final int itemCount = flatStories.length + (isLoadingMore ? 1 : 0);
+
+        return SizedBox(
+          height:
+              context.responsiveWidth(76) +
+              context.responsiveHeight(6) +
+              context.responsiveHeight(16),
+          child: ListView.builder(
+            controller: _scrollController,
+            scrollDirection: Axis.horizontal,
+            physics: const ClampingScrollPhysics(),
+            itemCount: itemCount,
+            itemBuilder: (context, index) {
+              if (index == flatStories.length) {
                 return Padding(
                   padding: EdgeInsetsDirectional.only(
                     end: context.responsiveWidth(14),
@@ -171,34 +237,76 @@ class _StoriesListViewState extends State<_StoriesListView> {
                   child: const _StoriesLoadingShimmer(count: 1),
                 );
               }
-              return const SizedBox.shrink();
+              final parentUserStory = flatStories[index].key;
+              final story = flatStories[index].value;
+              return Padding(
+                key: ValueKey('story_profile_${story.id}'),
+                padding: EdgeInsetsDirectional.only(
+                  end: context.responsiveWidth(14),
+                ),
+                child: _SingleStoryItem(
+                  key: ValueKey('story_profile_item_${story.id}'),
+                  story: story,
+                  parentUserStory: parentUserStory,
+                  allStories: widget.stories,
+                ),
+              );
             },
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
-class _UserStoryItem extends StatelessWidget {
-  final UserStoriesModel userStoryModel;
+class _SingleStoryItem extends StatefulWidget {
+  final StoryModel story;
+  final UserStoriesModel parentUserStory;
   final List<UserStoriesModel> allStories;
-  final int userIndex;
 
-  const _UserStoryItem({
+  const _SingleStoryItem({
     super.key,
-    required this.userStoryModel,
+    required this.story,
+    required this.parentUserStory,
     required this.allStories,
-    required this.userIndex,
   });
 
   @override
+  State<_SingleStoryItem> createState() => _SingleStoryItemState();
+}
+
+class _SingleStoryItemState extends State<_SingleStoryItem> {
+  String? _previousImageUrl;
+
+  @override
+  void didUpdateWidget(_SingleStoryItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.parentUserStory.image != widget.parentUserStory.image) {
+      _previousImageUrl = oldWidget.parentUserStory.image;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final heroTag = 'profile_story_${widget.story.id}';
+
     return CustomClick(
       onTap: () {
-        final chronologicalUsersStories = allStories.map((us) {
-          return us.copyWith(stories: us.stories.reversed.toList());
-        }).toList();
+        // كل story تتحول لـ UserStoriesModel منفردة → كل page في PageView = story واحدة
+        final flatList = <UserStoriesModel>[];
+        for (final us in widget.allStories) {
+          // الأحدث أول
+          final sorted = [...us.stories]
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          for (final s in sorted) {
+            flatList.add(us.copyWith(stories: [s]));
+          }
+        }
+
+        final initialIndex = flatList.indexWhere(
+          (us) => us.stories.first.id == widget.story.id,
+        );
+        final safeIndex = initialIndex != -1 ? initialIndex : 0;
 
         Navigator.push(
           context,
@@ -208,9 +316,9 @@ class _UserStoryItem extends StatelessWidget {
                 BlocProvider.value(
                   value: context.read<StoriesCubit>(),
                   child: StoryDetailsView(
-                    usersStories: chronologicalUsersStories,
-                    initialUserIndex: userIndex,
-                    heroTag: 'profile_story_${userStoryModel.userId}',
+                    usersStories: flatList,
+                    initialUserIndex: safeIndex,
+                    heroTag: heroTag,
                   ),
                 ),
             transitionsBuilder:
@@ -223,7 +331,7 @@ class _UserStoryItem extends StatelessWidget {
       child: Column(
         children: [
           Hero(
-            tag: 'profile_story_${userStoryModel.userId}',
+            tag: heroTag,
             child: Container(
               width: context.responsiveWidth(76),
               height: context.responsiveWidth(76),
@@ -231,14 +339,44 @@ class _UserStoryItem extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: (userStoryModel.allViewed)
+                  color: (widget.parentUserStory.allViewed)
                       ? AppColors.kGreyB3
                       : AppColors.kprimaryColor,
                   width: 2.sp,
                 ),
               ),
               child: ClipOval(
-                child: AppImage(userStoryModel.image, fit: BoxFit.cover),
+                child: CachedNetworkImage(
+                  imageUrl: widget.story.image,
+                  fit: BoxFit.cover,
+                  width: context.responsiveWidth(76),
+                  height: context.responsiveWidth(76),
+                  fadeInDuration: Duration.zero,
+                  fadeOutDuration: Duration.zero,
+                  useOldImageOnUrlChange: true,
+                  // ⭐ لو فيه URL قديم، استخدمه كـ placeholder بدل الـ shimmer
+                  placeholder: (context, url) =>
+                      _previousImageUrl != null && _previousImageUrl!.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: _previousImageUrl!,
+                          fit: BoxFit.cover,
+                          width: context.responsiveWidth(76),
+                          height: context.responsiveWidth(76),
+                          fadeInDuration: Duration.zero,
+                          fadeOutDuration: Duration.zero,
+                          errorWidget: (_, __, ___) =>
+                              Container(color: AppColors.secondary200),
+                        )
+                      : Container(color: AppColors.secondary200),
+                  errorWidget: (context, url, error) => Container(
+                    color: AppColors.secondary200,
+                    child: Icon(
+                      Icons.image_not_supported_outlined,
+                      color: AppColors.secondary400,
+                      size: 24,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -246,7 +384,7 @@ class _UserStoryItem extends StatelessWidget {
           SizedBox(
             width: context.responsiveWidth(76),
             child: Text(
-              userStoryModel.name,
+              widget.parentUserStory.name,
               textAlign: TextAlign.center,
               style: Styles.textStyle10.copyWith(color: AppColors.kGreyB3),
               maxLines: 1,
@@ -276,8 +414,8 @@ class _StoriesLoadingShimmer extends StatelessWidget {
               end: context.responsiveWidth(14),
             ),
             child: Shimmer.fromColors(
-              baseColor: Colors.grey[300]!,
-              highlightColor: Colors.grey[100]!,
+              baseColor: AppColors.secondary100,
+              highlightColor: AppColors.kWhiteColor.withOpacity(0.5),
               child: Column(
                 children: [
                   Container(

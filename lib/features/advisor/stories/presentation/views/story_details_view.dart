@@ -14,6 +14,7 @@ class StoryDetailsView extends StatefulWidget {
   final String? heroTag;
   final bool isArchive;
   final String? initialStoryId;
+  final bool newestFirst;
 
   const StoryDetailsView({
     super.key,
@@ -22,6 +23,7 @@ class StoryDetailsView extends StatefulWidget {
     this.heroTag,
     this.isArchive = false,
     this.initialStoryId,
+    this.newestFirst = false,
   });
 
   @override
@@ -171,6 +173,7 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
                         : null,
                     isActive: _currentUserIndex == index,
                     isDragging: _isDragging,
+                    newestFirst: widget.newestFirst,
                     onAllStoriesComplete: () {
                       if (_currentUserIndex < widget.usersStories.length - 1) {
                         _pageController.nextPage(
@@ -222,6 +225,7 @@ class _UserStoryPage extends StatefulWidget {
   final ValueChanged<bool> onDraggingChanged;
   final bool isActive;
   final bool isDragging;
+  final bool newestFirst;
 
   const _UserStoryPage({
     required this.userStories,
@@ -232,6 +236,7 @@ class _UserStoryPage extends StatefulWidget {
     required this.onDraggingChanged,
     this.isActive = false,
     this.isDragging = false,
+    this.newestFirst = false,
   });
 
   @override
@@ -308,7 +313,11 @@ class _UserStoryPageState extends State<_UserStoryPage> {
 
   void _initStoryItems() {
     final chronologicalStories = widget.userStories.stories.toList()
-      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      ..sort(
+        (a, b) => widget.newestFirst
+            ? b.createdAt.compareTo(a.createdAt)
+            : a.createdAt.compareTo(b.createdAt),
+      );
     _reorderedStories = chronologicalStories;
 
     int startIndex = 0;
@@ -380,7 +389,6 @@ class _UserStoryPageState extends State<_UserStoryPage> {
             duration: duration,
           ),
         );
-
       } else {
         _storyItems.add(
           StoryItem(

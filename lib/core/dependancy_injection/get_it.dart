@@ -70,9 +70,9 @@ import 'package:tayseer/features/user/marriage_filter/repo/marriage_filter_repo.
 import 'package:tayseer/features/user/marriage_filter/repo/marriage_filter_repo_impl.dart';
 import 'package:tayseer/features/user/my_tickets_event/repo/my_tickets_repo.dart';
 import 'package:tayseer/features/user/my_tickets_event/repo/my_tickets_repo_impl.dart';
-import 'package:tayseer/features/user/questions/repo/questions_repo.dart';
-import 'package:tayseer/features/user/questions/repo/questions_repo_impl.dart';
-import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
+import 'package:tayseer/features/user/questions/data/repo/questions_repo.dart';
+import 'package:tayseer/features/user/questions/data/repo/questions_repo_impl.dart';
+import 'package:tayseer/features/user/questions/presentation/manager/questions_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/repositories/user_advisor_profile_repository.dart';
 import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
@@ -190,7 +190,7 @@ Future<void> setupGetIt() async {
     () => StoriesRepositoryImpl(getIt<ApiService>()),
   );
 
-  getIt.registerFactory<StoriesCubit>(
+  getIt.registerLazySingleton<StoriesCubit>(
     () => StoriesCubit(getIt<StoriesRepository>()),
   );
 
@@ -229,7 +229,7 @@ Future<void> setupGetIt() async {
   );
 
   /// Profile Cubit
-  getIt.registerFactory<ProfileCubit>(
+  getIt.registerLazySingleton<ProfileCubit>(
     () => ProfileCubit(getIt<ProfileRepository>()),
   );
 

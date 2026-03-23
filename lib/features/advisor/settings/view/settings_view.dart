@@ -487,6 +487,19 @@ class _SettingsViewState extends State<SettingsView> {
     );
 
     try {
+      // مسح صورة البروفايل من كاش الصور قبل الـ logout
+      final profileImage = CachNetwork.getStringData(key: kMyProfileImage);
+      if (profileImage.isNotEmpty) {
+        try {
+          CachedNetworkImage.evictFromCache(profileImage);
+        } catch (_) {}
+      }
+
+      // مسح كاش البروفايل المحلي
+      await CachNetwork.removeData(key: kAdvisorProfileCache);
+      await CachNetwork.removeData(key: kMyProfileImage);
+      await CachNetwork.removeData(key: kMyProfileName);
+
       context.read<SettingsCubit>().logoutFromSever();
       await CachNetwork.clearCache();
       await getIt<CacheCleanupService>().clearAllUserCache();
@@ -538,8 +551,8 @@ class _SettingsViewState extends State<SettingsView> {
         }
       } else {
         final result = await Navigator.pushNamed(context, setting.routeName);
-        // Mark data changed if any sub-screen returns true
-        if (result == true) {
+        // Mark data changed if any sub-screen returns true or non-null data
+        if (result != null && result != false) {
           _markDataChanged();
         }
       }

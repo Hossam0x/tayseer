@@ -1,9 +1,9 @@
 import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/my_import.dart';
-import 'package:tayseer/features/user/questions/view/widget/question_page_config.dart';
-import 'package:tayseer/features/user/questions/view/widget/custom_selectable_list.dart';
-import 'package:tayseer/features/user/questions/view/widget/multiselect_chips_widget.dart';
-import 'package:tayseer/features/user/questions/view/widget/custom_ios_picker.dart';
+import 'package:tayseer/features/user/questions/data/models/question_page_config.dart';
+import 'package:tayseer/features/user/questions/presentation/widgets/custom_selectable_list.dart';
+import 'package:tayseer/features/user/questions/presentation/widgets/multiselect_chips_widget.dart';
+import 'package:tayseer/features/user/questions/presentation/widgets/custom_ios_picker.dart';
 
 class FilterSelectionScreen extends StatefulWidget {
   final String fieldKey;

@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:tayseer/core/utils/profile_event_bus.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/functions/set_advisor_status.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
@@ -11,9 +13,57 @@ class ProfileCubit extends Cubit<ProfileState> {
   final ProfileRepository _profileRepository;
   final int _pageSize = 10;
 
+  late StreamSubscription<ProfileUpdateEvent> _profileSubscription;
+
   ProfileCubit(this._profileRepository) : super(const ProfileState()) {
     _initializeProfile();
+    _listenToProfileUpdates();
   }
+
+  void _listenToProfileUpdates() {
+    _profileSubscription = ProfileEventBus.instance.onProfileUpdated.listen((
+      event,
+    ) {
+      if (event.userType != ProfileEventUserType.advisor) return;
+      if (event.userId != null && event.userId != kCurrentUserData?.id) return;
+
+      if (state.profile != null) {
+        debugPrint('🔄 ProfileCubit: updating profile image → ${event.image}');
+
+        // مسح الـ URL القديم من الكاش عشان CachedNetworkImage يحمل الجديد
+        final oldImage = state.profile!.image;
+        if (oldImage.isNotEmpty && oldImage != event.image) {
+          try {
+            CachedNetworkImage.evictFromCache(oldImage);
+          } catch (_) {}
+        }
+
+        final updatedProfile = state.profile!.copyWith(
+          name: event.name,
+          image: event.image,
+          username: event.username,
+        );
+
+        emit(state.copyWith(profile: updatedProfile));
+
+        try {
+          CachNetwork.setData(
+            key: kAdvisorProfileCache,
+            value: jsonEncode(updatedProfile.toJson()),
+          );
+        } catch (e) {
+          debugPrint('❌ Error updating cached profile: $e');
+        }
+      }
+    });
+  }
+
+  @override
+  Future<void> close() {
+    _profileSubscription.cancel();
+    return super.close();
+  }
+
   // ═══════════════════════════════════════════════════════════
   // 📌 INITIALIZE PROFILE
   // ═══════════════════════════════════════════════════════════
@@ -30,7 +80,14 @@ class ProfileCubit extends Cubit<ProfileState> {
     final cachedData = CachNetwork.getStringData(key: kAdvisorProfileCache);
     if (cachedData.isNotEmpty) {
       try {
-        final profile = ProfileModel.fromJson(jsonDecode(cachedData));
+        var profile = ProfileModel.fromJson(jsonDecode(cachedData));
+
+        // أولوية الصورة: لو kMyProfileImage فيه صورة أحدث، استخدمها
+        final cachedImage = CachNetwork.getStringData(key: kMyProfileImage);
+        if (cachedImage.isNotEmpty && cachedImage != profile.image) {
+          profile = profile.copyWith(image: cachedImage);
+        }
+
         emit(
           state.copyWith(profile: profile, profileState: CubitStates.success),
         );
@@ -102,21 +159,28 @@ class ProfileCubit extends Cubit<ProfileState> {
         ),
       ),
       (profileModel) {
+        // أولوية الصورة: لو kMyProfileImage فيه صورة أحدث من الـ API، استخدمها
+        final cachedImage = CachNetwork.getStringData(key: kMyProfileImage);
+        final finalModel =
+            (cachedImage.isNotEmpty && cachedImage != profileModel.image)
+            ? profileModel.copyWith(image: cachedImage)
+            : profileModel;
+
         // حفظ في الكاش
         try {
           CachNetwork.setData(
             key: kAdvisorProfileCache,
-            value: jsonEncode(profileModel.toJson()),
+            value: jsonEncode(finalModel.toJson()),
           );
         } catch (e) {
           debugPrint('❌ Error caching advisor profile: $e');
         }
-        setAdvisorStatus(profileModel.approvalKey);
+        setAdvisorStatus(finalModel.approvalKey);
         emit(
           state.copyWith(
             profileState: CubitStates.success,
-            profile: profileModel,
-            profileErrorMessage: null, // تنظيف رسالة الخطأ عند النجاح
+            profile: finalModel,
+            profileErrorMessage: null,
           ),
         );
       },

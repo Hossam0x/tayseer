@@ -4,7 +4,7 @@ import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/core/widgets/custom_video_and_edit/custom_uploaded_video_preview.dart';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
-import 'package:tayseer/features/user/questions/view/widget/image_guidelines_bottom_sheet.dart';
+import 'package:tayseer/features/user/questions/presentation/widgets/image_guidelines_bottom_sheet.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_state.dart';

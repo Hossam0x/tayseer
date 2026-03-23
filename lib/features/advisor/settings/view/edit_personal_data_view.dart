@@ -1,4 +1,7 @@
 import 'package:chewie/chewie.dart';
+import 'package:tayseer/core/utils/advisor_video_cache.dart';
+import 'package:tayseer/core/utils/advisor_video_event_bus.dart';
+import 'package:tayseer/core/widgets/advisor_video_player/advisor_video_player_widget.dart';
 import 'package:tayseer/core/widgets/custtom_glass_button.dart';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/profile_text_field.dart';
@@ -143,6 +146,12 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     _currentVideoUrl = videoUrl;
 
     if (!mounted) return;
+
+    // لو URL من السيرفر → نحدث الـ AdvisorVideoCache فقط (الـ widget يتعامل معاه)
+    if (videoUrl.startsWith('http')) {
+      AdvisorVideoCache.instance.updateUrl(videoUrl);
+      return;
+    }
 
     _uiCubit.setVideoLoading(true);
     _uiCubit.updateProgress(0.0);
@@ -378,7 +387,9 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => getIt<EditPersonalDataCubit>()),
+        BlocProvider(
+          create: (_) => getIt<EditPersonalDataCubit>()..loadProfileData(),
+        ),
         BlocProvider.value(value: _uiCubit),
       ],
       child: BlocConsumer<EditPersonalDataCubit, EditPersonalDataState>(
@@ -396,10 +407,18 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
             if (state.successMessage != null) {
               showSafeSnackBar(
                 context: context,
-                text: state.successMessage!,
+                text: context.tr(state.successMessage!),
                 isSuccess: true,
               );
               context.read<EditPersonalDataCubit>().clearSuccess();
+
+              // ⭐ بعت event بالـ video URL الجديد للـ ProfileView
+              final newVideoUrl = state.videoPreviewUrl ?? '';
+              if (newVideoUrl.isNotEmpty && newVideoUrl.startsWith('http')) {
+                AdvisorVideoCache.instance.updateUrl(newVideoUrl);
+                AdvisorVideoEventBus.instance.fire(newVideoUrl);
+              }
+
               // ⭐ إرجاع البروفايل المحدث للصفحة السابقة
               if (state.profile != null) {
                 Navigator.pop(context, state.profile);
@@ -480,7 +499,12 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                   children: [
                                     Gap(32.h),
                                     if (state.state == CubitStates.loading)
-                                      _buildSkeletonLoading()
+                                      Shimmer.fromColors(
+                                        baseColor: AppColors.secondary100,
+                                        highlightColor: AppColors.kWhiteColor
+                                            .withOpacity(0.5),
+                                        child: _buildSkeletonLoading(),
+                                      )
                                     else if (state.state == CubitStates.failure)
                                       CustomErrorView(
                                         verticalPadding: 100,
@@ -578,19 +602,24 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                             EditPersonalDataUiState
                                           >(
                                             builder: (context, uiState) {
-                                              return CustomBotton(
-                                                height: 54.h,
-                                                width: double.infinity,
-                                                useGradient: true,
-                                                title: state.isSaving
-                                                    ? context.tr("saving")
-                                                    : context.tr("save"),
-                                                onPressed:
-                                                    state.isSaving ||
-                                                        !state.hasChanges ||
-                                                        !_isFormValid
-                                                    ? null
-                                                    : () => cubit.saveChanges(),
+                                              final bool canSave =
+                                                  !state.isSaving &&
+                                                  state.hasChanges &&
+                                                  _isFormValid;
+                                              return Opacity(
+                                                opacity: canSave ? 1.0 : 0.4,
+                                                child: CustomBotton(
+                                                  height: 54.h,
+                                                  width: double.infinity,
+                                                  useGradient: true,
+                                                  title: state.isSaving
+                                                      ? context.tr("saving")
+                                                      : context.tr("save"),
+                                                  onPressed: canSave
+                                                      ? () =>
+                                                            cubit.saveChanges()
+                                                      : null,
+                                                ),
                                               );
                                             },
                                           ),
@@ -619,6 +648,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     BuildContext context,
     EditPersonalDataCubit cubit,
   ) async {
+    final bool canSave = _isFormValid;
     final result = await showDialog<String>(
       context: context,
       barrierDismissible: false,
@@ -645,12 +675,17 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CustomBotton(
-                  height: 48.h,
-                  width: double.infinity,
-                  useGradient: true,
-                  title: context.tr("save_and_exit"),
-                  onPressed: () => Navigator.pop(context, 'save'),
+                Opacity(
+                  opacity: canSave ? 1.0 : 0.4,
+                  child: CustomBotton(
+                    height: 48.h,
+                    width: double.infinity,
+                    useGradient: true,
+                    title: context.tr("save_and_exit"),
+                    onPressed: canSave
+                        ? () => Navigator.pop(context, 'save')
+                        : null,
+                  ),
                 ),
                 Gap(12.h),
                 Row(
@@ -900,20 +935,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Upload Progress Ring (Like Add Story)
-                    if (state.isSaving)
-                      SizedBox(
-                        width: 160.w,
-                        height: 160.h,
-                        child: CircularProgressIndicator(
-                          value: state.uploadProgress > 0
-                              ? state.uploadProgress
-                              : null,
-                          strokeWidth: 4,
-                          color: AppColors.kprimaryColor,
-                          backgroundColor: AppColors.secondary200,
-                        ),
-                      ),
                     Container(
                       height: 150.h,
                       width: 155.w,
@@ -938,33 +959,55 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                           : imageUrl != null && imageUrl.isNotEmpty
                           ? ClipRRect(
                               borderRadius: BorderRadius.circular(32.r),
-                              child: Image.network(
-                                imageUrl,
+                              child: CachedNetworkImage(
+                                imageUrl: imageUrl,
                                 fit: BoxFit.cover,
                                 width: double.infinity,
-                                errorBuilder: (context, error, stackTrace) {
+                                errorWidget: (context, url, error) {
                                   return _buildDefaultAvatar();
                                 },
                               ),
                             )
                           : _buildDefaultAvatar(),
                     ),
-                    // Percentage Text Overlay
+                    // Upload Progress — frame that follows the image shape
                     if (state.isSaving)
                       Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8.w,
-                          vertical: 4.h,
-                        ),
+                        height: 150.h,
+                        width: 155.w,
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
-                          borderRadius: BorderRadius.circular(16.r),
+                          color: Colors.black.withOpacity(0.45),
+                          borderRadius: BorderRadius.circular(32.r),
                         ),
-                        child: Text(
-                          '${(state.uploadProgress * 100).toInt()}%',
-                          style: Styles.textStyle14.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 56.w,
+                                height: 56.w,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    CircularProgressIndicator(
+                                      value: state.uploadProgress > 0
+                                          ? state.uploadProgress
+                                          : null,
+                                      strokeWidth: 4,
+                                      color: AppColors.kprimaryColor,
+                                      backgroundColor: Colors.white24,
+                                    ),
+                                    Text(
+                                      '${(state.uploadProgress * 100).toInt()}%',
+                                      style: Styles.textStyle12.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -1104,7 +1147,8 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
             (!isVideoDeleted &&
                 videoPreviewUrl != null &&
                 videoPreviewUrl.isNotEmpty &&
-                _chewieController != null);
+                (videoPreviewUrl.startsWith('http') ||
+                    _chewieController != null));
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1171,52 +1215,65 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: AppColors.kWhiteColor,
-                  borderRadius: BorderRadius.circular(10.r),
+                  borderRadius: BorderRadius.circular(16.r),
                   border: Border.all(color: AppColors.primary100, width: 1.0),
                 ),
                 child: Column(
                   children: [
                     Stack(
                       children: [
-                        Container(
-                          width: double.infinity,
-                          height: 250.h,
-                          decoration: BoxDecoration(
-                            color: Colors.black,
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child:
-                              _chewieController != null &&
-                                  _chewieController!
-                                      .videoPlayerController
-                                      .value
-                                      .isInitialized
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(8.r),
-                                  child: Chewie(controller: _chewieController!),
-                                )
-                              : Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.video_library_rounded,
-                                        size: 50.w,
-                                        color: Colors.white70,
-                                      ),
-                                      Gap(8.h),
-                                      Text(
-                                        videoFile != null
-                                            ? context.tr("loading_new_video")
-                                            : context.tr("loading_video"),
-                                        style: Styles.textStyle14.copyWith(
+                        // لو local file جديد → Chewie
+                        // لو URL من السيرفر → AdvisorVideoPlayerWidget (shared cache)
+                        if (videoFile != null)
+                          Container(
+                            width: double.infinity,
+                            height: 250.h,
+                            decoration: BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.circular(16.r),
+                            ),
+                            child:
+                                _chewieController != null &&
+                                    _chewieController!
+                                        .videoPlayerController
+                                        .value
+                                        .isInitialized
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(16.r),
+                                    child: Chewie(
+                                      controller: _chewieController!,
+                                    ),
+                                  )
+                                : Center(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.video_library_rounded,
+                                          size: 50.w,
                                           color: Colors.white70,
                                         ),
-                                      ),
-                                    ],
+                                        Gap(8.h),
+                                        Text(
+                                          context.tr("loading_new_video"),
+                                          style: Styles.textStyle14.copyWith(
+                                            color: Colors.white70,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                        ),
+                          )
+                        else if (videoPreviewUrl != null &&
+                            videoPreviewUrl.startsWith('http'))
+                          SizedBox(
+                            height: 250.h,
+                            child: AdvisorVideoPlayerWidget(
+                              videoUrl: videoPreviewUrl,
+                              showFullScreenButton: true,
+                            ),
+                          ),
                         Positioned(
                           top: 10,
                           right: 10,

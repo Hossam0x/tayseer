@@ -23,36 +23,50 @@ class UserAdvisorProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: AdvisorBackground(
-        child: MultiBlocProvider(
-          providers: [
-            BlocProvider<UserAdvisorProfileCubit>(
-              create: (_) => UserAdvisorProfileCubit(
-                getIt<UserAdvisorProfileRepository>(),
-                advisorId,
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) return;
+        // ✅ Restore global stories when leaving a filtered profile
+        getIt<StoriesCubit>().fetchStories(
+          isSpecial: true,
+          advisorId: null,
+          context: context,
+          isSilent: true,
+        );
+      },
+      child: Scaffold(
+        body: AdvisorBackground(
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider<UserAdvisorProfileCubit>(
+                create:
+                    (_) => UserAdvisorProfileCubit(
+                      getIt<UserAdvisorProfileRepository>(),
+                      advisorId,
+                    ),
               ),
-            ),
-            BlocProvider<StoriesCubit>(
-              create: (_) => getIt<StoriesCubit>()
-                ..fetchStories(
-                  isSpecial: true,
-                  advisorId: advisorId,
-                  context: context,
-                ),
-            ),
-            BlocProvider.value(value: getIt<ConnectivityCubit>()),
-          ],
-          child: Stack(
-            children: [
-              SafeArea(
-                child: _UserProfileContent(
-                  advisorName: advisorName,
-                  advisorId: advisorId,
-                ),
+              BlocProvider<StoriesCubit>.value(
+                value:
+                    getIt<StoriesCubit>()
+                      ..fetchStories(
+                        isSpecial: true,
+                        advisorId: advisorId,
+                        context: context,
+                      ),
               ),
-              const NavigateToChatListener(),
+              BlocProvider.value(value: getIt<ConnectivityCubit>()),
             ],
+            child: Stack(
+              children: [
+                SafeArea(
+                  child: _UserProfileContent(
+                    advisorName: advisorName,
+                    advisorId: advisorId,
+                  ),
+                ),
+                const NavigateToChatListener(),
+              ],
+            ),
           ),
         ),
       ),
@@ -88,8 +102,8 @@ class _UserProfileContent extends StatelessWidget {
           listenWhen: (prev, curr) => !prev.isConnected && curr.isConnected,
           listener: (context, state) {
             final storiesCubit = context.read<StoriesCubit>();
-            if (storiesCubit.state.storiesState == CubitStates.failure ||
-                storiesCubit.state.storiesList.isEmpty) {
+            if (storiesCubit.state.advisorSpecialStoriesState == CubitStates.failure ||
+                storiesCubit.state.advisorSpecialStories.isEmpty) {
               storiesCubit.fetchStories(
                 isSpecial: true,
                 advisorId: advisorId,
