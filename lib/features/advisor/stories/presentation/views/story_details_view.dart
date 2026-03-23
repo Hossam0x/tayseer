@@ -349,42 +349,60 @@ class _UserStoryPageState extends State<_UserStoryPage> {
             : const Duration(seconds: 15);
         _storyItems.add(
           StoryItem(
-            // Black bg (replaces pageVideo's Container(color: Colors.black))
-            // Counter-flip restores content orientation while outer StoryView flip makes bars RTL
-            Container(
-              color: Colors.black,
-              child: Transform.scale(
-                scaleX: isArabic ? -1.0 : 1.0,
-                child: StoryVideo.url(
-                  story.video!,
-                  controller: _storyController,
-                  // Use a stable key based on video URL so the widget is NOT
-                  // recreated on rebuild — prevents the "failed to load" flash.
-                  key: ValueKey('video_${story.id}'),
-                  // Show a spinner instead of "Media failed to load." during
-                  // the brief window where state=success but isInitialized=false.
-                  loadingWidget: const Center(
-                    child: SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2.5,
+            Stack(
+              fit: StackFit.expand,
+              children: [
+                // Black bg + video content
+                Container(
+                  color: Colors.black,
+                  child: Transform.scale(
+                    scaleX: isArabic ? -1.0 : 1.0,
+                    child: StoryVideo.url(
+                      story.video!,
+                      controller: _storyController,
+                      key: ValueKey('video_${story.id}'),
+                      loadingWidget: const Center(
+                        child: SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  errorWidget: const Center(
-                    child: SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2.5,
+                      errorWidget: const Center(
+                        child: SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
+                // Gradient overlay — top & bottom dark bands only
+                IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.65),
+                          Colors.transparent,
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.65),
+                        ],
+                        stops: const [0.0, 0.18, 0.78, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             duration: duration,
           ),
@@ -392,17 +410,40 @@ class _UserStoryPageState extends State<_UserStoryPage> {
       } else {
         _storyItems.add(
           StoryItem(
-            // Black bg (replaces pageImage's Container(color: Colors.black))
-            Container(
-              color: Colors.black,
-              child: Transform.scale(
-                scaleX: isArabic ? -1.0 : 1.0,
-                child: StoryImage.url(
-                  story.image,
-                  controller: _storyController,
-                  fit: BoxFit.contain,
+            Stack(
+              fit: StackFit.expand,
+              children: [
+                // Black bg + image content
+                Container(
+                  color: Colors.black,
+                  child: Transform.scale(
+                    scaleX: isArabic ? -1.0 : 1.0,
+                    child: StoryImage.url(
+                      story.image,
+                      controller: _storyController,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
-              ),
+                // Gradient overlay — top & bottom dark bands only
+                IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.65),
+                          Colors.transparent,
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.65),
+                        ],
+                        stops: const [0.0, 0.18, 0.78, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             duration: const Duration(seconds: 5),
           ),
