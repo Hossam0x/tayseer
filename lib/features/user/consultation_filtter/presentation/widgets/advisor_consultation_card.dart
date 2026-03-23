@@ -142,9 +142,11 @@ class AdvisorConsultationCard extends StatelessWidget {
               CustomBotton(
                 title: context.tr("book_session"),
                 onPressed: () {
-                  // TODO: navigate to advisor profile / booking
-                  // Navigator.pushNamed(context, Routes.advisorProfile, arguments: advisor.id);
-                },
+                    context.pushNamed(
+              AppRouter.kUserRescheduleView,
+              arguments: {"title": "حجز جلسه",  "advisorId": advisor.id, },
+            );
+                  },
                 height: 50.h,
                 width: double.infinity,
               ),

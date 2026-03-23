@@ -7,19 +7,20 @@ class MarriageState extends Equatable {
   final CubitStates userInteractionState;
   final CubitStates sendRegardState;
   final CubitStates sendRegardTextState;
-  final CubitStates blockActionState; // ✅
+  final CubitStates blockActionState;
   final UsersMarriageResponse? profile;
   final int currentIndex;
   final bool isScrollingDown;
   final bool isMarriageTab;
   final String? errorMessage;
-  final String? blockMessage; // ✅
+  final String? blockMessage;
   final double swipeDirection;
   final double swipeProgress;
   final bool isAnimating;
   final bool showHistory;
   final String selectedHistoryFilter;
   final List<UserItem> allUsers;
+  final List<UserItem> userHistory; // ✅ جديد
   final int currentPage;
   final int totalPages;
   final bool isLoadingMore;
@@ -32,19 +33,20 @@ class MarriageState extends Equatable {
     this.userInteractionState = CubitStates.initial,
     this.sendRegardState = CubitStates.initial,
     this.sendRegardTextState = CubitStates.initial,
-    this.blockActionState = CubitStates.initial, // ✅
+    this.blockActionState = CubitStates.initial,
     this.profile,
     this.currentIndex = 0,
     this.isScrollingDown = false,
     this.isMarriageTab = true,
     this.errorMessage,
-    this.blockMessage, // ✅
+    this.blockMessage,
     this.swipeDirection = 0,
     this.swipeProgress = 0,
     this.isAnimating = false,
     this.showHistory = false,
     this.selectedHistoryFilter = "liked_you",
     this.allUsers = const [],
+    this.userHistory = const [], // ✅ جديد
     this.currentPage = 1,
     this.totalPages = 1,
     this.isLoadingMore = false,
@@ -58,19 +60,20 @@ class MarriageState extends Equatable {
     CubitStates? userInteractionState,
     CubitStates? sendRegardState,
     CubitStates? sendRegardTextState,
-    CubitStates? blockActionState, // ✅
+    CubitStates? blockActionState,
     UsersMarriageResponse? profile,
     int? currentIndex,
     bool? isScrollingDown,
     bool? isMarriageTab,
     String? errorMessage,
-    String? blockMessage, // ✅
+    String? blockMessage,
     double? swipeDirection,
     double? swipeProgress,
     bool? isAnimating,
     bool? showHistory,
     String? selectedHistoryFilter,
     List<UserItem>? allUsers,
+    List<UserItem>? userHistory, // ✅ جديد
     int? currentPage,
     int? totalPages,
     bool? isLoadingMore,
@@ -83,13 +86,13 @@ class MarriageState extends Equatable {
       userInteractionState: userInteractionState ?? this.userInteractionState,
       sendRegardState: sendRegardState ?? this.sendRegardState,
       sendRegardTextState: sendRegardTextState ?? this.sendRegardTextState,
-      blockActionState: blockActionState ?? this.blockActionState, // ✅
+      blockActionState: blockActionState ?? this.blockActionState,
       profile: profile ?? this.profile,
       currentIndex: currentIndex ?? this.currentIndex,
       isScrollingDown: isScrollingDown ?? this.isScrollingDown,
       isMarriageTab: isMarriageTab ?? this.isMarriageTab,
       errorMessage: errorMessage ?? this.errorMessage,
-      blockMessage: blockMessage ?? this.blockMessage, // ✅
+      blockMessage: blockMessage ?? this.blockMessage,
       swipeDirection: swipeDirection ?? this.swipeDirection,
       swipeProgress: swipeProgress ?? this.swipeProgress,
       isAnimating: isAnimating ?? this.isAnimating,
@@ -97,6 +100,7 @@ class MarriageState extends Equatable {
       selectedHistoryFilter:
           selectedHistoryFilter ?? this.selectedHistoryFilter,
       allUsers: allUsers ?? this.allUsers,
+      userHistory: userHistory ?? this.userHistory, // ✅ جديد
       currentPage: currentPage ?? this.currentPage,
       totalPages: totalPages ?? this.totalPages,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
@@ -112,19 +116,20 @@ class MarriageState extends Equatable {
     userInteractionState,
     sendRegardState,
     sendRegardTextState,
-    blockActionState, // ✅
+    blockActionState,
     profile,
     currentIndex,
     isScrollingDown,
     isMarriageTab,
     errorMessage,
-    blockMessage, // ✅
+    blockMessage,
     swipeDirection,
     swipeProgress,
     isAnimating,
     showHistory,
     selectedHistoryFilter,
     allUsers,
+    userHistory, // ✅ جديد
     currentPage,
     totalPages,
     isLoadingMore,

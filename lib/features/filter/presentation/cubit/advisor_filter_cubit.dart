@@ -4,7 +4,6 @@ import '../../data/models/advisor_filter_request_model.dart';
 import 'advisor_filter_state.dart';
 
 class AdvisorFilterCubit extends Cubit<AdvisorFilterState> {
-
   AdvisorFilterCubit() : super(AdvisorFilterState.initial());
 
   // ─── UI updates ───────────────────────────────────────────────────────────
@@ -88,13 +87,13 @@ class AdvisorFilterCubit extends Cubit<AdvisorFilterState> {
 
   int _convertDayOfWeek(int dartWeekday) {
     const Map<int, int> dayMap = {
-      6: 0,
-      7: 1,
-      1: 2,
-      2: 3,
-      3: 4,
-      4: 5,
-      5: 6,
+      7: 0, // Sunday  → 0
+      1: 1, // Monday  → 1
+      2: 2, // Tuesday → 2
+      3: 3, // Wednesday → 3
+      4: 4, // Thursday → 4
+      5: 5, // Friday  → 5
+      6: 6, // Saturday → 6
     };
     return dayMap[dartWeekday] ?? 0;
   }

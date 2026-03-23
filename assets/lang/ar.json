@@ -1680,6 +1680,13 @@
   "press_verify_to_start" : "اضغط على التحقق للبدء",
     "invalid_name_characters": "الاسم يجب أن يحتوي على حروف فقط بدون رموز أو أرقام",
   "enter_full_name": "يرجى إدخال الاسم الأول والأخير",
-  "name_too_short": "كل اسم يجب أن يكون حرفين على الأقل"
+  "name_too_short": "كل اسم يجب أن يكون حرفين على الأقل",
+  "like_action": "إعجاب",
+  "dislike_action": "تجاهل", 
+  "favorite_action": "مفضلة",
+  "regard_action": "تحية",
+  "expand_filter": "توسيع الفلتر",
+"seen_all_recommendations": "لقد رأيت كل الأشخاص وفق ترشيحاتك",
+"try_expanding_filter": "لقد رأيت كل من يطابق فلاترك، حاول توسيعها لعرض المزيد."
 
 }

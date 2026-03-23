@@ -69,7 +69,10 @@ class MarriageBodyState extends State<MarriageBody>
     if (_interactionsCubit == null) {
       _interactionsCubit = getIt<InteractionsCubit>();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _interactionsCubit!.fetchHistorySilently();
+        _interactionsCubit!.fetchHistorySilently().then((_) {
+          // ✅ Re-render after fetch so isSubscribed is evaluated correctly
+          if (mounted) setState(() {});
+        });
       });
     }
     return _interactionsCubit!;
@@ -79,6 +82,19 @@ class MarriageBodyState extends State<MarriageBody>
   void initState() {
     super.initState();
     _mainScrollController.addListener(_scrollListener);
+
+    // ✅ لو جاي من interactions — initialize الـ interactionsCubit فوراً
+    // عشان نقدر نقرأ الـ isSubscribed بشكل صحيح في _buildMarriageContent
+    if (widget.fromInteractions) {
+      _interactionsCubit = getIt<InteractionsCubit>();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _interactionsCubit!.fetchHistorySilently().then((_) {
+          // ✅ FIXED: Re-render after subscription status is loaded
+          // This ensures shouldBlurImages is re-evaluated with correct isSubscribed value
+          if (mounted) setState(() {});
+        });
+      });
+    }
 
     // ✅ لو مستشار وجه من deep link — أظهر رسالة وارجع
     if (widget.personId != null &&
@@ -105,8 +121,8 @@ class MarriageBodyState extends State<MarriageBody>
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.pop(context); // أغلق الـ dialog
-                  context.pop(); // ارجع من صفحة الزواج
+                  Navigator.pop(context);
+                  context.pop();
                 },
                 child: Text(context.tr('okay_understood')),
               ),
@@ -114,7 +130,7 @@ class MarriageBodyState extends State<MarriageBody>
           ),
         );
       });
-      return; // ✅ وقف الـ initState هنا
+      return;
     }
 
     final cubit = context.read<MarriageCubit>();
@@ -128,7 +144,7 @@ class MarriageBodyState extends State<MarriageBody>
 
   @override
   void dispose() {
-    _scrollIdleTimer?.cancel(); // ✅ أضف دي
+    _scrollIdleTimer?.cancel();
     _mainScrollController.removeListener(_scrollListener);
     _mainScrollController.dispose();
     _interactionsCubit?.close();
@@ -161,7 +177,6 @@ class MarriageBodyState extends State<MarriageBody>
 
     _lastOffset = currentOffset;
 
-    // ✅ الجديد — idle timer
     _scrollIdleTimer?.cancel();
     _scrollIdleTimer = Timer(_scrollIdleDelay, () {
       if (!mounted) return;
@@ -179,7 +194,6 @@ class MarriageBodyState extends State<MarriageBody>
   ) async {
     final overlay = Overlay.of(context);
 
-    // ✅ احفظ النص قبل ما تدخل الـ overlay عشان الـ context صح
     final String labelOverride = switch (type) {
       SwipeActionType.like => context.tr('like_action'),
       SwipeActionType.dislike => context.tr('dislike_action'),
@@ -192,10 +206,7 @@ class MarriageBodyState extends State<MarriageBody>
     entry = OverlayEntry(
       builder: (_) => Positioned.fill(
         child: IgnorePointer(
-          child: SwipeActionPopup(
-            type: type,
-            labelOverride: labelOverride, // ✅ مرّر النص الجاهز
-          ),
+          child: SwipeActionPopup(type: type, labelOverride: labelOverride),
         ),
       ),
     );
@@ -283,10 +294,11 @@ class MarriageBodyState extends State<MarriageBody>
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<MarriageCubit, MarriageState>(
-      // ✅ block مش موجود في listenWhen خالص
       listenWhen: (previous, current) =>
           previous.marriageProfileState != current.marriageProfileState ||
           (previous.sendRegardState != current.sendRegardState &&
+              current.showActionSnackbar) ||
+          (previous.blockActionState != current.blockActionState &&
               current.showActionSnackbar) ||
           (previous.sendRegardTextState != current.sendRegardTextState &&
               current.showActionSnackbar),
@@ -303,7 +315,8 @@ class MarriageBodyState extends State<MarriageBody>
           previous.showHistory != current.showHistory ||
           previous.selectedHistoryFilter != current.selectedHistoryFilter ||
           previous.favoritedIds != current.favoritedIds ||
-          previous.isLoadingMore != current.isLoadingMore,
+          previous.isLoadingMore != current.isLoadingMore ||
+          previous.userHistory != current.userHistory,
 
       listener: (context, state) {
         // ✅ Regard failure
@@ -336,8 +349,31 @@ class MarriageBodyState extends State<MarriageBody>
           context.read<MarriageCubit>().resetState();
         }
 
-        // ✅ block مفيش listener له خالص —
-        // الـ cubit بنفسه بيعمل كل حاجة ويعمل reset
+        // ✅ Block success
+        if (state.blockActionState == CubitStates.success &&
+            state.showActionSnackbar) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('user_blocked_successfully'),
+              isError: false,
+            ),
+          );
+          context.read<MarriageCubit>().resetState();
+        }
+
+        // ✅ Block failure
+        if (state.blockActionState == CubitStates.failure &&
+            state.showActionSnackbar) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: state.blockMessage ?? context.tr('error_occurred'),
+              isError: true,
+            ),
+          );
+          context.read<MarriageCubit>().resetState();
+        }
       },
 
       builder: (context, state) {
@@ -356,14 +392,12 @@ class MarriageBodyState extends State<MarriageBody>
           );
         }
 
-        // ✅ في الـ builder — غير الـ users filter
         final List<UserItem> allUsers = state.allUsers;
         final List<UserItem> users = widget.personId != null
             ? () {
                 final filtered = allUsers
                     .where((p) => p.user?.id == widget.personId)
                     .toList();
-                // ✅ لو مش موجود في النتايج، اطلب إضافته وارجع كل الـ users مؤقتاً
                 if (filtered.isEmpty &&
                     state.marriageProfileState == CubitStates.success) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -565,13 +599,12 @@ class MarriageBodyState extends State<MarriageBody>
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             SvgPicture.asset(AssetsData.verIcon, height: 80.h),
-            // SizedBox(width: 12.w),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    context.tr('verified_profile_title'), // "هذا الملف موثق"
+                    context.tr('verified_profile_title'),
                     style: Styles.textStyle16Bold.copyWith(
                       fontWeight: FontWeight.w600,
                       color: AppColors.primary400,
@@ -579,9 +612,7 @@ class MarriageBodyState extends State<MarriageBody>
                   ),
                   SizedBox(height: 6.h),
                   Text(
-                    context.tr(
-                      'verified_profile_desc',
-                    ), // "تم التأكد من صحة جميع البيانات الشخصية من قبل التطبيق"
+                    context.tr('verified_profile_desc'),
                     textAlign: isArabic ? TextAlign.right : TextAlign.left,
                     style: Styles.textStyle16Bold.copyWith(
                       fontWeight: FontWeight.w400,
@@ -622,12 +653,10 @@ class MarriageBodyState extends State<MarriageBody>
 
     final cubit = context.read<MarriageCubit>();
 
-    final bool shouldBlurImages = widget.fromInteractions
-        ? (cubit.interactionUser?.isImageBlurred ?? user?.imageBlur ?? false)
-        : (user?.imageBlur ?? false);
     final bool isVerifiedUser = widget.fromInteractions
         ? (cubit.interactionUser?.isverified ?? user?.isVerified ?? false)
         : (user?.isVerified ?? false);
+
     final bool hasNext =
         widget.personId == null && profileIndex + 1 < users.length;
 
@@ -636,10 +665,32 @@ class MarriageBodyState extends State<MarriageBody>
     final nextAnswers = nextProfile?.answers;
     final List<String> nextImages = nextAnswers?.userMedia?.image ?? [];
 
+    // ✅ FIXED blur logic:
+    // - Not fromInteractions: depends only on server imageBlur flag
+    // - fromInteractions + NOT subscribed: always blur
+    // - fromInteractions + IS subscribed: only blur if interactionUser.isImageBlurred is explicitly true
+    //   (NO fallback to user?.imageBlur — that was causing blur even when subscribed)
+    final bool isSubscribed = _interactionsCubit?.state.isSubscribed ?? false;
+
+    final bool shouldBlurImages;
+    if (!widget.fromInteractions) {
+      // Normal flow — just use server flag
+      shouldBlurImages = user?.imageBlur ?? false;
+    } else if (!isSubscribed) {
+      // fromInteractions + not subscribed → always blur
+      shouldBlurImages = true;
+    } else {
+      // fromInteractions + subscribed → only blur if interactionUser explicitly says so
+      // Do NOT fall back to user?.imageBlur here
+      shouldBlurImages = cubit.interactionUser?.isImageBlurred ?? false;
+    }
+
     final timelineEvents = answers?.yourGoals != null
         ? _buildTimelineEventsFromAnswers(answers!.yourGoals!)
         : <Map<String, dynamic>>[];
+
     final bool canInteract = profile.allowInteractions ?? true;
+
     return Directionality(
       key: key,
       textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
@@ -699,7 +750,6 @@ class MarriageBodyState extends State<MarriageBody>
                         ? "📏 ${nextUser?.about?.height ?? ''}"
                         : null,
                     isFavorited: state.favoritedIds.contains(user?.id ?? ''),
-                    // ✅ لو مش مسموح بالتفاعل، القلب يختفي
                     onFavoriteTap: canInteract
                         ? () async {
                             await _showSwipePopup(
@@ -708,12 +758,10 @@ class MarriageBodyState extends State<MarriageBody>
                             );
                             cubit.toggleLocalFavorite(
                               user?.id ?? '',
-                              // ✅ لو جاي من interactions مش بنشيله من القائمة
                               removeFromList:
                                   widget.personId == null &&
                                   !widget.fromInteractions,
                             );
-                            // ✅ لو جاي من interactions ارجع للخلف
                             if (widget.fromInteractions && mounted) {
                               context.pop();
                             }
@@ -986,7 +1034,6 @@ class MarriageBodyState extends State<MarriageBody>
                             userName: user?.name ?? '',
                           );
                         },
-
                         onBlock: () {
                           CustomshowDialogWithImage(
                             context,
@@ -998,7 +1045,6 @@ class MarriageBodyState extends State<MarriageBody>
                             bottonText: context.tr(AppStrings.yes),
                             onPressed: () async {
                               cubit.blockUser(personId: user?.id ?? '');
-
                               if (!mounted) return;
                               if (widget.personId == null) {
                                 _resetScrollTracking();
@@ -1022,6 +1068,7 @@ class MarriageBodyState extends State<MarriageBody>
                       ),
                     ),
                   ),
+
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -1029,6 +1076,7 @@ class MarriageBodyState extends State<MarriageBody>
                     ),
                     sliver: SliverToBoxAdapter(child: _buildVerifiedCard()),
                   ),
+
                   SliverToBoxAdapter(child: SizedBox(height: 150.h)),
                 ],
               ),
@@ -1041,12 +1089,13 @@ class MarriageBodyState extends State<MarriageBody>
               bottom: state.isScrollingDown ? 30.h : 130.h,
               left: 0,
               right: 0,
-              child:
-                  canInteract // ✅ لو مش مسموح بالتفاعل اخفي الأزرار
+              child: canInteract
                   ? IgnorePointer(
                       ignoring: state.isAnimating,
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        mainAxisAlignment: state.userHistory.isEmpty
+                            ? MainAxisAlignment.spaceAround
+                            : MainAxisAlignment.spaceEvenly,
                         children: [
                           // Like button
                           buildCircleButton(
@@ -1055,9 +1104,7 @@ class MarriageBodyState extends State<MarriageBody>
                                 context,
                                 SwipeActionType.like,
                               );
-
                               if (widget.fromInteractions) {
-                                // ✅ بس ابعت التفاعل للـ API بدون ما تشيل من القائمة
                                 cubit.userInteraction(
                                   personId: profile.user?.id ?? '',
                                   interactionType: 'like',
@@ -1073,7 +1120,6 @@ class MarriageBodyState extends State<MarriageBody>
                                   scrollToTop();
                                 }
                               }
-
                               if (widget.fromInteractions && mounted) {
                                 context.pop();
                               }
@@ -1082,6 +1128,8 @@ class MarriageBodyState extends State<MarriageBody>
                             AppColors.kprimaryTextColor,
                             HexColor('f8d3da'),
                           ),
+
+                          // Star button
                           buildCircleButton(
                             onTap: () async {
                               cubit.sendRegard(
@@ -1092,6 +1140,7 @@ class MarriageBodyState extends State<MarriageBody>
                             Colors.white,
                             HexColor('cccab3'),
                           ),
+
                           // Dislike button
                           buildCircleButton(
                             onTap: () async {
@@ -1099,9 +1148,7 @@ class MarriageBodyState extends State<MarriageBody>
                                 context,
                                 SwipeActionType.dislike,
                               );
-
                               if (widget.fromInteractions) {
-                                // ✅ بس ابعت التفاعل للـ API بدون ما تشيل من القائمة
                                 cubit.userInteraction(
                                   personId: profile.user?.id ?? '',
                                   interactionType: 'dislike',
@@ -1117,7 +1164,6 @@ class MarriageBodyState extends State<MarriageBody>
                                   scrollToTop();
                                 }
                               }
-
                               if (widget.fromInteractions && mounted) {
                                 context.pop();
                               }
@@ -1126,10 +1172,29 @@ class MarriageBodyState extends State<MarriageBody>
                             Colors.white,
                             HexColor('e44e6c'),
                           ),
+
+                          // Back button
+                          if (state.userHistory.isNotEmpty)
+                            buildCircleButton(
+                              onTap: () async {
+                                final cubit = context.read<MarriageCubit>();
+                                cubit.goBackToPreviousUser();
+                                _resetScrollTracking();
+                                scrollToTop();
+                              },
+                              isArabic
+                                  ? Icons.subdirectory_arrow_left_outlined
+                                  : Icons.subdirectory_arrow_right_outlined,
+                              Colors.white,
+                              flipVertical: true,
+                              AppColors.primary200,
+                            )
+                          else
+                            const SizedBox.shrink(),
                         ],
                       ),
                     )
-                  : const SizedBox.shrink(), // ✅ اخفي الأزرار
+                  : const SizedBox.shrink(),
             ),
           ],
         ),
@@ -1270,13 +1335,20 @@ class MarriageBodyState extends State<MarriageBody>
     Color iconColor,
     Color bgColor, {
     VoidCallback? onTap,
+    bool flipVertical = false,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: CircleAvatar(
         radius: 28.r,
         backgroundColor: bgColor,
-        child: Icon(icon, color: iconColor, size: 30),
+        child: Transform(
+          alignment: Alignment.center,
+          transform: flipVertical
+              ? (Matrix4.identity()..scale(1.0, -1.0))
+              : Matrix4.identity(),
+          child: Icon(icon, color: iconColor, size: 30),
+        ),
       ),
     );
   }
