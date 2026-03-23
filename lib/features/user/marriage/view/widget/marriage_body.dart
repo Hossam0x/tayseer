@@ -1126,6 +1126,42 @@ class MarriageBodyState extends State<MarriageBody>
                             Colors.white,
                             HexColor('e44e6c'),
                           ),
+                          // back button
+                          buildCircleButton(
+                            onTap: () async {
+                              await _showSwipePopup(
+                                context,
+                                SwipeActionType.dislike,
+                              );
+
+                              if (widget.fromInteractions) {
+                                // ✅ بس ابعت التفاعل للـ API بدون ما تشيل من القائمة
+                                cubit.userInteraction(
+                                  personId: profile.user?.id ?? '',
+                                  interactionType: 'dislike',
+                                );
+                              } else {
+                                await cubit.swipeDislike(
+                                  personId: profile.user?.id ?? '',
+                                  usersLength: users.length,
+                                  hasSinglePerson: widget.personId != null,
+                                );
+                                if (widget.personId == null && mounted) {
+                                  _resetScrollTracking();
+                                  scrollToTop();
+                                }
+                              }
+
+                              if (widget.fromInteractions && mounted) {
+                                context.pop();
+                              }
+                            },
+                            isArabic
+                                ? Icons.subdirectory_arrow_left_outlined
+                                : Icons.subdirectory_arrow_right_outlined,
+                            Colors.white,
+                            HexColor('e44e6c'),
+                          ),
                         ],
                       ),
                     )

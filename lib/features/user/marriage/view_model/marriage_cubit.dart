@@ -493,6 +493,13 @@ class MarriageCubit extends Cubit<MarriageState> {
     _cardController!.value = 0;
 
     if (!hasSinglePerson) {
+      // ✅ احفظ الـ user في الـ history قبل ما تشيله
+      final removedUser = state.allUsers.firstWhere(
+        (u) => u.user?.id == personId,
+        orElse: () => UserItem(user: User(id: personId), answers: null),
+      );
+      final updatedHistory = [...state.userHistory, removedUser];
+
       final updatedUsers = state.allUsers
           .where((u) => u.user?.id != personId)
           .toList();
@@ -508,6 +515,7 @@ class MarriageCubit extends Cubit<MarriageState> {
       emit(
         state.copyWith(
           allUsers: updatedUsers,
+          userHistory: updatedHistory, // ✅ جديد
           currentIndex: newIndex,
           swipeDirection: 0,
           swipeProgress: 0,
@@ -736,6 +744,32 @@ class MarriageCubit extends Cubit<MarriageState> {
     if (state.currentIndex >= usersLength) {
       emit(state.copyWith(currentIndex: usersLength - 1));
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ON SWIPE COMPLETE — عدّل هنا
+  // ═══════════════════════════════════════════════════════════
+
+  // ═══════════════════════════════════════════════════════════
+  // GO BACK TO PREVIOUS USER ✅ جديد كلياً
+  // ═══════════════════════════════════════════════════════════
+  void goBackToPreviousUser() {
+    if (state.userHistory.isEmpty) return;
+
+    final previousUser = state.userHistory.last;
+    final updatedHistory = state.userHistory.sublist(
+      0,
+      state.userHistory.length - 1,
+    );
+
+    emit(
+      state.copyWith(
+        allUsers: [previousUser, ...state.allUsers],
+        userHistory: updatedHistory,
+        currentIndex: 0,
+        isScrollingDown: false,
+      ),
+    );
   }
 
   // ═══════════════════════════════════════════════════════════
