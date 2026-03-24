@@ -1,18 +1,13 @@
 import 'package:chewie/chewie.dart';
 import 'package:tayseer/core/utils/advisor_video_cache.dart';
 import 'package:tayseer/core/utils/advisor_video_event_bus.dart';
-import 'package:tayseer/core/widgets/custtom_glass_button.dart';
-import 'package:tayseer/core/widgets/profile_text_field.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data/edit_personal_data_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data/edit_personal_data_state.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data/edit_personal_data_ui_cubit.dart';
-import 'package:tayseer/features/advisor/settings/view/widgets/edit_personal_data/edit_personal_data_avatar.dart';
-import 'package:tayseer/features/advisor/settings/view/widgets/edit_personal_data/edit_personal_data_dropdown.dart';
-import 'package:tayseer/features/advisor/settings/view/widgets/edit_personal_data/edit_personal_data_save_button.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/edit_personal_data/edit_personal_data_form.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/edit_personal_data/edit_personal_data_skeleton.dart';
-import 'package:tayseer/features/advisor/settings/view/widgets/edit_personal_data/edit_personal_data_username_field.dart';
-import 'package:tayseer/features/advisor/settings/view/widgets/edit_personal_data/edit_personal_data_video_section.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/edit_personal_data/edit_personal_data_unsaved_dialog.dart';
 import 'package:tayseer/my_import.dart';
 
 class EditPersonalDataView extends StatefulWidget {
@@ -33,28 +28,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   ChewieController? _chewieController;
   String? _currentVideoUrl;
   bool _controllersInitialized = false;
-
-  static const _specializationKeys = [
-    'marital_counseling',
-    'premarital_counseling',
-    'parenting_counseling',
-    'children_issues',
-    'adolescent_issues',
-    'extended_family_relations',
-    'domestic_violence_protection',
-    'family_crisis_management',
-    'divorce_counseling',
-    'marital_sexual_counseling',
-    'family_addiction',
-    'family_mental_health',
-  ];
-
-  static const _jobLevelKeys = [
-    'junior_counselor',
-    'senior_counselor',
-    'specialist_consultant',
-    'lead_consultant',
-  ];
 
   static const _experienceYearsKeys = [
     'experience_0_2',
@@ -242,11 +215,27 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
         : username;
 
     _uiCubit.initializeFields(
-      position: _mapFromBackend(state.currentData.jobGrade, _jobLevelKeys),
-      specialization: _mapFromBackend(
-        state.currentData.professionalSpecialization,
-        _specializationKeys,
-      ),
+      position: _mapFromBackend(state.currentData.jobGrade, const [
+        'junior_counselor',
+        'senior_counselor',
+        'specialist_consultant',
+        'lead_consultant',
+      ]),
+      specialization:
+          _mapFromBackend(state.currentData.professionalSpecialization, const [
+            'marital_counseling',
+            'premarital_counseling',
+            'parenting_counseling',
+            'children_issues',
+            'adolescent_issues',
+            'extended_family_relations',
+            'domestic_violence_protection',
+            'family_crisis_management',
+            'divorce_counseling',
+            'marital_sexual_counseling',
+            'family_addiction',
+            'family_mental_health',
+          ]),
       experienceDisplay: _mapFromBackend(
         state.currentData.yearsOfExperience,
         _experienceYearsKeys,
@@ -399,7 +388,20 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                         onRetry: cubit.loadProfileData,
                                       )
                                     else
-                                      _buildForm(context, cubit, state),
+                                      EditPersonalDataForm(
+                                        cubit: cubit,
+                                        state: state,
+                                        uiCubit: _uiCubit,
+                                        nameController: _nameController,
+                                        bioController: _bioController,
+                                        usernameController: _usernameController,
+                                        chewieController: _chewieController,
+                                        onPickImage: () =>
+                                            _pickAvatarImage(cubit),
+                                        onPickVideo: () => _pickVideo(cubit),
+                                        onRemoveVideo: () =>
+                                            _removeVideo(cubit),
+                                      ),
                                   ],
                                 ),
                               ),
@@ -418,119 +420,6 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     );
   }
 
-  Widget _buildForm(
-    BuildContext context,
-    EditPersonalDataCubit cubit,
-    EditPersonalDataState state,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Center(
-          child: EditPersonalDataAvatar(
-            cubit: cubit,
-            state: state,
-            onPickImage: () => _pickAvatarImage(cubit),
-          ),
-        ),
-        Gap(20.h),
-        BlocBuilder<EditPersonalDataUiCubit, EditPersonalDataUiState>(
-          buildWhen: (p, c) => p.nameError != c.nameError,
-          builder: (context, _) => ProfileTextField(
-            controller: _nameController,
-            maxLength: 24,
-            minLength: 4,
-            showCharacterCount: true,
-            validationErrorKey: 'full_name_length_error',
-            onChanged: (value) {
-              _uiCubit.validateName(
-                value,
-                context.tr('full_name_length_error'),
-              );
-              cubit.updateName(value);
-            },
-            hint: context.tr("enter_name"),
-          ),
-        ),
-        Gap(11.h),
-        EditPersonalDataUsernameField(
-          controller: _usernameController,
-          cubit: cubit,
-          uiCubit: _uiCubit,
-        ),
-        Gap(11.h),
-        BlocBuilder<EditPersonalDataUiCubit, EditPersonalDataUiState>(
-          buildWhen: (p, c) =>
-              p.selectedSpecialization != c.selectedSpecialization,
-          builder: (context, uiState) => EditPersonalDataDropdown(
-            value: uiState.selectedSpecialization,
-            items: _specializationKeys,
-            hint: 'select_specialization',
-            onChanged: (v) {
-              _uiCubit.updateSelectedSpecialization(v);
-              if (v != null) cubit.updateSpecialization(v);
-            },
-          ),
-        ),
-        Gap(11.h),
-        BlocBuilder<EditPersonalDataUiCubit, EditPersonalDataUiState>(
-          buildWhen: (p, c) => p.selectedPosition != c.selectedPosition,
-          builder: (context, uiState) => EditPersonalDataDropdown(
-            value: uiState.selectedPosition,
-            items: _jobLevelKeys,
-            hint: 'select_position',
-            onChanged: (v) {
-              _uiCubit.updateSelectedPosition(v);
-              if (v != null) cubit.updatePosition(v);
-            },
-          ),
-        ),
-        Gap(11.h),
-        BlocBuilder<EditPersonalDataUiCubit, EditPersonalDataUiState>(
-          buildWhen: (p, c) =>
-              p.selectedExperienceDisplay != c.selectedExperienceDisplay,
-          builder: (context, uiState) => EditPersonalDataDropdown(
-            value: uiState.selectedExperienceDisplay,
-            items: _experienceYearsKeys,
-            hint: 'select_experience_years',
-            onChanged: (v) {
-              _uiCubit.updateSelectedExperience(v, v);
-              if (v != null) cubit.updateExperience(v);
-            },
-          ),
-        ),
-        Gap(11.h),
-        ProfileTextField(
-          controller: _bioController,
-          onChanged: cubit.updateBio,
-          hint: context.tr("bio_hint"),
-          maxLines: 4,
-          maxLength: 250,
-          minLength: 3,
-          showCharacterCount: true,
-          validationErrorKey: 'bio_min_3_chars',
-        ),
-        Gap(12.h),
-        CusttomGlassButton(
-          text: context.tr('generate_ai_content'),
-          showIcon: state.isAiState == CubitStates.loading,
-          onTap: () => cubit.enhanceTextWithGemini(context, _bioController),
-        ),
-        Gap(25.h),
-        EditPersonalDataVideoSection(
-          cubit: cubit,
-          state: state,
-          chewieController: _chewieController,
-          onPickVideo: () => _pickVideo(cubit),
-          onRemoveVideo: () => _removeVideo(cubit),
-        ),
-        Gap(35.h),
-        EditPersonalDataSaveButton(state: state, bioController: _bioController),
-        Gap(40.h),
-      ],
-    );
-  }
-
   Future<bool> _showUnsavedChangesDialog(
     BuildContext context,
     EditPersonalDataCubit cubit,
@@ -538,72 +427,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
     final result = await showDialog<String>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.r),
-        ),
-        title: Text(
-          context.tr("unsaved_changes_title"),
-          textAlign: TextAlign.center,
-          style: Styles.textStyle18SemiBold.copyWith(
-            color: AppColors.primary800,
-          ),
-        ),
-        content: Text(
-          context.tr("unsaved_changes_message"),
-          textAlign: TextAlign.center,
-          style: Styles.textStyle14.copyWith(color: AppColors.secondary600),
-        ),
-        actionsAlignment: MainAxisAlignment.center,
-        actions: [
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Opacity(
-                  opacity: _isFormValid ? 1.0 : 0.4,
-                  child: CustomBotton(
-                    height: 48.h,
-                    width: double.infinity,
-                    useGradient: true,
-                    title: context.tr("save_and_exit"),
-                    onPressed: _isFormValid
-                        ? () => Navigator.pop(ctx, 'save')
-                        : null,
-                  ),
-                ),
-                Gap(12.h),
-                Row(
-                  children: [
-                    Expanded(
-                      child: CustomBotton(
-                        height: 48.h,
-                        title: context.tr("discard_and_exit"),
-                        backGroundcolor: AppColors.secondary100,
-                        titleColor: AppColors.kRedColor,
-                        onPressed: () => Navigator.pop(ctx, 'discard'),
-                        elevation: 0,
-                      ),
-                    ),
-                    Gap(12.w),
-                    Expanded(
-                      child: CustomBotton(
-                        height: 48.h,
-                        title: context.tr("keep_editing"),
-                        backGroundcolor: AppColors.secondary100,
-                        titleColor: AppColors.secondary700,
-                        onPressed: () => Navigator.pop(ctx, 'keep'),
-                        elevation: 0,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+      builder: (_) => EditPersonalDataUnsavedDialog(isFormValid: _isFormValid),
     );
 
     if (result == 'save' && context.mounted) {

@@ -1,11 +1,10 @@
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/settings/data/models/blocked_user_model.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/blocked_users_repository.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/blocked_users/blocked_users_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/blocked_users/blocked_users_state.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/blocked_users/blocked_users_list.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/blocked_users/blocked_users_skeleton.dart';
 import 'package:tayseer/my_import.dart';
-import 'package:skeletonizer/skeletonizer.dart';
-import 'package:tayseer/features/advisor/settings/data/models/blocked_user_item.dart';
 
 class BlockedUsersView extends StatefulWidget {
   const BlockedUsersView({super.key});
@@ -15,14 +14,12 @@ class BlockedUsersView extends StatefulWidget {
 }
 
 class _BlockedUsersViewState extends State<BlockedUsersView> {
-  late BlockedUsersCubit _cubit;
+  late final BlockedUsersCubit _cubit;
 
   @override
   void initState() {
     super.initState();
     _cubit = BlockedUsersCubit(getIt<BlockedUsersRepository>());
-    // تحديث تلقائي كل 30 ثانية
-    // _cubit.startAutoRefresh(const Duration(seconds: 60));
   }
 
   @override
@@ -33,8 +30,8 @@ class _BlockedUsersViewState extends State<BlockedUsersView> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => _cubit,
+    return BlocProvider.value(
+      value: _cubit,
       child: Scaffold(
         body: AdvisorBackground(
           child: Stack(
@@ -56,7 +53,6 @@ class _BlockedUsersViewState extends State<BlockedUsersView> {
               SafeArea(
                 child: Column(
                   children: [
-                    // --- Custom Header ---
                     Padding(
                       padding: EdgeInsets.symmetric(
                         horizontal: 20.w,
@@ -64,8 +60,6 @@ class _BlockedUsersViewState extends State<BlockedUsersView> {
                       ),
                       child: SimpleAppBar(title: context.tr('blocks')),
                     ),
-
-                    // --- Main Content ---
                     Expanded(
                       child: BlocListener<BlockedUsersCubit, BlockedUsersState>(
                         listener: (context, state) {
@@ -92,7 +86,24 @@ class _BlockedUsersViewState extends State<BlockedUsersView> {
                         child:
                             BlocBuilder<BlockedUsersCubit, BlockedUsersState>(
                               builder: (context, state) {
-                                return _buildContent(context, state);
+                                if (state is BlockedUsersLoading) {
+                                  return const BlockedUsersSkeleton();
+                                }
+                                if (state is BlockedUsersError) {
+                                  return CustomErrorView(
+                                    verticalPadding: 100,
+                                    message: state.message,
+                                    onRetry: () => context
+                                        .read<BlockedUsersCubit>()
+                                        .refresh(),
+                                  );
+                                }
+                                if (state is BlockedUsersLoaded) {
+                                  return BlockedUsersList(
+                                    blockedUsers: state.blockedUsers,
+                                  );
+                                }
+                                return const SizedBox.shrink();
                               },
                             ),
                       ),
@@ -104,158 +115,6 @@ class _BlockedUsersViewState extends State<BlockedUsersView> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildContent(BuildContext context, BlockedUsersState state) {
-    if (state is BlockedUsersLoading) {
-      return _buildLoadingSkeleton();
-    }
-
-    if (state is BlockedUsersError) {
-      return CustomErrorView(
-        verticalPadding: 100,
-        message: state.message,
-        onRetry: () => context.read<BlockedUsersCubit>().refresh(),
-      );
-    }
-
-    if (state is BlockedUsersLoaded) {
-      return _buildBlockedUsersList(context, state.blockedUsers);
-    }
-
-    return const SizedBox();
-  }
-
-  Widget _buildLoadingSkeleton() {
-    return Skeletonizer(
-      enabled: true,
-      child: ListView.builder(
-        padding: EdgeInsets.symmetric(horizontal: 20.w),
-        itemCount: 8,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: EdgeInsets.symmetric(vertical: 12.h),
-            child: Row(
-              children: [
-                // صورة السكلتون الدائرية
-                Container(
-                  width: 56.r,
-                  height: 56.r,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.grey.shade200,
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                // معلومات السكلتون
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 100.w,
-                      height: 16.h,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(4.r),
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Container(
-                      width: 80.w,
-                      height: 14.h,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(4.r),
-                      ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                // زر السكلتون
-                Container(
-                  width: 100.w,
-                  height: 40.h,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(20.r),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildBlockedUsersList(
-    BuildContext context,
-    List<BlockedUserModel> blockedUsers,
-  ) {
-    if (blockedUsers.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AppImage(AssetsData.icNoContentSeach),
-            SizedBox(height: 16.h),
-            Text(
-              context.tr('no_blocked_users'),
-              style: Styles.textStyle16.copyWith(color: AppColors.secondary600),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return RefreshIndicator.adaptive(
-      onRefresh: () async {
-        await context.read<BlockedUsersCubit>().refresh();
-      },
-      color: AppColors.kprimaryColor,
-      backgroundColor: AppColors.kWhiteColor,
-      displacement: 40.h,
-      edgeOffset: 0,
-      child: ListView.separated(
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-        itemCount: blockedUsers.length,
-        separatorBuilder: (context, index) =>
-            Divider(color: Colors.grey.shade200, height: 1),
-        itemBuilder: (context, index) {
-          final blockedUser = blockedUsers[index];
-          return BlockedUserItem(
-            blockedUser: blockedUser,
-            onUnblock: () {
-              _showUnblockConfirmation(context, blockedUser);
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  void _showUnblockConfirmation(
-    BuildContext context,
-    BlockedUserModel blockedUser,
-  ) {
-    final cubit = context.read<BlockedUsersCubit>();
-
-    CustomshowDialogWithImage(
-      context,
-      title: context.tr('unblock'),
-      supTitle:
-          '${context.tr('are_you_sure_unblock')} ${blockedUser.blockedUser.name}',
-      icon: Icons.block,
-      iconColor: AppColors.kprimaryColor,
-      iconBackgroundColor: AppColors.primary100,
-      bottonText: context.tr('yes'),
-      onPressed: () {
-        cubit.unblockUser(blockedUser.blockedUser.id);
-      },
-      showCancelButton: true,
-      cancelText: context.tr('no'),
-      onCancel: () {},
     );
   }
 }

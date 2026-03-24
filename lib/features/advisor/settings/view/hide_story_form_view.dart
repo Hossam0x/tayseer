@@ -1,7 +1,9 @@
-import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility/story_visibility_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility/story_visibility_state.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/hide_story/hide_story_confirm_dialog.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/hide_story/hide_story_skeleton.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/hide_story/hide_story_user_item.dart';
 import 'package:tayseer/my_import.dart';
 
 class HideStoryFromView extends StatefulWidget {
@@ -22,9 +24,7 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
   }
 
   void _onSearchTextChanged() {
-    setState(() {
-      _hasText = _searchController.text.isNotEmpty;
-    });
+    setState(() => _hasText = _searchController.text.isNotEmpty);
   }
 
   @override
@@ -48,8 +48,6 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
             );
             context.read<StoryVisibilityCubit>().clearError();
           }
-
-          // عرض رسالة النجاح بعد إلغاء التقييد
           if (state.successMessage != null &&
               state.successMessage!.isNotEmpty) {
             showSafeSnackBar(
@@ -62,12 +60,10 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
         },
         builder: (context, state) {
           final cubit = context.read<StoryVisibilityCubit>();
-
           return Scaffold(
             body: SafeArea(
               child: Column(
                 children: [
-                  // Header مع زر إغلاق
                   Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 20.w,
@@ -78,107 +74,22 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
                       icon: Icons.close,
                     ),
                   ),
-
-                  // حقل البحث
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 30.w),
-                    child: TextField(
-                      controller: _searchController,
-                      textAlign: isArabic ? TextAlign.right : TextAlign.left,
-                      onChanged: (value) {
-                        context.read<StoryVisibilityCubit>().updateSearchQuery(
-                          value,
-                        );
-                      },
-                      decoration: InputDecoration(
-                        hintText: context.tr('search_by_name'),
-                        hintStyle: Styles.textStyle16.copyWith(
-                          color: AppColors.gray2,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.search,
-                          color: AppColors.gray2,
-                          size: 20.sp,
-                        ),
-                        prefixIconConstraints: BoxConstraints(
-                          minWidth: 40.w,
-                          minHeight: 20.h,
-                        ),
-                        border: UnderlineInputBorder(
-                          borderSide: BorderSide(color: Colors.grey.shade200),
-                        ),
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: Colors.grey.shade200),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 8.w,
-                          vertical: 20.h,
-                        ),
-                        suffixIcon: state.isLoading
-                            ? SizedBox(
-                                width: 20.w,
-                                height: 20.h,
-                                child: Padding(
-                                  padding: EdgeInsets.all(8.w),
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.primary300,
-                                  ),
-                                ),
-                              )
-                            : _hasText
-                            ? IconButton(
-                                icon: Icon(
-                                  Icons.clear,
-                                  color: AppColors.gray2,
-                                  size: 20.sp,
-                                ),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  context
-                                      .read<StoryVisibilityCubit>()
-                                      .updateSearchQuery('');
-                                },
-                              )
-                            : null,
-                      ),
-                    ),
+                  _SearchField(
+                    controller: _searchController,
+                    hasText: _hasText,
+                    isLoading: state.isLoading,
+                    onChanged: (value) => cubit.updateSearchQuery(value),
+                    onClear: () {
+                      _searchController.clear();
+                      cubit.updateSearchQuery('');
+                    },
                   ),
-
                   Gap(16.h),
-
-                  // زر اختيار الكل
                   if (state.state == CubitStates.success &&
                       state.users.isNotEmpty)
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 30.w),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          TextButton(
-                            onPressed: () => cubit.selectAllUsers(),
-                            child: Text(
-                              state.hasSelections &&
-                                      state.selectedUsers.length ==
-                                          state.users.length
-                                  ? context.tr('unselect_all')
-                                  : context.tr('select_all'),
-                              style: Styles.textStyle14.copyWith(
-                                color: AppColors.primary400,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
+                    _SelectAllButton(state: state, cubit: cubit),
                   Gap(8.h),
-
-                  // قائمة المستخدمين
                   Expanded(child: _buildUsersList(context, state, cubit)),
-
-                  // زر التأكيد في الأسفل
                   if (state.hasSelections)
                     Padding(
                       padding: EdgeInsets.symmetric(
@@ -191,10 +102,12 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
                             : '${context.tr('unrestricting_for')} ${state.selectedUsers.length} ${context.tr('user')}',
                         onPressed: state.isUnrestricting
                             ? null
-                            : () => _showConfirmationDialog(
-                                context,
-                                cubit,
-                                state,
+                            : () => showDialog(
+                                context: context,
+                                builder: (_) => HideStoryConfirmDialog(
+                                  cubit: cubit,
+                                  state: state,
+                                ),
                               ),
                         useGradient: true,
                       ),
@@ -213,9 +126,7 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
     StoryVisibilityState state,
     StoryVisibilityCubit cubit,
   ) {
-    if (state.state == CubitStates.loading) {
-      return _buildSkeletonLoading();
-    }
+    if (state.state == CubitStates.loading) return const HideStorySkeleton();
 
     if (state.state == CubitStates.failure) {
       return CustomErrorView(
@@ -254,12 +165,11 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
     return ListView.separated(
       padding: EdgeInsets.symmetric(horizontal: 30.w),
       itemCount: state.users.length,
-      separatorBuilder: (context, index) =>
+      separatorBuilder: (_, __) =>
           Divider(color: Colors.grey.shade100, height: 1),
       itemBuilder: (context, index) {
         final user = state.users[index];
-
-        return _UserListItem(
+        return HideStoryUserItem(
           key: ValueKey(user.userId),
           user: user,
           onTap: () => cubit.toggleUserSelection(user.userId),
@@ -267,266 +177,98 @@ class _HideStoryFromViewState extends State<HideStoryFromView> {
       },
     );
   }
-
-  Widget _buildSkeletonLoading() {
-    return Skeletonizer(
-      enabled: true,
-      child: ListView.separated(
-        padding: EdgeInsets.symmetric(horizontal: 30.w),
-        itemCount: 5,
-        separatorBuilder: (context, index) =>
-            Container(height: 1, color: Colors.grey.shade200),
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: EdgeInsets.symmetric(vertical: 10.h),
-            child: Row(
-              children: [
-                // صورة Skeleton
-                Container(
-                  width: 52.r,
-                  height: 52.r,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-
-                Gap(12.w),
-
-                // معلومات Skeleton
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 120.w,
-                        height: 18.h,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(4.r),
-                        ),
-                      ),
-                      Gap(6.h),
-                      Container(
-                        width: 80.w,
-                        height: 14.h,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(4.r),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const Spacer(),
-
-                // زر Skeleton
-                Container(
-                  width: 24.w,
-                  height: 24.w,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.grey.shade300,
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  void _showConfirmationDialog(
-    BuildContext context,
-    StoryVisibilityCubit cubit,
-    StoryVisibilityState state,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-          title: Text(
-            context.tr('confirmation'),
-            style: Styles.textStyle18Bold.copyWith(
-              color: AppColors.secondary800,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '${context.tr('want_to_unhide_from')} ${state.selectedUsers.length} ${context.tr('user')}',
-                style: Styles.textStyle14.copyWith(
-                  color: AppColors.secondary600,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              Gap(12.h),
-              if (state.selectedUsers.length <= 3)
-                Column(
-                  children: state.selectedUsers
-                      .map(
-                        (user) => Padding(
-                          padding: EdgeInsets.symmetric(vertical: 4.h),
-                          child: Text(
-                            '• ${user.name}',
-                            style: Styles.textStyle14.copyWith(
-                              color: AppColors.secondary700,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-            ],
-          ),
-          actions: [
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.grey.shade300),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(
-                      context.tr('cancel'),
-                      style: Styles.textStyle14.copyWith(
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                  ),
-                ),
-                Gap(12.w),
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD65670),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                    ),
-                    onPressed: () async {
-                      Navigator.pop(context);
-                      await cubit.unrestrictSelectedUsers();
-                    },
-                    child: Text(
-                      context.tr('confirm'),
-                      style: Styles.textStyle14Bold.copyWith(
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        );
-      },
-    );
-  }
 }
 
-// Extracted widget for better performance
-class _UserListItem extends StatelessWidget {
-  final dynamic user;
-  final VoidCallback onTap;
+class _SearchField extends StatelessWidget {
+  final TextEditingController controller;
+  final bool hasText;
+  final bool isLoading;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
 
-  const _UserListItem({super.key, required this.user, required this.onTap});
+  const _SearchField({
+    required this.controller,
+    required this.hasText,
+    required this.isLoading,
+    required this.onChanged,
+    required this.onClear,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 10.h),
-        child: Row(
-          children: [
-            // الصورة
-            _buildUserAvatar(user.image),
-
-            Gap(12.w),
-
-            // الاسم + اليوزرنيم
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    user.name,
-                    style: Styles.textStyle16.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.secondary800,
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 30.w),
+      child: TextField(
+        controller: controller,
+        textAlign: isArabic ? TextAlign.right : TextAlign.left,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          hintText: context.tr('search_by_name'),
+          hintStyle: Styles.textStyle16.copyWith(color: AppColors.gray2),
+          prefixIcon: Icon(Icons.search, color: AppColors.gray2, size: 20.sp),
+          prefixIconConstraints: BoxConstraints(
+            minWidth: 40.w,
+            minHeight: 20.h,
+          ),
+          border: UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          enabledBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          contentPadding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 20.h),
+          suffixIcon: isLoading
+              ? SizedBox(
+                  width: 20.w,
+                  height: 20.h,
+                  child: Padding(
+                    padding: EdgeInsets.all(8.w),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary300,
                     ),
                   ),
-                  if (user.userName.isNotEmpty)
-                    Text(
-                      user.userName,
-                      style: Styles.textStyle14.copyWith(
-                        color: AppColors.gray2,
-                      ),
-                    ),
-                  if (user.email != null && user.email!.isNotEmpty)
-                    Text(
-                      user.email!,
-                      style: Styles.textStyle12.copyWith(
-                        color: AppColors.gray2,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
-            ),
-
-            const Spacer(),
-
-            // زر التحديد
-            Container(
-              width: 24.w,
-              height: 24.w,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: user.isSelected
-                    ? const Color(0xFFD65670)
-                    : Colors.transparent,
-                border: Border.all(
-                  color: user.isSelected
-                      ? const Color(0xFFD65670)
-                      : Colors.grey.shade300,
-                  width: 2,
-                ),
-              ),
-              child: user.isSelected
-                  ? Icon(Icons.check, color: Colors.white, size: 16.sp)
-                  : null,
-            ),
-          ],
+                )
+              : hasText
+              ? IconButton(
+                  icon: Icon(Icons.clear, color: AppColors.gray2, size: 20.sp),
+                  onPressed: onClear,
+                )
+              : null,
         ),
       ),
     );
   }
+}
 
-  Widget _buildUserAvatar(String? imageUrl) {
-    return CircleAvatar(
-      radius: 26.r,
-      backgroundColor: Colors.grey.shade200,
-      backgroundImage: imageUrl != null && imageUrl.isNotEmpty
-          ? NetworkImage(imageUrl) as ImageProvider
-          : AssetImage(AssetsData.avatarImage),
-      child: imageUrl == null || imageUrl.isEmpty
-          ? Icon(Icons.person, color: Colors.grey.shade400, size: 24.sp)
-          : null,
+class _SelectAllButton extends StatelessWidget {
+  final StoryVisibilityState state;
+  final StoryVisibilityCubit cubit;
+
+  const _SelectAllButton({required this.state, required this.cubit});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 30.w),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          TextButton(
+            onPressed: () => cubit.selectAllUsers(),
+            child: Text(
+              state.hasSelections &&
+                      state.selectedUsers.length == state.users.length
+                  ? context.tr('unselect_all')
+                  : context.tr('select_all'),
+              style: Styles.textStyle14.copyWith(
+                color: AppColors.primary400,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
