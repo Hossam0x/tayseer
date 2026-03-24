@@ -23,7 +23,7 @@ import 'package:tayseer/features/advisor/settings/data/repositories/advisor_pack
 import 'package:tayseer/features/advisor/settings/data/repositories/blocked_users_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository_impl.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/account_management_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/account_management/account_management_cubit.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/shared/followers/data/repositories/followers_repository.dart';
 import 'package:tayseer/features/shared/followers/data/repositories/user_followings_repository.dart';
@@ -50,10 +50,10 @@ import 'package:tayseer/features/advisor/settings/data/models/service_provider_r
 import 'package:tayseer/features/advisor/settings/data/repositories/contact_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/story_visibility_repository.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_cubit.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/help_support_cubit.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_cubits.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data/edit_personal_data_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/help_support/help_support_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/service_provider/service_provider_cubits.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility/story_visibility_cubit.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo_impl.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
@@ -87,7 +87,7 @@ import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_edit
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
 import 'package:tayseer/features/advisor/search/data/repos/search_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/order_management_repository.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/order_management_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/order_management/order_management_cubit.dart';
 import 'package:tayseer/features/advisor/wallet/data/datasources/wallet_remote_data_source.dart';
 import 'package:tayseer/features/advisor/wallet/data/repos/wallet_repo.dart';
 import 'package:tayseer/features/advisor/wallet/data/cubit/wallet_cubit.dart';

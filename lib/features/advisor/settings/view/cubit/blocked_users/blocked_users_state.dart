@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../data/models/blocked_user_model.dart';
+import '../../../data/models/blocked_user_model.dart';
 
 abstract class BlockedUsersState extends Equatable {
   const BlockedUsersState();

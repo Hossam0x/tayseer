@@ -1,7 +1,7 @@
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility_cubit.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility_state.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility/story_visibility_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility/story_visibility_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class HideStoryFromView extends StatefulWidget {

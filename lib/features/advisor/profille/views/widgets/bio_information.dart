@@ -282,12 +282,13 @@ class BioInformation extends StatelessWidget {
   }
 
   Widget _buildConsultationCard(BuildContext context) {
-    return BlocSelector<ProfileCubit, ProfileState, int>(
-      selector: (state) => state.analytics?.overview.views ?? 0,
-      builder: (context, totalViews) {
-        final isLoading =
-            context.read<ProfileCubit>().state.analyticsState ==
-            CubitStates.loading;
+    return BlocBuilder<ProfileCubit, ProfileState>(
+      buildWhen: (prev, curr) =>
+          prev.analyticsState != curr.analyticsState ||
+          prev.analytics != curr.analytics,
+      builder: (context, state) {
+        final isLoading = state.analyticsState == CubitStates.loading;
+        final totalViews = state.analytics?.overview.views ?? 0;
 
         return CustomClick(
           onTap: () async {

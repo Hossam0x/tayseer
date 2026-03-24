@@ -4,7 +4,7 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:tayseer/core/utils/profile_event_bus.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/models/edit_personal_data_models.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_state.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data/edit_personal_data_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {

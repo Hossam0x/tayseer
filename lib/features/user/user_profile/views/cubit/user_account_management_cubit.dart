@@ -1,4 +1,4 @@
-import 'package:tayseer/features/advisor/settings/view/cubit/account_management_state.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/account_management/account_management_state.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_account_management_repository.dart';
 import 'package:tayseer/my_import.dart';
 

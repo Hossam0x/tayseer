@@ -1,9 +1,8 @@
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_cubits.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_states.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/service_provider/service_provider_cubits.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/service_provider/service_provider_states.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/time_slot_item.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class AppointmentsView extends StatelessWidget {

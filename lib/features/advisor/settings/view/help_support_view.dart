@@ -1,5 +1,5 @@
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/help_support_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/help_support/help_support_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class HelpSupportView extends StatelessWidget {

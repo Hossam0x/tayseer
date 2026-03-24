@@ -1,9 +1,9 @@
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/account_management_repository.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/account_management_cubit.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/account_management_state.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/account_action_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/account_management/account_management_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/account_management/account_management_state.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/account_management/account_action_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class AccountManagementView extends StatefulWidget {
@@ -293,23 +293,17 @@ class _AccountManagementViewState extends State<AccountManagementView> {
     BuildContext context,
     AccountManagementState state,
   ) async {
-    // معالجة النجاح
     if (state.state == CubitStates.success) {
-      // إعادة تعيين الخيار المحدد
       _actionCubit.clearSelection();
-
-      // تنفيذ التسجيل الخروج ومسح البيانات
-      await _logoutAndClearData(
-        context,
-        message: state.operation == AccountOperation.suspend
-            ? context.tr('account_suspended_successfully')
-            : context.tr('account_deleted_successfully'),
-      );
+      final message = state.operation == AccountOperation.suspend
+          ? context.tr('account_suspended_successfully')
+          : context.tr('account_deleted_successfully');
+      await _logoutAndClearData(context, message: message);
     }
 
-    // معالجة الأخطاء
     if (state.state == CubitStates.failure && state.errorMessage != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           CustomSnackBar(context, text: state.errorMessage!, isSuccess: false),
         );
@@ -322,27 +316,19 @@ class _AccountManagementViewState extends State<AccountManagementView> {
     required String message,
   }) async {
     try {
-      // الانتظار قليلاً لعرض الحالة النهائية
       await Future.delayed(const Duration(milliseconds: 500));
-
-      // 1. مسح جميع البيانات من SharedPreferences
       await CachNetwork.clearCache();
       await getIt<CacheCleanupService>().clearAllUserCache();
-
-      // 2. إعادة التوجيه إلى شاشة التسجيل/تسجيل الدخول
+      if (!context.mounted) return;
       Navigator.pushNamedAndRemoveUntil(
         context,
         AppRouter.kRegisrationView,
         (route) => false,
       );
-
-      // 3. عرض رسالة نجاح
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(CustomSnackBar(context, text: message, isSuccess: true));
-    } catch (e) {
-      print('❌ Error during logout: $e');
-    }
+    } catch (_) {}
   }
 }
 

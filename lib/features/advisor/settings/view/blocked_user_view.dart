@@ -1,8 +1,8 @@
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/data/models/blocked_user_model.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/blocked_users_repository.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/blocked_users_cubit.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/blocked_users_state.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/blocked_users/blocked_users_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/blocked_users/blocked_users_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/features/advisor/settings/data/models/blocked_user_item.dart';
