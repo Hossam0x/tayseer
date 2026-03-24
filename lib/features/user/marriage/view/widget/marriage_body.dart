@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
@@ -70,7 +69,6 @@ class MarriageBodyState extends State<MarriageBody>
       _interactionsCubit = getIt<InteractionsCubit>();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _interactionsCubit!.fetchHistorySilently().then((_) {
-          // ✅ Re-render after fetch so isSubscribed is evaluated correctly
           if (mounted) setState(() {});
         });
       });
@@ -83,52 +81,21 @@ class MarriageBodyState extends State<MarriageBody>
     super.initState();
     _mainScrollController.addListener(_scrollListener);
 
-    // ✅ لو جاي من interactions — initialize الـ interactionsCubit فوراً
-    // عشان نقدر نقرأ الـ isSubscribed بشكل صحيح في _buildMarriageContent
     if (widget.fromInteractions) {
       _interactionsCubit = getIt<InteractionsCubit>();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _interactionsCubit!.fetchHistorySilently().then((_) {
-          // ✅ FIXED: Re-render after subscription status is loaded
-          // This ensures shouldBlurImages is re-evaluated with correct isSubscribed value
           if (mounted) setState(() {});
         });
       });
     }
 
-    // ✅ لو مستشار وجه من deep link — أظهر رسالة وارجع
+    // ✅ لو مستشار وجه من deep link — أظهر popup زي الـ logout بالظبط
     if (widget.personId != null &&
         selectedUserType == UserTypeEnum.asConsultant) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: Text(
-              context.tr('cannot_do_this_action'),
-              textAlign: TextAlign.center,
-              style: Styles.textStyle18Bold,
-            ),
-            content: Text(
-              'هذه الميزة متاحة فقط لمستخدمي تطبيق تيسير.\nيرجى تسجيل الدخول بحساب مستخدم.',
-              textAlign: TextAlign.center,
-              style: Styles.textStyle14,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  context.pop();
-                },
-                child: Text(context.tr('okay_understood')),
-              ),
-            ],
-          ),
-        );
+        _showConsultantBlockedDialog();
       });
       return;
     }
@@ -140,6 +107,22 @@ class MarriageBodyState extends State<MarriageBody>
           : null,
     );
     cubit.initAnimation(this);
+  }
+
+  // ✅ Dialog exactly like logout — using CustomshowDialogWithImage
+  void _showConsultantBlockedDialog() {
+    CustomshowDialogWithImage(
+      context,
+      title: context.tr('cannot_do_this_action'),
+      supTitle: context.tr('consultant_blocked_msg'),
+      imageUrl: AssetsData.kWoriningImage,
+      bottonText: context.tr('okay_understood'),
+      showCancelButton: false,
+      onPressed: () {
+        Navigator.pop(context); // Closes the dialog
+ // Returns to the previous page
+      },
+    );
   }
 
   @override
@@ -186,6 +169,18 @@ class MarriageBodyState extends State<MarriageBody>
         widget.onScroll?.call(false);
       }
     });
+  }
+
+  // ✅ FIXED: faith بيجي كـ field منفصل من الـ API (مش جوه hobbies)
+  List<Map<String, dynamic>> _buildFaithItems(Answers? answers) {
+    final faithValue = answers?.faith;
+    if (faithValue == null || faithValue.trim().isEmpty) return [];
+
+    final emoji = MarriageConstants.getEmoji(faithValue);
+    final translated = _tr(faithValue);
+    return [
+      {'label': '$emoji $translated'},
+    ];
   }
 
   Future<void> _showSwipePopup(
@@ -319,7 +314,6 @@ class MarriageBodyState extends State<MarriageBody>
           previous.userHistory != current.userHistory,
 
       listener: (context, state) {
-        // ✅ Regard failure
         if ((state.sendRegardState == CubitStates.failure ||
                 state.sendRegardTextState == CubitStates.failure) &&
             state.showActionSnackbar) {
@@ -333,7 +327,6 @@ class MarriageBodyState extends State<MarriageBody>
           context.read<MarriageCubit>().resetState();
         }
 
-        // ✅ Regard success
         if (state.sendRegardState == CubitStates.success &&
             state.showActionSnackbar) {
           showDialog(
@@ -349,7 +342,6 @@ class MarriageBodyState extends State<MarriageBody>
           context.read<MarriageCubit>().resetState();
         }
 
-        // ✅ Block success
         if (state.blockActionState == CubitStates.success &&
             state.showActionSnackbar) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -362,7 +354,6 @@ class MarriageBodyState extends State<MarriageBody>
           context.read<MarriageCubit>().resetState();
         }
 
-        // ✅ Block failure
         if (state.blockActionState == CubitStates.failure &&
             state.showActionSnackbar) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -628,6 +619,78 @@ class MarriageBodyState extends State<MarriageBody>
     );
   }
 
+  String _getTagEmoji(String? category, String? value) {
+    if (category == null) return '✨';
+
+    if (category.toLowerCase() == 'country' ||
+        category.toLowerCase() == 'nationality') {
+      return CountryFlagUtils.getFlag(value ?? '');
+    }
+
+    switch (category.toLowerCase()) {
+      case 'religion':
+      case 'religious_commitment':
+        return '🕌';
+      case 'education':
+      case 'education_level':
+        return '🎓';
+      case 'job':
+      case 'professional_life':
+        return '💼';
+      case 'age':
+        return '🎂';
+      case 'hobby':
+      case 'hobbies':
+        return '🎯';
+      case 'social_status':
+      case 'marital_status':
+        return '💍';
+      case 'children':
+      case 'family':
+        return '👶';
+      case 'height':
+        return '📏';
+      case 'weight':
+        return '⚖️';
+      case 'smoker':
+        return '🚬';
+      case 'travel':
+        return '✈️';
+      case 'goals':
+      case 'marriage_intentions':
+        return '💫';
+      default:
+        return '✨';
+    }
+  }
+
+  List<String> _buildCompatibilityTags(List<MatchingTag>? matchingTags) {
+    if (matchingTags == null) return [];
+
+    final List<String> result = [];
+
+    for (final tag in matchingTags) {
+      if (tag.value == null || tag.value!.trim().isEmpty) continue;
+
+      final values = tag.value!
+          .split(',')
+          .map((v) => v.trim())
+          .where((v) => v.isNotEmpty)
+          .toList();
+
+      for (final value in values) {
+        if (value.startsWith('interest_') || value.startsWith('faith_')) {
+          final emoji = MarriageConstants.getEmoji(value);
+          result.add('$emoji ${_tr(value)}');
+        } else {
+          result.add('${_getTagEmoji(tag.category, value)} ${_tr(value)}');
+        }
+      }
+    }
+
+    return result;
+  }
+
   // ═══════════════════════════════════════════════════════════════
   // MARRIAGE TAB
   // ═══════════════════════════════════════════════════════════════
@@ -665,23 +728,14 @@ class MarriageBodyState extends State<MarriageBody>
     final nextAnswers = nextProfile?.answers;
     final List<String> nextImages = nextAnswers?.userMedia?.image ?? [];
 
-    // ✅ FIXED blur logic:
-    // - Not fromInteractions: depends only on server imageBlur flag
-    // - fromInteractions + NOT subscribed: always blur
-    // - fromInteractions + IS subscribed: only blur if interactionUser.isImageBlurred is explicitly true
-    //   (NO fallback to user?.imageBlur — that was causing blur even when subscribed)
     final bool isSubscribed = _interactionsCubit?.state.isSubscribed ?? false;
 
     final bool shouldBlurImages;
     if (!widget.fromInteractions) {
-      // Normal flow — just use server flag
       shouldBlurImages = user?.imageBlur ?? false;
     } else if (!isSubscribed) {
-      // fromInteractions + not subscribed → always blur
       shouldBlurImages = true;
     } else {
-      // fromInteractions + subscribed → only blur if interactionUser explicitly says so
-      // Do NOT fall back to user?.imageBlur here
       shouldBlurImages = cubit.interactionUser?.isImageBlurred ?? false;
     }
 
@@ -690,6 +744,7 @@ class MarriageBodyState extends State<MarriageBody>
         : <Map<String, dynamic>>[];
 
     final bool canInteract = profile.allowInteractions ?? true;
+    final faithItems = _buildFaithItems(answers);
 
     return Directionality(
       key: key,
@@ -780,16 +835,7 @@ class MarriageBodyState extends State<MarriageBody>
                         subtitle: user?.similarity != null
                             ? '${user!.similarity}%'
                             : '',
-                        tags:
-                            user?.matchingTags
-                                ?.where(
-                                  (t) =>
-                                      t.value != null &&
-                                      t.value!.trim().isNotEmpty,
-                                )
-                                .map<String>((t) => _tr(t.value))
-                                .toList() ??
-                            [],
+                        tags: _buildCompatibilityTags(user?.matchingTags),
                       ),
                     ),
                   ),
@@ -976,6 +1022,7 @@ class MarriageBodyState extends State<MarriageBody>
                       ),
                     ),
 
+                  // ✅ سكشن الهوايات
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -984,16 +1031,32 @@ class MarriageBodyState extends State<MarriageBody>
                     sliver: SliverToBoxAdapter(
                       child: InterestsSection(
                         interests:
-                            MarriageConstants.parseKeysFromRaw(
-                              answers?.hobbies,
-                            ).map((h) {
-                              final emoji = MarriageConstants.getEmoji(h);
-                              final translated = _tr(h);
-                              return {'label': '$emoji $translated'};
-                            }).toList(),
+                            MarriageConstants.parseKeysFromRaw(answers?.hobbies)
+                                .where((key) => key.startsWith('interest_'))
+                                .map((h) {
+                                  final emoji = MarriageConstants.getEmoji(h);
+                                  final translated = _tr(h);
+                                  return {'label': '$emoji $translated'};
+                                })
+                                .toList(),
                       ),
                     ),
                   ),
+
+                  // ✅ سكشن الإيمان — مصدره answers.faith (field منفصل في الـ API)
+                  if (faithItems.isNotEmpty)
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 10.h,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: InterestsSection(
+                          title: 'choose_faith',
+                          interests: faithItems,
+                        ),
+                      ),
+                    ),
 
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
@@ -1097,7 +1160,6 @@ class MarriageBodyState extends State<MarriageBody>
                             ? MainAxisAlignment.spaceAround
                             : MainAxisAlignment.spaceEvenly,
                         children: [
-                          // Like button
                           buildCircleButton(
                             onTap: () async {
                               await _showSwipePopup(
@@ -1129,7 +1191,6 @@ class MarriageBodyState extends State<MarriageBody>
                             HexColor('f8d3da'),
                           ),
 
-                          // Star button
                           buildCircleButton(
                             onTap: () async {
                               cubit.sendRegard(
@@ -1141,7 +1202,6 @@ class MarriageBodyState extends State<MarriageBody>
                             HexColor('cccab3'),
                           ),
 
-                          // Dislike button
                           buildCircleButton(
                             onTap: () async {
                               await _showSwipePopup(
@@ -1173,7 +1233,6 @@ class MarriageBodyState extends State<MarriageBody>
                             HexColor('e44e6c'),
                           ),
 
-                          // Back button
                           if (state.userHistory.isNotEmpty)
                             buildCircleButton(
                               onTap: () async {

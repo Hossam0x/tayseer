@@ -260,6 +260,7 @@
 // }
 import 'dart:ui';
 import 'dart:math' as math;
+import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/features/user/marriage/view/widget/animated_be_first_button.dart';
 import 'package:tayseer/features/user/marriage/view/widget/image_viewer_gallery.dart';
 import 'package:tayseer/my_import.dart';
@@ -725,10 +726,14 @@ class _InfoCard extends StatelessWidget {
             ],
           ),
           Gap(5.h),
+          // ✅ بعد
           if (location.isNotEmpty)
             Row(
               children: [
-                const Icon(Icons.flag, color: Colors.white, size: 16),
+                Text(
+                  CountryFlagUtils.getFlag(location),
+                  style: const TextStyle(fontSize: 16),
+                ),
                 Gap(5.w),
                 Flexible(
                   child: Text(

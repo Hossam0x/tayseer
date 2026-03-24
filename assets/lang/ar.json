@@ -1690,6 +1690,5 @@
   "favorite_action": "مفضلة",
   "regard_action": "تحية",
   "expand_filter": "توسيع الفلتر",
-  "seen_all_recommendations": "لقد رأيت كل الأشخاص وفق ترشيحاتك",
-  "try_expanding_filter": "لقد رأيت كل من يطابق فلاترك، حاول توسيعها لعرض المزيد."
+  "consultant_blocked_msg": "هذه الميزة متاحة فقط لمستخدمي تطبيق تيسير. يرجى تسجيل الدخول بحساب مستخدم."
 }

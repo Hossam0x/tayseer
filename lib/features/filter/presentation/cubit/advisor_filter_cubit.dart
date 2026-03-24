@@ -70,7 +70,9 @@ class AdvisorFilterCubit extends Cubit<AdvisorFilterState> {
     final request = AdvisorFilterRequestModel(
       priceMin: state.priceRange.start,
       priceMax: state.priceRange.end,
-      yearsOfExperience: _parseExperience(state.selectedExperience),
+      yearsOfExperience: _parseExperience(
+        state.selectedExperience,
+      ), // ✅ String?
       rating: state.selectedRating > 0 ? state.selectedRating.toDouble() : null,
       language: state.selectedLanguages.isNotEmpty
           ? state.selectedLanguages.first
@@ -98,8 +100,14 @@ class AdvisorFilterCubit extends Cubit<AdvisorFilterState> {
     return dayMap[dartWeekday] ?? 0;
   }
 
-  int? _parseExperience(String? experience) {
-    if (experience == null || experience.isEmpty) return null;
-    return int.tryParse(experience);
+  String? _parseExperience(String? experience) {
+    // experience هنا = '1', '3', '5', '10' (value من الـ chip)
+    const map = {
+      '1': 'experience_0_2', // ✅ نفس key التسجيل
+      '3': 'experience_2_5',
+      '5': 'experience_5_10',
+      '10': 'experience_10_plus',
+    };
+    return experience == null ? null : map[experience];
   }
 }

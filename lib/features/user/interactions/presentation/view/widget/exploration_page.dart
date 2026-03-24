@@ -90,8 +90,8 @@ class ExplorationState extends State<Exploration> {
           );
         }
 
-        if (!state.answerCompleted &&
-            kCurrentUserData?.compeletedData == false) {
+        // ✅ الحل - اعتمد على السيرفر فقط
+        if (!state.answerCompleted) {
           return const EmptyExploration();
         }
 
