@@ -25,13 +25,13 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
 
   late AnimationController _snapBackController;
   double _snapStartY = 0.0;
-  double _snapStartX = 0.0;
-
   double _dragY = 0.0;
-  double _dragX = 0.0;
 
   AnimationController? _doubleTapController;
   Animation<Matrix4>? _doubleTapAnimation;
+
+  late AnimationController _arrowHintController;
+  late Animation<double> _arrowHintAnimation;
 
   @override
   void initState() {
@@ -42,10 +42,8 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
           vsync: this,
           duration: const Duration(milliseconds: 300),
         )..addListener(() {
-          final t = _snapBackController.value;
           setState(() {
-            _dragY = _snapStartY * (1 - t);
-            _dragX = _snapStartX * (1 - t);
+            _dragY = _snapStartY * (1 - _snapBackController.value);
           });
         });
 
@@ -53,13 +51,46 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
       vsync: this,
       duration: const Duration(milliseconds: 250),
     );
+
+    _arrowHintController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _arrowHintAnimation =
+        TweenSequence([
+          TweenSequenceItem(tween: Tween(begin: 0.0, end: -14.0), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: -14.0, end: 0.0), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: 0.0, end: -10.0), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: -10.0, end: 0.0), weight: 25),
+        ]).animate(
+          CurvedAnimation(
+            parent: _arrowHintController,
+            curve: Curves.easeInOut,
+          ),
+        );
+
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (mounted) _arrowHintController.forward();
+    });
+
+    // منع الـ zoom out من تعدي الـ 1x
+    _transformationController.addListener(_clampScale);
+  }
+
+  void _clampScale() {
+    final scale = _transformationController.value.getMaxScaleOnAxis();
+    if (scale < 1.0) {
+      _transformationController.value = Matrix4.identity();
+    }
   }
 
   @override
   void dispose() {
+    _transformationController.removeListener(_clampScale);
     _transformationController.dispose();
     _snapBackController.dispose();
     _doubleTapController?.dispose();
+    _arrowHintController.dispose();
     super.dispose();
   }
 
@@ -93,86 +124,124 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
     _doubleTapController!.forward(from: 0);
   }
 
+  void _handleDragMove(double dy) {
+    if (_isZoomed) return;
+    if (dy < 0) {
+      _snapBackController.stop();
+      setState(() => _dragY += dy);
+    }
+  }
+
+  void _handleDragEnd() {
+    if (_isZoomed) return;
+    if (_dragY < -120) {
+      Navigator.pop(context);
+    } else if (_dragY < 0) {
+      _snapStartY = _dragY;
+      _snapBackController.forward(from: 0);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final progress = (_dragY / 350).clamp(0.0, 1.0);
+    final progress = (-_dragY / 350).clamp(0.0, 1.0);
     final bgOpacity = (1.0 - progress).clamp(0.0, 1.0);
     final scale = (1.0 - progress * 0.15).clamp(0.85, 1.0);
-    final borderRadius = progress * 30.0;
+    final borderRadius = progress * 40.0;
 
     return Scaffold(
       backgroundColor: Colors.black.withOpacity(bgOpacity),
-      appBar: AppBar(
-        backgroundColor: Colors.black.withOpacity(bgOpacity),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: widget.userName != null
-            ? Text(
-                widget.userName!,
-                style: Styles.textStyle16SemiBold.copyWith(color: Colors.white),
-              )
-            : null,
-      ),
-      body: Transform.translate(
-        offset: Offset(_dragX, _dragY),
-        child: Transform.scale(
-          scale: scale,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(borderRadius),
-            child: Container(
-              color: Colors.black,
-              width: double.infinity,
-              height: double.infinity,
-              child: GestureDetector(
-                onDoubleTapDown: _onDoubleTapDown,
-                onDoubleTap: () {},
-                // السحب للأسفل فقط لما مفيش zoom
-                onVerticalDragStart: (_) {
-                  if (_isZoomed) return;
-                  _snapBackController.stop();
-                },
-                onVerticalDragUpdate: (d) {
-                  if (_isZoomed) return;
-                  setState(() {
-                    _dragY += d.delta.dy;
-                    _dragX += d.delta.dx * 0.3;
-                  });
-                },
-                onVerticalDragEnd: (d) {
-                  if (_isZoomed) return;
-                  final vel = d.velocity.pixelsPerSecond.dy;
-                  if (_dragY > 120 || vel > 800) {
-                    Navigator.pop(context);
-                  } else {
-                    _snapStartY = _dragY;
-                    _snapStartX = _dragX;
-                    _snapBackController.forward(from: 0);
-                  }
-                },
-                child: Hero(
-                  tag: widget.heroTag,
-                  child: InteractiveViewer(
-                    transformationController: _transformationController,
-                    minScale: 0.8,
-                    maxScale: 4.0,
-                    boundaryMargin: const EdgeInsets.all(double.infinity),
-                    // نخلي InteractiveViewer يتحكم في الـ pan والـ scale بحرية
-                    panEnabled: true,
-                    scaleEnabled: true,
-                    child: SizedBox.expand(
-                      child: widget.imageFile != null
-                          ? Image.file(widget.imageFile!, fit: BoxFit.contain)
-                          : AppImage(widget.imageUrl, fit: BoxFit.contain),
+      body: Stack(
+        children: [
+          // الصورة
+          Listener(
+            onPointerMove: (e) {
+              if (!_isZoomed) _handleDragMove(e.delta.dy);
+            },
+            onPointerUp: (_) {
+              if (!_isZoomed) _handleDragEnd();
+            },
+            child: GestureDetector(
+              onDoubleTapDown: _onDoubleTapDown,
+              onDoubleTap: () {},
+              child: Transform.translate(
+                offset: Offset(0, _dragY),
+                child: Transform.scale(
+                  scale: scale,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(borderRadius),
+                    child: Container(
+                      color: Colors.black,
+                      width: double.infinity,
+                      height: double.infinity,
+                      child: Hero(
+                        tag: widget.heroTag,
+                        child: InteractiveViewer(
+                          transformationController: _transformationController,
+                          minScale: 1.0,
+                          maxScale: 4.0,
+                          panEnabled: true,
+                          scaleEnabled: true,
+                          constrained: true,
+                          boundaryMargin: EdgeInsets.zero,
+                          child: SizedBox.expand(
+                            child: widget.imageFile != null
+                                ? Image.file(
+                                    widget.imageFile!,
+                                    fit: BoxFit.contain,
+                                  )
+                                : AppImage(
+                                    widget.imageUrl,
+                                    fit: BoxFit.contain,
+                                  ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
+
+          // سهم الإغلاق مع hint animation وسحب
+          Positioned(
+            bottom: 10.h,
+            left: 0,
+            right: 0,
+            child: Opacity(
+              opacity: (1.0 - progress * 2).clamp(0.0, 1.0),
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                onVerticalDragUpdate: (d) => _handleDragMove(d.delta.dy),
+                onVerticalDragEnd: (_) => _handleDragEnd(),
+                child: AnimatedBuilder(
+                  animation: _arrowHintAnimation,
+                  builder: (context, child) => Transform.translate(
+                    offset: Offset(0, _arrowHintAnimation.value),
+                    child: child,
+                  ),
+                  child: Container(
+                    height: 80,
+                    alignment: Alignment.center,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.keyboard_arrow_up_rounded,
+                        color: Colors.white,
+                        size: 40.w,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
