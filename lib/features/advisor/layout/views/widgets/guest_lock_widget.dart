@@ -4,13 +4,16 @@ class GuestLockWidget extends StatelessWidget {
   const GuestLockWidget({
     super.key,
     required this.message,
-    required this.description, this.onTap,  this.titleBott='إنشاء حساب',
-
+    required this.description,
+    this.onTap,
+    this.titleBott = 'إنشاء حساب',
+    this.showBackgroundImage = true,
   });
   final String message;
   final String description;
   final VoidCallback? onTap;
   final String titleBott;
+  final bool showBackgroundImage;
 
   @override
   Widget build(BuildContext context) {
@@ -27,12 +30,13 @@ class GuestLockWidget extends StatelessWidget {
       ),
       child: Column(
         children: [
-          AppImage(
-            AssetsData.homeBarBackgroundImage,
-            width: double.infinity,
-            height: context.height*0.05,
-            fit: BoxFit.cover,
-          ),
+          if (showBackgroundImage)
+            AppImage(
+              AssetsData.homeBarBackgroundImage,
+              width: double.infinity,
+              height: context.height * 0.05,
+              fit: BoxFit.cover,
+            ),
 
           Expanded(
             child: Padding(
@@ -69,7 +73,7 @@ class GuestLockWidget extends StatelessWidget {
                     radius: 16,
                     useGradient: true,
                     title: titleBott,
-                    onPressed: onTap
+                    onPressed: onTap,
 
                     //     () {
                     //
