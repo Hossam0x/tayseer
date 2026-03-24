@@ -1,8 +1,11 @@
 import 'dart:ui';
+import 'package:vector_graphics/vector_graphics.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import '../../my_import.dart';
 
-// ⭐ StatefulWidget عشان يحتفظ بالـ URL القديم ويمنع الـ flash
+// ══════════════════════════════════════════════════════════════════════════════
+// ⭐ AppImage – ويدجت موحدة لكل أنواع الصور
+// ══════════════════════════════════════════════════════════════════════════════
 class AppImage extends StatefulWidget {
   final String? path;
   final double? height, width;
@@ -13,6 +16,7 @@ class AppImage extends StatefulWidget {
   final bool flipOnLtr;
   final double? blur;
   final bool isAvatar;
+  final double? radius; // ⭐ جديد
 
   const AppImage(
     this.path, {
@@ -26,6 +30,7 @@ class AppImage extends StatefulWidget {
     this.flipOnLtr = false,
     this.isAvatar = false,
     this.blur,
+    this.radius,
   });
 
   @override
@@ -38,13 +43,14 @@ class _AppImageState extends State<AppImage> {
   @override
   void didUpdateWidget(AppImage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // لو الـ URL اتغير وكان network image، نحفظ القديم كـ fallback
     if (oldWidget.path != widget.path &&
         oldWidget.path != null &&
         oldWidget.path!.startsWith('http')) {
       _previousNetworkPath = oldWidget.path;
     }
   }
+
+  // ──────────────── Helper Wrappers ────────────────
 
   Widget _flipIfLtr(Widget child, BuildContext context) {
     if (!widget.flipOnLtr) return child;
@@ -53,147 +59,233 @@ class _AppImageState extends State<AppImage> {
     return Transform.scale(scaleX: -1, child: child);
   }
 
+  /// ⭐ ClipRRect لو فيه radius
+  Widget _wrapWithClip(Widget child) {
+    if (widget.radius != null && widget.radius! > 0) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(widget.radius!),
+        child: child,
+      );
+    }
+    return child;
+  }
+
+  /// ⭐ Gradient wrapper
+  Widget _wrapWithGradient(Widget child) {
+    if (widget.gradientColorSvg != null) {
+      return ShaderMask(
+        shaderCallback: (bounds) =>
+            widget.gradientColorSvg!.createShader(bounds),
+        blendMode: BlendMode.srcIn,
+        child: child,
+      );
+    }
+    return child;
+  }
+
+  // ──────────────── Build ────────────────
+
   @override
   Widget build(BuildContext context) {
     final path = widget.path;
+    final pixelRatio = MediaQuery.of(context).devicePixelRatio;
 
+    // ── Empty path ──
     if (path == null || path.isEmpty) {
-      if (widget.placeholderImage != null) {
-        return Image.asset(
-          widget.placeholderImage!,
-          height: widget.height,
-          width: widget.width,
-          fit: widget.fit,
-        );
-      } else if (widget.isAvatar) {
-        return Image.asset(
-          AssetsData.defaultProfileImage,
-          height: widget.height,
-          width: widget.width,
-          fit: widget.fit,
-        );
-      }
-      return const SizedBox.shrink();
+      return _buildFallback();
     }
 
-    // SVG
-    if (path.endsWith("svg")) {
-      Widget svgWidget;
-      if (path.startsWith("http")) {
-        svgWidget = SvgPicture.network(
+    final ext = path.split('.').last.toLowerCase();
+
+    // ── Vector Graphics (.vec) – الأسرع ──
+    if (ext == 'vec') {
+      return _buildVec(path);
+    }
+
+    // ── SVG ──
+    if (ext == 'svg') {
+      return _buildSvg(path);
+    }
+
+    // ── Lottie ──
+    if (ext == 'json') {
+      return _wrapWithClip(
+        Lottie.asset(
           path,
           fit: widget.fit,
           height: widget.height,
           width: widget.width,
-          color: widget.gradientColorSvg == null ? widget.color : null,
-          placeholderBuilder: (context) => widget.placeholderImage != null
-              ? Image.asset(
-                  widget.placeholderImage!,
-                  height: widget.height,
-                  width: widget.width,
-                  fit: widget.fit,
-                )
-              : _buildLoadingPlaceholder(),
-        );
-      } else {
-        svgWidget = SvgPicture.asset(
-          path,
-          fit: widget.fit,
-          height: widget.height,
-          width: widget.width,
-          color: widget.gradientColorSvg == null ? widget.color : null,
-          placeholderBuilder: (context) => widget.placeholderImage != null
-              ? Image.asset(
-                  widget.placeholderImage!,
-                  height: widget.height,
-                  width: widget.width,
-                  fit: widget.fit,
-                )
-              : _buildLoadingPlaceholder(),
-        );
-      }
-      if (widget.gradientColorSvg != null) {
-        return _flipIfLtr(
-          ShaderMask(
-            shaderCallback: (bounds) =>
-                widget.gradientColorSvg!.createShader(bounds),
-            blendMode: BlendMode.srcIn,
-            child: svgWidget,
-          ),
-          context,
-        );
-      }
-      return _flipIfLtr(svgWidget, context);
-    }
-
-    // Lottie
-    if (path.endsWith("json")) {
-      return Lottie.asset(
-        path,
-        fit: widget.fit,
-        height: widget.height,
-        width: widget.width,
+        ),
       );
     }
 
-    // GIF
-    if (path.endsWith("gif")) {
-      if (path.startsWith("http")) {
-        return _ConnectivityNetworkImage(
+    // ── GIF ──
+    if (ext == 'gif') {
+      return _buildGif(path, pixelRatio);
+    }
+
+    // ── Network image ──
+    if (path.startsWith('http')) {
+      return _wrapWithGradient(
+        _ConnectivityNetworkImage(
           imageUrl: path,
           fit: widget.fit,
           height: widget.height,
           width: widget.width,
-          color: null,
+          color: widget.color,
           placeholderImage: widget.placeholderImage,
           isAvatar: widget.isAvatar,
           loadingPlaceholder: _buildLoadingPlaceholder(),
-          memCacheWidth: 600,
+          pixelRatio: pixelRatio,
           blur: widget.blur,
           previousUrl: _previousNetworkPath,
-        );
-      } else {
-        return _flipIfLtr(
-          Image.asset(
-            path,
-            height: widget.height,
-            width: widget.width,
-            fit: widget.fit,
-          ),
-          context,
-        );
-      }
+          radius: widget.radius,
+        ),
+      );
     }
 
-    // Network image
-    if (path.startsWith("http")) {
+    // ── Asset image (png, jpg, webp …) ──
+    return _buildAssetRaster(path, pixelRatio);
+  }
+
+  // ──────────────── Builders ────────────────
+
+  /// ⭐ جديد – Vector Graphics (.vec)
+  Widget _buildVec(String path) {
+    Widget vecWidget = SizedBox(
+      height: widget.height,
+      width: widget.width,
+      child: VectorGraphic(
+        loader: AssetBytesLoader(path),
+        fit: widget.fit,
+        colorFilter: widget.gradientColorSvg == null && widget.color != null
+            ? ColorFilter.mode(widget.color!, BlendMode.srcIn)
+            : null,
+        placeholderBuilder: (_) =>
+            SizedBox(height: widget.height ?? 24, width: widget.width ?? 24),
+      ),
+    );
+    return _flipIfLtr(_wrapWithClip(_wrapWithGradient(vecWidget)), context);
+  }
+
+  Widget _buildSvg(String path) {
+    // ⭐ استخدام colorFilter بدل color المحذوف
+    final colorFilter = widget.gradientColorSvg == null && widget.color != null
+        ? ColorFilter.mode(widget.color!, BlendMode.srcIn)
+        : null;
+
+    Widget svgWidget;
+    if (path.startsWith('http')) {
+      svgWidget = SvgPicture.network(
+        path,
+        fit: widget.fit,
+        height: widget.height,
+        width: widget.width,
+        colorFilter: colorFilter,
+        placeholderBuilder: (_) => widget.placeholderImage != null
+            ? Image.asset(
+                widget.placeholderImage!,
+                height: widget.height,
+                width: widget.width,
+                fit: widget.fit,
+              )
+            : _buildLoadingPlaceholder(),
+      );
+    } else {
+      svgWidget = SvgPicture.asset(
+        path,
+        fit: widget.fit,
+        height: widget.height,
+        width: widget.width,
+        colorFilter: colorFilter,
+        placeholderBuilder: (_) => widget.placeholderImage != null
+            ? Image.asset(
+                widget.placeholderImage!,
+                height: widget.height,
+                width: widget.width,
+                fit: widget.fit,
+              )
+            : _buildLoadingPlaceholder(),
+      );
+    }
+
+    return _flipIfLtr(_wrapWithClip(_wrapWithGradient(svgWidget)), context);
+  }
+
+  Widget _buildGif(String path, double pixelRatio) {
+    if (path.startsWith('http')) {
       return _ConnectivityNetworkImage(
         imageUrl: path,
         fit: widget.fit,
         height: widget.height,
         width: widget.width,
-        color: widget.color,
+        color: null,
         placeholderImage: widget.placeholderImage,
         isAvatar: widget.isAvatar,
         loadingPlaceholder: _buildLoadingPlaceholder(),
-        memCacheWidth: 600,
+        pixelRatio: pixelRatio,
         blur: widget.blur,
         previousUrl: _previousNetworkPath,
+        radius: widget.radius,
       );
     }
-
-    // Asset image
     return _flipIfLtr(
-      Image.asset(
-        path,
-        height: widget.height,
-        width: widget.width,
-        fit: widget.fit,
-        color: widget.color,
+      _wrapWithClip(
+        Image.asset(
+          path,
+          height: widget.height,
+          width: widget.width,
+          fit: widget.fit,
+        ),
       ),
       context,
     );
   }
+
+  /// ⭐ محسّن – cacheWidth/cacheHeight + errorBuilder
+  Widget _buildAssetRaster(String path, double pixelRatio) {
+    Widget assetImage = Image.asset(
+      path,
+      height: widget.height,
+      width: widget.width,
+      fit: widget.fit,
+      color: widget.color,
+      cacheWidth: widget.width != null
+          ? (widget.width! * pixelRatio).toInt()
+          : null,
+      cacheHeight: widget.height != null
+          ? (widget.height! * pixelRatio).toInt()
+          : null,
+      errorBuilder: (_, __, ___) => _buildErrorWidget(),
+    );
+    return _flipIfLtr(_wrapWithClip(_wrapWithGradient(assetImage)), context);
+  }
+
+  Widget _buildFallback() {
+    if (widget.placeholderImage != null) {
+      return _wrapWithClip(
+        Image.asset(
+          widget.placeholderImage!,
+          height: widget.height,
+          width: widget.width,
+          fit: widget.fit,
+        ),
+      );
+    }
+    if (widget.isAvatar) {
+      return _wrapWithClip(
+        Image.asset(
+          AssetsData.defaultProfileImage,
+          height: widget.height,
+          width: widget.width,
+          fit: widget.fit,
+        ),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  // ──────────────── Placeholders ────────────────
 
   Widget _buildLoadingPlaceholder() {
     return Shimmer.fromColors(
@@ -203,6 +295,25 @@ class _AppImageState extends State<AppImage> {
         height: widget.height,
         width: widget.width,
         color: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildErrorWidget() {
+    if (widget.placeholderImage != null) {
+      return Image.asset(
+        widget.placeholderImage!,
+        height: widget.height,
+        width: widget.width,
+        fit: widget.fit,
+      );
+    }
+    return Container(
+      height: widget.height,
+      width: widget.width,
+      color: Colors.grey[200],
+      child: Center(
+        child: Icon(Icons.image_outlined, color: Colors.grey[350], size: 32.sp),
       ),
     );
   }
@@ -220,9 +331,10 @@ class _ConnectivityNetworkImage extends StatefulWidget {
   final String? placeholderImage;
   final bool isAvatar;
   final Widget loadingPlaceholder;
-  final int? memCacheWidth;
+  final double pixelRatio; // ⭐ بدل الـ hardcoded 600
   final double? blur;
-  final String? previousUrl; // ⭐ الـ URL القديم من الـ parent
+  final String? previousUrl;
+  final double? radius; // ⭐ جديد
 
   const _ConnectivityNetworkImage({
     required this.imageUrl,
@@ -233,9 +345,10 @@ class _ConnectivityNetworkImage extends StatefulWidget {
     this.placeholderImage,
     required this.isAvatar,
     required this.loadingPlaceholder,
-    this.memCacheWidth,
+    required this.pixelRatio,
     this.blur,
     this.previousUrl,
+    this.radius,
   });
 
   @override
@@ -258,15 +371,22 @@ class _ConnectivityNetworkImageState extends State<_ConnectivityNetworkImage> {
   void didUpdateWidget(_ConnectivityNetworkImage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.imageUrl != widget.imageUrl) {
-      // نحتفظ بالـ URL القديم من الـ parent أو من الـ local state
       _localPreviousUrl = widget.previousUrl ?? oldWidget.imageUrl;
       _hasFailed = false;
     }
   }
 
+  // ⭐ حساب ديناميكي بناءً على pixelRatio
+  int? get _memCacheWidth =>
+      widget.width != null ? (widget.width! * widget.pixelRatio).toInt() : null;
+
+  int? get _memCacheHeight => widget.height != null
+      ? (widget.height! * widget.pixelRatio).toInt()
+      : null;
+
   @override
   Widget build(BuildContext context) {
-    return BlocListener<ConnectivityCubit, ConnectivityState>(
+    Widget image = BlocListener<ConnectivityCubit, ConnectivityState>(
       listenWhen: (prev, curr) => !prev.isConnected && curr.isConnected,
       listener: (_, __) {
         if (_hasFailed && mounted) {
@@ -278,17 +398,20 @@ class _ConnectivityNetworkImageState extends State<_ConnectivityNetworkImage> {
       },
       child: CachedNetworkImage(
         key: ValueKey('${widget.imageUrl}_$_retryKey'),
-        memCacheWidth: widget.memCacheWidth,
+        memCacheWidth: _memCacheWidth,
+        memCacheHeight: _memCacheHeight,
         imageUrl: widget.imageUrl,
         fit: widget.fit,
         height: widget.height,
         width: widget.width,
-        color: widget.color,
+        // لو فيه blur الـ color هيتطبق جوا الـ imageBuilder
+        color: widget.blur != null ? null : widget.color,
         fadeOutDuration: Duration.zero,
         fadeInDuration: Duration.zero,
         placeholderFadeInDuration: Duration.zero,
         useOldImageOnUrlChange: true,
-        // ⭐ لو فيه URL قديم، استخدمه كـ placeholder بدل الـ shimmer
+
+        // ⭐ لو فيه URL قديم، نعرضه كـ placeholder بدل الـ shimmer
         placeholder: (_, __) {
           final prev = _localPreviousUrl;
           if (prev != null && prev.isNotEmpty) {
@@ -297,6 +420,8 @@ class _ConnectivityNetworkImageState extends State<_ConnectivityNetworkImage> {
               fit: widget.fit,
               height: widget.height,
               width: widget.width,
+              memCacheWidth: _memCacheWidth,
+              memCacheHeight: _memCacheHeight,
               fadeInDuration: Duration.zero,
               fadeOutDuration: Duration.zero,
               errorWidget: (_, __, ___) => _buildPlaceholder(),
@@ -304,12 +429,14 @@ class _ConnectivityNetworkImageState extends State<_ConnectivityNetworkImage> {
           }
           return _buildPlaceholder();
         },
+
         errorWidget: (_, __, ___) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted && !_hasFailed) _hasFailed = true;
           });
           return _buildErrorWidget();
         },
+
         imageBuilder: widget.blur != null
             ? (context, imageProvider) => ImageFiltered(
                 imageFilter: ImageFilter.blur(
@@ -331,7 +458,19 @@ class _ConnectivityNetworkImageState extends State<_ConnectivityNetworkImage> {
             : null,
       ),
     );
+
+    // ⭐ RepaintBoundary + ClipRRect
+    return RepaintBoundary(
+      child: widget.radius != null && widget.radius! > 0
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(widget.radius!),
+              child: image,
+            )
+          : image,
+    );
   }
+
+  // ──────────────── Placeholders ────────────────
 
   Widget _buildPlaceholder() {
     if (widget.placeholderImage != null) {
