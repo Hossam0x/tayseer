@@ -1,20 +1,25 @@
 import 'package:tayseer/features/shared/event/view/widget/event_cart_item.dart';
 import 'package:tayseer/features/advisor/search/presentation/widgets/search_shimmer.dart';
 import 'package:tayseer/features/shared/followers/widgets/follower_item.dart';
-import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/advisor/search/presentation/cubit/search_state.dart';
+import 'package:tayseer/my_import.dart';
 
 class AdvisorSearchPaginationIndicator extends StatelessWidget {
-  final SearchState state;
+  final TabSearchData tabData;
+  final String tabId;
 
-  const AdvisorSearchPaginationIndicator({super.key, required this.state});
+  const AdvisorSearchPaginationIndicator({
+    super.key,
+    required this.tabData,
+    required this.tabId,
+  });
 
   @override
   Widget build(BuildContext context) {
-    if (state.isLoadingMore) {
-      return _PaginationSkeleton(tabType: state.lastSearchType);
+    if (tabData.isLoadingMore) {
+      return _PaginationSkeleton(tabType: tabId);
     }
-    if (!state.hasMore) {
+    if (!tabData.hasMore && tabData.hasFetchedOnce) {
       return _EndOfResultsWidget();
     }
     return const SizedBox.shrink();
@@ -39,7 +44,6 @@ class _PaginationSkeleton extends StatelessWidget {
           child: const EventCardShimmer(),
         );
       default:
-        // advisors / users
         return Column(
           children: List.generate(
             2,

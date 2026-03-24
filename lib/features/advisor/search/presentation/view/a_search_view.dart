@@ -92,7 +92,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     if (_uiCubit.state.selectedIndex != tabIndex) return;
     final c = _scrollControllers[tabIndex];
     if (c.position.pixels >= c.position.maxScrollExtent - 200) {
-      _searchCubit.loadMore();
+      _searchCubit.loadMore(tabId: kSearchTabs[tabIndex].id);
     }
   }
 
@@ -106,7 +106,7 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     if (_uiCubit.state.selectedIndex == index) return;
     _tabController.animateTo(index);
     _uiCubit.updateIndex(index);
-    _performSearch(showLoading: false);
+    _performSearch();
   }
 
   void _onSearchChanged() {
@@ -114,12 +114,11 @@ class _AdvisorSearchViewState extends State<AdvisorSearchView>
     _searchDebounce = Timer(const Duration(milliseconds: 500), _performSearch);
   }
 
-  void _performSearch({bool debounce = true, bool showLoading = true}) {
+  void _performSearch({bool debounce = true}) {
     _searchCubit.search(
       query: _searchController.text.trim(),
       type: kSearchTabs[_uiCubit.state.selectedIndex].id,
       debounce: debounce,
-      showLoading: showLoading,
     );
   }
 

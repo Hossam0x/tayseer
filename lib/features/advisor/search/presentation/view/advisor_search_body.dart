@@ -32,30 +32,52 @@ class AdvisorSearchBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tabId = _currentTab.id;
+    final tabData = state.tabData(tabId);
+
+    // مفيش query
     if (state.query.isEmpty) {
       return SearchEmptyState(
-        message: _emptyQueryMessage(context),
+        message: _emptyQueryMessage(context, tabId),
         iconPath: AssetsData.icSeachFor,
       );
     }
-    if (state.isLoading) return SearchLoadingState(tabType: _currentTab.id);
-    if (state.isError) {
+
+    // skeleton فقط لو أول مرة نجيب بيانات الـ tab ده
+    final isLoadingThisTab = state.isLoading && state.loadingTabId == tabId;
+    if (isLoadingThisTab && !tabData.hasFetchedOnce) {
+      return SearchLoadingState(tabType: tabId);
+    }
+
+    // error لو الـ tab ده هو اللي فيه error ومفيش بيانات قديمة
+    if (state.isError && state.errorTabId == tabId && !tabData.hasFetchedOnce) {
       return SearchErrorState(
         errorMessage: state.errorMessage,
         onRetry: onRetry,
       );
     }
-    if (state.isEmpty) {
+
+    // لو مفيش بيانات خالص (بعد ما جاب وفاضي)
+    if (tabData.hasFetchedOnce && tabData.isEmpty) {
       return SearchEmptyState(
-        message: _noResultsMessage(context),
+        message: _noResultsMessage(context, tabId),
         iconPath: AssetsData.icNoContentSeach,
       );
     }
-    return _buildTabContent(context);
+
+    // لو لسه ما جابش بيانات (مثلاً tab جديد لم يُفتح بعد)
+    if (!tabData.hasFetchedOnce) {
+      return SearchEmptyState(
+        message: _emptyQueryMessage(context, tabId),
+        iconPath: AssetsData.icSeachFor,
+      );
+    }
+
+    return _buildTabContent(context, tabId, tabData);
   }
 
-  String _emptyQueryMessage(BuildContext context) {
-    switch (_currentTab.id) {
+  String _emptyQueryMessage(BuildContext context, String tabId) {
+    switch (tabId) {
       case 'advisors':
         return context.tr("search_for_advisors");
       case 'users':
@@ -69,8 +91,8 @@ class AdvisorSearchBody extends StatelessWidget {
     }
   }
 
-  String _noResultsMessage(BuildContext context) {
-    switch (_currentTab.id) {
+  String _noResultsMessage(BuildContext context, String tabId) {
+    switch (tabId) {
       case 'advisors':
         return context.tr("no_matching_advisors");
       case 'posts':
@@ -82,9 +104,13 @@ class AdvisorSearchBody extends StatelessWidget {
     }
   }
 
-  Widget _buildTabContent(BuildContext context) {
+  Widget _buildTabContent(
+    BuildContext context,
+    String tabId,
+    TabSearchData tabData,
+  ) {
     final sc = scrollControllers[uiState.selectedIndex];
-    switch (_currentTab.id) {
+    switch (tabId) {
       case 'all':
         return _AllResultsTab(
           state: state,
@@ -92,20 +118,89 @@ class AdvisorSearchBody extends StatelessWidget {
           onTabSelected: onTabSelected,
         );
       case 'advisors':
-        return _AdvisorsTab(state: state, scrollController: sc);
+        return _ListTab<dynamic>(
+          items: tabData.advisors,
+          scrollController: sc,
+          tabData: tabData,
+          tabId: tabId,
+          padding: EdgeInsets.only(top: 12.h),
+          itemBuilder: (item) => Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+            child: AdvisorSearchAdvisorItem(advisor: item),
+          ),
+        );
       case 'users':
-        return _UsersTab(state: state, scrollController: sc);
+        return _ListTab<dynamic>(
+          items: tabData.users,
+          scrollController: sc,
+          tabData: tabData,
+          tabId: tabId,
+          padding: EdgeInsets.only(top: 12.h),
+          itemBuilder: (item) => Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+            child: AdvisorSearchUserItem(user: item),
+          ),
+        );
       case 'posts':
-        return _PostsTab(state: state, scrollController: sc);
+        return _ListTab<dynamic>(
+          items: tabData.posts,
+          scrollController: sc,
+          tabData: tabData,
+          tabId: tabId,
+          padding: EdgeInsets.zero,
+          itemBuilder: (item) => AdvisorSearchPostItem(post: item),
+        );
       case 'events':
-        return _EventsTab(state: state, scrollController: sc);
+        return _ListTab<dynamic>(
+          items: tabData.events,
+          scrollController: sc,
+          tabData: tabData,
+          tabId: tabId,
+          padding: EdgeInsets.symmetric(vertical: 12.h),
+          itemBuilder: (item) => Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+            child: AdvisorSearchEventItem(event: item),
+          ),
+        );
       default:
         return const SizedBox.shrink();
     }
   }
 }
 
-// ─── All Tab ────────────────────────────────────────────────────────────────
+// ─── Generic List Tab ────────────────────────────────────────────────────────
+
+class _ListTab<T> extends StatelessWidget {
+  final List items;
+  final ScrollController scrollController;
+  final TabSearchData tabData;
+  final String tabId;
+  final EdgeInsets padding;
+  final Widget Function(dynamic) itemBuilder;
+
+  const _ListTab({
+    required this.items,
+    required this.scrollController,
+    required this.tabData,
+    required this.tabId,
+    required this.padding,
+    required this.itemBuilder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      controller: scrollController,
+      padding: padding,
+      itemCount: items.length + 1,
+      itemBuilder: (_, i) => i < items.length
+          ? itemBuilder(items[i])
+          : _PaginationFooter(tabData: tabData, tabId: tabId),
+    );
+  }
+}
+
+// ─── All Tab ─────────────────────────────────────────────────────────────────
 
 class _AllResultsTab extends StatelessWidget {
   final SearchState state;
@@ -123,6 +218,23 @@ class _AllResultsTab extends StatelessWidget {
     if (index >= 0) onTabSelected(index);
   }
 
+  // في الـ all tab نعرض بيانات من كل الـ tabs
+  List get _advisors => state.tabData('advisors').advisors.isNotEmpty
+      ? state.tabData('advisors').advisors
+      : state.tabData('all').advisors;
+
+  List get _users => state.tabData('users').users.isNotEmpty
+      ? state.tabData('users').users
+      : state.tabData('all').users;
+
+  List get _posts => state.tabData('posts').posts.isNotEmpty
+      ? state.tabData('posts').posts
+      : state.tabData('all').posts;
+
+  List get _events => state.tabData('events').events.isNotEmpty
+      ? state.tabData('events').events
+      : state.tabData('all').events;
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -130,40 +242,38 @@ class _AllResultsTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (state.advisors.isNotEmpty) ...[
+          if (_advisors.isNotEmpty) ...[
             AdvisorSearchSectionHeader(
               title: context.tr("advisors"),
               onSeeAll: () => _goToTab('advisors'),
             ),
-            ...state.advisors.map(
+            ..._advisors.map(
               (a) => _padded(AdvisorSearchAdvisorItem(advisor: a)),
             ),
             SizedBox(height: 20.h),
           ],
-          if (state.users.isNotEmpty) ...[
+          if (_users.isNotEmpty) ...[
             AdvisorSearchSectionHeader(
               title: context.tr("users"),
               onSeeAll: () => _goToTab('users'),
             ),
-            ...state.users.map((u) => _padded(AdvisorSearchUserItem(user: u))),
+            ..._users.map((u) => _padded(AdvisorSearchUserItem(user: u))),
             SizedBox(height: 20.h),
           ],
-          if (state.posts.isNotEmpty) ...[
+          if (_posts.isNotEmpty) ...[
             AdvisorSearchSectionHeader(
               title: context.tr("posts"),
               onSeeAll: () => _goToTab('posts'),
             ),
-            ...state.posts.map((p) => AdvisorSearchPostItem(post: p)),
+            ..._posts.map((p) => AdvisorSearchPostItem(post: p)),
             SizedBox(height: 20.h),
           ],
-          if (state.events.isNotEmpty) ...[
+          if (_events.isNotEmpty) ...[
             AdvisorSearchSectionHeader(
               title: context.tr("events"),
               onSeeAll: () => _goToTab('events'),
             ),
-            ...state.events.map(
-              (e) => _padded(AdvisorSearchEventItem(event: e)),
-            ),
+            ..._events.map((e) => _padded(AdvisorSearchEventItem(event: e))),
             SizedBox(height: 20.h),
           ],
         ],
@@ -177,109 +287,15 @@ class _AllResultsTab extends StatelessWidget {
   );
 }
 
-// ─── Advisors Tab ────────────────────────────────────────────────────────────
-
-class _AdvisorsTab extends StatelessWidget {
-  final SearchState state;
-  final ScrollController scrollController;
-  const _AdvisorsTab({required this.state, required this.scrollController});
-
-  @override
-  Widget build(BuildContext context) {
-    final items = state.advisors;
-    return ListView.builder(
-      controller: scrollController,
-      padding: EdgeInsets.only(top: 12.h),
-      itemCount: items.length + 1,
-      itemBuilder: (_, i) => i < items.length
-          ? Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-              child: AdvisorSearchAdvisorItem(advisor: items[i]),
-            )
-          : _PaginationFooter(state: state, tabId: 'advisors'),
-    );
-  }
-}
-
-// ─── Users Tab ───────────────────────────────────────────────────────────────
-
-class _UsersTab extends StatelessWidget {
-  final SearchState state;
-  final ScrollController scrollController;
-  const _UsersTab({required this.state, required this.scrollController});
-
-  @override
-  Widget build(BuildContext context) {
-    final items = state.users;
-    return ListView.builder(
-      controller: scrollController,
-      padding: EdgeInsets.only(top: 12.h),
-      itemCount: items.length + 1,
-      itemBuilder: (_, i) => i < items.length
-          ? Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-              child: AdvisorSearchUserItem(user: items[i]),
-            )
-          : _PaginationFooter(state: state, tabId: 'users'),
-    );
-  }
-}
-
-// ─── Posts Tab ───────────────────────────────────────────────────────────────
-
-class _PostsTab extends StatelessWidget {
-  final SearchState state;
-  final ScrollController scrollController;
-  const _PostsTab({required this.state, required this.scrollController});
-
-  @override
-  Widget build(BuildContext context) {
-    final items = state.posts;
-    return ListView.builder(
-      controller: scrollController,
-      padding: EdgeInsets.zero,
-      itemCount: items.length + 1,
-      itemBuilder: (_, i) => i < items.length
-          ? AdvisorSearchPostItem(post: items[i])
-          : _PaginationFooter(state: state, tabId: 'posts'),
-    );
-  }
-}
-
-// ─── Events Tab ──────────────────────────────────────────────────────────────
-
-class _EventsTab extends StatelessWidget {
-  final SearchState state;
-  final ScrollController scrollController;
-  const _EventsTab({required this.state, required this.scrollController});
-
-  @override
-  Widget build(BuildContext context) {
-    final items = state.events;
-    return ListView.builder(
-      controller: scrollController,
-      padding: EdgeInsets.symmetric(vertical: 12.h),
-      itemCount: items.length + 1,
-      itemBuilder: (_, i) => i < items.length
-          ? Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-              child: AdvisorSearchEventItem(event: items[i]),
-            )
-          : _PaginationFooter(state: state, tabId: 'events'),
-    );
-  }
-}
-
-// ─── Pagination Footer ───────────────────────────────────────────────────────
+// ─── Pagination Footer ────────────────────────────────────────────────────────
 
 class _PaginationFooter extends StatelessWidget {
-  final SearchState state;
+  final TabSearchData tabData;
   final String tabId;
-  const _PaginationFooter({required this.state, required this.tabId});
+  const _PaginationFooter({required this.tabData, required this.tabId});
 
   @override
   Widget build(BuildContext context) {
-    if (state.lastSearchType != tabId) return const SizedBox.shrink();
-    return AdvisorSearchPaginationIndicator(state: state);
+    return AdvisorSearchPaginationIndicator(tabData: tabData, tabId: tabId);
   }
 }
