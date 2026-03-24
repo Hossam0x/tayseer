@@ -24,8 +24,7 @@ class ProfileCertificatesSection extends StatefulWidget {
       _ProfileCertificatesSectionState();
 }
 
-class _ProfileCertificatesSectionState
-    extends State<ProfileCertificatesSection>
+class _ProfileCertificatesSectionState extends State<ProfileCertificatesSection>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
@@ -72,11 +71,7 @@ class _CertificatesContent extends StatelessWidget {
           context.read<CertificatesCubit>().refresh(advisorId: advisorId),
       child: Column(
         children: [
-          _CertificatesBody(
-            advisorId: advisorId,
-            isMe: isMe,
-            state: state,
-          ),
+          _CertificatesBody(advisorId: advisorId, isMe: isMe, state: state),
           if (state.hasMore) CertificatesLoadMoreButton(state: state),
           Gap(20.h),
         ],
@@ -118,10 +113,8 @@ class _CertificatesBody extends StatelessWidget {
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 35.w),
               child: BoostButton(
-                onPressed: () => Navigator.pushNamed(
-                  context,
-                  AppRouter.kPackagesView,
-                ),
+                onPressed: () =>
+                    Navigator.pushNamed(context, AppRouter.kPackagesView),
                 text: context.tr('boost_button'),
               ),
             ),
