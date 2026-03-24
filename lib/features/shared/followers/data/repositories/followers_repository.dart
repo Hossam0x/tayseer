@@ -17,7 +17,10 @@ abstract class FollowersRepository {
     String? searchQuery,
   });
 
-  Future<Either<Failure, String>> toggleFollow(String targetUserId);
+  Future<Either<Failure, String>> toggleFollow(
+    String targetUserId, {
+    required bool isCurrentlyFollowing,
+  });
 }
 
 class FollowersRepositoryImpl implements FollowersRepository {
@@ -116,10 +119,14 @@ class FollowersRepositoryImpl implements FollowersRepository {
   }
 
   @override
-  Future<Either<Failure, String>> toggleFollow(String targetUserId) async {
+  Future<Either<Failure, String>> toggleFollow(
+    String targetUserId, {
+    required bool isCurrentlyFollowing,
+  }) async {
     try {
       final response = await _apiService.post(
         endPoint: '/advisor/toggle-follow/$targetUserId',
+        query: {'action': isCurrentlyFollowing ? 'remove' : 'add'},
       );
       return Right(response['message'] ?? 'تمت العملية بنجاح');
     } on DioException catch (e) {

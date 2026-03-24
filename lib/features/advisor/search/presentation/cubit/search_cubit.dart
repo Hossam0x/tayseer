@@ -62,12 +62,7 @@ class SearchCubit extends Cubit<SearchState> {
       );
     } else {
       // Just update query and reset error to start silent loading
-      emit(
-        state.copyWith(
-          query: query,
-          errorMessage: null,
-        ),
-      );
+      emit(state.copyWith(query: query, errorMessage: null));
     }
   }
 
@@ -200,7 +195,10 @@ class SearchCubit extends Cubit<SearchState> {
 
       emit(state.copyWith(advisors: currentAdvisors, posts: updatedPosts));
 
-      final result = await _followersRepository.toggleFollow(advisorId);
+      final result = await _followersRepository.toggleFollow(
+        advisorId,
+        isCurrentlyFollowing: isCurrentlyFollowing,
+      );
       result.fold(
         (failure) {
           // Rollback
@@ -224,9 +222,10 @@ class SearchCubit extends Cubit<SearchState> {
   }
 
   Future<void> _toggleFollowUser(String userId) async {
-    // For now, let's just call the API.
-
-    final result = await _userFollowingsRepository.toggleFollow(userId);
+    final result = await _userFollowingsRepository.toggleFollow(
+      userId,
+      isCurrentlyFollowing: false,
+    );
     result.fold(
       (failure) => log('Follow user failed: ${failure.message}'),
       (message) => log('Follow user success: $message'),
