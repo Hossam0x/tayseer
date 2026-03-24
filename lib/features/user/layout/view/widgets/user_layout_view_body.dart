@@ -31,17 +31,17 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
   Widget build(BuildContext context) {
     final cubit = context.read<LayoutCubit>();
 
-    return BlocBuilder<LayoutCubit, LayoutState>(
-      builder: (context, state) {
-        final pages = _getPages(context, cubit, state);
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBackButton(context, cubit, cubit.state);
+      },
+      child: BlocBuilder<LayoutCubit, LayoutState>(
+        builder: (context, state) {
+          final pages = _getPages(context, cubit, state);
 
-        return PopScope(
-          canPop: false,
-          onPopInvokedWithResult: (didPop, result) {
-            if (didPop) return;
-            _handleBackButton(context, cubit, state);
-          },
-          child: Scaffold(
+          return Scaffold(
             body: Column(
               children: [
                 const OfflineBanner(),
@@ -88,9 +88,9 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
                 ),
               ],
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -133,10 +133,7 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
           HomeView(onScroll: cubit.onScroll),
           state.isMarriageVisible
               ? MarriageView(key: _marriageKey, onScroll: cubit.onScroll)
-              : BlocProvider(
-                  create: (context) => MySpaceCubit(getIt<MySpaceRepo>()),
-                  child: const ConsultationStandalonePage(),
-                ),
+              : const _ConsultationTab(),
 
           MySpaceView(),
           const ReelsNavView(tabIndex: 3),
@@ -199,5 +196,17 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
       default:
         return [];
     }
+  }
+}
+
+class _ConsultationTab extends StatelessWidget {
+  const _ConsultationTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => MySpaceCubit(getIt<MySpaceRepo>()),
+      child: const ConsultationStandalonePage(),
+    );
   }
 }

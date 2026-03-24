@@ -8,27 +8,40 @@ import 'package:tayseer/features/shared/reels/views/reels_nav_view.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/my_import.dart';
 
-class ALayOutViewBody extends StatelessWidget {
+class ALayOutViewBody extends StatefulWidget {
   const ALayOutViewBody({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final cubit = context.read<LayoutCubit>();
-    final pages = [
+  State<ALayOutViewBody> createState() => _ALayOutViewBodyState();
+}
+
+class _ALayOutViewBodyState extends State<ALayOutViewBody> {
+  late final LayoutCubit cubit;
+  late final List<Widget> pages;
+
+  @override
+  void initState() {
+    super.initState();
+    cubit = context.read<LayoutCubit>();
+    pages = [
       HomeView(onScroll: cubit.onScroll),
       const ChatView(),
       const ReelsNavView(tabIndex: 2),
       ProfileView(),
     ];
-    return BlocBuilder<LayoutCubit, LayoutState>(
-      builder: (context, state) {
-        return PopScope(
-          canPop: false,
-          onPopInvokedWithResult: (didPop, result) {
-            if (didPop) return;
-            _handleBackButton(context, cubit, state);
-          },
-          child: Scaffold(
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBackButton(context, cubit, cubit.state);
+      },
+      child: BlocBuilder<LayoutCubit, LayoutState>(
+        builder: (context, state) {
+          return Scaffold(
             body: Column(
               children: [
                 const OfflineBanner(),
@@ -71,9 +84,9 @@ class ALayOutViewBody extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
