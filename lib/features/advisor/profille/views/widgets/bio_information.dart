@@ -1,7 +1,10 @@
 import 'package:flutter/cupertino.dart';
+import 'package:tayseer/core/enum/advisor_status.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_model.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_state.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
@@ -132,8 +135,17 @@ class BioInformation extends StatelessWidget {
           // About you - عرض فقط إذا كان موجوداً
           _buildAboutYou(profile),
 
-          // Consultation packages
-          _buildConsultationCard(context),
+          // Consultation packages - only for approved advisors
+          BlocBuilder<HomeCubit, HomeState>(
+            buildWhen: (prev, curr) =>
+                prev.currentAdvisorStatus != curr.currentAdvisorStatus,
+            builder: (context, homeState) {
+              final status = homeState.currentAdvisorStatus ?? advisorStatus;
+              if (status != AdvisorStatus.approved)
+                return const SizedBox.shrink();
+              return _buildConsultationCard(context);
+            },
+          ),
         ],
       ),
     );
@@ -282,12 +294,13 @@ class BioInformation extends StatelessWidget {
   }
 
   Widget _buildConsultationCard(BuildContext context) {
-    return BlocSelector<ProfileCubit, ProfileState, int>(
-      selector: (state) => state.analytics?.overview.views ?? 0,
-      builder: (context, totalViews) {
-        final isLoading =
-            context.read<ProfileCubit>().state.analyticsState ==
-            CubitStates.loading;
+    return BlocBuilder<ProfileCubit, ProfileState>(
+      buildWhen: (prev, curr) =>
+          prev.analyticsState != curr.analyticsState ||
+          prev.analytics != curr.analytics,
+      builder: (context, state) {
+        final isLoading = state.analyticsState == CubitStates.loading;
+        final totalViews = state.analytics?.overview.views ?? 0;
 
         return CustomClick(
           onTap: () async {

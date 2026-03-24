@@ -1,8 +1,8 @@
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/saved_posts_cubit.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/saved_posts_state.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/saved_posts/saved_posts_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/saved_posts/saved_posts_state.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart'
     as home_feed;

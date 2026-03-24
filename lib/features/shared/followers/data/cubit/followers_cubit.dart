@@ -193,7 +193,10 @@ class FollowersCubit extends Cubit<FollowersState> {
     emit(state.copyWith(followers: updatedFollowers));
 
     // Call API
-    final result = await _repository.toggleFollow(targetUserId);
+    final result = await _repository.toggleFollow(
+      targetUserId,
+      isCurrentlyFollowing: currentFollowState,
+    );
 
     if (isClosed) return;
 

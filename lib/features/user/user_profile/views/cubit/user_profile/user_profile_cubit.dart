@@ -10,7 +10,7 @@ import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_state.dart';
 import 'dart:convert';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
@@ -103,6 +103,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
         final settings = await _loadSettings(
           isProfileComplete: isMarriageComplete,
+          isMarriageDeactivated: isMarriageDeactivated,
         );
 
         emit(
@@ -143,6 +144,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
   Future<List<SettingItemModel>> _loadSettings({
     bool isProfileComplete = false,
+    bool isMarriageDeactivated = false,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final savedLanguage = prefs.getString('app_language') ?? 'ar';
@@ -155,14 +157,15 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         iconAsset: AssetsData.icEditSettings,
         routeName: '',
       ),
-      SettingItemModel(
-        id: 'edit_marriage_profile',
-        title: isProfileComplete
-            ? 'edit_marriage_profile'
-            : 'complete_marriage_profile',
-        iconAsset: AssetsData.icManagementSettings,
-        routeName: '',
-      ),
+      if (!isMarriageDeactivated)
+        SettingItemModel(
+          id: 'edit_marriage_profile',
+          title: isProfileComplete
+              ? 'edit_marriage_profile'
+              : 'complete_marriage_profile',
+          iconAsset: AssetsData.icManagementSettings,
+          routeName: '',
+        ),
       SettingItemModel(
         id: 'deactivate_the_marriage_section',
         title: 'deactivate_the_marriage_section',
@@ -282,6 +285,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       final settings = await _loadSettings(
         isProfileComplete: isMarriageComplete,
+        isMarriageDeactivated: isMarriageDeactivated,
       );
 
       emit(
@@ -683,19 +687,23 @@ class UserProfileCubit extends Cubit<UserProfileState> {
           ),
         );
       }
-    }
-    // ⭐⭐⭐ ADD THIS PART ⭐⭐⭐
-    else if (id == 'deactivate_the_marriage_section') {
-      // value = true  → قسم الزواج معطّل  → marriage tab مخفي
-      // value = false → قسم الزواج مفعّل  → marriage tab ظاهر
-
-      // 1️⃣ حدّث الـ state فوراً
+    } else if (id == 'deactivate_the_marriage_section') {
       emit(currentState.copyWith(isMarriageSectionDeactivated: value));
-
-      // 2️⃣ احفظ في الـ cache
       await _saveMarriageSectionDeactivated(value);
 
-      // 3️⃣ أبلّغ LayoutCubit عشان يخفي/يظهر الـ tab
+      // ✅ أعد بناء الـ settings عشان يخفي/يظهر item الزواج
+      final updatedSettings = await _loadSettings(
+        isProfileComplete: currentState.isMarriageProfileComplete,
+
+        isMarriageDeactivated: value, // ✅
+      );
+
+      emit(
+        currentState.copyWith(
+          isMarriageSectionDeactivated: value,
+          settings: updatedSettings, // ✅
+        ),
+      );
 
       debugPrint(
         '✅ Marriage section ${value ? "deactivated" : "activated"} locally',

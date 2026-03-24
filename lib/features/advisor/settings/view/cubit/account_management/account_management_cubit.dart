@@ -1,11 +1,11 @@
-import 'package:tayseer/features/advisor/settings/view/cubit/account_management_state.dart';
-import 'package:tayseer/features/user/user_profile/data/repositories/user_account_management_repository.dart';
+import 'package:tayseer/features/advisor/settings/data/repositories/account_management_repository.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/account_management/account_management_state.dart';
 import 'package:tayseer/my_import.dart';
 
-class UserAccountManagementCubit extends Cubit<AccountManagementState> {
-  final UserAccountManagementRepository _repository;
+class AccountManagementCubit extends Cubit<AccountManagementState> {
+  final AccountManagementRepository _repository;
 
-  UserAccountManagementCubit(this._repository)
+  AccountManagementCubit(this._repository)
     : super(const AccountManagementState());
 
   Future<void> suspendAccount() async {

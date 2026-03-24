@@ -1,8 +1,7 @@
 import 'package:tayseer/core/utils/profile_event_bus.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_edit_state.dart';
-import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_edit/user_profile_edit_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserProfileEditCubit extends Cubit<UserProfileEditState> {

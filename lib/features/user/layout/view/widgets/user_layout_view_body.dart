@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/offline_banner.dart';
 import 'package:tayseer/features/shared/reels/views/reels_nav_view.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
@@ -37,7 +38,12 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
         if (didPop) return;
         _handleBackButton(context, cubit, cubit.state);
       },
-      child: BlocBuilder<LayoutCubit, LayoutState>(
+      child: BlocConsumer<LayoutCubit, LayoutState>(
+        listenWhen: (prev, curr) => prev.currentIndex != curr.currentIndex,
+        listener: (context, state) {
+          // وقف كل الفيديوهات لما تتغير الـ tab
+          VideoManager.instance.stopAll();
+        },
         builder: (context, state) {
           final pages = _getPages(context, cubit, state);
 

@@ -1,6 +1,6 @@
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/order_management_cubit.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/order_management_state.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/order_management/order_management_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/order_management/order_management_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class OrderManagementView extends StatelessWidget {

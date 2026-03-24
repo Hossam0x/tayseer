@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:vibration/vibration.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/age_selection_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/age_selection/age_selection_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class AgeSelectionView extends StatefulWidget {

@@ -254,7 +254,7 @@ class _ProfileStoryRing extends StatelessWidget {
         final myStories = storyState.myStories;
         final hasStories = myStories != null && myStories.stories.isNotEmpty;
 
-        return GestureDetector(
+        return CustomClick(
           onTap: isUploading
               ? null
               : () => _handleTap(context, storyState, myStories),
@@ -312,7 +312,7 @@ class _ProfileStoryRing extends StatelessWidget {
                 Positioned(
                   bottom: 2,
                   right: 2,
-                  child: GestureDetector(
+                  child: CustomClick(
                     onTap: () => _openAddStory(context),
                     child: Container(
                       width: 22.w,

@@ -1,7 +1,7 @@
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_public_profile_repository.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_state.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_posts_repository.dart';
@@ -132,6 +132,10 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
     } else {
       if (state.postsState == CubitStates.loading) return;
 
+      // لو مفيش profile، مش هنقدر نجيب البوستات
+      final profileId = state.profile?.id ?? userId;
+      if (profileId == null) return;
+
       emit(
         state.copyWith(
           postsState: CubitStates.loading,
@@ -143,7 +147,9 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
       );
 
       final result = await _postsRepository.fetchUserPosts(
-        userId: state.profile!.isMe ? currentUserId : state.profile!.id,
+        userId: (state.profile?.isMe == true)
+            ? profileId
+            : (state.profile?.id ?? profileId),
         page: 1,
       );
 
@@ -412,7 +418,11 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
   }
 
   Future<void> refresh() async {
-    await Future.wait([fetchProfile(), fetchPosts(loadMore: false)]);
+    await fetchProfile();
+    // فقط نجلب البوستات لو الـ profile اتحمل بنجاح
+    if (state.profile != null) {
+      await fetchPosts(loadMore: false);
+    }
   }
 
   Future<void> deleteUserAccount() async {
