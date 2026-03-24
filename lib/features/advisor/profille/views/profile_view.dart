@@ -8,6 +8,8 @@ import 'package:tayseer/features/advisor/profille/views/widgets/profile_header.d
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_stories_section.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_tabs_section.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class ProfileView extends StatefulWidget {
@@ -70,6 +72,7 @@ class _ProfileViewState extends State<ProfileView>
                   BlocProvider<ProfileCubit>.value(value: _profileCubit),
                   BlocProvider<StoriesCubit>.value(value: _storiesCubit),
                   BlocProvider.value(value: getIt<ConnectivityCubit>()),
+                  BlocProvider.value(value: getIt<HomeCubit>()),
                 ],
                 child: Stack(children: [_ProfileContent()]),
               ),
@@ -117,7 +120,8 @@ class _ProfileContentState extends State<_ProfileContent> {
           listenWhen: (prev, curr) => !prev.isConnected && curr.isConnected,
           listener: (context, state) {
             final storiesCubit = context.read<StoriesCubit>();
-            if (storiesCubit.state.mySpecialStoriesState == CubitStates.failure ||
+            if (storiesCubit.state.mySpecialStoriesState ==
+                    CubitStates.failure ||
                 storiesCubit.state.mySpecialStories.isEmpty) {
               storiesCubit.fetchStories(
                 isSpecial: true,
@@ -159,21 +163,27 @@ class _ProfileContentState extends State<_ProfileContent> {
             // Bio Information
             const BioInformation(),
 
-            // Stories Section
-            const ProfileStoriesSection(advisorId: null),
-
-            // Spacing
-            SliverToBoxAdapter(child: Gap(20.h)),
-
-            // Posts Tabs Section or Account Review Content
-            if (advisorStatus == AdvisorStatus.disapproved ||
-                advisorStatus == AdvisorStatus.pending)
-              SliverToBoxAdapter(child: AdvisorStatusWidget())
-            else
-              const ProfileTabsSection(),
-
-            // Bottom padding for better scrolling
-            SliverToBoxAdapter(child: Gap(100.h)),
+            // Stories Section + Tabs — reactive to advisor status
+            BlocBuilder<HomeCubit, HomeState>(
+              buildWhen: (prev, curr) =>
+                  prev.currentAdvisorStatus != curr.currentAdvisorStatus,
+              builder: (context, homeState) {
+                final status = homeState.currentAdvisorStatus ?? advisorStatus;
+                final isApproved = status == AdvisorStatus.approved;
+                return SliverMainAxisGroup(
+                  slivers: [
+                    if (isApproved)
+                      const ProfileStoriesSection(advisorId: null),
+                    SliverToBoxAdapter(child: Gap(20.h)),
+                    if (isApproved)
+                      const ProfileTabsSection()
+                    else
+                      SliverToBoxAdapter(child: AdvisorStatusWidget()),
+                    SliverToBoxAdapter(child: Gap(100.h)),
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ),

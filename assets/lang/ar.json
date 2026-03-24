@@ -1637,6 +1637,7 @@
   "cannot_do_this_action": "لا يمكنك القيام بهذا الإجراء",
   "account_disapproved_message": "نأسف لإبلاغك أن حسابك لم يتم الموافقة عليه بعد المراجعة. إذا كنت تعتقد أن هذا خطأ، يرجى التواصل مع دعم العملاء لدينا للحصول على مزيد من المعلومات.",
   "contact_support": "اتصل بالدعم",
+  "content_not_available": "لا يمكنك رؤية المحتوى هنا",
   "your_account_under_review": "حسابك قيد المراجعة",
   "account_under_review_description": "شكراً لتسجيلك في تيسير! حسابك الآن قيد المراجعة من قبل فريقنا. سنقوم بإعلامك بمجرد الانتهاء من المراجعة. نتطلع إلى انضمامك إلى مجتمعنا قريباً!",
   "your_account_disapproved": "حسابك غير موثوق",
@@ -1685,10 +1686,10 @@
   "enter_full_name": "يرجى إدخال الاسم الأول والأخير",
   "name_too_short": "كل اسم يجب أن يكون حرفين على الأقل",
   "like_action": "إعجاب",
-  "dislike_action": "تجاهل", 
+  "dislike_action": "تجاهل",
   "favorite_action": "مفضلة",
   "regard_action": "تحية",
   "expand_filter": "توسيع الفلتر",
-"seen_all_recommendations": "لقد رأيت كل الأشخاص وفق ترشيحاتك",
-"try_expanding_filter": "لقد رأيت كل من يطابق فلاترك، حاول توسيعها لعرض المزيد."
+  "seen_all_recommendations": "لقد رأيت كل الأشخاص وفق ترشيحاتك",
+  "try_expanding_filter": "لقد رأيت كل من يطابق فلاترك، حاول توسيعها لعرض المزيد."
 }

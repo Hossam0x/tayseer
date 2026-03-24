@@ -1,5 +1,4 @@
 import 'package:tayseer/core/services/connectivity_cubit.dart';
-import 'package:tayseer/core/widgets/custom_error_view.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_posts_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_public_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_cubit.dart';

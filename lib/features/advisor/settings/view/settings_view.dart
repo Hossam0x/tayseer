@@ -285,13 +285,15 @@ class _SettingsViewState extends State<SettingsView> {
   Widget _buildSettingItem(BuildContext context, SettingItemModel setting) {
     final isNotificationsItem = setting.id == 'notifications';
     final isGuestProtected = _guestProtectedIds.contains(setting.id);
+    final isCustomClickItem =
+        isGuestProtected || setting.id == 'session_settings';
 
     final child = AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: isNotificationsItem || isGuestProtected
+          onTap: isNotificationsItem || isCustomClickItem
               ? null
               : () => _handleSettingTap(context, setting),
           borderRadius: BorderRadius.circular(16.r),
@@ -390,7 +392,7 @@ class _SettingsViewState extends State<SettingsView> {
       ),
     );
 
-    if (isGuestProtected) {
+    if (isCustomClickItem) {
       return CustomClick(
         onTap: () => _handleSettingTap(context, setting),
         child: child,

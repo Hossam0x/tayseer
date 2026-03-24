@@ -191,7 +191,7 @@ class UserPublicProfileHeader extends StatelessWidget {
       (cubit) => cubit.state.profile?.isBlockedByMe ?? false,
     );
 
-    return GestureDetector(
+    return CustomClick(
       onTap: isBlocked
           ? null
           : () => Navigator.push(
