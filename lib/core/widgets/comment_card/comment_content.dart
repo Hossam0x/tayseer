@@ -59,7 +59,7 @@ class CommentContent extends StatelessWidget {
                 ),
 
                 Gap(6.h),
-                _CommentText(text: comment.comment),
+                _CommentText(text: comment.comment, mentions: comment.mentions),
                 Gap(8.h),
                 _CommentActions(
                   comment: comment,
@@ -188,8 +188,9 @@ class _CommentHeader extends StatelessWidget {
 
 class _CommentText extends StatelessWidget {
   final String text;
+  final Map<String, MentionModel?>? mentions;
 
-  const _CommentText({required this.text});
+  const _CommentText({required this.text, this.mentions});
 
   bool _isEmojiOnly(String text) {
     final emojiRegex = RegExp(
@@ -226,6 +227,7 @@ class _CommentText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SocialTextParser(
+      mentions: mentions,
       text: text,
       removeDirectionality: true,
       style: Styles.textStyle14.copyWith(

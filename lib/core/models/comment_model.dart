@@ -31,6 +31,17 @@ class CommenterModel {
   }
 }
 
+class MentionModel {
+  final String id;
+  final String userType;
+
+  const MentionModel({required this.id, required this.userType});
+
+  factory MentionModel.fromJson(Map<String, dynamic> json) {
+    return MentionModel(id: json['id'] ?? '', userType: json['userType'] ?? '');
+  }
+}
+
 class CommentModel {
   final String id;
   final String comment;
@@ -46,6 +57,7 @@ class CommentModel {
   final bool isLoadingReplies;
   final int repliesCurrentPage;
   final int repliesTotalPages;
+  final Map<String, MentionModel?>? mentions; // ✅ NEW: المنشنات
 
   // ✅ NEW: للتفريق بين الكومنت المؤقت والحقيقي
   final bool isTemp;
@@ -63,6 +75,7 @@ class CommentModel {
     required this.isOwner,
     required this.commenter,
     required this.isFollowing,
+    this.mentions,
     this.replies = const [],
     this.isLoadingReplies = false,
     this.repliesCurrentPage = 0,
@@ -72,6 +85,18 @@ class CommentModel {
   });
 
   factory CommentModel.fromJson(Map<String, dynamic> json) {
+    Map<String, MentionModel?>? parsedMentions;
+    if (json['mentions'] != null) {
+      parsedMentions = {};
+      (json['mentions'] as Map<String, dynamic>).forEach((key, value) {
+        if (value != null) {
+          parsedMentions![key] = MentionModel.fromJson(value);
+        } else {
+          parsedMentions![key] = null;
+        }
+      });
+    }
+
     return CommentModel(
       id: json['id'] ?? '',
       comment: json['comment'] ?? '',
@@ -83,6 +108,7 @@ class CommentModel {
       isOwner: json['isOwner'] ?? false,
       commenter: CommenterModel.fromJson(json['commenter'] ?? {}),
       isFollowing: json['isFollowing'] ?? false,
+      mentions: parsedMentions,
       isTemp: false, // اللي جاي من السيرفر مش temp
     );
   }
@@ -104,6 +130,7 @@ class CommentModel {
       isOwner: true,
       commenter: commenter,
       isFollowing: false,
+      mentions: null,
       isTemp: true, // ✅ هذا كومنت مؤقت
     );
   }
@@ -119,6 +146,7 @@ class CommentModel {
     bool? isOwner,
     CommenterModel? commenter,
     bool? isFollowing,
+    Map<String, MentionModel?>? mentions,
     List<CommentModel>? replies,
     bool? isLoadingReplies,
     int? repliesCurrentPage,
@@ -137,6 +165,7 @@ class CommentModel {
       isOwner: isOwner ?? this.isOwner,
       commenter: commenter ?? this.commenter,
       isFollowing: isFollowing ?? this.isFollowing,
+      mentions: mentions ?? this.mentions,
       replies: replies ?? this.replies,
       isLoadingReplies: isLoadingReplies ?? this.isLoadingReplies,
       repliesCurrentPage: repliesCurrentPage ?? this.repliesCurrentPage,

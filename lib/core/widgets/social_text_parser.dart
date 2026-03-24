@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/core/utils/router/app_router.dart';
 
@@ -7,7 +8,6 @@ class SocialTextParser extends StatelessWidget {
   final String text;
   final TextStyle? style;
   final TextStyle? hashtagStyle;
-  final Function(String)? onMentionTap;
 
   // 1. المتغيرات الجديدة للتحكم في قص النص
   final int? maxLines;
@@ -16,12 +16,14 @@ class SocialTextParser extends StatelessWidget {
   final TextDirection? textDirection;
   final bool removeDirectionality;
   final bool parseMentions; // للتحكم في تفعيل المنشن
+
+  final Map<String, MentionModel?>?
+  mentions; // خريطة المنشنات (username -> userId)
   const SocialTextParser({
     super.key,
     required this.text,
     this.style,
     this.hashtagStyle,
-    this.onMentionTap,
     // 2. إضافتها في الكونستركتور
     this.maxLines,
     this.overflow,
@@ -29,6 +31,7 @@ class SocialTextParser extends StatelessWidget {
     this.textDirection,
     this.removeDirectionality = false,
     this.parseMentions = true,
+    this.mentions,
   });
 
   @override
@@ -85,8 +88,9 @@ class SocialTextParser extends StatelessWidget {
         final bool isHashtag = word.startsWith('#');
         final bool isMention = word.startsWith('@');
 
-        // إذا كانت الكلمة منشن وخاصية parseMentions معطلة، أضفها كنص عادي
-        if (isMention && !parseMentions) {
+        // إذا كانت الكلمة منشن (وخاصية parseMentions معطلة أو غير موجودة في الـ mentions)، أضفها كنص عادي
+        if (isMention &&
+            (!parseMentions || mentions == null || mentions![word] == null)) {
           spans.add(TextSpan(text: word));
           return word;
         }
@@ -107,11 +111,19 @@ class SocialTextParser extends StatelessWidget {
                     AppRouter.kAdvisorSearchView,
                     arguments: {'query': word},
                   );
-                } else if (isMention && parseMentions) {
-                  // المنشن
-                  print('Mention clicked: $word');
-                  if (onMentionTap != null) {
-                    onMentionTap!(word);
+                } else if (isMention) {
+                  final mention = mentions![word]!;
+
+                  if (mention.userType == "Advisor") {
+                    context.pushNamed(
+                      AppRouter.kUserProfileView,
+                      arguments: {'advisorId': mention.id},
+                    );
+                  } else {
+                    context.pushNamed(
+                      AppRouter.kUserPublicProfileView,
+                      arguments: mention.id,
+                    );
                   }
                 }
               },
