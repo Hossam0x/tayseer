@@ -1,6 +1,5 @@
 import 'package:tayseer/my_import.dart';
 
-/// Full screen image viewer with Hero animation, pinch-to-zoom, and swipe-to-dismiss
 class FullScreenImageView extends StatefulWidget {
   final String? imageUrl;
   final File? imageFile;
@@ -20,106 +19,156 @@ class FullScreenImageView extends StatefulWidget {
 }
 
 class _FullScreenImageViewState extends State<FullScreenImageView>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final TransformationController _transformationController =
       TransformationController();
 
-  double _dragDistance = 0.0;
-  bool _isDragging = false;
-  late AnimationController _dismissController;
+  late AnimationController _snapBackController;
+  double _snapStartY = 0.0;
+  double _snapStartX = 0.0;
+
+  double _dragY = 0.0;
+  double _dragX = 0.0;
+
+  AnimationController? _doubleTapController;
+  Animation<Matrix4>? _doubleTapAnimation;
 
   @override
   void initState() {
     super.initState();
-    _dismissController = AnimationController(
+
+    _snapBackController =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 300),
+        )..addListener(() {
+          final t = _snapBackController.value;
+          setState(() {
+            _dragY = _snapStartY * (1 - t);
+            _dragX = _snapStartX * (1 - t);
+          });
+        });
+
+    _doubleTapController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 100),
+      duration: const Duration(milliseconds: 250),
     );
   }
 
   @override
   void dispose() {
     _transformationController.dispose();
-    _dismissController.dispose();
+    _snapBackController.dispose();
+    _doubleTapController?.dispose();
     super.dispose();
   }
 
-  void _handleVerticalDragUpdate(DragUpdateDetails details) {
-    // Only allow dragging if not zoomed in
-    if (_transformationController.value.getMaxScaleOnAxis() <= 1.0) {
-      setState(() {
-        _isDragging = true;
-        _dragDistance += details.delta.dy;
-      });
-    }
-  }
+  bool get _isZoomed =>
+      _transformationController.value.getMaxScaleOnAxis() > 1.05;
 
-  void _handleVerticalDragEnd(DragEndDetails details) {
-    final velocity = details.velocity.pixelsPerSecond.dy;
-    final shouldDismiss = _dragDistance.abs() > 100 || velocity.abs() > 700;
+  void _onDoubleTapDown(TapDownDetails details) {
+    _doubleTapController!.stop();
+    final begin = _transformationController.value;
+    final Matrix4 end;
 
-    if (shouldDismiss) {
-      // Animate to dismiss
-      _dismissController.forward().then((_) {
-        Navigator.pop(context);
-      });
+    if (_isZoomed) {
+      end = Matrix4.identity();
     } else {
-      // Reset position with animation
-      setState(() {
-        _isDragging = false;
-        _dragDistance = 0.0;
-      });
+      final pos = details.localPosition;
+      end = Matrix4.identity()
+        ..translate(-pos.dx * 1.5, -pos.dy * 1.5)
+        ..scale(2.5);
     }
+
+    _doubleTapAnimation =
+        Matrix4Tween(begin: begin, end: end).animate(
+          CurvedAnimation(
+            parent: _doubleTapController!,
+            curve: Curves.easeInOut,
+          ),
+        )..addListener(() {
+          _transformationController.value = _doubleTapAnimation!.value;
+        });
+
+    _doubleTapController!.forward(from: 0);
   }
 
   @override
   Widget build(BuildContext context) {
-    // Calculate opacity based on drag distance (smoother fade)
-    final opacity = (1.0 - (_dragDistance.abs() / 400)).clamp(0.0, 1.0);
+    final progress = (_dragY / 350).clamp(0.0, 1.0);
+    final bgOpacity = (1.0 - progress).clamp(0.0, 1.0);
+    final scale = (1.0 - progress * 0.15).clamp(0.85, 1.0);
+    final borderRadius = progress * 30.0;
 
-    // Calculate scale based on drag distance (shrink effect)
-    final scale = (1.0 - (_dragDistance.abs() / 1000)).clamp(0.85, 1.0);
-
-    return GestureDetector(
-      // Wrap entire screen to detect swipe anywhere
-      onVerticalDragUpdate: _handleVerticalDragUpdate,
-      onVerticalDragEnd: _handleVerticalDragEnd,
-      child: Scaffold(
-        backgroundColor: Colors.black.withOpacity(opacity),
-        appBar: AppBar(
-          backgroundColor: Colors.black.withOpacity(opacity),
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: widget.userName != null
-              ? Text(
-                  widget.userName!,
-                  style: Styles.textStyle16SemiBold.copyWith(
-                    color: Colors.white,
-                  ),
-                )
-              : null,
+    return Scaffold(
+      backgroundColor: Colors.black.withOpacity(bgOpacity),
+      appBar: AppBar(
+        backgroundColor: Colors.black.withOpacity(bgOpacity),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
         ),
-        body: AnimatedContainer(
-          duration: _isDragging
-              ? Duration.zero
-              : const Duration(milliseconds: 250),
-          curve: Curves.easeOutCubic,
-          transform: Matrix4.identity()
-            ..translate(0.0, _dragDistance, 0.0)
-            ..scale(scale),
-          child: Center(
-            child: Hero(
-              tag: widget.heroTag,
-              child: InteractiveViewer(
-                transformationController: _transformationController,
-                minScale: 0.5,
-                maxScale: 4.0,
-                child: widget.imageFile != null
-                    ? Image.file(widget.imageFile!, fit: BoxFit.contain)
-                    : AppImage(widget.imageUrl, fit: BoxFit.contain),
+        title: widget.userName != null
+            ? Text(
+                widget.userName!,
+                style: Styles.textStyle16SemiBold.copyWith(color: Colors.white),
+              )
+            : null,
+      ),
+      body: Transform.translate(
+        offset: Offset(_dragX, _dragY),
+        child: Transform.scale(
+          scale: scale,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(borderRadius),
+            child: Container(
+              color: Colors.black,
+              width: double.infinity,
+              height: double.infinity,
+              child: GestureDetector(
+                onDoubleTapDown: _onDoubleTapDown,
+                onDoubleTap: () {},
+                // السحب للأسفل فقط لما مفيش zoom
+                onVerticalDragStart: (_) {
+                  if (_isZoomed) return;
+                  _snapBackController.stop();
+                },
+                onVerticalDragUpdate: (d) {
+                  if (_isZoomed) return;
+                  setState(() {
+                    _dragY += d.delta.dy;
+                    _dragX += d.delta.dx * 0.3;
+                  });
+                },
+                onVerticalDragEnd: (d) {
+                  if (_isZoomed) return;
+                  final vel = d.velocity.pixelsPerSecond.dy;
+                  if (_dragY > 120 || vel > 800) {
+                    Navigator.pop(context);
+                  } else {
+                    _snapStartY = _dragY;
+                    _snapStartX = _dragX;
+                    _snapBackController.forward(from: 0);
+                  }
+                },
+                child: Hero(
+                  tag: widget.heroTag,
+                  child: InteractiveViewer(
+                    transformationController: _transformationController,
+                    minScale: 0.8,
+                    maxScale: 4.0,
+                    boundaryMargin: const EdgeInsets.all(double.infinity),
+                    // نخلي InteractiveViewer يتحكم في الـ pan والـ scale بحرية
+                    panEnabled: true,
+                    scaleEnabled: true,
+                    child: SizedBox.expand(
+                      child: widget.imageFile != null
+                          ? Image.file(widget.imageFile!, fit: BoxFit.contain)
+                          : AppImage(widget.imageUrl, fit: BoxFit.contain),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
