@@ -139,18 +139,12 @@ class UserPublicProfileHeader extends StatelessWidget {
                   isBlur: imageBlur,
                   heroTag: 'profile_image_${profile.id}',
                   onTap: imageUrl.isNotEmpty && !isBlocked && !imageBlur
-                      ? () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => FullScreenImageView(
-                                imageUrl: imageUrl,
-                                heroTag: 'profile_image_${profile.id}',
-                                userName: profile.name,
-                              ),
-                            ),
-                          );
-                        }
+                      ? () => FullScreenImageView.show(
+                          context,
+                          imageUrl: imageUrl,
+                          heroTag: 'profile_image_${profile.id}',
+                          userName: profile.name,
+                        )
                       : null,
                 ),
               ],

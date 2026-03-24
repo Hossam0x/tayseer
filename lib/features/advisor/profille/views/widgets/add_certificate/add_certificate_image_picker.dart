@@ -25,15 +25,11 @@ class AddCertificateImagePicker extends StatelessWidget {
                 GestureDetector(
                   // When image exists → open fullscreen; otherwise → pick image
                   onTap: hasImage
-                      ? () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => FullScreenImageView(
-                                imageFile: state.certificateImageFile,
-                                heroTag: heroTag,
-                              ),
-                            ),
-                          )
+                      ? () => FullScreenImageView.show(
+                          context,
+                          imageFile: state.certificateImageFile,
+                          heroTag: heroTag,
+                        )
                       : cubit.pickCertificateImage,
                   child: Container(
                     padding: EdgeInsets.symmetric(
@@ -62,7 +58,10 @@ class AddCertificateImagePicker extends StatelessWidget {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                AppImage(AssetsData.uplaodCertificate, width: 35.w),
+                                AppImage(
+                                  AssetsData.uplaodCertificate,
+                                  width: 35.w,
+                                ),
                                 Gap(8.h),
                                 Text(
                                   context.tr('upload_image_or_pdf'),

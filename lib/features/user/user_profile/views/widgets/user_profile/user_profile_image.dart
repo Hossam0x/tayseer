@@ -16,15 +16,11 @@ class UserProfileImage extends StatelessWidget {
       height: 120.w,
       child: GestureDetector(
         onTap: (imageUrl != null && imageUrl.isNotEmpty)
-            ? () => Navigator.push(
+            ? () => FullScreenImageView.show(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => FullScreenImageView(
-                    imageUrl: imageUrl,
-                    heroTag: 'user_profile_image',
-                    userName: userProfile?.name ?? kCurrentUserData?.name ?? '',
-                  ),
-                ),
+                imageUrl: imageUrl,
+                heroTag: 'user_profile_image',
+                userName: userProfile?.name ?? kCurrentUserData?.name ?? '',
               )
             : null,
         child: Hero(

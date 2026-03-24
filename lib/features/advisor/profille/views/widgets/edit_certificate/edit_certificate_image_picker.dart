@@ -28,20 +28,16 @@ class EditCertificateImagePicker extends StatelessWidget {
                 GestureDetector(
                   // Tap the image to open fullscreen viewer
                   onTap: hasAnyImage
-                      ? () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => FullScreenImageView(
-                                imageFile: hasLocalFile
-                                    ? state.certificateImageFile
-                                    : null,
-                                imageUrl: !hasLocalFile
-                                    ? state.certificateImageUrl
-                                    : null,
-                                heroTag: heroTag,
-                              ),
-                            ),
-                          )
+                      ? () => FullScreenImageView.show(
+                          context,
+                          imageFile: hasLocalFile
+                              ? state.certificateImageFile
+                              : null,
+                          imageUrl: !hasLocalFile
+                              ? state.certificateImageUrl
+                              : null,
+                          heroTag: heroTag,
+                        )
                       : null,
                   child: Container(
                     height: 150.h,
@@ -49,7 +45,10 @@ class EditCertificateImagePicker extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.grey.shade200,
                       borderRadius: BorderRadius.circular(32.r),
-                      border: Border.all(color: AppColors.primary100, width: 1.5),
+                      border: Border.all(
+                        color: AppColors.primary100,
+                        width: 1.5,
+                      ),
                     ),
                     child: hasLocalFile
                         ? Hero(
@@ -64,23 +63,23 @@ class EditCertificateImagePicker extends StatelessWidget {
                             ),
                           )
                         : hasNetworkImage
-                            ? Hero(
-                                tag: heroTag,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(32.r),
-                                  child: AppImage(
-                                    state.certificateImageUrl!,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              )
-                            : Center(
-                                child: Icon(
-                                  Icons.school,
-                                  size: 40.w,
-                                  color: Colors.grey.shade500,
-                                ),
+                        ? Hero(
+                            tag: heroTag,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(32.r),
+                              child: AppImage(
+                                state.certificateImageUrl!,
+                                fit: BoxFit.cover,
                               ),
+                            ),
+                          )
+                        : Center(
+                            child: Icon(
+                              Icons.school,
+                              size: 40.w,
+                              color: Colors.grey.shade500,
+                            ),
+                          ),
                   ),
                 ),
                 Positioned(
@@ -88,7 +87,10 @@ class EditCertificateImagePicker extends StatelessWidget {
                   right: 10.r,
                   child: GestureDetector(
                     onTap: cubit.pickCertificateImage,
-                    child: AppImage(AssetsData.addCertificateImage, width: 32.w),
+                    child: AppImage(
+                      AssetsData.addCertificateImage,
+                      width: 32.w,
+                    ),
                   ),
                 ),
                 // if (hasAnyImage)

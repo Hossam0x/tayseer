@@ -133,18 +133,12 @@ class UserAdvisorProfileHeader extends StatelessWidget {
                     isBlur: imageBlur,
                     heroTag: 'advisor_profile_image_$profileId',
                     onTap: imageUrl.isNotEmpty && !isBlocked && !imageBlur
-                        ? () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => FullScreenImageView(
-                                  imageUrl: imageUrl,
-                                  heroTag: 'advisor_profile_image_$profileId',
-                                  userName: profileName,
-                                ),
-                              ),
-                            );
-                          }
+                        ? () => FullScreenImageView.show(
+                            context,
+                            imageUrl: imageUrl,
+                            heroTag: 'advisor_profile_image_$profileId',
+                            userName: profileName,
+                          )
                         : null,
                   ),
                 ],

@@ -29,16 +29,12 @@ class EditPersonalDataAvatar extends StatelessWidget {
                   !isImageDeleted &&
                   (imageFile != null ||
                       (imageUrl != null && imageUrl.isNotEmpty))
-              ? () => Navigator.push(
+              ? () => FullScreenImageView.show(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => FullScreenImageView(
-                      imageUrl: imageUrl,
-                      imageFile: imageFile,
-                      heroTag: 'advisor_edit_profile_avatar',
-                      userName: state.profile?.name,
-                    ),
-                  ),
+                  imageUrl: imageUrl,
+                  imageFile: imageFile,
+                  heroTag: 'advisor_edit_profile_avatar',
+                  userName: state.profile?.name,
                 )
               : null,
           child: Hero(

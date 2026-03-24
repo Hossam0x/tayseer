@@ -14,6 +14,32 @@ class FullScreenImageView extends StatefulWidget {
     this.userName,
   });
 
+  /// استخدم دي بدل Navigator.push عشان الخلفية تبقى شفافة
+  static Future<void> show(
+    BuildContext context, {
+    String? imageUrl,
+    File? imageFile,
+    required String heroTag,
+    String? userName,
+  }) {
+    return Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.transparent,
+        pageBuilder: (_, __, ___) => FullScreenImageView(
+          imageUrl: imageUrl,
+          imageFile: imageFile,
+          heroTag: heroTag,
+          userName: userName,
+        ),
+        transitionDuration: const Duration(milliseconds: 300),
+        reverseTransitionDuration: const Duration(milliseconds: 300),
+        transitionsBuilder: (_, animation, __, child) =>
+            FadeTransition(opacity: animation, child: child),
+      ),
+    );
+  }
+
   @override
   State<FullScreenImageView> createState() => _FullScreenImageViewState();
 }

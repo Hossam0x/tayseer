@@ -423,18 +423,10 @@ class _ProfileStoryRing extends StatelessWidget {
 
   void _openFullScreenImage(BuildContext context, String imageUrl) {
     if (imageUrl.isEmpty) return;
-    Navigator.push(
+    FullScreenImageView.show(
       context,
-      PageRouteBuilder(
-        opaque: false,
-        barrierColor: Colors.black,
-        pageBuilder: (_, __, ___) => FullScreenImageView(
-          imageUrl: imageUrl,
-          heroTag: 'profile_image_main',
-        ),
-        transitionsBuilder: (_, animation, __, child) =>
-            FadeTransition(opacity: animation, child: child),
-      ),
+      imageUrl: imageUrl,
+      heroTag: 'profile_image_main',
     );
   }
 }

@@ -129,7 +129,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     if (value.isEmpty || value == 'اختر' || value == 'select') {
       return context.tr('select');
     }
-    
+
     final translated = context.tr(value);
     if (translated == value && !value.contains(' ')) return value;
     return translated;
@@ -139,15 +139,11 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   // ✅ Open image in FullScreen
   // ════════════════════════════════════════════════════════════════
   void _openFullScreen(BuildContext context, String imageUrl, String heroTag) {
-    Navigator.push(
+    FullScreenImageView.show(
       context,
-      MaterialPageRoute(
-        builder: (context) => FullScreenImageView(
-          imageUrl: imageUrl,
-          heroTag: heroTag,
-          userName: context.tr('my_profile'),
-        ),
-      ),
+      imageUrl: imageUrl,
+      heroTag: heroTag,
+      userName: context.tr('my_profile'),
     );
   }
 
