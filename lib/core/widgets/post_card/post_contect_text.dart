@@ -1,4 +1,4 @@
-import 'package:tayseer/core/widgets/auto_direction_hashtag_text.dart';
+import 'package:tayseer/core/widgets/social_text_parser.dart';
 import 'package:tayseer/my_import.dart';
 
 class PostContentText extends StatefulWidget {
@@ -47,11 +47,11 @@ class _PostContentTextState extends State<PostContentText> {
 
         // 2. إذا كان النص لا يتجاوز الحد، اعرضه عادي
         if (!tp.didExceedMaxLines) {
-          return AutoDirectionHashtagText(
+          return SocialTextParser(
             text: widget.text,
             style: widget.style,
             hashtagStyle: widget.hashtagStyle,
-            onHashtagTap: widget.onHashtagTap,
+            parseMentions: false, // تعطيل المنشن في حالة عدم وجود "عرض المزيد"
           );
         }
 
@@ -59,12 +59,11 @@ class _PostContentTextState extends State<PostContentText> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AutoDirectionHashtagText(
+            SocialTextParser(
               text: widget.text,
               style: widget.style,
               hashtagStyle: widget.hashtagStyle,
-              onHashtagTap: widget.onHashtagTap,
-              // لازم تتأكد إن AutoDirectionHashtagText بتقبل المتغيرين دول
+              parseMentions: false,
               maxLines: _isExpanded ? null : _maxLines,
               overflow: _isExpanded
                   ? TextOverflow.visible

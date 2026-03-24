@@ -1,4 +1,5 @@
 import 'package:tayseer/core/models/comment_model.dart';
+import 'package:tayseer/core/widgets/social_text_parser.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_actions_menu.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_avatar.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_callbacks.dart';
@@ -224,9 +225,9 @@ class _CommentText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      textAlign: TextAlign.start,
+    return SocialTextParser(
+      text: text,
+      removeDirectionality: true,
       style: Styles.textStyle14.copyWith(
         fontSize: _fontSize(),
         color: Colors.black,
