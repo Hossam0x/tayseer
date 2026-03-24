@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/offline_banner.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/chat_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/a_nav_bar.dart';
@@ -20,7 +21,11 @@ class ALayOutViewBody extends StatelessWidget {
       const ReelsNavView(tabIndex: 2),
       ProfileView(),
     ];
-    return BlocBuilder<LayoutCubit, LayoutState>(
+    return BlocConsumer<LayoutCubit, LayoutState>(
+      listenWhen: (prev, curr) => prev.currentIndex != curr.currentIndex,
+      listener: (context, state) {
+        VideoManager.instance.stopAll();
+      },
       builder: (context, state) {
         return PopScope(
           canPop: false,
