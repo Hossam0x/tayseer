@@ -90,38 +90,12 @@ class MarriageBodyState extends State<MarriageBody>
       });
     }
 
+    // ✅ لو مستشار وجه من deep link — أظهر popup زي الـ logout بالظبط
     if (widget.personId != null &&
         selectedUserType == UserTypeEnum.asConsultant) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: Text(
-              context.tr('cannot_do_this_action'),
-              textAlign: TextAlign.center,
-              style: Styles.textStyle18Bold,
-            ),
-            content: Text(
-              'هذه الميزة متاحة فقط لمستخدمي تطبيق تيسير.\nيرجى تسجيل الدخول بحساب مستخدم.',
-              textAlign: TextAlign.center,
-              style: Styles.textStyle14,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  context.pop();
-                },
-                child: Text(context.tr('okay_understood')),
-              ),
-            ],
-          ),
-        );
+        _showConsultantBlockedDialog();
       });
       return;
     }
@@ -133,6 +107,22 @@ class MarriageBodyState extends State<MarriageBody>
           : null,
     );
     cubit.initAnimation(this);
+  }
+
+  // ✅ Dialog exactly like logout — using CustomshowDialogWithImage
+  void _showConsultantBlockedDialog() {
+    CustomshowDialogWithImage(
+      context,
+      title: context.tr('cannot_do_this_action'),
+      supTitle: context.tr('consultant_blocked_msg'),
+      imageUrl: AssetsData.kWoriningImage,
+      bottonText: context.tr('okay_understood'),
+      showCancelButton: false,
+      onPressed: () {
+        Navigator.pop(context); // Closes the dialog
+ // Returns to the previous page
+      },
+    );
   }
 
   @override
@@ -182,7 +172,6 @@ class MarriageBodyState extends State<MarriageBody>
   }
 
   // ✅ FIXED: faith بيجي كـ field منفصل من الـ API (مش جوه hobbies)
-  // الـ JSON: "faith": "faith_tahajjud" — مش في الـ hobbies array
   List<Map<String, dynamic>> _buildFaithItems(Answers? answers) {
     final faithValue = answers?.faith;
     if (faithValue == null || faithValue.trim().isEmpty) return [];
@@ -325,7 +314,6 @@ class MarriageBodyState extends State<MarriageBody>
           previous.userHistory != current.userHistory,
 
       listener: (context, state) {
-        // ✅ Regard failure
         if ((state.sendRegardState == CubitStates.failure ||
                 state.sendRegardTextState == CubitStates.failure) &&
             state.showActionSnackbar) {
@@ -339,7 +327,6 @@ class MarriageBodyState extends State<MarriageBody>
           context.read<MarriageCubit>().resetState();
         }
 
-        // ✅ Regard success
         if (state.sendRegardState == CubitStates.success &&
             state.showActionSnackbar) {
           showDialog(
@@ -355,7 +342,6 @@ class MarriageBodyState extends State<MarriageBody>
           context.read<MarriageCubit>().resetState();
         }
 
-        // ✅ Block success
         if (state.blockActionState == CubitStates.success &&
             state.showActionSnackbar) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -368,7 +354,6 @@ class MarriageBodyState extends State<MarriageBody>
           context.read<MarriageCubit>().resetState();
         }
 
-        // ✅ Block failure
         if (state.blockActionState == CubitStates.failure &&
             state.showActionSnackbar) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -759,8 +744,6 @@ class MarriageBodyState extends State<MarriageBody>
         : <Map<String, dynamic>>[];
 
     final bool canInteract = profile.allowInteractions ?? true;
-
-    // ✅ FIXED: اقرأ الـ faith items من answers.faith مباشرة
     final faithItems = _buildFaithItems(answers);
 
     return Directionality(
@@ -1039,7 +1022,7 @@ class MarriageBodyState extends State<MarriageBody>
                       ),
                     ),
 
-                  // ✅ سكشن الهوايات — interest_ keys فقط من hobbies array
+                  // ✅ سكشن الهوايات
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -1060,7 +1043,7 @@ class MarriageBodyState extends State<MarriageBody>
                     ),
                   ),
 
-                  // ✅ FIXED: سكشن الإيمان — مصدره answers.faith (field منفصل في الـ API)
+                  // ✅ سكشن الإيمان — مصدره answers.faith (field منفصل في الـ API)
                   if (faithItems.isNotEmpty)
                     SliverPadding(
                       padding: EdgeInsets.symmetric(
@@ -1177,7 +1160,6 @@ class MarriageBodyState extends State<MarriageBody>
                             ? MainAxisAlignment.spaceAround
                             : MainAxisAlignment.spaceEvenly,
                         children: [
-                          // Like button
                           buildCircleButton(
                             onTap: () async {
                               await _showSwipePopup(
@@ -1209,7 +1191,6 @@ class MarriageBodyState extends State<MarriageBody>
                             HexColor('f8d3da'),
                           ),
 
-                          // Star button
                           buildCircleButton(
                             onTap: () async {
                               cubit.sendRegard(
@@ -1221,7 +1202,6 @@ class MarriageBodyState extends State<MarriageBody>
                             HexColor('cccab3'),
                           ),
 
-                          // Dislike button
                           buildCircleButton(
                             onTap: () async {
                               await _showSwipePopup(
@@ -1253,7 +1233,6 @@ class MarriageBodyState extends State<MarriageBody>
                             HexColor('e44e6c'),
                           ),
 
-                          // Back button
                           if (state.userHistory.isNotEmpty)
                             buildCircleButton(
                               onTap: () async {

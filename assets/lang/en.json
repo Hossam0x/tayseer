@@ -1692,5 +1692,6 @@
   "press_verify_to_start": "Press Verify to Start",
   "invalid_name_characters": "Name must contain letters only, no symbols or numbers",
   "enter_full_name": "Please enter your first and last name",
-  "name_too_short": "Each name must be at least 2 characters"
+  "name_too_short": "Each name must be at least 2 characters",
+  "consultant_blocked_msg": "This feature is only available for Taysir app users. Please log in with a user account."
 }

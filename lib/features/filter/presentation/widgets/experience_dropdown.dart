@@ -17,11 +17,12 @@ class ExperienceDropdown extends StatelessWidget {
   // ✅ values صريحة — كل value هي الرقم الأول من النطاق
   // الـ cubit هيحولها لـ "1_years", "3_years", etc.
   static const List<_ExperienceOption> _options = [
-    _ExperienceOption(value: '1',  label: '1 - 3 years'),
-    _ExperienceOption(value: '3',  label: '3 - 5 years'),
-    _ExperienceOption(value: '5',  label: '5 - 10 years'),
-    _ExperienceOption(value: '10', label: '10+ years'),
+    _ExperienceOption(value: '1', label: 'experience_0_2'),
+    _ExperienceOption(value: '3', label: 'experience_2_5'),
+    _ExperienceOption(value: '5', label: 'experience_5_10'),
+    _ExperienceOption(value: '10', label: 'experience_10_plus'),
   ];
+
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +58,7 @@ class ExperienceDropdown extends StatelessWidget {
                   .map(
                     (option) => DropdownMenuItem<String>(
                       value: option.value,
-                      child: Text(option.label, style: Styles.textStyle14),
+                      child: Text( context.tr(option.label), style: Styles.textStyle14),
                     ),
                   )
                   .toList(),

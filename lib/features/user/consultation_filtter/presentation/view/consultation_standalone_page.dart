@@ -197,6 +197,7 @@ class _ConsultationViewState extends State<ConsultationView> {
                 ),
               ),
             ),
+        SizedBox(height: 100.h)
           ],
         ),
       ),
