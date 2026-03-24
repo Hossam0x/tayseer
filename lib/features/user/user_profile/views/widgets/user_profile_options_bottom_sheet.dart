@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:tayseer/core/enum/report_type.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserProfileOptionsBottomSheet extends StatelessWidget {

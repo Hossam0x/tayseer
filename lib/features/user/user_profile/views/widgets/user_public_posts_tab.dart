@@ -6,8 +6,8 @@ import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/core/widgets/post_card/post_shimmer.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_state.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserPublicPostsTab extends StatelessWidget {

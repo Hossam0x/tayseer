@@ -10,7 +10,7 @@ import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_state.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_state.dart';
 import 'dart:convert';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
