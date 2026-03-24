@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/my_import.dart';
 import '../../../data/Model/interaction_usermodel .dart';
 
@@ -20,15 +21,15 @@ class RecentlyJoined extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-    context.pushNamed(
-      AppRouter.kMarriageView,
-      arguments: {
-        'personId': item.userId,
-        'fromInteractions': true,
-        'isFavorite': item.isFavorite,
-        'interactionUser': item,
-      },
-    );
+        context.pushNamed(
+          AppRouter.kMarriageView,
+          arguments: {
+            'personId': item.userId,
+            'fromInteractions': true,
+            'isFavorite': item.isFavorite,
+            'interactionUser': item,
+          },
+        );
       },
       child: Container(
         margin: EdgeInsets.only(top: 10.h, left: 4.w),
@@ -41,7 +42,7 @@ class RecentlyJoined extends StatelessWidget {
           height: isCompact ? 170.h : 190.h, // ✅ ارتفاع مصغر
           width: isCompact ? 100.w : 110.w, // ✅ عرض مصغر
           child: Directionality(
-    textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+            textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
 
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -75,7 +76,7 @@ class RecentlyJoined extends StatelessWidget {
                     ),
                   ),
                 ),
-            
+
                 Padding(
                   padding: EdgeInsets.only(
                     top: isCompact ? 6.h : 10.h, // ✅ مسافة مصغرة
@@ -124,8 +125,8 @@ class RecentlyJoined extends StatelessWidget {
                       SizedBox(height: isCompact ? 4.h : 8.h), // ✅ مسافة مصغرة
                       if (item.country.isNotEmpty) ...[
                         _buildBadge(
-                          text:  context.tr(item.country),
-                          icon: "",
+                          text:
+                              '${CountryFlagUtils.getFlag(item.country)} ${context.tr(item.country)}',
                           isCompact: isCompact,
                         ),
                       ] else ...[

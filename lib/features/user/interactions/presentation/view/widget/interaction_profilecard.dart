@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/status_ribbon_widget.dart';
 
@@ -224,8 +225,8 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                                 SizedBox(width: 4.w),
                                 Flexible(
                                   child: _buildBadge(
-                                    text: context.tr(widget.item.country),
-                                    icon: "",
+                                    text:
+                                        '${CountryFlagUtils.getFlag(widget.item.country)} ${context.tr(widget.item.country)}',
                                   ),
                                 ),
                               ],
@@ -236,7 +237,7 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                             SizedBox(height: 6.h),
                             _buildBadge(
                               text: context.tr(widget.item.job),
-                              icon: AssetsData.workIcon,
+                              icon:AssetsData.workIcon,
                             ),
                             SizedBox(height: 6.h),
                           ] else ...[
@@ -414,6 +415,8 @@ class RemoveFavoriteDialog extends StatelessWidget {
     );
   }
 }
+
+
 
 Future<bool?> showRemoveFavoriteDialog(BuildContext context) {
   return showDialog<bool>(
