@@ -18,7 +18,7 @@ class SearchEmptyState extends StatelessWidget {
         child: Column(
           children: [
             SizedBox(height: 150.h),
-            Opacity(opacity: 0.6, child: AppImage(iconPath)),
+            Opacity(opacity: 0.65, child: AppImage(iconPath)),
             SizedBox(height: 30.h),
             Text(
               message,
