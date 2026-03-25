@@ -1,25 +1,44 @@
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
-import 'package:tayseer/core/widgets/custom_click.dart';
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
+import 'package:tayseer/features/shared/post_details/data/repos/mention_search_repo.dart';
 import 'package:tayseer/features/shared/post_details/presentation/manager/post_details_cubit/post_details_cubit.dart';
+import 'package:tayseer/features/shared/post_details/presentation/manager/mention_search_cubit/mention_search_cubit.dart';
+import 'package:tayseer/features/shared/post_details/data/models/mention_search_model.dart';
+import 'package:tayseer/features/shared/post_details/presentation/views/widgets/mention_suggestions_popup.dart';
+import 'package:tayseer/core/widgets/social_text_editing_controller.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/widgets/comment_avatar.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:flutter/foundation.dart' as foundation;
 
-class CommentInputArea extends StatefulWidget {
+class CommentInputArea extends StatelessWidget {
   const CommentInputArea({super.key});
 
   @override
-  State<CommentInputArea> createState() => CommentInputAreaState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => MentionSearchCubit(getIt<MentionSearchRepository>()),
+      child: const _CommentInputAreaBody(),
+    );
+  }
 }
 
-class CommentInputAreaState extends State<CommentInputArea> {
-  final TextEditingController _controller = TextEditingController();
+class _CommentInputAreaBody extends StatefulWidget {
+  const _CommentInputAreaBody({super.key});
+
+  @override
+  State<_CommentInputAreaBody> createState() => _CommentInputAreaBodyState();
+}
+
+class _CommentInputAreaBodyState extends State<_CommentInputAreaBody> {
+  final SocialTextEditingController _controller = SocialTextEditingController();
   final FocusNode _focusNode = FocusNode();
 
   TextDirection _defaultDirection = TextDirection.rtl;
   TextDirection _textDirection = TextDirection.rtl;
   bool _showEmojiPicker = false;
+
+  int _mentionStart = -1;
+  int _mentionEnd = -1;
 
   @override
   void didChangeDependencies() {
@@ -37,6 +56,7 @@ class CommentInputAreaState extends State<CommentInputArea> {
   void initState() {
     super.initState();
     _controller.addListener(_updateTextDirection);
+    _controller.addListener(_onTextChangedForMention);
 
     _focusNode.addListener(() {
       if (_focusNode.hasFocus) {
@@ -68,6 +88,70 @@ class CommentInputAreaState extends State<CommentInputArea> {
     } else if (!isArabic && _textDirection != TextDirection.ltr) {
       setState(() => _textDirection = TextDirection.ltr);
     }
+  }
+
+  void _onTextChangedForMention() {
+    final text = _controller.text;
+    final selection = _controller.selection;
+    if (!selection.isValid || !selection.isCollapsed) {
+      if (_mentionStart != -1) {
+        _mentionStart = -1;
+        _mentionEnd = -1;
+        context.read<MentionSearchCubit>().clearSearch();
+      }
+      return;
+    }
+
+    final cursorPosition = selection.baseOffset;
+
+    // Find limits of the current word
+    int start = cursorPosition - 1;
+    while (start >= 0 && text[start] != ' ' && text[start] != '\n') {
+      start--;
+    }
+    start++;
+
+    int end = cursorPosition;
+    while (end < text.length && text[end] != ' ' && text[end] != '\n') {
+      end++;
+    }
+
+    if (start < end && start >= 0) {
+      final wordToCursor = text.substring(start, cursorPosition);
+      if (wordToCursor.startsWith('@')) {
+        _mentionStart = start;
+        _mentionEnd = end;
+        final searchString = wordToCursor.substring(1);
+        context.read<MentionSearchCubit>().searchMentions(searchString);
+        return;
+      }
+    }
+
+    // Not a mention
+    if (_mentionStart != -1) {
+      _mentionStart = -1;
+      _mentionEnd = -1;
+      context.read<MentionSearchCubit>().clearSearch();
+    }
+  }
+
+  void _onMentionSelected(MentionSearchModel user) {
+    if (_mentionStart == -1 || _mentionEnd == -1) return;
+
+    final text = _controller.text;
+    final replacement = '${user.username} ';
+
+    final newText = text.replaceRange(_mentionStart, _mentionEnd, replacement);
+    final newCursorPosition = _mentionStart + replacement.length;
+
+    _controller.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newCursorPosition),
+    );
+
+    _mentionStart = -1;
+    _mentionEnd = -1;
+    context.read<MentionSearchCubit>().clearSearch();
   }
 
   void _toggleEmojiPicker() {
@@ -165,6 +249,7 @@ class CommentInputAreaState extends State<CommentInputArea> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                MentionSuggestionsPopup(onMentionSelected: _onMentionSelected),
                 Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: 16.w,

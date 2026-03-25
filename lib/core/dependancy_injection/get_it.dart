@@ -15,6 +15,7 @@ import 'package:tayseer/features/shared/event/repo/event_repo_impl.dart';
 import 'package:tayseer/features/shared/event_detail/repo/event_detail_repository.dart';
 import 'package:tayseer/features/shared/event_detail/repo/event_detail_repository_impl.dart';
 import 'package:tayseer/features/shared/event_detail/view_model/event_detail_cubit.dart';
+import 'package:tayseer/features/shared/post_details/data/repos/mention_search_repo.dart';
 import 'package:tayseer/features/shared/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/features/advisor/session/data/repos/advisor_session_repo.dart';
 import 'package:tayseer/features/advisor/session/presentation/manager/advisor_session_detailes_cubit.dart';
@@ -440,6 +441,9 @@ Future<void> setupGetIt() async {
   /// Search Repository
   getIt.registerLazySingleton<SearchRepository>(
     () => SearchRepository(getIt<ApiService>()),
+  );
+  getIt.registerLazySingleton<MentionSearchRepository>(
+    () => MentionSearchRepository(getIt<ApiService>()),
   );
 
   /// Marriage Filter Repo
