@@ -5,20 +5,11 @@ import 'package:tayseer/my_import.dart';
 
 class EditPersonalDataSaveButton extends StatelessWidget {
   final EditPersonalDataState state;
-  final TextEditingController bioController;
 
-  const EditPersonalDataSaveButton({
-    super.key,
-    required this.state,
-    required this.bioController,
-  });
+  const EditPersonalDataSaveButton({super.key, required this.state});
 
   bool _isFormValid(EditPersonalDataUiState uiState) {
-    final bioLength = bioController.text.trim().length;
-    return uiState.nameError == null &&
-        uiState.usernameError == null &&
-        bioLength >= 3 &&
-        bioLength <= 250;
+    return uiState.nameError == null && uiState.usernameError == null;
   }
 
   @override

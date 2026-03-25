@@ -1,7 +1,7 @@
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/wallet/data/cubit/withdraw_cubit.dart';
-import 'package:tayseer/features/advisor/wallet/data/cubit/wallet_cubit.dart';
-import 'package:tayseer/features/advisor/wallet/data/cubit/withdraw_state.dart';
+import 'package:tayseer/features/advisor/wallet/view/cubit/withdraw_cubit.dart';
+import 'package:tayseer/features/advisor/wallet/view/cubit/wallet_cubit.dart';
+import 'package:tayseer/features/advisor/wallet/view/cubit/withdraw_state.dart';
 import 'package:tayseer/features/advisor/wallet/data/models/withdraw_model.dart';
 import 'package:tayseer/features/advisor/wallet/view/widgets/balance_card.dart';
 import 'package:tayseer/my_import.dart';

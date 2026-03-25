@@ -121,8 +121,12 @@ class _TimeSlotsList extends StatelessWidget {
           initialFrom: timeSlot?.start ?? '00:00',
           initialTo: timeSlot?.end ?? '00:00',
           initialStatus: day.isEnabled,
-          onStatusChanged: (isActive) =>
-              cubit.toggleDayStatus(day.dayOfWeek, isActive),
+          onStatusChanged: (isActive) {
+            cubit.toggleDayStatus(day.dayOfWeek, isActive);
+            if (isActive && (timeSlot == null || timeSlot.start == '00:00')) {
+              cubit.updateDayTimeSlot(day.dayOfWeek, '09:00', '17:00');
+            }
+          },
           onTimeChanged: (start, end) =>
               cubit.updateDayTimeSlot(day.dayOfWeek, start, end),
         );
