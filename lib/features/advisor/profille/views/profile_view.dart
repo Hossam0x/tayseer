@@ -6,7 +6,7 @@ import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart
 import 'package:tayseer/features/advisor/profille/views/widgets/bio_information.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_header.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_stories_section.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/profile_tabs_section.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/stories/profile_tabs_section.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';

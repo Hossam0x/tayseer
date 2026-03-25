@@ -5,9 +5,9 @@ import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart
 import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_tabs_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_tabs_state.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/tabs/posts_tab.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/tabs/posts/posts_tab.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/profile_certificates_section.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings_tab.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings/ratings_tab.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
