@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/features/advisor/profille/data/models/archive_models.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_cubits.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/show_confirmation_dialog.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:tayseer/my_import.dart';

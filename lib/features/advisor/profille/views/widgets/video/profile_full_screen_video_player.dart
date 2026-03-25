@@ -19,7 +19,8 @@ class ProfileFullscreenVideoPlayer extends StatefulWidget {
   final String videoUrl;
   final Duration startPosition;
   final bool? isMuted; // ✅ Optional - لو null يستخدم GlobalMuteManager
-  final VideoPlayerController? controller; // ✅ Optional - reuse existing controller
+  final VideoPlayerController?
+  controller; // ✅ Optional - reuse existing controller
 
   const ProfileFullscreenVideoPlayer({
     super.key,
@@ -30,10 +31,12 @@ class ProfileFullscreenVideoPlayer extends StatefulWidget {
   });
 
   @override
-  State<ProfileFullscreenVideoPlayer> createState() => _ProfileFullscreenVideoPlayerState();
+  State<ProfileFullscreenVideoPlayer> createState() =>
+      _ProfileFullscreenVideoPlayerState();
 }
 
-class _ProfileFullscreenVideoPlayerState extends State<ProfileFullscreenVideoPlayer> {
+class _ProfileFullscreenVideoPlayerState
+    extends State<ProfileFullscreenVideoPlayer> {
   VideoPlayerController? _controller;
   bool _isInitialized = false;
   bool _showControls = true;
@@ -260,7 +263,7 @@ class _ProfileFullscreenVideoPlayerState extends State<ProfileFullscreenVideoPla
     }
 
     _controller?.removeListener(_videoListener);
-    
+
     // ✅ Dispose only if we created the controller internally
     if (widget.controller == null) {
       _controller?.dispose();

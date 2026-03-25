@@ -12,11 +12,7 @@ class RatingsTab extends StatefulWidget {
   final String advisorId;
   final bool isMe;
 
-  const RatingsTab({
-    super.key,
-    required this.advisorId,
-    required this.isMe,
-  });
+  const RatingsTab({super.key, required this.advisorId, required this.isMe});
 
   @override
   State<RatingsTab> createState() => _RatingsTabState();
@@ -95,11 +91,16 @@ class _RatingsContent extends StatelessWidget {
                       child: Center(
                         child: Column(
                           children: [
-                            AppImage(AssetsData.icNoContentSeach, height: 150.h),
+                            AppImage(
+                              AssetsData.icNoContentSeach,
+                              height: 150.h,
+                            ),
                             Gap(16.h),
                             Text(
                               context.tr('no_results'),
-                              style: Styles.textStyle16.copyWith(color: AppColors.kGreyB3),
+                              style: Styles.textStyle16.copyWith(
+                                color: AppColors.kGreyB3,
+                              ),
                             ),
                           ],
                         ),

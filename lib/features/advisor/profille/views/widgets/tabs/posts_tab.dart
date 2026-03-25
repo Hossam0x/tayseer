@@ -220,10 +220,7 @@ class PostsTab extends StatelessWidget {
   );
 
   Widget _buildError(String? error, ProfileCubit cubit, BuildContext context) =>
-      CustomErrorView(
-        message: error,
-        onRetry: () => cubit.fetchPosts(),
-      );
+      CustomErrorView(message: error, onRetry: () => cubit.fetchPosts());
 
   Widget _buildEmptyState(BuildContext context) => Padding(
     padding: EdgeInsets.only(top: 80.h),

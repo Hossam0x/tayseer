@@ -37,7 +37,7 @@ import 'package:tayseer/features/advisor/profille/data/repositories/profile_repo
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository_impl.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository_impl.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates/certificates_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates/edit_certificate_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
