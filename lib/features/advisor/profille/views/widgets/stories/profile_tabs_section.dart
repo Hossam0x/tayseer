@@ -1,10 +1,10 @@
 import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates/certificates_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_tabs_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_tabs_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/ratings/ratings_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_tabs_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_tabs_state.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/posts/posts_tab.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/profile_certificates_section.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings/ratings_tab.dart';

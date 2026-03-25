@@ -1,5 +1,5 @@
-import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/ratings_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/ratings/ratings_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/ratings/ratings_state.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings/ratings_add_button.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings/ratings_error_section.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings/ratings_list.dart';

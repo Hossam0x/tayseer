@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_model.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_state.dart';
 import 'package:tayseer/my_import.dart';
 
 /// Name + verification badge

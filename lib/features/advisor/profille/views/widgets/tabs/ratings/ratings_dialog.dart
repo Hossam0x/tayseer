@@ -1,6 +1,6 @@
 import 'package:tayseer/core/cubits/int_cubit.dart';
 import 'package:tayseer/core/cubits/toggle_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/ratings/ratings_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 /// Shows the rating submission dialog.

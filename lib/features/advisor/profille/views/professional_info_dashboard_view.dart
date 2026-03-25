@@ -1,6 +1,6 @@
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_state.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/dashboard/analytics_chart.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost/boost_button_sliver.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/dashboard/dashboard_analysis_loading.dart';

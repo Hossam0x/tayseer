@@ -1,8 +1,8 @@
 import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart'
     as home_feed;
 import 'package:tayseer/my_import.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_state.dart';
 import 'package:tayseer/core/widgets/post_card/post_shimmer.dart';
 import 'posts_tab_listeners.dart';
 import 'post_item_widget.dart';

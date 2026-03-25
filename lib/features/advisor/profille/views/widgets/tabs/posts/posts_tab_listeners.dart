@@ -1,5 +1,5 @@
 import 'package:tayseer/my_import.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_state.dart';
 
 /// Mixin that provides all BlocListener conditions and handlers for PostsTab
 mixin PostsTabListeners {

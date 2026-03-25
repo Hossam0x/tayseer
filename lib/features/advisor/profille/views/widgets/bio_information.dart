@@ -1,7 +1,7 @@
 import 'package:tayseer/core/enum/advisor_status.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_model.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_state.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/my_import.dart';

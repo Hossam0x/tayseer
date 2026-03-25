@@ -1,7 +1,7 @@
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_visitors_model.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_visitors_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_visitors_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_visitors_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_visitors_state.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost/boost_button_sliver.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/visitors/visitor_item.dart';
 import 'package:tayseer/my_import.dart';
