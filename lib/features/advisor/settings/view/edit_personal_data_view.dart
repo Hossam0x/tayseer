@@ -37,11 +37,8 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
   ];
 
   bool get _isFormValid {
-    final bioLength = _bioController.text.trim().length;
     return _uiCubit.state.nameError == null &&
-        _uiCubit.state.usernameError == null &&
-        bioLength >= 3 &&
-        bioLength <= 250;
+        _uiCubit.state.usernameError == null;
   }
 
   @override

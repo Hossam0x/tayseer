@@ -147,10 +147,6 @@ class EditPersonalDataForm extends StatelessWidget {
           onChanged: cubit.updateBio,
           hint: context.tr("bio_hint"),
           maxLines: 4,
-          maxLength: 250,
-          minLength: 3,
-          showCharacterCount: true,
-          validationErrorKey: 'bio_min_3_chars',
         ),
         Gap(12.h),
         CusttomGlassButton(
@@ -167,7 +163,7 @@ class EditPersonalDataForm extends StatelessWidget {
           onRemoveVideo: onRemoveVideo,
         ),
         Gap(35.h),
-        EditPersonalDataSaveButton(state: state, bioController: bioController),
+        EditPersonalDataSaveButton(state: state),
         Gap(40.h),
       ],
     );

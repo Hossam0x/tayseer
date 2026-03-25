@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_tabs_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_tabs_state.dart';
 
 class ProfileTabsCubit extends Cubit<ProfileTabsState> {
   ProfileTabsCubit() : super(const ProfileTabsState());

@@ -1,4 +1,4 @@
-import 'package:tayseer/features/advisor/profille/views/cubit/ratings_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/ratings/ratings_state.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings/rating_item_card.dart';
 import 'package:tayseer/my_import.dart';
 

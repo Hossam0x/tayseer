@@ -1,5 +1,5 @@
 import 'package:tayseer/features/advisor/profille/views/cubit/boost_account_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/subscription_card.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/boost/subscription_card.dart';
 import 'package:tayseer/my_import.dart';
 
 class InteractionSubscriptionView extends StatelessWidget {
