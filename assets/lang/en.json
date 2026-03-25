@@ -1696,21 +1696,7 @@
   "enter_full_name": "Please enter your first and last name",
   "name_too_short": "Each name must be at least 2 characters",
   "consultant_blocked_msg": "This feature is only available for Taysir app users. Please log in with a user account.",
-  "my_wallet": "My Wallet",
   "earnings": "Earnings",
-  "transactions_log": "Transactions Log",
-  "earnings_log": "Earnings Log",
-  "bookings_log": "Bookings Log",
-  "payment_record": "Payment Record",
-  "view_all": "View All",
-  "no_transactions": "No transactions yet",
-  "no_bookings": "No bookings yet",
-  "current_balance": "Current Balance",
-  "withdraw": "Withdraw",
   "withdraw_request": "Withdrawal Request",
-  "deposit": "Deposit",
-  "transaction": "Transaction",
-  "consultancy_session": "Consultancy Session",
-  "event_booking": "Event Booking",
-  "egp": "EGP"
+  "deposit": "Deposit"
 }
