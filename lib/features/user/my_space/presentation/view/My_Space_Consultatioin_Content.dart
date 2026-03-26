@@ -1,5 +1,6 @@
 import 'package:tayseer/core/widgets/chat_room_list_item/chat_room_list_item.dart';
 import 'package:tayseer/core/widgets/chat_room_list_item/helpers/chat_room_dialog_helper.dart';
+import 'package:tayseer/core/widgets/error_state_widget.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_space_state.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/add_advisor_item.dart';
@@ -59,7 +60,12 @@ class _MySpaceConsultationContentState
 
         // Failure State
         if (state.advisorChatState == CubitStates.failure) {
-          return _buildErrorWidget(state.errorMessage);
+          return ErrorStateWidget(
+            errorMessage: state.errorMessage,
+            onRetry: () {
+              context.read<MySpaceCubit>().getAdvisorChat();
+            },
+          );
         }
 
         // Success State
@@ -220,34 +226,6 @@ class _MySpaceConsultationContentState
         // Initial State
         return const SizedBox.shrink();
       },
-    );
-  }
-
-  Widget _buildErrorWidget(String? errorMessage) {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.w),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AppImage(AssetsData.errorIcon, width: 150.w),
-            SizedBox(height: 16.h),
-            Text(
-              'حدث خطأ ما',
-              style: Styles.textStyle18,
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 16.h),
-            CustomBotton(
-              width: 200.w,
-              title: "إعاده المحاوله",
-              onPressed: () {
-                context.read<MySpaceCubit>().getAdvisorChat();
-              },
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
