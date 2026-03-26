@@ -1,3 +1,9 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:tayseer/core/enum/cubit_states.dart';
+import 'package:tayseer/core/widgets/custom_app_image.dart';
 import 'package:tayseer/features/shared/post_details/presentation/manager/post_details_cubit/post_details_cubit.dart';
 import 'package:tayseer/features/shared/post_details/presentation/manager/mention_search_cubit/mention_search_cubit.dart';
 import 'package:tayseer/features/shared/post_details/data/models/mention_search_model.dart';
@@ -6,7 +12,6 @@ import 'package:tayseer/features/shared/post_details/presentation/views/widgets/
 import 'package:tayseer/core/widgets/social_text_editing_controller.dart';
 import 'package:tayseer/my_import.dart';
 
-/// CommentInputEditor - Reusable input for comments/replies
 class CommentInputEditor extends StatelessWidget {
   final String initialText;
   final String buttonText;
@@ -76,9 +81,6 @@ class _CommentInputEditorBodyState extends State<_CommentInputEditorBody> {
   int _mentionStart = -1;
   int _mentionEnd = -1;
 
-  // =============================================
-  // ✅ NEW: حقول الـ Overlay والـ Scroll
-  // =============================================
   final GlobalKey _editorKey = GlobalKey();
   OverlayEntry? _mentionOverlay;
   ScrollPosition? _scrollPosition;
@@ -106,17 +108,17 @@ class _CommentInputEditorBodyState extends State<_CommentInputEditorBody> {
       }
     }
 
-    // ✅ MODIFIED: ربط الـ Scroll Listener عشان نقفل الـ Overlay لما المستخدم يعمل سكرول
     _scrollPosition?.removeListener(_onUserScroll);
     _scrollPosition = Scrollable.maybeOf(context)?.position;
     _scrollPosition?.addListener(_onUserScroll);
   }
 
-  // ✅ MODIFIED: دالة تُنفذ عند عمل Scroll
   void _onUserScroll() {
     if (_mentionOverlay != null) {
-      // الـ Cubit هيغيّر الـ state لـ initial وهيقفل القائمة من نفسه
-      context.read<MentionSearchCubit>().clearSearch();
+      final currentState = context.read<MentionSearchCubit>().state;
+      if (currentState.state != CubitStates.initial) {
+        context.read<MentionSearchCubit>().clearSearch();
+      }
     }
   }
 
@@ -205,10 +207,6 @@ class _CommentInputEditorBodyState extends State<_CommentInputEditorBody> {
     context.read<MentionSearchCubit>().clearSearch();
   }
 
-  // =============================================
-  // ✅ إدارة الـ Mention Overlay
-  // =============================================
-
   void _onMentionStateChanged(MentionSearchState state) {
     if (_shouldShowMentions(state)) {
       _showOrUpdateOverlay();
@@ -235,9 +233,7 @@ class _CommentInputEditorBodyState extends State<_CommentInputEditorBody> {
     }
 
     final cubit = context.read<MentionSearchCubit>();
-
     _mentionOverlay = OverlayEntry(builder: (_) => _buildOverlayContent(cubit));
-
     Overlay.of(context).insert(_mentionOverlay!);
   }
 
@@ -246,6 +242,7 @@ class _CommentInputEditorBodyState extends State<_CommentInputEditorBody> {
     _mentionOverlay = null;
   }
 
+  // ✅ MODIFIED: فصل الشيمر عن القائمة في حساب الحجم
   Widget _buildOverlayContent(MentionSearchCubit cubit) {
     final renderBox =
         _editorKey.currentContext?.findRenderObject() as RenderBox?;
@@ -256,77 +253,77 @@ class _CommentInputEditorBodyState extends State<_CommentInputEditorBody> {
     final offset = renderBox.localToGlobal(Offset.zero);
     final size = renderBox.size;
 
-    // ✅ التعديل هنا: حساب المساحة مع الأخذ في الاعتبار الكيبورد!
     final mediaQuery = MediaQuery.of(context);
     final screenHeight = mediaQuery.size.height;
-    final keyboardHeight = mediaQuery.viewInsets.bottom; // طول الكيبورد
+    final keyboardHeight = mediaQuery.viewInsets.bottom;
 
-    // الارتفاع المتاح فعلياً من الشاشة للمستخدم (بدون الكيبورد)
     final availableHeight = screenHeight - keyboardHeight;
-
     final spaceAbove = offset.dy;
     final spaceBelow = availableHeight - (offset.dy + size.height);
 
-    // ✅ هل الـ Editor (التعليق اللي بنرد عليه) موجود في الثلث العلوي من الشاشة؟
     final isInTopThird = offset.dy < (availableHeight / 3);
-
-    // ✅ تحديد الاتجاه (الافتراضي أنها تفتح لأعلى)
     bool showAbove = true;
 
-    // متى نفتحها للأسفل؟
-    // 1- لو إحنا في الثلث العلوي، وفيه مساحة كافية تحت (أكبر من 150 بيكسل)
-    // 2- أو لو مفيش مساحة كافية فوق نهائياً والمساحة اللي تحت أكبر
     if (isInTopThird && spaceBelow > 150) {
       showAbove = false;
     } else if (spaceAbove < 120 && spaceBelow > spaceAbove) {
       showAbove = false;
     }
 
-    // حساب أقصى ارتفاع مسموح للقائمة عشان متعديش الشاشة
     double maxPopupHeight = showAbove ? spaceAbove - 20 : spaceBelow - 20;
     maxPopupHeight = maxPopupHeight.clamp(120.0, 250.0);
 
     return BlocProvider.value(
       value: cubit,
       child: BlocBuilder<MentionSearchCubit, MentionSearchState>(
+        buildWhen: (previous, current) =>
+            previous.state != current.state ||
+            previous.mentions != current.mentions,
         builder: (ctx, state) {
           if (!_shouldShowMentions(state)) {
             return const SizedBox.shrink();
           }
 
-          Widget content;
-          if (state.state == CubitStates.loading && state.mentions.isEmpty) {
-            content = _buildOverlayShimmer();
-          } else {
-            content = _buildOverlayMentionsList(state.mentions);
-          }
+          // ✅ MODIFIED: تحديد هل ده شيمر ولا قائمة حقيقية
+          final bool isShimmer =
+              state.state == CubitStates.loading && state.mentions.isEmpty;
+
+          final Widget content = isShimmer
+              ? _buildOverlayShimmer()
+              : _buildOverlayMentionsList(state.mentions);
 
           return Stack(
             children: [
               Positioned(
                 left: offset.dx,
                 width: size.width,
-                // تحديد موقعها فوق أو تحت بناءً على المتغير showAbove
                 top: showAbove ? null : offset.dy + size.height + 6,
                 bottom: showAbove ? screenHeight - offset.dy + 6 : null,
-
-                child: Material(
-                  elevation: 8,
-                  shadowColor: Colors.black26,
-                  borderRadius: BorderRadius.circular(12.r),
-                  color: Colors.white,
-                  child: Container(
-                    constraints: BoxConstraints(maxHeight: maxPopupHeight),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(
-                        color: Colors.grey.shade200,
-                        width: 0.5,
+                child: TapRegion(
+                  onTapOutside: (event) {
+                    cubit.clearSearch();
+                  },
+                  child: Material(
+                    elevation: 8,
+                    shadowColor: Colors.black26,
+                    borderRadius: BorderRadius.circular(12.r),
+                    color: Colors.white,
+                    child: Container(
+                      // ✅ MODIFIED: الشيمر بدون maxHeight، القائمة بـ maxHeight
+                      constraints: isShimmer
+                          ? null
+                          : BoxConstraints(maxHeight: maxPopupHeight),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(
+                          color: Colors.grey.shade200,
+                          width: 0.5,
+                        ),
                       ),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12.r),
-                      child: content,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12.r),
+                        child: content,
+                      ),
                     ),
                   ),
                 ),
@@ -338,109 +335,119 @@ class _CommentInputEditorBodyState extends State<_CommentInputEditorBody> {
     );
   }
 
+  // ✅ MODIFIED: شيمر بحجم مناسب (عنصر واحد بس)
   Widget _buildOverlayShimmer() {
     return Shimmer.fromColors(
       baseColor: Colors.grey.shade300,
       highlightColor: Colors.grey.shade100,
-      child: ListView.builder(
-        shrinkWrap: true,
-        padding: EdgeInsets.zero,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: 3,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-            child: Row(
-              children: [
-                Container(
-                  width: 36.w,
-                  height: 36.w,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 120.w,
-                        height: 12.h,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(4.r),
-                        ),
-                      ),
-                      SizedBox(height: 8.h),
-                      Container(
-                        width: 80.w,
-                        height: 10.h,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(4.r),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36.w,
+              height: 36.w,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
             ),
-          );
-        },
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 120.w,
+                    height: 12.h,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4.r),
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Container(
+                    width: 80.w,
+                    height: 10.h,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4.r),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
+  // ✅ القائمة الحقيقية (بدون تغيير)
   Widget _buildOverlayMentionsList(List<MentionSearchModel> mentions) {
-    return ListView.separated(
-      shrinkWrap: true,
-      padding: EdgeInsets.zero,
+    return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
-      itemCount: mentions.length,
-      separatorBuilder: (context, index) =>
-          Divider(height: 1, color: Colors.grey.shade200),
-      itemBuilder: (context, index) {
-        final user = mentions[index];
-        return ListTile(
-          dense: true,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-          leading: AppImage(
-            user.image ?? '',
-            width: 36.w,
-            height: 36.w,
-            radius: 18.r,
-            isAvatar: true,
-            blur: user.imageBlur ? 1.5 : 0.0,
-          ),
-          title: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(mentions.length, (index) {
+          final user = mentions[index];
+          return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Flexible(
-                child: Text(
-                  user.name ?? user.username,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
+              if (index > 0) Divider(height: 1, color: Colors.grey.shade200),
+              ListTile(
+                key: ValueKey(user.username),
+                dense: true,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 16.w,
+                  vertical: 4.h,
+                ),
+                leading: RepaintBoundary(
+                  child: AppImage(
+                    user.image ?? '',
+                    width: 36.w,
+                    height: 36.w,
+                    radius: 18.r,
+                    isAvatar: true,
+                    blur: user.imageBlur ? 1.5 : 0.0,
+                    fit: BoxFit.cover,
                   ),
                 ),
+                title: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        user.name ?? user.username,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (user.isVerified == true) ...[
+                      SizedBox(width: 4.w),
+                      Icon(Icons.verified, color: Colors.blue, size: 16.sp),
+                    ],
+                  ],
+                ),
+                subtitle: Text(
+                  user.username,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                onTap: () => _onMentionSelected(user),
               ),
-              if (user.isVerified == true) ...[
-                SizedBox(width: 4.w),
-                Icon(Icons.verified, color: Colors.blue, size: 16.sp),
-              ],
             ],
-          ),
-          subtitle: Text(
-            user.username,
-            style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade600),
-          ),
-          onTap: () => _onMentionSelected(user),
-        );
-      },
+          );
+        }),
+      ),
     );
   }
 
@@ -458,9 +465,7 @@ class _CommentInputEditorBodyState extends State<_CommentInputEditorBody> {
 
   @override
   void dispose() {
-    // ✅ MODIFIED: إزالة المستمع للسكرول لتجنب تسريب الذاكرة (Memory Leak)
     _scrollPosition?.removeListener(_onUserScroll);
-
     _removeMentionOverlay();
     _controller.removeListener(_onTextChanged);
     _controller.removeListener(_onTextChangedForMention);
@@ -481,7 +486,6 @@ class _CommentInputEditorBodyState extends State<_CommentInputEditorBody> {
           },
           child: const SizedBox.shrink(),
         ),
-
         _buildInputRow(),
         Gap(10.h),
         _buildActionButtons(context),
