@@ -1,8 +1,6 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
-
+import 'package:tayseer/core/widgets/chat_room_list_item/chat_room_list_item.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_space_state.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
-import 'package:tayseer/features/user/my_space/presentation/widget/my_space_list_view_item.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/session_history/empty_session_widget.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -104,16 +102,15 @@ class _MySpaceConsultationContentState
                   receiverId = otherUser.id;
                 }
 
-                return MySpaceListItem(
+                return ChatRoomListItem(
                   key: ValueKey('chat_${chatRoom.id}'),
-                  index: index,
                   id: chatRoom.id,
                   title: title,
                   subtitle: chatRoom.lastMessage?.content ?? '',
                   imageUrl: imageUrl,
                   lastUpdate: chatRoom.lastMessageAt ?? chatRoom.updatedAt,
                   unreadCount: chatRoom.unreadCount,
-                  isSystem: chatRoom.isSystemChat,
+                  fallbackAsset: AssetsData.kAppLogotayseerImage,
                   onTap: () {
                     final cubit = context.read<MySpaceCubit>();
                     cubit.markChatAsRead(chatRoom.id);
