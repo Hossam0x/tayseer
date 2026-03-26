@@ -14,24 +14,7 @@ import 'package:tayseer/features/advisor/chat/presentation/manager/state/chat_me
 import 'package:tayseer/my_import.dart';
 import 'package:uuid/uuid.dart';
 
-/// Chat Messages Cubit — aligned with the new socket event names.
-///
-/// CLIENT → SERVER events:
-///   joinChatRoom   { targetId }
-///   leaveChatRoom  { chatRoomId }
-///   sendTextMessage { chatRoomId, text, replyToMessageId?, tempId? }
-///   typingStatus   { chatRoomId, isTyping }
-///
-/// SERVER → CLIENT events:
-///   chatRoomJoined  { chatRoomId, otherUserType, freeChatMinsLeft, blockExists, isMe }
-///   chatRoomLeft    { chatRoomId }
-///   newMessage      { message: {...}, chatRoom: {...} }
-///   newMessageState { status, messageIds[] }
-///   typingStatus    { isTyping }
-///   messageDeleted  { chatMessageIds[] }
-///   blockerStatus   { userId, newBlockStatus }
-///   blockedStatus   { userId, newBlockStatus }
-///   fail            { message }
+
 class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   final ChatRepoSimple _repo;
   final tayseerSocketHelper _socketHelper = getIt.get<tayseerSocketHelper>();
