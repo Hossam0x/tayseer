@@ -1,8 +1,6 @@
 // notification_view_body.dart
 
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tayseer/core/enum/cubit_states.dart';
+
 import 'package:tayseer/features/advisor/notification/presentation/widget/empty_notification.dart';
 import 'package:tayseer/features/advisor/notification/presentation/widget/notification_failure_state.dart';
 import 'package:tayseer/features/advisor/notification/presentation/widget/notification_loading_state.dart';
@@ -45,11 +43,11 @@ class NotificationViewBody extends StatelessWidget {
     );
   }
 
-  void _handleNotificationTap(BuildContext context) {
-    // TODO: Navigation based on notification.type
-  }
-
-  void _handleSubscribe(BuildContext context) {
-    // TODO: Navigate to subscription screen
-  }
+  // void _handleNotificationTap(BuildContext context) {
+  //   // TODO: Navigation based on notification.type
+  // }
+  //
+  // void _handleSubscribe(BuildContext context) {
+  //   // TODO: Navigate to subscription screen
+  // }
 }

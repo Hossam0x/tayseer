@@ -21,7 +21,6 @@ class NotificationsModel {
     );
   }
 }
-
 class NotificationsModelData {
   NotificationsModelData({
     required this.notifications,
