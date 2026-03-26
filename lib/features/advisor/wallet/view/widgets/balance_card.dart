@@ -1,5 +1,5 @@
-import 'package:tayseer/features/advisor/wallet/data/cubit/wallet_cubit.dart';
-import 'package:tayseer/features/advisor/wallet/data/cubit/wallet_state.dart';
+import 'package:tayseer/features/advisor/wallet/view/cubit/wallet_cubit.dart';
+import 'package:tayseer/features/advisor/wallet/view/cubit/wallet_state.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -9,12 +9,15 @@ class BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<WalletCubit, WalletState>(
+      buildWhen: (prev, curr) =>
+          prev.walletStatus != curr.walletStatus ||
+          prev.walletData != curr.walletData,
       builder: (context, state) {
         final balance = state.walletData?.balance ?? 0;
-        final currency = state.walletData?.currency ?? context.tr('egp');
+        final currency = state.walletData?.currency ?? 'USD';
 
         return Skeletonizer(
-          enabled: state.status == WalletStatus.loading,
+          enabled: state.walletStatus == WalletStatus.loading,
           child: Container(
             width: double.infinity,
             padding: EdgeInsets.all(16.w),

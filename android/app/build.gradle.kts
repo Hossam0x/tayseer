@@ -22,8 +22,8 @@ android {
         applicationId = "com.athr.tayser"
         minSdk = 24
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.0"
+        versionCode = 6
+        versionName = "1.4.5"
         multiDexEnabled = true  // ← أضف هذا
     }
 

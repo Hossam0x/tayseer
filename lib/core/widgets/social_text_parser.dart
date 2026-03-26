@@ -1,8 +1,6 @@
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
 import 'package:tayseer/core/models/comment_model.dart';
-import 'package:tayseer/core/utils/extensions/extensions.dart';
-import 'package:tayseer/core/utils/router/app_router.dart';
+import 'package:tayseer/my_import.dart';
 
 class SocialTextParser extends StatelessWidget {
   final String text;
@@ -95,15 +93,27 @@ class SocialTextParser extends StatelessWidget {
           return word;
         }
 
+        String displayText = word;
+        TextStyle defaultStyle =
+            hashtagStyle ??
+            const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold);
+
+        if (isMention) {
+          final mention = mentions![word]!;
+          if (mention.name.isNotEmpty) {
+            displayText = mention.name;
+          }
+          defaultStyle = TextStyle(
+            color: AppColors.primary200,
+            fontWeight: FontWeight.w900,
+            fontSize: 16.sp,
+          );
+        }
+
         spans.add(
           TextSpan(
-            text: word,
-            style:
-                hashtagStyle ??
-                const TextStyle(
-                  color: Colors.blue,
-                  fontWeight: FontWeight.bold,
-                ),
+            text: displayText,
+            style: defaultStyle,
             recognizer: TapGestureRecognizer()
               ..onTap = () {
                 if (isHashtag) {

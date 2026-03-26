@@ -21,10 +21,10 @@ class AnalyticsChart extends StatelessWidget {
 
     return Column(
       children: [
-        Gap(40.h),
+        Gap(12.h),
         // Legend for weeks
-        // _buildWeekLegend(),
-        Gap(8.h),
+        _buildWeekLegend(),
+        Gap(12.h),
 
         SizedBox(
           height: 160.h,
@@ -226,37 +226,37 @@ class AnalyticsChart extends StatelessWidget {
   }
 
   /// بناء Legend للأسابيع
-  // Widget _buildWeekLegend() {
-  //   return Row(
-  //     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-  //     children: [
-  //       _buildLegendItem(_week1Color, 'الأسبوع 1'),
-  //       _buildLegendItem(_week2Color, 'الأسبوع 2'),
-  //       _buildLegendItem(_week3Color, 'الأسبوع 3'),
-  //       _buildLegendItem(_week4Color, 'الأسبوع 4'),
-  //     ],
-  //   );
-  // }
+  Widget _buildWeekLegend() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _buildLegendItem(_week1Color, 'الأسبوع 1'),
+        _buildLegendItem(_week2Color, 'الأسبوع 2'),
+        _buildLegendItem(_week3Color, 'الأسبوع 3'),
+        _buildLegendItem(_week4Color, 'الأسبوع 4'),
+      ],
+    );
+  }
 
-  // Widget _buildLegendItem(Color color, String text) {
-  //   return Row(
-  //     children: [
-  //       Container(
-  //         width: 12.w,
-  //         height: 12.h,
-  //         decoration: BoxDecoration(
-  //           color: color,
-  //           borderRadius: BorderRadius.circular(2.r),
-  //         ),
-  //       ),
-  //       Gap(4.w),
-  //       Text(
-  //         text,
-  //         style: Styles.textStyle12.copyWith(color: AppColors.blackColor),
-  //       ),
-  //     ],
-  //   );
-  // }
+  Widget _buildLegendItem(Color color, String text) {
+    return Row(
+      children: [
+        Container(
+          width: 12.w,
+          height: 12.h,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2.r),
+          ),
+        ),
+        Gap(4.w),
+        Text(
+          text,
+          style: Styles.textStyle12.copyWith(color: AppColors.blackColor),
+        ),
+      ],
+    );
+  }
 
   /// تجميع البيانات على 4 أسابيع لكل فئة
   List<CategoryWeeklyData> _calculateWeeklyData() {

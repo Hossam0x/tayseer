@@ -15,6 +15,7 @@ import 'package:tayseer/features/shared/event/repo/event_repo_impl.dart';
 import 'package:tayseer/features/shared/event_detail/repo/event_detail_repository.dart';
 import 'package:tayseer/features/shared/event_detail/repo/event_detail_repository_impl.dart';
 import 'package:tayseer/features/shared/event_detail/view_model/event_detail_cubit.dart';
+import 'package:tayseer/features/shared/post_details/data/repos/mention_search_repo.dart';
 import 'package:tayseer/features/shared/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/features/advisor/session/data/repos/advisor_session_repo.dart';
 import 'package:tayseer/features/advisor/session/presentation/manager/advisor_session_detailes_cubit.dart';
@@ -37,11 +38,11 @@ import 'package:tayseer/features/advisor/profille/data/repositories/profile_repo
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository_impl.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository_impl.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates/certificates_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates/edit_certificate_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/ratings/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository_impl.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
@@ -90,7 +91,7 @@ import 'package:tayseer/features/advisor/settings/data/repositories/order_manage
 import 'package:tayseer/features/advisor/settings/view/cubit/order_management/order_management_cubit.dart';
 import 'package:tayseer/features/advisor/wallet/data/datasources/wallet_remote_data_source.dart';
 import 'package:tayseer/features/advisor/wallet/data/repos/wallet_repo.dart';
-import 'package:tayseer/features/advisor/wallet/data/cubit/wallet_cubit.dart';
+import 'package:tayseer/features/advisor/wallet/view/cubit/wallet_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/otp_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_settings_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/email/email_edit_cubit.dart';
@@ -440,6 +441,9 @@ Future<void> setupGetIt() async {
   /// Search Repository
   getIt.registerLazySingleton<SearchRepository>(
     () => SearchRepository(getIt<ApiService>()),
+  );
+  getIt.registerLazySingleton<MentionSearchRepository>(
+    () => MentionSearchRepository(getIt<ApiService>()),
   );
 
   /// Marriage Filter Repo

@@ -11,7 +11,7 @@ import 'package:tayseer/features/advisor/chat/presentation/view/search_view.dart
 import 'package:tayseer/features/advisor/profille/views/boost_account_view.dart';
 import 'package:tayseer/features/advisor/profille/views/boost_properties_view.dart';
 import 'package:tayseer/features/advisor/profille/views/consultation_topics_view.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/location_selection_view.dart';
 import 'package:tayseer/features/advisor/profille/views/professional_info_dashboard_view.dart';
 import 'package:tayseer/features/advisor/session/presentation/view/order_session_view.dart';

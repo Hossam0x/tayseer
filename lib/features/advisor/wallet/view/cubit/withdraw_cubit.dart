@@ -1,5 +1,5 @@
 import 'package:file_picker/file_picker.dart';
-import 'package:tayseer/features/advisor/wallet/data/cubit/withdraw_state.dart';
+import 'package:tayseer/features/advisor/wallet/view/cubit/withdraw_state.dart';
 import 'package:tayseer/features/advisor/wallet/data/models/withdraw_model.dart';
 import 'package:tayseer/my_import.dart';
 

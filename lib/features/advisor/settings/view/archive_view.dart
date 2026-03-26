@@ -1,5 +1,5 @@
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_cubits.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/chats_tab_view.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/posts_tab_view.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/stories_tab_view.dart';

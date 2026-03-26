@@ -3,8 +3,8 @@ import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_visitors_model.dart';
 import 'package:tayseer/features/advisor/profille/data/models/visitor_itemm.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_visitors_repo.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_visitors_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_visitors_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_visitors_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_visitors_state.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost/boost_button_sliver.dart';
 import 'package:tayseer/my_import.dart';
 

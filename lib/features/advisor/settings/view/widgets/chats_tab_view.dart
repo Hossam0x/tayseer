@@ -1,5 +1,5 @@
-import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/archive_states.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_cubits.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_states.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/chats_tab_ui_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/chats/chat_item_widget.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/chats/chats_skeleton.dart';

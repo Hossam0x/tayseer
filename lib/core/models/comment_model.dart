@@ -34,11 +34,20 @@ class CommenterModel {
 class MentionModel {
   final String id;
   final String userType;
+  final String name; // ✅ Optional: اسم الشخص المذكور (لو متوفر)
 
-  const MentionModel({required this.id, required this.userType});
+  const MentionModel({
+    required this.id,
+    required this.userType,
+    required this.name,
+  });
 
   factory MentionModel.fromJson(Map<String, dynamic> json) {
-    return MentionModel(id: json['id'] ?? '', userType: json['userType'] ?? '');
+    return MentionModel(
+      id: json['id'] ?? '',
+      userType: json['userType'] ?? '',
+      name: json['name'] ?? '',
+    );
   }
 }
 
