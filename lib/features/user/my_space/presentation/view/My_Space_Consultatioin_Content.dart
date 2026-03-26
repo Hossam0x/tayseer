@@ -1,6 +1,8 @@
 import 'package:tayseer/core/widgets/chat_room_list_item/chat_room_list_item.dart';
+import 'package:tayseer/core/widgets/chat_room_list_item/helpers/chat_room_dialog_helper.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_space_state.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
+import 'package:tayseer/features/user/my_space/presentation/widget/add_advisor_item.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/session_history/empty_session_widget.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -77,7 +79,7 @@ class _MySpaceConsultationContentState
               itemCount: chatRooms.length + 1,
               itemBuilder: (context, index) {
                 if (index == chatRooms.length) {
-                  return _buildAddAdvisorItem(context);
+                  return const AddAdvisorItem();
                 }
                 final chatRoom = chatRooms[index];
 
@@ -146,14 +148,69 @@ class _MySpaceConsultationContentState
                         });
                   },
                   onArchive: () {
-                    _showArchiveDialog(context, chatRoom.id);
+                    ChatRoomDialogHelper.showArchiveDialog(
+                      context: context,
+                      onConfirm: () async {
+                        final cubit = context.read<MySpaceCubit>();
+                        final success = await cubit.archiveChatRoom(chatRoom.id);
+                        if (context.mounted) {
+                          if (success) {
+                            AppToast.success(context, 'تم أرشفة الاستشارة بنجاح');
+                          } else {
+                            AppToast.error(
+                              context,
+                              'فشل في أرشفة المحادثة، حاول مرة أخرى',
+                            );
+                          }
+                        }
+                      },
+                    );
                   },
                   onDelete: () {
-                    _showDeleteDialog(context, chatRoom.id);
+                    ChatRoomDialogHelper.showDeleteDialog(
+                      context: context,
+                      onConfirm: () async {
+                        final cubit = context.read<MySpaceCubit>();
+                        final success = await cubit.deleteChatRoom(chatRoom.id);
+                        if (context.mounted) {
+                          if (success) {
+                            AppToast.success(context, 'تم حذف المحادثة بنجاح');
+                          } else {
+                            AppToast.error(
+                              context,
+                              'فشل في حذف المحادثة، حاول مرة أخرى',
+                            );
+                          }
+                        }
+                      },
+                    );
                   },
                   onReport: () {
-                    _showReportDialog(context, chatRoom.id);
+                    ChatRoomDialogHelper.showReportDialog(
+                      context: context,
+                      onConfirm: () {
+                        // TODO: Implement report logic
+                      },
+                    );
                   },
+                  onBlock: () {
+                    if (chatRoom.isBlocked) {
+                      ChatRoomDialogHelper.showUnblockDialog(
+                        context: context,
+                        onConfirm: () {
+                          // TODO: Implement unblock logic
+                        },
+                      );
+                    } else {
+                      ChatRoomDialogHelper.showBlockDialog(
+                        context: context,
+                        onConfirm: () {
+                          // TODO: Implement block logic
+                        },
+                      );
+                    }
+                  },
+                  blockLabel: chatRoom.isBlocked ? 'إلغاء الحظر' : 'حظر',
                 );
               },
             ),
@@ -193,155 +250,5 @@ class _MySpaceConsultationContentState
       ),
     );
   }
-
-  void _showDeleteDialog(BuildContext context, String chatId) {
-    final cubit = context.read<MySpaceCubit>();
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('حذف المحادثة'),
-        content: const Text('هل أنت متأكد من حذف هذه المحادثة؟'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('إلغاء'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(dialogContext);
-              final success = await cubit.deleteChatRoom(chatId);
-              if (context.mounted) {
-                if (success) {
-                  AppToast.success(context, 'تم حذف المحادثة بنجاح');
-                } else {
-                  AppToast.error(context, 'فشل في حذف المحادثة، حاول مرة أخرى');
-                }
-              }
-            },
-            child: const Text('حذف', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showArchiveDialog(BuildContext context, String chatId) {
-    final cubit = context.read<MySpaceCubit>();
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('أرشفة المحادثة'),
-        content: const Text('هل أنت متأكد من أرشفة هذه المحادثة؟'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('إلغاء'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(dialogContext);
-              final success = await cubit.archiveChatRoom(chatId);
-              if (context.mounted) {
-                if (success) {
-                  AppToast.success(context, 'تم أرشفة الاستشارة بنجاح');
-                } else {
-                  AppToast.error(
-                    context,
-                    'فشل في أرشفة المحادثة، حاول مرة أخرى',
-                  );
-                }
-              }
-            },
-            child: const Text(
-              'أرشفة',
-              style: TextStyle(color: Color(0xFFA12042)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showReportDialog(BuildContext context, String chatId) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('إبلاغ'),
-        content: const Text('هل تريد الإبلاغ عن هذه المحادثة؟'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('إلغاء'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-            },
-            child: const Text('إبلاغ', style: TextStyle(color: Colors.orange)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAddAdvisorItem(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 600;
-    final containerPadding = isMobile ? 14.0 : 16.0;
-    final avatarRadius = isMobile ? 25.0 : 30.0;
-    final spacing1 = isMobile ? 14.0 : 18.0;
-    final titleFontSize = isMobile ? 15.0 : 17.0;
-
-    return Padding(
-      padding: EdgeInsets.only(left: isMobile ? 12.0 : 16.0, top: 6, bottom: 6),
-      child: GestureDetector(
-        onTap: () {
-          Navigator.pushNamed(context, AppRouter.kAdvisorSearchView);
-        },
-        child: Container(
-          color: Colors.transparent,
-          padding: EdgeInsets.only(
-            left: isMobile ? 4 : 6,
-            right: 20,
-            top: containerPadding,
-            bottom: containerPadding,
-          ),
-          child: Row(
-            children: [
-              // Plus Icon in Circle
-              Container(
-                width: avatarRadius * 2,
-                height: avatarRadius * 2,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.grey.shade200,
-                  border: Border.all(color: Colors.grey.shade300, width: 1),
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.add,
-                    color: Colors.grey.shade500,
-                    size: isMobile ? 28 : 32,
-                  ),
-                ),
-              ),
-              SizedBox(width: spacing1),
-
-              // Title
-              Expanded(
-                child: Text(
-                  'مستشار جديد',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: titleFontSize,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
+
