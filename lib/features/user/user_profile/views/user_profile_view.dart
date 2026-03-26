@@ -1,8 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/video_playback_manager.dart';
-import 'package:tayseer/core/widgets/custom_error_view.dart';
-import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
+import 'package:tayseer/features/shared/settings/models/setting_item_model.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_cubit.dart';
@@ -51,32 +49,54 @@ class _UserProfileViewState extends State<UserProfileView> {
         body: Stack(
           children: [
             Positioned.fill(
-              child: Image.asset(AssetsData.homeBarBackgroundImage, fit: BoxFit.cover),
+              child: Image.asset(
+                AssetsData.homeBarBackgroundImage,
+                fit: BoxFit.cover,
+              ),
             ),
             AdvisorBackground(
               child: MultiBlocListener(
                 listeners: [
                   BlocListener<UserProfileCubit, UserProfileState>(
                     listenWhen: (previous, current) {
-                      if (previous is! SettingsLoaded && current is SettingsLoaded) return true;
-                      if (current is SettingsLoaded && previous is SettingsLoaded) {
-                        if (previous.isMarriageSectionDeactivated != current.isMarriageSectionDeactivated) return true;
-                        return current.actionTimestamp != previous.actionTimestamp;
+                      if (previous is! SettingsLoaded &&
+                          current is SettingsLoaded) {
+                        return true;
                       }
-                      if (current is SettingsLoaded && current.actionMessage != null) return true;
+                      if (current is SettingsLoaded &&
+                          previous is SettingsLoaded) {
+                        if (previous.isMarriageSectionDeactivated !=
+                            current.isMarriageSectionDeactivated) {
+                          return true;
+                        }
+                        return current.actionTimestamp !=
+                            previous.actionTimestamp;
+                      }
+                      if (current is SettingsLoaded &&
+                          current.actionMessage != null) {
+                        return true;
+                      }
                       return false;
                     },
                     listener: (context, state) {
                       if (state is SettingsLoaded) {
                         final layoutCubit = context.read<LayoutCubit>();
-                                               if (layoutCubit.state.isMarriageVisible == state.isMarriageSectionDeactivated) {
-                          layoutCubit.updateMarriageVisibility(!state.isMarriageSectionDeactivated);
+                        if (layoutCubit.state.isMarriageVisible ==
+                            state.isMarriageSectionDeactivated) {
+                          layoutCubit.updateMarriageVisibility(
+                            !state.isMarriageSectionDeactivated,
+                          );
                         }
                         if (state.actionMessage == null) return;
-                        final isLogout = state.actionMessage == 'logout_success';
-                        final isLogoutError = state.actionMessage == 'logout_error';
+                        final isLogout =
+                            state.actionMessage == 'logout_success';
+                        final isLogoutError =
+                            state.actionMessage == 'logout_error';
 
-                        if (isLogout) { _handleLogoutSuccess(); return; }
+                        if (isLogout) {
+                          _handleLogoutSuccess();
+                          return;
+                        }
                         if (isLogoutError) {
                           Navigator.pop(context);
                           AppToast.error(context, context.tr("logout_error"));
@@ -86,14 +106,23 @@ class _UserProfileViewState extends State<UserProfileView> {
                           SharedPreferences.getInstance().then((p) {
                             final lang = p.getString(kAppLanguage) ?? 'ar';
                             if (context.mounted) {
-                              context.read<LanguageCubit>().setLanguage(lang, context);
+                              context.read<LanguageCubit>().setLanguage(
+                                lang,
+                                context,
+                              );
                             }
                           });
                         } else {
                           if (state.isActionSuccess ?? false) {
-                            AppToast.success(context, context.tr(state.actionMessage ?? ""));
+                            AppToast.success(
+                              context,
+                              context.tr(state.actionMessage ?? ""),
+                            );
                           } else {
-                            AppToast.error(context, context.tr(state.actionMessage ?? ""));
+                            AppToast.error(
+                              context,
+                              context.tr(state.actionMessage ?? ""),
+                            );
                           }
                         }
                       }
@@ -101,28 +130,39 @@ class _UserProfileViewState extends State<UserProfileView> {
                   ),
                   BlocListener<LayoutCubit, LayoutState>(
                     listenWhen: (previous, current) =>
-                        previous.scrollToTopTrigger != current.scrollToTopTrigger &&
+                        previous.scrollToTopTrigger !=
+                            current.scrollToTopTrigger &&
                         current.currentIndex == 4,
                     listener: (context, state) {
                       if (_scrollController.hasClients) {
-                        _scrollController.animateTo(0,
-                            duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+                        _scrollController.animateTo(
+                          0,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOut,
+                        );
                       }
                     },
                   ),
                   BlocListener<ConnectivityCubit, ConnectivityState>(
-                    listenWhen: (prev, curr) => !prev.isConnected && curr.isConnected,
-                    listener: (context, state) => context.read<UserProfileCubit>().refresh(),
+                    listenWhen: (prev, curr) =>
+                        !prev.isConnected && curr.isConnected,
+                    listener: (context, state) =>
+                        context.read<UserProfileCubit>().refresh(),
                   ),
                 ],
                 child: BlocBuilder<UserProfileCubit, UserProfileState>(
                   buildWhen: (previous, current) {
-                    if (previous.runtimeType != current.runtimeType) return true;
-                    if (previous is SettingsLoaded && current is SettingsLoaded) {
+                    if (previous.runtimeType != current.runtimeType) {
+                      return true;
+                    }
+                    if (previous is SettingsLoaded &&
+                        current is SettingsLoaded) {
                       return previous.userProfile != current.userProfile ||
                           previous.settings != current.settings ||
-                          previous.isMarriageSectionDeactivated != current.isMarriageSectionDeactivated ||
-                          previous.isMarriageProfileComplete != current.isMarriageProfileComplete;
+                          previous.isMarriageSectionDeactivated !=
+                              current.isMarriageSectionDeactivated ||
+                          previous.isMarriageProfileComplete !=
+                              current.isMarriageProfileComplete;
                     }
                     return true;
                   },
@@ -148,7 +188,9 @@ class _UserProfileViewState extends State<UserProfileView> {
       displacement: 40.h,
       child: CustomScrollView(
         controller: _scrollController,
-        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
         slivers: [
           SliverToBoxAdapter(
             child: Container(
@@ -163,22 +205,33 @@ class _UserProfileViewState extends State<UserProfileView> {
                   Gap(18.h),
                   BlocBuilder<UserProfileCubit, UserProfileState>(
                     buildWhen: (previous, current) {
-                      if (previous.runtimeType != current.runtimeType) return true;
-                      if (previous is SettingsLoaded && current is SettingsLoaded) {
-                        return previous.userProfile?.image != current.userProfile?.image ||
-                            previous.userProfile?.name != current.userProfile?.name ||
-                            previous.userProfile?.username != current.userProfile?.username ||
+                      if (previous.runtimeType != current.runtimeType) {
+                        return true;
+                      }
+                      if (previous is SettingsLoaded &&
+                          current is SettingsLoaded) {
+                        return previous.userProfile?.image !=
+                                current.userProfile?.image ||
+                            previous.userProfile?.name !=
+                                current.userProfile?.name ||
+                            previous.userProfile?.username !=
+                                current.userProfile?.username ||
                             previous.userProfile?.id != current.userProfile?.id;
                       }
                       return true;
                     },
-                    builder: (context, state) => _buildProfileSection(context, state),
+                    builder: (context, state) =>
+                        _buildProfileSection(context, state),
                   ),
                 ],
               ),
             ),
           ),
-          BlocSelector<UserProfileCubit, UserProfileState, List<SettingItemModel>>(
+          BlocSelector<
+            UserProfileCubit,
+            UserProfileState,
+            List<SettingItemModel>
+          >(
             selector: (state) => state is SettingsLoaded ? state.settings : [],
             builder: (context, settings) {
               return SliverList(
@@ -192,7 +245,9 @@ class _UserProfileViewState extends State<UserProfileView> {
             },
           ),
           SliverToBoxAdapter(
-            child: UserProfileLogoutButton(onTap: () => _showLogoutConfirmation(context)),
+            child: UserProfileLogoutButton(
+              onTap: () => _showLogoutConfirmation(context),
+            ),
           ),
           SliverToBoxAdapter(child: Gap(100.h)),
         ],
@@ -209,7 +264,9 @@ class _UserProfileViewState extends State<UserProfileView> {
         message: state.message,
         verticalPadding: 40.h,
         onRetry: () async {
-          try { await context.read<UserProfileCubit>().refresh(); } catch (_) {}
+          try {
+            await context.read<UserProfileCubit>().refresh();
+          } catch (_) {}
         },
       );
     }
@@ -226,7 +283,11 @@ class _UserProfileViewState extends State<UserProfileView> {
     return const SizedBox();
   }
 
-  Widget _buildSettingsList(BuildContext context, List<SettingItemModel> settings, UserProfileState state) {
+  Widget _buildSettingsList(
+    BuildContext context,
+    List<SettingItemModel> settings,
+    UserProfileState state,
+  ) {
     if (settings.isEmpty) {
       return Column(
         children: [
@@ -248,7 +309,8 @@ class _UserProfileViewState extends State<UserProfileView> {
             onMarriageDeactivate: _showDeactivateMarriageDialog,
             onRateApp: _showRateAppDialog,
           ),
-          if (i < settings.length) Divider(color: AppColors.secondary100, height: 1),
+          if (i < settings.length)
+            Divider(color: AppColors.secondary100, height: 1),
         ],
       ],
     );
@@ -281,7 +343,10 @@ class _UserProfileViewState extends State<UserProfileView> {
           Container(
             width: 16.w,
             height: 16.w,
-            decoration: BoxDecoration(color: AppColors.secondary200, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: AppColors.secondary200,
+              shape: BoxShape.circle,
+            ),
           ),
         ],
       ),
@@ -291,7 +356,9 @@ class _UserProfileViewState extends State<UserProfileView> {
   void _openEditProfile(BuildContext context) {
     final cubit = context.read<UserProfileCubit>();
     final currentState = cubit.state;
-    if (currentState is! SettingsLoaded || currentState.userProfile == null) return;
+    if (currentState is! SettingsLoaded || currentState.userProfile == null) {
+      return;
+    }
 
     Navigator.pushNamed(
       context,
@@ -324,13 +391,18 @@ class _UserProfileViewState extends State<UserProfileView> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Center(child: CircularProgressIndicator(color: AppColors.primary100)),
+      builder: (context) =>
+          Center(child: CircularProgressIndicator(color: AppColors.primary100)),
     );
     cubit.logout();
   }
 
   void _handleLogoutSuccess() async {
-    Navigator.pushNamedAndRemoveUntil(context, AppRouter.kRegisrationView, (route) => false);
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRouter.kRegisrationView,
+      (route) => false,
+    );
     AppToast.success(context, context.tr("logout_success"));
   }
 
@@ -338,12 +410,17 @@ class _UserProfileViewState extends State<UserProfileView> {
     showDialog(
       context: context,
       builder: (dialogContext) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
         child: StatefulBuilder(
           builder: (builderContext, setDialogState) {
             return Container(
               padding: EdgeInsets.all(24.w),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20.r)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20.r),
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -354,8 +431,12 @@ class _UserProfileViewState extends State<UserProfileView> {
                         onTap: () => Navigator.pop(dialogContext),
                         child: Icon(Icons.close, size: 24.w),
                       ),
-                      Text(builderContext.tr("rate_app"),
-                          style: Styles.textStyle20Meduim.copyWith(color: AppColors.primary500)),
+                      Text(
+                        builderContext.tr("rate_app"),
+                        style: Styles.textStyle20Meduim.copyWith(
+                          color: AppColors.primary500,
+                        ),
+                      ),
                       Gap(24.w),
                     ],
                   ),
@@ -367,7 +448,9 @@ class _UserProfileViewState extends State<UserProfileView> {
                         onTap: () => setDialogState(() => _rating = index + 1),
                         child: Icon(
                           Icons.star_rounded,
-                          color: index < _rating ? AppColors.kprimaryColor : AppColors.secondary100,
+                          color: index < _rating
+                              ? AppColors.kprimaryColor
+                              : AppColors.secondary100,
                           size: 56.w,
                         ),
                       );
@@ -375,13 +458,21 @@ class _UserProfileViewState extends State<UserProfileView> {
                   ),
                   if (_rating > 0) ...[
                     Gap(12.h),
-                    Text('${builderContext.tr("rating")}: $_rating / 5',
-                        style: Styles.textStyle14.copyWith(color: AppColors.primary500)),
+                    Text(
+                      '${builderContext.tr("rating")}: $_rating / 5',
+                      style: Styles.textStyle14.copyWith(
+                        color: AppColors.primary500,
+                      ),
+                    ),
                   ],
                   Gap(24.h),
-                  Text(builderContext.tr("rate_app_message"),
-                      style: Styles.textStyle16.copyWith(color: AppColors.secondary700),
-                      textAlign: TextAlign.center),
+                  Text(
+                    builderContext.tr("rate_app_message"),
+                    style: Styles.textStyle16.copyWith(
+                      color: AppColors.secondary700,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                   Gap(32.h),
                   CustomBotton(
                     title: builderContext.tr("send_rating"),
@@ -426,7 +517,10 @@ class _UserProfileViewState extends State<UserProfileView> {
           body: Stack(
             children: [
               Positioned.fill(
-                child: Image.asset(AssetsData.homeBarBackgroundImage, fit: BoxFit.cover),
+                child: Image.asset(
+                  AssetsData.homeBarBackgroundImage,
+                  fit: BoxFit.cover,
+                ),
               ),
               MarriagefilePage(
                 userProfile: state.userProfile,
@@ -447,11 +541,15 @@ class _UserProfileViewState extends State<UserProfileView> {
 
   void _showDeactivateMarriageDialog(BuildContext context, bool value) {
     final overlay = Overlay.of(context);
-    final flyingIcon = value ? AssetsData.consultationIcon : AssetsData.ringIcon;
+    final flyingIcon = value
+        ? AssetsData.consultationIcon
+        : AssetsData.ringIcon;
 
     CustomshowDialogWithImage(
       context,
-      title: context.tr(value ? "deactivate_marriage_title" : "activate_marriage_title"),
+      title: context.tr(
+        value ? "deactivate_marriage_title" : "activate_marriage_title",
+      ),
       supTitle: context.tr("activate_marriage_subtitle"),
       imageUrl: AssetsData.marriageRingIcon,
       bottonText: context.tr("yes"),
@@ -463,7 +561,10 @@ class _UserProfileViewState extends State<UserProfileView> {
           iconAsset: flyingIcon,
           overlay: overlay,
           onComplete: () {
-            context.read<UserProfileCubit>().updateSwitch('deactivate_the_marriage_section', value);
+            context.read<UserProfileCubit>().updateSwitch(
+              'deactivate_the_marriage_section',
+              value,
+            );
           },
         );
       },

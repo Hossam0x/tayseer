@@ -1,7 +1,7 @@
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
+import 'package:tayseer/features/shared/settings/models/setting_item_model.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_cubit.dart';
@@ -10,9 +10,9 @@ import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart'
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/referral_share_card.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/settings/settings_item_widget.dart';
-import 'package:tayseer/features/advisor/settings/view/widgets/settings/settings_logout_button.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/settings/settings_rate_dialog.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/settings/settings_error_view.dart';
+import 'package:tayseer/features/shared/settings/widgets/settings_logout_button.dart';
 import 'package:tayseer/my_import.dart';
 
 class SettingsView extends StatefulWidget {
@@ -170,7 +170,7 @@ class _SettingsViewState extends State<SettingsView> {
   void _showRateAppDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => SettingsRateDialog(settingsCubit: _settingsCubit),
+      builder: (_) => AdvisorSettingsRateDialog(settingsCubit: _settingsCubit),
     );
   }
 
@@ -181,7 +181,7 @@ class _SettingsViewState extends State<SettingsView> {
     }
 
     if (setting.id == 'invite') {
-      await context.read<SettingsCubit>().shareApp(
+      await _settingsCubit.shareApp(
         context.tr("share_app_message"),
         context.tr("share_app_subject"),
       );
@@ -196,11 +196,9 @@ class _SettingsViewState extends State<SettingsView> {
     if (setting.routeName.isNotEmpty) {
       if (setting.id == 'language') {
         final result = await Navigator.pushNamed(context, setting.routeName);
-        if (result != null && result is String) {
+        if (result != null && result is String && context.mounted) {
           _markDataChanged();
-          if (context.mounted) {
-            context.read<SettingsCubit>().updateLanguage(result);
-          }
+          _settingsCubit.updateLanguage(result);
         }
       } else {
         final result = await Navigator.pushNamed(context, setting.routeName);

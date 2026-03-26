@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
+import 'package:tayseer/features/shared/settings/models/setting_item_model.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 
 abstract class UserProfileState extends Equatable {

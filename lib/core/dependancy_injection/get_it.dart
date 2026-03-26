@@ -306,7 +306,12 @@ Future<void> setupGetIt() async {
   );
 
   getIt.registerLazySingleton<AccountManagementRepository>(
-    () => AccountManagementRepositoryImpl(getIt<ApiService>()),
+    () => AccountManagementRepositoryImpl(
+      apiService: getIt<ApiService>(),
+      suspendEndpoint: '/advisor/suspend',
+      deleteEndpoint: '/advisor/deleteUser',
+      deleteMethod: 'delete',
+    ),
   );
 
   getIt.registerLazySingleton<AdvisorPackagesRepository>(
@@ -416,10 +421,8 @@ Future<void> setupGetIt() async {
     () => MarriageRepositoryImpl(getIt<ApiService>()),
   );
 
-  // User
-  getIt.registerFactory<UserAccountManagementRepository>(
-    () => UserAccountManagementRepositoryImpl(getIt<ApiService>()),
-  );
+  // User account management — uses shared repo with user-specific endpoints
+  // (no getIt registration needed; view creates it directly with endpoints)
 
   getIt.registerLazySingleton<FollowersRepository>(
     () => FollowersRepositoryImpl(getIt<ApiService>()),
