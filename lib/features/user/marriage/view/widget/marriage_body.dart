@@ -90,7 +90,7 @@ class MarriageBodyState extends State<MarriageBody>
       });
     }
 
-    // ✅ لو مستشار وجه من deep link — أظهر popup زي الـ logout بالظبط
+    // ✅ consultant blocked dialog — same as logout
     if (widget.personId != null &&
         selectedUserType == UserTypeEnum.asConsultant) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -109,7 +109,6 @@ class MarriageBodyState extends State<MarriageBody>
     cubit.initAnimation(this);
   }
 
-  // ✅ Dialog exactly like logout — using CustomshowDialogWithImage
   void _showConsultantBlockedDialog() {
     CustomshowDialogWithImage(
       context,
@@ -119,8 +118,7 @@ class MarriageBodyState extends State<MarriageBody>
       bottonText: context.tr('okay_understood'),
       showCancelButton: false,
       onPressed: () {
-        Navigator.pop(context); // Closes the dialog
- // Returns to the previous page
+        Navigator.pop(context);
       },
     );
   }
@@ -171,7 +169,7 @@ class MarriageBodyState extends State<MarriageBody>
     });
   }
 
-  // ✅ FIXED: faith بيجي كـ field منفصل من الـ API (مش جوه hobbies)
+  // ✅ faith comes as a separate field from the API (not inside hobbies)
   List<Map<String, dynamic>> _buildFaithItems(Answers? answers) {
     final faithValue = answers?.faith;
     if (faithValue == null || faithValue.trim().isEmpty) return [];
@@ -286,6 +284,13 @@ class MarriageBodyState extends State<MarriageBody>
     );
   }
 
+  // ✅ NEW HELPER: check if current profile is still loading partial data
+  bool _isCurrentProfilePartial(MarriageState state, List<UserItem> users) {
+    if (users.isEmpty) return false;
+    final idx = state.currentIndex.clamp(0, users.length - 1);
+    return users[idx].isPartialData;
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<MarriageCubit, MarriageState>(
@@ -368,10 +373,12 @@ class MarriageBodyState extends State<MarriageBody>
       },
 
       builder: (context, state) {
+        // ✅ GUARD 1: explicit loading state → shimmer
         if (state.marriageProfileState == CubitStates.loading) {
           return _buildShimmerScreen();
         }
 
+        // ✅ GUARD 2: failure state → error screen
         if (state.marriageProfileState == CubitStates.failure) {
           return _buildWithAppBar(
             child: Center(
@@ -384,11 +391,24 @@ class MarriageBodyState extends State<MarriageBody>
         }
 
         final List<UserItem> allUsers = state.allUsers;
+
+        // ✅ GUARD 3: first visible user is still partial → keep shimmer
+        // This catches the case where state flipped to success prematurely
+        if (_isCurrentProfilePartial(state, allUsers)) {
+          return _buildShimmerScreen();
+        }
+
         final List<UserItem> users = widget.personId != null
             ? () {
                 final filtered = allUsers
                     .where((p) => p.user?.id == widget.personId)
                     .toList();
+
+                // ✅ FIX: if the filtered user is partial, show shimmer
+                if (filtered.isNotEmpty && filtered.first.isPartialData) {
+                  return <UserItem>[];
+                }
+
                 if (filtered.isEmpty &&
                     state.marriageProfileState == CubitStates.success) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -400,6 +420,16 @@ class MarriageBodyState extends State<MarriageBody>
                 return filtered.isNotEmpty ? filtered : allUsers;
               }()
             : allUsers;
+
+        // ✅ GUARD 4: personId provided but user is still partial → shimmer
+        if (widget.personId != null) {
+          final targetUser = allUsers
+              .where((u) => u.user?.id == widget.personId)
+              .firstOrNull;
+          if (targetUser != null && targetUser.isPartialData) {
+            return _buildShimmerScreen();
+          }
+        }
 
         if (users.isEmpty) {
           return AnimatedSwitcher(
@@ -424,6 +454,11 @@ class MarriageBodyState extends State<MarriageBody>
               usersLength: users.length,
             );
           });
+        }
+
+        // ✅ GUARD 5: final safety check — if profile at index is partial, shimmer
+        if (users[profileIndex].isPartialData) {
+          return _buildShimmerScreen();
         }
 
         return AnimatedSwitcher(
@@ -702,6 +737,11 @@ class MarriageBodyState extends State<MarriageBody>
     required List<UserItem> users,
   }) {
     final profile = users[profileIndex];
+
+    // ✅ SAFETY: never render a partial profile — should be caught above but
+    // this is the last line of defence
+    if (profile.isPartialData) return _buildShimmerScreen();
+
     final user = profile.user;
     final answers = profile.answers;
     final images = answers?.userMedia?.image ?? [];
@@ -1022,7 +1062,7 @@ class MarriageBodyState extends State<MarriageBody>
                       ),
                     ),
 
-                  // ✅ سكشن الهوايات
+                  // ✅ Hobbies section
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -1043,7 +1083,7 @@ class MarriageBodyState extends State<MarriageBody>
                     ),
                   ),
 
-                  // ✅ سكشن الإيمان — مصدره answers.faith (field منفصل في الـ API)
+                  // ✅ Faith section — answers.faith is a separate API field
                   if (faithItems.isNotEmpty)
                     SliverPadding(
                       padding: EdgeInsets.symmetric(
@@ -1145,7 +1185,7 @@ class MarriageBodyState extends State<MarriageBody>
               ),
             ),
 
-            // ✅ أزرار Like / Star / Dislike
+            // ✅ Like / Star / Dislike buttons
             AnimatedPositioned(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOutCubic,

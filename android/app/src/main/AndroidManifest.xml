@@ -75,7 +75,8 @@
         android:name="${applicationName}"
         android:label="tayser"
         android:icon="@mipmap/ic_launcher"
-        tools:targetApi="29">
+        android:usesCleartextTraffic="true"
+        tools:targetApi="31">
 
         <!-- Google Maps API Key -->
         <meta-data
@@ -85,7 +86,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:launchMode="singleTop"
+            android:launchMode="singleTask"
             android:taskAffinity=""
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
@@ -96,27 +97,35 @@
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme"/>
 
+            <!-- Launcher -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
-            <!-- App Links (HTTPS) -->
+            <!-- ✅ App Links (IMPORTANT FIX) -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
+
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="https"
-                      android:host="tayser-app.net"
-                      android:pathPattern="/marriage/profile/.*"/>
+
+                <data
+                    android:scheme="https"
+                    android:host="tayser-app.net"
+                    android:pathPrefix="/marriage/profile"/>
             </intent-filter>
 
-            <!-- Custom Scheme fallback -->
+            <!-- ✅ fallback custom scheme -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
+
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="tayseer" android:host="marriage"/>
+
+                <data
+                    android:scheme="tayseer"
+                    android:host="marriage"/>
             </intent-filter>
 
         </activity>

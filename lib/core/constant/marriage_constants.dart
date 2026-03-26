@@ -1,6 +1,4 @@
-
 class MarriageConstants {
-
   // ════════════════════════════════════════════
   // 🎯 Emoji Maps
   // ════════════════════════════════════════════
@@ -151,9 +149,9 @@ class MarriageConstants {
 
   /// Combined map (hobby + faith) - for cases needing both
   static Map<String, String> get allEmojiMap => {
-        ...hobbyEmojiMap,
-        ...faithEmojiMap,
-      };
+    ...hobbyEmojiMap,
+    ...faithEmojiMap,
+  };
 
   // ════════════════════════════════════════════
   // 📦 Categorized Items (for MultiSelect widgets)
@@ -322,34 +320,67 @@ class MarriageConstants {
         }
       }
     } else if (raw is String && raw.isNotEmpty) {
-      result = raw.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      result = raw
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
     }
 
     return result.where(isValidKey).toList();
   }
 }
-// lib/core/utils/country_flag_utils.dart
+
 class CountryFlagUtils {
-  static String getFlag(String country) {
-    final c = country.toLowerCase();
-    if (c.contains('saudi') || c.contains('سعودي')) return '🇸🇦';
-    if (c.contains('egypt') || c.contains('مصر')) return '🇪🇬';
-    if (c.contains('emirati') || c.contains('امارات')) return '🇦🇪';
-    if (c.contains('kuwait') || c.contains('كويت')) return '🇰🇼';
-    if (c.contains('qatar') || c.contains('قطر')) return '🇶🇦';
-    if (c.contains('bahrain') || c.contains('بحرين')) return '🇧🇭';
-    if (c.contains('jordan') || c.contains('أردن')) return '🇯🇴';
-    if (c.contains('palestin') || c.contains('فلسطين')) return '🇵🇸';
-    if (c.contains('morocco') || c.contains('مغرب')) return '🇲🇦';
-    if (c.contains('tunisia') || c.contains('تونس')) return '🇹🇳';
-    if (c.contains('syria') || c.contains('سوريا')) return '🇸🇾';
-    if (c.contains('iraq') || c.contains('عراق')) return '🇮🇶';
-    if (c.contains('libya') || c.contains('ليبيا')) return '🇱🇾';
-    if (c.contains('algeria') || c.contains('الجزائر')) return '🇩🇿';
-    if (c.contains('sudan') || c.contains('السودان')) return '🇸🇩';
-    if (c.contains('yemen') || c.contains('اليمن')) return '🇾🇪';
-    if (c.contains('oman') || c.contains('عمان')) return '🇴🇲';
-    if (c.contains('lebanon') || c.contains('لبنان')) return '🇱🇧';
-    return '🌍';
+  static const Map<String, String> _flagMap = {
+    // Keys
+    'nationality_saudi': '🇸🇦',
+    'nationality_egyptian': '🇪🇬',
+    'nationality_emirati': '🇦🇪',
+    'nationality_kuwaiti': '🇰🇼',
+    'nationality_qatari': '🇶🇦',
+    'nationality_bahraini': '🇧🇭',
+    'nationality_jordanian': '🇯🇴',
+    'nationality_palestinian': '🇵🇸',
+    'nationality_moroccan': '🇲🇦',
+    'nationality_tunisian': '🇹🇳',
+    'country_saudi': '🇸🇦',
+    'country_egypt': '🇪🇬',
+    'country_emirati': '🇦🇪',
+    'country_kuwait': '🇰🇼',
+    'country_qatar': '🇶🇦',
+    'country_bahrain': '🇧🇭',
+    'country_jordan': '🇯🇴',
+    'country_palestine': '🇵🇸',
+    'country_morocco': '🇲🇦',
+    'country_tunisia': '🇹🇳',
+
+    // ✅ النصوص العربية المترجمة كما تجي من الـ API
+    'السعودية': '🇸🇦',
+    'مصر': '🇪🇬',
+    'الإمارات': '🇦🇪',
+    'الكويت': '🇰🇼',
+    'قطر': '🇶🇦',
+    'البحرين': '🇧🇭',
+    'الأردن': '🇯🇴',
+    'فلسطين': '🇵🇸',
+    'المغرب': '🇲🇦',
+    'تونس': '🇹🇳',
+
+    // ✅ الجنسيات بالعربي
+    'سعودي': '🇸🇦',
+    'مصري': '🇪🇬',
+    'إماراتي': '🇦🇪',
+    'كويتي': '🇰🇼',
+    'قطري': '🇶🇦',
+    'بحريني': '🇧🇭',
+    'أردني': '🇯🇴',
+    'فلسطيني': '🇵🇸',
+    'مغربي': '🇲🇦',
+    'تونسي': '🇹🇳',
+  };
+
+  static String getFlag(String countryKey) {
+    return _flagMap[countryKey.trim()] ?? '🌍';
   }
 }

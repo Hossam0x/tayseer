@@ -16,12 +16,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     this.interactionUser,
   }) : _repo = repository ?? getIt<MarriageRepository>(),
        super(const MarriageState()) {
-    // ✅ استمع لأحداث الـ EventBus
     _filterSubscription = MarriageEventBus.instance.onFilterApplied.listen(
       (filters) => fetchMarriageProfile(filters: filters),
     );
-
-    // ✅ استمع للتحويل لتاب الزواج — هنا في الـ constructor مش في دالة منفصلة
     _switchToMarriageTabSub = MarriageEventBus.instance.onSwitchToMarriageTab
         .listen((_) => setMarriageTab(true));
   }
@@ -58,9 +55,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     }
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // FETCH
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   Future<void> fetchMarriageProfile({
     Map<String, dynamic>? filters,
     String? seedFavoriteId,
@@ -91,20 +88,21 @@ class MarriageCubit extends Cubit<MarriageState> {
         if (isClosed) return;
 
         if (interactionUser != null) {
-          // ✅ جاي من interactions — نبني من interactionUser مباشرة
+          // ✅ FIX: pass fetchedFavoriteIds & seedFavoriteId correctly
           _emitFromInteractionUser(
             fetchedFavoriteIds: fetchedFavoriteIds,
             seedFavoriteId: seedFavoriteId,
           );
         } else if (seedPersonId != null && seedPersonId!.isNotEmpty) {
-          // ✅ جاي من deeplink أو نفس الـ gender — نعمل placeholder ونجيب البيانات
           final placeholder = UserItem(
             user: User(id: seedPersonId),
             answers: null,
+            isPartialData: true,
           );
           emit(
             state.copyWith(
-              marriageProfileState: CubitStates.success,
+              // ✅ FIX: keep loading until fetchSpecificProfile finishes
+              marriageProfileState: CubitStates.loading,
               currentIndex: 0,
               allUsers: [placeholder],
               currentPage: 1,
@@ -112,10 +110,8 @@ class MarriageCubit extends Cubit<MarriageState> {
               favoritedIds: fetchedFavoriteIds,
             ),
           );
-          // ✅ اجيب البيانات الحقيقية بعدها
           fetchSpecificProfile(seedPersonId!);
         } else {
-          // ✅ مفيش seed — عرض الـ error
           emit(
             state.copyWith(
               marriageProfileState: CubitStates.failure,
@@ -148,30 +144,34 @@ class MarriageCubit extends Cubit<MarriageState> {
         final serverUsers = profile.data?.users ?? [];
         List<UserItem> finalUsers = serverUsers;
 
-        // ✅ لو في seedPersonId ومش موجود في النتايج
         if (seedPersonId != null) {
           final found = serverUsers.any((u) => u.user?.id == seedPersonId);
           if (!found) {
             if (interactionUser != null) {
-              // ✅ عندنا interactionUser — نبني منه
               final seededItem = _buildUserItemFromInteraction(
                 interactionUser!,
               );
               finalUsers = [seededItem, ...serverUsers];
             } else {
-              // ✅ مفيش interactionUser — نحط placeholder بـ seedPersonId
               final placeholder = UserItem(
                 user: User(id: seedPersonId),
                 answers: null,
+                isPartialData: true,
               );
               finalUsers = [placeholder, ...serverUsers];
             }
           }
         }
 
+        // ✅ FIX: if first user is still partial, keep loading state
+        final firstIsPartial =
+            finalUsers.isNotEmpty && finalUsers.first.isPartialData;
+
         emit(
           state.copyWith(
-            marriageProfileState: CubitStates.success,
+            marriageProfileState: firstIsPartial
+                ? CubitStates.loading
+                : CubitStates.success,
             profile: profile,
             currentIndex: 0,
             allUsers: finalUsers,
@@ -181,12 +181,11 @@ class MarriageCubit extends Cubit<MarriageState> {
           ),
         );
 
-        // ✅ لو في placeholder (answers == null) — اجيب البيانات الحقيقية
         if (seedPersonId != null) {
-          final hasPlaceholder = finalUsers.any(
-            (u) => u.user?.id == seedPersonId && u.answers == null,
+          final hasPartial = finalUsers.any(
+            (u) => u.user?.id == seedPersonId && u.isPartialData,
           );
-          if (hasPlaceholder) {
+          if (hasPartial) {
             fetchSpecificProfile(seedPersonId!);
           }
         }
@@ -195,45 +194,43 @@ class MarriageCubit extends Cubit<MarriageState> {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // FETCH SPECIFIC PROFILE — المدخل الرئيسي
+  // FETCH SPECIFIC PROFILE
   // ═══════════════════════════════════════════════════════════════
   Future<void> fetchSpecificProfile(String targetPersonId) async {
-    final alreadyHasData = state.allUsers.any(
-      (u) => u.user?.id == targetPersonId && u.answers != null,
+    final alreadyHasFullData = state.allUsers.any(
+      (u) =>
+          u.user?.id == targetPersonId && u.answers != null && !u.isPartialData,
     );
-    if (alreadyHasData) return;
+    if (alreadyHasFullData) return;
 
-    // ✅ لو جاي من interactionUser — ابني منه مباشرة
-    if (interactionUser != null && interactionUser!.userId == targetPersonId) {
-      final builtItem = _buildUserItemFromInteraction(interactionUser!);
-      final updatedUsers = <UserItem>[
-        builtItem,
-        ...state.allUsers.where((u) => u.user?.id != targetPersonId),
-      ];
-      emit(state.copyWith(allUsers: updatedUsers, currentIndex: 0));
-      return;
+    // ✅ FIX: ensure we stay in loading while fetching
+    if (interactionUser == null || interactionUser!.userId != targetPersonId) {
+      _ensurePlaceholderExists(targetPersonId);
     }
 
-    // ✅ تأكد من وجود placeholder
-    _ensurePlaceholderExists(targetPersonId);
+    // ✅ Ensure state is loading while we wait
+    if (state.marriageProfileState != CubitStates.loading) {
+      emit(state.copyWith(marriageProfileState: CubitStates.loading));
+    }
 
-    // ✅ استخدم الـ endpoint المخصص
     final result = await _repo.getProfileById(targetPersonId);
 
-    result.fold(
-      (_) {
-        // ✅ فشل — جرب الـ fallback القديم
-        _fetchSpecificProfileFallback(targetPersonId);
-      },
-      (userItem) {
-        if (isClosed) return;
-        final updatedUsers = <UserItem>[
-          userItem,
-          ...state.allUsers.where((u) => u.user?.id != targetPersonId),
-        ];
-        emit(state.copyWith(allUsers: updatedUsers, currentIndex: 0));
-      },
-    );
+    result.fold((_) => _fetchSpecificProfileFallback(targetPersonId), (
+      userItem,
+    ) {
+      if (isClosed) return;
+      final updatedUsers = <UserItem>[
+        userItem, // ✅ full data from API — isPartialData = false
+        ...state.allUsers.where((u) => u.user?.id != targetPersonId),
+      ];
+      emit(
+        state.copyWith(
+          allUsers: updatedUsers,
+          currentIndex: 0,
+          marriageProfileState: CubitStates.success, // ✅ only emit success here
+        ),
+      );
+    });
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -243,7 +240,11 @@ class MarriageCubit extends Cubit<MarriageState> {
     final exists = state.allUsers.any((u) => u.user?.id == targetPersonId);
     if (exists) return;
 
-    final placeholder = UserItem(user: User(id: targetPersonId), answers: null);
+    final placeholder = UserItem(
+      user: User(id: targetPersonId),
+      answers: null,
+      isPartialData: true,
+    );
 
     emit(
       state.copyWith(
@@ -252,6 +253,8 @@ class MarriageCubit extends Cubit<MarriageState> {
           ...state.allUsers.where((u) => u.user?.id != targetPersonId),
         ],
         currentIndex: 0,
+        // ✅ FIX: stay in loading — don't flip to success with partial data
+        marriageProfileState: CubitStates.loading,
       ),
     );
   }
@@ -262,7 +265,6 @@ class MarriageCubit extends Cubit<MarriageState> {
   Future<void> _fetchSpecificProfileFallback(String targetPersonId) async {
     if (isClosed) return;
 
-    // ✅ جرب بـ user_id filter أولاً
     final resultWithFilter = await _repo.getMarriageProfile(
       "1",
       filters: {'user_id': targetPersonId},
@@ -276,10 +278,17 @@ class MarriageCubit extends Cubit<MarriageState> {
           (u) => u.user?.id == targetPersonId,
         );
         final updatedUsers = <UserItem>[
-          specificUser,
+          specificUser, // ✅ full data — isPartialData = false
           ...state.allUsers.where((u) => u.user?.id != targetPersonId),
         ];
-        emit(state.copyWith(allUsers: updatedUsers, currentIndex: 0));
+        emit(
+          state.copyWith(
+            allUsers: updatedUsers,
+            currentIndex: 0,
+            marriageProfileState:
+                CubitStates.success, // ✅ success only after full data
+          ),
+        );
         return true;
       } catch (_) {
         return false;
@@ -288,12 +297,18 @@ class MarriageCubit extends Cubit<MarriageState> {
 
     if (foundInFilter) return;
 
-    // ✅ مش موجود بالـ filter — جرب بدون filter
     final resultNoFilter = await _repo.getMarriageProfile("1", filters: {});
 
     resultNoFilter.fold(
       (_) {
-        // ✅ فشل — placeholder يفضل
+        if (isClosed) return;
+        // ✅ FIX: if all fallbacks fail, emit failure instead of staying in loading forever
+        emit(
+          state.copyWith(
+            marriageProfileState: CubitStates.failure,
+            errorMessage: 'Failed to load profile',
+          ),
+        );
       },
       (profile) {
         if (isClosed) return;
@@ -303,31 +318,43 @@ class MarriageCubit extends Cubit<MarriageState> {
             (u) => u.user?.id == targetPersonId,
           );
           final updatedUsers = <UserItem>[
-            specificUser,
+            specificUser, // ✅ full data — isPartialData = false
             ...state.allUsers.where((u) => u.user?.id != targetPersonId),
           ];
-          emit(state.copyWith(allUsers: updatedUsers, currentIndex: 0));
+          emit(
+            state.copyWith(
+              allUsers: updatedUsers,
+              currentIndex: 0,
+              marriageProfileState: CubitStates.success,
+            ),
+          );
         } catch (_) {
-          // ✅ مش موجود — السيرفر بيفلتره بسبب التفاعل
-          // الـ UI يفضل بالـ placeholder
+          // ✅ FIX: user not found in any source — show failure instead of blank
+          if (!isClosed) {
+            emit(
+              state.copyWith(
+                marriageProfileState: CubitStates.failure,
+                errorMessage: 'Profile not found',
+              ),
+            );
+          }
         }
       },
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // BUILD USER ITEM FROM INTERACTION — بيبني UserItem كامل مع Answers
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
+  // BUILD USER ITEM FROM INTERACTION — placeholder مؤقت فقط
+  // ═══════════════════════════════════════════════════════════════
   UserItem _buildUserItemFromInteraction(InteractionUserModel item) {
-    // ✅ تأكد إن الـ image مش فاضية
     final hasImage = item.image.isNotEmpty;
     final hasJob = item.job.isNotEmpty;
 
     return UserItem(
+      isPartialData: true, // ✅ always partial — real data comes from API
       user: User(
         id: item.userId,
         name: item.name,
-        // ✅ لو image فاضية ابعت null مش string فاضية
         image: hasImage ? item.image : null,
         country: item.country,
         isFavorite: item.isFavorite,
@@ -338,28 +365,24 @@ class MarriageCubit extends Cubit<MarriageState> {
       ),
       answers: Answers(
         aboutMe: AboutMe(
-          // ✅ لو age = 0 ابعت null
           age: item.age > 0 ? item.age.toString() : null,
           country: item.country.isNotEmpty ? item.country : null,
         ),
         professionalLife: hasJob ? ProfessionalLife(job: item.job) : null,
-        // ✅ بس لو image حقيقية موجودة
         userMedia: hasImage ? UserMedia(image: [item.image]) : null,
       ),
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // EMIT FROM INTERACTION USER
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   void _emitFromInteractionUser({
     required Set<String> fetchedFavoriteIds,
     String? seedFavoriteId,
   }) {
     if (isClosed) return;
     final item = interactionUser!;
-
-    // ✅ بنبني بـ answers مش null
     final seededItem = _buildUserItemFromInteraction(item);
 
     final mergedFavorites = {
@@ -369,9 +392,10 @@ class MarriageCubit extends Cubit<MarriageState> {
       if (seedFavoriteId != null && seedFavoriteId.isNotEmpty) seedFavoriteId,
     };
 
+    // ✅ FIX: emit loading — keep shimmer until fetchSpecificProfile succeeds
     emit(
       state.copyWith(
-        marriageProfileState: CubitStates.success,
+        marriageProfileState: CubitStates.loading,
         currentIndex: 0,
         allUsers: [seededItem],
         currentPage: 1,
@@ -380,21 +404,21 @@ class MarriageCubit extends Cubit<MarriageState> {
       ),
     );
 
-    // ✅ مش محتاج fetchSpecificProfile — عنده بيانات كافية للعرض
+    // ✅ fetch real data — only then will success be emitted
+    fetchSpecificProfile(item.userId);
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // REFRESH
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   Future<void> refreshProfile() async {
-    // ✅ امسح الـ history عند الـ refresh
     emit(state.copyWith(userHistory: []));
     await fetchMarriageProfile(filters: state.activeFilters);
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // REFRESH SILENTLY
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   Future<void> refreshProfileSilently() async {
     final results = await Future.wait([
       _repo.getMarriageProfile("1", filters: state.activeFilters),
@@ -417,8 +441,9 @@ class MarriageCubit extends Cubit<MarriageState> {
           marriageProfileState: CubitStates.success,
           profile: profile,
           currentIndex: 0,
-          allUsers: profile.data?.users ?? [],
-          userHistory: [], // ✅ امسح الـ history
+          allUsers:
+              profile.data?.users ?? [], // ✅ full data — isPartialData = false
+          userHistory: [],
           currentPage: profile.data?.pagination?.currentPage ?? 1,
           totalPages: profile.data?.pagination?.totalPages ?? 1,
           favoritedIds: mergedFavorites,
@@ -427,9 +452,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     });
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // LOAD MORE
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   Future<void> loadMoreUsers() async {
     if (state.isLoadingMore) return;
     if (state.currentPage >= state.totalPages) return;
@@ -456,9 +481,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     });
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // SWIPE LIKE
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   Future<void> swipeLike({
     required String personId,
     required int usersLength,
@@ -471,9 +496,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     _onSwipeComplete(personId: personId, hasSinglePerson: hasSinglePerson);
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // SWIPE DISLIKE
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   Future<void> swipeDislike({
     required String personId,
     required int usersLength,
@@ -486,9 +511,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     _onSwipeComplete(personId: personId, hasSinglePerson: hasSinglePerson);
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // ON SWIPE COMPLETE
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   void _onSwipeComplete({
     required String personId,
     required bool hasSinglePerson,
@@ -496,7 +521,6 @@ class MarriageCubit extends Cubit<MarriageState> {
     _cardController!.value = 0;
 
     if (!hasSinglePerson) {
-      // ✅ احفظ الـ user في الـ history قبل ما تشيله
       final removedUser = state.allUsers.firstWhere(
         (u) => u.user?.id == personId,
         orElse: () => UserItem(user: User(id: personId), answers: null),
@@ -518,7 +542,7 @@ class MarriageCubit extends Cubit<MarriageState> {
       emit(
         state.copyWith(
           allUsers: updatedUsers,
-          userHistory: updatedHistory, // ✅ جديد
+          userHistory: updatedHistory,
           currentIndex: newIndex,
           swipeDirection: 0,
           swipeProgress: 0,
@@ -538,9 +562,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     }
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // HISTORY
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   void showHistoryView() => emit(
     state.copyWith(showHistory: true, selectedHistoryFilter: "liked_you"),
   );
@@ -548,17 +572,17 @@ class MarriageCubit extends Cubit<MarriageState> {
   void setHistoryFilter(String filter) =>
       emit(state.copyWith(selectedHistoryFilter: filter));
 
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // SCROLL
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   void setScrollingDown(bool isDown) {
     if (state.isScrollingDown == isDown) return;
     emit(state.copyWith(isScrollingDown: isDown));
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // TABS
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   void setMarriageTab(bool isMarriage) {
     if (state.isMarriageTab == isMarriage) return;
     if (state.showHistory) {
@@ -568,9 +592,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     }
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // USER INTERACTION
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   Future<void> userInteraction({
     required String personId,
     required String interactionType,
@@ -598,12 +622,11 @@ class MarriageCubit extends Cubit<MarriageState> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // REGARD
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   Future<void> sendRegard({required String personId}) async {
     final result = await _repo.sendRegard(personId: personId);
-
     if (isClosed) return;
 
     result.fold(
@@ -654,12 +677,11 @@ class MarriageCubit extends Cubit<MarriageState> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // BLOCK USER
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   Future<void> blockUser({required String personId}) async {
     _repo.blockUser(personId: personId);
-
     if (isClosed) return;
 
     final updatedUsers = state.allUsers
@@ -677,8 +699,8 @@ class MarriageCubit extends Cubit<MarriageState> {
         allUsers: updatedUsers,
         currentIndex: newIndex,
         isScrollingDown: false,
-        blockActionState: CubitStates.success, // ✅ جديد
-        showActionSnackbar: true, // ✅ جديد
+        blockActionState: CubitStates.success,
+        showActionSnackbar: true,
       ),
     );
 
@@ -686,9 +708,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     if (newLength == 0) refreshProfileSilently();
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // TOGGLE FAVORITE
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   Future<void> toggleLocalFavorite(
     String userId, {
     bool removeFromList = false,
@@ -703,12 +725,11 @@ class MarriageCubit extends Cubit<MarriageState> {
     }
 
     if (removeFromList) {
-      // ✅ احفظ اليوزر في الـ history قبل ما تشيله
       final removedUser = state.allUsers.firstWhere(
         (u) => u.user?.id == userId,
         orElse: () => UserItem(user: User(id: userId), answers: null),
       );
-      final updatedHistory = [...state.userHistory, removedUser]; // ✅ جديد
+      final updatedHistory = [...state.userHistory, removedUser];
 
       final updatedUsers = state.allUsers
           .where((u) => u.user?.id != userId)
@@ -722,7 +743,7 @@ class MarriageCubit extends Cubit<MarriageState> {
         state.copyWith(
           favoritedIds: updatedFavorites,
           allUsers: updatedUsers,
-          userHistory: updatedHistory, // ✅ جديد
+          userHistory: updatedHistory,
           currentIndex: newIndex,
           isScrollingDown: false,
         ),
@@ -749,9 +770,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     }, (_) {});
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // CLAMP INDEX
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   void clampCurrentIndex({required int usersLength}) {
     if (usersLength <= 0) return;
     if (state.currentIndex >= usersLength) {
@@ -759,13 +780,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     }
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // ON SWIPE COMPLETE — عدّل هنا
-  // ═══════════════════════════════════════════════════════════
-
-  // ═══════════════════════════════════════════════════════════
-  // GO BACK TO PREVIOUS USER ✅ جديد كلياً
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
+  // GO BACK TO PREVIOUS USER
+  // ═══════════════════════════════════════════════════════════════
   void goBackToPreviousUser() {
     if (state.userHistory.isEmpty) return;
 
@@ -785,9 +802,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // RESET STATE
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   void resetState() {
     emit(
       state.copyWith(
@@ -802,9 +819,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   // DISPOSE
-  // ═══════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
   @override
   Future<void> close() {
     _filterSubscription.cancel();

@@ -1,263 +1,3 @@
-//  // lib/features/user/marriage/view/widget/sliver_profile_header.dart
-
-// import 'dart:ui';
-// import 'package:tayseer/features/user/marriage/view/widget/animated_be_first_button.dart';
-// import 'package:tayseer/features/user/marriage/view/widget/image_viewer_gallery.dart';
-// import 'package:tayseer/my_import.dart';
-
-// class SliverProfileHeader extends StatelessWidget {
-//   final List<String> images;
-//   final String name;
-//   final String age;
-//   final String location;
-//   final String? tagsjob;
-//   final String? educationLevel;
-//   final String? religiousCommitment;
-//   final String? nationality;
-//   final String? height;
-//   final String? transitionKey;
-//   final Widget? toggleWidget;
-//   final String? reportId;
-//   const SliverProfileHeader({
-//     super.key,
-//     required this.images,
-//     required this.name,
-//     required this.age,
-//     required this.location,
-//     this.tagsjob,
-//     this.educationLevel,
-//     this.religiousCommitment,
-//     this.nationality,
-//     this.height,
-//     this.transitionKey,
-//     this.toggleWidget,
-//     this.reportId,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final String coverImage = images.isNotEmpty ? images.first : '';
-
-//     return SliverAppBar(
-//       expandedHeight: context.height * 0.85,
-//       pinned: true, // ✅ CHANGED: الأب بار يفضل ثابت
-//       floating: false,
-//       snap: false,
-//       backgroundColor: Colors.transparent,
-//       elevation: 0,
-//       automaticallyImplyLeading: false,
-//       titleSpacing: 0,
-//       title: Padding(
-//         padding: EdgeInsets.symmetric(horizontal: 16.w),
-//         child: Stack(
-//           alignment: Alignment.center,
-//           children: [
-//             // ✅ Toggle ثابت في النص
-//             if (toggleWidget != null) Center(child: toggleWidget!),
-
-//             // ✅ Filter button
-//             Positioned(
-//               right: 0,
-//               child: GestureDetector(
-//                 onTap: () {
-//                   context.pushNamed(AppRouter.kMarriageFilterView);
-//                 },
-//                 child: CircleAvatar(
-//                   backgroundColor: Colors.black26,
-//                   child: AppImage(
-//                     AssetsData.kfilterIcon,
-//                     width: 20,
-//                     height: 20,
-//                   ),
-//                 ),
-//               ),
-//             ),
-
-//             // ✅ Boost button
-//             Positioned(
-//               left: 0,
-//               child: AnimatedBeFirstButton(
-//                 onTap: () {
-//                   context.pushNamed(AppRouter.kBoostAccountView);
-//                 },
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//       flexibleSpace: FlexibleSpaceBar(
-//         collapseMode: CollapseMode.pin,
-//         background: Stack(
-//           fit: StackFit.expand,
-//           children: [
-//             GestureDetector(
-//               onTap: () {
-//                 if (images.isNotEmpty) {
-//                   Navigator.push(
-//                     context,
-//                     MaterialPageRoute(
-//                       builder: (context) => ImageViewerGallery(
-//                         images: images,
-//                         initialIndex: 0,
-//                         personId: reportId,
-//                       ),
-//                     ),
-//                   );
-//                 }
-//               },
-//               child: Hero(
-//                 tag: coverImage,
-//                 child: AppImage(coverImage, fit: BoxFit.cover),
-//               ),
-//             ),
-//             Positioned(
-//               bottom: 60.h,
-//               right: 16.w,
-//               left: 16.w,
-//               child: glassCard(
-//                 borderRadius: 24,
-//                 blur: 18,
-//                 opacity: 0.18,
-//                 paddingAll: 16,
-//                 child: AnimatedSwitcher(
-//                   duration: const Duration(milliseconds: 380),
-//                   transitionBuilder: (child, animation) {
-//                     final offsetAnimation =
-//                         Tween<Offset>(
-//                           begin: const Offset(0, 0.35),
-//                           end: Offset.zero,
-//                         ).animate(
-//                           CurvedAnimation(
-//                             parent: animation,
-//                             curve: Curves.easeOutCubic,
-//                           ),
-//                         );
-//                     return SlideTransition(
-//                       position: offsetAnimation,
-//                       child: FadeTransition(opacity: animation, child: child),
-//                     );
-//                   },
-//                   child: Container(
-//                     key: ValueKey(transitionKey ?? name),
-//                     child: Column(
-//                       crossAxisAlignment: CrossAxisAlignment.start,
-//                       children: [
-//                         Row(
-//                           children: [
-//                             Text(
-//                               name,
-//                               style: Styles.textStyle18Bold.copyWith(
-//                                 color: Colors.white,
-//                               ),
-//                             ),
-//                             Gap(5.w),
-//                             Text(
-//                               "$age ${context.tr("age")}",
-//                               style: Styles.textStyle14.copyWith(
-//                                 color: Colors.white,
-//                               ),
-//                             ),
-//                             Gap(8.w),
-//                             const Icon(
-//                               Icons.verified,
-//                               color: Colors.blue,
-//                               size: 20,
-//                             ),
-//                           ],
-//                         ),
-//                         Gap(5.h),
-//                         Row(
-//                           children: [
-//                             const Icon(
-//                               Icons.flag,
-//                               color: Colors.white,
-//                               size: 16,
-//                             ),
-//                             Gap(5.w),
-//                             Text(
-//                               location,
-//                               style: Styles.textStyle12.copyWith(
-//                                 color: Colors.white70,
-//                               ),
-//                             ),
-//                           ],
-//                         ),
-//                         Gap(10.h),
-//                         Wrap(
-//                           spacing: 8.w,
-//                           runSpacing: 8.h,
-//                           children: [
-//                             if (tagsjob != null && tagsjob!.isNotEmpty)
-//                               _buildTransparentTag(tagsjob!),
-//                             if (educationLevel != null &&
-//                                 educationLevel!.isNotEmpty)
-//                               _buildTransparentTag(educationLevel!),
-//                             if (religiousCommitment != null &&
-//                                 religiousCommitment!.isNotEmpty)
-//                               _buildTransparentTag(religiousCommitment!),
-//                             if (nationality != null && nationality!.isNotEmpty)
-//                               _buildTransparentTag(nationality!),
-//                           ],
-//                         ),
-//                       ],
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildTransparentTag(String text) {
-//     return glassCard(
-//       borderRadius: 24,
-//       blur: 18,
-//       opacity: 0.18,
-//       paddingAll: 6,
-//       child: Text(
-//         text,
-//         style: Styles.textStyle10.copyWith(color: Colors.white),
-//       ),
-//     );
-//   }
-
-//   Widget glassCard({
-//     required Widget child,
-//     double borderRadius = 20,
-//     double blur = 20,
-//     double opacity = 0.25,
-//     double paddingAll = 0.0,
-//   }) {
-//     return ClipRRect(
-//       borderRadius: BorderRadius.circular(borderRadius),
-//       child: BackdropFilter(
-//         filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-//         child: Container(
-//           padding: EdgeInsets.all(paddingAll),
-//           decoration: BoxDecoration(
-//             borderRadius: BorderRadius.circular(borderRadius),
-//             gradient: LinearGradient(
-//               colors: [
-//                 Colors.white.withOpacity(opacity),
-//                 Colors.white.withOpacity(opacity / 2),
-//               ],
-//               begin: Alignment.topLeft,
-//               end: Alignment.bottomRight,
-//             ),
-//             border: Border.all(
-//               color: Colors.white.withOpacity(0.2),
-//               width: 1.2,
-//             ),
-//           ),
-//           child: child,
-//         ),
-//       ),
-//     );
-//   }
-// }
 import 'dart:ui';
 import 'dart:math' as math;
 import 'package:tayseer/core/constant/marriage_constants.dart';
@@ -279,7 +19,7 @@ class SliverProfileHeader extends StatelessWidget {
   final Widget? toggleWidget;
   final String? reportId;
   final bool shouldBlur;
-  final bool isVerified; // ✅
+  final bool isVerified;
 
   // ---------- الكارت اللي بعده (الخلفي) ----------
   final List<String>? nextImages;
@@ -291,7 +31,7 @@ class SliverProfileHeader extends StatelessWidget {
   final String? nextReligiousCommitment;
   final String? nextNationality;
   final String? nextHeight;
-  final bool? nextIsVerified; // ✅
+  final bool? nextIsVerified;
 
   final double swipeDirection;
   final double swipeProgress;
@@ -313,7 +53,7 @@ class SliverProfileHeader extends StatelessWidget {
     this.toggleWidget,
     this.reportId,
     this.shouldBlur = false,
-    this.isVerified = false, // ✅
+    this.isVerified = false,
     this.nextImages,
     this.nextName,
     this.nextAge,
@@ -323,7 +63,7 @@ class SliverProfileHeader extends StatelessWidget {
     this.nextReligiousCommitment,
     this.nextNationality,
     this.nextHeight,
-    this.nextIsVerified, // ✅
+    this.nextIsVerified,
     this.swipeDirection = 0,
     this.swipeProgress = 0,
     this.onFavoriteTap,
@@ -404,7 +144,7 @@ class SliverProfileHeader extends StatelessWidget {
                     nextReligiousCommitment: nextReligiousCommitment,
                     nextNationality: nextNationality,
                     nextHeight: nextHeight,
-                    nextIsVerified: nextIsVerified ?? false, // ✅
+                    nextIsVerified: nextIsVerified ?? false,
                   ),
                 ),
 
@@ -432,7 +172,7 @@ class SliverProfileHeader extends StatelessWidget {
                     onFavoriteTap: onFavoriteTap,
                     isFavorited: isFavorited,
                     shouldBlur: shouldBlur,
-                    isVerified: isVerified, // ✅
+                    isVerified: isVerified,
                   ),
                 ),
               ),
@@ -464,7 +204,7 @@ class _FrontProfileCard extends StatelessWidget {
   final VoidCallback? onFavoriteTap;
   final bool isFavorited;
   final bool shouldBlur;
-  final bool isVerified; // ✅
+  final bool isVerified;
 
   const _FrontProfileCard({
     required this.images,
@@ -483,8 +223,10 @@ class _FrontProfileCard extends StatelessWidget {
     this.onFavoriteTap,
     this.isFavorited = false,
     this.shouldBlur = false,
-    this.isVerified = false, // ✅
+    this.isVerified = false,
   });
+
+  bool get _hasImage => coverImage.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -493,6 +235,7 @@ class _FrontProfileCard extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
+        // ========= الصورة أو الـ Placeholder =========
         GestureDetector(
           onTap: () {
             if (images.isNotEmpty) {
@@ -516,27 +259,54 @@ class _FrontProfileCard extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                shouldBlur
-                    ? ImageFiltered(
-                        imageFilter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                        child: isAnimating
-                            ? AppImage(coverImage, fit: BoxFit.cover)
-                            : Hero(
-                                tag: coverImage,
-                                child: AppImage(coverImage, fit: BoxFit.cover),
-                              ),
-                      )
-                    : (isAnimating
-                          ? AppImage(coverImage, fit: BoxFit.cover)
-                          : Hero(
-                              tag: coverImage,
-                              child: AppImage(coverImage, fit: BoxFit.cover),
-                            )),
-                if (shouldBlur) Container(color: Colors.black.withOpacity(0.2)),
+                // ✅ Placeholder لما مفيش صورة
+                if (!_hasImage)
+                  _buildPlaceholder()
+                else if (shouldBlur)
+                  ImageFiltered(
+                    imageFilter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                    child: isAnimating
+                        ? AppImage(coverImage, fit: BoxFit.cover)
+                        : Hero(
+                            tag: coverImage,
+                            child: AppImage(coverImage, fit: BoxFit.cover),
+                          ),
+                  )
+                else
+                  isAnimating
+                      ? AppImage(coverImage, fit: BoxFit.cover)
+                      : Hero(
+                          tag: coverImage,
+                          child: AppImage(coverImage, fit: BoxFit.cover),
+                        ),
+
+                // ✅ Gradient دايماً فوق الصورة — يمنع الـ info card يبان على خلفية فاضية
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.2),
+                          Colors.black.withOpacity(0.65),
+                        ],
+                        stops: const [0.0, 0.45, 0.72, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
+
+                if (shouldBlur)
+                  Container(color: Colors.black.withOpacity(0.2)),
               ],
             ),
           ),
         ),
+
+        // ========= Info Card =========
         Positioned(
           bottom: 60.h,
           right: 16.w,
@@ -550,14 +320,55 @@ class _FrontProfileCard extends StatelessWidget {
             religiousCommitment: religiousCommitment,
             nationality: nationality,
             height: height,
-            useBlur: !isAnimating,
+            useBlur: !isAnimating && _hasImage,
             opacity: 0.18,
             onFavoriteTap: onFavoriteTap,
             isFavorited: isFavorited,
-            isVerified: isVerified, // ✅
+            isVerified: isVerified,
           ),
         ),
       ],
+    );
+  }
+
+  /// ✅ Placeholder جميل لما الصورة فاضية
+  Widget _buildPlaceholder() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.kprimaryColor.withOpacity(0.15),
+            AppColors.kprimaryColor.withOpacity(0.05),
+            AppColors.kScaffoldColor,
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 120.w,
+              height: 120.w,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.kprimaryColor.withOpacity(0.1),
+                border: Border.all(
+                  color: AppColors.kprimaryColor.withOpacity(0.2),
+                  width: 2,
+                ),
+              ),
+              child: Icon(
+                Icons.person_outline_rounded,
+                size: 64.r,
+                color: AppColors.kprimaryColor.withOpacity(0.35),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -575,7 +386,7 @@ class _BackProfileCard extends StatelessWidget {
   final String? nextReligiousCommitment;
   final String? nextNationality;
   final String? nextHeight;
-  final bool nextIsVerified; // ✅
+  final bool nextIsVerified;
 
   const _BackProfileCard({
     this.nextImages,
@@ -587,7 +398,7 @@ class _BackProfileCard extends StatelessWidget {
     this.nextReligiousCommitment,
     this.nextNationality,
     this.nextHeight,
-    this.nextIsVerified = false, // ✅
+    this.nextIsVerified = false,
   });
 
   @override
@@ -595,12 +406,44 @@ class _BackProfileCard extends StatelessWidget {
     final String backCover = (nextImages != null && nextImages!.isNotEmpty)
         ? nextImages!.first
         : '';
+    final bool hasBackImage = backCover.isNotEmpty;
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        if (backCover.isNotEmpty) AppImage(backCover, fit: BoxFit.cover),
-        const ColoredBox(color: Color(0x40000000)),
+        // ✅ Placeholder للكارت الخلفي لو مفيش صورة
+        if (!hasBackImage)
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.kprimaryColor.withOpacity(0.1),
+                  AppColors.kScaffoldColor,
+                ],
+              ),
+            ),
+          )
+        else
+          AppImage(backCover, fit: BoxFit.cover),
+
+        // ✅ Gradient فوق الكارت الخلفي
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.1),
+                  Colors.black.withOpacity(0.5),
+                ],
+              ),
+            ),
+          ),
+        ),
+
         Positioned(
           bottom: 60.h,
           right: 16.w,
@@ -618,7 +461,7 @@ class _BackProfileCard extends StatelessWidget {
             opacity: 0.14,
             onFavoriteTap: null,
             isFavorited: false,
-            isVerified: nextIsVerified, // ✅
+            isVerified: nextIsVerified,
           ),
         ),
       ],
@@ -642,7 +485,7 @@ class _InfoCard extends StatelessWidget {
   final double opacity;
   final VoidCallback? onFavoriteTap;
   final bool isFavorited;
-  final bool isVerified; // ✅
+  final bool isVerified;
 
   const _InfoCard({
     required this.name,
@@ -657,7 +500,7 @@ class _InfoCard extends StatelessWidget {
     required this.opacity,
     this.onFavoriteTap,
     this.isFavorited = false,
-    this.isVerified = false, // ✅
+    this.isVerified = false,
   });
 
   @override
@@ -691,7 +534,6 @@ class _InfoCard extends StatelessWidget {
                         "$age ${context.tr("age")}",
                         style: Styles.textStyle14.copyWith(color: Colors.white),
                       ),
-                    // ✅ يظهر فقط لو isVerified = true
                     if (isVerified) ...[
                       Gap(8.w),
                       const Icon(Icons.verified, color: Colors.blue, size: 20),
@@ -726,7 +568,6 @@ class _InfoCard extends StatelessWidget {
             ],
           ),
           Gap(5.h),
-          // ✅ بعد
           if (location.isNotEmpty)
             Row(
               children: [
