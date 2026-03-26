@@ -89,33 +89,12 @@ class _MySpaceConsultationContentState
                 }
                 final chatRoom = chatRooms[index];
 
-                // الحصول على المستخدم الآخر
-                final String title;
-                final String? imageUrl;
-                final String receiverId;
-
-                if (chatRoom.isSystemChat) {
-                  title = 'System';
-                  imageUrl = chatRoom.systemChatImage; // استخدام الصورة من systemChatData
-                  receiverId = 'system';
-                } else {
-                  final otherUser = chatRoom.users.isNotEmpty
-                      ? chatRoom.users.firstWhere(
-                          (user) => user.id == chatRoom.sender.id,
-                          orElse: () => chatRoom.users.first,
-                        )
-                      : chatRoom.sender;
-                  title = otherUser.name;
-                  imageUrl = otherUser.image;
-                  receiverId = otherUser.id;
-                }
-
                 return ChatRoomListItem(
                   key: ValueKey('chat_${chatRoom.id}'),
                   id: chatRoom.id,
-                  title: title,
+                  title: chatRoom.displayTitle,
                   subtitle: chatRoom.lastMessage?.content ?? '',
-                  imageUrl: imageUrl,
+                  imageUrl: chatRoom.displayImage,
                   lastUpdate: chatRoom.lastMessageAt ?? chatRoom.updatedAt,
                   unreadCount: chatRoom.unreadCount,
                   fallbackAsset: AssetsData.kAppLogotayseerImage,
@@ -128,8 +107,8 @@ class _MySpaceConsultationContentState
                     // تحضير الـ arguments
                     final Map<String, dynamic> arguments = {
                       'chatroomid': chatRoom.id,
-                      'username': title,
-                      'userimage': imageUrl,
+                      'username': chatRoom.displayTitle,
+                      'userimage': chatRoom.displayImage,
                       'isBlocked': chatRoom.isBlocked,
                       'isHaveSession': chatRoom.isHaveSession,
                       'isSystemChat': chatRoom.isSystemChat,
@@ -139,7 +118,7 @@ class _MySpaceConsultationContentState
                     if (chatRoom.isSystemChat) {
                       arguments['system'] = true;
                     } else {
-                      arguments['receiverid'] = receiverId;
+                      arguments['receiverid'] = chatRoom.displayReceiverId;
                     }
 
                     context

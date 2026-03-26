@@ -62,13 +62,33 @@ class AdvisorChatRoomModel {
     this.lastMessage,
     this.lastMessageAt,
     required this.status,
-    required this.sender, // <--- هنا
+    required this.sender,
     required this.createdAt,
     required this.updatedAt,
     required this.unreadCount,
     this.isSystemChat = false,
     this.systemChatImage,
   });
+
+  /// Display title للـ chat room (System أو اسم المستخدم)
+  String get displayTitle => isSystemChat ? 'System' : _getOtherUser().name;
+
+  /// Display image للـ chat room (صورة System أو صورة المستخدم)
+  String? get displayImage =>
+      isSystemChat ? systemChatImage : _getOtherUser().image;
+
+  /// Display receiver ID للـ chat room (system أو ID المستخدم)
+  String get displayReceiverId => isSystemChat ? 'system' : _getOtherUser().id;
+
+  /// الحصول على المستخدم الآخر في المحادثة
+  ChatUserModel _getOtherUser() {
+    return users.isNotEmpty
+        ? users.firstWhere(
+            (user) => user.id == sender.id,
+            orElse: () => users.first,
+          )
+        : sender;
+  }
 
   factory AdvisorChatRoomModel.fromJson(Map<String, dynamic> json) {
     String extractString(dynamic value) {
