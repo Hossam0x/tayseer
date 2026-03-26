@@ -159,7 +159,7 @@ class GreetingProfileCard extends StatelessWidget {
                       SizedBox(height: 4.h),
 
                       if (item.job.isNotEmpty)
-                        _buildBadge(text: context.tr(item.job), icon: AssetsData.workIcon),
+                        _buildBadge(text: context.tr(item.job), icon: '💼'),
                     ],
                   ),
                 ),
@@ -240,7 +240,7 @@ class GreetingProfileCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            AppImage(icon, width: 14.w),
+            Text(icon, style: TextStyle(fontSize: 12.sp)),
             SizedBox(width: 4.w),
           ],
           Flexible(
@@ -258,6 +258,4 @@ class GreetingProfileCard extends StatelessWidget {
       ),
     );
   }
-
-
 }

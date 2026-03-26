@@ -2,6 +2,9 @@ import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
 
+// ✅ Sentinel so copyWith can explicitly clear nullable String fields to null
+const _clearString = Object();
+
 class MarriageState extends Equatable {
   final CubitStates marriageProfileState;
   final CubitStates userInteractionState;
@@ -20,7 +23,7 @@ class MarriageState extends Equatable {
   final bool showHistory;
   final String selectedHistoryFilter;
   final List<UserItem> allUsers;
-  final List<UserItem> userHistory; // ✅ جديد
+  final List<UserItem> userHistory;
   final int currentPage;
   final int totalPages;
   final bool isLoadingMore;
@@ -46,7 +49,7 @@ class MarriageState extends Equatable {
     this.showHistory = false,
     this.selectedHistoryFilter = "liked_you",
     this.allUsers = const [],
-    this.userHistory = const [], // ✅ جديد
+    this.userHistory = const [],
     this.currentPage = 1,
     this.totalPages = 1,
     this.isLoadingMore = false,
@@ -65,15 +68,16 @@ class MarriageState extends Equatable {
     int? currentIndex,
     bool? isScrollingDown,
     bool? isMarriageTab,
-    String? errorMessage,
-    String? blockMessage,
+    // ✅ FIX: use Object? sentinel so callers can pass null explicitly to clear
+    Object? errorMessage = _clearString,
+    Object? blockMessage = _clearString,
     double? swipeDirection,
     double? swipeProgress,
     bool? isAnimating,
     bool? showHistory,
     String? selectedHistoryFilter,
     List<UserItem>? allUsers,
-    List<UserItem>? userHistory, // ✅ جديد
+    List<UserItem>? userHistory,
     int? currentPage,
     int? totalPages,
     bool? isLoadingMore,
@@ -91,8 +95,13 @@ class MarriageState extends Equatable {
       currentIndex: currentIndex ?? this.currentIndex,
       isScrollingDown: isScrollingDown ?? this.isScrollingDown,
       isMarriageTab: isMarriageTab ?? this.isMarriageTab,
-      errorMessage: errorMessage ?? this.errorMessage,
-      blockMessage: blockMessage ?? this.blockMessage,
+      // ✅ FIX: if sentinel → keep existing value; if null passed → clear to null; if value → use it
+      errorMessage: identical(errorMessage, _clearString)
+          ? this.errorMessage
+          : errorMessage as String?,
+      blockMessage: identical(blockMessage, _clearString)
+          ? this.blockMessage
+          : blockMessage as String?,
       swipeDirection: swipeDirection ?? this.swipeDirection,
       swipeProgress: swipeProgress ?? this.swipeProgress,
       isAnimating: isAnimating ?? this.isAnimating,
@@ -100,7 +109,7 @@ class MarriageState extends Equatable {
       selectedHistoryFilter:
           selectedHistoryFilter ?? this.selectedHistoryFilter,
       allUsers: allUsers ?? this.allUsers,
-      userHistory: userHistory ?? this.userHistory, // ✅ جديد
+      userHistory: userHistory ?? this.userHistory,
       currentPage: currentPage ?? this.currentPage,
       totalPages: totalPages ?? this.totalPages,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
@@ -129,7 +138,7 @@ class MarriageState extends Equatable {
     showHistory,
     selectedHistoryFilter,
     allUsers,
-    userHistory, // ✅ جديد
+    userHistory,
     currentPage,
     totalPages,
     isLoadingMore,

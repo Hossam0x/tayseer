@@ -44,19 +44,21 @@ class UserItem {
   User? user;
   Answers? answers;
   bool? allowInteractions;
-
-  UserItem({this.user, this.answers, this.allowInteractions});
+  final bool isPartialData;
+  UserItem({this.user, this.answers, this.allowInteractions, this.isPartialData = false});
 
   factory UserItem.fromJson(Map<String, dynamic> json) => UserItem(
     user: json["user"] != null ? User.fromJson(json["user"]) : null,
     answers: json["answers"] != null ? Answers.fromJson(json["answers"]) : null,
     allowInteractions: json["allowInteractions"],
+    isPartialData: json["isPartialData"] ?? false,
   );
 
   Map<String, dynamic> toJson() => {
     "user": user?.toJson(),
     "answers": answers?.toJson(),
     "allowInteractions": allowInteractions,
+    "isPartialData": isPartialData,
   };
 }
 

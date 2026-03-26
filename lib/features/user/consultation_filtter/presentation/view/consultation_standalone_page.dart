@@ -104,18 +104,18 @@ class _ConsultationViewState extends State<ConsultationView> {
               ),
             ),
             Expanded(
-              child: RefreshIndicator(
-                // ✅ هنا برا BlocBuilder
-                onRefresh: () => context.read<ConsultationCubit>().refresh(),
-                child: BlocBuilder<ConsultationCubit, ConsultationState>(
-                  builder: (context, state) {
-                    if (state.isLoading) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
+              child: BlocBuilder<ConsultationCubit, ConsultationState>(
+                builder: (context, state) {
+                  if (state.isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                    if (state.isFailure) {
-                      // ✅ لازم يكون ListView عشان الـ RefreshIndicator يشتغل
-                      return ListView(
+                  if (state.isFailure) {
+                    return RefreshIndicator(
+                      // ✅ هنا جوا
+                      onRefresh: () =>
+                          context.read<ConsultationCubit>().refresh(),
+                      child: ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
                         children: [
                           SizedBox(height: 200.h),
@@ -148,11 +148,16 @@ class _ConsultationViewState extends State<ConsultationView> {
                             ),
                           ),
                         ],
-                      );
-                    }
+                      ),
+                    );
+                  }
 
-                    if (state.isEmpty) {
-                      return ListView(
+                  if (state.isEmpty) {
+                    return RefreshIndicator(
+                      // ✅ هنا جوا
+                      onRefresh: () =>
+                          context.read<ConsultationCubit>().refresh(),
+                      child: ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
                         children: [
                           SizedBox(height: 200.h),
@@ -165,12 +170,17 @@ class _ConsultationViewState extends State<ConsultationView> {
                             ),
                           ),
                         ],
-                      );
-                    }
+                      ),
+                    );
+                  }
 
-                    return ListView.separated(
+                  return RefreshIndicator(
+                    // ✅ هنا جوا
+                    onRefresh: () =>
+                        context.read<ConsultationCubit>().refresh(),
+                    child: ListView.separated(
                       controller: _scrollController,
-                      physics: const AlwaysScrollableScrollPhysics(), // ✅ مهم
+                      physics: const AlwaysScrollableScrollPhysics(),
                       padding: EdgeInsets.symmetric(
                         horizontal: 20.w,
                         vertical: 8.h,
@@ -192,12 +202,12 @@ class _ConsultationViewState extends State<ConsultationView> {
                           isSelected: index == 0,
                         );
                       },
-                    );
-                  },
-                ),
+                    ),
+                  );
+                },
               ),
             ),
-        SizedBox(height: 100.h)
+            SizedBox(height: 100.h),
           ],
         ),
       ),

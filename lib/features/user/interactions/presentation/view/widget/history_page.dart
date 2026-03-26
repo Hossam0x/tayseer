@@ -37,7 +37,11 @@ class HistorypageState extends State<Historypage> {
           final filterKey = widget.selectedFilter.isEmpty
               ? "liked_you"
               : widget.selectedFilter;
-          context.read<InteractionsCubit>().fetchHistory(filter: filterKey);
+          final cubit = context.read<InteractionsCubit>();
+          final hasData =
+              cubit.state.historyData[filterKey]?.isNotEmpty ?? false;
+          // ✅ فقط fetch لو مفيش data
+          cubit.fetchHistory(filter: filterKey, forceRefresh: !hasData);
         }
       });
     }
@@ -52,12 +56,18 @@ class HistorypageState extends State<Historypage> {
           final filterKey = widget.selectedFilter.isEmpty
               ? "liked_you"
               : widget.selectedFilter;
-          context.read<InteractionsCubit>().fetchHistory(filter: filterKey);
+          final cubit = context.read<InteractionsCubit>();
+          final hasData =
+              cubit.state.historyData[filterKey]?.isNotEmpty ?? false;
+          // ✅ فقط fetch لو مفيش data للـ filter ده
+          cubit.fetchHistory(filter: filterKey, forceRefresh: !hasData);
           scrollToTop();
         }
       });
     }
   }
+
+
 
   @override
   void dispose() {
@@ -93,18 +103,22 @@ class HistorypageState extends State<Historypage> {
     if (mounted) setState(() => _isLoadingMore = false);
   }
 
-  Future<void> _onRefresh() async {
+    Future<void> _onRefresh() async {
     final cubit = context.read<InteractionsCubit>();
     if (widget.selectedFilter == "favorites") {
       await cubit.refreshFavorites();
     } else {
-      await cubit.fetchHistory(filter: widget.selectedFilter);
+      // ✅ forceRefresh: true عشان الـ pull-to-refresh يجيب data جديدة دايماً
+      await cubit.fetchHistory(
+        filter: widget.selectedFilter,
+        forceRefresh: true,
+      );
     }
   }
 
   int _getCrossAxisCount(BuildContext context) =>
       MediaQuery.of(context).size.width >= 600 ? 3 : 2;
-  double _getChildAspectRatio(int count) => count == 3 ? 0.65 : 0.7;
+  double _getChildAspectRatio(int count) => count == 3 ? 0.6 : 0.62;
 
   bool _shouldShowSubscriptionOverlay(InteractionsState state) {
     if (state.isSubscribed) return false;
@@ -138,9 +152,11 @@ class HistorypageState extends State<Historypage> {
                 SizedBox(height: 16.h),
                 CustomBotton(
                   title: context.tr("retry"),
-                  onPressed: () => context
-                      .read<InteractionsCubit>()
-                      .fetchHistory(filter: widget.selectedFilter),
+                  onPressed: () =>
+                      context.read<InteractionsCubit>().fetchHistory(
+                        filter: widget.selectedFilter,
+                        forceRefresh: true,
+                      ),
                 ),
               ],
             ),

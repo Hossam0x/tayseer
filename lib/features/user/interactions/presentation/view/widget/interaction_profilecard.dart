@@ -237,14 +237,14 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                             SizedBox(height: 6.h),
                             _buildBadge(
                               text: context.tr(widget.item.job),
-                              icon:AssetsData.workIcon,
+                              icon: '💼',
                             ),
                             SizedBox(height: 6.h),
                           ] else ...[
                             SizedBox(height: 6.h),
                             _buildBadge(
                               text: context.tr("no_job"),
-                              icon: AssetsData.workIcon,
+                              icon: '💼',
                             ),
                             SizedBox(height: 6.h),
                           ],
@@ -296,31 +296,35 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
   }
 
   Widget _buildBadge({required String text, String? icon}) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-      decoration: BoxDecoration(
-        color: const Color.fromRGBO(186, 186, 186, 0.24),
-        borderRadius: BorderRadius.circular(15.r),
-        border: Border.all(color: Colors.white.withOpacity(0.5), width: 0.5),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(
-            child: Text(
-              text,
-              style: Styles.textStyle14SemiBold.copyWith(
-                fontWeight: FontWeight.w400,
-                fontSize: 14.sp,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+  return Container(
+    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+    decoration: BoxDecoration(
+      color: const Color.fromRGBO(186, 186, 186, 0.24),
+      borderRadius: BorderRadius.circular(15.r),
+      border: Border.all(color: Colors.white.withOpacity(0.5), width: 0.5),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (icon != null) ...[
+          Text(icon, style: TextStyle(fontSize: 14.sp)),
+          SizedBox(width: 4.w),
         ],
-      ),
-    );
-  }
+        Flexible(
+          child: Text(
+            text,
+            style: Styles.textStyle14SemiBold.copyWith(
+              fontWeight: FontWeight.w400,
+              fontSize: 14.sp,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    ),
+  );
+}
 }
 
 class RemoveFavoriteDialog extends StatelessWidget {
