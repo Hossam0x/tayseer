@@ -1694,5 +1694,9 @@
   "earnings": "الأرباح",
   "earnings_log": "سجل الأرباح",
   "withdraw_request": "طلب سحب",
-  "deposit": "إيداع"
+  "deposit": "إيداع",
+  "enter_certificate_name": "يرجى إدخال اسم الشهادة",
+  "enter_issuing_entity": "يرجى إدخال الجهة المانحة",
+  "choose_year": "يرجى اختيار سنة الحصول",
+  "certificate_added_success": "تمت إضافة الشهادة بنجاح"
 }
