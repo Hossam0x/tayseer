@@ -3,12 +3,14 @@ import 'dart:developer';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/features/shared/profile/widgets/profile_posts_tab.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/models/user_advisor_profile_model.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/repositories/user_advisor_profile_repository.dart';
 import 'package:tayseer/my_import.dart';
 import 'user_advisor_profile_state.dart';
 
-class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
+class UserAdvisorProfileCubit
+    extends ProfilePostsCubitContract<UserAdvisorProfileState> {
   final UserAdvisorProfileRepository _repository;
   final String advisorId;
   final int _pageSize = 10;
@@ -20,6 +22,40 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     _initializeProfile();
     _setupSocketListeners();
   }
+
+  // ── ProfilePostsCubitContract implementation ──
+  @override
+  List<PostModel> get posts => state.posts;
+  @override
+  CubitStates get postsState => state.postsState;
+  @override
+  String? get postsErrorMessage => state.postsErrorMessage;
+  @override
+  bool get hasMore => state.hasMore;
+  @override
+  bool get isLoadingMore => state.isLoadingMore;
+  @override
+  CubitStates get shareActionState => state.shareActionState;
+  @override
+  String? get shareMessage => state.shareMessage;
+  @override
+  bool? get isShareAdded => state.isShareAdded;
+  @override
+  CubitStates get saveActionState => state.saveActionState;
+  @override
+  String? get saveMessage => state.saveMessage;
+  @override
+  CubitStates get deletePostActionState => state.deletePostActionState;
+  @override
+  String? get deletePostMessage => state.deletePostMessage;
+  @override
+  CubitStates get archivePostActionState => state.archivePostActionState;
+  @override
+  String? get archivePostMessage => state.archivePostMessage;
+  @override
+  CubitStates get blockUserActionState => state.blockUserActionState;
+  @override
+  String? get blockUserMessage => state.blockUserMessage;
 
   @override
   Future<void> close() {
@@ -95,6 +131,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     );
   }
 
+  @override
   Future<void> fetchPosts({
     bool loadMore = false,
     bool isSilent = false,

@@ -2,155 +2,44 @@ import 'package:flutter/cupertino.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_model.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_state.dart';
+import 'package:tayseer/features/shared/profile/widgets/bio_sections.dart';
 import 'package:tayseer/my_import.dart';
 
-/// Name + verification badge
-class BioNameSection extends StatelessWidget {
+// Re-export shared widgets under the original names for backward compatibility.
+typedef BioNameSection = _BioNameSectionWrapper;
+typedef BioProfessionalInfo = SharedBioProfessionalInfo;
+typedef BioLocationSection = _BioLocationSectionWrapper;
+typedef BioAboutSection = _BioAboutSectionWrapper;
+
+/// Thin wrapper so existing callers can pass a [ProfileModel] directly.
+class _BioNameSectionWrapper extends StatelessWidget {
   final ProfileModel profile;
-  const BioNameSection({super.key, required this.profile});
+  const _BioNameSectionWrapper({required this.profile});
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Flexible(
-          child: Text(
-            profile.name,
-            style: Styles.textStyle20SemiBold.copyWith(
-              color: AppColors.blueText,
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        if (profile.isVerified) ...[
-          Gap(8.w),
-          Icon(Icons.verified, color: Colors.blue, size: 20.w),
-        ],
-      ],
-    );
-  }
+  Widget build(BuildContext context) =>
+      SharedBioNameSection(name: profile.name, isVerified: profile.isVerified);
 }
 
-/// Specialization + years of experience
-class BioProfessionalInfo extends StatelessWidget {
-  final String? displaySpecialization;
-  final String? displayYearsExperience;
-  const BioProfessionalInfo({
-    super.key,
-    this.displaySpecialization,
-    this.displayYearsExperience,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final hasSpec =
-        displaySpecialization != null && displaySpecialization!.isNotEmpty;
-    final hasExp =
-        displayYearsExperience != null && displayYearsExperience!.isNotEmpty;
-
-    if (!hasSpec && !hasExp) return const SizedBox.shrink();
-
-    String specText = '';
-    if (hasSpec) {
-      specText = context.tr(displaySpecialization!);
-      if (!context.isArabicLang) {
-        specText = specText
-            .split(' ')
-            .map(
-              (w) =>
-                  w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '',
-            )
-            .join(' ');
-      }
-    }
-
-    String expText = '';
-    if (hasExp) {
-      expText = context.tr(displayYearsExperience!);
-      expText = context.isArabicLang
-          ? '${expText.replaceAll('-', 'الي')} ${context.tr('years_experience')}'
-          : '${expText.replaceAll('-', 'to')} ${context.tr('years_experience')}';
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (hasSpec)
-          Text(
-            specText,
-            style: Styles.textStyle14.copyWith(
-              color: AppColors.secondary800,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        if (hasSpec && hasExp) Gap(4.h),
-        if (hasExp)
-          Text(
-            expText,
-            style: Styles.textStyle14Meduim.copyWith(
-              color: AppColors.secondary800,
-            ),
-          ),
-        Gap(8.h),
-      ],
-    );
-  }
-}
-
-/// Location row
-class BioLocationSection extends StatelessWidget {
+class _BioLocationSectionWrapper extends StatelessWidget {
   final ProfileModel profile;
-  const BioLocationSection({super.key, required this.profile});
+  const _BioLocationSectionWrapper({required this.profile});
 
   @override
-  Widget build(BuildContext context) {
-    if (profile.location == null || profile.location!.isEmpty)
-      return const SizedBox.shrink();
-
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4.h),
-      child: Row(
-        children: [
-          AppImage(AssetsData.locationIcon, width: 12.w),
-          Gap(4.w),
-          Expanded(
-            child: Text(
-              profile.location!,
-              style: Styles.textStyle14.copyWith(color: AppColors.secondary800),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      SharedBioLocationSection(location: profile.location);
 }
 
-/// About you text
-class BioAboutSection extends StatelessWidget {
+class _BioAboutSectionWrapper extends StatelessWidget {
   final ProfileModel profile;
-  const BioAboutSection({super.key, required this.profile});
+  const _BioAboutSectionWrapper({required this.profile});
 
   @override
-  Widget build(BuildContext context) {
-    if (profile.aboutYou.isEmpty) return const SizedBox.shrink();
-
-    return Padding(
-      padding: EdgeInsets.only(top: 8.h, bottom: 24.h),
-      child: Text(
-        profile.aboutYou,
-        style: Styles.textStyle14.copyWith(
-          color: AppColors.infoText,
-          height: 1.5,
-        ),
-        textAlign: TextAlign.start,
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      SharedBioAboutSection(aboutYou: profile.aboutYou);
 }
 
-/// Consultation dashboard card (approved advisors only)
+/// Consultation dashboard card (approved advisors only).
 class BioConsultationCard extends StatelessWidget {
   const BioConsultationCard({super.key});
 

@@ -1,14 +1,13 @@
-import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
-import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/certificates/certificates_cubit.dart';
+import 'package:tayseer/features/shared/profile/data/repositories/certificates_repository.dart';
+import 'package:tayseer/features/shared/profile/data/repositories/ratings_repository.dart';
+import 'package:tayseer/features/shared/profile/cubit/certificates/certificates_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/ratings/ratings_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_tabs_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_tabs_state.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/tabs/posts/posts_tab.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/tabs/profile_certificates_section.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/tabs/ratings/ratings_tab.dart';
-import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
+import 'package:tayseer/features/shared/profile/cubit/ratings/ratings_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/posts_tab.dart';
+import 'package:tayseer/features/shared/profile/widgets/certificates/profile_certificates_section.dart';
+import 'package:tayseer/features/shared/profile/widgets/ratings/ratings_tab.dart';
+import 'package:tayseer/features/shared/profile/cubit/profile_tabs_cubit.dart';
+import 'package:tayseer/features/shared/profile/widgets/profile_tab_bar.dart';
 import 'package:tayseer/my_import.dart';
 
 class ProfileTabsSection extends StatefulWidget {
@@ -30,28 +29,20 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
   @override
   void initState() {
     super.initState();
-
     _tabController = TabController(length: _tabs.length, vsync: this);
-
-    // Create Cubits
     _certificatesCubit = CertificatesCubit(getIt<CertificatesRepository>());
     _ratingsCubit = RatingsCubit(getIt<RatingsRepository>());
     _tabsCubit = ProfileTabsCubit();
-
-    // Listen to TabController for swipe changes only
-    _tabController.addListener(_onTabControllerChanged);
-
-    // Initial load (optional if View already loaded it, but safe to keep)
-    // _loadDataForTab(0); // View usually loads posts initially via ProfileCubit
+    _tabController.addListener(_onTabChanged);
   }
 
-  void _onTabControllerChanged() {
+  void _onTabChanged() {
     if (!_tabController.indexIsChanging) {
       _tabsCubit.updateIndex(_tabController.index);
     }
   }
 
-  Future<void> _loadDataForTabIfNeeded(int index) async {
+  Future<void> _loadTabIfNeeded(int index) async {
     switch (index) {
       case 1:
         if (!_certificatesCubit.state.hasLoadedOnce) {
@@ -66,7 +57,7 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
     }
   }
 
-  void _refreshCurrentTab(int index) {
+  void _refreshTab(int index) {
     switch (index) {
       case 0:
         context.read<ProfileCubit>().fetchPosts();
@@ -82,7 +73,7 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
 
   @override
   void dispose() {
-    _tabController.removeListener(_onTabControllerChanged);
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     _certificatesCubit.close();
     _ratingsCubit.close();
@@ -99,114 +90,52 @@ class _ProfileTabsSectionState extends State<ProfileTabsSection>
         BlocProvider.value(value: _tabsCubit),
       ],
       child: BlocListener<ProfileTabsCubit, ProfileTabsState>(
+        listenWhen: (prev, curr) =>
+            prev.selectedIndex != curr.selectedIndex ||
+            prev.refreshTimestamp != curr.refreshTimestamp,
         listener: (context, state) {
-          if (state.refreshTimestamp != 0) {
-            _refreshCurrentTab(state.selectedIndex);
-          }
+          if (state.refreshTimestamp != 0) _refreshTab(state.selectedIndex);
           if (state.selectedIndex != _tabController.index) {
             _tabController.animateTo(state.selectedIndex);
           }
-          _loadDataForTabIfNeeded(state.selectedIndex);
+          _loadTabIfNeeded(state.selectedIndex);
         },
-        listenWhen: (previous, current) =>
-            previous.selectedIndex != current.selectedIndex ||
-            previous.refreshTimestamp != current.refreshTimestamp,
         child: SliverToBoxAdapter(
-          child: Column(children: [_buildTabsHeader(), _buildTabContent()]),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTabsHeader() {
-    final bool isArabic =
-        context.read<LanguageCubit>().state.languageCode == 'ar';
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+          child: Column(
             children: [
-              Transform.translate(
-                offset: Offset(isArabic ? 110.w : -110.w, 0),
-                child: TabBar(
-                  controller: _tabController,
-                  isScrollable: true,
-                  labelPadding: EdgeInsets.symmetric(horizontal: 8.w),
-                  indicatorColor: AppColors.blackColor,
-                  indicatorSize: TabBarIndicatorSize.label,
-                  indicatorPadding: EdgeInsets.zero,
-                  indicator: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: AppColors.blackColor,
-                        width: 1.5.h,
-                      ),
-                    ),
-                  ),
-                  dividerHeight: 0,
-                  labelColor: AppColors.blackColor,
-                  unselectedLabelColor: AppColors.secondary400,
-                  labelStyle: Styles.textStyle16Bold,
-                  unselectedLabelStyle: Styles.textStyle14,
-                  tabs: _tabs.map((tab) {
-                    return Tab(
-                      height: 33.w,
-                      child: Column(
-                        children: [
-                          Text(context.tr(tab)),
-                          Gap(4.h),
-                          Container(width: 75.w, color: Colors.transparent),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                  onTap: (index) {
-                    _tabsCubit.changeTab(index);
-                  },
-                ),
+              ProfileTabBar(
+                tabController: _tabController,
+                tabs: _tabs,
+                tabsCubit: _tabsCubit,
+              ),
+              BlocBuilder<ProfileTabsCubit, ProfileTabsState>(
+                buildWhen: (prev, curr) =>
+                    prev.selectedIndex != curr.selectedIndex,
+                builder: (context, state) {
+                  switch (state.selectedIndex) {
+                    case 0:
+                      return const PostsTab();
+                    case 1:
+                      return ProfileCertificatesSection(
+                        isMe: true,
+                        key: const ValueKey('certificates_tab'),
+                        advisorId: '',
+                      );
+                    case 2:
+                      return RatingsTab(
+                        isMe: true,
+                        key: const ValueKey('ratings_tab'),
+                        advisorId: '',
+                      );
+                    default:
+                      return const SizedBox.shrink();
+                  }
+                },
               ),
             ],
           ),
-          Divider(height: 1.h, color: Colors.grey.shade300),
-        ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildTabContent() {
-    return BlocBuilder<ProfileTabsCubit, ProfileTabsState>(
-      buildWhen: (previous, current) =>
-          previous.selectedIndex != current.selectedIndex,
-      builder: (context, state) {
-        // Use IndexedStack or just switch to avoid state loss if wanted?
-        // But switching widgets is standard here.
-        // The user asked for performance. "not rebuild every tab switch".
-        // Actually, keeping state alive (AutomaticKeepAlive) is key for performance + IndexedStack.
-        // But SliverToBoxAdapter -> Column -> Content.
-        // If we use simple switch, we lose state of scroll position in inner lists unless we use PageStorageKeys.
-        // The previous code verified using simple switch.
-        // We will stick to simple switch but wrapped in Builder to restrict rebuild to this area only.
-        switch (state.selectedIndex) {
-          case 0:
-            return const PostsTab();
-          case 1:
-            return ProfileCertificatesSection(
-              isMe: true,
-              key: const ValueKey('certificates_tab'),
-              advisorId: '',
-            );
-          case 2:
-            return RatingsTab(
-              isMe: true,
-              key: const ValueKey('ratings_tab'),
-              advisorId: '',
-            );
-          default:
-            return const SizedBox.shrink();
-        }
-      },
     );
   }
 }

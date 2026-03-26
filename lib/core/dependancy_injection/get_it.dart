@@ -32,17 +32,17 @@ import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository_impl.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/archive_repository.dart';
-import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
-import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository_impl.dart';
+import 'package:tayseer/features/shared/profile/data/repositories/certificates_repository.dart';
+import 'package:tayseer/features/shared/profile/data/repositories/certificates_repository_impl.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository_impl.dart';
-import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
-import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository_impl.dart';
+import 'package:tayseer/features/shared/profile/data/repositories/ratings_repository.dart';
+import 'package:tayseer/features/shared/profile/data/repositories/ratings_repository_impl.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_cubits.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/certificates/certificates_cubit.dart';
+import 'package:tayseer/features/shared/profile/cubit/certificates/certificates_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates/edit_certificate_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/ratings/ratings_cubit.dart';
+import 'package:tayseer/features/shared/profile/cubit/ratings/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository_impl.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
@@ -307,7 +307,12 @@ Future<void> setupGetIt() async {
   );
 
   getIt.registerLazySingleton<AccountManagementRepository>(
-    () => AccountManagementRepositoryImpl(getIt<ApiService>()),
+    () => AccountManagementRepositoryImpl(
+      apiService: getIt<ApiService>(),
+      suspendEndpoint: '/advisor/suspend',
+      deleteEndpoint: '/advisor/deleteUser',
+      deleteMethod: 'delete',
+    ),
   );
 
   getIt.registerLazySingleton<AdvisorPackagesRepository>(
@@ -417,10 +422,8 @@ Future<void> setupGetIt() async {
     () => MarriageRepositoryImpl(getIt<ApiService>()),
   );
 
-  // User
-  getIt.registerFactory<UserAccountManagementRepository>(
-    () => UserAccountManagementRepositoryImpl(getIt<ApiService>()),
-  );
+  // User account management — uses shared repo with user-specific endpoints
+  // (no getIt registration needed; view creates it directly with endpoints)
 
   getIt.registerLazySingleton<FollowersRepository>(
     () => FollowersRepositoryImpl(getIt<ApiService>()),

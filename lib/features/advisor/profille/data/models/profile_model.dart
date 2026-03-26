@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
+import 'package:tayseer/features/shared/profile/extensions/profile_extensions.dart';
 
-class ProfileModel extends Equatable {
+class ProfileModel extends Equatable with ProfileProfessionalInfoMixin {
   final String name;
   final String image;
   final String username;
@@ -10,8 +11,11 @@ class ProfileModel extends Equatable {
   final bool isVerified;
   final String approvalKey;
   final String? location;
+  @override
   final String? yearsOfExperience;
+  @override
   final String? professionalSpecialization;
+  @override
   final String? jobGrade;
 
   const ProfileModel({
@@ -110,50 +114,4 @@ class ProfileModel extends Equatable {
   ];
 }
 
-// إضافة Extension للتحويل
-extension ProfileModelExtension on ProfileModel {
-  String _mapExperienceKey(String? value) {
-    if (value == null || value.isEmpty) return '';
-    if (value.startsWith('experience_')) return value;
-
-    // Map numeric or bound-based values to keys
-    if (value == '2' || value == '0' || value == '0-2') return 'experience_0_2';
-    if (value == '5' || value == '3' || value == '2-5') return 'experience_2_5';
-    if (value == '10' || value == '5-10') return 'experience_5_10';
-    if (value == '11' || value == '10+') return 'experience_10_plus';
-
-    return value;
-  }
-
-  // الحصول على التخصص للعرض (يرجع المفتاح للترجمة)
-  String? get displaySpecialization {
-    if (professionalSpecialization == null ||
-        professionalSpecialization!.isEmpty) {
-      return null;
-    }
-    return professionalSpecialization;
-  }
-
-  // الحصول على المنصب للعرض (يرجع المفتاح للترجمة)
-  String? get displayJobGrade {
-    if (jobGrade == null || jobGrade!.isEmpty) {
-      return null;
-    }
-    return jobGrade;
-  }
-
-  // الحصول على سنوات الخبرة للعرض (يرجع المفتاح للترجمة)
-  String? get displayYearsExperience {
-    if (yearsOfExperience == null || yearsOfExperience!.isEmpty) {
-      return null;
-    }
-    return _mapExperienceKey(yearsOfExperience);
-  }
-
-  // التحقق مما إذا كان هناك بيانات للعرض
-  bool get hasProfessionalInfo {
-    return (displaySpecialization != null &&
-            displaySpecialization!.isNotEmpty) ||
-        (displayYearsExperience != null && displayYearsExperience!.isNotEmpty);
-  }
-}
+// Professional info display logic is provided via ProfileProfessionalInfoMixin.
