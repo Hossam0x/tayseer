@@ -1,4 +1,4 @@
-import 'package:tayseer/core/widgets/custom_error_view.dart';
+import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_state.dart';
@@ -148,22 +148,34 @@ class UserPublicProfileBio extends StatelessWidget {
             profile.availableForMarry
                 ? Padding(
                     padding: EdgeInsets.only(top: 10.h),
-                    child: CustomClick(
-                      onTap: () {
-                        context.pushNamed(
-                          AppRouter.kMarriageView,
-                          arguments: {'personId': profile.id},
-                        );
-                      },
-                      child: CustomBotton(
-                        width: 200.w,
-                        height: 40.h,
-                        backGroundcolor: AppColors.primary400,
-                        title: context.tr('view_marriage_profile'),
-                        onPressed: isBlocked
-                            ? null
-                            : () {}, // CustomClick handles it
-                      ),
+                    child: CustomBotton(
+                      width: 200.w,
+                      height: 40.h,
+                      backGroundcolor: AppColors.primary400,
+                      title: context.tr('view_marriage_profile'),
+                      onPressed: isBlocked
+                          ? null
+                          : () {
+                              context.pushNamed(
+                                AppRouter.kMarriageView,
+                                arguments: {
+                                  'personId': profile.id,
+                                  'fromInteractions': false,
+                                  'isFavorite': false,
+                                  'interactionUser': InteractionUserModel(
+                                    userId: profile.id,
+                                    name: profile.name,
+                                    age: profile.age,
+                                    country: profile.location ?? '',
+                                    day: '',
+                                    job: '',
+                                    image: profile.image ?? '',
+                                    isverified: profile.isVerified ?? false,
+                                    isImageBlurred: profile.imageBlur ?? false,
+                                  ),
+                                },
+                              );
+                            },
                     ),
                   )
                 : Container(
