@@ -106,10 +106,12 @@ class CommentCard extends StatelessWidget {
                 isEditLoading: isEditLoading,
               ),
             ),
-            if (comment.hasMoreReplies)
+            // ✅ FIXED: شرط واحد بس وكافي - لو عدد الردود الكلي أكبر من المحمل فعلاً
+            if (comment.repliesNumber > comment.replies.length)
               _LoadMoreButton(
                 isLoading: isLoadingReplies,
                 onTap: () => callbacks.onLoadReplies?.call(comment.id),
+                remainingCount: comment.repliesNumber - comment.replies.length,
               ),
           ],
         ),
@@ -347,12 +349,16 @@ class _ShowRepliesButton extends StatelessWidget {
 // ══════════════════════════════════════════════════════════════════════════════
 // Load More Button
 // ══════════════════════════════════════════════════════════════════════════════
-
 class _LoadMoreButton extends StatelessWidget {
   final bool isLoading;
   final VoidCallback? onTap;
+  final int? remainingCount; // ✅ NEW
 
-  const _LoadMoreButton({required this.isLoading, this.onTap});
+  const _LoadMoreButton({
+    required this.isLoading,
+    this.onTap,
+    this.remainingCount,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -371,7 +377,12 @@ class _LoadMoreButton extends StatelessWidget {
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               child: Text(
-                context.tr(AppStrings.showMoreReplies),
+                // ✅ MODIFIED: لو فيه عدد متبقي نعرضه
+                remainingCount != null && remainingCount! > 0
+                    ? context
+                          .tr(AppStrings.showNReplies)
+                          .replaceFirst('{}', '$remainingCount')
+                    : context.tr(AppStrings.showMoreReplies),
                 style: Styles.textStyle12SemiBold.copyWith(
                   color: Colors.grey.shade600,
                 ),
