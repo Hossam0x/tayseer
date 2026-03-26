@@ -1,8 +1,9 @@
+// lib/features/user/questions/data/repo/questions_repo_impl.dart
+
 import 'dart:convert';
 import 'dart:developer';
 
 import 'package:dartz/dartz.dart';
-import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/functions/upload_imageandvideo_to_api.dart';
 import 'package:tayseer/core/models/login_data.dart';
 import 'package:tayseer/features/user/questions/data/repo/questions_repo.dart';
@@ -24,10 +25,6 @@ class QuestionsRepoImpl implements QuestionsRepo {
   // Shared error handling wrapper
   // ─────────────────────────────────────────────────────
 
-  /// Wraps any API call with consistent error handling.
-  ///
-  /// Catches [DioException] and generic exceptions, returning
-  /// appropriate [ServerFailure] messages.
   Future<Either<Failure, T>> _safeApiCall<T>(
     Future<Either<Failure, T>> Function() apiCall,
   ) async {
@@ -321,6 +318,36 @@ class QuestionsRepoImpl implements QuestionsRepo {
         );
       }
       return right(null);
+    });
+  }
+
+  // ─────────────────────────────────────────────────────
+  // ✅ NEW: Create Face Verification Session (Didit)
+  // ─────────────────────────────────────────────────────
+
+  @override
+  Future<Either<Failure, String>> createFaceVerificationSession() {
+    return _safeApiCall(() async {
+      final response = await apiService.get(
+        endPoint: '/user/verify-face-didit',
+      );
+
+      final success = response['success'] ?? false;
+      if (!success) {
+        return left(
+          ServerFailure(
+            response['message'] ?? 'فشل إنشاء جلسة التحقق من الوجه',
+          ),
+        );
+      }
+
+      // ⚠️ عدّل هنا حسب شكل الـ response اللي الـ Backend بيرجعه
+      final sessionToken = response['data']?['sessionToken'] as String?;
+      if (sessionToken == null || sessionToken.isEmpty) {
+        return left(ServerFailure('لم يتم استلام رمز الجلسة'));
+      }
+
+      return right(sessionToken);
     });
   }
 }

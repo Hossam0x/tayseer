@@ -23,6 +23,10 @@ PODS:
   - CryptoSwift (1.8.4)
   - device_info_plus (0.0.1):
     - Flutter
+  - didit_sdk (3.4.2):
+    - DiditSDK (~> 3.2)
+    - Flutter
+  - DiditSDK (3.2.7)
   - DKImagePickerController/Core (4.3.9):
     - DKImagePickerController/ImageDataManager
     - DKImagePickerController/Resource
@@ -279,6 +283,8 @@ DEPENDENCIES:
   - camera_avfoundation (from `.symlinks/plugins/camera_avfoundation/ios`)
   - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
+  - didit_sdk (from `.symlinks/plugins/didit_sdk/ios`)
+  - DiditSDK (from `https://raw.githubusercontent.com/didit-protocol/sdk-ios/main/DiditSDK.podspec`)
   - emoji_picker_flutter (from `.symlinks/plugins/emoji_picker_flutter/ios`)
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - firebase_auth (from `.symlinks/plugins/firebase_auth/ios`)
@@ -372,6 +378,10 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/connectivity_plus/ios"
   device_info_plus:
     :path: ".symlinks/plugins/device_info_plus/ios"
+  didit_sdk:
+    :path: ".symlinks/plugins/didit_sdk/ios"
+  DiditSDK:
+    :podspec: https://raw.githubusercontent.com/didit-protocol/sdk-ios/main/DiditSDK.podspec
   emoji_picker_flutter:
     :path: ".symlinks/plugins/emoji_picker_flutter/ios"
   file_picker:
@@ -467,6 +477,8 @@ SPEC CHECKSUMS:
   connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
   CryptoSwift: e64e11850ede528a02a0f3e768cec8e9d92ecb90
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
+  didit_sdk: 8de994f09872349d2c6520f8aa17d5e893e5c35b
+  DiditSDK: 7255e1d3239d69d6fe74e04fd72e9083577026db
   DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
   emoji_picker_flutter: ece213fc274bdddefb77d502d33080dc54e616cc
@@ -541,6 +553,6 @@ SPEC CHECKSUMS:
   ZIPFoundation: dfd3d681c4053ff7e2f7350bc4e53b5dba3f5351
   ZPNs: 73bad0046a74e37315201053f9a0e7ac625d9436
 
-PODFILE CHECKSUM: 4c87e78f6b9eb543973c9dc39f9a30d0872cffc6
+PODFILE CHECKSUM: c7317b9e8b28d682e4cb966b355d056e15bc950f
 
 COCOAPODS: 1.16.2

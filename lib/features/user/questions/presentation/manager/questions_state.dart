@@ -1,3 +1,5 @@
+// lib/features/user/questions/presentation/manager/questions_state.dart
+
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/user/questions/data/models/last_question_number_model.dart';
 
@@ -84,6 +86,7 @@ class QuestionsState {
     bool? isAiLoading,
     String? aiGeneratedText,
     String? aiErrorMessage,
+    bool clearFaceVerificationError = false,
   }) {
     return QuestionsState(
       answerQuestionsState: answerQuestionsState ?? this.answerQuestionsState,
@@ -100,8 +103,9 @@ class QuestionsState {
       lastQuestionNumberResponse:
           lastQuestionNumberResponse ?? this.lastQuestionNumberResponse,
       errorMessage: errorMessage ?? this.errorMessage,
-      faceVerificationError:
-          faceVerificationError ?? this.faceVerificationError,
+      faceVerificationError: clearFaceVerificationError
+          ? null
+          : (faceVerificationError ?? this.faceVerificationError),
       mainImage: mainImage ?? this.mainImage,
       images: images ?? this.images,
       blurEnabled: blurEnabled ?? this.blurEnabled,
@@ -128,7 +132,8 @@ class QuestionsState {
   bool get isVerificationSuccess =>
       faceVerificationState == CubitStates.success;
 
-  bool get isVerificationFailed => faceVerificationState == CubitStates.failure;
+  bool get isVerificationFailed =>
+      faceVerificationState == CubitStates.failure;
 
   bool get isVerificationInitial =>
       faceVerificationState == CubitStates.initial;
@@ -138,7 +143,6 @@ class QuestionsState {
   // ─────────────────────────────────────────────────────
 
   bool get hasMainImage => mainImage != null;
-
   bool get hasImages => images.isNotEmpty;
 
   // ─────────────────────────────────────────────────────
@@ -146,10 +150,7 @@ class QuestionsState {
   // ─────────────────────────────────────────────────────
 
   bool get isPartnerFilterLoading => partnerFilterState == CubitStates.loading;
-
   bool get isPartnerFilterSuccess => partnerFilterState == CubitStates.success;
-
   bool get isPartnerFilterFailed => partnerFilterState == CubitStates.failure;
-
   bool get isPartnerFilterInitial => partnerFilterState == CubitStates.initial;
 }
