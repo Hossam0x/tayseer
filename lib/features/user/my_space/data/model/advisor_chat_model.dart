@@ -52,6 +52,7 @@ class AdvisorChatRoomModel {
   final DateTime updatedAt;
   final int unreadCount;
   final bool isSystemChat;
+  final String? systemChatImage;
 
   AdvisorChatRoomModel({
     required this.id,
@@ -66,6 +67,7 @@ class AdvisorChatRoomModel {
     required this.updatedAt,
     required this.unreadCount,
     this.isSystemChat = false,
+    this.systemChatImage,
   });
 
   factory AdvisorChatRoomModel.fromJson(Map<String, dynamic> json) {
@@ -75,6 +77,10 @@ class AdvisorChatRoomModel {
       if (value is List && value.isNotEmpty) return value.first.toString();
       return value.toString();
     }
+
+    // Get system chat image from systemChatData
+    final String? systemImage = json['systemChatData']?['image']?.toString();
+    final bool isSystemChat = json['systemChat'] ?? false;
 
     // New API format uses 'otherUser'
     final otherUserJson = json['otherUser'] as Map<String, dynamic>?;
@@ -86,6 +92,21 @@ class AdvisorChatRoomModel {
         .toList();
     if (otherUser != null && !users.any((u) => u.id == otherUser.id)) {
       users.add(otherUser);
+    }
+
+    // If system chat, create a system user with the image
+    ChatUserModel senderUser;
+    if (isSystemChat) {
+      senderUser = ChatUserModel(
+        id: 'system',
+        name: 'System',
+        image: systemImage,
+        userType: 'System',
+      );
+    } else {
+      senderUser = otherUser ?? ChatUserModel.fromJson(
+        json['sender'] is Map<String, dynamic> ? json['sender'] : {},
+      );
     }
 
     return AdvisorChatRoomModel(
@@ -103,9 +124,7 @@ class AdvisorChatRoomModel {
              ? DateTime.tryParse(json['lastMessage']['sentAt'].toString())
              : null),
       status: extractString(json['status']),
-      sender: otherUser ?? ChatUserModel.fromJson(
-        json['sender'] is Map<String, dynamic> ? json['sender'] : {},
-      ),
+      sender: senderUser,
       createdAt: json['sentAt'] != null
           ? DateTime.tryParse(json['sentAt'].toString()) ?? DateTime.now()
           : (json['createdAt'] != null
@@ -115,7 +134,8 @@ class AdvisorChatRoomModel {
           ? DateTime.tryParse(json['updatedAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
       unreadCount: json['unreadCount'] ?? 0,
-      isSystemChat: json['systemChat'] ?? false,
+      isSystemChat: isSystemChat,
+      systemChatImage: systemImage,
     );
   }
 }

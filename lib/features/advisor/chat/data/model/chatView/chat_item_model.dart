@@ -32,6 +32,7 @@ class ChatRoom {
   final int unreadCount;
   final bool isBlocked;
   final bool isSystemChat;
+  final String? systemChatImage;
 
   ChatRoom({
     required this.id,
@@ -41,15 +42,20 @@ class ChatRoom {
     required this.unreadCount,
     this.isBlocked = false,
     this.isSystemChat = false,
+    this.systemChatImage,
   });
 
   factory ChatRoom.fromJson(Map<String, dynamic> json) {
     final List<ChatUser> parts = [];
+    String? systemImage;
+    
     if (json['otherUser'] != null) {
       parts.add(ChatUser.fromJson(json['otherUser'] as Map<String, dynamic>));
     } else if (json['systemChat'] == true) {
+      // Get system chat image from systemChatData
+      systemImage = json['systemChatData']?['image']?.toString();
       // Create a dummy system user if it's a system chat
-      parts.add(ChatUser(id: 'system', name: 'System'));
+      parts.add(ChatUser(id: 'system', name: 'System', image: systemImage));
     }
 
     return ChatRoom(
@@ -68,6 +74,7 @@ class ChatRoom {
       unreadCount: json['unreadCount'] ?? 0,
       isBlocked: json['blockExists'] ?? json['isBlocked'] ?? false,
       isSystemChat: json['systemChat'] ?? false,
+      systemChatImage: systemImage,
     );
   }
 
@@ -79,6 +86,7 @@ class ChatRoom {
     int? unreadCount,
     bool? isBlocked,
     bool? isSystemChat,
+    String? systemChatImage,
   }) {
     return ChatRoom(
       id: id ?? this.id,
@@ -88,6 +96,7 @@ class ChatRoom {
       unreadCount: unreadCount ?? this.unreadCount,
       isBlocked: isBlocked ?? this.isBlocked,
       isSystemChat: isSystemChat ?? this.isSystemChat,
+      systemChatImage: systemChatImage ?? this.systemChatImage,
     );
   }
 }

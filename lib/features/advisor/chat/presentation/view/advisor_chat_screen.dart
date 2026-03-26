@@ -53,7 +53,11 @@ class AdvisorChatScreen extends StatelessWidget {
             log('🚀 Creating ChatMessagesCubit for room: $chatRoomId');
             final cubit = getIt<ChatMessagesCubit>(param1: chatRoomId);
             cubit.setInitialBlocked(isBlocked);
-            cubit.loadInitialMessages(chatRoomId!, receiverId: receiverId);
+            cubit.loadInitialMessages(
+              chatRoomId!, 
+              receiverId: receiverId,
+              isSystemChat: isSystemChat,
+            );
             cubit.setupSocketListeners();
             return cubit;
           },

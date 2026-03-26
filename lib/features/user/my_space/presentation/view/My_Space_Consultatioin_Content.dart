@@ -67,8 +67,8 @@ class _MySpaceConsultationContentState
                 final String receiverId;
 
                 if (chatRoom.isSystemChat) {
-                  title = 'نظام تيسير';
-                  imageUrl = null; // سيتم عرض أيقونة افتراضية في ListItem
+                  title = 'System';
+                  imageUrl = chatRoom.systemChatImage; // استخدام الصورة من systemChatData
                   receiverId = 'system';
                 } else {
                   final otherUser = chatRoom.users.isNotEmpty
@@ -96,23 +96,31 @@ class _MySpaceConsultationContentState
                     cubit.setActiveChatRoom(chatRoom.id);
                     cubit.markMessageAsReadOnSocket(chatRoom.id);
 
+                    // تحضير الـ arguments
+                    final Map<String, dynamic> arguments = {
+                      'chatroomid': chatRoom.id,
+                      'username': title,
+                      'userimage': imageUrl,
+                      'isBlocked': chatRoom.isBlocked,
+                      'isHaveSession': chatRoom.isHaveSession,
+                      'isSystemChat': chatRoom.isSystemChat,
+                    };
+
+                    // في حالة System Chat نرسل system: true بدلاً من receiverid
+                    if (chatRoom.isSystemChat) {
+                      arguments['system'] = true;
+                    } else {
+                      arguments['receiverid'] = receiverId;
+                    }
+
                     context
                         .pushNamed(
                           AppRouter.kConversitionView,
-                          arguments: {
-                            'chatroomid': chatRoom.id,
-                            'receiverid': receiverId,
-                            'username': title,
-                            'userimage': imageUrl,
-                            'isBlocked': chatRoom.isBlocked,
-                            'isHaveSession': chatRoom.isHaveSession,
-                            'isSystemChat': chatRoom.isSystemChat,
-                          },
+                          arguments: arguments,
                         )
                         .then((_) {
                           if (context.mounted) {
                             cubit.setActiveChatRoom(null);
-                            cubit.getAdvisorChat();
                           }
                         });
                   },

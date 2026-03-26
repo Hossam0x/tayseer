@@ -58,6 +58,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   Future<void> loadInitialMessages(
     String chatRoomId, {
     String? receiverId,
+    bool isSystemChat = false,
   }) async {
     _currentChatRoomId = chatRoomId;
     _currentReceiverId = receiverId;
@@ -80,7 +81,11 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       setupSocketListeners();
 
       // Join the chat room via socket so the server starts delivering events.
-      if (receiverId != null) {
+      if (isSystemChat) {
+        // في حالة System Chat نرسل system: true
+        _socketHelper.send('joinChatRoom', {'system': true}, null);
+      } else if (receiverId != null) {
+        // في حالة المحادثات العادية نرسل targetId
         _socketHelper.send('joinChatRoom', {'targetId': receiverId}, null);
       }
     } catch (e) {
