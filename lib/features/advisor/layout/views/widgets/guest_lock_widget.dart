@@ -21,7 +21,7 @@ class GuestLockWidget extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      height: double.infinity,
+      height: MediaQuery.of(context).size.height, // ✅ always finite
       decoration: BoxDecoration(
         image: DecorationImage(
           image: AssetImage(AssetsData.homeBackgroundImage),
@@ -33,8 +33,8 @@ class GuestLockWidget extends StatelessWidget {
           if (showBackgroundImage)
             AppImage(
               AssetsData.homeBarBackgroundImage,
-              width: double.infinity,
-              height: context.height * 0.05,
+              width: MediaQuery.of(context).size.width, // ✅ was double.infinity
+              height: MediaQuery.of(context).size.height * 0.05,
               fit: BoxFit.cover,
             ),
 
@@ -45,9 +45,7 @@ class GuestLockWidget extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   AppImage(AssetsData.guestLockImage, width: 228),
-
                   const SizedBox(height: 24),
-
                   Text(
                     message,
                     textAlign: TextAlign.center,
@@ -55,9 +53,7 @@ class GuestLockWidget extends StatelessWidget {
                       color: AppColors.kTextGrey,
                     ),
                   ),
-
                   const SizedBox(height: 12),
-
                   Text(
                     description,
                     textAlign: TextAlign.center,
@@ -66,27 +62,12 @@ class GuestLockWidget extends StatelessWidget {
                       height: 1.5,
                     ),
                   ),
-
                   const SizedBox(height: 40),
-
                   CustomBotton(
                     radius: 16,
                     useGradient: true,
                     title: titleBott,
                     onPressed: onTap,
-
-                    //     () {
-                    //
-                    //
-                    //   // showDialog(
-                    //   //   context: context,
-                    //   //   builder: (context) {
-                    //   //     return Dialog(child: const LockPopUp());
-                    //   //   },
-                    //   // );
-                    //
-                    //   // context.pushNamed(AppRouter.kChooseGenderView);
-                    // },
                   ),
                 ],
               ),

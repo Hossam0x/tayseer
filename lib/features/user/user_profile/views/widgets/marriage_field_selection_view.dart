@@ -529,15 +529,16 @@ class _MarriageFieldSelectionViewState
       case 'maritalStatus':
         return {
           'titleKey': 'select_marital_status_title',
-          'items': [
-            'social_single',
-            'social_married',
-            'social_divorced',
-            'social_widowed',
-          ],
+          'items': kCurrentUserData?.gender == 'male'
+              ? [
+                  'social_single',
+                  'social_married',
+                  'social_divorced',
+                  'social_widowed',
+                ]
+              : ['F_social_single', 'F_social_divorced', 'F_social_widowed'],
           'showSearch': false,
         };
-
       case 'previouslyMarried':
         return {
           'titleKey': 'select_previously_married_title',
@@ -586,10 +587,10 @@ class _MarriageFieldSelectionViewState
         return {
           'titleKey': 'select_engagement_timeline_title',
           'items': [
-            'timeline_immediate',
-            'timeline_three_months',
-            'timeline_six_months',
-            'timeline_year',
+            'period_1_3_months', // ✅ نفس الـ create
+            'period_4_7_months',
+            'period_7_12_months',
+            'period_1_2_years',
           ],
           'showSearch': false,
         };
@@ -610,8 +611,8 @@ class _MarriageFieldSelectionViewState
         return {
           'titleKey': 'family', // أو 'select_family_acceptance_title'
           'items': [
-            'no_problem_children', // 'لا مانع لدي من إنجاب أطفال'
-            'do_not_want_children', // 'لا أرغب في إنجاب أطفال'
+            'no_problem_children', // ✅ نفس QuestionsData.familyOptions
+            'do_not_want_children',
           ],
           'showSearch': false,
         };
