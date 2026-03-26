@@ -1,18 +1,47 @@
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/wallet/data/cubit/wallet_cubit.dart';
-import 'package:tayseer/features/advisor/wallet/data/cubit/wallet_state.dart';
+import 'package:tayseer/features/advisor/wallet/view/cubit/wallet_cubit.dart';
+import 'package:tayseer/features/advisor/wallet/view/cubit/wallet_state.dart';
 import 'package:tayseer/features/advisor/wallet/view/widgets/transaction_item.dart';
 import 'package:tayseer/features/advisor/wallet/data/models/transaction_model.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/my_import.dart';
 
-class BookingsLogView extends StatelessWidget {
+class BookingsLogView extends StatefulWidget {
   const BookingsLogView({super.key});
 
   @override
+  State<BookingsLogView> createState() => _BookingsLogViewState();
+}
+
+class _BookingsLogViewState extends State<BookingsLogView> {
+  late final ScrollController _scrollController;
+  late final WalletCubit _cubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _cubit = getIt<WalletCubit>()..fetchEarnings(refresh: true);
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    final pos = _scrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 200) {
+      _cubit.fetchEarnings();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => getIt<WalletCubit>()..getAllTransactions(),
+    return BlocProvider.value(
+      value: _cubit,
       child: Scaffold(
         body: AdvisorBackground(
           child: Stack(
@@ -33,36 +62,47 @@ class BookingsLogView extends StatelessWidget {
                     Gap(16.h),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20.w),
-                      child: SimpleAppBar(title: context.tr('bookings_log')),
+                      child: SimpleAppBar(title: context.tr('earnings_log')),
                     ),
                     Gap(16.h),
-                    BlocBuilder<WalletCubit, WalletState>(
-                      builder: (context, state) {
-                        return Expanded(
-                          child: Skeletonizer(
-                            enabled: state.status == WalletStatus.loading,
+                    Expanded(
+                      child: BlocBuilder<WalletCubit, WalletState>(
+                        buildWhen: (p, c) =>
+                            p.earningsStatus != c.earningsStatus ||
+                            p.earnings != c.earnings,
+                        builder: (context, state) {
+                          final isLoading =
+                              state.earningsStatus == ListStatus.loading;
+                          final isLoadingMore =
+                              state.earningsStatus == ListStatus.loadingMore;
+                          final items = state.earnings;
+
+                          return Skeletonizer(
+                            enabled: isLoading,
                             child: ListView.builder(
-                              itemCount: state.status == WalletStatus.loading
+                              controller: _scrollController,
+                              itemCount: isLoading
                                   ? 10
-                                  : state.bookingTransactions.length,
-                              itemBuilder: (context, index) => TransactionItem(
-                                transaction:
-                                    state.status == WalletStatus.loading
-                                    ? TransactionModel(
-                                        id: '',
-                                        amount: 0,
-                                        displayAmount: '+000',
-                                        type: 'event',
-                                        eventTicketsNumber: 0,
-                                        formattedDate: '24 ديسمبر 2025',
-                                      )
-                                    : state.bookingTransactions[index],
-                                showTime: true,
-                              ),
+                                  : items.length + (isLoadingMore ? 1 : 0),
+                              itemBuilder: (context, i) {
+                                if (!isLoading && i == items.length) {
+                                  return Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 16.h,
+                                    ),
+                                    child: const Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  );
+                                }
+                                return TransactionItem(
+                                  transaction: isLoading ? _skeleton : items[i],
+                                );
+                              },
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -73,4 +113,13 @@ class BookingsLogView extends StatelessWidget {
       ),
     );
   }
+
+  static const _skeleton = TransactionModel(
+    id: '',
+    userId: '',
+    type: 'session_reservation',
+    amount: 0,
+    displayAmount: '+000',
+    currency: 'USD',
+  );
 }

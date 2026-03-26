@@ -8,6 +8,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_linux
   flutter_sound
   flutter_volume_controller
+  gtk
   pro_video_editor
   url_launcher_linux
   zego_express_engine

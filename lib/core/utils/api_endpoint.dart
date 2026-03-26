@@ -1,5 +1,6 @@
 class ApiEndPoint {
   static const String allStories = '/stories/all';
+  static const String myStories = '/stories/my-stories';
   static String specialStories([String? advisorId]) =>
       '/stories/special/${advisorId ?? ''}';
   static const String guestLogin = '/guest/login';
@@ -67,8 +68,9 @@ class ApiEndPoint {
   static const String followAdvisor = '/advisor/toggle-follow/';
   static const String changeIsAvaliableForSessions =
       '/advisor/changeIsAvaliableForSessions';
-  static const String wallet = '/wallet/';
-  static const String walletTransactions = '/wallet/transactions';
+  static const String wallet = '/new-wallet/';
+  static const String walletTransactions = '/new-wallet/transaction-history';
+  static const String walletEarnings = '/new-wallet/advisor-earnings';
   static const String reportReasons = '/report-reasons';
   static const String sendReport = "/reports/";
 }

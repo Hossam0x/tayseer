@@ -1,8 +1,8 @@
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
 import 'package:tayseer/my_import.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/archive_states.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_cubits.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_states.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart'
     as home_feed;
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
@@ -177,7 +177,10 @@ class _PostsTabBody extends StatelessWidget {
               return const SizedBox.shrink();
             }
 
-            return _PostItem(post: state.posts[index]);
+            return _PostItem(
+              key: ValueKey(state.posts[index].postId),
+              post: state.posts[index],
+            );
           },
         ),
       ),
@@ -187,7 +190,7 @@ class _PostsTabBody extends StatelessWidget {
 
 class _PostItem extends StatelessWidget {
   final PostModel post;
-  const _PostItem({required this.post});
+  const _PostItem({super.key, required this.post});
 
   @override
   Widget build(BuildContext context) {
@@ -213,6 +216,7 @@ class _PostItem extends StatelessWidget {
               onSave: (postId) => cubit.toggleSavePost(postId: postId),
               onDelete: (postId) => cubit.deletePost(postId: postId),
               onArchive: (postId) => cubit.unarchivePost(postId),
+
               onHide: (postId) => cubit.toggleHidePost(postId: postId),
               onBlock: (postId, advisorId) =>
                   cubit.blockUser(visiblePostId: postId, advisorId: advisorId),

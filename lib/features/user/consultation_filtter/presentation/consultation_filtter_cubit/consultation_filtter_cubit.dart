@@ -1,10 +1,8 @@
-// lib/features/user/consultation/presentation/cubit/consultation_cubit.dart
-
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayseer/features/filter/data/models/advisor_filter_request_model.dart';
 import 'package:tayseer/features/user/consultation_filtter/data/consultation_repo/consultation_repo.dart';
 import 'package:tayseer/features/user/consultation_filtter/presentation/consultation_filtter_cubit/consultation_filtter_state.dart';
-import 'package:tayseer/features/filter/data/models/advisor_filter_request_model.dart';
-
+import 'package:tayseer/my_import.dart';
+import 'package:tayseer/features/user/consultation_filtter/presentation/consultation_filtter_cubit/consultation_filtter_state.dart';
 class ConsultationCubit extends Cubit<ConsultationState> {
   final ConsultationFiltterRepo _repo;
 
@@ -12,12 +10,10 @@ class ConsultationCubit extends Cubit<ConsultationState> {
       : _repo = repo ?? ConsultationFiltterRepoImpl(),
         super(const ConsultationState());
 
-  // ─── استقبال نتيجة الفلتر من AdvisorFilterView بعد Navigator.pop ──────────
-
   Future<void> applyFilter(AdvisorFilterRequestModel request) async {
     emit(state.copyWith(
       status: ConsultationStatus.loading,
-      advisors: [], // مسح القديم
+      advisors: [],
     ));
 
     final result = await _repo.getFilteredAdvisors(request);
@@ -31,19 +27,15 @@ class ConsultationCubit extends Cubit<ConsultationState> {
         status: ConsultationStatus.success,
         advisors: paginated.advisors,
         currentPage: paginated.currentPage,
-        lastPage: paginated.lastPage,
-        total: paginated.total,
+        totalPages: paginated.totalPages,
+        totalCount: paginated.totalCount,
         lastRequest: request,
       )),
     );
   }
 
-  // ─── Load next page ───────────────────────────────────────────────────────
-
   Future<void> loadMore() async {
-    if (!state.hasNextPage || state.isLoadingMore || state.lastRequest == null) {
-      return;
-    }
+    if (!state.hasNextPage || state.isLoadingMore || state.lastRequest == null) return;
 
     emit(state.copyWith(status: ConsultationStatus.loadingMore));
 
@@ -62,9 +54,12 @@ class ConsultationCubit extends Cubit<ConsultationState> {
         status: ConsultationStatus.success,
         advisors: [...state.advisors, ...paginated.advisors],
         currentPage: paginated.currentPage,
-        lastPage: paginated.lastPage,
+        totalPages: paginated.totalPages,
         lastRequest: nextRequest,
       )),
     );
   }
+  Future<void> refresh() async {
+  await applyFilter(const AdvisorFilterRequestModel(page: 1));
+}
 }

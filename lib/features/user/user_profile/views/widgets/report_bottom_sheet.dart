@@ -1,6 +1,6 @@
 // features/user/user_profile/views/widgets/report_bottom_sheet.dart
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserReportBottomSheet extends StatefulWidget {

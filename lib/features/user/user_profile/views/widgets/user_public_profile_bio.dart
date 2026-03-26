@@ -1,6 +1,7 @@
+import 'package:tayseer/core/widgets/custom_error_view.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_state.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
@@ -95,25 +96,9 @@ class UserPublicProfileBio extends StatelessWidget {
 
   Widget _buildErrorBio(BuildContext context, String? errorMessage) {
     return SliverToBoxAdapter(
-      child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: AppColors.kRedColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: AppColors.kRedColor.withOpacity(0.3)),
-        ),
-        child: Column(
-          children: [
-            Icon(Icons.info_outline, color: AppColors.kRedColor, size: 32.w),
-            Gap(10.h),
-            Text(
-              errorMessage ?? context.tr('error_loading_data'),
-              style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+      child: CustomErrorView(
+        message: errorMessage,
+        onRetry: () => context.read<UserPublicProfileCubit>().fetchProfile(),
       ),
     );
   }
@@ -175,7 +160,9 @@ class UserPublicProfileBio extends StatelessWidget {
                         height: 40.h,
                         backGroundcolor: AppColors.primary400,
                         title: context.tr('view_marriage_profile'),
-                        onPressed: isBlocked ? null : () {}, // CustomClick handles it
+                        onPressed: isBlocked
+                            ? null
+                            : () {}, // CustomClick handles it
                       ),
                     ),
                   )

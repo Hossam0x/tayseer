@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -148,8 +149,8 @@ class GreetingProfileCard extends StatelessWidget {
                             Flexible(
                               // ✅
                               child: _buildBadge(
-                                text:  context.tr(item.country),
-                                icon: AssetsData.EgyFlagIcon,
+                                text:
+                                    '${CountryFlagUtils.getFlag(item.country)} ${context.tr(item.country)}',
                               ),
                             ),
                         ],
@@ -158,7 +159,7 @@ class GreetingProfileCard extends StatelessWidget {
                       SizedBox(height: 4.h),
 
                       if (item.job.isNotEmpty)
-                        _buildBadge(text: item.job, icon: AssetsData.workIcon),
+                        _buildBadge(text: context.tr(item.job), icon: AssetsData.workIcon),
                     ],
                   ),
                 ),
@@ -257,4 +258,6 @@ class GreetingProfileCard extends StatelessWidget {
       ),
     );
   }
+
+
 }

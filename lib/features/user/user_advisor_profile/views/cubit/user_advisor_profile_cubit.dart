@@ -229,7 +229,10 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     );
 
     // ⭐ استدعاء الـ API
-    final result = await _repository.toggleFollowUser(advisorId);
+    final result = await _repository.toggleFollowUser(
+      advisorId,
+      isCurrentlyFollowing: state.profile?.isFollowing ?? false,
+    );
 
     if (isClosed) return;
 
@@ -395,23 +398,37 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     bool connected = socketHelper.isConnected;
     if (!connected) {
       log('📡 Socket not connected, attempting to connect...');
-      emit(state.copyWith(isChatLoading: true, chatActionState: CubitStates.loading));
+      emit(
+        state.copyWith(
+          isChatLoading: true,
+          chatActionState: CubitStates.loading,
+        ),
+      );
       connected = await socketHelper.connect();
-      
+
       if (!connected) {
         log('❌ Failed to connect to socket');
-        emit(state.copyWith(
-          isChatLoading: false, 
-          chatActionState: CubitStates.failure,
-          chatErrorMessage: 'فشل الاتصال بخدمة المحادثة، يرجى المحاولة لاحقاً',
-        ));
+        emit(
+          state.copyWith(
+            isChatLoading: false,
+            chatActionState: CubitStates.failure,
+            chatErrorMessage:
+                'فشل الاتصال بخدمة المحادثة، يرجى المحاولة لاحقاً',
+          ),
+        );
         return;
       }
       log('✅ Socket connected successfully');
     }
 
     // ⭐ 3. البدء في عملية إنشاء الـ Room عبر السوكيت
-    emit(state.copyWith(isChatLoading: true, chatActionState: CubitStates.loading, chatErrorMessage: null));
+    emit(
+      state.copyWith(
+        isChatLoading: true,
+        chatActionState: CubitStates.loading,
+        chatErrorMessage: null,
+      ),
+    );
 
     // تنظيف وتهيئة الـ listeners (نستخدم listen بدلاً من legacy لتفادي التكرار)
     socketHelper.off('room_created');
@@ -434,11 +451,14 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
       if (!isClosed && state.isChatLoading) {
         log("⏱️ Chat room creation timeout reached");
         if (state.chatActionState == CubitStates.loading) {
-          emit(state.copyWith(
-            isChatLoading: false,
-            chatActionState: CubitStates.failure,
-            chatErrorMessage: 'انتهت مهلة إنشاء المحادثة، يرجى المحاولة مرة أخرى',
-          ));
+          emit(
+            state.copyWith(
+              isChatLoading: false,
+              chatActionState: CubitStates.failure,
+              chatErrorMessage:
+                  'انتهت مهلة إنشاء المحادثة، يرجى المحاولة مرة أخرى',
+            ),
+          );
         }
       }
     });

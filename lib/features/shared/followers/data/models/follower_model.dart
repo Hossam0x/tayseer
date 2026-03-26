@@ -10,6 +10,7 @@ class FollowerModel extends Equatable {
   final bool isVerified;
   final String userType; // ← Advisor أو User
   final bool isMe;
+  final bool imageBlur;
 
   const FollowerModel({
     required this.id,
@@ -20,6 +21,7 @@ class FollowerModel extends Equatable {
     this.isVerified = false,
     required this.userType,
     required this.isMe,
+    this.imageBlur = false,
   });
 
   factory FollowerModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +34,7 @@ class FollowerModel extends Equatable {
       isVerified: json['isVerified'] ?? json['verified'] ?? false,
       userType: json['userType'] ?? 'User',
       isMe: json['isMe'] ?? false,
+      imageBlur: json['imageBlur'] ?? false,
     );
   }
 
@@ -44,6 +47,7 @@ class FollowerModel extends Equatable {
     bool? isVerified,
     String? userType,
     bool? isMe,
+    bool? imageBlur,
   }) {
     return FollowerModel(
       id: id ?? this.id,
@@ -54,6 +58,7 @@ class FollowerModel extends Equatable {
       isVerified: isVerified ?? this.isVerified,
       userType: userType ?? this.userType,
       isMe: isMe ?? this.isMe,
+      imageBlur: imageBlur ?? this.imageBlur,
     );
   }
 
@@ -70,5 +75,6 @@ class FollowerModel extends Equatable {
     isVerified,
     userType,
     isMe,
+    imageBlur,
   ];
 }

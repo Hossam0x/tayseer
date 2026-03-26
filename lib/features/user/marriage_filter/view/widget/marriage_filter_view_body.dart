@@ -6,18 +6,35 @@ import 'package:tayseer/features/user/marriage_filter/view_models/marriage_filte
 import 'package:tayseer/my_import.dart';
 
 class MarriageFilterBody extends StatelessWidget {
-  const MarriageFilterBody({super.key});
+  const MarriageFilterBody({super.key, this.onBackPressed});
+
+  final VoidCallback? onBackPressed;
 
   @override
   Widget build(BuildContext context) {
     return CustomBackground(
       child: BlocConsumer<MarriageFilterCubit, MarriageFilterState>(
         listener: (context, state) {
-          if (state.marriageFilterStatus == CubitStates.success) {
-            context.pop();
-            context.pop();
+          if (state.marriageFilterStatus == CubitStates.loading) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => const Center(child: CustomloadingApp()),
+            );
+          } else if (state.marriageFilterStatus == CubitStates.success) {
+            // ✅ أغلق الـ loading dialog
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+            // ✅ ارجع من صفحة الفلتر
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
           } else if (state.marriageFilterStatus == CubitStates.failure) {
-            context.pop();
+            // ✅ أغلق الـ loading dialog
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
             ScaffoldMessenger.of(context).showSnackBar(
               CustomSnackBar(
                 context,
@@ -25,104 +42,125 @@ class MarriageFilterBody extends StatelessWidget {
                 isError: true,
               ),
             );
-          } else if (state.marriageFilterStatus == CubitStates.loading) {
-            showDialog(
-              context: context,
-              builder: (context) => const Center(child: CustomloadingApp()),
-            );
           }
         },
         builder: (context, state) {
-          return CustomScrollView(
-            slivers: [
-              _buildSliverAppBar(context),
+          final countryRaw = state.selectedFilters['country']?.toString();
+          final nationalityRaw = state.selectedFilters['nationality']
+              ?.toString();
 
-              // ✅ استخدام الـ Custom Widget
-              SliverToBoxAdapter(
-                child: CustomAgeAndCountrySection(
-                  ageRange: state.ageRange,
-                  onAgeRangeChanged: (values) {
-                    context.read<MarriageFilterCubit>().updateAgeRange(values);
-                  },
-                  countryValue: state.selectedFilters['country']?.toString(),
-                  nationalityValue: state.selectedFilters['nationality']
-                      ?.toString(),
-                  onCountryTap: () => _navigateToSelection(
-                    context,
-                    fieldKey: 'country',
-                    currentValue: state.selectedFilters['country'],
-                  ),
-                  onNationalityTap: () => _navigateToSelection(
-                    context,
-                    fieldKey: 'nationality',
-                    currentValue: state.selectedFilters['nationality'],
-                  ),
-                ),
-              ),
+          final countryDisplay =
+              (countryRaw != null &&
+                  countryRaw.isNotEmpty &&
+                  countryRaw != 'no_preference')
+              ? context.tr(countryRaw)
+              : null;
 
-              SliverToBoxAdapter(
-                child: CustomDataCard(
-                  sectionTitle: context.tr('data_and_activities'),
-                  items: [
-                    _buildRow(context, "verified_id", "isVerified"),
-                    _buildRow(context, "new_member", "isNew"),
-                    _buildRow(context, "photo_status", "imageBlur"),
-                    _buildRow(context, "gold_account", "goalMarry"),
-                  ],
-                ),
-              ),
+          final nationalityDisplay =
+              (nationalityRaw != null &&
+                  nationalityRaw.isNotEmpty &&
+                  nationalityRaw != 'no_preference')
+              ? context.tr(nationalityRaw)
+              : null;
 
-              SliverToBoxAdapter(
-                child: CustomDataCard(
-                  sectionTitle: context.tr('personal_data'),
-                  items: [
-                    _buildRow(context, "height", "height"),
-                    _buildRow(context, "marital_status", "maritalStatus"),
-                    _buildRow(context, "job", "job"),
-                    _buildRow(context, "education", "educationLevel"),
-                    _buildRow(context, "hobbies", "hobbies"),
-                  ],
-                ),
-              ),
+          return Directionality(
+            textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+            child: CustomScrollView(
+              slivers: [
+                _buildSliverAppBar(context),
 
-              SliverToBoxAdapter(
-                child: CustomDataCard(
-                  sectionTitle: context.tr('goals'),
-                  items: [
-                    _buildRow(context, "marriage", "goalMarry"),
-                    _buildRow(context, "engagement", "goalEngagment"),
-                    _buildRow(context, "travel", "goalTravel"),
-                    _buildRow(context, "family", "goalChildren"),
-                  ],
-                ),
-              ),
-
-              SliverToBoxAdapter(
-                child: CustomDataCard(
-                  sectionTitle: context.tr('religion_and_habits'),
-                  items: [
-                    _buildRow(
+                SliverToBoxAdapter(
+                  child: CustomAgeAndCountrySection(
+                    ageRange: state.ageRange,
+                    onAgeRangeChanged: (values) {
+                      context.read<MarriageFilterCubit>().updateAgeRange(
+                        values,
+                      );
+                    },
+                    countryValue: countryDisplay,
+                    nationalityValue: nationalityDisplay,
+                    onCountryTap: () => _navigateToSelection(
                       context,
-                      "religious_commitment",
-                      "religiousCommitment",
+                      fieldKey: 'country',
+                      currentValue: countryRaw,
                     ),
-                    _buildRow(context, "smoking", "smoker"),
-                    _buildRow(context, "hijab", "wearHijab"),
-                  ],
+                    onNationalityTap: () => _navigateToSelection(
+                      context,
+                      fieldKey: 'nationality',
+                      currentValue: nationalityRaw,
+                    ),
+                  ),
                 ),
-              ),
 
-              const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
+                SliverToBoxAdapter(
+                  child: CustomDataCard(
+                    sectionTitle: context.tr('data_and_activities'),
+                    items: [
+                      _buildRow(context, state, 'verified_id', 'isVerified'),
+                      _buildRow(context, state, 'new_member', 'isNew'),
+                      _buildRow(context, state, 'photo_status', 'imageBlur'),
+                      _buildRow(context, state, 'gold_account', 'goldAccount'),
+                    ],
+                  ),
+                ),
 
-              _buildApplyButton(context, state),
-            ],
+                SliverToBoxAdapter(
+                  child: CustomDataCard(
+                    sectionTitle: context.tr('personal_data'),
+                    items: [
+                      _buildRow(context, state, 'height', 'height'),
+                      _buildRow(
+                        context,
+                        state,
+                        'marital_status',
+                        'maritalStatus',
+                      ),
+                      _buildRow(context, state, 'job', 'job'),
+                      _buildRow(context, state, 'education', 'educationLevel'),
+                      _buildRow(context, state, 'hobbies', 'hobbies'),
+                    ],
+                  ),
+                ),
+
+                SliverToBoxAdapter(
+                  child: CustomDataCard(
+                    sectionTitle: context.tr('goals'),
+                    items: [
+                      _buildRow(context, state, 'marriage', 'goalMarry'),
+                      _buildRow(context, state, 'engagement', 'goalEngagment'),
+                      _buildRow(context, state, 'travel', 'goalTravel'),
+                      _buildRow(context, state, 'family', 'goalChildren'),
+                    ],
+                  ),
+                ),
+
+                SliverToBoxAdapter(
+                  child: CustomDataCard(
+                    sectionTitle: context.tr('religion_and_habits'),
+                    items: [
+                      _buildRow(
+                        context,
+                        state,
+                        'religious_commitment',
+                        'religiousCommitment',
+                      ),
+                      _buildRow(context, state, 'smoking', 'smoker'),
+                      _buildRow(context, state, 'hijab', 'wearHijab'),
+                    ],
+                  ),
+                ),
+
+                const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
+
+                _buildApplyButton(context, state),
+              ],
+            ),
           );
         },
       ),
     );
   }
 
-  /// ✅ دالة للتنقل إلى شاشة الاختيار
   Future<void> _navigateToSelection(
     BuildContext context, {
     required String fieldKey,
@@ -144,18 +182,22 @@ class MarriageFilterBody extends StatelessWidget {
 
   FilterItemModel _buildRow(
     BuildContext context,
+    MarriageFilterState state,
     String title,
     String fieldKey,
   ) {
-    final state = context.read<MarriageFilterCubit>().state;
     final value = state.selectedFilters[fieldKey];
 
     String displayValue = context.tr('no_preference');
-    if (value is String) {
-      displayValue = value.contains('_') ? context.tr(value) : value;
-    }
-    if (value is List) {
-      displayValue = "${value.length} ${context.tr('selected')}";
+
+    if (value is int) {
+      displayValue = '$value ${context.tr('cm')}';
+    } else if (value is String &&
+        value.isNotEmpty &&
+        value != 'no_preference') {
+      displayValue = context.tr(value);
+    } else if (value is List && value.isNotEmpty) {
+      displayValue = '${value.length} ${context.tr('selected')}';
     }
 
     return FilterItemModel(
@@ -178,7 +220,8 @@ class MarriageFilterBody extends StatelessWidget {
       title: Text(context.tr('filter_profiles'), style: Styles.textStyle18Bold),
       leading: IconButton(
         icon: const Icon(Icons.close, color: Colors.grey),
-        onPressed: () => context.pop(),
+        onPressed:
+            onBackPressed ?? () => context.pop(), // ✅ استخدم الـ callback
       ),
       actions: [
         TextButton(

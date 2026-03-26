@@ -328,3 +328,28 @@ class MarriageConstants {
     return result.where(isValidKey).toList();
   }
 }
+// lib/core/utils/country_flag_utils.dart
+class CountryFlagUtils {
+  static String getFlag(String country) {
+    final c = country.toLowerCase();
+    if (c.contains('saudi') || c.contains('سعودي')) return '🇸🇦';
+    if (c.contains('egypt') || c.contains('مصر')) return '🇪🇬';
+    if (c.contains('emirati') || c.contains('امارات')) return '🇦🇪';
+    if (c.contains('kuwait') || c.contains('كويت')) return '🇰🇼';
+    if (c.contains('qatar') || c.contains('قطر')) return '🇶🇦';
+    if (c.contains('bahrain') || c.contains('بحرين')) return '🇧🇭';
+    if (c.contains('jordan') || c.contains('أردن')) return '🇯🇴';
+    if (c.contains('palestin') || c.contains('فلسطين')) return '🇵🇸';
+    if (c.contains('morocco') || c.contains('مغرب')) return '🇲🇦';
+    if (c.contains('tunisia') || c.contains('تونس')) return '🇹🇳';
+    if (c.contains('syria') || c.contains('سوريا')) return '🇸🇾';
+    if (c.contains('iraq') || c.contains('عراق')) return '🇮🇶';
+    if (c.contains('libya') || c.contains('ليبيا')) return '🇱🇾';
+    if (c.contains('algeria') || c.contains('الجزائر')) return '🇩🇿';
+    if (c.contains('sudan') || c.contains('السودان')) return '🇸🇩';
+    if (c.contains('yemen') || c.contains('اليمن')) return '🇾🇪';
+    if (c.contains('oman') || c.contains('عمان')) return '🇴🇲';
+    if (c.contains('lebanon') || c.contains('لبنان')) return '🇱🇧';
+    return '🌍';
+  }
+}

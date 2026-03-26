@@ -1,4 +1,3 @@
-
 // ════════════════════════════════════════════════════════
 // advisor_filter_state.dart
 // ════════════════════════════════════════════════════════
@@ -34,21 +33,22 @@ class AdvisorFilterState extends Equatable {
 
   // ✅ فاضي تماماً — مفيش اختيارات افتراضية
   factory AdvisorFilterState.initial() => AdvisorFilterState(
-        priceRange: const RangeValues(0, 100),
-        selectedExperience: null,
-        selectedRating: 0,
-        selectedLanguages: const [],
-        selectedBadges: const [],
-        selectedDate: DateTime.now(),
-      );
+    priceRange: const RangeValues(0, 100),
+    selectedExperience: null,
+    selectedRating: 0,
+    selectedLanguages: const [],
+    selectedBadges: const [],
+    selectedDate: DateTime.now(),
+  );
 
   bool get isLoading => status == AdvisorFilterStatus.loading;
-bool get isFilterComplete =>
-    selectedExperience != null &&   // خبرة اتاختارت
-    selectedRating != 0 &&          // رأي اتاختار
-    selectedLanguages.isNotEmpty && // لغة واحدة على الأقل
-    selectedBadges.isNotEmpty &&    // شارة واحدة على الأقل
-    priceRange.start != priceRange.end;
+  // bool get isFilterComplete =>
+  //     selectedExperience != null &&   // خبرة اتاختارت
+  //     selectedRating != 0 &&          // رأي اتاختار
+  //     selectedLanguages.isNotEmpty && // لغة واحدة على الأقل
+  //     selectedBadges.isNotEmpty &&    // شارة واحدة على الأقل
+  //     priceRange.start != priceRange.end;
+  bool get isFilterComplete => true;
   AdvisorFilterState copyWith({
     RangeValues? priceRange,
     // ✅ Object? بدل String? عشان الـ sentinel يشتغل
@@ -77,13 +77,13 @@ bool get isFilterComplete =>
 
   @override
   List<Object?> get props => [
-        priceRange,
-        selectedExperience,
-        selectedRating,
-        selectedLanguages,
-        selectedBadges,
-        selectedDate,
-        status,
-        errorMessage,
-      ];
+    priceRange,
+    selectedExperience,
+    selectedRating,
+    selectedLanguages,
+    selectedBadges,
+    selectedDate,
+    status,
+    errorMessage,
+  ];
 }

@@ -2,20 +2,49 @@ import 'package:tayseer/core/enum/advisor_status.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/advisor_status_widget.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/bio_information.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_header.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/profile_stories_section.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/profile_tabs_section.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/stories/profile_tabs_section.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/my_import.dart';
 
-class ProfileView extends StatelessWidget {
+class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
 
   @override
+  State<ProfileView> createState() => _ProfileViewState();
+}
+
+class _ProfileViewState extends State<ProfileView>
+    with AutomaticKeepAliveClientMixin {
+  late final ProfileCubit _profileCubit;
+  late final StoriesCubit _storiesCubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileCubit = getIt<ProfileCubit>();
+    _storiesCubit = getIt<StoriesCubit>()
+      ..fetchStories(isSpecial: true, advisorId: null, context: context)
+      ..fetchMyStories();
+  }
+
+  @override
+  void dispose() {
+    // DO NOT close singleton cubits here as they are managed by GetIt
+    super.dispose();
+  }
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return Scaffold(
       body: AdvisorBackground(
         child: Stack(
@@ -40,18 +69,10 @@ class ProfileView extends StatelessWidget {
             SafeArea(
               child: MultiBlocProvider(
                 providers: [
-                  BlocProvider<ProfileCubit>(
-                    create: (_) => getIt<ProfileCubit>(),
-                  ),
-                  BlocProvider<StoriesCubit>(
-                    create: (_) => getIt<StoriesCubit>()
-                      ..fetchStories(
-                        isSpecial: true,
-                        advisorId: null,
-                        context: context,
-                      ),
-                  ),
+                  BlocProvider<ProfileCubit>.value(value: _profileCubit),
+                  BlocProvider<StoriesCubit>.value(value: _storiesCubit),
                   BlocProvider.value(value: getIt<ConnectivityCubit>()),
+                  BlocProvider.value(value: getIt<HomeCubit>()),
                 ],
                 child: Stack(children: [_ProfileContent()]),
               ),
@@ -99,8 +120,9 @@ class _ProfileContentState extends State<_ProfileContent> {
           listenWhen: (prev, curr) => !prev.isConnected && curr.isConnected,
           listener: (context, state) {
             final storiesCubit = context.read<StoriesCubit>();
-            if (storiesCubit.state.storiesState == CubitStates.failure ||
-                storiesCubit.state.storiesList.isEmpty) {
+            if (storiesCubit.state.mySpecialStoriesState ==
+                    CubitStates.failure ||
+                storiesCubit.state.mySpecialStories.isEmpty) {
               storiesCubit.fetchStories(
                 isSpecial: true,
                 advisorId: null,
@@ -122,45 +144,47 @@ class _ProfileContentState extends State<_ProfileContent> {
               advisorId: null,
               context: context,
             ),
+            context.read<StoriesCubit>().fetchMyStories(),
           ]);
         },
         color: AppColors.kprimaryColor,
         backgroundColor: AppColors.kWhiteColor,
         displacement: 40.h,
         edgeOffset: 0,
-        child: BlocBuilder<ProfileCubit, ProfileState>(
-          buildWhen: (previous, current) => previous.profile != current.profile,
-          builder: (context, state) {
-            return CustomScrollView(
-              controller: _scrollController,
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
-              ),
-              slivers: [
-                // Profile Header
-                const ProfileHeader(),
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
+          slivers: [
+            // Profile Header
+            const ProfileHeader(),
 
-                // Bio Information
-                const BioInformation(),
+            // Bio Information
+            const BioInformation(),
 
-                // Stories Section
-                const ProfileStoriesSection(advisorId: null),
-
-                // Spacing
-                SliverToBoxAdapter(child: Gap(20.h)),
-
-                // Posts Tabs Section or Account Review Content
-                if (advisorStatus == AdvisorStatus.disapproved ||
-                    advisorStatus == AdvisorStatus.pending)
-                  SliverToBoxAdapter(child: AdvisorStatusWidget())
-                else
-                  const ProfileTabsSection(),
-
-                // Bottom padding for better scrolling
-                SliverToBoxAdapter(child: Gap(100.h)),
-              ],
-            );
-          },
+            // Stories Section + Tabs — reactive to advisor status
+            BlocBuilder<HomeCubit, HomeState>(
+              buildWhen: (prev, curr) =>
+                  prev.currentAdvisorStatus != curr.currentAdvisorStatus,
+              builder: (context, homeState) {
+                final status = homeState.currentAdvisorStatus ?? advisorStatus;
+                final isApproved = status == AdvisorStatus.approved;
+                return SliverMainAxisGroup(
+                  slivers: [
+                    if (isApproved)
+                      const ProfileStoriesSection(advisorId: null),
+                    SliverToBoxAdapter(child: Gap(20.h)),
+                    if (isApproved)
+                      const ProfileTabsSection()
+                    else
+                      SliverToBoxAdapter(child: AdvisorStatusWidget()),
+                    SliverToBoxAdapter(child: Gap(100.h)),
+                  ],
+                );
+              },
+            ),
+          ],
         ),
       ),
     );

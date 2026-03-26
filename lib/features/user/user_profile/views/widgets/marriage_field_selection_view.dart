@@ -2,9 +2,9 @@
 // ⭐⭐⭐ COMPLETE FIXED VERSION WITH FULL TRANSLATION SUPPORT
 
 import 'package:tayseer/core/constant/marriage_constants.dart';
-import 'package:tayseer/features/user/questions/view/widget/categorized_multi_select_widget.dart';
-import 'package:tayseer/features/user/questions/view/widget/custom_ios_picker.dart';
-import 'package:tayseer/features/user/questions/view/widget/custom_selectable_list.dart';
+import 'package:tayseer/features/user/questions/presentation/widgets/categorized_multi_select_widget.dart';
+import 'package:tayseer/features/user/questions/presentation/widgets/custom_ios_picker.dart';
+import 'package:tayseer/features/user/questions/presentation/widgets/custom_selectable_list.dart';
 import 'package:tayseer/my_import.dart';
 
 class MarriageFieldSelectionView extends StatefulWidget {
@@ -265,22 +265,25 @@ class _MarriageFieldSelectionViewState
     debugPrint('🔍 Items count: ${items.length}');
 
     return Expanded(
-      child:  Container(
-      color: AppColors.kWhiteColor,
-      child: SelectableListWidget(
-        key: ValueKey(_selectedValue),  // ✅ هنا الحل - يعمل rebuild لما تتغير القيمة
-        items: items,
-        showSearch: fieldData['showSearch'] as bool,
-        searchHintKey: fieldData['searchHint'] as String?,
-        initialSelectedKey: _selectedValue ?? initialSelectedKey, // ✅ يعكس الاختيار الحالي
-        primaryColor: AppColors.kprimaryColor,
-        onChanged: (key, translatedValue) {
-          setState(() {
-            _selectedValue = key;
-          });
-        },
+      child: Container(
+        color: AppColors.kWhiteColor,
+        child: SelectableListWidget(
+          key: ValueKey(
+            _selectedValue,
+          ), // ✅ هنا الحل - يعمل rebuild لما تتغير القيمة
+          items: items,
+          showSearch: fieldData['showSearch'] as bool,
+          searchHintKey: fieldData['searchHint'] as String?,
+          initialSelectedKey:
+              _selectedValue ?? initialSelectedKey, // ✅ يعكس الاختيار الحالي
+          primaryColor: AppColors.kprimaryColor,
+          onChanged: (key, translatedValue) {
+            setState(() {
+              _selectedValue = key;
+            });
+          },
+        ),
       ),
-    ),
     );
   }
 
@@ -324,7 +327,6 @@ class _MarriageFieldSelectionViewState
 
   // ⭐⭐⭐ الحصول على بيانات الحقل - SAME AS BEFORE
   Map<String, dynamic> _getFieldData(String fieldKey, String? currentValue) {
-  
     switch (fieldKey) {
       case 'country':
         return {
@@ -636,7 +638,8 @@ class _MarriageFieldSelectionViewState
         return {
           'titleKey': 'select_faith_title',
           'type': 'multiselect',
-          'categorizedItems':  MarriageConstants.faithWithCategories, // ⭐ الإيمان فقط
+          'categorizedItems':
+              MarriageConstants.faithWithCategories, // ⭐ الإيمان فقط
         };
 
       // ⭐⭐⭐ HOBBIES & INTERESTS - NOW WITH CATEGORIZED ITEMS
@@ -647,8 +650,8 @@ class _MarriageFieldSelectionViewState
               ? 'select_interests_title'
               : 'select_hobbies_title',
           'type': 'multiselect',
-          'categorizedItems':
-            MarriageConstants.interestsWithCategories, // ⭐ USE CATEGORIZED WIDGET
+          'categorizedItems': MarriageConstants
+              .interestsWithCategories, // ⭐ USE CATEGORIZED WIDGET
         };
 
       default:

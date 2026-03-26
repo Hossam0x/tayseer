@@ -1,6 +1,7 @@
 // lib/features/user/purpose/view/purpose_selection_view.dart
 
-import 'package:tayseer/features/user/questions/view/widget/custom_selectable_list.dart';
+import 'package:tayseer/features/user/questions/presentation/widgets/custom_selectable_list.dart';
+import 'package:tayseer/main.dart'; // ✅ consumePendingDeepLink
 import 'package:tayseer/my_import.dart';
 
 class PurposeSelectionView extends StatefulWidget {
@@ -41,6 +42,18 @@ class _PurposeSelectionViewState extends State<PurposeSelectionView> {
       AppRouter.kUserLayoutView,
       predicate: (route) => false,
     );
+
+    // ✅ بعد اكتمال الـ onboarding — افتح الـ deep link لو في واحد pending
+    // لو اختار زواج فقط نفتح الـ deep link، لأن الـ marriage section هيكون مفعّل
+    if (_selectedKey == 'purpose_marriage') {
+      consumePendingDeepLink();
+    } else {
+      // اختار استشارات — نمسح الـ pending عشان ما يتفتحش بعدين بالغلط
+      pendingDeepLinkPersonId = null;
+      debugPrint(
+        '🔗 Deep link cleared — user chose consultation, not marriage',
+      );
+    }
   }
 
   @override

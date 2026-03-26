@@ -85,6 +85,8 @@ class UserModel {
   final String? createdAt;
   final String? updatedAt;
   final bool? isNew; // ✅ أضف هذا
+  final String? socialStatus; // ✅ أضف هذا
+  final bool? hasChildren; // ✅ أضف هذا
 
   UserModel({
     this.id,
@@ -104,6 +106,8 @@ class UserModel {
     this.createdAt,
     this.updatedAt,
     this.isNew, // ✅
+    this.socialStatus, // ✅
+    this.hasChildren,
   });
 
   /// Helper method to build full image URL from filename
@@ -151,6 +155,8 @@ class UserModel {
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
       isNew: json['isNew'], // ✅
+      socialStatus: json['socialStatus'], // ✅
+      hasChildren: json['hasChildren'] ?? false, // ✅
     );
   }
 
@@ -172,6 +178,8 @@ class UserModel {
       'createdAt': createdAt,
       'updatedAt': updatedAt,
       'isNew': isNew, // ✅
+      'socialStatus': socialStatus,
+      'hasChildren': hasChildren, // ✅
     };
   }
 
@@ -193,6 +201,8 @@ class UserModel {
     String? createdAt,
     String? updatedAt,
     bool? isNew, // ✅
+    String? socialStatus, // ✅
+    bool? hasChildren, // ✅
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -212,6 +222,8 @@ class UserModel {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isNew: isNew ?? this.isNew, // ✅
+      socialStatus: socialStatus ?? this.socialStatus, // ✅
+      hasChildren: hasChildren ?? this.hasChildren, // ✅
     );
   }
 }

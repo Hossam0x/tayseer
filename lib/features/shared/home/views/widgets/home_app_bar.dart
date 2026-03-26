@@ -15,6 +15,11 @@ class _HomeAppBarState extends State<HomeAppBar> {
   Widget build(BuildContext context) {
     return SliverToBoxAdapter(
       child: BlocBuilder<HomeCubit, HomeState>(
+        buildWhen: (previous, current) =>
+            previous.homeInfo?.image != current.homeInfo?.image ||
+            previous.homeInfo?.name != current.homeInfo?.name ||
+            previous.homeInfo?.notifications !=
+                current.homeInfo?.notifications,
         builder: (context, state) {
           final userName = state.homeInfo?.name ?? '';
           final notificationsCount = state.homeInfo?.notifications ?? 0;

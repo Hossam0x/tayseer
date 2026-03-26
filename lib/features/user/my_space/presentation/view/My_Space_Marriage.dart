@@ -52,7 +52,7 @@ class MySpaceMarriageContent extends StatelessWidget {
                     useGradient: true,
                     title: context.tr('complete_your_profile_bott'),
                     onPressed: () {
-                      context.pushNamed(AppRouter.kChooseGenderView);
+                      // context.pushNamed(AppRouter.kQuestionsPageView);
                     },
                   ),
                 ],

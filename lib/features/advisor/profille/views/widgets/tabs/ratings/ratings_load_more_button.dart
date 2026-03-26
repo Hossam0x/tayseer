@@ -1,5 +1,5 @@
-import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/ratings_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/ratings/ratings_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/ratings/ratings_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class RatingsLoadMoreButton extends StatelessWidget {

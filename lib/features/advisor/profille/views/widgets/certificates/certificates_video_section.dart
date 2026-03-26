@@ -1,4 +1,4 @@
-import 'package:tayseer/features/advisor/profille/views/widgets/video/video_player_widget.dart';
+import 'package:tayseer/core/widgets/advisor_video_player/advisor_video_player_widget.dart';
 import 'package:tayseer/my_import.dart';
 
 class CertificatesVideoSection extends StatelessWidget {
@@ -11,7 +11,10 @@ class CertificatesVideoSection extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       height: 300.h,
-      child: VideoPlayerWidget(videoUrl: videoUrl, showFullScreenButton: true),
+      child: AdvisorVideoPlayerWidget(
+        videoUrl: videoUrl,
+        showFullScreenButton: true,
+      ),
     );
   }
 }

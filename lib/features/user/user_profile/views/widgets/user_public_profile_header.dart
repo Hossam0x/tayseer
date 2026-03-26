@@ -2,8 +2,8 @@ import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/shared/followers/user_followings_view.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_state.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_state.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/user_profile_options_bottom_sheet.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -76,52 +76,24 @@ class UserPublicProfileHeader extends StatelessWidget {
 
   Widget _buildErrorHeader(BuildContext context, String? errorMessage) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                icon: Icon(
-                  Icons.arrow_back_ios,
-                  color: AppColors.secondary600,
-                  size: 20.sp,
-                ),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-          Gap(20.h),
-          Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
-          Gap(10.h),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 18.0.w),
-            child: Text(
-              errorMessage ?? context.tr("error_loading_data"),
-              style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
-              textAlign: TextAlign.center,
+          IconButton(
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            icon: Icon(
+              Icons.arrow_back_ios,
+              color: AppColors.secondary600,
+              size: 20.sp,
             ),
+            onPressed: () => Navigator.pop(context),
           ),
-          Gap(10.h),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.kprimaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-            ),
-            onPressed: () =>
+          CustomErrorView(
+            message: errorMessage,
+            onRetry: () =>
                 context.read<UserPublicProfileCubit>().fetchProfile(),
-            child: Text(
-              context.tr("retry"),
-              style: Styles.textStyle14Meduim.copyWith(
-                color: AppColors.kWhiteColor,
-              ),
-            ),
           ),
         ],
       ),
@@ -167,18 +139,12 @@ class UserPublicProfileHeader extends StatelessWidget {
                   isBlur: imageBlur,
                   heroTag: 'profile_image_${profile.id}',
                   onTap: imageUrl.isNotEmpty && !isBlocked && !imageBlur
-                      ? () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => FullScreenImageView(
-                                imageUrl: imageUrl,
-                                heroTag: 'profile_image_${profile.id}',
-                                userName: profile.name,
-                              ),
-                            ),
-                          );
-                        }
+                      ? () => FullScreenImageView.show(
+                          context,
+                          imageUrl: imageUrl,
+                          heroTag: 'profile_image_${profile.id}',
+                          userName: profile.name,
+                        )
                       : null,
                 ),
               ],
@@ -219,7 +185,7 @@ class UserPublicProfileHeader extends StatelessWidget {
       (cubit) => cubit.state.profile?.isBlockedByMe ?? false,
     );
 
-    return GestureDetector(
+    return CustomClick(
       onTap: isBlocked
           ? null
           : () => Navigator.push(

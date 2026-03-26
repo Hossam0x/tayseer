@@ -1,6 +1,6 @@
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/add_certificate_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/add_certificate_state.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/add_certificate_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/add_certificate_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class AddCertificateImagePicker extends StatelessWidget {
@@ -25,15 +25,11 @@ class AddCertificateImagePicker extends StatelessWidget {
                 GestureDetector(
                   // When image exists → open fullscreen; otherwise → pick image
                   onTap: hasImage
-                      ? () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => FullScreenImageView(
-                                imageFile: state.certificateImageFile,
-                                heroTag: heroTag,
-                              ),
-                            ),
-                          )
+                      ? () => FullScreenImageView.show(
+                          context,
+                          imageFile: state.certificateImageFile,
+                          heroTag: heroTag,
+                        )
                       : cubit.pickCertificateImage,
                   child: Container(
                     padding: EdgeInsets.symmetric(
@@ -62,7 +58,10 @@ class AddCertificateImagePicker extends StatelessWidget {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                AppImage(AssetsData.uplaodCertificate, width: 35.w),
+                                AppImage(
+                                  AssetsData.uplaodCertificate,
+                                  width: 35.w,
+                                ),
                                 Gap(8.h),
                                 Text(
                                   context.tr('upload_image_or_pdf'),

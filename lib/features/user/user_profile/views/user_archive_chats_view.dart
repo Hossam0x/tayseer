@@ -5,8 +5,8 @@ import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/advisor/profille/data/models/archive_models.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/show_confirmation_dialog.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/archive_states.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_cubits.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_states.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_service.dart';
 import 'package:tayseer/my_import.dart';
 

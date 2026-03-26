@@ -2,7 +2,7 @@ import 'package:intl/intl.dart';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/features/advisor/profille/data/models/certificate_model.dart';
 import 'package:tayseer/features/advisor/profille/views/add_certificate_view.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/certificates_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/certificates_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/edit_certificate_view.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -38,10 +38,7 @@ class CertificateItemCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _CertificateImage(
-              imageUrl: certificate.image,
-              heroTag: heroTag,
-            ),
+            _CertificateImage(imageUrl: certificate.image, heroTag: heroTag),
             SizedBox(width: 16.w),
             Expanded(child: _CertificateDetails(certificate: certificate)),
             if (isMe) AppImage(AssetsData.editIcon, width: 20.w),
@@ -73,11 +70,14 @@ class CertificateItemCard extends StatelessWidget {
         transitionsBuilder: _slideTransition,
       ),
     ).then((result) {
-      if (result != null && result is Map && result['updated'] == true) {
+      if (result != null && result is CertificateModel) {
+        certificatesCubit.updateCertificateLocally(result);
+        // Removed refresh call to avoid full refetch
+      } else if (result != null && result is Map && result['updated'] == true) {
         if (result['certificate'] != null) {
           certificatesCubit.updateCertificateLocally(result['certificate']);
         }
-        certificatesCubit.refresh(advisorId: advisorId);
+        // certificatesCubit.refresh(advisorId: advisorId); // Avoid refreshing if possible
       }
     });
   }
@@ -91,8 +91,7 @@ class CertificateItemCard extends StatelessWidget {
     const begin = Offset(1.0, 0.0);
     const end = Offset.zero;
     const curve = Curves.easeInOutCubic;
-    final tween =
-        Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+    final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
     return SlideTransition(position: animation.drive(tween), child: child);
   }
 }
@@ -109,15 +108,11 @@ class _CertificateImage extends StatelessWidget {
 
     return GestureDetector(
       onTap: hasImage
-          ? () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => FullScreenImageView(
-                    imageUrl: imageUrl,
-                    heroTag: heroTag,
-                  ),
-                ),
-              )
+          ? () => FullScreenImageView.show(
+              context,
+              imageUrl: imageUrl,
+              heroTag: heroTag,
+            )
           : null,
       child: Hero(
         tag: heroTag,
@@ -171,16 +166,14 @@ class _CertificateDetails extends StatelessWidget {
         SizedBox(height: 4.h),
         Text(
           certificate.fromWhere,
-          style:
-              TextStyle(fontSize: 14.sp, color: Colors.grey.shade600),
+          style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade600),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         SizedBox(height: 4.h),
         Text(
           DateFormat('yyyy').format(certificate.date),
-          style:
-              TextStyle(fontSize: 14.sp, color: Colors.grey.shade600),
+          style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade600),
         ),
       ],
     );
@@ -198,13 +191,17 @@ void navigateToAddCertificate(BuildContext context, String advisorId) {
         const begin = Offset(1.0, 0.0);
         const end = Offset.zero;
         const curve = Curves.easeInOutCubic;
-        final tween =
-            Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+        final tween = Tween(
+          begin: begin,
+          end: end,
+        ).chain(CurveTween(curve: curve));
         return SlideTransition(position: animation.drive(tween), child: child);
       },
     ),
   ).then((result) {
-    if (result == true && context.mounted) {
+    if (result != null && result is CertificateModel && context.mounted) {
+      context.read<CertificatesCubit>().addCertificate(result);
+    } else if (result == true && context.mounted) {
       context.read<CertificatesCubit>().refresh(advisorId: advisorId);
     }
   });

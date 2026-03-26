@@ -18,6 +18,9 @@ abstract class StoriesRepository {
     String? advisorId,
     bool isSpecial = false,
   });
+
+  /// Fetch only the current advisor's own stories (GET /stories/my-stories)
+  Future<Either<Failure, UserStoriesModel?>> fetchMyStories();
   void markStoryAsViewed({required String storyId});
   void likeStory({required String storyId});
   Future<Either<Failure, StoryModel>> createStories({

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math' as math;
-
 import 'package:flutter/services.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
@@ -79,11 +78,11 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
         return;
       }
 
-      // 2️⃣ Configure iOS Audio Session
+      // 2️⃣ ✅ iOS: Configure Audio Session BEFORE open (مهم جداً على الجهاز الحقيقي)
       if (Platform.isIOS) {
         await _configureIOSAudioSession();
-        // ✅ انتظر عشان الـ iOS system يستجيب بعد configure
-        await Future.delayed(const Duration(milliseconds: 300));
+        // ✅ زود الانتظار لـ 500ms عشان iOS system يستجيب
+        await Future.delayed(const Duration(milliseconds: 500));
       }
 
       // 3️⃣ Open recorder
@@ -126,7 +125,6 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
 
   // ════════════════════════════════════════════════════════════════
   // ✅ iOS Audio Session via MethodChannel
-  //    لو الـ channel مش موجود، مفيش مشكلة — بيكمل عادي
   // ════════════════════════════════════════════════════════════════
   Future<void> _configureIOSAudioSession() async {
     try {
@@ -307,11 +305,12 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
       await _recorder!.stopRecorder();
       _recorderSubscription?.cancel();
       _durationTimer?.cancel();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _isRecording = false;
           _isPaused = false;
         });
+      }
       if (_recordingPath != null) {
         final audioFile = File(_recordingPath!);
         if (await audioFile.exists()) {
@@ -463,157 +462,158 @@ class _VoiceRecordingWidgetState extends State<VoiceRecordingWidget>
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // ✅ FIXED: شيل Expanded واستبدله بـ Padding + Column مع mainAxisSize.min
+  // ════════════════════════════════════════════════════════════════
   Widget _buildRecordingState() {
-    return Expanded(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Text(
-                  _formatDuration(_recordingDuration),
-                  style: TextStyle(
-                    color: Colors.grey[700],
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14.sp,
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+      child: Column(
+        mainAxisSize: MainAxisSize.min, // ✅ مهم — يأخذ أقل مساحة ممكنة
+        children: [
+          Row(
+            children: [
+              Text(
+                _formatDuration(_recordingDuration),
+                style: TextStyle(
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14.sp,
+                ),
+              ),
+              SizedBox(width: 8.w),
+              AnimatedBuilder(
+                animation: _animationController,
+                builder: (context, child) => Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: _isPaused ? Colors.orange : Colors.red,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: (_isPaused ? Colors.orange : Colors.red)
+                            .withOpacity(
+                              0.3 + (_animationController.value * 0.4),
+                            ),
+                        blurRadius: 4 + (_animationController.value * 4),
+                        spreadRadius: 1,
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(width: 8.w),
-                AnimatedBuilder(
-                  animation: _animationController,
-                  builder: (context, child) => Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: _isPaused ? Colors.orange : Colors.red,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: (_isPaused ? Colors.orange : Colors.red)
-                              .withOpacity(
-                                0.3 + (_animationController.value * 0.4),
-                              ),
-                          blurRadius: 4 + (_animationController.value * 4),
-                          spreadRadius: 1,
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: SizedBox(
+                  height: 40,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: List.generate(_waveHeights.length, (index) {
+                      final height = _waveHeights[index];
+                      final color = Color.lerp(
+                        AppColors.secondary200.withOpacity(0.5),
+                        AppColors.secondary600,
+                        (height / 35.0).clamp(0.0, 1.0),
+                      )!;
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 400),
+                        curve: Curves.easeOut,
+                        width: 2.5,
+                        height: height,
+                        margin: const EdgeInsets.symmetric(horizontal: 0.8),
+                        decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: BorderRadius.circular(2),
+                          boxShadow: height > 20
+                              ? [
+                                  BoxShadow(
+                                    color: color.withOpacity(0.3),
+                                    blurRadius: 2,
+                                  ),
+                                ]
+                              : null,
                         ),
-                      ],
-                    ),
+                      );
+                    }),
                   ),
                 ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: SizedBox(
-                    height: 40,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: List.generate(_waveHeights.length, (index) {
-                        final height = _waveHeights[index];
-                        final color = Color.lerp(
-                          AppColors.secondary200.withOpacity(0.5),
-                          AppColors.secondary600,
-                          (height / 35.0).clamp(0.0, 1.0),
-                        )!;
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 400),
-                          curve: Curves.easeOut,
-                          width: 2.5,
-                          height: height,
-                          margin: const EdgeInsets.symmetric(horizontal: 0.8),
-                          decoration: BoxDecoration(
-                            color: color,
-                            borderRadius: BorderRadius.circular(2),
-                            boxShadow: height > 20
-                                ? [
-                                    BoxShadow(
-                                      color: color.withOpacity(0.3),
-                                      blurRadius: 2,
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                        );
-                      }),
-                    ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              GestureDetector(
+                onTap: _cancelRecording,
+                child: Container(
+                  width: 40.w,
+                  height: 40.h,
+                  decoration: BoxDecoration(
+                    color: Colors.red[400],
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.withOpacity(0.3),
+                        blurRadius: 6,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.white,
+                    size: 22,
                   ),
                 ),
-              ],
-            ),
-            SizedBox(height: 12.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                GestureDetector(
-                  onTap: _cancelRecording,
-                  child: Container(
-                    width: 40.w,
-                    height: 40.h,
-                    decoration: BoxDecoration(
-                      color: Colors.red[400],
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.red.withOpacity(0.3),
-                          blurRadius: 6,
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.delete_outline,
-                      color: Colors.white,
-                      size: 22,
-                    ),
+              ),
+              GestureDetector(
+                onTap: _isPaused ? _resumeRecording : _pauseRecording,
+                child: Container(
+                  width: 40.w,
+                  height: 40.h,
+                  decoration: BoxDecoration(
+                    color: Colors.orange[400],
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.orange.withOpacity(0.3),
+                        blurRadius: 6,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    _isPaused ? Icons.play_arrow : Icons.pause,
+                    color: Colors.white,
+                    size: 22,
                   ),
                 ),
-                GestureDetector(
-                  onTap: _isPaused ? _resumeRecording : _pauseRecording,
-                  child: Container(
-                    width: 40.w,
-                    height: 40.h,
-                    decoration: BoxDecoration(
-                      color: Colors.orange[400],
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.orange.withOpacity(0.3),
-                          blurRadius: 6,
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      _isPaused ? Icons.play_arrow : Icons.pause,
-                      color: Colors.white,
-                      size: 22,
-                    ),
+              ),
+              GestureDetector(
+                onTap: _stopRecording,
+                child: Container(
+                  width: 45.w,
+                  height: 45.h,
+                  decoration: BoxDecoration(
+                    color: Colors.green[600],
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.green.withOpacity(0.4),
+                        blurRadius: 8,
+                        spreadRadius: 2,
+                      ),
+                    ],
                   ),
+                  child: Icon(Icons.send, color: Colors.white, size: 22.w),
                 ),
-                GestureDetector(
-                  onTap: _stopRecording,
-                  child: Container(
-                    width: 45.w,
-                    height: 45.h,
-                    decoration: BoxDecoration(
-                      color: Colors.green[600],
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.green.withOpacity(0.4),
-                          blurRadius: 8,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: Icon(Icons.send, color: Colors.white, size: 22.w),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

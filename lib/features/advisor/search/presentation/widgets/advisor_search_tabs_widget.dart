@@ -1,6 +1,6 @@
+import 'package:tayseer/features/advisor/search/presentation/view/search_tab.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/advisor/search/presentation/cubit/advisor_search_ui_cubit.dart';
-import 'package:tayseer/features/advisor/search/presentation/view/a_search_view.dart' show SearchTab;
 
 class AdvisorSearchTabsWidget extends StatelessWidget {
   final List<SearchTab> tabs;

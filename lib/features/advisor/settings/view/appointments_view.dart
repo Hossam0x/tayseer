@@ -1,9 +1,8 @@
-import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_cubits.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_states.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/service_provider/service_provider_cubits.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/service_provider/service_provider_states.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/appointments/appointments_skeleton.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/time_slot_item.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class AppointmentsView extends StatelessWidget {
@@ -23,7 +22,6 @@ class AppointmentsView extends StatelessWidget {
             );
             context.read<AppointmentsCubit>().clearError();
           }
-
           if (state.successMessage != null &&
               state.successMessage!.isNotEmpty) {
             showSafeSnackBar(
@@ -39,12 +37,10 @@ class AppointmentsView extends StatelessWidget {
         },
         builder: (context, state) {
           final cubit = context.read<AppointmentsCubit>();
-
           return Scaffold(
             body: AdvisorBackground(
               child: Stack(
                 children: [
-                  // الخلفية
                   Positioned(
                     top: 0,
                     left: 0,
@@ -59,8 +55,6 @@ class AppointmentsView extends StatelessWidget {
                       ),
                     ),
                   ),
-
-                  // المحتوى
                   SafeArea(
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -69,31 +63,26 @@ class AppointmentsView extends StatelessWidget {
                           Gap(16.h),
                           SimpleAppBar(title: context.tr('appointments_title')),
                           Gap(30.h),
-
-                          // Loading State with Skeletonizer
                           if (state.state == CubitStates.loading)
-                            Expanded(child: _buildSkeletonLoading())
-                          // Error State
+                            const Expanded(child: AppointmentsSkeleton())
                           else if (state.state == CubitStates.failure)
                             CustomErrorView(
                               verticalPadding: 100,
                               message: state.errorMessage,
                               onRetry: () => cubit.loadServiceProvider(),
                             )
-                          // Success State
                           else
                             Expanded(
                               child: Column(
                                 children: [
                                   Expanded(
-                                    child: _buildTimeSlotsList(
-                                      context,
-                                      state,
-                                      cubit,
+                                    child: _TimeSlotsList(
+                                      state: state,
+                                      cubit: cubit,
                                     ),
                                   ),
                                   Gap(20.h),
-                                  _buildSaveButton(context, cubit, state),
+                                  _SaveButton(cubit: cubit, state: state),
                                   Gap(40.h),
                                 ],
                               ),
@@ -110,110 +99,23 @@ class AppointmentsView extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildSkeletonLoading() {
-    return Skeletonizer(
-      enabled: true,
-      child: ListView.separated(
-        padding: EdgeInsets.symmetric(vertical: 10.h),
-        itemCount: 7, // 7 أيام
-        separatorBuilder: (context, index) => Gap(20.h),
-        itemBuilder: (context, index) {
-          return Container(
-            padding: EdgeInsets.all(16.w),
+class _TimeSlotsList extends StatelessWidget {
+  final AppointmentsState state;
+  final AppointmentsCubit cubit;
+  const _TimeSlotsList({required this.state, required this.cubit});
 
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // اليوم والتبديل
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      width: 80.w,
-                      height: 24.h,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                    ),
-                    Container(
-                      width: 48.w,
-                      height: 24.h,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                    ),
-                  ],
-                ),
-                Gap(16.h),
-
-                // حقول الوقت
-                Row(
-                  children: [
-                    Container(
-                      width: 30.w,
-                      height: 20.h,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(4.r),
-                      ),
-                    ),
-                    Gap(8.w),
-                    Expanded(
-                      child: Container(
-                        height: 55.h,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(16.r),
-                        ),
-                      ),
-                    ),
-                    Gap(8.w),
-                    Container(
-                      width: 30.w,
-                      height: 20.h,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(4.r),
-                      ),
-                    ),
-                    Gap(8.w),
-                    Expanded(
-                      child: Container(
-                        height: 55.h,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(16.r),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildTimeSlotsList(
-    BuildContext context,
-    AppointmentsState state,
-    AppointmentsCubit cubit,
-  ) {
-    final weeklyAvailability = state.weeklyAvailability;
-
+  @override
+  Widget build(BuildContext context) {
+    final days = state.weeklyAvailability;
     return ListView.separated(
       padding: EdgeInsets.symmetric(vertical: 10.h),
-      itemCount: weeklyAvailability.length,
-      separatorBuilder: (context, index) => Gap(20.h),
-      itemBuilder: (context, index) {
-        final day = weeklyAvailability[index];
+      itemCount: days.length,
+      separatorBuilder: (_, __) => Gap(20.h),
+      itemBuilder: (_, index) {
+        final day = days[index];
         final timeSlot = day.timeSlots.isNotEmpty ? day.timeSlots.first : null;
-
         return TimeSlotItem(
           name: day.dayName,
           initialFrom: timeSlot?.start ?? '00:00',
@@ -221,20 +123,25 @@ class AppointmentsView extends StatelessWidget {
           initialStatus: day.isEnabled,
           onStatusChanged: (isActive) {
             cubit.toggleDayStatus(day.dayOfWeek, isActive);
+            if (isActive && (timeSlot == null || timeSlot.start == '00:00')) {
+              cubit.updateDayTimeSlot(day.dayOfWeek, '09:00', '17:00');
+            }
           },
-          onTimeChanged: (start, end) {
-            cubit.updateDayTimeSlot(day.dayOfWeek, start, end);
-          },
+          onTimeChanged: (start, end) =>
+              cubit.updateDayTimeSlot(day.dayOfWeek, start, end),
         );
       },
     );
   }
+}
 
-  Widget _buildSaveButton(
-    BuildContext context,
-    AppointmentsCubit cubit,
-    AppointmentsState state,
-  ) {
+class _SaveButton extends StatelessWidget {
+  final AppointmentsCubit cubit;
+  final AppointmentsState state;
+  const _SaveButton({required this.cubit, required this.state});
+
+  @override
+  Widget build(BuildContext context) {
     return CustomBotton(
       height: 54.h,
       width: double.infinity,

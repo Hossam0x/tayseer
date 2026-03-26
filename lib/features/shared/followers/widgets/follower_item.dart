@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:tayseer/features/shared/followers/data/models/follower_model.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
@@ -155,24 +156,15 @@ class FollowerItem extends StatelessWidget {
             ),
             child: ClipOval(
               child: follower.imageUrl != null && follower.imageUrl!.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: follower.imageUrl!,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: Colors.grey.shade200,
-                        child: Icon(
-                          Icons.person,
-                          size: 24.w,
-                          color: Colors.grey.shade400,
-                        ),
+                  ? ImageFiltered(
+                      imageFilter: ImageFilter.blur(
+                        sigmaX: follower.imageBlur ? 10.0 : 0.0,
+                        sigmaY: follower.imageBlur ? 10.0 : 0.0,
                       ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Colors.grey.shade200,
-                        child: Icon(
-                          Icons.person,
-                          size: 24.w,
-                          color: Colors.grey.shade400,
-                        ),
+                      child: AppImage(
+                        follower.imageUrl!,
+                        fit: BoxFit.cover,
+                        isAvatar: true,
                       ),
                     )
                   : Container(

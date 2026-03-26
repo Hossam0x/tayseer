@@ -1,12 +1,13 @@
-// features/user/user_profile/views/cubit/email/email_edit_cubit.dart
 import 'dart:developer';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_settings_repository.dart';
 import 'package:tayseer/my_import.dart';
+
 part 'email_edit_state.dart';
 
 class EmailEditCubit extends Cubit<EmailEditState> {
-  final ApiService _apiService;
+  final UserSettingsRepository _repository;
 
-  EmailEditCubit() : _apiService = ApiService(Dio()), super(EmailEditInitial());
+  EmailEditCubit(this._repository) : super(EmailEditInitial());
 
   void updateEmail(String email) {
     emit(state.copyWith(email: email.trim(), emailError: ''));
@@ -39,17 +40,17 @@ class EmailEditCubit extends Cubit<EmailEditState> {
       ),
     );
 
-    try {
-      log('طلب تغيير الإيميل → ${state.email}');
+    log('طلب تغيير الإيميل → ${state.email}');
 
-      final response = await _apiService.post(
-        endPoint: '/user/update-email',
-        data: {'email': state.email},
-      );
+    final result = await _repository.updateEmail(email: state.email);
 
-      log('الرد: $response');
-
-      if (response['success'] == true) {
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(status: CubitStates.failure, errorMessage: failure.message),
+        );
+      },
+      (_) {
         emit(
           state.copyWith(
             status: CubitStates.success,
@@ -58,26 +59,8 @@ class EmailEditCubit extends Cubit<EmailEditState> {
             errorMessage: '',
           ),
         );
-      } else {
-        final msg = response['message'] ?? 'update_email_failed';
-        emit(state.copyWith(status: CubitStates.failure, errorMessage: msg));
-      }
-    } on DioException catch (e) {
-      final failure = ServerFailure.fromDioError(e);
-      emit(
-        state.copyWith(
-          status: CubitStates.failure,
-          errorMessage: failure.message,
-        ),
-      );
-    } catch (e) {
-      emit(
-        state.copyWith(
-          status: CubitStates.failure,
-          errorMessage: 'error_occurred',
-        ),
-      );
-    }
+      },
+    );
   }
 
   void clearMessages() {

@@ -16,6 +16,7 @@ import 'package:tayseer/features/shared/event/repo/event_repo_impl.dart';
 import 'package:tayseer/features/shared/event_detail/repo/event_detail_repository.dart';
 import 'package:tayseer/features/shared/event_detail/repo/event_detail_repository_impl.dart';
 import 'package:tayseer/features/shared/event_detail/view_model/event_detail_cubit.dart';
+import 'package:tayseer/features/shared/post_details/data/repos/mention_search_repo.dart';
 import 'package:tayseer/features/shared/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/features/advisor/session/data/repos/advisor_session_repo.dart';
 import 'package:tayseer/features/advisor/session/presentation/manager/advisor_session_detailes_cubit.dart';
@@ -24,7 +25,7 @@ import 'package:tayseer/features/advisor/settings/data/repositories/advisor_pack
 import 'package:tayseer/features/advisor/settings/data/repositories/blocked_users_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository_impl.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/account_management_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/account_management/account_management_cubit.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/shared/followers/data/repositories/followers_repository.dart';
 import 'package:tayseer/features/shared/followers/data/repositories/user_followings_repository.dart';
@@ -38,11 +39,11 @@ import 'package:tayseer/features/advisor/profille/data/repositories/profile_repo
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository_impl.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository_impl.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/certificates_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/edit_certificate_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/ratings_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_cubits.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/certificates_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/certificates/edit_certificate_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/ratings/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository_impl.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
@@ -51,10 +52,10 @@ import 'package:tayseer/features/advisor/settings/data/models/service_provider_r
 import 'package:tayseer/features/advisor/settings/data/repositories/contact_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/story_visibility_repository.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data_cubit.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/help_support_cubit.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_cubits.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/edit_personal_data/edit_personal_data_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/help_support/help_support_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/service_provider/service_provider_cubits.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility/story_visibility_cubit.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo_impl.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
@@ -71,9 +72,9 @@ import 'package:tayseer/features/user/marriage_filter/repo/marriage_filter_repo.
 import 'package:tayseer/features/user/marriage_filter/repo/marriage_filter_repo_impl.dart';
 import 'package:tayseer/features/user/my_tickets_event/repo/my_tickets_repo.dart';
 import 'package:tayseer/features/user/my_tickets_event/repo/my_tickets_repo_impl.dart';
-import 'package:tayseer/features/user/questions/repo/questions_repo.dart';
-import 'package:tayseer/features/user/questions/repo/questions_repo_impl.dart';
-import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
+import 'package:tayseer/features/user/questions/data/repo/questions_repo.dart';
+import 'package:tayseer/features/user/questions/data/repo/questions_repo_impl.dart';
+import 'package:tayseer/features/user/questions/presentation/manager/questions_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/repositories/user_advisor_profile_repository.dart';
 import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
@@ -84,14 +85,19 @@ import 'package:tayseer/features/user/user_profile/data/repositories/user_accoun
 import 'package:tayseer/features/user/user_profile/data/repositories/user_posts_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_public_profile_repository.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_edit_cubit.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_edit/user_profile_edit_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_cubit.dart';
 import 'package:tayseer/features/advisor/search/data/repos/search_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/order_management_repository.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/order_management_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/order_management/order_management_cubit.dart';
 import 'package:tayseer/features/advisor/wallet/data/datasources/wallet_remote_data_source.dart';
 import 'package:tayseer/features/advisor/wallet/data/repos/wallet_repo.dart';
-import 'package:tayseer/features/advisor/wallet/data/cubit/wallet_cubit.dart';
+import 'package:tayseer/features/advisor/wallet/view/cubit/wallet_cubit.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/otp_repository.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_settings_repository.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/email/email_edit_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/phone/phone_edit_cubit.dart';
 
 import '../../features/advisor/notification/presentation/manager/notification_cubit.dart';
 import '../../my_import.dart';
@@ -187,7 +193,7 @@ Future<void> setupGetIt() async {
     () => StoriesRepositoryImpl(getIt<ApiService>()),
   );
 
-  getIt.registerFactory<StoriesCubit>(
+  getIt.registerLazySingleton<StoriesCubit>(
     () => StoriesCubit(getIt<StoriesRepository>()),
   );
 
@@ -226,7 +232,7 @@ Future<void> setupGetIt() async {
   );
 
   /// Profile Cubit
-  getIt.registerFactory<ProfileCubit>(
+  getIt.registerLazySingleton<ProfileCubit>(
     () => ProfileCubit(getIt<ProfileRepository>()),
   );
 
@@ -438,6 +444,9 @@ Future<void> setupGetIt() async {
   getIt.registerLazySingleton<SearchRepository>(
     () => SearchRepository(getIt<ApiService>()),
   );
+  getIt.registerLazySingleton<MentionSearchRepository>(
+    () => MentionSearchRepository(getIt<ApiService>()),
+  );
 
   /// Marriage Filter Repo
 
@@ -474,6 +483,50 @@ Future<void> setupGetIt() async {
 
   /// Update Post Cubit
   getIt.registerFactory(() => UpdatePostCubit());
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // User Profile Settings (Phone/Email/OTP)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  getIt.registerLazySingleton<OtpRepository>(
+    () => OtpRepositoryImpl(getIt<Dio>()),
+  );
+
+  getIt.registerLazySingleton<UserSettingsRepository>(
+    () => UserSettingsRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerFactory<PhoneEditCubit>(
+    () => PhoneEditCubit(getIt<UserSettingsRepository>()),
+  );
+
+  getIt.registerFactory<EmailEditCubit>(
+    () => EmailEditCubit(getIt<UserSettingsRepository>()),
+  );
+
+  getIt.registerFactoryParam<OtpCubit, OtpCubitParams, void>(
+    (params, _) => OtpCubit(
+      phoneNumber: params.phoneNumber,
+      isPhoneUpdate: params.isPhoneUpdate,
+      isEmailUpdate: params.isEmailUpdate,
+      otpRepository: getIt<OtpRepository>(),
+      otpSource: params.otpSource,
+    ),
+  );
+}
+
+class OtpCubitParams {
+  final String phoneNumber;
+  final bool isPhoneUpdate;
+  final bool isEmailUpdate;
+  final OtpSource otpSource;
+
+  OtpCubitParams({
+    required this.phoneNumber,
+    required this.isPhoneUpdate,
+    required this.isEmailUpdate,
+    required this.otpSource,
+  });
   getIt.registerFactory<NotificationRepo>(() => NotificationRepo(apiService: getIt<ApiService>()));
   getIt.registerFactory<NotificationCubit>(()=>NotificationCubit(notificationRepo: getIt<NotificationRepo>()));
 }

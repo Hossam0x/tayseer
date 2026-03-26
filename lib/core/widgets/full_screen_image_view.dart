@@ -1,6 +1,5 @@
 import 'package:tayseer/my_import.dart';
 
-/// Full screen image viewer with Hero animation, pinch-to-zoom, and swipe-to-dismiss
 class FullScreenImageView extends StatefulWidget {
   final String? imageUrl;
   final File? imageFile;
@@ -15,115 +14,260 @@ class FullScreenImageView extends StatefulWidget {
     this.userName,
   });
 
+  /// استخدم دي بدل Navigator.push عشان الخلفية تبقى شفافة
+  static Future<void> show(
+    BuildContext context, {
+    String? imageUrl,
+    File? imageFile,
+    required String heroTag,
+    String? userName,
+  }) {
+    return Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.transparent,
+        pageBuilder: (_, __, ___) => FullScreenImageView(
+          imageUrl: imageUrl,
+          imageFile: imageFile,
+          heroTag: heroTag,
+          userName: userName,
+        ),
+        transitionDuration: const Duration(milliseconds: 300),
+        reverseTransitionDuration: const Duration(milliseconds: 300),
+        transitionsBuilder: (_, animation, __, child) =>
+            FadeTransition(opacity: animation, child: child),
+      ),
+    );
+  }
+
   @override
   State<FullScreenImageView> createState() => _FullScreenImageViewState();
 }
 
 class _FullScreenImageViewState extends State<FullScreenImageView>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final TransformationController _transformationController =
       TransformationController();
 
-  double _dragDistance = 0.0;
-  bool _isDragging = false;
-  late AnimationController _dismissController;
+  late AnimationController _snapBackController;
+  double _snapStartY = 0.0;
+  double _dragY = 0.0;
+
+  AnimationController? _doubleTapController;
+  Animation<Matrix4>? _doubleTapAnimation;
+
+  late AnimationController _arrowHintController;
+  late Animation<double> _arrowHintAnimation;
 
   @override
   void initState() {
     super.initState();
-    _dismissController = AnimationController(
+
+    _snapBackController =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 300),
+        )..addListener(() {
+          setState(() {
+            _dragY = _snapStartY * (1 - _snapBackController.value);
+          });
+        });
+
+    _doubleTapController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 100),
+      duration: const Duration(milliseconds: 250),
     );
+
+    _arrowHintController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _arrowHintAnimation =
+        TweenSequence([
+          TweenSequenceItem(tween: Tween(begin: 0.0, end: -14.0), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: -14.0, end: 0.0), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: 0.0, end: -10.0), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: -10.0, end: 0.0), weight: 25),
+        ]).animate(
+          CurvedAnimation(
+            parent: _arrowHintController,
+            curve: Curves.easeInOut,
+          ),
+        );
+
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (mounted) _arrowHintController.forward();
+    });
+
+    // منع الـ zoom out من تعدي الـ 1x
+    _transformationController.addListener(_clampScale);
+  }
+
+  void _clampScale() {
+    final scale = _transformationController.value.getMaxScaleOnAxis();
+    if (scale < 1.0) {
+      _transformationController.value = Matrix4.identity();
+    }
   }
 
   @override
   void dispose() {
+    _transformationController.removeListener(_clampScale);
     _transformationController.dispose();
-    _dismissController.dispose();
+    _snapBackController.dispose();
+    _doubleTapController?.dispose();
+    _arrowHintController.dispose();
     super.dispose();
   }
 
-  void _handleVerticalDragUpdate(DragUpdateDetails details) {
-    // Only allow dragging if not zoomed in
-    if (_transformationController.value.getMaxScaleOnAxis() <= 1.0) {
-      setState(() {
-        _isDragging = true;
-        _dragDistance += details.delta.dy;
-      });
+  bool get _isZoomed =>
+      _transformationController.value.getMaxScaleOnAxis() > 1.05;
+
+  void _onDoubleTapDown(TapDownDetails details) {
+    _doubleTapController!.stop();
+    final begin = _transformationController.value;
+    final Matrix4 end;
+
+    if (_isZoomed) {
+      end = Matrix4.identity();
+    } else {
+      final pos = details.localPosition;
+      end = Matrix4.identity()
+        ..translate(-pos.dx * 1.5, -pos.dy * 1.5)
+        ..scale(2.5);
+    }
+
+    _doubleTapAnimation =
+        Matrix4Tween(begin: begin, end: end).animate(
+          CurvedAnimation(
+            parent: _doubleTapController!,
+            curve: Curves.easeInOut,
+          ),
+        )..addListener(() {
+          _transformationController.value = _doubleTapAnimation!.value;
+        });
+
+    _doubleTapController!.forward(from: 0);
+  }
+
+  void _handleDragMove(double dy) {
+    if (_isZoomed) return;
+    if (dy < 0) {
+      _snapBackController.stop();
+      setState(() => _dragY += dy);
     }
   }
 
-  void _handleVerticalDragEnd(DragEndDetails details) {
-    final velocity = details.velocity.pixelsPerSecond.dy;
-    final shouldDismiss = _dragDistance.abs() > 100 || velocity.abs() > 700;
-
-    if (shouldDismiss) {
-      // Animate to dismiss
-      _dismissController.forward().then((_) {
-        Navigator.pop(context);
-      });
-    } else {
-      // Reset position with animation
-      setState(() {
-        _isDragging = false;
-        _dragDistance = 0.0;
-      });
+  void _handleDragEnd() {
+    if (_isZoomed) return;
+    if (_dragY < -120) {
+      Navigator.pop(context);
+    } else if (_dragY < 0) {
+      _snapStartY = _dragY;
+      _snapBackController.forward(from: 0);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Calculate opacity based on drag distance (smoother fade)
-    final opacity = (1.0 - (_dragDistance.abs() / 400)).clamp(0.0, 1.0);
+    final progress = (-_dragY / 350).clamp(0.0, 1.0);
+    final bgOpacity = (1.0 - progress).clamp(0.0, 1.0);
+    final scale = (1.0 - progress * 0.15).clamp(0.85, 1.0);
+    final borderRadius = progress * 40.0;
 
-    // Calculate scale based on drag distance (shrink effect)
-    final scale = (1.0 - (_dragDistance.abs() / 1000)).clamp(0.85, 1.0);
-
-    return GestureDetector(
-      // Wrap entire screen to detect swipe anywhere
-      onVerticalDragUpdate: _handleVerticalDragUpdate,
-      onVerticalDragEnd: _handleVerticalDragEnd,
-      child: Scaffold(
-        backgroundColor: Colors.black.withOpacity(opacity),
-        appBar: AppBar(
-          backgroundColor: Colors.black.withOpacity(opacity),
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: widget.userName != null
-              ? Text(
-                  widget.userName!,
-                  style: Styles.textStyle16SemiBold.copyWith(
-                    color: Colors.white,
+    return Scaffold(
+      backgroundColor: Colors.black.withOpacity(bgOpacity),
+      body: Stack(
+        children: [
+          // الصورة
+          Listener(
+            onPointerMove: (e) {
+              if (!_isZoomed) _handleDragMove(e.delta.dy);
+            },
+            onPointerUp: (_) {
+              if (!_isZoomed) _handleDragEnd();
+            },
+            child: GestureDetector(
+              onDoubleTapDown: _onDoubleTapDown,
+              onDoubleTap: () {},
+              child: Transform.translate(
+                offset: Offset(0, _dragY),
+                child: Transform.scale(
+                  scale: scale,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(borderRadius),
+                    child: Container(
+                      color: Colors.black,
+                      width: double.infinity,
+                      height: double.infinity,
+                      child: Hero(
+                        tag: widget.heroTag,
+                        child: InteractiveViewer(
+                          transformationController: _transformationController,
+                          minScale: 1.0,
+                          maxScale: 4.0,
+                          panEnabled: true,
+                          scaleEnabled: true,
+                          constrained: true,
+                          boundaryMargin: EdgeInsets.zero,
+                          child: SizedBox.expand(
+                            child: widget.imageFile != null
+                                ? Image.file(
+                                    widget.imageFile!,
+                                    fit: BoxFit.contain,
+                                  )
+                                : AppImage(
+                                    widget.imageUrl,
+                                    fit: BoxFit.contain,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                )
-              : null,
-        ),
-        body: AnimatedContainer(
-          duration: _isDragging
-              ? Duration.zero
-              : const Duration(milliseconds: 250),
-          curve: Curves.easeOutCubic,
-          transform: Matrix4.identity()
-            ..translate(0.0, _dragDistance, 0.0)
-            ..scale(scale),
-          child: Center(
-            child: Hero(
-              tag: widget.heroTag,
-              child: InteractiveViewer(
-                transformationController: _transformationController,
-                minScale: 0.5,
-                maxScale: 4.0,
-                child: widget.imageFile != null
-                    ? Image.file(widget.imageFile!, fit: BoxFit.contain)
-                    : AppImage(widget.imageUrl, fit: BoxFit.contain),
+                ),
               ),
             ),
           ),
-        ),
+
+          // سهم الإغلاق مع hint animation وسحب
+          Positioned(
+            bottom: 10.h,
+            left: 0,
+            right: 0,
+            child: Opacity(
+              opacity: (1.0 - progress * 2).clamp(0.0, 1.0),
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                onVerticalDragUpdate: (d) => _handleDragMove(d.delta.dy),
+                onVerticalDragEnd: (_) => _handleDragEnd(),
+                child: AnimatedBuilder(
+                  animation: _arrowHintAnimation,
+                  builder: (context, child) => Transform.translate(
+                    offset: Offset(0, _arrowHintAnimation.value),
+                    child: child,
+                  ),
+                  child: Container(
+                    height: 80,
+                    alignment: Alignment.center,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.keyboard_arrow_up_rounded,
+                        color: Colors.white,
+                        size: 40.w,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

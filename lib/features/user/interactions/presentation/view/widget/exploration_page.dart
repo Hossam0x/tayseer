@@ -8,7 +8,6 @@ import 'package:tayseer/features/user/interactions/presentation/view/widget/inte
 import 'package:tayseer/features/user/interactions/presentation/view/widget/greeting_interaction_card.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/recently_joined.dart';
 import 'package:tayseer/my_import.dart';
-
 import '../../../data/Model/interaction_usermodel .dart';
 
 class Exploration extends StatefulWidget {
@@ -91,8 +90,8 @@ class ExplorationState extends State<Exploration> {
           );
         }
 
-        if (!state.answerCompleted &&
-            kCurrentUserData?.compeletedData == false) {
+        // ✅ الحل - اعتمد على السيرفر فقط
+        if (!state.answerCompleted) {
           return const EmptyExploration();
         }
 
@@ -103,7 +102,7 @@ class ExplorationState extends State<Exploration> {
           return const EmptyExploration();
         }
 
-        return RefreshIndicator(
+        return RefreshIndicator.adaptive(
           onRefresh: _onRefresh,
           color: AppColors.primary400,
           backgroundColor: Colors.white,
@@ -335,7 +334,7 @@ class ExplorationState extends State<Exploration> {
                   itemBuilder: (context, index) {
                     final item = state.explorationData["ارسل تحية"]![index];
                     return Padding(
-                      padding: EdgeInsetsDirectional.only(bottom: 12.w),
+                      padding: EdgeInsetsDirectional.only(bottom: 12.h),
                       child: GreetingProfileCard(
                         item: item,
                         forceBlur: !state.isSubscribed,
@@ -349,7 +348,7 @@ class ExplorationState extends State<Exploration> {
         ),
 
         SliverPadding(
-          padding: EdgeInsets.only(bottom: 100.h),
+          padding: EdgeInsets.only(bottom: 140.h),
           sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
         ),
       ],

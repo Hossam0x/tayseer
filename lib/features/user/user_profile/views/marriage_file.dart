@@ -707,18 +707,12 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
       sliver: SliverToBoxAdapter(
         child: GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => FullScreenImageView(
-                  imageUrl: imageUrl,
-                  heroTag: heroTag,
-                  userName: context.tr("my_profile"),
-                ),
-              ),
-            );
-          },
+          onTap: () => FullScreenImageView.show(
+            context,
+            imageUrl: imageUrl,
+            heroTag: heroTag,
+            userName: context.tr("my_profile"),
+          ),
           child: Hero(
             tag: heroTag,
             child: ClipRRect(
@@ -766,18 +760,12 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
         children: [
           GestureDetector(
             onTap: mainImage != _defaultImageUrl
-                ? () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => FullScreenImageView(
-                          imageUrl: mainImage,
-                          heroTag: 'profile_main_image',
-                          userName: context.tr("my_profile"),
-                        ),
-                      ),
-                    );
-                  }
+                ? () => FullScreenImageView.show(
+                    context,
+                    imageUrl: mainImage,
+                    heroTag: 'profile_main_image',
+                    userName: context.tr("my_profile"),
+                  )
                 : null,
             child: Hero(
               tag: 'profile_main_image',
@@ -1003,23 +991,23 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       if (profile.aboutMe?.socialStatus != null)
         {
           'icon': AssetsData.kdrawingIcon,
-          'label': _translateValue(profile.aboutMe!.socialStatus),
+          'label': "💍 ${_translateValue(profile.aboutMe!.socialStatus)}",
         },
       if (profile.aboutMe?.age != null)
         {
           'icon': AssetsData.kdrawingIcon,
-          'label': "${context.tr('age')} ${profile.aboutMe?.age}",
+          'label': "🎂 ${context.tr('age')} ${profile.aboutMe?.age}",
         },
       if (profile.aboutMe?.skinColor != null)
         {
           'icon': AssetsData.kdrawingIcon,
           'label':
-              "${context.tr('Skin')} ${_translateValue(profile.aboutMe!.skinColor)}",
+              "🎨 ${context.tr('Skin')} ${_translateValue(profile.aboutMe!.skinColor)}",
         },
       if (profile.aboutMe?.healthStatus != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': _translateValue(profile.aboutMe!.healthStatus),
+          'label': "🩺 ${_translateValue(profile.aboutMe!.healthStatus)}",
         },
     ];
   }
@@ -1031,12 +1019,13 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       if (profile.professionalLife?.educationLevel != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': _translateValue(profile.professionalLife!.educationLevel),
+          'label':
+              "🎓 ${_translateValue(profile.professionalLife!.educationLevel)}",
         },
       if (profile.professionalLife?.job != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': _translateValue(profile.professionalLife!.job),
+          'label': "💼 ${_translateValue(profile.professionalLife!.job)}",
         },
     ];
   }
@@ -1082,12 +1071,13 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       if (profile.aboutMe?.religiousCommitment != null)
         {
           'icon': AssetsData.kdrawingIcon,
-          'label': _translateValue(profile.aboutMe!.religiousCommitment),
+          'label':
+              "🕌 ${_translateValue(profile.aboutMe!.religiousCommitment)}",
         },
       if (profile.aboutMe?.smoker != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': _translateValue(profile.aboutMe!.smoker),
+          'label': "🚬 ${_translateValue(profile.aboutMe!.smoker)}",
         },
     ];
   }

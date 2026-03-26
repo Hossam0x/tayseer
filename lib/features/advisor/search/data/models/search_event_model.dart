@@ -32,20 +32,31 @@ class SearchEvent extends Equatable {
     return SearchEvent(
       id: json['id'] ?? '',
       title: json['title'] ?? '',
-      imageUrl: json['image'] ?? json['imageUrl'] ?? '',
+      imageUrl: _extractImage(json),
       location: json['location'] ?? '',
-      advisorName: json['advisorName'] ?? '',
-      dateTime: json['dateTime'] ?? '',
-      price: json['price']?.toString() ?? '0',
-      oldPrice: json['oldPrice']?.toString() ?? '0',
-      attendeesCount: json['attendeesCount'] ?? 0,
+      advisorName: json['advisorName'] ?? json['advisor']?['name'] ?? '',
+      dateTime: json['date'] ?? json['dateTime'] ?? '',
+      price: json['priceAfterDiscount']?.toString() ?? json['price']?.toString() ?? '0',
+      oldPrice: json['priceBeforeDiscount']?.toString() ?? json['oldPrice']?.toString() ?? '0',
+      attendeesCount: json['attendeesCount'] ?? json['numberOfReservations'] ?? 0,
       attendeesImages:
           (json['attendeesImages'] as List?)
               ?.map((e) => e.toString())
               .toList() ??
           [],
-      isFeatured: json['isFeatured'] ?? false,
+      isFeatured: json['isFeatured'] ?? json['specialEvent'] ?? false,
     );
+  }
+
+  static String _extractImage(Map<String, dynamic> json) {
+    if (json['images'] is List && (json['images'] as List).isNotEmpty) {
+      return (json['images'] as List).first.toString();
+    } else if (json['image'] is String) {
+      return json['image'];
+    } else if (json['imageUrl'] is String) {
+      return json['imageUrl'];
+    }
+    return '';
   }
 
   @override

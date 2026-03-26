@@ -10,6 +10,7 @@ import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/view_model/home_event_bus.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
+import 'package:tayseer/core/utils/profile_event_bus.dart';
 import '../../../../my_import.dart';
 import '../reposiotry/home_repository.dart';
 
@@ -22,6 +23,7 @@ class HomeCubit extends Cubit<HomeState> {
   // تتبع حالة الاتصال للتحكم في التصفح
   bool _isPaginationEnabled = true;
   StreamSubscription? _connectivitySubscription;
+  late StreamSubscription<ProfileUpdateEvent> _profileSubscription;
 
   HomeCubit(
     this.homeRepository, {
@@ -30,6 +32,70 @@ class HomeCubit extends Cubit<HomeState> {
   }) : super(const HomeState()) {
     _loadCachedUserData();
     _listenToConnectivity();
+    _listenToProfileUpdates();
+  }
+
+  void _listenToProfileUpdates() {
+    _profileSubscription = ProfileEventBus.instance.onProfileUpdated.listen((
+      event,
+    ) {
+      if (isClosed) return;
+
+      debugPrint('🏠 HomeCubit: profile update received → ${event.image}');
+
+      // 1. تحديث الكاش المحلي
+      CachNetwork.setData(key: kMyProfileImage, value: event.image);
+      CachNetwork.setData(key: kMyProfileName, value: event.name);
+
+      // 2. تحديث بيانات اليوزر في الهيدر
+      final newData = ImageAndNameModel(
+        image: event.image,
+        name: event.name,
+        notifications: state.homeInfo?.notifications ?? 0,
+        approvalKey: state.homeInfo?.approvalKey ?? '',
+      );
+
+      var newState = state.copyWith(
+        homeInfo: newData,
+        fetchNameAndImageState: CubitStates.success,
+      );
+
+      // 3. تحديث صور اليوزر في البوستات الخاصة به (لو كان مستشار)
+      final myId = kCurrentUserData?.id;
+      if (myId != null) {
+        final updatedMap = Map<String?, CategoryPostsData>.from(
+          state.categoryPostsMap,
+        );
+        bool anyChanged = false;
+
+        updatedMap.forEach((catId, data) {
+          final postIndex = data.posts.indexWhere((p) => p.advisorId == myId);
+          if (postIndex != -1) {
+            final updatedPosts = data.posts.map((p) {
+              if (p.advisorId == myId) {
+                return p.copyWith(name: event.name, avatar: event.image);
+              }
+              return p;
+            }).toList();
+            updatedMap[catId] = data.copyWith(posts: updatedPosts);
+            anyChanged = true;
+          }
+        });
+
+        if (anyChanged) {
+          newState = newState.copyWith(categoryPostsMap: updatedMap);
+        }
+      }
+
+      emit(newState);
+    });
+  }
+
+  @override
+  Future<void> close() {
+    _connectivitySubscription?.cancel();
+    _profileSubscription.cancel();
+    return super.close();
   }
 
   /// الاستماع لتغييرات الاتصال
@@ -141,6 +207,8 @@ class HomeCubit extends Cubit<HomeState> {
             image: cachedImage,
             name: cachedName,
             notifications: state.homeInfo?.notifications ?? 0,
+            notifications: 0,
+            approvalKey: state.homeInfo?.approvalKey ?? '',
           ),
           fetchNameAndImageState: CubitStates.success,
         ),
@@ -1303,11 +1371,5 @@ class HomeCubit extends Cubit<HomeState> {
         emit(state.copyWith(sessionStartModel: null));
       });
     });
-  }
-
-  @override
-  Future<void> close() {
-    _connectivitySubscription?.cancel();
-    return super.close();
   }
 }

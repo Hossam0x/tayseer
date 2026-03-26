@@ -43,18 +43,20 @@ class UsersData {
 class UserItem {
   User? user;
   Answers? answers;
+  bool? allowInteractions;
 
-  UserItem({this.user, this.answers});
+  UserItem({this.user, this.answers, this.allowInteractions});
 
   factory UserItem.fromJson(Map<String, dynamic> json) => UserItem(
     user: json["user"] != null ? User.fromJson(json["user"]) : null,
-    answers:
-        json["answers"] != null ? Answers.fromJson(json["answers"]) : null,
+    answers: json["answers"] != null ? Answers.fromJson(json["answers"]) : null,
+    allowInteractions: json["allowInteractions"],
   );
 
   Map<String, dynamic> toJson() => {
     "user": user?.toJson(),
     "answers": answers?.toJson(),
+    "allowInteractions": allowInteractions,
   };
 }
 
@@ -179,6 +181,8 @@ class Answers {
   ProfessionalLife? professionalLife;
   Family? family;
   List<String>? hobbies;
+  // ✅ FIXED: faith بيجي كـ field منفصل من الـ API — مش جوه hobbies
+  String? faith;
   UserMedia? userMedia;
   YourGoals? yourGoals;
   String? myDescription;
@@ -189,6 +193,7 @@ class Answers {
     this.professionalLife,
     this.family,
     this.hobbies,
+    this.faith,
     this.userMedia,
     this.yourGoals,
     this.myDescription,
@@ -196,8 +201,7 @@ class Answers {
   });
 
   factory Answers.fromJson(Map<String, dynamic> json) => Answers(
-    aboutMe:
-        json["aboutMe"] != null ? AboutMe.fromJson(json["aboutMe"]) : null,
+    aboutMe: json["aboutMe"] != null ? AboutMe.fromJson(json["aboutMe"]) : null,
     professionalLife: json["professionalLife"] != null
         ? ProfessionalLife.fromJson(json["professionalLife"])
         : null,
@@ -205,6 +209,8 @@ class Answers {
     hobbies: json["hobbies"] != null
         ? List<String>.from(json["hobbies"])
         : null,
+    // ✅ FIXED: اقرأ faith من الـ JSON مباشرة
+    faith: json["faith"],
     userMedia: json["userMedia"] != null
         ? UserMedia.fromJson(json["userMedia"])
         : null,
@@ -220,6 +226,7 @@ class Answers {
     "professionalLife": professionalLife?.toJson(),
     "family": family?.toJson(),
     "hobbies": hobbies,
+    "faith": faith,
     "userMedia": userMedia?.toJson(),
     "yourGoals": yourGoals?.toJson(),
     "myDescription": myDescription,
@@ -358,8 +365,8 @@ class YourGoals {
   dynamic children;
   dynamic marry;
   dynamic engagment;
-  dynamic marriageIntentions; // ✅ الـ field الصح للزواج من الـ API
-  dynamic familyAcceptance;   // ✅ الـ field الصح للأسرة من الـ API
+  dynamic marriageIntentions;
+  dynamic familyAcceptance;
 
   YourGoals({
     this.travel,
@@ -375,8 +382,8 @@ class YourGoals {
     children: json["children"],
     marry: json["marry"],
     engagment: json["engagment"],
-    marriageIntentions: json["marriageIntentions"], // ✅
-    familyAcceptance: json["familyAcceptance"],     // ✅
+    marriageIntentions: json["marriageIntentions"],
+    familyAcceptance: json["familyAcceptance"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -384,8 +391,8 @@ class YourGoals {
     "children": children,
     "marry": marry,
     "engagment": engagment,
-    "marriageIntentions": marriageIntentions, // ✅
-    "familyAcceptance": familyAcceptance,     // ✅
+    "marriageIntentions": marriageIntentions,
+    "familyAcceptance": familyAcceptance,
   };
 }
 

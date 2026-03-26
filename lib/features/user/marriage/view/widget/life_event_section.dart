@@ -13,7 +13,7 @@ class LifeEventsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.ltr,
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
         decoration: BoxDecoration(

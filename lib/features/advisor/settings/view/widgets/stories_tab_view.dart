@@ -1,9 +1,10 @@
-import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/archive_states.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_cubits.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_states.dart';
 import 'package:tayseer/features/advisor/stories/stories.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/story_details_view.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/stories/stories_skeleton.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/stories/story_grid_item.dart';
 import 'package:tayseer/my_import.dart';
 
 class StoriesTabView extends StatelessWidget {
@@ -21,7 +22,7 @@ class StoriesTabView extends StatelessWidget {
       builder: (context, state) {
         switch (state.state) {
           case CubitStates.loading:
-            return _buildSkeletonStories();
+            return const StoriesSkeleton();
           case CubitStates.failure:
             return CustomErrorView(
               message: state.errorMessage,
@@ -31,110 +32,24 @@ class StoriesTabView extends StatelessWidget {
             if (state.stories.isEmpty) {
               return SharedEmptyState(title: context.tr('no_stories'));
             }
-            return _buildStoriesContent(context, state);
+            return _StoriesGrid(state: state);
           default:
             return const SizedBox.shrink();
         }
       },
     );
   }
+}
 
-  Widget _buildSkeletonStories() {
-    return GridView.builder(
-      padding: EdgeInsets.all(20.w),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 10.w,
-        mainAxisSpacing: 10.h,
-        childAspectRatio: 0.8,
-      ),
-      itemCount: 9, // 9 عناصر للـ skeleton
-      itemBuilder: (context, index) {
-        return Skeletonizer(
-          enabled: true,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(30.r),
-              color: Colors.grey.shade100,
-            ),
-            child: Stack(
-              children: [
-                // Skeleton للصورة
-                Container(
-                  width: double.infinity,
-                  height: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30.r),
-                    color: Colors.grey.shade300,
-                  ),
-                ),
-                // Skeleton للتاريخ
-                Positioned(
-                  top: 20.h,
-                  right: 20.w,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 12.w,
-                      vertical: 6.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14.r),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 20.w,
-                          height: 20.h,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade400,
-                            borderRadius: BorderRadius.circular(4.r),
-                          ),
-                        ),
-                        Gap(2.h),
-                        Container(
-                          width: 40.w,
-                          height: 12.h,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade400,
-                            borderRadius: BorderRadius.circular(4.r),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Skeleton للعلامة الخاصة (Special Badge)
-                if (index % 3 == 0)
-                  Positioned(
-                    top: 20.h,
-                    left: 20.w,
-                    child: Container(
-                      width: 24.w,
-                      height: 24.h,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade400,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+class _StoriesGrid extends StatelessWidget {
+  final ArchivedStoriesState state;
+  const _StoriesGrid({required this.state});
 
-  Widget _buildStoriesContent(
-    BuildContext context,
-    ArchivedStoriesState state,
-  ) {
-    // Flatten the stories list to display individual stories in the grid
-    final List<MapEntry<UserStoriesModel, StoryModel>> allStories = [];
-    for (var userStory in state.stories) {
-      for (var story in userStory.stories) {
+  @override
+  Widget build(BuildContext context) {
+    final allStories = <MapEntry<UserStoriesModel, StoryModel>>[];
+    for (final userStory in state.stories) {
+      for (final story in userStory.stories) {
         allStories.add(MapEntry(userStory, story));
       }
     }
@@ -165,61 +80,15 @@ class StoriesTabView extends StatelessWidget {
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   if (index == allStories.length) {
-                    return _buildLoadMoreIndicator(state);
+                    return _LoadMoreIndicator(state: state);
                   }
-
                   final parentUserStory = allStories[index].key;
                   final story = allStories[index].value;
-
                   return GestureDetector(
-                    onTap: () {
-                      // Reverse stories to chronological order (oldest first)
-                      final chronologicalStories = parentUserStory
-                          .stories
-                          .reversed
-                          .toList();
-
-                      final tempUserStory = parentUserStory.copyWith(
-                        stories: chronologicalStories,
-                      );
-
-                      Navigator.push(
-                        context,
-                        PageRouteBuilder(
-                          opaque: false,
-                          pageBuilder:
-                              (newContext, animation, secondaryAnimation) =>
-                                  MultiBlocProvider(
-                                    providers: [
-                                      BlocProvider.value(
-                                        value: getIt<StoriesCubit>(),
-                                      ),
-                                      BlocProvider.value(
-                                        value: context
-                                            .read<ArchivedStoriesCubit>(),
-                                      ),
-                                    ],
-                                    child: StoryDetailsView(
-                                      usersStories: [tempUserStory],
-                                      initialUserIndex: 0,
-                                      heroTag: 'archive_${story.id}',
-                                      isArchive: true,
-                                      initialStoryId: story.id,
-                                    ),
-                                  ),
-                          transitionsBuilder:
-                              (context, animation, secondaryAnimation, child) {
-                                return FadeTransition(
-                                  opacity: animation,
-                                  child: child,
-                                );
-                              },
-                        ),
-                      );
-                    },
+                    onTap: () => _openStory(context, parentUserStory, story),
                     child: Hero(
                       tag: 'archive_${story.id}',
-                      child: _buildStoryItem(context, story),
+                      child: StoryGridItem(story: story),
                     ),
                   );
                 }, childCount: allStories.length + (state.hasMore ? 1 : 0)),
@@ -231,204 +100,61 @@ class StoriesTabView extends StatelessWidget {
     );
   }
 
-  Widget _buildStoryItem(BuildContext context, StoryModel story) {
-    final date = story.createdAt;
+  void _openStory(
+    BuildContext context,
+    UserStoriesModel parentUserStory,
+    StoryModel story,
+  ) {
+    final chronologicalStories = parentUserStory.stories.reversed.toList();
+    final tempUserStory = parentUserStory.copyWith(
+      stories: chronologicalStories,
+    );
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(30.r),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Story Media (Image/Video)
-          // Note: Current StoryModel mainly has image. If there's video, it might be in a different field or handled elsewhere.
-          _buildStoryImage(story.image),
-
-          // Content Overlay
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.7),
-                    Colors.transparent,
-                    Colors.transparent,
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(30.r),
-              ),
-            ),
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        opaque: false,
+        pageBuilder: (newContext, _, __) => MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: getIt<StoriesCubit>()),
+            BlocProvider.value(value: context.read<ArchivedStoriesCubit>()),
+          ],
+          child: StoryDetailsView(
+            usersStories: [tempUserStory],
+            initialUserIndex: 0,
+            heroTag: 'archive_${story.id}',
+            isArchive: true,
+            initialStoryId: story.id,
           ),
-
-          // Date Badge
-          Positioned(
-            top: 15.h,
-            right: 15.w,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    date.day.toString(),
-                    style: Styles.textStyle16Meduim.copyWith(
-                      color: AppColors.blackColor,
-                    ),
-                  ),
-                  Text(
-                    _getMonthName(date.month),
-                    style: Styles.textStyle12.copyWith(
-                      color: AppColors.blackColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Special Badge
-          // if (story.isSpecial)
-          //   Positioned(
-          //     top: 20.h,
-          //     left: 20.w,
-          //     child: Container(
-          //       padding: EdgeInsets.all(6.w),
-          //       decoration: BoxDecoration(
-          //         color: AppColors.kprimaryColor,
-          //         shape: BoxShape.circle,
-          //         boxShadow: [
-          //           BoxShadow(
-          //             color: Colors.black.withOpacity(0.2),
-          //             blurRadius: 4,
-          //             offset: const Offset(0, 2),
-          //           ),
-          //         ],
-          //       ),
-          //       child: Icon(Icons.star, color: Colors.white, size: 16.sp),
-          //     ),
-          //   ),
-
-          // Like Icon
-          // Positioned(
-          //   bottom: 15.h,
-          //   left: 15.w,
-          //   child: Row(
-          //     children: [
-          //       Icon(
-          //         story.isLiked ? Icons.favorite : Icons.favorite_border,
-          //         color: story.isLiked ? Colors.red : Colors.white,
-          //         size: 18.sp,
-          //       ),
-          //       Gap(4.w),
-          //       Text(
-          //         '${story.likesCount}',
-          //         style: Styles.textStyle12.copyWith(color: Colors.white),
-          //       ),
-          //     ],
-          //   ),
-          // ),
-        ],
+        ),
+        transitionsBuilder: (_, animation, __, child) =>
+            FadeTransition(opacity: animation, child: child),
       ),
     );
   }
+}
 
-  Widget _buildStoryImage(String imageUrl) {
-    return Image.network(
-      imageUrl,
-      fit: BoxFit.cover,
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
+class _LoadMoreIndicator extends StatelessWidget {
+  final ArchivedStoriesState state;
+  const _LoadMoreIndicator({required this.state});
 
-        // Skeleton أثناء التحميل
-        return Container(
-          color: Colors.grey.shade300,
-          child: Center(
-            child: Container(
-              width: 40.w,
-              height: 40.h,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade400,
-                borderRadius: BorderRadius.circular(20.r),
-              ),
-            ),
-          ),
-        );
-      },
-      errorBuilder: (context, error, stackTrace) {
-        return _buildPlaceholder();
-      },
-    );
-  }
-
-  Widget _buildPlaceholder() {
-    return Container(
-      color: AppColors.primary100,
-      child: Center(
-        child: Icon(Icons.photo, color: AppColors.primary300, size: 40.sp),
-      ),
-    );
-  }
-
-  Widget _buildLoadMoreIndicator(ArchivedStoriesState state) {
-    if (!state.hasMore) return SizedBox.shrink();
-
+  @override
+  Widget build(BuildContext context) {
+    if (!state.hasMore) return const SizedBox.shrink();
     if (state.isLoadingMore) {
-      return Skeletonizer(
-        enabled: true,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(30.r),
-            color: Colors.grey.shade100,
-          ),
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30.r),
+          color: Colors.grey.shade100,
         ),
       );
     }
-
-    return Container(
-      color: Colors.transparent,
-      child: Center(
-        child: Icon(
-          Icons.arrow_downward,
-          color: AppColors.primary300,
-          size: 24.sp,
-        ),
+    return Center(
+      child: Icon(
+        Icons.arrow_downward,
+        color: AppColors.primary300,
+        size: 24.sp,
       ),
     );
   }
-
-  String _getMonthName(int month) {
-    final months = [
-      'يناير',
-      'فبراير',
-      'مارس',
-      'أبريل',
-      'مايو',
-      'يونيو',
-      'يوليو',
-      'أغسطس',
-      'سبتمبر',
-      'أكتوبر',
-      'نوفمبر',
-      'ديسمبر',
-    ];
-    return months[month - 1];
-  }
-
-  // String _formatDuration(double seconds) {
-  //   final duration = Duration(seconds: seconds.toInt());
-  //   final minutes = duration.inMinutes;
-  //   final remainingSeconds = duration.inSeconds % 60;
-  //   return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
-  // }
 }

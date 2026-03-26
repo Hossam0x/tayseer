@@ -14,19 +14,18 @@ class WalletRepo {
       final response = await _remoteDataSource.getWallet();
       if (response['success'] == true) {
         return Right(WalletModel.fromJson(response['data']));
-      } else {
-        return Left(
-          ServerFailure(response['message'] ?? 'Error fetching wallet'),
-        );
       }
+      return Left(
+        ServerFailure(response['message'] ?? 'Error fetching wallet'),
+      );
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
   }
 
-  Future<Either<Failure, List<TransactionModel>>> getTransactions({
-    required int page,
-    int? limit,
+  Future<Either<Failure, PaginatedTransactions>> getTransactions({
+    int page = 1,
+    int limit = 20,
   }) async {
     try {
       final response = await _remoteDataSource.getTransactions(
@@ -34,17 +33,43 @@ class WalletRepo {
         limit: limit,
       );
       if (response['success'] == true) {
-        final List<TransactionModel> transactions = List<TransactionModel>.from(
-          response['data']['transactions'].map(
-            (x) => TransactionModel.fromJson(x),
+        final d = response['data'] as Map<String, dynamic>;
+        return Right(
+          PaginatedTransactions(
+            data: (d['data'] as List)
+                .map((x) => TransactionModel.fromJson(x))
+                .toList(),
+            pagination: PaginationModel.fromJson(d['pagination']),
           ),
         );
-        return Right(transactions);
-      } else {
-        return Left(
-          ServerFailure(response['message'] ?? 'Error fetching transactions'),
+      }
+      return Left(ServerFailure(response['message'] ?? 'Error'));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  Future<Either<Failure, PaginatedTransactions>> getEarnings({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await _remoteDataSource.getEarnings(
+        page: page,
+        limit: limit,
+      );
+      if (response['success'] == true) {
+        final d = response['data'] as Map<String, dynamic>;
+        return Right(
+          PaginatedTransactions(
+            data: (d['data'] as List)
+                .map((x) => TransactionModel.fromJson(x))
+                .toList(),
+            pagination: PaginationModel.fromJson(d['pagination']),
+          ),
         );
       }
+      return Left(ServerFailure(response['message'] ?? 'Error'));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

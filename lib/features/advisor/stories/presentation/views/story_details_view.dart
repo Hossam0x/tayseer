@@ -2,8 +2,8 @@ import 'package:story_view/story_view.dart';
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/features/advisor/stories/stories.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/archive_cubits.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/archive_states.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_cubits.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_states.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart' hide Direction;
@@ -14,6 +14,7 @@ class StoryDetailsView extends StatefulWidget {
   final String? heroTag;
   final bool isArchive;
   final String? initialStoryId;
+  final bool newestFirst;
 
   const StoryDetailsView({
     super.key,
@@ -22,6 +23,7 @@ class StoryDetailsView extends StatefulWidget {
     this.heroTag,
     this.isArchive = false,
     this.initialStoryId,
+    this.newestFirst = false,
   });
 
   @override
@@ -171,6 +173,7 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
                         : null,
                     isActive: _currentUserIndex == index,
                     isDragging: _isDragging,
+                    newestFirst: widget.newestFirst,
                     onAllStoriesComplete: () {
                       if (_currentUserIndex < widget.usersStories.length - 1) {
                         _pageController.nextPage(
@@ -222,6 +225,7 @@ class _UserStoryPage extends StatefulWidget {
   final ValueChanged<bool> onDraggingChanged;
   final bool isActive;
   final bool isDragging;
+  final bool newestFirst;
 
   const _UserStoryPage({
     required this.userStories,
@@ -232,6 +236,7 @@ class _UserStoryPage extends StatefulWidget {
     required this.onDraggingChanged,
     this.isActive = false,
     this.isDragging = false,
+    this.newestFirst = false,
   });
 
   @override
@@ -308,7 +313,11 @@ class _UserStoryPageState extends State<_UserStoryPage> {
 
   void _initStoryItems() {
     final chronologicalStories = widget.userStories.stories.toList()
-      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      ..sort(
+        (a, b) => widget.newestFirst
+            ? b.createdAt.compareTo(a.createdAt)
+            : a.createdAt.compareTo(b.createdAt),
+      );
     _reorderedStories = chronologicalStories;
 
     int startIndex = 0;
@@ -340,61 +349,101 @@ class _UserStoryPageState extends State<_UserStoryPage> {
             : const Duration(seconds: 15);
         _storyItems.add(
           StoryItem(
-            // Black bg (replaces pageVideo's Container(color: Colors.black))
-            // Counter-flip restores content orientation while outer StoryView flip makes bars RTL
-            Container(
-              color: Colors.black,
-              child: Transform.scale(
-                scaleX: isArabic ? -1.0 : 1.0,
-                child: StoryVideo.url(
-                  story.video!,
-                  controller: _storyController,
-                  // Use a stable key based on video URL so the widget is NOT
-                  // recreated on rebuild — prevents the "failed to load" flash.
-                  key: ValueKey('video_${story.id}'),
-                  // Show a spinner instead of "Media failed to load." during
-                  // the brief window where state=success but isInitialized=false.
-                  loadingWidget: const Center(
-                    child: SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2.5,
+            Stack(
+              fit: StackFit.expand,
+              children: [
+                // Black bg + video content
+                Container(
+                  color: Colors.black,
+                  child: Transform.scale(
+                    scaleX: isArabic ? -1.0 : 1.0,
+                    child: StoryVideo.url(
+                      story.video!,
+                      controller: _storyController,
+                      key: ValueKey('video_${story.id}'),
+                      loadingWidget: const Center(
+                        child: SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  errorWidget: const Center(
-                    child: SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2.5,
+                      errorWidget: const Center(
+                        child: SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
+                // Gradient overlay — top & bottom dark bands only
+                IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.65),
+                          Colors.transparent,
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.65),
+                        ],
+                        stops: const [0.0, 0.18, 0.78, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             duration: duration,
           ),
         );
-
       } else {
         _storyItems.add(
           StoryItem(
-            // Black bg (replaces pageImage's Container(color: Colors.black))
-            Container(
-              color: Colors.black,
-              child: Transform.scale(
-                scaleX: isArabic ? -1.0 : 1.0,
-                child: StoryImage.url(
-                  story.image,
-                  controller: _storyController,
-                  fit: BoxFit.contain,
+            Stack(
+              fit: StackFit.expand,
+              children: [
+                // Black bg + image content
+                Container(
+                  color: Colors.black,
+                  child: Transform.scale(
+                    scaleX: isArabic ? -1.0 : 1.0,
+                    child: StoryImage.url(
+                      story.image,
+                      controller: _storyController,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
-              ),
+                // Gradient overlay — top & bottom dark bands only
+                IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.65),
+                          Colors.transparent,
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.65),
+                        ],
+                        stops: const [0.0, 0.18, 0.78, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             duration: const Duration(seconds: 5),
           ),
@@ -897,6 +946,7 @@ class _UserStoryPageState extends State<_UserStoryPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      enableDrag: true,
       builder: (ctx) => _LikersBottomSheet(likers: likers),
     );
   }
@@ -933,7 +983,7 @@ class _LoveButton extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Likers Bottom Sheet — with pagination & profile navigation
+// Likers Bottom Sheet — draggable, paginated & profile navigation
 // ─────────────────────────────────────────────────────────────────────────────
 class _LikersBottomSheet extends StatefulWidget {
   final List<StoryUserModel> likers;
@@ -947,23 +997,10 @@ class _LikersBottomSheet extends StatefulWidget {
 class _LikersBottomSheetState extends State<_LikersBottomSheet> {
   static const int _pageSize = 15;
   int _visibleCount = _pageSize;
-  final ScrollController _scrollController = ScrollController();
 
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 100) {
+  void _onScroll(ScrollController controller) {
+    if (controller.position.pixels >=
+        controller.position.maxScrollExtent - 100) {
       if (_visibleCount < widget.likers.length) {
         setState(() {
           _visibleCount = (_visibleCount + _pageSize).clamp(
@@ -976,7 +1013,6 @@ class _LikersBottomSheetState extends State<_LikersBottomSheet> {
   }
 
   void _navigateToProfile(BuildContext context, StoryUserModel user) {
-    // Don't close the bottom sheet - keep story paused
     final isAdvisor = user.userType.toLowerCase() == 'advisor';
     if (isAdvisor) {
       Navigator.push(
@@ -999,69 +1035,188 @@ class _LikersBottomSheetState extends State<_LikersBottomSheet> {
   Widget build(BuildContext context) {
     final displayedLikers = widget.likers.take(_visibleCount).toList();
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.6,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      child: Column(
-        children: [
-          Gap(12.h),
-          Container(
-            width: 40.w,
-            height: 4.h,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2.r),
-            ),
+    return DraggableScrollableSheet(
+      initialChildSize: 0.45,
+      minChildSize: 0.25,
+      maxChildSize: 0.92,
+      expand: false,
+      snap: true,
+      snapSizes: const [0.45, 0.7, 0.92],
+      builder: (context, scrollController) {
+        scrollController.addListener(() => _onScroll(scrollController));
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 20,
+                offset: const Offset(0, -4),
+              ),
+            ],
           ),
-          Gap(16.h),
-          Text(context.tr('story_likers'), style: Styles.textStyle16SemiBold),
-          Gap(12.h),
-          Expanded(
-            child: widget.likers.isEmpty
-                ? Center(
-                    child: Text(
-                      context.tr('no_likers_yet'),
-                      style: Styles.textStyle14.copyWith(
-                        color: AppColors.kGreyB3,
+          child: Column(
+            children: [
+              // ── Drag handle ──
+              Padding(
+                padding: EdgeInsets.only(top: 12.h, bottom: 8.h),
+                child: Container(
+                  width: 40.w,
+                  height: 4.h,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2.r),
+                  ),
+                ),
+              ),
+              // ── Title row ──
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(8.r),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.favorite,
+                        color: Colors.red,
+                        size: 18.sp,
                       ),
                     ),
-                  )
-                : ListView.separated(
-                    controller: _scrollController,
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    itemCount: displayedLikers.length,
-                    separatorBuilder: (_, _) => Gap(12.h),
-                    itemBuilder: (context, index) {
-                      final user = displayedLikers[index];
-                      return GestureDetector(
-                        onTap: () => _navigateToProfile(context, user),
-                        child: Row(
+                    Gap(10.w),
+                    Text(
+                      context.tr('story_likers'),
+                      style: Styles.textStyle16SemiBold,
+                    ),
+                    const Spacer(),
+                    if (widget.likers.isNotEmpty)
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10.w,
+                          vertical: 4.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.kprimaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20.r),
+                        ),
+                        child: Text(
+                          '${widget.likers.length}',
+                          style: Styles.textStyle12.copyWith(
+                            color: AppColors.kprimaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Divider(height: 1, color: Colors.grey[100]),
+              // ── List ──
+              Expanded(
+                child: widget.likers.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            CircleAvatar(
-                              radius: 22.r,
-                              backgroundImage: NetworkImage(user.image),
+                            Icon(
+                              Icons.favorite_border,
+                              size: 48.sp,
+                              color: Colors.grey[300],
                             ),
-                            Gap(12.w),
-                            Expanded(
-                              child: Text(
-                                user.name,
-                                style: Styles.textStyle14SemiBold,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                            Gap(12.h),
+                            Text(
+                              context.tr('no_likers_yet'),
+                              style: Styles.textStyle14.copyWith(
+                                color: AppColors.kGreyB3,
                               ),
                             ),
                           ],
                         ),
-                      );
-                    },
-                  ),
+                      )
+                    : ListView.builder(
+                        controller: scrollController,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16.w,
+                          vertical: 8.h,
+                        ),
+                        itemCount: displayedLikers.length,
+                        itemBuilder: (context, index) {
+                          final user = displayedLikers[index];
+                          return GestureDetector(
+                            onTap: () => _navigateToProfile(context, user),
+                            child: Container(
+                              margin: EdgeInsets.only(bottom: 4.h),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12.w,
+                                vertical: 10.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(14.r),
+                              ),
+                              child: Row(
+                                children: [
+                                  Stack(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 24.r,
+                                        backgroundImage: NetworkImage(
+                                          user.image,
+                                        ),
+                                      ),
+                                      Positioned(
+                                        bottom: 0,
+                                        right: 0,
+                                        child: Container(
+                                          width: 14.w,
+                                          height: 14.w,
+                                          decoration: BoxDecoration(
+                                            color: Colors.red,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.white,
+                                              width: 1.5.w,
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            Icons.favorite,
+                                            color: Colors.white,
+                                            size: 8.sp,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Gap(12.w),
+                                  Expanded(
+                                    child: Text(
+                                      user.name,
+                                      style: Styles.textStyle14SemiBold,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.arrow_forward_ios_rounded,
+                                    size: 14.sp,
+                                    color: Colors.grey[400],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+              SizedBox(height: MediaQuery.of(context).padding.bottom + 8.h),
+            ],
           ),
-          Gap(16.h),
-        ],
-      ),
+        );
+      },
     );
   }
 }

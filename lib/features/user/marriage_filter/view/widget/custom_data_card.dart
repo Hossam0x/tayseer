@@ -4,7 +4,6 @@ class FilterItemModel {
   final String title;
   final String value;
   final VoidCallback? onTap;
-
   FilterItemModel({required this.title, required this.value, this.onTap});
 }
 
@@ -21,7 +20,8 @@ class CustomDataCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      // ✅ حسب اللغة بدل rtl ثابت
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -40,26 +40,27 @@ class CustomDataCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // العنوان الرئيسي
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12.0),
               child: Text(sectionTitle, style: Styles.textStyle16Bold),
             ),
-
             ...items.asMap().entries.map((entry) {
-              int idx = entry.key;
-              FilterItemModel item = entry.value;
-              bool isLast = idx == items.length - 1;
-
-              return _buildInfoRow(item, isLast);
-            }).toList(),
+              final idx = entry.key;
+              final item = entry.value;
+              final isLast = idx == items.length - 1;
+              return _buildInfoRow(context, item, isLast);
+            }),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoRow(FilterItemModel item, bool isLast) {
+  Widget _buildInfoRow(
+    BuildContext context,
+    FilterItemModel item,
+    bool isLast,
+  ) {
     return InkWell(
       onTap: item.onTap,
       child: Column(
@@ -67,8 +68,11 @@ class CustomDataCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 14.0),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // ✅ العنوان — حجم ثابت
                 Expanded(
+                  flex: 2,
                   child: Text(
                     item.title,
                     style: Styles.textStyle16.copyWith(
@@ -76,22 +80,39 @@ class CustomDataCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                Row(
-                  children: [
-                    Text(
-                      item.value,
-                      style: Styles.textStyle14.copyWith(
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w400,
+
+                const SizedBox(width: 8),
+
+                // ✅ القيمة + أيقونة — تاخد المساحة المتبقية وتلتف لو طويلة
+                Expanded(
+                  flex: 3,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          item.value,
+                          style: Styles.textStyle14.copyWith(
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w400,
+                          ),
+                          textAlign: TextAlign.end,
+                          // ✅ يكمل في السطر اللي تحت لو طويل
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(
-                      Icons.arrow_forward_ios,
-                      size: 14,
-                      color: Colors.grey[300],
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Icon(
+                        isArabic
+                            ? Icons.arrow_back_ios
+                            : Icons.arrow_forward_ios,
+                        size: 14,
+                        color: Colors.grey[300],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

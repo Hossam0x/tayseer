@@ -1,8 +1,8 @@
-// features/user/user_profile/views/user_public_profile_view.dart
+import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_posts_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_public_profile_repository.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_state.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_state.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/send_greeting_dialog.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/user_public_profile_bio.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/user_public_profile_header.dart';
@@ -17,24 +17,37 @@ class UserPublicProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<UserPublicProfileCubit>(
-      create: (_) => UserPublicProfileCubit(
-        getIt<UserPublicProfileRepository>(),
-        getIt<UserPostsRepository>(),
-        userId: userId,
-        initialProfile: null,
-      ),
-      child: Scaffold(
-        body: AdvisorBackground(
-          child: SafeArea(child: _UserPublicProfileContent()),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<UserPublicProfileCubit>(
+          create: (_) => UserPublicProfileCubit(
+            getIt<UserPublicProfileRepository>(),
+            getIt<UserPostsRepository>(),
+            userId: userId,
+            initialProfile: null,
+          ),
         ),
-        floatingActionButton: _buildFloatingActionButton(),
+        BlocProvider.value(value: getIt<ConnectivityCubit>()),
+      ],
+      child: BlocListener<ConnectivityCubit, ConnectivityState>(
+        listenWhen: (prev, curr) => !prev.isConnected && curr.isConnected,
+        listener: (context, _) =>
+            context.read<UserPublicProfileCubit>().refresh(),
+        child: Scaffold(
+          body: AdvisorBackground(
+            child: SafeArea(child: _UserPublicProfileContent()),
+          ),
+          floatingActionButton: _buildFloatingActionButton(),
+        ),
       ),
     );
   }
 
   Widget _buildFloatingActionButton() {
     return BlocBuilder<UserPublicProfileCubit, UserPublicProfileState>(
+      buildWhen: (prev, curr) =>
+          prev.state != curr.state ||
+          prev.profile?.isBlockedByMe != curr.profile?.isBlockedByMe,
       builder: (context, state) {
         final isBlocked = state.profile?.isBlockedByMe ?? false;
         if (state.profile?.isMe == true ||
@@ -59,7 +72,7 @@ class UserPublicProfileView extends StatelessWidget {
               );
             },
             child: FloatingActionButton(
-              onPressed: null, // Handled by CustomClick
+              onPressed: null,
               backgroundColor: AppColors.kprimaryColor,
               shape: const CircleBorder(),
               elevation: 4,
@@ -102,10 +115,14 @@ class _UserPublicProfileContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<UserPublicProfileCubit, UserPublicProfileState>(
+      buildWhen: (prev, curr) => prev.state != curr.state,
       builder: (context, state) {
-        // ⭐ التحقق من حالة التحميل العامة
         if (state.state == CubitStates.loading) {
           return const UserPublicProfileViewSkeletonizer();
+        }
+
+        if (state.state == CubitStates.failure && state.profile == null) {
+          return _buildFullErrorView(context, state);
         }
 
         return RefreshIndicator.adaptive(
@@ -117,24 +134,46 @@ class _UserPublicProfileContent extends StatelessWidget {
               parent: AlwaysScrollableScrollPhysics(),
             ),
             slivers: [
-              // الهيدر
               const UserPublicProfileHeader(),
-
-              // المعلومات الشخصية
               const UserPublicProfileBio(),
-
-              // Spacing
               SliverToBoxAdapter(child: Gap(20.h)),
-
-              // التبويبات
               const UserPublicProfileTabs(),
-
-              // مساحة في الأسفل
               SliverToBoxAdapter(child: Gap(100.h)),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildFullErrorView(
+    BuildContext context,
+    UserPublicProfileState state,
+  ) {
+    return Column(
+      children: [
+        // زر الرجوع
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: IconButton(
+              icon: Icon(
+                Icons.arrow_back_ios,
+                color: AppColors.secondary600,
+                size: 20.sp,
+              ),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+        ),
+        Expanded(
+          child: CustomErrorView(
+            message: state.profileErrorMessage,
+            onRetry: () => context.read<UserPublicProfileCubit>().refresh(),
+          ),
+        ),
+      ],
     );
   }
 }

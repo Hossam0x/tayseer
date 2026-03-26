@@ -17,16 +17,24 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
+    super.initState();
     _initializeSocket();
     _navigateBasedOnToken();
   }
 
   Future<void> _initializeSocket() async {
     try {
+      final userType = CachNetwork.getStringData(key: kUserType);
+      final token = CachNetwork.getStringData(key: ktoken);
+
+      if (userType == UserTypeEnum.guest.name || token.isEmpty) return;
+
       final socketHelper = getIt<tayseerSocketHelper>();
       final connected = await socketHelper.connect();
       if (connected) {
         log('✅ Socket connected successfully');
+      } else {
+        log('⚠️ Socket connection failed, but continuing...');
       }
     } catch (e) {
       log('❌ Socket initialization error: $e');
@@ -34,7 +42,21 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _navigateBasedOnToken() async {
-    await Future.delayed(const Duration(seconds: 5));
+    await Future.delayed(const Duration(milliseconds: 4800));
+    if (!mounted) return;
+
+    final String? token = CachNetwork.getStringData(key: ktoken);
+    final String? userType = CachNetwork.getStringData(key: kUserType);
+
+    log(
+      '🔍 Navigation check - Token: ${token?.isNotEmpty}, '
+      'UserType: $userType, selectedUserType: $selectedUserType',
+    );
+
+    // ✅ نسحب الـ cold start URI ونمسحه فوراً
+    final coldUri = pendingDeepLinkUri;
+    pendingDeepLinkUri = null;
+
     if (!mounted) return;
 
     String? token = CachNetwork.getStringData(key: ktoken);
@@ -75,6 +97,59 @@ class _SplashScreenState extends State<SplashScreen>
         AppRouter.kRegisrationView,
       );
     }
+  }
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          consumePendingDeepLink();
+        });
+      }
+    } else {
+      // ─── مش مسجل ───
+      log('⚠️ No token found, navigating to registration');
+
+      // ✅ حفظ الـ cold start deep link لما يسجل دخول
+      if (coldUri != null) {
+        final personId = _extractPersonId(coldUri);
+        if (personId != null) {
+          pendingDeepLinkPersonId = personId;
+          debugPrint('🔗 Cold start: saved for after login: $personId');
+        }
+      }
+
+      if (!mounted) return;
+      context.pushReplacementNamed(AppRouter.kRegisrationView);
+    }
+  }
+
+  void _handleDeepLinkAfterLogin(Uri uri) {
+    final personId = _extractPersonId(uri);
+    if (personId == null) return;
+
+    // ✅ delay أكبر عشان الـ destination screen يتبني خالص
+    Future.delayed(const Duration(milliseconds: 1000), () {
+      if (!mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        navigatorKey.currentState?.pushNamed(
+          AppRouter.kMarriageView,
+          arguments: {'personId': personId},
+        );
+      });
+    });
+  }
+
+  String? _extractPersonId(Uri uri) {
+    final segments = uri.pathSegments;
+
+    if (segments.length >= 3 &&
+        segments[0] == 'marriage' &&
+        segments[1] == 'profile') {
+      return segments[2];
+    }
+
+    if (uri.scheme == 'tayseer' && uri.host == 'marriage') {
+      return uri.queryParameters['profileId'];
+    }
+
+    return null;
   }
 
   @override

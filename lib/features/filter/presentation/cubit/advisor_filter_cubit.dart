@@ -1,17 +1,10 @@
-// lib/features/filter/presentation/cubit/advisor_filter_cubit.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tayseer/features/filter/data/advisor_filter_repo/advisor_filter_repo.dart';
 import '../../data/models/advisor_filter_request_model.dart';
 import 'advisor_filter_state.dart';
 
 class AdvisorFilterCubit extends Cubit<AdvisorFilterState> {
-  final AdvisorFilterRepo _repo;
-
-  AdvisorFilterCubit({AdvisorFilterRepo? repo})
-    : _repo = repo ?? AdvisorFilterRepoImpl(),
-      super(AdvisorFilterState.initial());
+  AdvisorFilterCubit() : super(AdvisorFilterState.initial());
 
   // ─── UI updates ───────────────────────────────────────────────────────────
 
@@ -40,14 +33,11 @@ class AdvisorFilterCubit extends Cubit<AdvisorFilterState> {
   }
 
   void updateDate(DateTime date) => emit(state.copyWith(selectedDate: date));
+
   void previousMonth(DateTime current) {
     final today = DateTime.now();
     final prev = DateTime(current.year, current.month - 1, 1);
-
-    // ✅ لو رجعنا للشهر الحالي → نحط النهارده كـ selected
-    // لو شهر مستقبلي → نحط أول يوم فيه
     final isCurrentMonth = prev.year == today.year && prev.month == today.month;
-
     emit(
       state.copyWith(
         selectedDate: isCurrentMonth
@@ -60,11 +50,7 @@ class AdvisorFilterCubit extends Cubit<AdvisorFilterState> {
   void nextMonth(DateTime current) {
     final today = DateTime.now();
     final next = DateTime(current.year, current.month + 1, 1);
-
-    // ✅ لو الشهر القادم هو الشهر الحالي (حالة نادرة) → النهارده
-    // غير كده → أول يوم في الشهر الجديد
     final isCurrentMonth = next.year == today.year && next.month == today.month;
-
     emit(
       state.copyWith(
         selectedDate: isCurrentMonth
@@ -76,39 +62,52 @@ class AdvisorFilterCubit extends Cubit<AdvisorFilterState> {
 
   void clearFilters() => emit(AdvisorFilterState.initial());
 
-  // ─── Apply → log ──────────────────────────────────────────────────────────
+  // ─── Apply ────────────────────────────────────────────────────────────────
 
   Future<void> applyFilters(BuildContext context) async {
     emit(state.copyWith(status: AdvisorFilterStatus.loading));
 
     final request = AdvisorFilterRequestModel(
-      minPrice: state.priceRange.start,
-      maxPrice: state.priceRange.end,
-      experience: state.selectedExperience,
-      rating: state.selectedRating > 0 ? state.selectedRating : null,
-      languages: state.selectedLanguages,
-      badges: state.selectedBadges,
-      date: _formatDate(state.selectedDate),
+      priceMin: state.priceRange.start,
+      priceMax: state.priceRange.end,
+      yearsOfExperience: _parseExperience(
+        state.selectedExperience,
+      ), // ✅ String?
+      rating: state.selectedRating > 0 ? state.selectedRating.toDouble() : null,
+      language: state.selectedLanguages.isNotEmpty
+          ? state.selectedLanguages.first
+          : null,
+      dayOfWeek: _convertDayOfWeek(state.selectedDate.weekday),
+      page: 1,
     );
 
-    final result = await _repo.filterAdvisors(request);
-
-    result.fold(
-      (failure) => emit(
-        state.copyWith(
-          status: AdvisorFilterStatus.failure,
-          errorMessage: failure,
-        ),
-      ),
-      (_) {
-        emit(state.copyWith(status: AdvisorFilterStatus.success));
-        Navigator.pop(context);
-      },
-    );
+    emit(state.copyWith(status: AdvisorFilterStatus.success));
+    Navigator.pop(context, request);
   }
 
-  String _formatDate(DateTime date) =>
-      '${date.year}-'
-      '${date.month.toString().padLeft(2, '0')}-'
-      '${date.day.toString().padLeft(2, '0')}';
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+
+  int _convertDayOfWeek(int dartWeekday) {
+    const Map<int, int> dayMap = {
+      7: 0, // Sunday  → 0
+      1: 1, // Monday  → 1
+      2: 2, // Tuesday → 2
+      3: 3, // Wednesday → 3
+      4: 4, // Thursday → 4
+      5: 5, // Friday  → 5
+      6: 6, // Saturday → 6
+    };
+    return dayMap[dartWeekday] ?? 0;
+  }
+
+  String? _parseExperience(String? experience) {
+    // experience هنا = '1', '3', '5', '10' (value من الـ chip)
+    const map = {
+      '1': 'experience_0_2', // ✅ نفس key التسجيل
+      '3': 'experience_2_5',
+      '5': 'experience_5_10',
+      '10': 'experience_10_plus',
+    };
+    return experience == null ? null : map[experience];
+  }
 }

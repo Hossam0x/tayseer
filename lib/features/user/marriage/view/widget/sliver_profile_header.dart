@@ -258,12 +258,9 @@
 //     );
 //   }
 // }
-// lib/features/user/marriage/view/widget/sliver_profile_header.dart
-
-// sliver_profile_header.dart
-// sliver_profile_header.dart
 import 'dart:ui';
 import 'dart:math' as math;
+import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/features/user/marriage/view/widget/animated_be_first_button.dart';
 import 'package:tayseer/features/user/marriage/view/widget/image_viewer_gallery.dart';
 import 'package:tayseer/my_import.dart';
@@ -281,7 +278,8 @@ class SliverProfileHeader extends StatelessWidget {
   final String? height;
   final Widget? toggleWidget;
   final String? reportId;
-  final bool shouldBlur; // ✅ جديد
+  final bool shouldBlur;
+  final bool isVerified; // ✅
 
   // ---------- الكارت اللي بعده (الخلفي) ----------
   final List<String>? nextImages;
@@ -293,6 +291,7 @@ class SliverProfileHeader extends StatelessWidget {
   final String? nextReligiousCommitment;
   final String? nextNationality;
   final String? nextHeight;
+  final bool? nextIsVerified; // ✅
 
   final double swipeDirection;
   final double swipeProgress;
@@ -313,7 +312,8 @@ class SliverProfileHeader extends StatelessWidget {
     this.height,
     this.toggleWidget,
     this.reportId,
-    this.shouldBlur = false, // ✅
+    this.shouldBlur = false,
+    this.isVerified = false, // ✅
     this.nextImages,
     this.nextName,
     this.nextAge,
@@ -323,6 +323,7 @@ class SliverProfileHeader extends StatelessWidget {
     this.nextReligiousCommitment,
     this.nextNationality,
     this.nextHeight,
+    this.nextIsVerified, // ✅
     this.swipeDirection = 0,
     this.swipeProgress = 0,
     this.onFavoriteTap,
@@ -403,6 +404,7 @@ class SliverProfileHeader extends StatelessWidget {
                     nextReligiousCommitment: nextReligiousCommitment,
                     nextNationality: nextNationality,
                     nextHeight: nextHeight,
+                    nextIsVerified: nextIsVerified ?? false, // ✅
                   ),
                 ),
 
@@ -429,7 +431,8 @@ class SliverProfileHeader extends StatelessWidget {
                     isAnimating: _isAnimating,
                     onFavoriteTap: onFavoriteTap,
                     isFavorited: isFavorited,
-                    shouldBlur: shouldBlur, // ✅
+                    shouldBlur: shouldBlur,
+                    isVerified: isVerified, // ✅
                   ),
                 ),
               ),
@@ -460,7 +463,8 @@ class _FrontProfileCard extends StatelessWidget {
   final bool isAnimating;
   final VoidCallback? onFavoriteTap;
   final bool isFavorited;
-  final bool shouldBlur; // ✅
+  final bool shouldBlur;
+  final bool isVerified; // ✅
 
   const _FrontProfileCard({
     required this.images,
@@ -478,7 +482,8 @@ class _FrontProfileCard extends StatelessWidget {
     required this.isAnimating,
     this.onFavoriteTap,
     this.isFavorited = false,
-    this.shouldBlur = false, // ✅
+    this.shouldBlur = false,
+    this.isVerified = false, // ✅
   });
 
   @override
@@ -488,7 +493,6 @@ class _FrontProfileCard extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // ✅ الصورة مع دعم الـ blur
         GestureDetector(
           onTap: () {
             if (images.isNotEmpty) {
@@ -512,13 +516,9 @@ class _FrontProfileCard extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // ✅ الصورة (blur أو عادية)
                 shouldBlur
                     ? ImageFiltered(
-                        imageFilter: ImageFilter.blur(
-                          sigmaX: 15,
-                          sigmaY: 15,
-                        ),
+                        imageFilter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                         child: isAnimating
                             ? AppImage(coverImage, fit: BoxFit.cover)
                             : Hero(
@@ -527,21 +527,16 @@ class _FrontProfileCard extends StatelessWidget {
                               ),
                       )
                     : (isAnimating
-                        ? AppImage(coverImage, fit: BoxFit.cover)
-                        : Hero(
-                            tag: coverImage,
-                            child: AppImage(coverImage, fit: BoxFit.cover),
-                          )),
-
-                // ✅ تعتيم فوق الـ blur
-                if (shouldBlur)
-                  Container(color: Colors.black.withOpacity(0.2)),
+                          ? AppImage(coverImage, fit: BoxFit.cover)
+                          : Hero(
+                              tag: coverImage,
+                              child: AppImage(coverImage, fit: BoxFit.cover),
+                            )),
+                if (shouldBlur) Container(color: Colors.black.withOpacity(0.2)),
               ],
             ),
           ),
         ),
-
-        // ✅ معلومات اليوزر
         Positioned(
           bottom: 60.h,
           right: 16.w,
@@ -559,6 +554,7 @@ class _FrontProfileCard extends StatelessWidget {
             opacity: 0.18,
             onFavoriteTap: onFavoriteTap,
             isFavorited: isFavorited,
+            isVerified: isVerified, // ✅
           ),
         ),
       ],
@@ -579,6 +575,7 @@ class _BackProfileCard extends StatelessWidget {
   final String? nextReligiousCommitment;
   final String? nextNationality;
   final String? nextHeight;
+  final bool nextIsVerified; // ✅
 
   const _BackProfileCard({
     this.nextImages,
@@ -590,6 +587,7 @@ class _BackProfileCard extends StatelessWidget {
     this.nextReligiousCommitment,
     this.nextNationality,
     this.nextHeight,
+    this.nextIsVerified = false, // ✅
   });
 
   @override
@@ -620,6 +618,7 @@ class _BackProfileCard extends StatelessWidget {
             opacity: 0.14,
             onFavoriteTap: null,
             isFavorited: false,
+            isVerified: nextIsVerified, // ✅
           ),
         ),
       ],
@@ -643,6 +642,7 @@ class _InfoCard extends StatelessWidget {
   final double opacity;
   final VoidCallback? onFavoriteTap;
   final bool isFavorited;
+  final bool isVerified; // ✅
 
   const _InfoCard({
     required this.name,
@@ -657,6 +657,7 @@ class _InfoCard extends StatelessWidget {
     required this.opacity,
     this.onFavoriteTap,
     this.isFavorited = false,
+    this.isVerified = false, // ✅
   });
 
   @override
@@ -688,17 +689,12 @@ class _InfoCard extends StatelessWidget {
                     if (age.isNotEmpty)
                       Text(
                         "$age ${context.tr("age")}",
-                        style: Styles.textStyle14.copyWith(
-                          color: Colors.white,
-                        ),
+                        style: Styles.textStyle14.copyWith(color: Colors.white),
                       ),
-                    if (name.isNotEmpty) ...[
+                    // ✅ يظهر فقط لو isVerified = true
+                    if (isVerified) ...[
                       Gap(8.w),
-                      const Icon(
-                        Icons.verified,
-                        color: Colors.blue,
-                        size: 20,
-                      ),
+                      const Icon(Icons.verified, color: Colors.blue, size: 20),
                     ],
                   ],
                 ),
@@ -711,11 +707,18 @@ class _InfoCard extends StatelessWidget {
                     duration: const Duration(milliseconds: 300),
                     transitionBuilder: (child, animation) =>
                         ScaleTransition(scale: animation, child: child),
-                    child: Icon(
-                      isFavorited ? Icons.favorite : Icons.favorite_border,
+                    child: Container(
                       key: ValueKey(isFavorited),
-                      color: isFavorited ? Colors.red : Colors.white,
-                      size: 30.r,
+                      padding: EdgeInsets.all(6.r),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isFavorited ? Icons.favorite : Icons.favorite_border,
+                        color: isFavorited ? Colors.red : Colors.white,
+                        size: 30.r,
+                      ),
                     ),
                   ),
                 ),
@@ -723,10 +726,14 @@ class _InfoCard extends StatelessWidget {
             ],
           ),
           Gap(5.h),
+          // ✅ بعد
           if (location.isNotEmpty)
             Row(
               children: [
-                const Icon(Icons.flag, color: Colors.white, size: 16),
+                Text(
+                  CountryFlagUtils.getFlag(location),
+                  style: const TextStyle(fontSize: 16),
+                ),
                 Gap(5.w),
                 Flexible(
                   child: Text(
@@ -742,8 +749,7 @@ class _InfoCard extends StatelessWidget {
             spacing: 8.w,
             runSpacing: 8.h,
             children: [
-              if (tagsjob != null && tagsjob!.isNotEmpty)
-                _buildTag(tagsjob!),
+              if (tagsjob != null && tagsjob!.isNotEmpty) _buildTag(tagsjob!),
               if (educationLevel != null && educationLevel!.isNotEmpty)
                 _buildTag(educationLevel!),
               if (religiousCommitment != null &&

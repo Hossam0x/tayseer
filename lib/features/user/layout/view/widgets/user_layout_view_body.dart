@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/offline_banner.dart';
 import 'package:tayseer/features/shared/reels/views/reels_nav_view.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
@@ -31,17 +32,22 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
   Widget build(BuildContext context) {
     final cubit = context.read<LayoutCubit>();
 
-    return BlocBuilder<LayoutCubit, LayoutState>(
-      builder: (context, state) {
-        final pages = _getPages(context, cubit, state);
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBackButton(context, cubit, cubit.state);
+      },
+      child: BlocConsumer<LayoutCubit, LayoutState>(
+        listenWhen: (prev, curr) => prev.currentIndex != curr.currentIndex,
+        listener: (context, state) {
+          // وقف كل الفيديوهات لما تتغير الـ tab
+          VideoManager.instance.stopAll();
+        },
+        builder: (context, state) {
+          final pages = _getPages(context, cubit, state);
 
-        return PopScope(
-          canPop: false,
-          onPopInvokedWithResult: (didPop, result) {
-            if (didPop) return;
-            _handleBackButton(context, cubit, state);
-          },
-          child: Scaffold(
+          return Scaffold(
             body: Column(
               children: [
                 const OfflineBanner(),
@@ -88,9 +94,9 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
                 ),
               ],
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -133,10 +139,7 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
           HomeView(onScroll: cubit.onScroll),
           state.isMarriageVisible
               ? MarriageView(key: _marriageKey, onScroll: cubit.onScroll)
-              : BlocProvider(
-                  create: (context) => MySpaceCubit(getIt<MySpaceRepo>()),
-                  child: const ConsultationStandalonePage(),
-                ),
+              : const _ConsultationTab(),
 
           MySpaceView(),
           const ReelsNavView(tabIndex: 3),
@@ -199,5 +202,17 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
       default:
         return [];
     }
+  }
+}
+
+class _ConsultationTab extends StatelessWidget {
+  const _ConsultationTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => MySpaceCubit(getIt<MySpaceRepo>()),
+      child: const ConsultationStandalonePage(),
+    );
   }
 }

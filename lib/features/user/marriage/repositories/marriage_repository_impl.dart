@@ -141,7 +141,7 @@ Future<Either<Failure, String>> blockUser({required String personId}) async {
   try {
     final response = await _apiService.post(
       endPoint: ApiEndPoint.blockuser,
-      data: {'blockedUserId': personId},
+      data: {'blockedId': personId},
     );
     if (response['success'] == true) {
       return Right(response['message'] ?? 'تم الحظر بنجاح');
@@ -156,15 +156,23 @@ Future<Either<Failure, String>> blockUser({required String personId}) async {
 }
 
 @override
-Future<Either<Failure, String>> unblockUser({required String personId}) async {
+Future<Either<Failure, UserItem>> getProfileById(String userId) async {
   try {
-    final response = await _apiService.delete(
-      endPoint: '/user/block/$personId',
+    final response = await _apiService.get(
+      endPoint: '/user/one-user-for-marry/$userId',
     );
     if (response['success'] == true) {
-      return Right(response['message'] ?? 'تم رفع الحظر بنجاح');
+      final data = response['data'];
+      final userData = data['userData'];
+      final allowInteractions = data['allowInteractions'] as bool? ?? true; // ✅
+
+      final userItem = UserItem.fromJson({
+        ...userData,
+        'allowInteractions': allowInteractions, // ✅ حطه في الـ UserItem
+      });
+      return Right(userItem);
     } else {
-      return Left(ServerFailure(response['message'] ?? 'فشل رفع الحظر'));
+      return Left(ServerFailure(response['message'] ?? ''));
     }
   } on DioException catch (e) {
     return Left(ServerFailure.fromDioError(e));
