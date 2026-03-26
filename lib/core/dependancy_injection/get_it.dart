@@ -9,6 +9,7 @@ import 'package:tayseer/features/advisor/add_post/repo/posts_repository.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository_impl.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/upload_post/upload_post_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit_simple.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_list_cubit.dart';
 import 'package:tayseer/features/advisor/update_posts/view_model/update_posts_cubit.dart';
 import 'package:tayseer/features/shared/event/repo/event_repo.dart';
 import 'package:tayseer/features/shared/event/repo/event_repo_impl.dart';
@@ -195,9 +196,13 @@ Future<void> setupGetIt() async {
     () => StoriesCubit(getIt<StoriesRepository>()),
   );
 
-  /// Chat Repository (Simplified - No Cache)
   getIt.registerLazySingleton<ChatRepoSimple>(
     () => ChatRepoSimple(getIt<ApiService>()),
+  );
+
+  /// ChatListCubit (LazySingleton to keep listeners alive in background)
+  getIt.registerLazySingleton<ChatListCubit>(
+    () => ChatListCubit(getIt<ChatRepoSimple>()),
   );
 
   /// ChatMessagesCubit (Simplified)

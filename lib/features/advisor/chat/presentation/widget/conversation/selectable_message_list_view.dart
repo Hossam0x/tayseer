@@ -71,7 +71,7 @@ class _SelectableMessageListViewState extends State<SelectableMessageListView> {
               addAutomaticKeepAlives: true,
               cacheExtent: 500,
               itemBuilder: (context, index) {
-                final msg = widget.messages[widget.messages.length - 1 - index];
+                final msg = widget.messages[index];
                 final currentMsgId = msg.id;
                 final messageKey = currentMsgId.isNotEmpty
                     ? _getOrCreateKey(currentMsgId)

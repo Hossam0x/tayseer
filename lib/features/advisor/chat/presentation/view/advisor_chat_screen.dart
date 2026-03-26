@@ -29,6 +29,7 @@ class AdvisorChatScreen extends StatelessWidget {
   final String? userimage;
   final bool isBlocked;
   final bool isHaveSession;
+  final bool isSystemChat;
   final void Function(bool isBlocked)? onBlockStatusChanged;
 
   const AdvisorChatScreen({
@@ -39,6 +40,7 @@ class AdvisorChatScreen extends StatelessWidget {
     this.userimage,
     this.isBlocked = false,
     this.isHaveSession = true,
+    this.isSystemChat = false,
     this.onBlockStatusChanged,
   });
 
@@ -77,6 +79,7 @@ class AdvisorChatScreen extends StatelessWidget {
         userimage: userimage,
         isBlocked: isBlocked,
         isHaveSession: isHaveSession,
+        isSystemChat: isSystemChat,
         onBlockStatusChanged: onBlockStatusChanged,
       ),
     );
@@ -92,6 +95,7 @@ class _AdvisorChatContent extends BaseChatScreen {
     super.userimage,
     super.isBlocked,
     super.isHaveSession,
+    super.isSystemChat,
     super.onBlockStatusChanged,
   });
 

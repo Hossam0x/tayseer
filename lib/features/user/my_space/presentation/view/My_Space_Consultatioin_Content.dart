@@ -54,23 +54,40 @@ class _MySpaceConsultationContentState
           return RefreshIndicator(
             onRefresh: () => context.read<MySpaceCubit>().getAdvisorChat(),
             child: ListView.builder(
-              itemCount: chatRooms.length,
+              itemCount: chatRooms.length + 1,
               itemBuilder: (context, index) {
+                if (index == chatRooms.length) {
+                  return _buildAddAdvisorItem(context);
+                }
                 final chatRoom = chatRooms[index];
 
                 // الحصول على المستخدم الآخر
-                final otherUser = chatRoom.users.isNotEmpty
-                    ? chatRoom.users.firstWhere(
-                        (user) => user.id == chatRoom.sender.id,
-                      )
-                    : chatRoom.sender;
+                final String title;
+                final String? imageUrl;
+                final String receiverId;
+
+                if (chatRoom.isSystemChat) {
+                  title = 'نظام تيسير';
+                  imageUrl = null; // سيتم عرض أيقونة افتراضية في ListItem
+                  receiverId = 'system';
+                } else {
+                  final otherUser = chatRoom.users.isNotEmpty
+                      ? chatRoom.users.firstWhere(
+                          (user) => user.id == chatRoom.sender.id,
+                          orElse: () => chatRoom.users.first,
+                        )
+                      : chatRoom.sender;
+                  title = otherUser.name;
+                  imageUrl = otherUser.image;
+                  receiverId = otherUser.id;
+                }
 
                 return MySpaceListItem(
                   index: index,
                   id: chatRoom.id,
-                  title: otherUser.name,
+                  title: title,
                   subtitle: chatRoom.lastMessage?.content ?? '',
-                  imageUrl: otherUser.image,
+                  imageUrl: imageUrl,
                   lastUpdate: chatRoom.lastMessageAt ?? chatRoom.updatedAt,
                   unreadCount: chatRoom.unreadCount,
                   onTap: () {
@@ -84,11 +101,12 @@ class _MySpaceConsultationContentState
                           AppRouter.kConversitionView,
                           arguments: {
                             'chatroomid': chatRoom.id,
-                            'receiverid': otherUser.id,
-                            'username': otherUser.name,
-                            'userimage': otherUser.image,
+                            'receiverid': receiverId,
+                            'username': title,
+                            'userimage': imageUrl,
                             'isBlocked': chatRoom.isBlocked,
                             'isHaveSession': chatRoom.isHaveSession,
+                            'isSystemChat': chatRoom.isSystemChat,
                           },
                         )
                         .then((_) {
@@ -233,6 +251,67 @@ class _MySpaceConsultationContentState
             child: const Text('إبلاغ', style: TextStyle(color: Colors.orange)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAddAdvisorItem(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final containerPadding = isMobile ? 14.0 : 16.0;
+    final avatarRadius = isMobile ? 25.0 : 30.0;
+    final spacing1 = isMobile ? 14.0 : 18.0;
+    final titleFontSize = isMobile ? 15.0 : 17.0;
+
+    return Padding(
+      padding: EdgeInsets.only(left: isMobile ? 12.0 : 16.0, top: 6, bottom: 6),
+      child: GestureDetector(
+        onTap: () {
+          Navigator.pushNamed(context, AppRouter.kAdvisorSearchView);
+        },
+        child: Container(
+          color: Colors.transparent,
+          padding: EdgeInsets.only(
+            left: isMobile ? 4 : 6,
+            right: 20,
+            top: containerPadding,
+            bottom: containerPadding,
+          ),
+          child: Row(
+            children: [
+              // Plus Icon in Circle
+              Container(
+                width: avatarRadius * 2,
+                height: avatarRadius * 2,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey.shade200,
+                  border: Border.all(color: Colors.grey.shade300, width: 1),
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.add,
+                    color: Colors.grey.shade500,
+                    size: isMobile ? 28 : 32,
+                  ),
+                ),
+              ),
+              SizedBox(width: spacing1),
+
+              // Title
+              Expanded(
+                child: Text(
+                  'مستشار جديد',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: titleFontSize,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -20,6 +20,7 @@ import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/s
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/selectable_message_list_view.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/selection_bottom_bar.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/typing_indicator.dart';
+import 'package:tayseer/core/utils/router/app_router.dart';
 
 /// Base chat screen with common functionality
 /// This is an abstract class that can be extended by specific implementations
@@ -30,6 +31,7 @@ abstract class BaseChatScreen extends StatefulWidget {
   final String? userimage;
   final bool isBlocked;
   final bool isHaveSession;
+  final bool isSystemChat;
   final void Function(bool isBlocked)? onBlockStatusChanged;
 
   const BaseChatScreen({
@@ -40,6 +42,7 @@ abstract class BaseChatScreen extends StatefulWidget {
     this.userimage,
     this.isBlocked = false,
     this.isHaveSession = true,
+    this.isSystemChat = false,
     this.onBlockStatusChanged,
   });
 }
@@ -159,7 +162,8 @@ abstract class BaseChatScreenState<T extends BaseChatScreen> extends State<T> {
       },
       buildWhen: (previous, current) =>
           previous.loadingState != current.loadingState ||
-          previous.messages != current.messages,
+          previous.messages != current.messages ||
+          previous.freeChatMinutes != current.freeChatMinutes,
       builder: (context, state) {
         if (state.loadingState == CubitStates.loading) {
           return const MessageShimmer();
@@ -170,6 +174,8 @@ abstract class BaseChatScreenState<T extends BaseChatScreen> extends State<T> {
           return Column(
             children: [
               if (!state.isOnline) _buildOfflineIndicator(),
+              if (state.freeChatMinutes != null && state.freeChatMinutes! > 0)
+                _buildFreeChatBanner(state.freeChatMinutes!),
               Expanded(
                 child: NotificationListener<ScrollNotification>(
                   onNotification: (notification) {
@@ -226,6 +232,62 @@ abstract class BaseChatScreenState<T extends BaseChatScreen> extends State<T> {
         'أنت غير متصل - سيتم إرسال الرسائل عند الاتصال',
         textAlign: TextAlign.center,
         style: TextStyle(fontSize: 12, color: Colors.orange),
+      ),
+    );
+  }
+
+  /// Build free chat minutes banner
+  Widget _buildFreeChatBanner(int minutes) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xfffdf2f2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xfff8d7da).withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        children: [
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: 'لديك $minutes دقيقة الآن لإرسال استفسارك ، وستحصل على إجابة مجانية من المستشار!\n',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    height: 1.5,
+                  ),
+                ),
+                WidgetSpan(
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, AppRouter.userticketSessionView);
+                    },
+                    child: const Text(
+                      'احجز جلسة',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xffa94442),
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ),
+                const TextSpan(
+                  text: ' للحصول على المزيد من الاستشارات .',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -315,6 +377,8 @@ abstract class BaseChatScreenState<T extends BaseChatScreen> extends State<T> {
               // TODO: Implement delete chat
             },
           );
+        } else if (widget.isSystemChat) {
+          return const SizedBox.shrink();
         } else {
           return buildInputArea(context);
         }

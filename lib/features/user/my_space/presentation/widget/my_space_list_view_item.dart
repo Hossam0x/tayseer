@@ -16,6 +16,7 @@ class MySpaceListItem extends StatelessWidget {
   final VoidCallback? onArchive;
   final VoidCallback? onDelete;
   final VoidCallback? onReport;
+  final bool isSystem;
 
   const MySpaceListItem({
     super.key,
@@ -30,6 +31,7 @@ class MySpaceListItem extends StatelessWidget {
     this.onArchive,
     this.onDelete,
     this.onReport,
+    this.isSystem = false,
   });
 
   static const String chatArchiveIcon = "assets/icons/chat_archive.svg";
@@ -111,9 +113,11 @@ class MySpaceListItem extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     image: DecorationImage(
-                      image: NetworkImage(
-                        imageUrl ?? 'https://i.pravatar.cc/150?img=12',
-                      ),
+                      image: isSystem
+                          ? AssetImage(AssetsData.kAppLogotayseerImage)
+                          : (imageUrl != null && imageUrl!.isNotEmpty)
+                              ? NetworkImage(imageUrl!) as ImageProvider
+                              : AssetImage(AssetsData.kAppLogotayseerImage),
                       fit: BoxFit.cover,
                     ),
                   ),

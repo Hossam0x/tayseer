@@ -757,6 +757,10 @@ abstract class AppRouter {
                 (settings.arguments as Map<String, dynamic>?)?['isHaveSession']
                     as bool? ??
                 true,
+            isSystemChat:
+                (settings.arguments as Map<String, dynamic>?)?['isSystemChat']
+                    as bool? ??
+                false,
             onBlockStatusChanged:
                 (settings.arguments
                         as Map<String, dynamic>?)?['onBlockStatusChanged']

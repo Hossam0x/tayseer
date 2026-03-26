@@ -31,7 +31,7 @@ class AdvisorChatData {
 
   factory AdvisorChatData.fromJson(Map<String, dynamic> json) {
     return AdvisorChatData(
-      chatRooms: (json['chatRooms'] as List? ?? [])
+      chatRooms: (json['data'] as List? ?? json['chatRooms'] as List? ?? [])
           .map((e) => AdvisorChatRoomModel.fromJson(e))
           .toList(),
       pagination: PaginationModel.fromJson(json['pagination'] ?? {}),
@@ -51,6 +51,7 @@ class AdvisorChatRoomModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final int unreadCount;
+  final bool isSystemChat;
 
   AdvisorChatRoomModel({
     required this.id,
@@ -64,6 +65,7 @@ class AdvisorChatRoomModel {
     required this.createdAt,
     required this.updatedAt,
     required this.unreadCount,
+    this.isSystemChat = false,
   });
 
   factory AdvisorChatRoomModel.fromJson(Map<String, dynamic> json) {
@@ -74,31 +76,46 @@ class AdvisorChatRoomModel {
       return value.toString();
     }
 
+    // New API format uses 'otherUser'
+    final otherUserJson = json['otherUser'] as Map<String, dynamic>?;
+    final otherUser = otherUserJson != null ? ChatUserModel.fromJson(otherUserJson) : null;
+    
+    // Fallback for older systems
+    final users = (json['users'] as List? ?? [])
+        .map((e) => ChatUserModel.fromJson(e is Map<String, dynamic> ? e : {}))
+        .toList();
+    if (otherUser != null && !users.any((u) => u.id == otherUser.id)) {
+      users.add(otherUser);
+    }
+
     return AdvisorChatRoomModel(
-      id: extractString(json['id']),
-      isBlocked: json['isBlocked'] ?? false,
+      id: extractString(json['id'] ?? json['_id']),
+      isBlocked: json['blockExists'] ?? json['isBlocked'] ?? false,
       isHaveSession: json['isHaveSession'] ?? false,
-      users: (json['users'] as List? ?? [])
-          .map((e) => ChatUserModel.fromJson(e is Map<String, dynamic> ? e : {}))
-          .toList(),
+      users: users,
       lastMessage: json['lastMessage'] is Map<String, dynamic>
           ? LastMessageModel.fromJson(json['lastMessage'])
           : null,
       lastMessageAt: json['lastMessageAt'] != null
           ? DateTime.tryParse(json['lastMessageAt'].toString()) ??
               DateTime.now()
-          : null,
+          : (json['lastMessage']?['sentAt'] != null 
+             ? DateTime.tryParse(json['lastMessage']['sentAt'].toString())
+             : null),
       status: extractString(json['status']),
-      sender: ChatUserModel.fromJson(
+      sender: otherUser ?? ChatUserModel.fromJson(
         json['sender'] is Map<String, dynamic> ? json['sender'] : {},
       ),
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      createdAt: json['sentAt'] != null
+          ? DateTime.tryParse(json['sentAt'].toString()) ?? DateTime.now()
+          : (json['createdAt'] != null
+              ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
+              : DateTime.now()),
       updatedAt: json['updatedAt'] != null
           ? DateTime.tryParse(json['updatedAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
       unreadCount: json['unreadCount'] ?? 0,
+      isSystemChat: json['systemChat'] ?? false,
     );
   }
 }
@@ -128,7 +145,7 @@ class ChatUserModel {
     }
 
     return ChatUserModel(
-      id: extractString(json['id']),
+      id: extractString(json['userId'] ?? json['id'] ?? json['_id']),
       name: extractString(json['name']),
       image: json['image']?.toString(),
       userType: extractString(json['userType']),
@@ -171,12 +188,17 @@ class LastMessageModel {
       return value.toString();
     }
 
+    final rawContent = json['content'];
+    final content = (rawContent is List)
+        ? (rawContent.isEmpty ? '' : rawContent.first.toString())
+        : extractString(rawContent);
+
     return LastMessageModel(
-      id: extractString(json['id']),
-      sender: extractString(json['sender']),
+      id: extractString(json['id'] ?? json['_id']),
+      sender: extractString(json['sender'] ?? json['senderId']),
       senderType: extractString(json['senderType']),
-      content: extractString(json['content']),
-      messageType: extractString(json['messageType']),
+      content: content,
+      messageType: extractString(json['contentType'] ?? json['messageType']),
       chatRoom: extractString(json['chatRoom']),
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()

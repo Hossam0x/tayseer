@@ -83,7 +83,7 @@ class MySpaceCubit extends Cubit<MySpaceState> {
     _isListening = true;
     log('🎧 [$_listenerId] Setting up new_message listener for user chat list');
 
-    socketHelper.listenWithId('new_message', _listenerId, (data) {
+    socketHelper.listenWithId('newMessage', _listenerId, (data) {
       _handleNewMessageForChatList(data);
     });
   }
@@ -99,17 +99,20 @@ class MySpaceCubit extends Cubit<MySpaceState> {
     log('📨 [$_listenerId] Raw data: $data');
 
     try {
-      final chatRoomId = data['chatRoomId']?.toString();
-      final content = data['content'];
-      final createdAt = data['createdAt']?.toString() ?? '';
-      final updatedAt = data['updatedAt']?.toString() ?? '';
-      final isMe = data['isMe'] ?? false;
-      final senderName = data['senderName']?.toString() ?? '';
-      final messageType = data['messageType']?.toString() ?? 'text';
-      final messageId = data['id']?.toString() ?? '';
+      final messageData = data['message'];
+      if (messageData == null) return;
+      
+      final chatRoomId = messageData['chatRoomId']?.toString();
+      final content = messageData['content'];
+      final createdAt = messageData['sentAt']?.toString() ?? messageData['createdAt']?.toString() ?? '';
+      final updatedAt = messageData['updatedAt']?.toString() ?? '';
+      final isMe = messageData['isMe'] ?? false;
+      final senderName = messageData['senderName']?.toString() ?? '';
+      final messageType = messageData['contentType']?.toString() ?? messageData['messageType']?.toString() ?? 'text';
+      final messageId = messageData['id']?.toString() ?? messageData['_id']?.toString() ?? '';
 
       log(
-        '📨 [$_listenerId] Extracted - chatRoomId: $chatRoomId, messageId: $messageId, content: $content',
+        '📨 [$_listenerId] Extracted - chatRoomId: $chatRoomId, messageId: $messageId',
       );
 
       if (chatRoomId == null) {
@@ -264,7 +267,11 @@ class MySpaceCubit extends Cubit<MySpaceState> {
     if (content is String) {
       return content;
     } else if (content is List && content.isNotEmpty) {
-      return content.first.toString();
+      final first = content.first;
+      if (first is Map) {
+        return first['media']?.toString() ?? first['url']?.toString() ?? first.toString();
+      }
+      return first.toString();
     }
     return '';
   }

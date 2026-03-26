@@ -250,10 +250,10 @@ class _AppImageState extends State<AppImage> {
       width: widget.width,
       fit: widget.fit,
       color: widget.color,
-      cacheWidth: widget.width != null
+      cacheWidth: (widget.width != null && widget.width!.isFinite)
           ? (widget.width! * pixelRatio).toInt()
           : null,
-      cacheHeight: widget.height != null
+      cacheHeight: (widget.height != null && widget.height!.isFinite)
           ? (widget.height! * pixelRatio).toInt()
           : null,
       errorBuilder: (_, __, ___) => _buildErrorWidget(),
@@ -377,10 +377,11 @@ class _ConnectivityNetworkImageState extends State<_ConnectivityNetworkImage> {
   }
 
   // ⭐ حساب ديناميكي بناءً على pixelRatio
-  int? get _memCacheWidth =>
-      widget.width != null ? (widget.width! * widget.pixelRatio).toInt() : null;
+  int? get _memCacheWidth => (widget.width != null && widget.width!.isFinite)
+      ? (widget.width! * widget.pixelRatio).toInt()
+      : null;
 
-  int? get _memCacheHeight => widget.height != null
+  int? get _memCacheHeight => (widget.height != null && widget.height!.isFinite)
       ? (widget.height! * widget.pixelRatio).toInt()
       : null;
 

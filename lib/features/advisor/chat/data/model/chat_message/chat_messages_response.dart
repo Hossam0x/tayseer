@@ -1,37 +1,27 @@
 import 'package:tayseer/core/enum/message_status_enum.dart';
+import 'package:tayseer/my_import.dart';
 
+/// Response for GET /new-chat/messages/room-messages
 class ChatMessagesResponse {
   final bool success;
-  final String message;
-  final ChatMessagesData data;
+  final List<ChatMessage> messages;
+  final bool hasMore;
 
   ChatMessagesResponse({
     required this.success,
-    required this.message,
-    required this.data,
+    required this.messages,
+    required this.hasMore,
   });
 
   factory ChatMessagesResponse.fromJson(Map<String, dynamic> json) {
     return ChatMessagesResponse(
-      success: json['success'],
-      message: json['message'],
-      data: ChatMessagesData.fromJson(json['data']),
-    );
-  }
-}
-
-class ChatMessagesData {
-  final List<ChatMessage> messages;
-  final MessagePagination pagination;
-
-  ChatMessagesData({required this.messages, required this.pagination});
-
-  factory ChatMessagesData.fromJson(Map<String, dynamic> json) {
-    return ChatMessagesData(
-      messages: (json['messages'] as List)
-          .map((e) => ChatMessage.fromJson(e))
-          .toList(),
-      pagination: MessagePagination.fromJson(json['pagination']),
+      success: json['success'] ?? false,
+      messages:
+          (json['data'] as List?)
+              ?.map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      hasMore: json['hasMore'] ?? false,
     );
   }
 }
@@ -45,18 +35,11 @@ class ReplyInfo {
   ReplyInfo({this.replyMessageId, this.replyMessage, this.isReply = false});
 
   factory ReplyInfo.fromJson(dynamic jsonData) {
-    // ✅ Handle null
     if (jsonData == null) return ReplyInfo(isReply: false);
-
-    // ✅ Handle if it's not a Map
-    if (jsonData is! Map<String, dynamic>) {
-      print('⚠️ ReplyInfo: Unexpected type: ${jsonData.runtimeType}');
-      return ReplyInfo(isReply: false);
-    }
+    if (jsonData is! Map<String, dynamic>) return ReplyInfo(isReply: false);
 
     final json = jsonData;
 
-    // ✅ معالجة replyMessage سواء كان String أو List
     String? parseReplyMessage(dynamic data) {
       if (data == null) return null;
       if (data is List) {
@@ -68,21 +51,12 @@ class ReplyInfo {
       return strValue.isNotEmpty ? strValue : null;
     }
 
-    final replyMessageId = json['replyMessageId']?.toString();
-    final replyMessage = parseReplyMessage(json['replyMessage']);
-    final isReply = json['isReply'] ?? false;
-
-    // ✅ Debug log
-    if (isReply == true) {
-      print(
-        '✅ ReplyInfo parsed: isReply=$isReply, replyMessageId=$replyMessageId, replyMessage=$replyMessage',
-      );
-    }
-
+    // New API returns the full message object in 'reply'
     return ReplyInfo(
-      replyMessageId: replyMessageId,
-      replyMessage: replyMessage,
-      isReply: isReply,
+      replyMessageId: (json['id'] ?? json['_id'] ?? json['replyMessageId'])
+          ?.toString(),
+      replyMessage: parseReplyMessage(json['content'] ?? json['replyMessage']),
+      isReply: json['isReply'] ?? true,
     );
   }
 
@@ -118,7 +92,7 @@ enum SystemMessageAction {
 
 class ChatMessage {
   final String id;
-  final String? tempId; // ✅ UUID for reliable message matching
+  final String? tempId;
   final String chatRoomId;
   final String senderId;
   final String senderName;
@@ -129,22 +103,19 @@ class ChatMessage {
   final String messageType;
   final String createdAt;
   final String updatedAt;
-  final String? deliveredAt; // ISO timestamp for sorting
+  final String? deliveredAt;
   bool isRead;
-  final MessageStatusEnum status; // ✅ New field
+  final MessageStatusEnum status;
   final ReplyInfo? reply;
-  final SystemMessageAction action; // ✅ Action field for system messages
-  final List<String>?
-  localFilePaths; // ✅ Local file paths for optimistic media display
-  final double? uploadProgress; // ✅ Upload progress (0.0 to 1.0)
+  final SystemMessageAction action;
+  final List<String>? localFilePaths;
+  final double? uploadProgress;
 
   String get content => contentList.isNotEmpty ? contentList.first : '';
 
-  /// Check if this message has local files (optimistic media)
   bool get hasLocalFiles =>
       localFilePaths != null && localFilePaths!.isNotEmpty;
 
-  /// Check if upload is in progress
   bool get isUploading =>
       uploadProgress != null && uploadProgress! < 1.0 && uploadProgress! >= 0.0;
 
@@ -163,40 +134,105 @@ class ChatMessage {
     required this.updatedAt,
     this.deliveredAt,
     this.isRead = true,
-    this.status = MessageStatusEnum.sent, // ✅ Default value
+    this.status = MessageStatusEnum.sent,
     this.reply,
     this.action = SystemMessageAction.none,
     this.localFilePaths,
     this.uploadProgress,
   });
 
+  static String _mapMessageType(Map<String, dynamic> json) {
+    final rawType =
+        json['contentType']?.toString() ?? json['messageType']?.toString();
+    if (rawType == null) return 'text';
+
+    if (rawType == 'images/videos') {
+      // Try to determine if it's actually a video from the first content object
+      final content = json['content'];
+      if (content is List && content.isNotEmpty) {
+        final first = content.first;
+        if (first is Map) {
+          final mediaType = first['mediaType']?.toString();
+          final mediaUrl = first['media']?.toString() ?? '';
+          if (mediaType == 'video' ||
+              mediaUrl.toLowerCase().endsWith('.mp4') ||
+              mediaUrl.toLowerCase().endsWith('.mov')) {
+            return 'video';
+          }
+        }
+      }
+      return 'image';
+    }
+
+    if (rawType == 'record') {
+      return 'audio';
+    }
+
+    return rawType;
+  }
+
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     List<String> parseContentList(dynamic contentData) {
       if (contentData == null) return [];
       if (contentData is List) {
-        return contentData.map((e) => e.toString()).toList();
+        return contentData.map((e) {
+          if (e is Map) {
+            // Handle new media object structure: { "media": "url", "mediaType": "image" }
+            return e['media']?.toString() ??
+                e['url']?.toString() ??
+                e.toString();
+          }
+          return e.toString();
+        }).toList();
       }
       return [contentData.toString()];
     }
 
+    // sender can be an object or a plain id string
+    final senderData = json['sender'];
+    String senderId = json['senderId']?.toString() ?? '';
+    String senderName = '';
+    String senderImage = '';
+    String senderType = '';
+
+    if (senderData is Map<String, dynamic>) {
+      senderId =
+          senderData['_id']?.toString() ??
+          senderData['userId']?.toString() ??
+          senderId;
+      senderName = senderData['name']?.toString() ?? '';
+      senderImage =
+          senderData['avatar']?.toString() ??
+          senderData['image']?.toString() ??
+          '';
+      senderType = senderData['userType']?.toString() ?? '';
+    } else if (senderData != null) {
+      senderId = senderData.toString();
+    }
+
     return ChatMessage(
-      id: json['id']?.toString() ?? "",
+      id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
       tempId: json['tempId']?.toString(),
-      chatRoomId: json['chatRoomId']?.toString() ?? "",
-      senderId: json['senderId']?.toString() ?? "",
-      senderName: json['senderName']?.toString() ?? "",
-      senderImage: json['senderImage']?.toString() ?? "",
-      senderType: json['senderType']?.toString() ?? "",
-      isMe: json['isMe'] ?? false,
+      chatRoomId:
+          json['chatRoomId']?.toString() ??
+          (json['chatRoom'] is String
+              ? json['chatRoom'].toString()
+              : (json['chatRoom'] as Map<String, dynamic>?)?['_id']
+                        ?.toString() ??
+                    ''),
+      senderId: senderId,
+      senderName: senderName,
+      senderImage: senderImage,
+      senderType: senderType,
+      isMe: json['isMe'] ?? (senderId == kCurrentUserData?.id),
       contentList: parseContentList(json['content']),
-      messageType: json['messageType']?.toString() ?? "text",
-      createdAt: json['createdAt']?.toString() ?? "",
-      updatedAt: json['updatedAt']?.toString() ?? "",
-      deliveredAt: json['deliveredAt']?.toString(), // ISO timestamp
+      messageType: _mapMessageType(json),
+      createdAt:
+          json['sentAt']?.toString() ?? json['createdAt']?.toString() ?? '',
+      updatedAt: json['updatedAt']?.toString() ?? '',
+      deliveredAt: json['deliveredAt']?.toString(),
       isRead: json['isRead'] ?? true,
-      status: MessageStatusExtension.fromString(
-        json['status']?.toString(),
-      ), // ✅ Parse status
+      status: MessageStatusExtension.fromString(json['status']?.toString()),
       reply: ReplyInfo.fromJson(json['reply']),
       action: SystemMessageAction.fromString(json['action']?.toString()),
     );
@@ -249,29 +285,6 @@ class ChatMessage {
       uploadProgress: clearUploadProgress
           ? null
           : (uploadProgress ?? this.uploadProgress),
-    );
-  }
-}
-
-class MessagePagination {
-  final int totalCount;
-  final int totalPages;
-  final int currentPage;
-  final int pageSize;
-
-  MessagePagination({
-    required this.totalCount,
-    required this.totalPages,
-    required this.currentPage,
-    required this.pageSize,
-  });
-
-  factory MessagePagination.fromJson(Map<String, dynamic> json) {
-    return MessagePagination(
-      totalCount: json['totalCount'],
-      totalPages: json['totalPages'],
-      currentPage: json['currentPage'],
-      pageSize: json['pageSize'],
     );
   }
 }

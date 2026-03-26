@@ -20,12 +20,9 @@ class ChatListItem extends StatelessWidget {
     const Color dividerColor = Color(0xFFD9D9D9);
     final archiveColor = AppColors.kprimaryColor;
 
-    final otherUser = chatRoom.users.isNotEmpty
-        ? chatRoom.users.firstWhere(
-            (user) => user.id == chatRoom.sender.id,
-            orElse: () => chatRoom.sender,
-          )
-        : chatRoom.sender;
+    final otherUser = chatRoom.participants.isNotEmpty
+        ? chatRoom.participants.first
+        : ChatUser(id: '', name: '');
 
     final displayName = otherUser.name;
     final displayImage = otherUser.image;
@@ -216,6 +213,7 @@ class ChatListItem extends StatelessWidget {
                       'username': otherUser.name,
                       'userimage': otherUser.image,
                       'isBlocked': chatRoom.isBlocked,
+                      'isSystemChat': chatRoom.isSystemChat,
                       'onBlockStatusChanged': (bool isBlocked) {
                         if (context.mounted) {
                           context.read<ChatListCubit>().updateBlockStatus(
@@ -271,10 +269,9 @@ class ChatListItem extends StatelessWidget {
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 10.w),
                         child: Text(
-                          chatRoom.lastMessage?.timeAgo ??
-                              (chatRoom.lastMessageAt != null
-                                  ? formatTime(chatRoom.lastMessageAt!)
-                                  : ''),
+                          chatRoom.lastMessage?.sentAt != null
+                              ? formatTime(chatRoom.lastMessage!.sentAt!)
+                              : '',
                           style: Styles.textStyle12.copyWith(
                             color: AppColors.secondary400,
                           ),
