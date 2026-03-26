@@ -25,10 +25,32 @@ class _MySpaceConsultationContentState
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<MySpaceCubit, MySpaceState>(
-      buildWhen: (previous, current) =>
-          previous.advisorChatState != current.advisorChatState ||
-          previous.advisorChatModel != current.advisorChatModel ||
-          previous.lastUpdateTime != current.lastUpdateTime,
+      buildWhen: (previous, current) {
+        // Only rebuild if state changes or chat list actually changes
+        if (previous.advisorChatState != current.advisorChatState) {
+          return true;
+        }
+        
+        // Check if the chat list actually changed (not just lastUpdateTime)
+        final prevRooms = previous.advisorChatModel?.data.chatRooms ?? [];
+        final currRooms = current.advisorChatModel?.data.chatRooms ?? [];
+        
+        // If length changed, rebuild
+        if (prevRooms.length != currRooms.length) {
+          return true;
+        }
+        
+        // If any room's unreadCount or lastMessage changed, rebuild
+        for (int i = 0; i < prevRooms.length; i++) {
+          if (prevRooms[i].id != currRooms[i].id ||
+              prevRooms[i].unreadCount != currRooms[i].unreadCount ||
+              prevRooms[i].lastMessage?.content != currRooms[i].lastMessage?.content) {
+            return true;
+          }
+        }
+        
+        return false;
+      },
       builder: (context, state) {
         // Loading State
         if (state.advisorChatState == CubitStates.loading) {
@@ -83,6 +105,7 @@ class _MySpaceConsultationContentState
                 }
 
                 return MySpaceListItem(
+                  key: ValueKey('chat_${chatRoom.id}'),
                   index: index,
                   id: chatRoom.id,
                   title: title,
@@ -90,6 +113,7 @@ class _MySpaceConsultationContentState
                   imageUrl: imageUrl,
                   lastUpdate: chatRoom.lastMessageAt ?? chatRoom.updatedAt,
                   unreadCount: chatRoom.unreadCount,
+                  isSystem: chatRoom.isSystemChat,
                   onTap: () {
                     final cubit = context.read<MySpaceCubit>();
                     cubit.markChatAsRead(chatRoom.id);

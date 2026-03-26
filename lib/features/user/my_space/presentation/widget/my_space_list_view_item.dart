@@ -107,19 +107,30 @@ class MySpaceListItem extends StatelessWidget {
             child: Row(
               children: [
                 // Avatar
-                Container(
-                  width: avatarRadius * 2,
-                  height: avatarRadius * 2,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: isSystem
-                          ? AssetImage(AssetsData.kAppLogotayseerImage)
-                          : (imageUrl != null && imageUrl!.isNotEmpty)
-                              ? NetworkImage(imageUrl!) as ImageProvider
-                              : AssetImage(AssetsData.kAppLogotayseerImage),
-                      fit: BoxFit.cover,
-                    ),
+                ClipOval(
+                  child: SizedBox(
+                    width: avatarRadius * 2,
+                    height: avatarRadius * 2,
+                    child: (imageUrl == null || imageUrl!.isEmpty)
+                        ? Image.asset(
+                            AssetsData.kAppLogotayseerImage,
+                            fit: BoxFit.cover,
+                          )
+                        : CachedNetworkImage(
+                            imageUrl: imageUrl!,
+                            cacheKey: isSystem ? 'system_chat_image' : null,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: Colors.grey[200],
+                              child: const Center(
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Image.asset(
+                              AssetsData.kAppLogotayseerImage,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                   ),
                 ),
                 SizedBox(width: spacing1),
