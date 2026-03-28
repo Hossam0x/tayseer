@@ -62,40 +62,31 @@ class _ReactionPickerState extends State<ReactionPicker>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onDismiss,
-      behavior: HitTestBehavior.translucent,
-      child: Container(
-        color: Colors.transparent,
-        child: Center(
-          child: FadeTransition(
-            opacity: _opacityAnimation,
-            child: ScaleTransition(
-              scale: _scaleAnimation,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
-                      blurRadius: 20,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: _reactions.map((emoji) {
-                    return _ReactionButton(
-                      emoji: emoji,
-                      onTap: () => _handleReactionTap(emoji),
-                    );
-                  }).toList(),
-                ),
+    return FadeTransition(
+      opacity: _opacityAnimation,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(30.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
               ),
-            ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: _reactions.map((emoji) {
+              return _ReactionButton(
+                emoji: emoji,
+                onTap: () => _handleReactionTap(emoji),
+              );
+            }).toList(),
           ),
         ),
       ),
