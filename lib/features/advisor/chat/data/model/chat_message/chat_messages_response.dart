@@ -1,4 +1,5 @@
 import 'package:tayseer/core/enum/message_status_enum.dart';
+import 'package:tayseer/core/services/socket_events/chat_socket_events.dart';
 import 'package:tayseer/my_import.dart';
 
 /// Response for GET /new-chat/messages/room-messages
@@ -110,6 +111,7 @@ class ChatMessage {
   final SystemMessageAction action;
   final List<String>? localFilePaths;
   final double? uploadProgress;
+  final List<MessageReaction> reactions;
 
   String get content => contentList.isNotEmpty ? contentList.first : '';
 
@@ -139,6 +141,7 @@ class ChatMessage {
     this.action = SystemMessageAction.none,
     this.localFilePaths,
     this.uploadProgress,
+    this.reactions = const [],
   });
 
   static String _mapMessageType(Map<String, dynamic> json) {
@@ -188,6 +191,16 @@ class ChatMessage {
       return [contentData.toString()];
     }
 
+    List<MessageReaction> parseReactions(dynamic reactionsData) {
+      if (reactionsData == null) return [];
+      if (reactionsData is List) {
+        return reactionsData
+            .map((e) => MessageReaction.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    }
+
     // sender can be an object or a plain id string
     final senderData = json['sender'];
     String senderId = json['senderId']?.toString() ?? '';
@@ -235,6 +248,7 @@ class ChatMessage {
       status: MessageStatusExtension.fromString(json['status']?.toString()),
       reply: ReplyInfo.fromJson(json['reply']),
       action: SystemMessageAction.fromString(json['action']?.toString()),
+      reactions: parseReactions(json['reactions']),
     );
   }
 
@@ -260,6 +274,7 @@ class ChatMessage {
     bool clearLocalFilePaths = false,
     double? uploadProgress,
     bool clearUploadProgress = false,
+    List<MessageReaction>? reactions,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -285,6 +300,7 @@ class ChatMessage {
       uploadProgress: clearUploadProgress
           ? null
           : (uploadProgress ?? this.uploadProgress),
+      reactions: reactions ?? this.reactions,
     );
   }
 }

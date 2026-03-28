@@ -84,6 +84,12 @@ class ChatMessagesArea extends StatelessWidget {
                         );
                       }
                     },
+                    onReactionTap: (messageId, emoji) {
+                      context.read<ChatMessagesCubit>().reactToMessage(
+                            messageId: messageId,
+                            emoji: emoji,
+                          );
+                    },
                   ),
                 ),
               ),

@@ -6,10 +6,12 @@ import 'package:tayseer/core/enum/message_status_enum.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/message_model.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 import 'package:tayseer/features/advisor/chat/presentation/theme/chat_theme.dart';
+import 'package:tayseer/my_import.dart';
 import 'reply_preview_bubble.dart';
 import 'message_time_status.dart';
 import 'message_content_builder.dart';
 import 'emoji_helper.dart';
+import '../conversation/message_reactions_display.dart';
 
 class MessageBubble extends StatefulWidget {
   final Message? oldMessage;
@@ -17,6 +19,7 @@ class MessageBubble extends StatefulWidget {
   final bool isOverlay;
   final bool isHighlighted;
   final Function(String? replyMessageId)? onReplyTap;
+  final Function(String emoji)? onReactionTap;
 
   const MessageBubble({
     super.key,
@@ -25,6 +28,7 @@ class MessageBubble extends StatefulWidget {
     this.isOverlay = false,
     this.isHighlighted = false,
     this.onReplyTap,
+    this.onReactionTap,
   });
 
   @override
@@ -111,18 +115,24 @@ class _MessageBubbleState extends State<MessageBubble> {
             : CrossAxisAlignment.start,
         children: [
           IntrinsicWidth(
-            child: AnimatedContainer(
-              duration: ChatAnimations.messageEntryDuration,
-              decoration: BoxDecoration(
-                color: widget.isHighlighted
-                    ? ChatColors.highlightColor
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(20.r),
-              ),
-              padding: widget.isHighlighted
-                  ? EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h)
-                  : EdgeInsets.zero,
-              child: Container(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: isMe
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              children: [
+                AnimatedContainer(
+                  duration: ChatAnimations.messageEntryDuration,
+                  decoration: BoxDecoration(
+                    color: widget.isHighlighted
+                        ? ChatColors.highlightColor
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20.r),
+                  ),
+                  padding: widget.isHighlighted
+                      ? EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h)
+                      : EdgeInsets.zero,
+                  child: Container(
                 constraints: BoxConstraints(maxWidth: maxBubbleWidth),
                 padding: isSingleEmoji
                     ? EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h)
@@ -243,6 +253,22 @@ class _MessageBubbleState extends State<MessageBubble> {
                           textStyle,
                         ))
                       _buildShowLessButton(isMe),
+
+                    // ✅ عرض الـ reactions
+                    if (widget.chatMessage != null &&
+                        widget.chatMessage!.reactions.isNotEmpty)
+                      Padding(
+                        padding: EdgeInsets.only(bottom: 4.h),
+                        child: MessageReactionsDisplay(
+                          reactions: widget.chatMessage!.reactions,
+                          currentUserId: kCurrentUserData?.id ?? '',
+                          onReactionTap: (emoji) {
+                            if (widget.onReactionTap != null) {
+                              widget.onReactionTap!(emoji);
+                            }
+                          },
+                        ),
+                      ),
 
                     Align(
                       alignment: isMe

@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'dart:developer';
-import 'dart:io';
 
 import 'package:dartz/dartz.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/core/enum/message_status_enum.dart';
+import 'package:tayseer/core/services/socket_events/chat_socket_events.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/typing_model.dart';
@@ -396,6 +394,12 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     // SERVER → CLIENT: chatRoomLeft  { chatRoomId }
     _socketHelper.listenWithId('chatRoomLeft', listenerId, (data) {
       log('👋 chatRoomLeft: $data');
+    });
+
+    // SERVER → CLIENT: messageReaction  { chatMessageId, reactions: [{userId, emoji}] }
+    _socketHelper.listenWithId('messageReaction', listenerId, (data) {
+      if (data is! Map) return;
+      _handleMessageReaction(data);
     });
   }
 
@@ -831,5 +835,83 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
 
   Future<void> loadOlderMessages() async {
     // TODO: implement cursor-based pagination using repo.loadMessages(before:)
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // REACTIONS
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /// إضافة أو إزالة reaction على رسالة
+  void reactToMessage({
+    required String messageId,
+    required String emoji,
+  }) {
+    final currentMessages = state.messagesOrEmpty;
+    final messageIndex = currentMessages.indexWhere((m) => m.id == messageId);
+    
+    if (messageIndex == -1) return;
+
+    final message = currentMessages[messageIndex];
+    final currentUserId = kCurrentUserData?.id ?? '';
+    
+    // Check if user already reacted with this emoji
+    final existingReaction = message.reactions.firstWhere(
+      (r) => r.userId == currentUserId && r.emoji == emoji,
+      orElse: () => const MessageReaction(userId: '', emoji: ''),
+    );
+
+    if (existingReaction.userId.isNotEmpty) {
+      // User already reacted with this emoji, so remove it
+      _socketHelper.send('unreactToMessage', {
+        'chatMessageId': messageId,
+      }, (ack) {
+        log('✅ unreactToMessage ACK: $ack');
+      });
+    } else {
+      // Add new reaction
+      _socketHelper.send('reactToMessage', {
+        'chatMessageId': messageId,
+        'emoji': emoji,
+      }, (ack) {
+        log('✅ reactToMessage ACK: $ack');
+      });
+    }
+  }
+
+  /// Handle reaction update from server
+  void _handleMessageReaction(Map data) {
+    final chatMessageId = data['chatMessageId']?.toString();
+    final reactionsData = data['reactions'] as List?;
+
+    if (chatMessageId == null || reactionsData == null) return;
+
+    final reactions = reactionsData
+        .map((r) {
+          final reactionMap = Map<String, dynamic>.from(r as Map);
+          return MessageReaction.fromJson(reactionMap);
+        })
+        .toList();
+
+    final currentMessages = state.messagesOrEmpty;
+    final messageIndex = currentMessages.indexWhere((m) => m.id == chatMessageId);
+
+    if (messageIndex == -1) return;
+
+    final updatedMessages = List<ChatMessage>.from(currentMessages);
+    updatedMessages[messageIndex] = currentMessages[messageIndex].copyWith(
+      reactions: reactions,
+    );
+
+    emit(
+      ChatMessagesState.loaded(
+        messages: updatedMessages,
+        hasMoreMessages: false,
+        isBlocked: _isBlocked,
+        isUserTyping: _isUserTyping,
+        typingInfo: _typingInfo,
+      ),
+    );
+
+    log('✅ Message reactions updated: $chatMessageId - ${reactions.length} reactions');
   }
 }

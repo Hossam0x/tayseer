@@ -5,13 +5,15 @@ import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/message_actions_handler.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/overlay_manager.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit_simple.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/input/chat_input_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/selection/message_selection_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/theme/chat_theme.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/message_details.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/chat_context_menu_overlay.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/reaction_picker.dart';
 
-class ChatContextMenuWrapper extends StatelessWidget {
+class ChatContextMenuWrapper extends StatefulWidget {
   final Size screenSize;
   final bool isMobile;
   final OverlayManager overlayManager;
@@ -28,65 +30,103 @@ class ChatContextMenuWrapper extends StatelessWidget {
   });
 
   @override
+  State<ChatContextMenuWrapper> createState() => _ChatContextMenuWrapperState();
+}
+
+class _ChatContextMenuWrapperState extends State<ChatContextMenuWrapper> {
+  bool _showReactionPicker = false;
+
+  @override
   Widget build(BuildContext context) {
-    if (!overlayManager.isOverlayVisible ||
-        overlayManager.selectedMessage == null) {
+    if (!widget.overlayManager.isOverlayVisible ||
+        widget.overlayManager.selectedMessage == null) {
       return const SizedBox.shrink();
     }
 
-    final selectedMessage = overlayManager.selectedMessage!;
+    final selectedMessage = widget.overlayManager.selectedMessage!;
 
-    return ChatContextMenuOverlay(
-      selectedMessage: selectedMessage,
-      messagePosition: overlayManager.messagePosition,
-      messageSize: overlayManager.messageSize,
-      screenSize: screenSize,
-      isMobile: isMobile,
-      safeTopPadding: MediaQuery.of(context).padding.top,
-      onDismiss: () {
-        overlayManager.hideOverlay(onStateChanged: onStateChanged);
-      },
-      onReply: () {
-        context.read<ChatInputCubit>().setReplyingToMessage(selectedMessage);
-        overlayManager.hideOverlay(onStateChanged: onStateChanged);
-      },
-      onCopy: () {
-        overlayManager.hideOverlay(onStateChanged: onStateChanged);
-        _copyMessageText(context, selectedMessage);
-      },
-      onDetails: () {
-        overlayManager.hideOverlay(onStateChanged: onStateChanged);
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MessageDetailsScreen(
-              chatMessage: selectedMessage,
-              readMessageIcon: AssetsData.readMessageIcon,
-              deliveredMessageIcon: AssetsData.readMessageIcon,
-            ),
+    return Stack(
+      children: [
+        // Context Menu
+        if (!_showReactionPicker)
+          ChatContextMenuOverlay(
+            selectedMessage: selectedMessage,
+            messagePosition: widget.overlayManager.messagePosition,
+            messageSize: widget.overlayManager.messageSize,
+            screenSize: widget.screenSize,
+            isMobile: widget.isMobile,
+            safeTopPadding: MediaQuery.of(context).padding.top,
+            onDismiss: () {
+              widget.overlayManager.hideOverlay(onStateChanged: widget.onStateChanged);
+            },
+            onReply: () {
+              context.read<ChatInputCubit>().setReplyingToMessage(selectedMessage);
+              widget.overlayManager.hideOverlay(onStateChanged: widget.onStateChanged);
+            },
+            onCopy: () {
+              widget.overlayManager.hideOverlay(onStateChanged: widget.onStateChanged);
+              _copyMessageText(context, selectedMessage);
+            },
+            onDetails: () {
+              widget.overlayManager.hideOverlay(onStateChanged: widget.onStateChanged);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MessageDetailsScreen(
+                    chatMessage: selectedMessage,
+                    readMessageIcon: AssetsData.readMessageIcon,
+                    deliveredMessageIcon: AssetsData.readMessageIcon,
+                  ),
+                ),
+              );
+            },
+            onSelect: () {
+              context.read<MessageSelectionCubit>().enterSelectionMode(
+                    selectedMessage,
+                  );
+              widget.overlayManager.hideOverlay(onStateChanged: widget.onStateChanged);
+            },
+            onDeleteForMe: () {
+              widget.overlayManager.hideOverlay(onStateChanged: widget.onStateChanged);
+              widget.actionsHandler.showDeleteConfirmationForSingleMessage(
+                message: selectedMessage,
+                deleteType: 'me',
+              );
+            },
+            onDeleteForAll: () {
+              widget.overlayManager.hideOverlay(onStateChanged: widget.onStateChanged);
+              widget.actionsHandler.showDeleteConfirmationForSingleMessage(
+                message: selectedMessage,
+                deleteType: 'everyone',
+              );
+            },
+            onReact: () {
+              setState(() {
+                _showReactionPicker = true;
+              });
+            },
           ),
-        );
-      },
-      onSelect: () {
-        context.read<MessageSelectionCubit>().enterSelectionMode(
-              selectedMessage,
-            );
-        overlayManager.hideOverlay(onStateChanged: onStateChanged);
-      },
-      onDeleteForMe: () {
-        overlayManager.hideOverlay(onStateChanged: onStateChanged);
-        actionsHandler.showDeleteConfirmationForSingleMessage(
-          message: selectedMessage,
-          deleteType: 'me',
-        );
-      },
-      onDeleteForAll: () {
-        overlayManager.hideOverlay(onStateChanged: onStateChanged);
-        actionsHandler.showDeleteConfirmationForSingleMessage(
-          message: selectedMessage,
-          deleteType: 'everyone',
-        );
-      },
+        // Reaction Picker
+        if (_showReactionPicker)
+          ReactionPicker(
+            onReactionSelected: (emoji) {
+              context.read<ChatMessagesCubit>().reactToMessage(
+                    messageId: selectedMessage.id,
+                    emoji: emoji,
+                  );
+              widget.overlayManager.hideOverlay(onStateChanged: widget.onStateChanged);
+              setState(() {
+                _showReactionPicker = false;
+              });
+            },
+            onDismiss: () {
+              widget.overlayManager.hideOverlay(onStateChanged: widget.onStateChanged);
+              setState(() {
+                _showReactionPicker = false;
+              });
+            },
+          ),
+      ],
     );
   }
 
