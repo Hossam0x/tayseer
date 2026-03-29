@@ -96,6 +96,7 @@ import 'package:tayseer/features/advisor/settings/view/cubit/order_management/or
 import 'package:tayseer/features/advisor/wallet/data/datasources/wallet_remote_data_source.dart';
 import 'package:tayseer/features/advisor/wallet/data/repos/wallet_repo.dart';
 import 'package:tayseer/features/advisor/wallet/view/cubit/wallet_cubit.dart';
+import 'package:tayseer/features/advisor/wallet/view/cubit/recharge_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/otp_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_settings_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/email/email_edit_cubit.dart';
@@ -494,6 +495,9 @@ Future<void> setupGetIt() async {
     () => WalletRepo(getIt<WalletRemoteDataSource>()),
   );
   getIt.registerFactory<WalletCubit>(() => WalletCubit(getIt<WalletRepo>()));
+  getIt.registerFactory<RechargeCubit>(
+    () => RechargeCubit(getIt<WalletRepo>()),
+  );
 
   // Reports
   getIt.registerLazySingleton<ReportsRepo>(
@@ -535,10 +539,10 @@ Future<void> setupGetIt() async {
   );
 
   getIt.registerLazySingleton<NotificationRepo>(
-        () => NotificationRepo(apiService: getIt<ApiService>()),
+    () => NotificationRepo(apiService: getIt<ApiService>()),
   );
   getIt.registerFactory<NotificationCubit>(
-        () => NotificationCubit(notificationRepo: getIt<NotificationRepo>()),
+    () => NotificationCubit(notificationRepo: getIt<NotificationRepo>()),
   );
 }
 
@@ -554,5 +558,4 @@ class OtpCubitParams {
     required this.isEmailUpdate,
     required this.otpSource,
   });
-
 }
