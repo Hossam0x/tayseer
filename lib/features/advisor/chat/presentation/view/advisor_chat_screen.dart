@@ -176,6 +176,7 @@ class _ChatContentState extends State<_ChatContent> {
           child: SafeArea(
             top: false,
             child: Scaffold(
+              resizeToAvoidBottomInset: true,
               backgroundColor: ChatColors.chatBackground,
               body: Directionality(
                 textDirection: TextDirection.rtl,

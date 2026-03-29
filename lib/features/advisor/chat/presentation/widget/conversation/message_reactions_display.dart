@@ -28,8 +28,10 @@ class MessageReactionsDisplay extends StatelessWidget {
     }
 
     return Wrap(
-      spacing: 4.w,
-      runSpacing: 4.h,
+      spacing: 6.w,
+      runSpacing: 6.h,
+      alignment: WrapAlignment.start,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: groupedReactions.entries.map((entry) {
         final emoji = entry.key;
         final userIds = entry.value;
