@@ -92,6 +92,17 @@ class _CommentInputAreaBodyState extends State<_CommentInputAreaBody> {
 
   void _onTextChangedForMention() {
     final text = _controller.text;
+
+    // ✅ FIXED: لو النص فاضي، امسح القائمة فوراً
+    if (text.isEmpty) {
+      if (_mentionStart != -1) {
+        _mentionStart = -1;
+        _mentionEnd = -1;
+        context.read<MentionSearchCubit>().clearSearch();
+      }
+      return;
+    }
+
     final selection = _controller.selection;
     if (!selection.isValid || !selection.isCollapsed) {
       if (_mentionStart != -1) {
@@ -104,12 +115,21 @@ class _CommentInputAreaBodyState extends State<_CommentInputAreaBody> {
 
     final cursorPosition = selection.baseOffset;
 
+    // ✅ FIXED: لو الكيرسر في البداية مفيش mention
+    if (cursorPosition == 0) {
+      if (_mentionStart != -1) {
+        _mentionStart = -1;
+        _mentionEnd = -1;
+        context.read<MentionSearchCubit>().clearSearch();
+      }
+      return;
+    }
+
     int start = cursorPosition - 1;
     while (start >= 0 && text[start] != ' ' && text[start] != '\n') {
       start--;
     }
     start++;
-
     int end = cursorPosition;
     while (end < text.length && text[end] != ' ' && text[end] != '\n') {
       end++;

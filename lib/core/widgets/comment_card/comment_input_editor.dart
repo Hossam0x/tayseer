@@ -1,9 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:shimmer/shimmer.dart';
-import 'package:tayseer/core/enum/cubit_states.dart';
-import 'package:tayseer/core/widgets/custom_app_image.dart';
 import 'package:tayseer/features/shared/post_details/presentation/manager/post_details_cubit/post_details_cubit.dart';
 import 'package:tayseer/features/shared/post_details/presentation/manager/mention_search_cubit/mention_search_cubit.dart';
 import 'package:tayseer/features/shared/post_details/data/models/mention_search_model.dart';
@@ -150,6 +144,17 @@ class _CommentInputEditorBodyState extends State<_CommentInputEditorBody> {
 
   void _onTextChangedForMention() {
     final text = _controller.text;
+
+    // ✅ FIXED: لو النص فاضي، امسح القائمة فوراً
+    if (text.isEmpty) {
+      if (_mentionStart != -1) {
+        _mentionStart = -1;
+        _mentionEnd = -1;
+        context.read<MentionSearchCubit>().clearSearch();
+      }
+      return;
+    }
+
     final selection = _controller.selection;
     if (!selection.isValid || !selection.isCollapsed) {
       if (_mentionStart != -1) {
@@ -161,6 +166,17 @@ class _CommentInputEditorBodyState extends State<_CommentInputEditorBody> {
     }
 
     final cursorPosition = selection.baseOffset;
+
+    // ✅ FIXED: لو الكيرسر في البداية مفيش mention
+    if (cursorPosition == 0) {
+      if (_mentionStart != -1) {
+        _mentionStart = -1;
+        _mentionEnd = -1;
+        context.read<MentionSearchCubit>().clearSearch();
+      }
+      return;
+    }
+
     int start = cursorPosition - 1;
     while (start >= 0 && text[start] != ' ' && text[start] != '\n') {
       start--;
