@@ -20,7 +20,6 @@ class UserAdvisorProfileCubit
   UserAdvisorProfileCubit(this._repository, this.advisorId)
     : super(const UserAdvisorProfileState()) {
     _initializeProfile();
-    _setupSocketListeners();
   }
 
   // ── ProfilePostsCubitContract implementation ──
@@ -66,32 +65,7 @@ class UserAdvisorProfileCubit
   }
 
   void _setupSocketListeners() {
-    // ⭐ الاستماع لإنشاء الروم من السوكيت
-    socketHelper.listen('chatRoomJoined', (data) {
-      final String chatRoomId =
-          data['chatRoomId']?.toString() ?? ''; //chatRoomId
-
-      if (chatRoomId.isNotEmpty) {
-        log('Socket room created: $chatRoomId');
-
-        // ⭐ تحديث الـ profile بالـ room الجديد
-        final updatedProfile = state.profile?.copyWith(
-          room: RoomInfoModel(
-            chatRoomId: chatRoomId,
-            isBlocked: false,
-            isHaveSession: false,
-          ),
-        );
-
-        emit(
-          state.copyWith(
-            profile: updatedProfile,
-            chatRoomId: chatRoomId,
-            shouldNavigateToChat: true,
-          ),
-        );
-      }
-    });
+    // deprecated - listeners are now managed in startChat()
   }
 
   Future<void> _initializeProfile() async {
@@ -423,16 +397,6 @@ class UserAdvisorProfileCubit
     // ⭐ إلغاء أي timer سابق
     _chatTimeoutTimer?.cancel();
 
-    // ⭐ 1. التحقق إذا كان هناك room ID قادم من الـ Backend بالفعل
-    // إذا كان موجوداً، ننتقل مباشرة دون الحاجة للسوكيت
-    if (state.profile?.hasRoom == true &&
-        state.profile!.chatRoomId != null &&
-        state.profile!.chatRoomId!.isNotEmpty) {
-      log('🔗 Room ID found in backend: ${state.profile!.chatRoomId}');
-      emit(state.copyWith(isChatLoading: true, shouldNavigateToChat: true));
-      return;
-    }
-
     // ⭐ 2. التأكد من اتصال السوكيت
     bool connected = socketHelper.isConnected;
     if (!connected) {
@@ -460,7 +424,7 @@ class UserAdvisorProfileCubit
       log('✅ Socket connected successfully');
     }
 
-    // ⭐ 3. البدء في عملية إنشاء الـ Room عبر السوكيت
+    // ⭐ 2. البدء في عملية إنشاء الـ Room عبر السوكيت
     emit(
       state.copyWith(
         isChatLoading: true,
