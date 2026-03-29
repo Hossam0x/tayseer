@@ -60,14 +60,14 @@ class UserAdvisorProfileCubit
   @override
   Future<void> close() {
     _chatTimeoutTimer?.cancel();
-    socketHelper.off('room_created');
+    socketHelper.off('chatRoomJoined');
     socketHelper.off('fail');
     return super.close();
   }
 
   void _setupSocketListeners() {
     // ⭐ الاستماع لإنشاء الروم من السوكيت
-    socketHelper.listen('room_created', (data) {
+    socketHelper.listen('chatRoomJoined', (data) {
       final String chatRoomId =
           data['chatRoomId']?.toString() ?? ''; //chatRoomId
 
@@ -412,9 +412,11 @@ class UserAdvisorProfileCubit
       return;
     }
 
-    socketHelper.send('create_room', {'reciverId': receiverId}, (ack) {
-      log("send room create for user: $receiverId");
-    });
+    socketHelper.send('joinChatRoom', {'targetId': receiverId}, null);
+
+    // socketHelper.send('create_room', {'reciverId': receiverId}, (ack) {
+    //   log("send room create for user: $receiverId");
+    // });
   }
 
   Future<void> startChat() async {
@@ -468,10 +470,10 @@ class UserAdvisorProfileCubit
     );
 
     // تنظيف وتهيئة الـ listeners (نستخدم listen بدلاً من legacy لتفادي التكرار)
-    socketHelper.off('room_created');
+    socketHelper.off('chatRoomJoined');
     socketHelper.off('fail');
 
-    socketHelper.listen('room_created', (data) {
+    socketHelper.listen('chatRoomJoined', (data) {
       if (!isClosed) _handleRoomCreated(data);
     });
 
@@ -481,7 +483,7 @@ class UserAdvisorProfileCubit
 
     // إرسال طلب إنشاء room
     log("🚀 Sending create_room event for: $advisorId");
-    socketHelper.send('create_room', {'receiverId': advisorId}, (ack) {});
+    socketHelper.send('joinChatRoom', {'targetId': advisorId}, (ack) {});
 
     // إضافة timeout
     _chatTimeoutTimer = Timer(const Duration(seconds: 15), () {
