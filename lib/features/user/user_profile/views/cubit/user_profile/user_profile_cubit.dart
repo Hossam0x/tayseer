@@ -27,7 +27,8 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     _loadInitialData();
     _listenToProfileUpdates();
   }
-
+  static final StreamController<bool> marriageStatusStream =
+      StreamController<bool>.broadcast();
   void _listenToProfileUpdates() {
     _profileSubscription = ProfileEventBus.instance.onProfileUpdated.listen((
       event,
@@ -694,20 +695,19 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       emit(currentState.copyWith(isMarriageSectionDeactivated: value));
       await _saveMarriageSectionDeactivated(value);
 
-      // ✅ أعد بناء الـ settings عشان يخفي/يظهر item الزواج
+      // ✅ أضف السطر ده
+      UserProfileCubit.marriageStatusStream.add(value);
+
       final updatedSettings = await _loadSettings(
         isProfileComplete: currentState.isMarriageProfileComplete,
-
-        isMarriageDeactivated: value, // ✅
+        isMarriageDeactivated: value,
       );
-
       emit(
         currentState.copyWith(
           isMarriageSectionDeactivated: value,
-          settings: updatedSettings, // ✅
+          settings: updatedSettings,
         ),
       );
-
       debugPrint(
         '✅ Marriage section ${value ? "deactivated" : "activated"} locally',
       );
