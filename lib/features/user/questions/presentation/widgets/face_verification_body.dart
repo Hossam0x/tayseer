@@ -1,5 +1,3 @@
-// lib/features/user/questions/view/widget/face_verification_body.dart
-
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/user/questions/presentation/widgets/face_verification_painters.dart';
 import 'package:tayseer/features/user/questions/presentation/manager/questions_cubit.dart';
@@ -52,8 +50,7 @@ class _FaceVerificationBodyState extends State<FaceVerificationBody> {
         child: SafeArea(
           child: BlocConsumer<QuestionsCubit, QuestionsState>(
             listenWhen: (previous, current) =>
-                previous.faceVerificationState !=
-                current.faceVerificationState,
+                previous.faceVerificationState != current.faceVerificationState,
             listener: (context, state) {
               if (state.isVerificationSuccess) {
                 Future.delayed(const Duration(seconds: 2), () {
@@ -261,9 +258,7 @@ class _FaceVerificationBodyState extends State<FaceVerificationBody> {
             onPressed: () => context.pop(),
             child: Text(
               context.tr('go_back'),
-              style: Styles.textStyle14.copyWith(
-                color: Colors.grey.shade600,
-              ),
+              style: Styles.textStyle14.copyWith(color: Colors.grey.shade600),
             ),
           ),
         ],
