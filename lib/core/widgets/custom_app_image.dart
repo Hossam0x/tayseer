@@ -1,6 +1,4 @@
-import 'dart:ui';
 import 'package:vector_graphics/vector_graphics.dart';
-import 'package:tayseer/core/services/connectivity_cubit.dart';
 import '../../my_import.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -16,7 +14,7 @@ class AppImage extends StatefulWidget {
   final bool flipOnLtr;
   final double? blur;
   final bool isAvatar;
-  final double? radius; // ⭐ جديد
+  final double? radius;
 
   const AppImage(
     this.path, {
@@ -50,8 +48,6 @@ class _AppImageState extends State<AppImage> {
     }
   }
 
-  // ──────────────── Helper Wrappers ────────────────
-
   Widget _flipIfLtr(Widget child, BuildContext context) {
     if (!widget.flipOnLtr) return child;
     final isLtr = Directionality.of(context) == TextDirection.ltr;
@@ -59,7 +55,6 @@ class _AppImageState extends State<AppImage> {
     return Transform.scale(scaleX: -1, child: child);
   }
 
-  /// ⭐ ClipRRect لو فيه radius
   Widget _wrapWithClip(Widget child) {
     if (widget.radius != null && widget.radius! > 0) {
       return ClipRRect(
@@ -70,7 +65,6 @@ class _AppImageState extends State<AppImage> {
     return child;
   }
 
-  /// ⭐ Gradient wrapper
   Widget _wrapWithGradient(Widget child) {
     if (widget.gradientColorSvg != null) {
       return ShaderMask(
@@ -83,31 +77,20 @@ class _AppImageState extends State<AppImage> {
     return child;
   }
 
-  // ──────────────── Build ────────────────
-
   @override
   Widget build(BuildContext context) {
     final path = widget.path;
     final pixelRatio = MediaQuery.of(context).devicePixelRatio;
 
-    // ── Empty path ──
     if (path == null || path.isEmpty) {
       return _buildFallback();
     }
 
     final ext = path.split('.').last.toLowerCase();
 
-    // ── Vector Graphics (.vec) – الأسرع ──
-    if (ext == 'vec') {
-      return _buildVec(path);
-    }
+    if (ext == 'vec') return _buildVec(path);
+    if (ext == 'svg') return _buildSvg(path);
 
-    // ── SVG ──
-    if (ext == 'svg') {
-      return _buildSvg(path);
-    }
-
-    // ── Lottie ──
     if (ext == 'json') {
       return _wrapWithClip(
         Lottie.asset(
@@ -119,12 +102,8 @@ class _AppImageState extends State<AppImage> {
       );
     }
 
-    // ── GIF ──
-    if (ext == 'gif') {
-      return _buildGif(path, pixelRatio);
-    }
+    if (ext == 'gif') return _buildGif(path, pixelRatio);
 
-    // ── Network image ──
     if (path.startsWith('http')) {
       return _wrapWithGradient(
         _ConnectivityNetworkImage(
@@ -144,13 +123,9 @@ class _AppImageState extends State<AppImage> {
       );
     }
 
-    // ── Asset image (png, jpg, webp …) ──
     return _buildAssetRaster(path, pixelRatio);
   }
 
-  // ──────────────── Builders ────────────────
-
-  /// ⭐ جديد – Vector Graphics (.vec)
   Widget _buildVec(String path) {
     Widget vecWidget = SizedBox(
       height: widget.height,
@@ -169,45 +144,37 @@ class _AppImageState extends State<AppImage> {
   }
 
   Widget _buildSvg(String path) {
-    // ⭐ استخدام colorFilter بدل color المحذوف
     final colorFilter = widget.gradientColorSvg == null && widget.color != null
         ? ColorFilter.mode(widget.color!, BlendMode.srcIn)
         : null;
 
-    Widget svgWidget;
-    if (path.startsWith('http')) {
-      svgWidget = SvgPicture.network(
-        path,
-        fit: widget.fit,
-        height: widget.height,
-        width: widget.width,
-        colorFilter: colorFilter,
-        placeholderBuilder: (_) => widget.placeholderImage != null
-            ? Image.asset(
-                widget.placeholderImage!,
-                height: widget.height,
-                width: widget.width,
-                fit: widget.fit,
-              )
-            : _buildLoadingPlaceholder(),
-      );
-    } else {
-      svgWidget = SvgPicture.asset(
-        path,
-        fit: widget.fit,
-        height: widget.height,
-        width: widget.width,
-        colorFilter: colorFilter,
-        placeholderBuilder: (_) => widget.placeholderImage != null
-            ? Image.asset(
-                widget.placeholderImage!,
-                height: widget.height,
-                width: widget.width,
-                fit: widget.fit,
-              )
-            : _buildLoadingPlaceholder(),
-      );
-    }
+    Widget svgWidget = path.startsWith('http')
+        ? SvgPicture.network(
+            path,
+            fit: widget.fit,
+            height: widget.height,
+            width: widget.width,
+            colorFilter: colorFilter,
+            placeholderBuilder: (_) => widget.placeholderImage != null
+                ? Image.asset(widget.placeholderImage!,
+                    height: widget.height,
+                    width: widget.width,
+                    fit: widget.fit)
+                : _buildLoadingPlaceholder(),
+          )
+        : SvgPicture.asset(
+            path,
+            fit: widget.fit,
+            height: widget.height,
+            width: widget.width,
+            colorFilter: colorFilter,
+            placeholderBuilder: (_) => widget.placeholderImage != null
+                ? Image.asset(widget.placeholderImage!,
+                    height: widget.height,
+                    width: widget.width,
+                    fit: widget.fit)
+                : _buildLoadingPlaceholder(),
+          );
 
     return _flipIfLtr(_wrapWithClip(_wrapWithGradient(svgWidget)), context);
   }
@@ -242,50 +209,47 @@ class _AppImageState extends State<AppImage> {
     );
   }
 
-  /// ⭐ محسّن – cacheWidth/cacheHeight + errorBuilder
   Widget _buildAssetRaster(String path, double pixelRatio) {
+    final safeWidth = widget.width;
+    final safeHeight = widget.height;
+
     Widget assetImage = Image.asset(
       path,
       height: widget.height,
       width: widget.width,
       fit: widget.fit,
       color: widget.color,
-      cacheWidth: widget.width != null
-          ? (widget.width! * pixelRatio).toInt()
+      cacheWidth: (safeWidth != null && safeWidth.isFinite && safeWidth > 0)
+          ? (safeWidth * pixelRatio).toInt()
           : null,
-      cacheHeight: widget.height != null
-          ? (widget.height! * pixelRatio).toInt()
+      cacheHeight: (safeHeight != null && safeHeight.isFinite && safeHeight > 0)
+          ? (safeHeight * pixelRatio).toInt()
           : null,
       errorBuilder: (_, __, ___) => _buildErrorWidget(),
     );
+
     return _flipIfLtr(_wrapWithClip(_wrapWithGradient(assetImage)), context);
   }
 
   Widget _buildFallback() {
     if (widget.placeholderImage != null) {
       return _wrapWithClip(
-        Image.asset(
-          widget.placeholderImage!,
-          height: widget.height,
-          width: widget.width,
-          fit: widget.fit,
-        ),
+        Image.asset(widget.placeholderImage!,
+            height: widget.height,
+            width: widget.width,
+            fit: widget.fit),
       );
     }
     if (widget.isAvatar) {
       return _wrapWithClip(
-        Image.asset(
-          AssetsData.defaultProfileImage,
-          height: widget.height,
-          width: widget.width,
-          fit: widget.fit,
-        ),
+        Image.asset(AssetsData.defaultProfileImage,
+            height: widget.height,
+            width: widget.width,
+            fit: widget.fit),
       );
     }
     return const SizedBox.shrink();
   }
-
-  // ──────────────── Placeholders ────────────────
 
   Widget _buildLoadingPlaceholder() {
     return Shimmer.fromColors(
@@ -301,26 +265,25 @@ class _AppImageState extends State<AppImage> {
 
   Widget _buildErrorWidget() {
     if (widget.placeholderImage != null) {
-      return Image.asset(
-        widget.placeholderImage!,
-        height: widget.height,
-        width: widget.width,
-        fit: widget.fit,
-      );
+      return Image.asset(widget.placeholderImage!,
+          height: widget.height,
+          width: widget.width,
+          fit: widget.fit);
     }
     return Container(
       height: widget.height,
       width: widget.width,
       color: Colors.grey[200],
       child: Center(
-        child: Icon(Icons.image_outlined, color: Colors.grey[350], size: 32.sp),
+        child: Icon(Icons.image_outlined,
+            color: Colors.grey[350], size: 32.sp),
       ),
     );
   }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 🔄 صورة شبكة مع إعادة تحميل تلقائية عند عودة الاتصال
+// 🔄 Connectivity Image
 // ══════════════════════════════════════════════════════════════════════════════
 class _ConnectivityNetworkImage extends StatefulWidget {
   final String imageUrl;
@@ -331,10 +294,10 @@ class _ConnectivityNetworkImage extends StatefulWidget {
   final String? placeholderImage;
   final bool isAvatar;
   final Widget loadingPlaceholder;
-  final double pixelRatio; // ⭐ بدل الـ hardcoded 600
+  final double pixelRatio;
   final double? blur;
   final String? previousUrl;
-  final double? radius; // ⭐ جديد
+  final double? radius;
 
   const _ConnectivityNetworkImage({
     required this.imageUrl,
@@ -356,7 +319,8 @@ class _ConnectivityNetworkImage extends StatefulWidget {
       _ConnectivityNetworkImageState();
 }
 
-class _ConnectivityNetworkImageState extends State<_ConnectivityNetworkImage> {
+class _ConnectivityNetworkImageState
+    extends State<_ConnectivityNetworkImage> {
   int _retryKey = 0;
   bool _hasFailed = false;
   String? _localPreviousUrl;
@@ -376,146 +340,40 @@ class _ConnectivityNetworkImageState extends State<_ConnectivityNetworkImage> {
     }
   }
 
-  // ⭐ حساب ديناميكي بناءً على pixelRatio
-  int? get _memCacheWidth =>
-      widget.width != null ? (widget.width! * widget.pixelRatio).toInt() : null;
+  int? get _memCacheWidth {
+    final w = widget.width;
+    if (w != null && w.isFinite && w > 0) {
+      return (w * widget.pixelRatio).toInt();
+    }
+    return null;
+  }
 
-  int? get _memCacheHeight => widget.height != null
-      ? (widget.height! * widget.pixelRatio).toInt()
-      : null;
+  int? get _memCacheHeight {
+    final h = widget.height;
+    if (h != null && h.isFinite && h > 0) {
+      return (h * widget.pixelRatio).toInt();
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
-    Widget image = BlocListener<ConnectivityCubit, ConnectivityState>(
-      listenWhen: (prev, curr) => !prev.isConnected && curr.isConnected,
-      listener: (_, __) {
-        if (_hasFailed && mounted) {
-          setState(() {
-            _retryKey++;
-            _hasFailed = false;
-          });
-        }
-      },
-      child: CachedNetworkImage(
-        key: ValueKey('${widget.imageUrl}_$_retryKey'),
-        memCacheWidth: _memCacheWidth,
-        memCacheHeight: _memCacheHeight,
-        imageUrl: widget.imageUrl,
-        fit: widget.fit,
-        height: widget.height,
-        width: widget.width,
-        // لو فيه blur الـ color هيتطبق جوا الـ imageBuilder
-        color: widget.blur != null ? null : widget.color,
-        fadeOutDuration: Duration.zero,
-        fadeInDuration: Duration.zero,
-        placeholderFadeInDuration: Duration.zero,
-        useOldImageOnUrlChange: true,
-
-        // ⭐ لو فيه URL قديم، نعرضه كـ placeholder بدل الـ shimmer
-        placeholder: (_, __) {
-          final prev = _localPreviousUrl;
-          if (prev != null && prev.isNotEmpty) {
-            return CachedNetworkImage(
-              imageUrl: prev,
-              fit: widget.fit,
-              height: widget.height,
-              width: widget.width,
-              memCacheWidth: _memCacheWidth,
-              memCacheHeight: _memCacheHeight,
-              fadeInDuration: Duration.zero,
-              fadeOutDuration: Duration.zero,
-              errorWidget: (_, __, ___) => _buildPlaceholder(),
-            );
-          }
-          return _buildPlaceholder();
-        },
-
-        errorWidget: (_, __, ___) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted && !_hasFailed) _hasFailed = true;
-          });
-          return _buildErrorWidget();
-        },
-
-        imageBuilder: widget.blur != null
-            ? (context, imageProvider) => ImageFiltered(
-                imageFilter: ImageFilter.blur(
-                  sigmaX: widget.blur!,
-                  sigmaY: widget.blur!,
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: imageProvider,
-                      fit: widget.fit,
-                      colorFilter: widget.color != null
-                          ? ColorFilter.mode(widget.color!, BlendMode.srcIn)
-                          : null,
-                    ),
-                  ),
-                ),
-              )
-            : null,
-      ),
-    );
-
-    // ⭐ RepaintBoundary + ClipRRect
-    return RepaintBoundary(
-      child: widget.radius != null && widget.radius! > 0
-          ? ClipRRect(
-              borderRadius: BorderRadius.circular(widget.radius!),
-              child: image,
-            )
-          : image,
-    );
-  }
-
-  // ──────────────── Placeholders ────────────────
-
-  Widget _buildPlaceholder() {
-    if (widget.placeholderImage != null) {
-      return Image.asset(
-        widget.placeholderImage!,
-        height: widget.height,
-        width: widget.width,
-        fit: widget.fit,
-      );
-    }
-    if (widget.isAvatar) {
-      return Image.asset(
-        AssetsData.defaultProfileImage,
-        height: widget.height,
-        width: widget.width,
-        fit: BoxFit.cover,
-      );
-    }
-    return widget.loadingPlaceholder;
-  }
-
-  Widget _buildErrorWidget() {
-    if (widget.placeholderImage != null) {
-      return Image.asset(
-        widget.placeholderImage!,
-        height: widget.height,
-        width: widget.width,
-        fit: widget.fit,
-      );
-    }
-    if (widget.isAvatar) {
-      return Image.asset(
-        AssetsData.defaultProfileImage,
-        height: widget.height,
-        width: widget.width,
-        fit: BoxFit.cover,
-      );
-    }
-    return Container(
+    Widget image = CachedNetworkImage(
+      key: ValueKey('${widget.imageUrl}_$_retryKey'),
+      memCacheWidth: _memCacheWidth,
+      memCacheHeight: _memCacheHeight,
+      imageUrl: widget.imageUrl,
+      fit: widget.fit,
       height: widget.height,
       width: widget.width,
-      color: Colors.grey[200],
-      child: Center(
-        child: Icon(Icons.image_outlined, color: Colors.grey[350], size: 32.sp),
-      ),
+      color: widget.blur != null ? null : widget.color,
     );
+
+    return widget.radius != null && widget.radius! > 0
+        ? ClipRRect(
+            borderRadius: BorderRadius.circular(widget.radius!),
+            child: image,
+          )
+        : image;
   }
 }

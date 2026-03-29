@@ -1698,5 +1698,20 @@
   "enter_certificate_name": "يرجى إدخال اسم الشهادة",
   "enter_issuing_entity": "يرجى إدخال الجهة المانحة",
   "choose_year": "يرجى اختيار سنة الحصول",
-  "certificate_added_success": "تمت إضافة الشهادة بنجاح"
+  "certificate_added_success": "تمت إضافة الشهادة بنجاح",
+  "verification_failed_title": "فشل التحقق",
+  "verification_success_subtitle": "تم التأكد من هويتك بنجاح",
+  "verification_failed_subtitle": "لم نتمكن من التحقق من هويتك، يرجى المحاولة مرة أخرى",
+  "please_wait": "يرجى الانتظار...",
+  "sdk_processing": "جاري معالجة بيانات الوجه...",
+  "redirecting": "جاري التحويل...",
+  "go_back": "الرجوع",
+  "session_creation_failed": "فشل في إنشاء جلسة التحقق",
+  "face_mismatch": "الوجه لا يتطابق مع الصورة المرفوعة",
+  "verification_pending": "التحقق قيد المراجعة",
+  "verification_cancelled": "تم إلغاء التحقق",
+  "session_expired": "انتهت صلاحية الجلسة",
+  "network_error": "خطأ في الاتصال بالإنترنت",
+  "camera_access_denied": "لم يتم السماح بالوصول للكاميرا",
+  "api_error": "خطأ في الاتصال بالخادم"
 }
