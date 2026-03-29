@@ -222,6 +222,8 @@ PODS:
   - proximity_sensor (0.0.1):
     - Flutter
   - RecaptchaInterop (101.0.0)
+  - record_darwin (1.0.0):
+    - Flutter
   - RegulaCommon (7.5.935)
   - screen_brightness_ios (0.1.0):
     - Flutter
@@ -305,6 +307,7 @@ DEPENDENCIES:
   - photo_manager (from `.symlinks/plugins/photo_manager/darwin`)
   - pro_video_editor (from `.symlinks/plugins/pro_video_editor/ios`)
   - proximity_sensor (from `.symlinks/plugins/proximity_sensor/ios`)
+  - record_darwin (from `.symlinks/plugins/record_darwin/ios`)
   - screen_brightness_ios (from `.symlinks/plugins/screen_brightness_ios/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -424,6 +427,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/pro_video_editor/ios"
   proximity_sensor:
     :path: ".symlinks/plugins/proximity_sensor/ios"
+  record_darwin:
+    :path: ".symlinks/plugins/record_darwin/ios"
   screen_brightness_ios:
     :path: ".symlinks/plugins/screen_brightness_ios/ios"
   share_plus:
@@ -517,6 +522,7 @@ SPEC CHECKSUMS:
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   proximity_sensor: 2aef59f90cf0382935faf58ad0a79e1e860773bd
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
+  record_darwin: fb1f375f1d9603714f55b8708a903bbb91ffdb0a
   RegulaCommon: 2a6406d2d3ebbd720b66a9cfa5b9631701d343eb
   screen_brightness_ios: 5ed898fa50fa82a26171c086ca5e28228f932576
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf

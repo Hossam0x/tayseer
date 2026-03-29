@@ -26,6 +26,7 @@ import package_info_plus
 import path_provider_foundation
 import photo_manager
 import pro_video_editor
+import record_darwin
 import screen_brightness_macos
 import share_plus
 import shared_preferences_foundation
@@ -59,6 +60,7 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   PathProviderPlugin.register(with: registry.registrar(forPlugin: "PathProviderPlugin"))
   PhotoManagerPlugin.register(with: registry.registrar(forPlugin: "PhotoManagerPlugin"))
   ProVideoEditorPlugin.register(with: registry.registrar(forPlugin: "ProVideoEditorPlugin"))
+  RecordPlugin.register(with: registry.registrar(forPlugin: "RecordPlugin"))
   ScreenBrightnessMacosPlugin.register(with: registry.registrar(forPlugin: "ScreenBrightnessMacosPlugin"))
   SharePlusMacosPlugin.register(with: registry.registrar(forPlugin: "SharePlusMacosPlugin"))
   SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))
