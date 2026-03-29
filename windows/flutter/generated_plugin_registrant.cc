@@ -18,6 +18,7 @@
 #include <geolocator_windows/geolocator_windows.h>
 #include <permission_handler_windows/permission_handler_windows_plugin.h>
 #include <pro_video_editor/pro_video_editor_plugin_c_api.h>
+#include <record_windows/record_windows_plugin_c_api.h>
 #include <screen_brightness_windows/screen_brightness_windows_plugin.h>
 #include <share_plus/share_plus_windows_plugin_c_api.h>
 #include <url_launcher_windows/url_launcher_windows.h>
@@ -49,6 +50,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("PermissionHandlerWindowsPlugin"));
   ProVideoEditorPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("ProVideoEditorPluginCApi"));
+  RecordWindowsPluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("RecordWindowsPluginCApi"));
   ScreenBrightnessWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("ScreenBrightnessWindowsPlugin"));
   SharePlusWindowsPluginCApiRegisterWithRegistrar(

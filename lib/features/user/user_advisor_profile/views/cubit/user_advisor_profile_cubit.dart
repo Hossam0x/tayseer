@@ -20,7 +20,6 @@ class UserAdvisorProfileCubit
   UserAdvisorProfileCubit(this._repository, this.advisorId)
     : super(const UserAdvisorProfileState()) {
     _initializeProfile();
-    _setupSocketListeners();
   }
 
   // ── ProfilePostsCubitContract implementation ──
@@ -60,38 +59,13 @@ class UserAdvisorProfileCubit
   @override
   Future<void> close() {
     _chatTimeoutTimer?.cancel();
-    socketHelper.off('room_created');
+    socketHelper.off('chatRoomJoined');
     socketHelper.off('fail');
     return super.close();
   }
 
   void _setupSocketListeners() {
-    // ⭐ الاستماع لإنشاء الروم من السوكيت
-    socketHelper.listen('room_created', (data) {
-      final String chatRoomId =
-          data['chatRoomId']?.toString() ?? ''; //chatRoomId
-
-      if (chatRoomId.isNotEmpty) {
-        log('Socket room created: $chatRoomId');
-
-        // ⭐ تحديث الـ profile بالـ room الجديد
-        final updatedProfile = state.profile?.copyWith(
-          room: RoomInfoModel(
-            chatRoomId: chatRoomId,
-            isBlocked: false,
-            isHaveSession: false,
-          ),
-        );
-
-        emit(
-          state.copyWith(
-            profile: updatedProfile,
-            chatRoomId: chatRoomId,
-            shouldNavigateToChat: true,
-          ),
-        );
-      }
-    });
+    // deprecated - listeners are now managed in startChat()
   }
 
   Future<void> _initializeProfile() async {
@@ -412,24 +386,16 @@ class UserAdvisorProfileCubit
       return;
     }
 
-    socketHelper.send('create_room', {'reciverId': receiverId}, (ack) {
-      log("send room create for user: $receiverId");
-    });
+    socketHelper.send('joinChatRoom', {'targetId': receiverId}, null);
+
+    // socketHelper.send('create_room', {'reciverId': receiverId}, (ack) {
+    //   log("send room create for user: $receiverId");
+    // });
   }
 
   Future<void> startChat() async {
     // ⭐ إلغاء أي timer سابق
     _chatTimeoutTimer?.cancel();
-
-    // ⭐ 1. التحقق إذا كان هناك room ID قادم من الـ Backend بالفعل
-    // إذا كان موجوداً، ننتقل مباشرة دون الحاجة للسوكيت
-    if (state.profile?.hasRoom == true &&
-        state.profile!.chatRoomId != null &&
-        state.profile!.chatRoomId!.isNotEmpty) {
-      log('🔗 Room ID found in backend: ${state.profile!.chatRoomId}');
-      emit(state.copyWith(isChatLoading: true, shouldNavigateToChat: true));
-      return;
-    }
 
     // ⭐ 2. التأكد من اتصال السوكيت
     bool connected = socketHelper.isConnected;
@@ -458,7 +424,7 @@ class UserAdvisorProfileCubit
       log('✅ Socket connected successfully');
     }
 
-    // ⭐ 3. البدء في عملية إنشاء الـ Room عبر السوكيت
+    // ⭐ 2. البدء في عملية إنشاء الـ Room عبر السوكيت
     emit(
       state.copyWith(
         isChatLoading: true,
@@ -468,10 +434,10 @@ class UserAdvisorProfileCubit
     );
 
     // تنظيف وتهيئة الـ listeners (نستخدم listen بدلاً من legacy لتفادي التكرار)
-    socketHelper.off('room_created');
+    socketHelper.off('chatRoomJoined');
     socketHelper.off('fail');
 
-    socketHelper.listen('room_created', (data) {
+    socketHelper.listen('chatRoomJoined', (data) {
       if (!isClosed) _handleRoomCreated(data);
     });
 
@@ -481,7 +447,7 @@ class UserAdvisorProfileCubit
 
     // إرسال طلب إنشاء room
     log("🚀 Sending create_room event for: $advisorId");
-    socketHelper.send('create_room', {'receiverId': advisorId}, (ack) {});
+    socketHelper.send('joinChatRoom', {'targetId': advisorId}, (ack) {});
 
     // إضافة timeout
     _chatTimeoutTimer = Timer(const Duration(seconds: 15), () {

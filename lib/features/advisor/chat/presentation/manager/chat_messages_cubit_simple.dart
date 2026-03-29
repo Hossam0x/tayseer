@@ -201,6 +201,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     required String messageType,
     List<File>? images,
     List<File>? videos,
+    File? audio,
     String? replyMessageId,
     ChatMessage? replyToMessage,
   }) async {
@@ -212,6 +213,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     final localPaths = <String>[];
     if (images != null) localPaths.addAll(images.map((f) => f.path));
     if (videos != null) localPaths.addAll(videos.map((f) => f.path));
+    if (audio != null) localPaths.add(audio.path);
 
     final optimisticMessage = ChatMessage(
       id: localId,
@@ -258,6 +260,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       contentType: messageType,
       images: images,
       videos: videos,
+      audio: audio,
       replyToMessageId: replyMessageId,
       tempId: tempId,
       onProgress: (sent, total) {

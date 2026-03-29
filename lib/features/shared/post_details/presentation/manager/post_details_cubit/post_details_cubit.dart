@@ -528,11 +528,15 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
         );
         emit(state.copyWith(editingState: CubitStates.initial));
       },
-      (successMessage) {
+      (updatedModel) {
         final updatedComments = _updateCommentById(
           state.comments,
           commentId,
-          (comment) => comment.copyWith(comment: newContent),
+          (oldComment) => oldComment.copyWith(
+            comment: updatedModel.comment,
+            mentions: updatedModel.mentions,
+            timeAgo: updatedModel.timeAgo,
+          ),
         );
 
         emit(
@@ -540,7 +544,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
             editingState: CubitStates.success,
             comments: updatedComments,
             clearEditingCommentId: true,
-            // ✅ NEW: Scroll للكومنت اللي اتعدل
+            // ✅ Scroll للكومنت اللي اتعدل
             scrollToCommentId: commentId,
             scrollTrigger: state.scrollTrigger + 1,
           ),

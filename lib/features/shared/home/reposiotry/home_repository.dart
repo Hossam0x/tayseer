@@ -62,11 +62,11 @@ abstract class HomeRepository {
     required bool isRemove,
   });
 
-  Future<Either<Failure, String>> editComment({
+  Future<Either<Failure, CommentModel>> editComment({
     required String commentId,
     required String comment,
   });
-  Future<Either<Failure, String>> editReply({
+  Future<Either<Failure, CommentModel>> editReply({
     required String replyId,
     required String reply,
   });
@@ -102,7 +102,5 @@ abstract class HomeRepository {
     required bool isAdding,
   });
 
-  Future<Either<Failure, PostModel>> fetchPostById({
-    required String postId,
-  });
+  Future<Either<Failure, PostModel>> fetchPostById({required String postId});
 }
