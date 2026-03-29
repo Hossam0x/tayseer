@@ -156,10 +156,12 @@ class _AppImageState extends State<AppImage> {
             width: widget.width,
             colorFilter: colorFilter,
             placeholderBuilder: (_) => widget.placeholderImage != null
-                ? Image.asset(widget.placeholderImage!,
+                ? Image.asset(
+                    widget.placeholderImage!,
                     height: widget.height,
                     width: widget.width,
-                    fit: widget.fit)
+                    fit: widget.fit,
+                  )
                 : _buildLoadingPlaceholder(),
           )
         : SvgPicture.asset(
@@ -169,10 +171,12 @@ class _AppImageState extends State<AppImage> {
             width: widget.width,
             colorFilter: colorFilter,
             placeholderBuilder: (_) => widget.placeholderImage != null
-                ? Image.asset(widget.placeholderImage!,
+                ? Image.asset(
+                    widget.placeholderImage!,
                     height: widget.height,
                     width: widget.width,
-                    fit: widget.fit)
+                    fit: widget.fit,
+                  )
                 : _buildLoadingPlaceholder(),
           );
 
@@ -234,18 +238,22 @@ class _AppImageState extends State<AppImage> {
   Widget _buildFallback() {
     if (widget.placeholderImage != null) {
       return _wrapWithClip(
-        Image.asset(widget.placeholderImage!,
-            height: widget.height,
-            width: widget.width,
-            fit: widget.fit),
+        Image.asset(
+          widget.placeholderImage!,
+          height: widget.height,
+          width: widget.width,
+          fit: widget.fit,
+        ),
       );
     }
     if (widget.isAvatar) {
       return _wrapWithClip(
-        Image.asset(AssetsData.defaultProfileImage,
-            height: widget.height,
-            width: widget.width,
-            fit: widget.fit),
+        Image.asset(
+          AssetsData.defaultProfileImage,
+          height: widget.height,
+          width: widget.width,
+          fit: widget.fit,
+        ),
       );
     }
     return const SizedBox.shrink();
@@ -265,18 +273,19 @@ class _AppImageState extends State<AppImage> {
 
   Widget _buildErrorWidget() {
     if (widget.placeholderImage != null) {
-      return Image.asset(widget.placeholderImage!,
-          height: widget.height,
-          width: widget.width,
-          fit: widget.fit);
+      return Image.asset(
+        widget.placeholderImage!,
+        height: widget.height,
+        width: widget.width,
+        fit: widget.fit,
+      );
     }
     return Container(
       height: widget.height,
       width: widget.width,
       color: Colors.grey[200],
       child: Center(
-        child: Icon(Icons.image_outlined,
-            color: Colors.grey[350], size: 32.sp),
+        child: Icon(Icons.image_outlined, color: Colors.grey[350], size: 32.sp),
       ),
     );
   }
@@ -319,8 +328,7 @@ class _ConnectivityNetworkImage extends StatefulWidget {
       _ConnectivityNetworkImageState();
 }
 
-class _ConnectivityNetworkImageState
-    extends State<_ConnectivityNetworkImage> {
+class _ConnectivityNetworkImageState extends State<_ConnectivityNetworkImage> {
   int _retryKey = 0;
   bool _hasFailed = false;
   String? _localPreviousUrl;

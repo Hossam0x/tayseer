@@ -733,34 +733,23 @@ abstract class AppRouter {
           ),
         );
       case kConversitionView:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final isSystemChat = args?['isSystemChat'] as bool? ?? false;
+        final bool hasSystem = args?['system'] as bool? ?? false;
+        
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => AdvisorChatScreen(
-            receiverId: settings.arguments != null
-                ? (settings.arguments as Map<String, dynamic>)['receiverid']
-                      as String
-                : '',
-            chatRoomId:
-                (settings.arguments as Map<String, dynamic>?)?['chatroomid']
-                    as String?,
-            username:
-                (settings.arguments as Map<String, dynamic>?)?['username']
-                    as String?,
-            userimage:
-                (settings.arguments as Map<String, dynamic>?)?['userimage']
-                    as String?,
-            isBlocked:
-                (settings.arguments as Map<String, dynamic>?)?['isBlocked']
-                    as bool? ??
-                false,
-            isHaveSession:
-                (settings.arguments as Map<String, dynamic>?)?['isHaveSession']
-                    as bool? ??
-                true,
-            onBlockStatusChanged:
-                (settings.arguments
-                        as Map<String, dynamic>?)?['onBlockStatusChanged']
-                    as void Function(bool)?,
+            receiverId: (isSystemChat || hasSystem) 
+                ? null // في حالة System Chat لا نرسل receiverId
+                : (args?['receiverid'] as String?),
+            chatRoomId: args?['chatroomid'] as String?,
+            username: args?['username'] as String?,
+            userimage: args?['userimage'] as String?,
+            isBlocked: args?['isBlocked'] as bool? ?? false,
+            isHaveSession: args?['isHaveSession'] as bool? ?? true,
+            isSystemChat: isSystemChat || hasSystem,
+            onBlockStatusChanged: args?['onBlockStatusChanged'] as void Function(bool)?,
           ),
         );
       case notification:

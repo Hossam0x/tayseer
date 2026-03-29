@@ -1,125 +1,102 @@
+/// Response for GET /new-chat/rooms
 class ChatRoomsResponse {
   final bool success;
-  final String message;
-  final ChatRoomsData data;
+  final List<ChatRoom> rooms;
 
-  ChatRoomsResponse({
-    required this.success,
-    required this.message,
-    required this.data,
-  });
+  ChatRoomsResponse({required this.success, required this.rooms});
 
   factory ChatRoomsResponse.fromJson(Map<String, dynamic> json) {
+    // Handle multiple server structure variations:
+    // 1. { "success": true, "data": { "data": [ ... ] } }
+    // 2. { "success": true, "data": { "chatRooms": [ ... ] } }
+    final dataObj = json['data'];
+    final roomsList = (dataObj is Map<String, dynamic>)
+        ? (dataObj['data'] ?? dataObj['chatRooms'])
+        : null;
+
     return ChatRoomsResponse(
       success: json['success'] ?? false,
-      message: json['message'] ?? "",
-      data: ChatRoomsData.fromJson(json['data'] ?? {}),
-    );
-  }
-}
-
-class ChatRoomsData {
-  final List<ChatRoom> rooms;
-  final Pagination pagination;
-
-  ChatRoomsData({required this.rooms, required this.pagination});
-
-  factory ChatRoomsData.fromJson(Map<String, dynamic> json) {
-    return ChatRoomsData(
-      rooms:
-          (json['chatRooms'] as List?)
-              ?.map((e) => ChatRoom.fromJson(e))
+      rooms: (roomsList as List?)
+              ?.map((e) => ChatRoom.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
-      pagination: Pagination.fromJson(json['pagination'] ?? {}),
-    );
-  }
-
-  // ✅ أضف هذا
-  ChatRoomsData copyWith({List<ChatRoom>? rooms, Pagination? pagination}) {
-    return ChatRoomsData(
-      rooms: rooms ?? this.rooms,
-      pagination: pagination ?? this.pagination,
     );
   }
 }
 
 class ChatRoom {
   final String id;
-  final List<ChatUser> users;
+  final List<ChatUser> participants;
   final LastMessage? lastMessage;
-  final DateTime? lastMessageAt;
-  final String status;
-  final ChatUser sender;
   final DateTime? createdAt;
-  final DateTime? updatedAt;
   final int unreadCount;
   final bool isBlocked;
+  final bool isSystemChat;
+  final String? systemChatImage;
 
   ChatRoom({
     required this.id,
-    required this.users,
+    required this.participants,
     this.lastMessage,
-    required this.lastMessageAt,
-    required this.status,
-    required this.sender,
-    required this.createdAt,
-    required this.updatedAt,
+    this.createdAt,
     required this.unreadCount,
     this.isBlocked = false,
+    this.isSystemChat = false,
+    this.systemChatImage,
   });
 
   factory ChatRoom.fromJson(Map<String, dynamic> json) {
+    final List<ChatUser> parts = [];
+    String? systemImage;
+    
+    if (json['otherUser'] != null) {
+      parts.add(ChatUser.fromJson(json['otherUser'] as Map<String, dynamic>));
+    } else if (json['systemChat'] == true) {
+      // Get system chat image from systemChatData
+      systemImage = json['systemChatData']?['image']?.toString();
+      // Create a dummy system user if it's a system chat
+      parts.add(ChatUser(id: 'system', name: 'System', image: systemImage));
+    }
+
     return ChatRoom(
-      id: json['id']?.toString() ?? "",
-      users:
-          (json['users'] as List?)?.map((e) => ChatUser.fromJson(e)).toList() ??
-          [],
+      id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      participants: parts,
       lastMessage:
           json['lastMessage'] != null &&
               json['lastMessage'] is Map<String, dynamic>
-          ? LastMessage.fromJson(json['lastMessage'])
+          ? LastMessage.fromJson(json['lastMessage'] as Map<String, dynamic>)
           : null,
-      lastMessageAt: json['lastMessageAt'] != null
-          ? DateTime.tryParse(json['lastMessageAt'])
-          : null,
-      status: json['status']?.toString() ?? "",
-      sender: ChatUser.fromJson(json['sender'] ?? {}),
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'])
-          : null,
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.tryParse(json['updatedAt'])
-          : null,
+      createdAt: json['lastMessage']?['sentAt'] != null
+          ? DateTime.tryParse(json['lastMessage']['sentAt'].toString())
+          : (json['createdAt'] != null
+              ? DateTime.tryParse(json['createdAt'].toString())
+              : null),
       unreadCount: json['unreadCount'] ?? 0,
-      isBlocked: json['isBlocked'] ?? false,
+      isBlocked: json['blockExists'] ?? json['isBlocked'] ?? false,
+      isSystemChat: json['systemChat'] ?? false,
+      systemChatImage: systemImage,
     );
   }
 
-  // ✅ أضف هذا
   ChatRoom copyWith({
     String? id,
-    List<ChatUser>? users,
+    List<ChatUser>? participants,
     LastMessage? lastMessage,
-    DateTime? lastMessageAt,
-    String? status,
-    ChatUser? sender,
     DateTime? createdAt,
-    DateTime? updatedAt,
     int? unreadCount,
     bool? isBlocked,
+    bool? isSystemChat,
+    String? systemChatImage,
   }) {
     return ChatRoom(
       id: id ?? this.id,
-      users: users ?? this.users,
+      participants: participants ?? this.participants,
       lastMessage: lastMessage ?? this.lastMessage,
-      lastMessageAt: lastMessageAt ?? this.lastMessageAt,
-      status: status ?? this.status,
-      sender: sender ?? this.sender,
       createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
       unreadCount: unreadCount ?? this.unreadCount,
       isBlocked: isBlocked ?? this.isBlocked,
+      isSystemChat: isSystemChat ?? this.isSystemChat,
+      systemChatImage: systemChatImage ?? this.systemChatImage,
     );
   }
 }
@@ -134,114 +111,46 @@ class ChatUser {
 
   factory ChatUser.fromJson(Map<String, dynamic> json) {
     return ChatUser(
-      id: json['id']?.toString() ?? "",
-      name: json['name']?.toString() ?? "",
-      image: json['image']?.toString(),
+      id: json['userId']?.toString() ?? json['_id']?.toString() ?? '',
+      name:
+          json['name']?.toString() ??
+          json['displayName']?.toString() ??
+          'Unknown',
+      image: json['image']?.toString() ?? json['avatar']?.toString(),
       userType: json['userType']?.toString(),
     );
   }
 }
 
 class LastMessage {
-  final String id;
-  final String chatRoom;
-  final String sender;
-  final String senderType;
   final String content;
-  final String messageType;
-  final String senderName;
-  final String timeAgo;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
+  final DateTime? sentAt;
 
-  LastMessage({
-    required this.id,
-    required this.chatRoom,
-    required this.sender,
-    required this.senderType,
-    required this.content,
-    required this.messageType,
-    required this.senderName,
-    required this.timeAgo,
-    required this.createdAt,
-    required this.updatedAt,
-  });
+  LastMessage({required this.content, required this.sentAt});
 
   factory LastMessage.fromJson(Map<String, dynamic> json) {
-    String parseContent(dynamic contentData) {
-      if (contentData == null) return "";
-      if (contentData is List) {
-        if (contentData.isEmpty) return "";
-        return contentData.map((e) => e.toString()).join(" ");
-      }
-      return contentData.toString();
+    return LastMessage(
+      content: _parseContent(json['content']),
+      sentAt: json['sentAt'] != null
+          ? DateTime.tryParse(json['sentAt'].toString())
+          : (json['createdAt'] != null
+              ? DateTime.tryParse(json['createdAt'].toString())
+              : null),
+    );
+  }
+
+  static String _parseContent(dynamic contentData) {
+    if (contentData == null) return '';
+    if (contentData is List) {
+      return contentData.isEmpty ? '' : contentData.first.toString();
     }
-
-    return LastMessage(
-      id: json['id']?.toString() ?? "",
-      chatRoom: json['chatRoom']?.toString() ?? "",
-      sender: json['sender']?.toString() ?? "",
-      senderType: json['senderType']?.toString() ?? "",
-      content: parseContent(json['content']),
-      messageType: json['messageType']?.toString() ?? "text",
-      senderName: json['senderName']?.toString() ?? "",
-      timeAgo: json['timeAgo']?.toString() ?? "",
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'])
-          : null,
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.tryParse(json['updatedAt'])
-          : null,
-    );
+    return contentData.toString();
   }
 
-  // ✅ أضف هذا
-  LastMessage copyWith({
-    String? id,
-    String? chatRoom,
-    String? sender,
-    String? senderType,
-    String? content,
-    String? messageType,
-    String? senderName,
-    String? timeAgo,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) {
+  LastMessage copyWith({String? content, DateTime? sentAt}) {
     return LastMessage(
-      id: id ?? this.id,
-      chatRoom: chatRoom ?? this.chatRoom,
-      sender: sender ?? this.sender,
-      senderType: senderType ?? this.senderType,
       content: content ?? this.content,
-      messageType: messageType ?? this.messageType,
-      senderName: senderName ?? this.senderName,
-      timeAgo: timeAgo ?? this.timeAgo,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-    );
-  }
-}
-
-class Pagination {
-  final int totalCount;
-  final int totalPages;
-  final int currentPage;
-  final int pageSize;
-
-  Pagination({
-    required this.totalCount,
-    required this.totalPages,
-    required this.currentPage,
-    required this.pageSize,
-  });
-
-  factory Pagination.fromJson(Map<String, dynamic> json) {
-    return Pagination(
-      totalCount: json['totalCount'] ?? 0,
-      totalPages: json['totalPages'] ?? 0,
-      currentPage: json['currentPage'] ?? 0,
-      pageSize: json['pageSize'] ?? 0,
+      sentAt: sentAt ?? this.sentAt,
     );
   }
 }

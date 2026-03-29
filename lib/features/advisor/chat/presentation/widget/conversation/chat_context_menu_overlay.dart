@@ -14,11 +14,12 @@ class ChatContextMenuOverlay extends StatelessWidget {
   final double safeTopPadding;
   final VoidCallback onDismiss;
   final VoidCallback onReply;
-  final VoidCallback onCopy; // ✅ نسخ
+  final VoidCallback onCopy;
   final VoidCallback onDetails;
   final VoidCallback onSelect;
   final VoidCallback onDeleteForMe;
   final VoidCallback onDeleteForAll;
+  final VoidCallback onReact; // ✅ زر التفاعل
 
   const ChatContextMenuOverlay({
     super.key,
@@ -30,11 +31,12 @@ class ChatContextMenuOverlay extends StatelessWidget {
     required this.safeTopPadding,
     required this.onDismiss,
     required this.onReply,
-    required this.onCopy, // ✅ نسخ
+    required this.onCopy,
     required this.onDetails,
     required this.onSelect,
     required this.onDeleteForMe,
     required this.onDeleteForAll,
+    required this.onReact, // ✅ زر التفاعل
   });
 
   @override
@@ -80,24 +82,25 @@ class ChatContextMenuOverlay extends StatelessWidget {
           : null,
       child: ConversationContextMenu(
         isMyMessage: isMyMessage,
-        messageType: selectedMessage.messageType, // ✅ نمرر نوع الرسالة
+        messageType: selectedMessage.messageType,
         onReply: onReply,
-        onCopy: onCopy, // ✅ نسخ
+        onCopy: onCopy,
         onDetails: onDetails,
         onSelect: onSelect,
         onDeleteForMe: onDeleteForMe,
         onDeleteForAll: onDeleteForAll,
+        onReact: onReact, // ✅ زر التفاعل
       ),
     );
   }
 
   _MenuPositions _calculateMenuPositions(bool isMyMessage) {
-    // ✅ عدد العناصر بيتغير حسب نوع الرسالة
+    // عدد العناصر: رد + نسخ (للنص) + تفاصيل + تحديد + تفاعل + حذف
     int menuItemCount;
     if (isMyMessage) {
-      menuItemCount = (selectedMessage.messageType == 'text') ? 6 : 5;
+      menuItemCount = (selectedMessage.messageType == 'text') ? 7 : 6; // +1 للتفاعل
     } else {
-      menuItemCount = (selectedMessage.messageType == 'text') ? 4 : 3;
+      menuItemCount = (selectedMessage.messageType == 'text') ? 5 : 4; // +1 للتفاعل
     }
 
     const menuItemHeight = 44.0;

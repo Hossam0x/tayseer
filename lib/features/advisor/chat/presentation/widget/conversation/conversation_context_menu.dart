@@ -18,13 +18,14 @@ class ContextMenuOption {
 
 class ConversationContextMenu extends StatelessWidget {
   final bool isMyMessage;
-  final String messageType; // ✅ عشان نعرف لو الرسالة نص نعرض نسخ
+  final String messageType;
   final VoidCallback? onReply;
-  final VoidCallback? onCopy; // ✅ نسخ الرسالة
+  final VoidCallback? onCopy;
   final VoidCallback? onDetails;
   final VoidCallback? onSelect;
   final VoidCallback? onDeleteForMe;
   final VoidCallback? onDeleteForAll;
+  final VoidCallback? onReact; // ✅ زر التفاعل
 
   const ConversationContextMenu({
     super.key,
@@ -36,6 +37,7 @@ class ConversationContextMenu extends StatelessWidget {
     this.onSelect,
     this.onDeleteForMe,
     this.onDeleteForAll,
+    this.onReact, // ✅ زر التفاعل
   });
 
   List<ContextMenuOption> _getMenuOptions() {
@@ -54,6 +56,13 @@ class ConversationContextMenu extends StatelessWidget {
           hasBorder: true,
           onTap: onCopy,
         ),
+      // ✅ زر التفاعل
+      ContextMenuOption(
+        icon: Icons.add_reaction_outlined,
+        label: "تفاعل",
+        hasBorder: true,
+        onTap: onReact,
+      ),
       if (isMyMessage)
         ContextMenuOption(
           icon: Icons.info_outline,

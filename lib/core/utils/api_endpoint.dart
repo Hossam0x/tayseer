@@ -8,10 +8,10 @@ class ApiEndPoint {
   static const String storyViews = '/stories/view/';
   static const String posts = '/posts/all';
   static const String like = '/likes';
-  static const String getAllchatRooms = '/chat';
-  static String getChatMessages(String chatRoomId) =>
-      '/chat/$chatRoomId/messages';
-  static const String sendChatMedia = '/chat/messages/media';
+  static const String getAllchatRooms = '/new-chat/rooms';
+  static const String getChatMessages = '/new-chat/messages/room-messages';
+  static const String getChatMessageDetails = '/new-chat/messages/details';
+  static const String sendChatMedia = '/new-chat/messages/upload-media';
   static const String share = '/shares';
   static const String comments = '/comments';
   static const String replies = '/comment-replies/comment/';
@@ -20,10 +20,10 @@ class ApiEndPoint {
   static const String updateReply = '/comment-replies/update/';
   static const String reels = '/posts/reels';
   static const String nameAndImage = '/advisor/getNameAndImage';
-  static const String deleteChatMessage = '/chat/messages/';
-  static String deleteChatRoom(String chatRoomId) => '/chat/$chatRoomId';
+  static const String deleteChatMessage = '/new-chat/messages/delete-message';
+  static const String deleteChatRoom = '/new-chat/rooms/delete-chat-room';
   static String archiveChatRoom(String chatRoomId) =>
-      '/chat/$chatRoomId/archive';
+      '/new-chat/$chatRoomId/archive';
   static const String blockuser = '/blocks/block';
   static const String unblockuser = '/blocks/unblock';
   static const String profileData = '/advisor/getProfile';

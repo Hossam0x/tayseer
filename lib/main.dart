@@ -2,6 +2,7 @@ import 'package:app_links/app_links.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/adapters.dart';
+import 'package:tayseer/core/cache/chat_cache_service.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:tayseer/core/services/connectivity_service.dart';
@@ -32,6 +33,10 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await CachNetwork.cacheInitializaion();
   await setupGetIt();
+  
+  // Initialize ChatCacheService
+  await getIt<ChatCacheService>().init();
+  
   await getIt<ConnectivityService>().initialize();
   await _initializeVideoSystem();
   await GlobalMuteManager.instance.init();

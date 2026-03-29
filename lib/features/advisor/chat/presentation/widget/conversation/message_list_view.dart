@@ -12,6 +12,7 @@ class MessageListView extends StatefulWidget {
   final Function(ChatMessage message, GlobalKey key)? onMessageLongPress;
   final Function(String? replyMessageId, List<ChatMessage> messages)?
   onReplyTap;
+  final Function(String messageId, String emoji)? onReactionTap;
 
   const MessageListView({
     super.key,
@@ -19,6 +20,7 @@ class MessageListView extends StatefulWidget {
     required this.scrollController,
     this.onMessageLongPress,
     this.onReplyTap,
+    this.onReactionTap,
   });
 
   @override
@@ -93,6 +95,9 @@ class _MessageListViewState extends State<MessageListView> {
                             replyMessageId,
                             widget.messages,
                           );
+                        },
+                        onReactionTap: (emoji) {
+                          widget.onReactionTap?.call(msg.id, emoji);
                         },
                       ),
                     ),

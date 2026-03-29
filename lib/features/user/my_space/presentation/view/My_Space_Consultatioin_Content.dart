@@ -1,8 +1,9 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
-
+import 'package:tayseer/core/widgets/chat_room_list_item/chat_room_list_item.dart';
+import 'package:tayseer/core/widgets/chat_room_list_item/helpers/chat_room_dialog_helper.dart';
+import 'package:tayseer/core/widgets/error_state_widget.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_space_state.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
-import 'package:tayseer/features/user/my_space/presentation/widget/my_space_list_view_item.dart';
+import 'package:tayseer/features/user/my_space/presentation/widget/add_advisor_item.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/session_history/empty_session_widget.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -25,10 +26,32 @@ class _MySpaceConsultationContentState
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<MySpaceCubit, MySpaceState>(
-      buildWhen: (previous, current) =>
-          previous.advisorChatState != current.advisorChatState ||
-          previous.advisorChatModel != current.advisorChatModel ||
-          previous.lastUpdateTime != current.lastUpdateTime,
+      buildWhen: (previous, current) {
+        // Only rebuild if state changes or chat list actually changes
+        if (previous.advisorChatState != current.advisorChatState) {
+          return true;
+        }
+        
+        // Check if the chat list actually changed (not just lastUpdateTime)
+        final prevRooms = previous.advisorChatModel?.data.chatRooms ?? [];
+        final currRooms = current.advisorChatModel?.data.chatRooms ?? [];
+        
+        // If length changed, rebuild
+        if (prevRooms.length != currRooms.length) {
+          return true;
+        }
+        
+        // If any room's unreadCount or lastMessage changed, rebuild
+        for (int i = 0; i < prevRooms.length; i++) {
+          if (prevRooms[i].id != currRooms[i].id ||
+              prevRooms[i].unreadCount != currRooms[i].unreadCount ||
+              prevRooms[i].lastMessage?.content != currRooms[i].lastMessage?.content) {
+            return true;
+          }
+        }
+        
+        return false;
+      },
       builder: (context, state) {
         // Loading State
         if (state.advisorChatState == CubitStates.loading) {
@@ -37,7 +60,12 @@ class _MySpaceConsultationContentState
 
         // Failure State
         if (state.advisorChatState == CubitStates.failure) {
-          return _buildErrorWidget(state.errorMessage);
+          return ErrorStateWidget(
+            errorMessage: state.errorMessage,
+            onRetry: () {
+              context.read<MySpaceCubit>().getAdvisorChat();
+            },
+          );
         }
 
         // Success State
@@ -54,59 +82,120 @@ class _MySpaceConsultationContentState
           return RefreshIndicator(
             onRefresh: () => context.read<MySpaceCubit>().getAdvisorChat(),
             child: ListView.builder(
-              itemCount: chatRooms.length,
+              itemCount: chatRooms.length + 1,
               itemBuilder: (context, index) {
+                if (index == chatRooms.length) {
+                  return const AddAdvisorItem();
+                }
                 final chatRoom = chatRooms[index];
 
-                // الحصول على المستخدم الآخر
-                final otherUser = chatRoom.users.isNotEmpty
-                    ? chatRoom.users.firstWhere(
-                        (user) => user.id == chatRoom.sender.id,
-                      )
-                    : chatRoom.sender;
-
-                return MySpaceListItem(
-                  index: index,
+                return ChatRoomListItem(
+                  key: ValueKey('chat_${chatRoom.id}'),
                   id: chatRoom.id,
-                  title: otherUser.name,
+                  title: chatRoom.displayTitle,
                   subtitle: chatRoom.lastMessage?.content ?? '',
-                  imageUrl: otherUser.image,
+                  imageUrl: chatRoom.displayImage,
                   lastUpdate: chatRoom.lastMessageAt ?? chatRoom.updatedAt,
                   unreadCount: chatRoom.unreadCount,
+                  fallbackAsset: AssetsData.kAppLogotayseerImage,
                   onTap: () {
                     final cubit = context.read<MySpaceCubit>();
                     cubit.markChatAsRead(chatRoom.id);
                     cubit.setActiveChatRoom(chatRoom.id);
                     cubit.markMessageAsReadOnSocket(chatRoom.id);
 
+                    // تحضير الـ arguments
+                    final Map<String, dynamic> arguments = {
+                      'chatroomid': chatRoom.id,
+                      'username': chatRoom.displayTitle,
+                      'userimage': chatRoom.displayImage,
+                      'isBlocked': chatRoom.isBlocked,
+                      'isHaveSession': chatRoom.isHaveSession,
+                      'isSystemChat': chatRoom.isSystemChat,
+                    };
+
+                    // في حالة System Chat نرسل system: true بدلاً من receiverid
+                    if (chatRoom.isSystemChat) {
+                      arguments['system'] = true;
+                    } else {
+                      arguments['receiverid'] = chatRoom.displayReceiverId;
+                    }
+
                     context
                         .pushNamed(
                           AppRouter.kConversitionView,
-                          arguments: {
-                            'chatroomid': chatRoom.id,
-                            'receiverid': otherUser.id,
-                            'username': otherUser.name,
-                            'userimage': otherUser.image,
-                            'isBlocked': chatRoom.isBlocked,
-                            'isHaveSession': chatRoom.isHaveSession,
-                          },
+                          arguments: arguments,
                         )
                         .then((_) {
                           if (context.mounted) {
                             cubit.setActiveChatRoom(null);
-                            cubit.getAdvisorChat();
                           }
                         });
                   },
                   onArchive: () {
-                    _showArchiveDialog(context, chatRoom.id);
+                    ChatRoomDialogHelper.showArchiveDialog(
+                      context: context,
+                      onConfirm: () async {
+                        final cubit = context.read<MySpaceCubit>();
+                        final success = await cubit.archiveChatRoom(chatRoom.id);
+                        if (context.mounted) {
+                          if (success) {
+                            AppToast.success(context, 'تم أرشفة الاستشارة بنجاح');
+                          } else {
+                            AppToast.error(
+                              context,
+                              'فشل في أرشفة المحادثة، حاول مرة أخرى',
+                            );
+                          }
+                        }
+                      },
+                    );
                   },
                   onDelete: () {
-                    _showDeleteDialog(context, chatRoom.id);
+                    ChatRoomDialogHelper.showDeleteDialog(
+                      context: context,
+                      onConfirm: () async {
+                        final cubit = context.read<MySpaceCubit>();
+                        final success = await cubit.deleteChatRoom(chatRoom.id);
+                        if (context.mounted) {
+                          if (success) {
+                            AppToast.success(context, 'تم حذف المحادثة بنجاح');
+                          } else {
+                            AppToast.error(
+                              context,
+                              'فشل في حذف المحادثة، حاول مرة أخرى',
+                            );
+                          }
+                        }
+                      },
+                    );
                   },
                   onReport: () {
-                    _showReportDialog(context, chatRoom.id);
+                    ChatRoomDialogHelper.showReportDialog(
+                      context: context,
+                      onConfirm: () {
+                        // TODO: Implement report logic
+                      },
+                    );
                   },
+                  onBlock: () {
+                    if (chatRoom.isBlocked) {
+                      ChatRoomDialogHelper.showUnblockDialog(
+                        context: context,
+                        onConfirm: () {
+                          // TODO: Implement unblock logic
+                        },
+                      );
+                    } else {
+                      ChatRoomDialogHelper.showBlockDialog(
+                        context: context,
+                        onConfirm: () {
+                          // TODO: Implement block logic
+                        },
+                      );
+                    }
+                  },
+                  blockLabel: chatRoom.isBlocked ? 'إلغاء الحظر' : 'حظر',
                 );
               },
             ),
@@ -118,122 +207,5 @@ class _MySpaceConsultationContentState
       },
     );
   }
-
-  Widget _buildErrorWidget(String? errorMessage) {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.w),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AppImage(AssetsData.errorIcon, width: 150.w),
-            SizedBox(height: 16.h),
-            Text(
-              'حدث خطأ ما',
-              style: Styles.textStyle18,
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 16.h),
-            CustomBotton(
-              width: 200.w,
-              title: "إعاده المحاوله",
-              onPressed: () {
-                context.read<MySpaceCubit>().getAdvisorChat();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showDeleteDialog(BuildContext context, String chatId) {
-    final cubit = context.read<MySpaceCubit>();
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('حذف المحادثة'),
-        content: const Text('هل أنت متأكد من حذف هذه المحادثة؟'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('إلغاء'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(dialogContext);
-              final success = await cubit.deleteChatRoom(chatId);
-              if (context.mounted) {
-                if (success) {
-                  AppToast.success(context, 'تم حذف المحادثة بنجاح');
-                } else {
-                  AppToast.error(context, 'فشل في حذف المحادثة، حاول مرة أخرى');
-                }
-              }
-            },
-            child: const Text('حذف', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showArchiveDialog(BuildContext context, String chatId) {
-    final cubit = context.read<MySpaceCubit>();
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('أرشفة المحادثة'),
-        content: const Text('هل أنت متأكد من أرشفة هذه المحادثة؟'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('إلغاء'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(dialogContext);
-              final success = await cubit.archiveChatRoom(chatId);
-              if (context.mounted) {
-                if (success) {
-                  AppToast.success(context, 'تم أرشفة الاستشارة بنجاح');
-                } else {
-                  AppToast.error(
-                    context,
-                    'فشل في أرشفة المحادثة، حاول مرة أخرى',
-                  );
-                }
-              }
-            },
-            child: const Text(
-              'أرشفة',
-              style: TextStyle(color: Color(0xFFA12042)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showReportDialog(BuildContext context, String chatId) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('إبلاغ'),
-        content: const Text('هل تريد الإبلاغ عن هذه المحادثة؟'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('إلغاء'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-            },
-            child: const Text('إبلاغ', style: TextStyle(color: Colors.orange)),
-          ),
-        ],
-      ),
-    );
-  }
 }
+
