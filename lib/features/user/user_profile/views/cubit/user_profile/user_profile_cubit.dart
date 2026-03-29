@@ -750,7 +750,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     try {
       final messaging = FirebaseMessaging.instance;
       await messaging.unsubscribeFromTopic("all");
-       await _notificationService.clearAllNotifications();
+      await _notificationService.clearAllNotifications();
 
       if (Platform.isIOS) {
         await messaging.setForegroundNotificationPresentationOptions(
@@ -806,7 +806,21 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     final currentState = state;
 
     try {
-       await _notificationService.clearAllNotifications();
+      await _notificationService.clearAllNotifications();
+
+      // مسح صورة البروفايل من كاش الصور قبل الـ logout
+      final profileImage = CachNetwork.getStringData(key: kMyProfileImage);
+      if (profileImage.isNotEmpty) {
+        try {
+          CachedNetworkImage.evictFromCache(profileImage);
+        } catch (_) {}
+      }
+
+      // مسح كاش البروفايل المحلي
+      await CachNetwork.removeData(key: kUserProfileCache);
+      await CachNetwork.removeData(key: kMyProfileImage);
+      await CachNetwork.removeData(key: kMyProfileName);
+
       _userProfileRepository.logout();
 
       await CachNetwork.clearCache();
