@@ -150,19 +150,23 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
     _doubleTapController!.forward(from: 0);
   }
 
+  void _handleDragStart() {
+    if (_isZoomed) return;
+    _snapBackController.stop();
+  }
+
   void _handleDragMove(double dy) {
     if (_isZoomed) return;
-    if (dy < 0) {
-      _snapBackController.stop();
-      setState(() => _dragY += dy);
-    }
+    _snapBackController.stop();
+    setState(() => _dragY += dy);
   }
 
   void _handleDragEnd() {
     if (_isZoomed) return;
-    if (_dragY < -120) {
+    final threshold = 120.0;
+    if (_dragY.abs() > threshold) {
       Navigator.pop(context);
-    } else if (_dragY < 0) {
+    } else {
       _snapStartY = _dragY;
       _snapBackController.forward(from: 0);
     }
@@ -170,10 +174,13 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
 
   @override
   Widget build(BuildContext context) {
-    final progress = (-_dragY / 350).clamp(0.0, 1.0);
+    final progress = (_dragY.abs() / 350).clamp(0.0, 1.0);
     final bgOpacity = (1.0 - progress).clamp(0.0, 1.0);
-    final scale = (1.0 - progress * 0.15).clamp(0.85, 1.0);
-    final borderRadius = progress * 40.0;
+    // كل ما سحبت أكتر الصورة تصغر من 1.0 لـ 0.4
+    final scale = (1.0 - progress * 0.6).clamp(0.4, 1.0);
+    // الـ borderRadius يبدأ من 0 ويوصل لـ 500 (دايرة كاملة)
+    final screenW = MediaQuery.of(context).size.width;
+    final borderRadius = progress * (screenW * scale / 2);
 
     return Scaffold(
       backgroundColor: Colors.black.withOpacity(bgOpacity),
@@ -181,6 +188,9 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
         children: [
           // الصورة
           Listener(
+            onPointerDown: (_) {
+              if (!_isZoomed) _handleDragStart();
+            },
             onPointerMove: (e) {
               if (!_isZoomed) _handleDragMove(e.delta.dy);
             },
@@ -239,6 +249,7 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
               opacity: (1.0 - progress * 2).clamp(0.0, 1.0),
               child: GestureDetector(
                 onTap: () => Navigator.pop(context),
+                onVerticalDragStart: (_) => _handleDragStart(),
                 onVerticalDragUpdate: (d) => _handleDragMove(d.delta.dy),
                 onVerticalDragEnd: (_) => _handleDragEnd(),
                 child: AnimatedBuilder(

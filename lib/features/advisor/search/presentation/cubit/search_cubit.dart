@@ -184,30 +184,51 @@ class SearchCubit extends Cubit<SearchState> {
   }
 
   Future<void> _toggleFollowAdvisor(String advisorId) async {
-    // تحديث في advisors tab
+    // البحث في advisors tab أو all tab
     final advisorsData = state.tabData('advisors');
-    final idx = advisorsData.advisors.indexWhere((a) => a.id == advisorId);
-    if (idx < 0) return;
+    final allData = state.tabData('all');
 
-    final advisor = advisorsData.advisors[idx];
+    int idx = advisorsData.advisors.indexWhere((a) => a.id == advisorId);
+    final bool foundInAdvisorsTab = idx >= 0;
+
+    // لو مش موجود في advisors tab، دور في all tab
+    int allIdx = allData.advisors.indexWhere((a) => a.id == advisorId);
+    if (!foundInAdvisorsTab && allIdx < 0) return;
+
+    // جيب الـ advisor من أي tab موجود فيه
+    final advisor = foundInAdvisorsTab
+        ? advisorsData.advisors[idx]
+        : allData.advisors[allIdx];
     final isFollowing = advisor.isFollowing;
-
-    final updatedAdvisors = List<SearchAdvisor>.from(advisorsData.advisors);
-    updatedAdvisors[idx] = advisor.copyWith(
+    final updatedAdvisor = advisor.copyWith(
       isFollowing: !isFollowing,
       followersCount: (advisor.followersCount ?? 0) + (isFollowing ? -1 : 1),
     );
 
+    // تحديث في advisors tab لو موجود
+    final updatedAdvisors = List<SearchAdvisor>.from(advisorsData.advisors);
+    if (foundInAdvisorsTab) {
+      updatedAdvisors[idx] = updatedAdvisor;
+    }
+
+    // تحديث في all tab لو موجود
+    final updatedAllAdvisors = List<SearchAdvisor>.from(allData.advisors);
+    if (allIdx >= 0) {
+      updatedAllAdvisors[allIdx] = updatedAdvisor;
+    }
+
     // تحديث في posts tab كمان
     final postsData = state.tabData('posts');
     final updatedPosts = postsData.posts.map((p) {
-      if (p.advisorId == advisorId)
+      if (p.advisorId == advisorId) {
         return p.copyWith(isFollowing: !isFollowing);
+      }
       return p;
     }).toList();
 
     var newState = state
         .updateTab('advisors', advisorsData.copyWith(advisors: updatedAdvisors))
+        .updateTab('all', allData.copyWith(advisors: updatedAllAdvisors))
         .updateTab('posts', postsData.copyWith(posts: updatedPosts));
     emit(newState);
 
@@ -219,6 +240,7 @@ class SearchCubit extends Cubit<SearchState> {
       // Rollback
       final rollback = state
           .updateTab('advisors', advisorsData)
+          .updateTab('all', allData)
           .updateTab('posts', postsData);
       emit(rollback);
     }, (_) {});
@@ -236,15 +258,92 @@ class SearchCubit extends Cubit<SearchState> {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // 🛠 POST HELPERS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /// يجيب الـ post من posts tab أو all tab، ويرجع (post, postsTabData, allTabData, postsIdx, allIdx)
+  ({
+    PostModel? post,
+    TabSearchData postsData,
+    TabSearchData allData,
+    int postsIdx,
+    int allIdx,
+  })
+  _findPost(String postId) {
+    final postsData = state.tabData('posts');
+    final allData = state.tabData('all');
+    final postsIdx = postsData.posts.indexWhere((p) => p.postId == postId);
+    final allIdx = allData.posts.indexWhere((p) => p.postId == postId);
+    final post = postsIdx >= 0
+        ? postsData.posts[postsIdx]
+        : allIdx >= 0
+        ? allData.posts[allIdx]
+        : null;
+    return (
+      post: post,
+      postsData: postsData,
+      allData: allData,
+      postsIdx: postsIdx,
+      allIdx: allIdx,
+    );
+  }
+
+  /// يحدث الـ post في posts tab و all tab معاً
+  SearchState _updatePostInBothTabs({
+    required TabSearchData postsData,
+    required TabSearchData allData,
+    required int postsIdx,
+    required int allIdx,
+    required PostModel updatedPost,
+  }) {
+    var newState = state;
+    if (postsIdx >= 0) {
+      final updated = List<PostModel>.from(postsData.posts);
+      updated[postsIdx] = updatedPost;
+      newState = newState.updateTab(
+        'posts',
+        postsData.copyWith(posts: updated),
+      );
+    }
+    if (allIdx >= 0) {
+      final updated = List<PostModel>.from(allData.posts);
+      updated[allIdx] = updatedPost;
+      newState = newState.updateTab('all', allData.copyWith(posts: updated));
+    }
+    return newState;
+  }
+
+  /// يحذف الـ post من posts tab و all tab معاً
+  SearchState _removePostFromBothTabs({
+    required TabSearchData postsData,
+    required TabSearchData allData,
+    required String postId,
+  }) {
+    var newState = state;
+    newState = newState.updateTab(
+      'posts',
+      postsData.copyWith(
+        posts: postsData.posts.where((p) => p.postId != postId).toList(),
+      ),
+    );
+    newState = newState.updateTab(
+      'all',
+      allData.copyWith(
+        posts: allData.posts.where((p) => p.postId != postId).toList(),
+      ),
+    );
+    return newState;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // ❤️ POST REACTIONS
   // ═══════════════════════════════════════════════════════════════════════════
 
   void reactToPost({required String postId, ReactionType? reactionType}) {
-    final postsData = state.tabData('posts');
-    final idx = postsData.posts.indexWhere((p) => p.postId == postId);
-    if (idx == -1) return;
+    final found = _findPost(postId);
+    if (found.post == null) return;
+    final post = found.post!;
 
-    final post = postsData.posts[idx];
     if (post.myReaction == reactionType && reactionType != null) return;
 
     final isRemoving = reactionType == null;
@@ -263,15 +362,22 @@ class SearchCubit extends Cubit<SearchState> {
       newLikesCount: newLikesCount,
     );
 
-    final updatedPosts = List<PostModel>.from(postsData.posts);
-    updatedPosts[idx] = post.copyWith(
+    final updatedPost = post.copyWith(
       likesCount: newLikesCount,
       topReactions: newTopReactions,
       myReaction: reactionType,
       clearMyReaction: isRemoving,
     );
 
-    emit(state.updateTab('posts', postsData.copyWith(posts: updatedPosts)));
+    emit(
+      _updatePostInBothTabs(
+        postsData: found.postsData,
+        allData: found.allData,
+        postsIdx: found.postsIdx,
+        allIdx: found.allIdx,
+        updatedPost: updatedPost,
+      ),
+    );
     _homeRepository.reactToPost(
       postId: postId,
       reactionType: reactionType,
@@ -284,18 +390,19 @@ class SearchCubit extends Cubit<SearchState> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   Future<void> toggleSavePost({required String postId}) async {
-    final postsData = state.tabData('posts');
-    final idx = postsData.posts.indexWhere((p) => p.postId == postId);
-    if (idx == -1) return;
+    final found = _findPost(postId);
+    if (found.post == null) return;
+    final post = found.post!;
 
-    final post = postsData.posts[idx];
-    final updatedPosts = List<PostModel>.from(postsData.posts);
-    updatedPosts[idx] = post.copyWith(isSaved: !post.isSaved);
-
+    final updatedPost = post.copyWith(isSaved: !post.isSaved);
     emit(
-      state
-          .updateTab('posts', postsData.copyWith(posts: updatedPosts))
-          .copyWith(actionStatus: CubitStates.initial),
+      _updatePostInBothTabs(
+        postsData: found.postsData,
+        allData: found.allData,
+        postsIdx: found.postsIdx,
+        allIdx: found.allIdx,
+        updatedPost: updatedPost,
+      ).copyWith(actionStatus: CubitStates.initial),
     );
 
     final result = await _homeRepository.savedPost(
@@ -304,12 +411,13 @@ class SearchCubit extends Cubit<SearchState> {
     );
     result.fold(
       (f) => emit(
-        state
-            .updateTab('posts', postsData)
-            .copyWith(
-              actionStatus: CubitStates.failure,
-              actionMessage: f.message,
-            ),
+        _updatePostInBothTabs(
+          postsData: found.postsData,
+          allData: found.allData,
+          postsIdx: found.postsIdx,
+          allIdx: found.allIdx,
+          updatedPost: post, // rollback
+        ).copyWith(actionStatus: CubitStates.failure, actionMessage: f.message),
       ),
       (m) => emit(
         state.copyWith(actionStatus: CubitStates.success, actionMessage: m),
@@ -322,33 +430,29 @@ class SearchCubit extends Cubit<SearchState> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   Future<void> deletePost({required String postId}) async {
-    final postsData = state.tabData('posts');
-    final idx = postsData.posts.indexWhere((p) => p.postId == postId);
-    if (idx == -1) return;
-
-    final post = postsData.posts[idx];
-    final filtered = postsData.posts.where((p) => p.postId != postId).toList();
+    final found = _findPost(postId);
+    if (found.post == null) return;
+    final post = found.post!;
 
     emit(
-      state
-          .updateTab('posts', postsData.copyWith(posts: filtered))
-          .copyWith(actionStatus: CubitStates.initial),
+      _removePostFromBothTabs(
+        postsData: found.postsData,
+        allData: found.allData,
+        postId: postId,
+      ).copyWith(actionStatus: CubitStates.initial),
     );
 
     final result = await _homeRepository.deletePost(postId: postId);
     result.fold(
-      (f) {
-        final rollback = List<PostModel>.from(state.tabData('posts').posts);
-        rollback.insert(idx, post);
-        emit(
-          state
-              .updateTab('posts', postsData.copyWith(posts: rollback))
-              .copyWith(
-                actionStatus: CubitStates.failure,
-                actionMessage: f.message,
-              ),
-        );
-      },
+      (f) => emit(
+        _updatePostInBothTabs(
+          postsData: found.postsData,
+          allData: found.allData,
+          postsIdx: found.postsIdx,
+          allIdx: found.allIdx,
+          updatedPost: post, // rollback
+        ).copyWith(actionStatus: CubitStates.failure, actionMessage: f.message),
+      ),
       (m) => emit(
         state.copyWith(actionStatus: CubitStates.success, actionMessage: m),
       ),
@@ -356,33 +460,29 @@ class SearchCubit extends Cubit<SearchState> {
   }
 
   Future<void> archivePost({required String postId}) async {
-    final postsData = state.tabData('posts');
-    final idx = postsData.posts.indexWhere((p) => p.postId == postId);
-    if (idx == -1) return;
-
-    final post = postsData.posts[idx];
-    final filtered = postsData.posts.where((p) => p.postId != postId).toList();
+    final found = _findPost(postId);
+    if (found.post == null) return;
+    final post = found.post!;
 
     emit(
-      state
-          .updateTab('posts', postsData.copyWith(posts: filtered))
-          .copyWith(actionStatus: CubitStates.initial),
+      _removePostFromBothTabs(
+        postsData: found.postsData,
+        allData: found.allData,
+        postId: postId,
+      ).copyWith(actionStatus: CubitStates.initial),
     );
 
     final result = await _homeRepository.archivePost(postId: postId);
     result.fold(
-      (f) {
-        final rollback = List<PostModel>.from(state.tabData('posts').posts);
-        rollback.insert(idx, post);
-        emit(
-          state
-              .updateTab('posts', postsData.copyWith(posts: rollback))
-              .copyWith(
-                actionStatus: CubitStates.failure,
-                actionMessage: f.message,
-              ),
-        );
-      },
+      (f) => emit(
+        _updatePostInBothTabs(
+          postsData: found.postsData,
+          allData: found.allData,
+          postsIdx: found.postsIdx,
+          allIdx: found.allIdx,
+          updatedPost: post, // rollback
+        ).copyWith(actionStatus: CubitStates.failure, actionMessage: f.message),
+      ),
       (m) => emit(
         state.copyWith(actionStatus: CubitStates.success, actionMessage: m),
       ),
@@ -394,15 +494,20 @@ class SearchCubit extends Cubit<SearchState> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   void toggleHidePost({required String postId}) {
-    final postsData = state.tabData('posts');
-    final idx = postsData.posts.indexWhere((p) => p.postId == postId);
-    if (idx == -1) return;
+    final found = _findPost(postId);
+    if (found.post == null) return;
+    final post = found.post!;
 
-    final post = postsData.posts[idx];
-    final updated = List<PostModel>.from(postsData.posts);
-    updated[idx] = post.copyWith(isHidden: !post.isHidden);
-
-    emit(state.updateTab('posts', postsData.copyWith(posts: updated)));
+    final updatedPost = post.copyWith(isHidden: !post.isHidden);
+    emit(
+      _updatePostInBothTabs(
+        postsData: found.postsData,
+        allData: found.allData,
+        postsIdx: found.postsIdx,
+        allIdx: found.allIdx,
+        updatedPost: updatedPost,
+      ),
+    );
     _homeRepository.hidePost(postId: postId, isHide: !post.isHidden);
   }
 
@@ -431,17 +536,30 @@ class SearchCubit extends Cubit<SearchState> {
         ),
       ),
       (m) {
+        // تحديث في posts tab
         final postsData = state.tabData('posts');
-        final updated = postsData.posts
+        final updatedPostsPosts = postsData.posts
             .map(
               (p) =>
                   p.postId == visiblePostId ? p.copyWith(isBlocked: true) : p,
             )
             .where((p) => p.advisorId != advisorId || p.postId == visiblePostId)
             .toList();
+
+        // تحديث في all tab
+        final allData = state.tabData('all');
+        final updatedAllPosts = allData.posts
+            .map(
+              (p) =>
+                  p.postId == visiblePostId ? p.copyWith(isBlocked: true) : p,
+            )
+            .where((p) => p.advisorId != advisorId || p.postId == visiblePostId)
+            .toList();
+
         emit(
           state
-              .updateTab('posts', postsData.copyWith(posts: updated))
+              .updateTab('posts', postsData.copyWith(posts: updatedPostsPosts))
+              .updateTab('all', allData.copyWith(posts: updatedAllPosts))
               .copyWith(actionStatus: CubitStates.success, actionMessage: m),
         );
       },
@@ -456,11 +574,9 @@ class SearchCubit extends Cubit<SearchState> {
     required String postId,
     required String choiceText,
   }) async {
-    final postsData = state.tabData('posts');
-    final idx = postsData.posts.indexWhere((p) => p.postId == postId);
-    if (idx == -1) return;
-
-    final post = postsData.posts[idx];
+    final found = _findPost(postId);
+    if (found.post == null) return;
+    final post = found.post!;
     if (post.pollModel == null) return;
 
     final choiceIndex = post.pollModel!.pollChoices.indexWhere(
@@ -483,8 +599,9 @@ class SearchCubit extends Cubit<SearchState> {
         final updatedChoices = post.pollModel!.pollChoices.asMap().entries.map((
           e,
         ) {
-          if (e.key == choiceIndex)
+          if (e.key == choiceIndex) {
             return e.value.copyWith(votes: e.value.votes + 1, isSelected: true);
+          }
           return e.value;
         }).toList();
 
@@ -495,29 +612,29 @@ class SearchCubit extends Cubit<SearchState> {
           ),
         );
 
-        final updated = List<PostModel>.from(postsData.posts);
-        updated[idx] = updatedPost;
         emit(
-          state
-              .updateTab('posts', postsData.copyWith(posts: updated))
-              .copyWith(
-                actionStatus: CubitStates.success,
-                actionMessage: 'تم التصويت بنجاح',
-              ),
+          _updatePostInBothTabs(
+            postsData: found.postsData,
+            allData: found.allData,
+            postsIdx: found.postsIdx,
+            allIdx: found.allIdx,
+            updatedPost: updatedPost,
+          ).copyWith(
+            actionStatus: CubitStates.success,
+            actionMessage: 'تم التصويت بنجاح',
+          ),
         );
       },
     );
   }
 
   Future<void> toggleSharePost({required String postId}) async {
-    final postsData = state.tabData('posts');
-    final idx = postsData.posts.indexWhere((p) => p.postId == postId);
-    if (idx == -1) return;
+    final found = _findPost(postId);
+    if (found.post == null) return;
+    final post = found.post!;
 
-    final post = postsData.posts[idx];
     final isRemoving = post.isRepostedByMe;
-    final updated = List<PostModel>.from(postsData.posts);
-    updated[idx] = post.copyWith(
+    final updatedPost = post.copyWith(
       sharesCount: isRemoving
           ? (post.sharesCount - 1).clamp(0, post.sharesCount)
           : post.sharesCount + 1,
@@ -525,9 +642,13 @@ class SearchCubit extends Cubit<SearchState> {
     );
 
     emit(
-      state
-          .updateTab('posts', postsData.copyWith(posts: updated))
-          .copyWith(actionStatus: CubitStates.initial),
+      _updatePostInBothTabs(
+        postsData: found.postsData,
+        allData: found.allData,
+        postsIdx: found.postsIdx,
+        allIdx: found.allIdx,
+        updatedPost: updatedPost,
+      ).copyWith(actionStatus: CubitStates.initial),
     );
 
     final result = await _homeRepository.sharePost(
@@ -536,12 +657,13 @@ class SearchCubit extends Cubit<SearchState> {
     );
     result.fold(
       (f) => emit(
-        state
-            .updateTab('posts', postsData)
-            .copyWith(
-              actionStatus: CubitStates.failure,
-              actionMessage: f.message,
-            ),
+        _updatePostInBothTabs(
+          postsData: found.postsData,
+          allData: found.allData,
+          postsIdx: found.postsIdx,
+          allIdx: found.allIdx,
+          updatedPost: post, // rollback
+        ).copyWith(actionStatus: CubitStates.failure, actionMessage: f.message),
       ),
       (m) => emit(
         state.copyWith(actionStatus: CubitStates.success, actionMessage: m),

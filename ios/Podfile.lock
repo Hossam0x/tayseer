@@ -26,7 +26,7 @@ PODS:
   - didit_sdk (3.4.2):
     - DiditSDK (~> 3.2)
     - Flutter
-  - DiditSDK (3.2.7)
+  - DiditSDK (3.2.8)
   - DKImagePickerController/Core (4.3.9):
     - DKImagePickerController/ImageDataManager
     - DKImagePickerController/Resource
@@ -473,7 +473,7 @@ SPEC CHECKSUMS:
   CryptoSwift: e64e11850ede528a02a0f3e768cec8e9d92ecb90
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   didit_sdk: 8de994f09872349d2c6520f8aa17d5e893e5c35b
-  DiditSDK: 7255e1d3239d69d6fe74e04fd72e9083577026db
+  DiditSDK: 46ecbc14aef347a9b2481625df70fed418985df6
   DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
   emoji_picker_flutter: ece213fc274bdddefb77d502d33080dc54e616cc
