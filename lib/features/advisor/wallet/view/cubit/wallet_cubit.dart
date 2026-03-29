@@ -10,8 +10,8 @@ class WalletCubit extends Cubit<WalletState> {
   Future<void> loadInitialData() async {
     await Future.wait([
       fetchWallet(),
-      fetchTransactions(refresh: true),
-      fetchEarnings(refresh: true),
+      fetchTransactions(refresh: true, limit: 5),
+      fetchEarnings(refresh: true, limit: 9),
     ]);
   }
 
@@ -31,7 +31,7 @@ class WalletCubit extends Cubit<WalletState> {
     );
   }
 
-  Future<void> fetchTransactions({bool refresh = false}) async {
+  Future<void> fetchTransactions({bool refresh = false, int limit = 15}) async {
     if (!refresh && state.transactionsStatus == ListStatus.loadingMore) return;
 
     final isFirstPage =
@@ -40,8 +40,9 @@ class WalletCubit extends Cubit<WalletState> {
         ? 1
         : (state.transactionsPagination?.currentPage ?? 0) + 1;
 
-    if (!isFirstPage && state.transactionsPagination?.hasNextPage == false)
+    if (!isFirstPage && state.transactionsPagination?.hasNextPage == false) {
       return;
+    }
 
     emit(
       state.copyWith(
@@ -51,7 +52,10 @@ class WalletCubit extends Cubit<WalletState> {
       ),
     );
 
-    final result = await _walletRepo.getTransactions(page: nextPage);
+    final result = await _walletRepo.getTransactions(
+      page: nextPage,
+      limit: limit,
+    );
     result.fold(
       (f) => emit(
         state.copyWith(
@@ -71,7 +75,7 @@ class WalletCubit extends Cubit<WalletState> {
     );
   }
 
-  Future<void> fetchEarnings({bool refresh = false}) async {
+  Future<void> fetchEarnings({bool refresh = false, int limit = 15}) async {
     if (!refresh && state.earningsStatus == ListStatus.loadingMore) return;
 
     final isFirstPage = refresh || state.earningsStatus == ListStatus.initial;
@@ -79,7 +83,9 @@ class WalletCubit extends Cubit<WalletState> {
         ? 1
         : (state.earningsPagination?.currentPage ?? 0) + 1;
 
-    if (!isFirstPage && state.earningsPagination?.hasNextPage == false) return;
+    if (!isFirstPage && state.earningsPagination?.hasNextPage == false) {
+      return;
+    }
 
     emit(
       state.copyWith(
@@ -89,7 +95,7 @@ class WalletCubit extends Cubit<WalletState> {
       ),
     );
 
-    final result = await _walletRepo.getEarnings(page: nextPage);
+    final result = await _walletRepo.getEarnings(page: nextPage, limit: limit);
     result.fold(
       (f) => emit(
         state.copyWith(
