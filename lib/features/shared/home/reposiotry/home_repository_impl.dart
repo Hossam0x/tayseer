@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_null_comparison
+
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/services/connectivity_service.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
@@ -279,7 +281,7 @@ class HomeRepositoryImpl implements HomeRepository {
   }
 
   @override
-  Future<Either<Failure, String>> editComment({
+  Future<Either<Failure, CommentModel>> editComment({
     required String commentId,
     required String comment,
   }) async {
@@ -288,14 +290,14 @@ class HomeRepositoryImpl implements HomeRepository {
         endPoint: ApiEndPoint.comments,
         data: {"commentId": commentId, "comment": comment},
       );
-      return Right(response['message'] ?? 'تم تعديل التعليق بنجاح');
+      return Right(CommentModel.fromJson(response['data']));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }
   }
 
   @override
-  Future<Either<Failure, String>> editReply({
+  Future<Either<Failure, CommentModel>> editReply({
     required String replyId,
     required String reply,
   }) async {
@@ -304,7 +306,7 @@ class HomeRepositoryImpl implements HomeRepository {
         endPoint: '${ApiEndPoint.updateReply}$replyId',
         data: {"reply": reply},
       );
-      return Right(response['message'] ?? 'تم تعديل الرد بنجاح');
+      return Right(CommentModel.fromJson(response['data']));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }
@@ -594,6 +596,29 @@ class HomeRepositoryImpl implements HomeRepository {
       return Right(response['message'] ?? 'تمت العملية بنجاح');
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, PostModel>> fetchPostById({
+    required String postId,
+  }) async {
+    try {
+      final response = await apiService.get(endPoint: '/posts/get/$postId');
+
+      // ✅ Handle null or missing data
+      if (response == null || response['data'] == null) {
+        // ignore: invalid_null_aware_operator
+        return Left(ServerFailure(response?['message'] ?? 'فشل تحميل المنشور'));
+      }
+
+      final postData = response['data'] as Map<String, dynamic>;
+      final post = PostModel.fromJson(postData);
+      return Right(post);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
     }
   }
 }

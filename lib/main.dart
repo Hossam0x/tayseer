@@ -1,5 +1,6 @@
 import 'package:app_links/app_links.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:tayseer/core/cache/chat_cache_service.dart';
@@ -13,6 +14,10 @@ import 'package:tayseer/core/utils/simple_bloc_observer.dart';
 import 'package:tayseer/core/video/video_controller_manager.dart';
 import 'package:tayseer/my_import.dart';
 
+// ─────────────────────────────────────────────
+// Globals
+// ─────────────────────────────────────────────
+
 /// Global navigator key
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -22,12 +27,21 @@ Uri? pendingDeepLinkUri;
 /// personId بعد ما يسجل دخول
 String? pendingDeepLinkPersonId;
 
+/// ✅ متغير global - HomeScreen هتاخده وتعمل Navigate
+RemoteMessage? pendingNotificationMessage;
+
+// ─────────────────────────────────────────────
+// Main
+// ─────────────────────────────────────────────
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+
   await dotenv.load(fileName: '.env');
   await Hive.initFlutter();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -44,13 +58,22 @@ void main() async {
   // ✅ نحفظ الـ cold start URI قبل runApp — بدون أي navigation هنا
   await _captureColdStartLink();
 
+  // ✅ نحفظ الـ cold start notification قبل runApp
+  final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+  if (initialMessage != null) {
+    pendingNotificationMessage = initialMessage;
+  }
+
   Bloc.observer = SimpleBlocObserver();
 
-
+  // ✅ أولاً runApp عشان الـ Navigator يكون جاهز
   runApp(const TayseerApp());
 
-  // ✅ بعد runApp — عشان Navigator يكون جاهز قبل أي notification navigation
-  LocalNotification().initialize();
+  // ✅ بعد runApp — initialize الإشعارات بعد ما التطبيق يشتغل
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    final localNotification = LocalNotification(navigatorKey: navigatorKey);
+    await localNotification.initialize();
+  });
 
   // ✅ Warm start فقط — التطبيق في الخلفية
   _listenToWarmStartLinks();
@@ -75,23 +98,26 @@ Future<void> _captureColdStartLink() async {
 
 void _listenToWarmStartLinks() {
   final appLinks = AppLinks();
-  appLinks.uriLinkStream.listen((uri) {
-    debugPrint('🔗 Warm start DeepLink received: $uri');
+  appLinks.uriLinkStream.listen(
+        (uri) {
+      debugPrint('🔗 Warm start DeepLink received: $uri');
 
-    // ✅ تجاهل لو نفس الـ cold start URI
-    if (pendingDeepLinkUri != null &&
-        uri.toString() == pendingDeepLinkUri.toString()) {
-      debugPrint('🔗 Ignoring duplicate warm start (same as cold start)');
-      return;
-    }
+      // ✅ تجاهل لو نفس الـ cold start URI
+      if (pendingDeepLinkUri != null &&
+          uri.toString() == pendingDeepLinkUri.toString()) {
+        debugPrint('🔗 Ignoring duplicate warm start (same as cold start)');
+        return;
+      }
 
-    // ✅ delay + postFrameCallback عشان Navigator يكون جاهز
-    Future.delayed(const Duration(milliseconds: 300), () {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _navigateFromUri(uri);
+      // ✅ delay + postFrameCallback عشان Navigator يكون جاهز
+      Future.delayed(const Duration(milliseconds: 300), () {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _navigateFromUri(uri);
+        });
       });
-    });
-  }, onError: (e) => debugPrint('DeepLink stream error: $e'));
+    },
+    onError: (e) => debugPrint('DeepLink stream error: $e'),
+  );
 }
 
 String? _extractPersonId(Uri uri) {
@@ -155,6 +181,10 @@ void consumePendingDeepLink() {
     );
   });
 }
+
+// ─────────────────────────────────────────────
+// Video
+// ─────────────────────────────────────────────
 
 Future<void> _initializeVideoSystem() async {
   try {

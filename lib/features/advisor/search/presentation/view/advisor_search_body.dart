@@ -148,7 +148,7 @@ class AdvisorSearchBody extends StatelessWidget {
           tabData: tabData,
           tabId: tabId,
           padding: EdgeInsets.zero,
-          itemBuilder: (item) => AdvisorSearchPostItem(post: item),
+          itemBuilder: (item) => AdvisorSearchPostItem(postId: item.postId),
         );
       case 'events':
         return _ListTab<dynamic>(
@@ -265,7 +265,7 @@ class _AllResultsTab extends StatelessWidget {
               title: context.tr("posts"),
               onSeeAll: () => _goToTab('posts'),
             ),
-            ..._posts.map((p) => AdvisorSearchPostItem(post: p)),
+            ..._posts.map((p) => AdvisorSearchPostItem(postId: p.postId)),
             SizedBox(height: 20.h),
           ],
           if (_events.isNotEmpty) ...[

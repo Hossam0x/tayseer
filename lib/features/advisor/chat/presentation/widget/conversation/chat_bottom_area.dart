@@ -115,6 +115,7 @@ class ChatBottomArea extends StatelessWidget {
           messageType: messageType,
           images: messageType == 'image' ? files : null,
           videos: messageType == 'video' ? files : null,
+          audio: messageType == 'audio' ? files.firstOrNull : null,
           replyMessageId: replyMessageId,
           replyToMessage: replyToMessage,
         );

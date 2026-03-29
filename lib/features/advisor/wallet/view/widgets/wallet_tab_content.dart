@@ -1,12 +1,13 @@
+import 'package:skeletonizer/skeletonizer.dart';
+import 'package:tayseer/features/advisor/wallet/data/models/transaction_model.dart';
 import 'package:tayseer/features/advisor/wallet/view/cubit/wallet_cubit.dart';
 import 'package:tayseer/features/advisor/wallet/view/cubit/wallet_state.dart';
 import 'package:tayseer/features/advisor/wallet/view/widgets/balance_card.dart';
 import 'package:tayseer/features/advisor/wallet/view/widgets/transaction_item.dart';
-import 'package:tayseer/features/advisor/wallet/data/models/transaction_model.dart';
-import 'package:skeletonizer/skeletonizer.dart';
+import 'package:tayseer/features/advisor/wallet/view/widgets/wallet_empty_state.dart';
+import 'package:tayseer/features/advisor/wallet/view/widgets/wallet_section_header.dart';
 import 'package:tayseer/my_import.dart';
 
-/// Tab 1 — المحفظة (transactions)
 class WalletTabContent extends StatelessWidget {
   const WalletTabContent({super.key});
 
@@ -38,7 +39,7 @@ class WalletTabContent extends StatelessWidget {
                 child: const BalanceCard(),
               ),
               SizedBox(height: 20.h),
-              _SectionHeader(
+              WalletSectionHeader(
                 title: context.tr('transactions_log'),
                 onViewAll: () => Navigator.pushNamed(
                   context,
@@ -48,7 +49,7 @@ class WalletTabContent extends StatelessWidget {
               Skeletonizer(
                 enabled: isLoading,
                 child: (items.isEmpty && !isLoading)
-                    ? _EmptyState(label: context.tr('no_transactions'))
+                    ? WalletEmptyState(label: context.tr('no_transactions'))
                     : ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
@@ -61,13 +62,36 @@ class WalletTabContent extends StatelessWidget {
               SizedBox(height: 20.h),
               Padding(
                 padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 40.w),
-                child: CustomBotton(
-                  height: 54.h,
-                  width: double.infinity,
-                  title: context.tr('withdraw'),
-                  onPressed: () =>
-                      Navigator.pushNamed(context, AppRouter.kWithdrawalView),
-                  useGradient: true,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: CustomBotton(
+                        height: 54.h,
+                        width: double.infinity,
+                        title: context.tr('withdraw'),
+                        onPressed: () => Navigator.pushNamed(
+                          context,
+                          AppRouter.kWithdrawalView,
+                        ),
+                        useGradient: true,
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: CustomBotton(
+                        height: 54.h,
+                        width: double.infinity,
+                        title: context.tr('recharge'),
+                        onPressed: () => Navigator.pushNamed(
+                          context,
+                          AppRouter.kRechargeView,
+                        ),
+                        useGradient: false,
+                        backGroundcolor: AppColors.primary100,
+                        titleColor: AppColors.primary500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               SizedBox(height: 20.h),
@@ -79,7 +103,6 @@ class WalletTabContent extends StatelessWidget {
   }
 }
 
-/// Tab 2 — الأرباح (earnings)
 class EarningsTabContent extends StatelessWidget {
   const EarningsTabContent({super.key});
 
@@ -104,7 +127,7 @@ class EarningsTabContent extends StatelessWidget {
         return SingleChildScrollView(
           child: Column(
             children: [
-              _SectionHeader(
+              WalletSectionHeader(
                 title: context.tr('earnings_log'),
                 onViewAll: () =>
                     Navigator.pushNamed(context, AppRouter.kBookingsLogView),
@@ -112,7 +135,7 @@ class EarningsTabContent extends StatelessWidget {
               Skeletonizer(
                 enabled: isLoading,
                 child: (items.isEmpty && !isLoading)
-                    ? _EmptyState(label: context.tr('no_bookings'))
+                    ? WalletEmptyState(label: context.tr('no_bookings'))
                     : ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
@@ -127,54 +150,6 @@ class EarningsTabContent extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final VoidCallback onViewAll;
-
-  const _SectionHeader({required this.title, required this.onViewAll});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(right: 25.w, left: 8.w),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: Styles.textStyle20Bold.copyWith(
-              color: AppColors.primaryText,
-            ),
-          ),
-          TextButton(
-            onPressed: onViewAll,
-            child: Text(
-              context.tr('view_all'),
-              style: Styles.textStyle14.copyWith(color: AppColors.primary400),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  final String label;
-  const _EmptyState({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 40.h),
-      child: Text(
-        label,
-        style: Styles.textStyle16.copyWith(color: AppColors.secondary600),
-      ),
     );
   }
 }

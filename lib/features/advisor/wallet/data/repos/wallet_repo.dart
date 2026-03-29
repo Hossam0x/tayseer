@@ -3,6 +3,7 @@ import 'package:tayseer/core/errors/failure.dart';
 import 'package:tayseer/features/advisor/wallet/data/datasources/wallet_remote_data_source.dart';
 import 'package:tayseer/features/advisor/wallet/data/models/wallet_model.dart';
 import 'package:tayseer/features/advisor/wallet/data/models/transaction_model.dart';
+import 'package:tayseer/features/advisor/wallet/data/models/balance_package_model.dart';
 
 class WalletRepo {
   final WalletRemoteDataSource _remoteDataSource;
@@ -68,6 +69,20 @@ class WalletRepo {
             pagination: PaginationModel.fromJson(d['pagination']),
           ),
         );
+      }
+      return Left(ServerFailure(response['message'] ?? 'Error'));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  Future<Either<Failure, List<BalancePackageModel>>>
+  getBalancePackages() async {
+    try {
+      final response = await _remoteDataSource.getBalancePackages();
+      if (response['success'] == true) {
+        final list = response['data'] as List;
+        return Right(list.map((x) => BalancePackageModel.fromJson(x)).toList());
       }
       return Left(ServerFailure(response['message'] ?? 'Error'));
     } catch (e) {

@@ -47,6 +47,7 @@ abstract class ProfilePostsCubitContract<S> extends Cubit<S> {
   void archivePost({required String postId});
   Future<void> blockUser({String? visiblePostId, required String advisorId});
   Future<void> fetchPosts({bool loadMore = false});
+  void updatePostLocally(PostModel updatedPost);
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -292,9 +293,13 @@ class ProfilePostItem<C extends ProfilePostsCubitContract>
 }
 
 class _ProfilePostItemState<C extends ProfilePostsCubitContract>
-    extends State<ProfilePostItem<C>> {
+    extends State<ProfilePostItem<C>>
+    with AutomaticKeepAliveClientMixin {
   late final Stream<PostModel?> _postStream;
   late final PostCallbacks _callbacks;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -325,10 +330,11 @@ class _ProfilePostItemState<C extends ProfilePostsCubitContract>
     );
   }
 
-  void _onEdit(PostModel post) => context.pushNamed(
-    AppRouter.kAddPostView,
-    arguments: {'post': post, 'isEdit': true},
-  );
+  void _onEdit(PostModel post) {
+    // الـ post_options_bottom_sheet بيهاندل الـ navigation لـ kUpdatePostView
+    // وبيستدعي onEdit بعد ما يرجع الـ result — مش محتاجين نعمل حاجة هنا
+    widget.cubit.updatePostLocally(post);
+  }
 
   void _onHashtagTap(String hashtag) {
     final clean = hashtag.startsWith('#') ? hashtag.substring(1) : hashtag;
@@ -359,6 +365,7 @@ class _ProfilePostItemState<C extends ProfilePostsCubitContract>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Column(
       children: [
         // Use BlocSelector to rebuild only when this specific post changes

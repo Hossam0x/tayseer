@@ -26,7 +26,7 @@ PODS:
   - didit_sdk (3.4.2):
     - DiditSDK (~> 3.2)
     - Flutter
-  - DiditSDK (3.2.7)
+  - DiditSDK (3.2.8)
   - DKImagePickerController/Core (4.3.9):
     - DKImagePickerController/ImageDataManager
     - DKImagePickerController/Resource
@@ -221,6 +221,8 @@ PODS:
   - proximity_sensor (0.0.1):
     - Flutter
   - RecaptchaInterop (101.0.0)
+  - record_darwin (1.0.0):
+    - Flutter
   - screen_brightness_ios (0.1.0):
     - Flutter
   - SDWebImage (5.21.7):
@@ -304,6 +306,7 @@ DEPENDENCIES:
   - photo_manager (from `.symlinks/plugins/photo_manager/darwin`)
   - pro_video_editor (from `.symlinks/plugins/pro_video_editor/ios`)
   - proximity_sensor (from `.symlinks/plugins/proximity_sensor/ios`)
+  - record_darwin (from `.symlinks/plugins/record_darwin/ios`)
   - screen_brightness_ios (from `.symlinks/plugins/screen_brightness_ios/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -423,6 +426,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/pro_video_editor/ios"
   proximity_sensor:
     :path: ".symlinks/plugins/proximity_sensor/ios"
+  record_darwin:
+    :path: ".symlinks/plugins/record_darwin/ios"
   screen_brightness_ios:
     :path: ".symlinks/plugins/screen_brightness_ios/ios"
   share_plus:
@@ -467,7 +472,7 @@ SPEC CHECKSUMS:
   CryptoSwift: e64e11850ede528a02a0f3e768cec8e9d92ecb90
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   didit_sdk: 8de994f09872349d2c6520f8aa17d5e893e5c35b
-  DiditSDK: 7255e1d3239d69d6fe74e04fd72e9083577026db
+  DiditSDK: 46ecbc14aef347a9b2481625df70fed418985df6
   DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
   emoji_picker_flutter: ece213fc274bdddefb77d502d33080dc54e616cc
@@ -516,6 +521,7 @@ SPEC CHECKSUMS:
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   proximity_sensor: 2aef59f90cf0382935faf58ad0a79e1e860773bd
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
+  record_darwin: fb1f375f1d9603714f55b8708a903bbb91ffdb0a
   screen_brightness_ios: 5ed898fa50fa82a26171c086ca5e28228f932576
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
   share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a

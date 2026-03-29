@@ -1,9 +1,11 @@
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/services/connectivity_service.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/cache/chat_cache_service.dart';
 import 'package:tayseer/core/utils/hive_service.dart';
+import 'package:tayseer/features/advisor/notification/data/repo/NotificationRepo.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_remote_datasource.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository.dart';
@@ -94,12 +96,14 @@ import 'package:tayseer/features/advisor/settings/view/cubit/order_management/or
 import 'package:tayseer/features/advisor/wallet/data/datasources/wallet_remote_data_source.dart';
 import 'package:tayseer/features/advisor/wallet/data/repos/wallet_repo.dart';
 import 'package:tayseer/features/advisor/wallet/view/cubit/wallet_cubit.dart';
+import 'package:tayseer/features/advisor/wallet/view/cubit/recharge_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/otp_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_settings_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/email/email_edit_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/phone/phone_edit_cubit.dart';
 
+import '../../features/advisor/notification/presentation/manager/notification_cubit.dart';
 import '../../my_import.dart';
 
 final getIt = GetIt.instance;
@@ -154,6 +158,13 @@ Future<void> setupGetIt() async {
 
   /// SocketHelper
   getIt.registerLazySingleton<tayseerSocketHelper>(() => tayseerSocketHelper());
+
+  /// ChatSocketService
+  getIt.registerLazySingleton<ChatSocketService>(() {
+    final service = ChatSocketService();
+    service.init();
+    return service;
+  });
 
   /// AuthRepo
   getIt.registerLazySingleton<AuthRepo>(
@@ -484,6 +495,9 @@ Future<void> setupGetIt() async {
     () => WalletRepo(getIt<WalletRemoteDataSource>()),
   );
   getIt.registerFactory<WalletCubit>(() => WalletCubit(getIt<WalletRepo>()));
+  getIt.registerFactory<RechargeCubit>(
+    () => RechargeCubit(getIt<WalletRepo>()),
+  );
 
   // Reports
   getIt.registerLazySingleton<ReportsRepo>(
@@ -522,6 +536,13 @@ Future<void> setupGetIt() async {
       otpRepository: getIt<OtpRepository>(),
       otpSource: params.otpSource,
     ),
+  );
+
+  getIt.registerLazySingleton<NotificationRepo>(
+    () => NotificationRepo(apiService: getIt<ApiService>()),
+  );
+  getIt.registerFactory<NotificationCubit>(
+    () => NotificationCubit(notificationRepo: getIt<NotificationRepo>()),
   );
 }
 

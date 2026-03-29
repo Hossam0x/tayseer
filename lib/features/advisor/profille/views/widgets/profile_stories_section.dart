@@ -106,11 +106,11 @@ class ProfileStoriesSection extends StatelessWidget {
   }
 
   Widget _buildContent(
-    BuildContext context,
-    CubitStates currentState,
-    List<UserStoriesModel> stories,
-    String errorMessage,
-  ) {
+      BuildContext context,
+      CubitStates currentState,
+      List<UserStoriesModel> stories,
+      String errorMessage,
+      ) {
     switch (currentState) {
       case CubitStates.loading:
         return const StoriesLoadingShimmer();
@@ -123,6 +123,7 @@ class ProfileStoriesSection extends StatelessWidget {
             context: context,
           ),
         );
+      case CubitStates.loadingMore:
       case CubitStates.success:
       case CubitStates.initial:
         if (stories.isEmpty) return const SizedBox.shrink();

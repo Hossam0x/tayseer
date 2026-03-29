@@ -27,7 +27,7 @@ class UpdatePostBody extends StatelessWidget {
               isSuccess: true,
             ),
           );
-          Navigator.of(context).pop(true);
+          Navigator.of(context).pop(state.updatedPost);
         }
         if (state.updatePostState == CubitStates.failure) {
           ScaffoldMessenger.of(context).showSnackBar(

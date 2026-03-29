@@ -73,6 +73,7 @@ dependencies:
   pretty_dio_logger: ^1.4.0
   pro_image_editor: ^11.0.0
   pro_video_editor: any
+  record: 5.0.4
   reorderable_grid_view: ^2.2.8
   share_plus: ^12.0.1
   shared_preferences: ^2.5.3
@@ -99,6 +100,8 @@ dev_dependencies:
 
 dependency_overrides:
   vector_math: ^2.2.0
+  record_linux: 0.7.1
+  record_platform_interface: 1.2.0
 
 flutter:
   uses-material-design: true

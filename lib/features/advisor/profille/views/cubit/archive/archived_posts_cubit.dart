@@ -290,6 +290,10 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
     emit(state.copyWith(posts: updatedPosts));
   }
 
+  void updatePostLocally(PostModel updatedPost) {
+    _updatePostInList(updatedPost.postId, updatedPost);
+  }
+
   void resetArchivePostState() => emit(
     state.copyWith(
       archivePostActionState: CubitStates.initial,

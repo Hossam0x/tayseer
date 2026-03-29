@@ -6,11 +6,11 @@ import 'package:flutter/foundation.dart' as foundation;
 import 'package:tayseer/core/utils/helper/picker_helper.dart';
 import 'package:tayseer/core/widgets/pick_image_bottom_sheet.dart';
 import 'package:tayseer/features/advisor/chat/presentation/theme/chat_theme.dart';
+import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/voice_recorder_widget.dart';
 import 'package:tayseer/my_import.dart';
 import '../../manager/input/chat_input_cubit.dart';
 import '../../manager/input/chat_input_state.dart';
 import 'reply_preview_input.dart';
-import 'dart:io';
 
 class ConversationInputArea extends StatefulWidget {
   final String sendMessageIcon;
@@ -42,6 +42,7 @@ class _ConversationInputAreaState extends State<ConversationInputArea> {
   late FocusNode _focusNode;
   Timer? _typingTimer;
   bool _isTyping = false;
+  bool _isRecording = false;
 
   @override
   void initState() {
@@ -188,6 +189,32 @@ class _ConversationInputAreaState extends State<ConversationInputArea> {
 
     return BlocBuilder<ChatInputCubit, ChatInputState>(
       builder: (context, state) {
+        // لو بيسجل صوت، نعرض الـ Voice Recorder Widget
+        if (_isRecording) {
+          return VoiceRecorderWidget(
+            onSendVoice: (audioFile, duration) {
+              setState(() {
+                _isRecording = false;
+              });
+              
+              final replyMessageId = context
+                  .read<ChatInputCubit>()
+                  .state
+                  .replyingToMessage
+                  ?.id;
+              
+              // إرسال الملف الصوتي
+              widget.onSendMedia?.call([audioFile], 'audio', replyMessageId);
+              context.read<ChatInputCubit>().onMessageSent();
+            },
+            onCancel: () {
+              setState(() {
+                _isRecording = false;
+              });
+            },
+          );
+        }
+
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -225,6 +252,22 @@ class _ConversationInputAreaState extends State<ConversationInputArea> {
                         child: Row(
                           children: [
                             SizedBox(width: spacing2),
+                            
+                            // زر التسجيل الصوتي - نقلناه للأول
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _isRecording = true;
+                                });
+                                context.read<ChatInputCubit>().setShowEmojiPicker(false);
+                              },
+                              child: Icon(
+                                Icons.mic,
+                                color: AppColors.kprimaryColor,
+                                size: 24,
+                              ),
+                            ),
+                            SizedBox(width: spacing3),
 
                             GestureDetector(
                               onTap: _toggleEmojiPicker,
@@ -248,6 +291,7 @@ class _ConversationInputAreaState extends State<ConversationInputArea> {
                               ),
                             ),
                             SizedBox(width: spacing3),
+                            
                             Expanded(
                               child: TextField(
                                 controller: _messageController,
