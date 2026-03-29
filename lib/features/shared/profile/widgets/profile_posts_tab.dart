@@ -327,8 +327,6 @@ class _ProfilePostItemState<C extends ProfilePostsCubitContract>
           widget.cubit.blockUser(visiblePostId: postId, advisorId: userId),
       onArchive: (id) => widget.cubit.archivePost(postId: id),
       onEdit: _onEdit,
-      onPostPopped: (updatedPost) =>
-          widget.cubit.updatePostLocally(updatedPost),
     );
   }
 

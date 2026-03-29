@@ -227,7 +227,7 @@ class _PostItemState extends State<_PostItem>
       onHide: (postId) => _cubit.toggleHidePost(postId: postId),
       onBlock: (postId, advisorId) =>
           _cubit.blockUser(visiblePostId: postId, advisorId: advisorId),
-      onPostPopped: (updatedPost) => _cubit.updatePostLocally(updatedPost),
+      onEdit: (updatedPost) => _cubit.updatePostLocally(updatedPost),
     );
   }
 

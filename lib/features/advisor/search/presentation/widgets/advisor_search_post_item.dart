@@ -59,7 +59,7 @@ class _AdvisorSearchPostItemState extends State<AdvisorSearchPostItem>
       },
       onPollVote: (postId, choiceText) =>
           _searchCubit.voteInPoll(postId: postId, choiceText: choiceText),
-      onPostPopped: (updatedPost) =>
+      onEdit: (updatedPost) =>
           _searchCubit.updatePostLocally(updatedPost),
     );
   }

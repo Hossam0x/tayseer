@@ -95,7 +95,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
     _postSubscription?.cancel();
     // ✅ بعت الـ post المحدث للـ parent لما نطلع
     if (_currentPost != null) {
-      widget.callbacks.onPostPopped?.call(_currentPost!);
+      widget.callbacks.onEdit?.call(_currentPost!);
     }
     _postDetailsCubit.close();
     super.dispose();
