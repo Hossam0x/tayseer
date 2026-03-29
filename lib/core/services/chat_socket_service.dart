@@ -19,6 +19,7 @@ class ChatSocketService {
   final _blockStatus = StreamController<BlockStatusSocketEvent>.broadcast();
   final _chatRoomJoined = StreamController<ChatRoomJoinedSocketEvent>.broadcast();
   final _messageReaction = StreamController<MessageReactionSocketEvent>.broadcast();
+  final _failEvent = StreamController<String>.broadcast();
 
   // Public streams
   Stream<NewMessageSocketEvent> get onNewMessage => _newMessage.stream;
@@ -28,6 +29,7 @@ class ChatSocketService {
   Stream<BlockStatusSocketEvent> get onBlockStatus => _blockStatus.stream;
   Stream<ChatRoomJoinedSocketEvent> get onChatRoomJoined => _chatRoomJoined.stream;
   Stream<MessageReactionSocketEvent> get onMessageReaction => _messageReaction.stream;
+  Stream<String> get onFailEvent => _failEvent.stream;
 
   /// تهيئة الـ service وتسجيل الـ listeners
   void init() {
@@ -111,6 +113,18 @@ class ChatSocketService {
       }
     });
 
+    // Fail event
+    _socket.listenWithId('fail', _id, (data) {
+      if (data is! Map) return;
+      try {
+        final message = data['message'] as String? ?? 'حدث خطأ غير معروف';
+        _failEvent.add(message);
+        log('⚠️ [ChatSocketService] fail event: $message');
+      } catch (e) {
+        log('❌ [ChatSocketService] fail parse error: $e');
+      }
+    });
+
     log('✅ [ChatSocketService] initialized');
   }
 
@@ -148,6 +162,7 @@ class ChatSocketService {
     _blockStatus.close();
     _chatRoomJoined.close();
     _messageReaction.close();
+    _failEvent.close();
     log('🗑️ [ChatSocketService] disposed');
   }
 }

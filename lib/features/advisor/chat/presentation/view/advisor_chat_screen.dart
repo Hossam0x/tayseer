@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart';
+import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/utils/assets.dart';
+import 'package:tayseer/core/widgets/app_toast.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/message_actions_handler.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/overlay_manager.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/scroll_behavior_handler.dart';
@@ -120,11 +123,22 @@ class _ChatContentState extends State<_ChatContent> {
   late final ScrollBehaviorHandler _scrollHandler;
   late final OverlayManager _overlayManager;
   late final MessageActionsHandler _actionsHandler;
+  StreamSubscription<String>? _failEventSubscription;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
+    _setupFailEventListener();
+  }
+
+  void _setupFailEventListener() {
+    final chatSocketService = getIt<ChatSocketService>();
+    _failEventSubscription = chatSocketService.onFailEvent.listen((message) {
+      if (mounted) {
+        AppToast.error(context, message);
+      }
+    });
   }
 
   @override
@@ -152,6 +166,7 @@ class _ChatContentState extends State<_ChatContent> {
 
   @override
   void dispose() {
+    _failEventSubscription?.cancel();
     _scrollHandler.dispose();
     _scrollController.dispose();
     super.dispose();

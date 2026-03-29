@@ -28,8 +28,8 @@ class MessageReactionsDisplay extends StatelessWidget {
     }
 
     return Wrap(
-      spacing: 6.w,
-      runSpacing: 6.h,
+      spacing: 4.w,
+      runSpacing: 4.h,
       alignment: WrapAlignment.start,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: groupedReactions.entries.map((entry) {
@@ -100,20 +100,8 @@ class _ReactionChipState extends State<_ReactionChip>
       onTapCancel: () => _controller.reverse(),
       child: ScaleTransition(
         scale: _scaleAnimation,
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-          decoration: BoxDecoration(
-            color: widget.isMyReaction
-                ? const Color(0xFFE96E88).withOpacity(0.15)
-                : Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(
-              color: widget.isMyReaction
-                  ? const Color(0xFFE96E88)
-                  : Colors.grey.shade300,
-              width: 1.5,
-            ),
-          ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 2.w),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -122,15 +110,13 @@ class _ReactionChipState extends State<_ReactionChip>
                 style: TextStyle(fontSize: 16.sp),
               ),
               if (widget.count > 1) ...[
-                SizedBox(width: 4.w),
+                SizedBox(width: 2.w),
                 Text(
                   '${widget.count}',
                   style: TextStyle(
-                    fontSize: 12.sp,
+                    fontSize: 11.sp,
                     fontWeight: FontWeight.w600,
-                    color: widget.isMyReaction
-                        ? const Color(0xFFE96E88)
-                        : Colors.grey.shade700,
+                    color: Colors.grey.shade700,
                   ),
                 ),
               ],
