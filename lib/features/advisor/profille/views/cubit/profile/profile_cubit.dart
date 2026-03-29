@@ -676,4 +676,9 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
 
     emit(state.copyWith(posts: updatedPosts));
   }
+
+  @override
+  void updatePostLocally(PostModel updatedPost) {
+    _updatePostInList(updatedPost.postId, updatedPost);
+  }
 }

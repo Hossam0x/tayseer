@@ -447,6 +447,8 @@ class _PostItemState extends State<_PostItem>
       onEdit: _editPost,
       onPollVote: _onPollVote,
       onCommented: _onCommented,
+      onPostPopped: (updatedPost) =>
+          widget.homeCubit.updateEditedPost(updatedPost),
     );
   }
 

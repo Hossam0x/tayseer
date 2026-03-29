@@ -179,7 +179,7 @@ class _PostsTabBody extends StatelessWidget {
 
             return _PostItem(
               key: ValueKey(state.posts[index].postId),
-              post: state.posts[index],
+              postId: state.posts[index].postId,
             );
           },
         ),
@@ -188,39 +188,65 @@ class _PostsTabBody extends StatelessWidget {
   }
 }
 
-class _PostItem extends StatelessWidget {
-  final PostModel post;
-  const _PostItem({super.key, required this.post});
+class _PostItem extends StatefulWidget {
+  final String postId;
+  const _PostItem({super.key, required this.postId});
+
+  @override
+  State<_PostItem> createState() => _PostItemState();
+}
+
+class _PostItemState extends State<_PostItem>
+    with AutomaticKeepAliveClientMixin {
+  late final ArchivedPostsCubit _cubit;
+  late final Stream<PostModel?> _postStream;
+  late final PostCallbacks _callbacks;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _cubit = context.read<ArchivedPostsCubit>();
+    _postStream = _cubit.stream
+        .map(
+          (state) =>
+              state.posts.where((p) => p.postId == widget.postId).firstOrNull,
+        )
+        .distinct();
+
+    _callbacks = PostCallbacks(
+      postUpdatesStream: _postStream,
+      onReactionChanged: (postId, reaction) =>
+          _cubit.reactToPost(postId: postId, reactionType: reaction),
+      onShareTap: (postId) => _cubit.toggleSharePost(postId: postId),
+      onSave: (postId) => _cubit.toggleSavePost(postId: postId),
+      onDelete: (postId) => _cubit.deletePost(postId: postId),
+      onArchive: (postId) => _cubit.unarchivePost(postId),
+      onHide: (postId) => _cubit.toggleHidePost(postId: postId),
+      onBlock: (postId, advisorId) =>
+          _cubit.blockUser(visiblePostId: postId, advisorId: advisorId),
+      onPostPopped: (updatedPost) => _cubit.updatePostLocally(updatedPost),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<ArchivedPostsCubit>();
-
-    return BlocSelector<ArchivedPostsCubit, ArchivedPostsState, PostModel>(
-      selector: (state) => state.posts.firstWhere(
-        (p) => p.postId == post.postId,
-        orElse: () => post,
-      ),
-      builder: (context, currentPost) {
+    super.build(context);
+    return BlocSelector<ArchivedPostsCubit, ArchivedPostsState, PostModel?>(
+      selector: (state) =>
+          state.posts.where((p) => p.postId == widget.postId).firstOrNull,
+      builder: (context, post) {
+        if (post == null) return const SizedBox.shrink();
         return Padding(
           padding: EdgeInsets.only(bottom: 8.h),
           child: PostCard(
             isFromProfile: true,
             heroPrefix: 'archived_posts',
             isArchived: true,
-            post: currentPost,
-            callbacks: PostCallbacks(
-              onReactionChanged: (postId, reaction) =>
-                  cubit.reactToPost(postId: postId, reactionType: reaction),
-              onShareTap: (postId) => cubit.toggleSharePost(postId: postId),
-              onSave: (postId) => cubit.toggleSavePost(postId: postId),
-              onDelete: (postId) => cubit.deletePost(postId: postId),
-              onArchive: (postId) => cubit.unarchivePost(postId),
-
-              onHide: (postId) => cubit.toggleHidePost(postId: postId),
-              onBlock: (postId, advisorId) =>
-                  cubit.blockUser(visiblePostId: postId, advisorId: advisorId),
-            ),
+            post: post,
+            callbacks: _callbacks,
             onNavigateToDetails: (context, post, controller) {
               Navigator.push(
                 context,
@@ -231,6 +257,7 @@ class _PostItem extends StatelessWidget {
                     isArchived: true,
                     heroPrefix: 'archived_posts',
                     cachedController: controller,
+                    callbacks: _callbacks,
                   ),
                 ),
               );

@@ -331,6 +331,10 @@ class SavedPostsCubit extends Cubit<SavedPostsState> {
     emit(state.copyWith(posts: updatedPosts));
   }
 
+  void updatePostLocally(PostModel updatedPost) {
+    _updatePostInList(updatedPost.postId, updatedPost);
+  }
+
   Future<void> refresh() async {
     await fetchSavedPosts();
   }

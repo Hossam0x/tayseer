@@ -540,6 +540,11 @@ class UserAdvisorProfileCubit
     emit(state.copyWith(posts: updatedPosts));
   }
 
+  @override
+  void updatePostLocally(PostModel updatedPost) {
+    _updatePostInList(updatedPost.postId, updatedPost);
+  }
+
   PostModel? _findPost(String postId) {
     final index = state.posts.indexWhere((p) => p.postId == postId);
     return index != -1 ? state.posts[index] : null;

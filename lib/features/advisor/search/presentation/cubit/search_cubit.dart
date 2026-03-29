@@ -677,6 +677,20 @@ class SearchCubit extends Cubit<SearchState> {
     );
   }
 
+  void updatePostLocally(PostModel updatedPost) {
+    final found = _findPost(updatedPost.postId);
+    if (found.post == null) return;
+    emit(
+      _updatePostInBothTabs(
+        postsData: found.postsData,
+        allData: found.allData,
+        postsIdx: found.postsIdx,
+        allIdx: found.allIdx,
+        updatedPost: updatedPost,
+      ),
+    );
+  }
+
   @override
   Future<void> close() {
     _searchDebounce?.cancel();

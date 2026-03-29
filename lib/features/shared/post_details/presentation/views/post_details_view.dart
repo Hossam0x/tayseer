@@ -93,6 +93,10 @@ class _PostDetailsViewState extends State<PostDetailsView> {
   void dispose() {
     _scrollController.dispose();
     _postSubscription?.cancel();
+    // ✅ بعت الـ post المحدث للـ parent لما نطلع
+    if (_currentPost != null) {
+      widget.callbacks.onPostPopped?.call(_currentPost!);
+    }
     _postDetailsCubit.close();
     super.dispose();
   }

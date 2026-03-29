@@ -711,7 +711,7 @@ abstract class AppRouter {
         final post = settings.arguments as PostModel;
         return MaterialPageRoute(
           builder: (_) => BlocProvider(
-            create: (_) => getIt<UpdatePostCubit>(),
+            create: (_) => UpdatePostCubit(),
             child: UpdatePostView(post: post),
           ),
         );
