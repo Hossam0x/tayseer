@@ -1,4 +1,5 @@
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/services/connectivity_service.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
@@ -156,6 +157,13 @@ Future<void> setupGetIt() async {
 
   /// SocketHelper
   getIt.registerLazySingleton<tayseerSocketHelper>(() => tayseerSocketHelper());
+
+  /// ChatSocketService
+  getIt.registerLazySingleton<ChatSocketService>(() {
+    final service = ChatSocketService();
+    service.init();
+    return service;
+  });
 
   /// AuthRepo
   getIt.registerLazySingleton<AuthRepo>(
