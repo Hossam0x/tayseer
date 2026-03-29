@@ -1696,8 +1696,7 @@
   "withdraw_request": "طلب سحب",
   "deposit": "إيداع",
   "seen_all_recommendations": "لقد رأيت جميع التوصيات",
-  "try_expanding_filter": "حاول توسيع الفلتر لرؤية المزيد من الأشخاص"
-  "deposit": "إيداع",
+  "try_expanding_filter": "حاول توسيع الفلتر لرؤية المزيد من الأشخاص",
   "enter_certificate_name": "يرجى إدخال اسم الشهادة",
   "enter_issuing_entity": "يرجى إدخال الجهة المانحة",
   "choose_year": "يرجى اختيار سنة الحصول",
@@ -1716,5 +1715,6 @@
   "session_expired": "انتهت صلاحية الجلسة",
   "network_error": "خطأ في الاتصال بالإنترنت",
   "camera_access_denied": "لم يتم السماح بالوصول للكاميرا",
-  "api_error": "خطأ في الاتصال بالخادم"
+  "api_error": "خطأ في الاتصال بالخادم",
+  "view_who_interacted": "شاهد من تفاعلت معه"
 }

@@ -1,10 +1,41 @@
+import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_state.dart';
 import 'package:tayseer/my_import.dart';
 
-class MySpaceMarriageContent extends StatelessWidget {
+class MySpaceMarriageContent extends StatefulWidget {
   const MySpaceMarriageContent({super.key});
 
   @override
+  State<MySpaceMarriageContent> createState() => _MySpaceMarriageContentState();
+}
+
+class _MySpaceMarriageContentState extends State<MySpaceMarriageContent> {
+  void _goToMarriageView() async {
+    await context.pushNamed(AppRouter.kMarriageView);
+
+    if (!mounted) return;
+
+    // ✅ أظهر الـ navbar بعد الرجوع
+    context.read<LayoutCubit>().setNavVisibility(true);
+
+    // ✅ حدّث البيانات عشان يتحقق من dataCompleted
+    try {
+      context.read<UserProfileCubit>().fetchUserProfile();
+    } catch (_) {}
+  }
+
+  @override
   Widget build(BuildContext context) {
+    bool isDataCompleted = false;
+    try {
+      final userState = context.watch<UserProfileCubit>().state;
+      if (userState is SettingsLoaded) {
+        isDataCompleted = userState.userProfile?.dataCompleted ?? false;
+      }
+    } catch (_) {}
+
+    if (isDataCompleted) return const SizedBox.shrink();
+
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -51,9 +82,7 @@ class MySpaceMarriageContent extends StatelessWidget {
                     radius: 16.r,
                     useGradient: true,
                     title: context.tr('complete_your_profile_bott'),
-                    onPressed: () {
-                      // context.pushNamed(AppRouter.kQuestionsPageView);
-                    },
+                    onPressed: _goToMarriageView,
                   ),
                 ],
               ),

@@ -4,21 +4,17 @@ class MarriageUserProfileModel {
   final AboutMe? aboutMe;
   final ProfessionalLife? professionalLife;
   final Family? family;
-  final List<String> hobbies; // ✅ Only interest_*
+  final List<String> hobbies;
   final List<String> faith;
   final UserMedia? userMedia;
   final YourGoals? yourGoals;
   final String? myDescription;
   final int? lastQuestionNumber;
-
-  // ⭐⭐⭐ NEW: Progress percentage from API
   final num? answerCompletedPercentage;
-  // ⭐⭐⭐ NEW: Statistics fields
   final int? interactionCount;
   final int? regredsCount;
   final bool? inReview;
   final bool? isVerified;
-  // Additional fields for the "view" format from API
   final ProfileHeader? header;
   final List<TimelineGoal>? timeline;
   final ReligiousInfo? religious;
@@ -34,7 +30,7 @@ class MarriageUserProfileModel {
     this.yourGoals,
     this.myDescription,
     this.lastQuestionNumber,
-    this.answerCompletedPercentage, // ⭐⭐⭐ NEW
+    this.answerCompletedPercentage,
     this.interactionCount,
     this.regredsCount,
     this.inReview,
@@ -46,9 +42,7 @@ class MarriageUserProfileModel {
   });
 
   factory MarriageUserProfileModel.fromJson(Map<String, dynamic> json) {
-    // Check if this is the "view" format or "edit" format
     final bool isViewFormat = json.containsKey('header');
-
     if (isViewFormat) {
       return _fromViewFormat(json);
     } else {
@@ -56,31 +50,21 @@ class MarriageUserProfileModel {
     }
   }
 
-  // Parse the VIEW format (what your current API returns)
   static MarriageUserProfileModel _fromViewFormat(Map<String, dynamic> json) {
     final header = json['header'] != null
         ? ProfileHeader.fromJson(json['header'] as Map<String, dynamic>)
         : null;
 
-    // Extract data from the view format and map to edit format
-    final aboutMeData = json['aboutMe'] as List<dynamic>? ?? [];
-    final educationData = json['education'] as List<dynamic>? ?? [];
     final timelineData = json['timeline'] as List<dynamic>? ?? [];
-    final interestsData = json['interests'] as List<dynamic>? ?? [];
 
-    // Build AboutMe from tags and other data
     final aboutMe = AboutMe(
       country: header?.location,
       age: header?.age?.toString(),
-      // Parse other fields from aboutMe array if needed
-      // Example: aboutMeData might contain smoking, health status, etc.
     );
 
-    // Extract images from header
     final images = header?.images ?? [];
     final userMedia = UserMedia(images: images);
 
-    // Parse timeline into YourGoals
     YourGoals? yourGoals;
     if (timelineData.isNotEmpty) {
       String? marry, engagement, intendTravelAbroad, familyAcceptance;
@@ -99,8 +83,8 @@ class MarriageUserProfileModel {
         familyAcceptance: familyAcceptance,
       );
     }
-    List<String> parsedHobbies = [];
 
+    List<String> parsedHobbies = [];
     if (json['hobbies'] is String && json['hobbies'] != null) {
       final hobbiesStr = json['hobbies'] as String;
       parsedHobbies = hobbiesStr
@@ -111,13 +95,7 @@ class MarriageUserProfileModel {
     } else if (json['hobbies'] is List) {
       parsedHobbies = List<String>.from(json['hobbies']);
     }
-    // // Parse hobbies/interests
-    // final hobbies = interestsData
-    //     .map((e) => (e as Map<String, dynamic>)['label'] as String?)
-    //     .whereType<String>()
-    //     .toList();
 
-    // Parse bio
     final bioText = json['bio'] != null
         ? (json['bio'] as Map<String, dynamic>)['text'] as String?
         : null;
@@ -128,8 +106,7 @@ class MarriageUserProfileModel {
       yourGoals: yourGoals,
       hobbies: parsedHobbies,
       myDescription: bioText,
-      answerCompletedPercentage:
-          json['answerCompletedPercentage'] as int?, // ⭐⭐⭐ NEW
+      answerCompletedPercentage: json['answerCompletedPercentage'] as num?,
       header: header,
       timeline: timelineData
           .map((e) => TimelineGoal.fromJson(e as Map<String, dynamic>))
@@ -142,74 +119,55 @@ class MarriageUserProfileModel {
           : null,
     );
   }
-  // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ CRITICAL FIX: Deduplicate hobbies after merging faith
-  // ════════════════════════════════════════════════════════════════
-
-  // In the _fromEditFormat method, replace lines 101-157 with this:
 
   static MarriageUserProfileModel _fromEditFormat(Map<String, dynamic> json) {
-    // ⭐⭐⭐ 1. Parse HOBBIES (interests only) - WITH SPLITTING FIX
+    // ✅ Parse HOBBIES
     List<String> parsedHobbies = [];
-
     if (json['hobbies'] != null) {
-    
-
       if (json['hobbies'] is String) {
-        final hobbiesStr = json['hobbies'] as String;
-        parsedHobbies = hobbiesStr
+        parsedHobbies = (json['hobbies'] as String)
             .split(',')
             .map((h) => h.trim())
             .where((h) => h.isNotEmpty && h.startsWith('interest_'))
             .toList();
       } else if (json['hobbies'] is List) {
-        final hobbiesList = json['hobbies'] as List;
-
-        // ⭐⭐⭐ CRITICAL FIX: Loop through each item and split if needed
-        for (var item in hobbiesList) {
+        for (var item in json['hobbies'] as List) {
           if (item is String) {
-            // ⭐ إذا العنصر فيه فواصل، فصّله
             if (item.contains(',')) {
-        
-              final subItems = item
-                  .split(',')
-                  .map((s) => s.trim())
-                  .where((s) => s.isNotEmpty && s.startsWith('interest_'));
-              parsedHobbies.addAll(subItems);
+              parsedHobbies.addAll(
+                item
+                    .split(',')
+                    .map((s) => s.trim())
+                    .where((s) => s.isNotEmpty && s.startsWith('interest_')),
+              );
             } else if (item.trim().startsWith('interest_')) {
-              // ⭐ عنصر واحد بدون فواصل
               parsedHobbies.add(item.trim());
             }
           }
         }
       }
-
-    
     }
 
-    // ⭐⭐⭐ 2. Parse FAITH (separate field) - SEPARATED
-    // ⭐⭐⭐ Parse FAITH - SIMPLIFIED
+    // ✅ Parse FAITH
     List<String> parsedFaith = [];
-
     if (json['faith'] != null) {
-      
-
       if (json['faith'] is List) {
-        // ⭐ لو جاي كـ Array من الـ Backend
-        final faithList = json['faith'] as List;
-
-        for (var item in faithList) {
+        for (var item in json['faith'] as List) {
           final itemStr = item.toString().trim();
-
-          // ⭐ لو العنصر key صحيح (بيبدأ بـ faith_)
           if (itemStr.startsWith('faith_')) {
             parsedFaith.add(itemStr);
+          } else if (itemStr.contains(',')) {
+            // ✅ لو في فواصل داخل عنصر واحد
+            parsedFaith.addAll(
+              itemStr
+                  .split(',')
+                  .map((s) => s.trim())
+                  .where((s) => s.startsWith('faith_')),
+            );
           }
         }
       } else if (json['faith'] is String) {
-        // ⭐ لو جاي كـ String (للتوافق)
         final faithStr = json['faith'] as String;
-
         if (faithStr.contains(',')) {
           parsedFaith = faithStr
               .split(',')
@@ -220,9 +178,8 @@ class MarriageUserProfileModel {
           parsedFaith.add(faithStr);
         }
       }
-
-    
     }
+
     return MarriageUserProfileModel(
       aboutMe: json['aboutMe'] != null
           ? AboutMe.fromJson(json['aboutMe'] as Map<String, dynamic>)
@@ -235,8 +192,8 @@ class MarriageUserProfileModel {
       family: json['family'] != null
           ? Family.fromJson(json['family'] as Map<String, dynamic>)
           : null,
-      hobbies: parsedHobbies, // ✅ SEPARATED & SPLIT
-      faith: parsedFaith, // ✅ SEPARATED
+      hobbies: parsedHobbies,
+      faith: parsedFaith,
       userMedia: json['userMedia'] != null
           ? UserMedia.fromJson(json['userMedia'] as Map<String, dynamic>)
           : null,
@@ -253,27 +210,24 @@ class MarriageUserProfileModel {
     );
   }
 
-  Map<String, dynamic> toJson() {
-    // Always send in EDIT format for updates
-    return {
-      'aboutMe': aboutMe?.toJson(),
-      'professionalLife': professionalLife?.toJson(),
-      'family': family?.toJson(),
-      'hobbies': hobbies,
-      'userMedia': userMedia?.toJson(),
-      'yourGoals': yourGoals?.toJson(),
-      'myDescription': myDescription,
-      'answerCompletedPercentage': answerCompletedPercentage, // ⭐⭐⭐ NEW
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    'aboutMe': aboutMe?.toJson(),
+    'professionalLife': professionalLife?.toJson(),
+    'family': family?.toJson(),
+    'hobbies': hobbies,
+    'faith': faith,
+    'userMedia': userMedia?.toJson(),
+    'yourGoals': yourGoals?.toJson(),
+    'myDescription': myDescription,
+    'answerCompletedPercentage': answerCompletedPercentage,
+  };
 
-  // ⭐⭐⭐ UPDATED: copyWith with new fields
   MarriageUserProfileModel copyWith({
     AboutMe? aboutMe,
     ProfessionalLife? professionalLife,
     Family? family,
     List<String>? hobbies,
-      List<String>? faith,
+    List<String>? faith,
     UserMedia? userMedia,
     YourGoals? yourGoals,
     String? myDescription,
@@ -283,7 +237,6 @@ class MarriageUserProfileModel {
     int? regredsCount,
     bool? inReview,
     bool? isVerified,
-
     ProfileHeader? header,
     List<TimelineGoal>? timeline,
     ReligiousInfo? religious,
@@ -294,7 +247,7 @@ class MarriageUserProfileModel {
       professionalLife: professionalLife ?? this.professionalLife,
       family: family ?? this.family,
       hobbies: hobbies ?? this.hobbies,
-       faith: faith ?? this.faith,
+      faith: faith ?? this.faith,
       userMedia: userMedia ?? this.userMedia,
       yourGoals: yourGoals ?? this.yourGoals,
       myDescription: myDescription ?? this.myDescription,
@@ -304,17 +257,17 @@ class MarriageUserProfileModel {
       interactionCount: interactionCount ?? this.interactionCount,
       regredsCount: regredsCount ?? this.regredsCount,
       inReview: inReview ?? this.inReview,
+      isVerified: isVerified ?? this.isVerified,
       header: header ?? this.header,
       timeline: timeline ?? this.timeline,
       religious: religious ?? this.religious,
       bio: bio ?? this.bio,
-      isVerified: isVerified ?? this.isVerified,
     );
   }
 }
 
 // ════════════════════════════════════════════════════════════════
-// ProfileHeader (for view format)
+// ProfileHeader
 // ════════════════════════════════════════════════════════════════
 class ProfileHeader {
   final String? name;
@@ -350,12 +303,9 @@ class ProfileHeader {
 
 class TagLabel {
   final String label;
-
   TagLabel({required this.label});
-
-  factory TagLabel.fromJson(Map<String, dynamic> json) {
-    return TagLabel(label: json['label']?.toString() ?? '');
-  }
+  factory TagLabel.fromJson(Map<String, dynamic> json) =>
+      TagLabel(label: json['label']?.toString() ?? '');
 }
 
 class TimelineGoal {
@@ -365,13 +315,11 @@ class TimelineGoal {
 
   TimelineGoal({this.timeLabel, this.goalLabel, this.isActive});
 
-  factory TimelineGoal.fromJson(Map<String, dynamic> json) {
-    return TimelineGoal(
-      timeLabel: json['timeLabel'] as String?,
-      goalLabel: json['goalLabel'] as String?,
-      isActive: json['isActive'] as bool?,
-    );
-  }
+  factory TimelineGoal.fromJson(Map<String, dynamic> json) => TimelineGoal(
+    timeLabel: json['timeLabel'] as String?,
+    goalLabel: json['goalLabel'] as String?,
+    isActive: json['isActive'] as bool?,
+  );
 }
 
 class ReligiousInfo {
@@ -380,30 +328,25 @@ class ReligiousInfo {
 
   ReligiousInfo({this.title, this.tags = const []});
 
-  factory ReligiousInfo.fromJson(Map<String, dynamic> json) {
-    return ReligiousInfo(
-      title: json['title'] as String?,
-      tags: json['tags'] != null
-          ? (json['tags'] as List)
-                .map((e) => TagLabel.fromJson(e as Map<String, dynamic>))
-                .toList()
-          : [],
-    );
-  }
+  factory ReligiousInfo.fromJson(Map<String, dynamic> json) => ReligiousInfo(
+    title: json['title'] as String?,
+    tags: json['tags'] != null
+        ? (json['tags'] as List)
+              .map((e) => TagLabel.fromJson(e as Map<String, dynamic>))
+              .toList()
+        : [],
+  );
 }
 
 class BioInfo {
   final String? text;
-
   BioInfo({this.text});
-
-  factory BioInfo.fromJson(Map<String, dynamic> json) {
-    return BioInfo(text: json['text'] as String?);
-  }
+  factory BioInfo.fromJson(Map<String, dynamic> json) =>
+      BioInfo(text: json['text'] as String?);
 }
 
 // ════════════════════════════════════════════════════════════════
-// AboutMe Model (edit format)
+// AboutMe
 // ════════════════════════════════════════════════════════════════
 class AboutMe {
   final String? weight;
@@ -416,8 +359,8 @@ class AboutMe {
   final String? healthStatus;
   final String? smoker;
   final String? religiousCommitment;
-  final String? drinkAlcohol;  // ✅ جديد
-  final String? eatHalalOnly;  // ✅ جديد
+  final String? drinkAlcohol;
+  final String? eatHalalOnly;
 
   AboutMe({
     this.weight,
@@ -430,8 +373,8 @@ class AboutMe {
     this.healthStatus,
     this.smoker,
     this.religiousCommitment,
-    this.drinkAlcohol,   // ✅ جديد
-    this.eatHalalOnly,   // ✅ جديد
+    this.drinkAlcohol,
+    this.eatHalalOnly,
   });
 
   factory AboutMe.fromJson(Map<String, dynamic> json) => AboutMe(
@@ -445,8 +388,8 @@ class AboutMe {
     healthStatus: json['healthStatus'] as String?,
     smoker: json['smoker'] as String?,
     religiousCommitment: json['religiousCommitment'] as String?,
-    drinkAlcohol: json['drinkAlcohol'] as String?,  // ✅ جديد
-    eatHalalOnly: json['eatHalalOnly'] as String?,  // ✅ جديد
+    drinkAlcohol: json['drinkAlcohol'] as String?,
+    eatHalalOnly: json['eatHalalOnly'] as String?,
   );
 
   Map<String, dynamic> toJson() => {
@@ -460,8 +403,8 @@ class AboutMe {
     'healthStatus': healthStatus,
     'smoker': smoker,
     'religiousCommitment': religiousCommitment,
-    'drinkAlcohol': drinkAlcohol,   // ✅ جديد
-    'eatHalalOnly': eatHalalOnly,   // ✅ جديد
+    'drinkAlcohol': drinkAlcohol,
+    'eatHalalOnly': eatHalalOnly,
   };
 
   AboutMe copyWith({
@@ -475,8 +418,8 @@ class AboutMe {
     String? healthStatus,
     String? smoker,
     String? religiousCommitment,
-    String? drinkAlcohol,   // ✅ جديد
-    String? eatHalalOnly,   // ✅ جديد
+    String? drinkAlcohol,
+    String? eatHalalOnly,
   }) {
     return AboutMe(
       weight: weight ?? this.weight,
@@ -489,13 +432,14 @@ class AboutMe {
       healthStatus: healthStatus ?? this.healthStatus,
       smoker: smoker ?? this.smoker,
       religiousCommitment: religiousCommitment ?? this.religiousCommitment,
-      drinkAlcohol: drinkAlcohol ?? this.drinkAlcohol,   // ✅ جديد
-      eatHalalOnly: eatHalalOnly ?? this.eatHalalOnly,   // ✅ جديد
+      drinkAlcohol: drinkAlcohol ?? this.drinkAlcohol,
+      eatHalalOnly: eatHalalOnly ?? this.eatHalalOnly,
     );
   }
 }
+
 // ════════════════════════════════════════════════════════════════
-// ProfessionalLife Model
+// ProfessionalLife
 // ════════════════════════════════════════════════════════════════
 class ProfessionalLife {
   final String? job;
@@ -531,7 +475,7 @@ class ProfessionalLife {
 }
 
 // ════════════════════════════════════════════════════════════════
-// Family Model
+// Family
 // ════════════════════════════════════════════════════════════════
 class Family {
   final String? hasChildren;
@@ -566,58 +510,70 @@ class Family {
 }
 
 // ════════════════════════════════════════════════════════════════
-// UserMedia Model
+// UserMedia
 // ════════════════════════════════════════════════════════════════
-// في user_profile_marriage_model.dart
 class UserMedia {
   final List<String> images;
   final String? video;
   final String? audio;
   final String? singleImage;
+  final Map<String, String> imagesIndex;
 
-  UserMedia({this.singleImage, this.images = const [], this.video, this.audio});
-
-  // ⭐ دالة مساعدة لفلترة الصور الـ default
-  static String? _filterDefaultImage(String? imageUrl) {
-    if (imageUrl == null || imageUrl.isEmpty) return null;
-
-    // ⭐ قائمة بالصور الـ default المعروفة
-    final defaultImages = [
-      'https://cdn-icons-png.flaticon.com/512/149/149071.png',
-      'cdn-icons-png.flaticon.com/512/149/149071.png',
-      'flaticon.com/512/149/149071.png',
-    ];
-
-    // ⭐ لو الصورة في القائمة، ارجع null
-    for (final defaultImg in defaultImages) {
-      if (imageUrl.contains(defaultImg)) {
-        return null;
-      }
-    }
-
-    return imageUrl;
-  }
+  UserMedia({
+    this.singleImage,
+    this.images = const [],
+    this.video,
+    this.audio,
+    this.imagesIndex = const {},
+  });
 
   factory UserMedia.fromJson(Map<String, dynamic> json) {
-    // ⭐ فلتر singleImage قبل ما نحفظها
     final rawSingleImage = json['singleImage'] as String?;
     final filteredSingleImage = _filterDefaultImage(rawSingleImage);
 
+    // ✅ image ممكن يكون Map أو List
+    List<String> orderedImages = [];
+    final rawImage = json['image'];
+
+    if (rawImage is Map) {
+      // ✅ {"0": "url1", "1": "url2"}
+      final imageMap = Map<String, dynamic>.from(rawImage);
+      final sortedKeys = imageMap.keys.toList()
+        ..sort(
+          (a, b) => (int.tryParse(a) ?? 0).compareTo(int.tryParse(b) ?? 0),
+        );
+      orderedImages = sortedKeys
+          .map((k) => imageMap[k]?.toString() ?? '')
+          .where((url) => url.isNotEmpty)
+          .toList();
+    } else if (rawImage is List) {
+      // ✅ ["url1", "url2"]
+      orderedImages = List<String>.from(rawImage);
+    }
+
+    // ✅ بناء imagesIndex من الـ images المرتبة
+    final imagesIndex = orderedImages.asMap().map(
+      (i, url) => MapEntry(i.toString(), url),
+    );
+
     return UserMedia(
-      singleImage: filteredSingleImage, // ⭐ استخدم الصورة المفلترة
-      images: json['image'] != null
-          ? List<String>.from(json['image'] as List)
-          : [],
+      singleImage: filteredSingleImage,
+      images: orderedImages,
       video: json['video'] as String?,
       audio: json['audio'] as String?,
+      imagesIndex: imagesIndex,
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'image': images,
+    // ✅ احفظ كـ Map دايماً للـ consistency
+    'image': imagesIndex.isNotEmpty
+        ? imagesIndex
+        : images.asMap().map((i, url) => MapEntry(i.toString(), url)),
     'video': video,
     'audio': audio,
     'singleImage': singleImage,
+    'imagesIndex': imagesIndex,
   };
 
   UserMedia copyWith({
@@ -625,20 +581,36 @@ class UserMedia {
     String? singleImage,
     String? video,
     String? audio,
+    Map<String, String>? imagesIndex,
   }) {
     return UserMedia(
       images: images ?? this.images,
       singleImage: singleImage ?? this.singleImage,
       video: video ?? this.video,
       audio: audio ?? this.audio,
+      imagesIndex: imagesIndex ?? this.imagesIndex,
     );
+  }
+
+  static String? _filterDefaultImage(String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty) return null;
+    const defaultImages = [
+      'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+    ];
+    for (final defaultImg in defaultImages) {
+      if (imageUrl.contains(defaultImg)) return null;
+    }
+    return imageUrl;
   }
 }
 
+// ════════════════════════════════════════════════════════════════
+// YourGoals
+// ════════════════════════════════════════════════════════════════
 class YourGoals {
-  final String? intendTravelAbroad; 
+  final String? intendTravelAbroad;
   final String? familyAcceptance;
-    final String? marry;
+  final String? marry;
   final String? engagement;
 
   YourGoals({
@@ -650,25 +622,23 @@ class YourGoals {
 
   String? get children => familyAcceptance;
 
-  // ⭐⭐⭐ FIX: استقبال الحقول الصحيحة من السيرفر
   factory YourGoals.fromJson(Map<String, dynamic> json) => YourGoals(
-    intendTravelAbroad: json['intendTravelAbroad'] as String?, // ✅
-    familyAcceptance: json['familyAcceptance'] as String?, // ✅
+    intendTravelAbroad: json['intendTravelAbroad'] as String?,
+    familyAcceptance: json['familyAcceptance'] as String?,
     marry: json['marriageIntentions'] as String?,
     engagement: json['engagment'] as String?,
   );
 
-  // ⭐⭐⭐ FIX: إرسال الحقول الصحيحة للسيرفر
   Map<String, dynamic> toJson() => {
-    'intendTravelAbroad': intendTravelAbroad, // ✅
-    'familyAcceptance': familyAcceptance, // ✅
+    'intendTravelAbroad': intendTravelAbroad,
+    'familyAcceptance': familyAcceptance,
     'marriageIntentions': marry,
     'engagment': engagement,
   };
 
   YourGoals copyWith({
-    String? intendTravelAbroad, // ✅
-    String? familyAcceptance, // ✅
+    String? intendTravelAbroad,
+    String? familyAcceptance,
     String? marry,
     String? engagement,
   }) {

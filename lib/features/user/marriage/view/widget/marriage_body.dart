@@ -4,6 +4,7 @@ import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/animated_history_button.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/history_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_FilterChips.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_body.dart';
@@ -776,7 +777,9 @@ class MarriageBodyState extends State<MarriageBody>
         ? _buildTimelineEventsFromAnswers(answers!.yourGoals!)
         : <Map<String, dynamic>>[];
 
-    final bool canInteract = profile.allowInteractions ?? true;
+    final bool canInteract = widget.fromInteractions
+        ? true
+        : (profile.allowInteractions ?? true);
     final faithItems = _buildFaithItems(answers);
 
     return Directionality(
@@ -1334,7 +1337,7 @@ class MarriageBodyState extends State<MarriageBody>
                           ),
                           Positioned(
                             left: 0,
-                            child: GestureDetector(
+                            child: AnimatedHistoryButton(
                               onTap: () {
                                 cubit.showHistoryView();
                                 WidgetsBinding.instance.addPostFrameCallback((
@@ -1347,11 +1350,6 @@ class MarriageBodyState extends State<MarriageBody>
                                   );
                                 });
                               },
-                              child: AppImage(
-                                AssetsData.archiveIcon,
-                                width: 50.w,
-                                height: 50.h,
-                              ),
                             ),
                           ),
                         ],

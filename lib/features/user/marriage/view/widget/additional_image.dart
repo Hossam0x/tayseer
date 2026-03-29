@@ -26,19 +26,17 @@ class AdditionalImageSection extends StatelessWidget {
           if (shouldBlur)
             ImageFiltered(
               imageFilter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-              child: AppImage(
-                imageUrl,
-                width: context.width,
+              child: SizedBox(
+                width: double.infinity,
                 height: context.height * 0.4,
-                fit: BoxFit.cover,
+                child: AppImage(imageUrl, fit: BoxFit.cover),
               ),
             )
           else
-            AppImage(
-              imageUrl,
-              width: context.width,
+            SizedBox(
+              width: double.infinity,
               height: context.height * 0.4,
-              fit: BoxFit.cover,
+              child: AppImage(imageUrl, fit: BoxFit.cover),
             ),
 
           // ✅ طبقة تعتيم فوق الـ blur
