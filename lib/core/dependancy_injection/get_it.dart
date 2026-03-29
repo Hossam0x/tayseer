@@ -513,6 +513,13 @@ Future<void> setupGetIt() async {
       otpSource: params.otpSource,
     ),
   );
+
+  getIt.registerLazySingleton<NotificationRepo>(
+        () => NotificationRepo(apiService: getIt<ApiService>()),
+  );
+  getIt.registerFactory<NotificationCubit>(
+        () => NotificationCubit(notificationRepo: getIt<NotificationRepo>()),
+  );
 }
 
 class OtpCubitParams {
@@ -527,6 +534,5 @@ class OtpCubitParams {
     required this.isEmailUpdate,
     required this.otpSource,
   });
-  getIt.registerFactory<NotificationRepo>(() => NotificationRepo(apiService: getIt<ApiService>()));
-  getIt.registerFactory<NotificationCubit>(()=>NotificationCubit(notificationRepo: getIt<NotificationRepo>()));
+
 }

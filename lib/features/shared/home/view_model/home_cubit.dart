@@ -207,7 +207,7 @@ class HomeCubit extends Cubit<HomeState> {
             image: cachedImage,
             name: cachedName,
             notifications: state.homeInfo?.notifications ?? 0,
-            notifications: 0,
+
             approvalKey: state.homeInfo?.approvalKey ?? '',
           ),
           fetchNameAndImageState: CubitStates.success,

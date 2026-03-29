@@ -17,7 +17,6 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
-    super.initState();
     _initializeSocket();
     _navigateBasedOnToken();
   }
@@ -45,11 +44,11 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 4800));
     if (!mounted) return;
 
-    final String? token = CachNetwork.getStringData(key: ktoken);
+    final String token = CachNetwork.getStringData(key: ktoken);
     final String? userType = CachNetwork.getStringData(key: kUserType);
 
     log(
-      '🔍 Navigation check - Token: ${token?.isNotEmpty}, '
+      '🔍 Navigation check - Token: ${token.isNotEmpty}, '
       'UserType: $userType, selectedUserType: $selectedUserType',
     );
 
@@ -59,28 +58,11 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    String? token = CachNetwork.getStringData(key: ktoken);
-    if (mounted) {
-      if (token.isNotEmpty) {
-        if (selectedUserType == UserTypeEnum.asConsultant) {
-          if (kCurrentUserData?.compeletedData == true) {
-            context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
-          } else {
-            context.pushReplacementNamed(AppRouter.kRegisrationView);
-          }
-        } else if (selectedUserType == UserTypeEnum.user) {
-          kCurrentUserData?.isNew == false
-              ? context.pushReplacementNamed(AppRouter.kUserLayoutView)
-              : context.pushReplacementNamed(AppRouter.kRegisrationView);
-          
-        }
-      } else {
-        navigatorKey.currentState?.pushReplacementNamed(
-          AppRouter.kRegisrationView,
-        );
-      }
+    if (token.isNotEmpty) {
+      // ─── مسجل دخول ───
+      _navigateLoggedInUser();
 
-      // ✅ استخدام NotificationHelper بدل go()
+      // ✅ handle pending notification
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.delayed(const Duration(milliseconds: 300), () {
           if (pendingNotificationMessage != null) {
@@ -92,12 +74,9 @@ class _SplashScreenState extends State<SplashScreen>
           }
         });
       });
-    } else {
-      navigatorKey.currentState?.pushReplacementNamed(
-        AppRouter.kRegisrationView,
-      );
-    }
-  }
+
+      // ✅ handle cold start deep link
+      if (coldUri != null) {
         Future.delayed(const Duration(milliseconds: 1000), () {
           consumePendingDeepLink();
         });
@@ -120,11 +99,31 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
+  void _navigateLoggedInUser() {
+    if (!mounted) return;
+
+    if (selectedUserType == UserTypeEnum.asConsultant) {
+      if (kCurrentUserData?.compeletedData == true) {
+        context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
+      } else {
+        context.pushReplacementNamed(AppRouter.kRegisrationView);
+      }
+    } else if (selectedUserType == UserTypeEnum.user) {
+      kCurrentUserData?.isNew == false
+          ? context.pushReplacementNamed(AppRouter.kUserLayoutView)
+          : context.pushReplacementNamed(AppRouter.kRegisrationView);
+    } else {
+      // fallback لو selectedUserType مش محدد
+      navigatorKey.currentState?.pushReplacementNamed(
+        AppRouter.kRegisrationView,
+      );
+    }
+  }
+
   void _handleDeepLinkAfterLogin(Uri uri) {
     final personId = _extractPersonId(uri);
     if (personId == null) return;
 
-    // ✅ delay أكبر عشان الـ destination screen يتبني خالص
     Future.delayed(const Duration(milliseconds: 1000), () {
       if (!mounted) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {

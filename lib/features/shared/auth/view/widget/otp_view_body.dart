@@ -19,7 +19,7 @@ class _OtpViewBodyState extends State<OtpViewBody> {
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
       listenWhen: (previous, current) =>
-          previous.verifyOtpState != current.verifyOtpState ||
+      previous.verifyOtpState != current.verifyOtpState ||
           previous.resendCodeState != current.resendCodeState,
 
       listener: (context, state) {
