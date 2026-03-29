@@ -401,29 +401,31 @@ class _ConnectivityNetworkImageState extends State<_ConnectivityNetworkImage> {
         memCacheWidth: _memCacheWidth,
         memCacheHeight: _memCacheHeight,
         imageUrl: widget.imageUrl,
-        fit: widget.fit,
+        fit: widget.fit, // ✅ use widget.fit, not hardcoded cover
         height: widget.height,
         width: widget.width,
-        // لو فيه blur الـ color هيتطبق جوا الـ imageBuilder
         color: widget.blur != null ? null : widget.color,
+        colorBlendMode: BlendMode.srcIn, // ✅ required when color is set
         fadeOutDuration: Duration.zero,
         fadeInDuration: Duration.zero,
         placeholderFadeInDuration: Duration.zero,
-        useOldImageOnUrlChange: true,
+        useOldImageOnUrlChange:
+            false, // ✅ disable — conflicts with _localPreviousUrl
 
-        // ⭐ لو فيه URL قديم، نعرضه كـ placeholder بدل الـ shimmer
         placeholder: (_, __) {
           final prev = _localPreviousUrl;
           if (prev != null && prev.isNotEmpty) {
             return CachedNetworkImage(
               imageUrl: prev,
-              fit: widget.fit,
+              fit: widget.fit, // ✅ consistent fit
               height: widget.height,
               width: widget.width,
               memCacheWidth: _memCacheWidth,
               memCacheHeight: _memCacheHeight,
               fadeInDuration: Duration.zero,
               fadeOutDuration: Duration.zero,
+              color: widget.color, // ✅ apply color to old image too
+              colorBlendMode: BlendMode.srcIn,
               errorWidget: (_, __, ___) => _buildPlaceholder(),
             );
           }

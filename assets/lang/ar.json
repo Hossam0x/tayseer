@@ -1694,5 +1694,7 @@
   "earnings": "الأرباح",
   "earnings_log": "سجل الأرباح",
   "withdraw_request": "طلب سحب",
-  "deposit": "إيداع"
+  "deposit": "إيداع",
+  "seen_all_recommendations": "لقد رأيت جميع التوصيات",
+  "try_expanding_filter": "حاول توسيع الفلتر لرؤية المزيد من الأشخاص"
 }

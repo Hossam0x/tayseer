@@ -63,7 +63,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   @override
   void didUpdateWidget(MarriageProfileEditView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // ✅ لو الـ scrollToSection اتغير، اعمل scroll
     if (widget.scrollToSection != null &&
         widget.scrollToSection != oldWidget.scrollToSection) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -129,7 +128,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     if (value.isEmpty || value == 'اختر' || value == 'select') {
       return context.tr('select');
     }
-
     final translated = context.tr(value);
     if (translated == value && !value.contains(' ')) return value;
     return translated;
@@ -241,25 +239,19 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ✅ Header مقسم لسطرين
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ✅ Header: عدد الصور وزر إعادة الترتيب في سطر واحد
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                // crossAxisAlignment: Center, // لضمان توسيط العناصر عمودياً بالنسبة لبعضها
                 children: [
-                  // استخدم Expanded أو Flexible لضمان عدم حدوث Overflow إذا كان النص طويلاً
                   Expanded(
                     child: Text(
                       '${context.tr('images_count')} ( $totalCount )',
                       style: Styles.textStyle18Meduim,
-                      overflow:
-                          TextOverflow.ellipsis, // لقص النص إذا زاد عن المساحة
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-
                   if (canDrag)
                     GestureDetector(
                       onTap: () => setState(() => _isDragMode = !_isDragMode),
@@ -267,7 +259,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                         duration: const Duration(milliseconds: 200),
                         padding: EdgeInsets.symmetric(
                           horizontal: 10.w,
-                          vertical: 6.h, // زيادة بسيطة في الارتفاع لتسهيل الضغط
+                          vertical: 6.h,
                         ),
                         decoration: BoxDecoration(
                           color: _isDragMode
@@ -311,14 +303,12 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                     ),
                 ],
               ),
-              // ✅ Badge في سطر منفصل
               if (pendingSingle != null || pendingImgs.isNotEmpty) ...[
                 Gap(6.h),
                 _buildPendingBadge(context, context.tr('images_pending_save')),
               ],
             ],
           ),
-
           if (_isDragMode) ...[
             Gap(8.h),
             Container(
@@ -346,9 +336,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
               ),
             ),
           ],
-
           Gap(12.h),
-
           _isDragMode
               ? _buildDragGrid(
                   context,
@@ -378,7 +366,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ✅ NORMAL GRID — with FullScreenImageView on tap
+  // ✅ NORMAL GRID
   // ════════════════════════════════════════════════════════════════
   Widget _buildNormalGrid(
     BuildContext context,
@@ -405,10 +393,8 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         ),
         itemCount: 6,
         itemBuilder: (context, index) {
-          // ── SLOT 0: Main Image ──
           if (index == 0) {
             return GestureDetector(
-              // ✅ tap = open fullscreen (only if image exists)
               onTap: hasSingleToShow && displaySingleUrl != null
                   ? () =>
                         _openFullScreen(context, displaySingleUrl, 'main_image')
@@ -419,7 +405,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                 imageUrl: displaySingleUrl,
                 localFile: pendingSingle,
                 isMain: true,
-                onTap: null, // handled by GestureDetector above
+                onTap: null,
                 onRemove: hasSingleToShow
                     ? () => _removeSingleImage(context, cubit)
                     : null,
@@ -427,7 +413,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             );
           }
 
-          // ── SLOT 5: Guidelines ──
           if (index == 5) {
             return GestureDetector(
               onTap: () => ImageGuidelinesBottomSheet.show(
@@ -457,7 +442,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             );
           }
 
-          // ── SLOTS 1-4: Secondary Images ──
           final listIndex = index - 1;
           if (listIndex < secondaryImages.length) {
             final isLocal = listIndex >= filteredServerImages.length;
@@ -466,7 +450,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             final heroTag = 'secondary_image_$listIndex';
 
             return GestureDetector(
-              // ✅ tap = open fullscreen (only server images, not local pending)
               onTap: !isLocal && imageUrl != null
                   ? () => _openFullScreen(context, imageUrl, heroTag)
                   : null,
@@ -476,7 +459,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                     ? widget.state.pendingImages[pendingIndex]
                     : null,
                 isMain: false,
-                onTap: null, // handled by GestureDetector above
+                onTap: null,
                 onRemove: () {
                   if (isLocal) {
                     cubit.removePendingImage(pendingIndex);
@@ -493,7 +476,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             );
           }
 
-          // ── Empty slot ──
           return ImageSlotCard(
             imageUrl: null,
             isMain: false,
@@ -508,7 +490,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ✅ DRAG GRID — main image FIXED (non-draggable), secondary draggable
+  // ✅ DRAG GRID
   // ════════════════════════════════════════════════════════════════
   Widget _buildDragGrid(
     BuildContext context,
@@ -525,10 +507,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     final cellWidth = (screenWidth - 24) / 3;
     final cellHeight = cellWidth / 0.7;
 
-    // ✅ Fixed Main Image
     Widget mainFixed = SizedBox(
       width: cellWidth,
-      height: cellHeight, // spans 2 rows height + gap
+      height: cellHeight,
       child: ImageSlotCard(
         imageUrl: displaySingleUrl,
         localFile: pendingSingle,
@@ -538,31 +519,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       ),
     );
 
-    // ✅ Drag hint banner
-    Widget dragHint = Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-      decoration: BoxDecoration(
-        color: AppColors.primary50.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(8.r),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.touch_app_outlined,
-            size: 14.w,
-            color: AppColors.primary400,
-          ),
-          Gap(6.w),
-          Text(
-            context.tr('long_press_to_drag'),
-            style: TextStyle(fontSize: 14.sp, color: AppColors.primary400),
-          ),
-        ],
-      ),
-    );
-
-    // ✅ Build each secondary slot
     Widget secSlot(int listIndex) {
       if (listIndex >= secondaryImages.length) {
         return Container(
@@ -622,15 +578,10 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── LEFT: Main image FIXED (spans full height) ──
           mainFixed,
-
           SizedBox(width: 12.w),
-
-          // ── RIGHT: ReorderableGridView للـ 4 صور الثانوية ──
           Expanded(
             child: SizedBox(
-              // height = 2 rows + 1 gap
               height: cellHeight * 2 + 12,
               child: ReorderableGridView.count(
                 crossAxisCount: 2,
@@ -641,21 +592,15 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                 physics: const NeverScrollableScrollPhysics(),
                 onReorder: (oldIdx, newIdx) {
                   if (oldIdx == newIdx) return;
-
-                  // ✅ Reorder locally in the list
                   final updatedImages = List<String>.from(secondaryImages);
                   if (newIdx >= updatedImages.length) return;
-
                   final item = updatedImages.removeAt(oldIdx);
                   updatedImages.insert(newIdx, item);
-
                   cubit.reorderSecondaryImages(
                     updatedImages,
                     filteredServerImages,
                   );
-
                   setState(() {});
-
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       CustomSnackBar(
@@ -942,7 +887,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
 
   Future<void> _pickVideoFromCamera(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
-    final tr = context.tr; // أو احفظ الـ strings مباشرة
+    final tr = context.tr;
     try {
       if (Platform.isAndroid) {
         final s = await Permission.camera.request();
@@ -990,7 +935,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   Future<void> _pickVideoFromGallery(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
     final tr = context.tr;
-
     try {
       if (Platform.isAndroid) {
         final info = await DeviceInfoPlugin().androidInfo;
@@ -1145,7 +1089,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
 
   Future<void> _pickAudio(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
-    final tr = context.tr; // أو احفظ الـ strings مباشرة
+    final tr = context.tr;
     try {
       if (Platform.isAndroid) {
         final info = await DeviceInfoPlugin().androidInfo;
@@ -1336,6 +1280,8 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   // ════════════════════════════════════════════════════════════════
   // INFO SECTIONS
   // ════════════════════════════════════════════════════════════════
+
+  // ✅ FIX 2: حذف سكشن "هل تأكل الحلال" من هنا
   Widget _buildPersonalInfoSection(
     BuildContext context,
     MarriageProfileCubit cubit,
@@ -1446,16 +1392,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
               profile.aboutMe?.drinkAlcohol,
             ),
           ),
-          _buildInfoRow(
-            context.tr('eat_halal_only'),
-            _translateValue(profile.aboutMe?.eatHalalOnly ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'eatHalalOnly',
-              profile.aboutMe?.eatHalalOnly,
-            ),
-          ),
+          // ✅ تم حذف سكشن "هل تأكل الحلال" (eatHalalOnly) من هنا
         ],
       ),
     );
@@ -1524,14 +1461,26 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
+  // ✅ FIX 1: إخفاء سكشن الأطفال للأعزب/الأنسة
   Widget _buildFamilyAndPreferencesSection(
     BuildContext context,
     MarriageProfileCubit cubit,
     MarriageUserProfileModel profile,
   ) {
     final hasChildren = profile.family?.hasChildren ?? '';
+    final socialStatus = profile.aboutMe?.socialStatus ?? '';
+
+    // ✅ إذا كان أعزب أو آنسة، يُخفى سكشن الأطفال كاملاً
+    final isSingle =
+        socialStatus == 'social_single' || socialStatus == 'F_social_single';
+    final showChildrenSection = !isSingle;
+
     final showChildrenDetails =
-        hasChildren.isNotEmpty && hasChildren != 'no' && hasChildren != 'لا';
+        showChildrenSection &&
+        hasChildren.isNotEmpty &&
+        hasChildren != 'no' &&
+        hasChildren != 'لا';
+
     return Container(
       padding: EdgeInsets.all(10.w),
       decoration: BoxDecoration(
@@ -1554,40 +1503,43 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
               profile.aboutMe?.socialStatus,
             ),
           ),
-          _buildInfoRow(
-            context.tr('has_childrens'),
-            _translateValue(profile.family?.hasChildren ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'hasChildren',
-              profile.family?.hasChildren,
-            ),
-          ),
-          if (showChildrenDetails) ...[
+          // ✅ إظهار سكشن الأطفال فقط لغير الأعزب/الأنسة
+          if (showChildrenSection) ...[
             _buildInfoRow(
-              context.tr('children_count'),
-              _translateValue(profile.family?.childrenNumber ?? '', context),
+              context.tr('has_childrens'),
+              _translateValue(profile.family?.hasChildren ?? '', context),
               () => _navigateToFieldSelection(
                 context,
                 cubit,
-                'childrenNumber',
-                profile.family?.childrenNumber,
+                'hasChildren',
+                profile.family?.hasChildren,
               ),
             ),
-            _buildInfoRow(
-              context.tr('children_live_with_you'),
-              _translateValue(
-                profile.family?.childrenLivingStatus ?? '',
-                context,
+            if (showChildrenDetails) ...[
+              _buildInfoRow(
+                context.tr('children_count'),
+                _translateValue(profile.family?.childrenNumber ?? '', context),
+                () => _navigateToFieldSelection(
+                  context,
+                  cubit,
+                  'childrenNumber',
+                  profile.family?.childrenNumber,
+                ),
               ),
-              () => _navigateToFieldSelection(
-                context,
-                cubit,
-                'childrenLiveWithYou',
-                profile.family?.childrenLivingStatus,
+              _buildInfoRow(
+                context.tr('children_live_with_you'),
+                _translateValue(
+                  profile.family?.childrenLivingStatus ?? '',
+                  context,
+                ),
+                () => _navigateToFieldSelection(
+                  context,
+                  cubit,
+                  'childrenLiveWithYou',
+                  profile.family?.childrenLivingStatus,
+                ),
               ),
-            ),
+            ],
           ],
         ],
       ),
@@ -1726,7 +1678,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             CustomSnackBar(
               context,
               text: context.tr('changes_saved_successfully'),
-              isSuccess: true, // ← isSuccess مش isError
+              isSuccess: true,
             ),
           );
           widget.onTabChanged?.call(1);

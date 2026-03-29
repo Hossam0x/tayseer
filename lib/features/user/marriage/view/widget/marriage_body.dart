@@ -90,23 +90,24 @@ class MarriageBodyState extends State<MarriageBody>
       });
     }
 
-    // ✅ consultant blocked dialog — same as logout
-    if (widget.personId != null &&
-        selectedUserType == UserTypeEnum.asConsultant) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _showConsultantBlockedDialog();
-      });
-      return;
-    }
-
     final cubit = context.read<MarriageCubit>();
+
+    // ✅ دايماً fetch البيانات بغض النظر عن الـ userType
     cubit.fetchMarriageProfile(
       seedFavoriteId: (cubit.seedPersonId != null && cubit.seedIsFavorite)
           ? cubit.seedPersonId
           : null,
     );
     cubit.initAnimation(this);
+
+    // ✅ لو مستشار، بس اعرض الـ dialog من غير ما توقف الـ fetch
+    if (widget.personId != null &&
+        selectedUserType == UserTypeEnum.asConsultant) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _showConsultantBlockedDialog();
+      });
+    }
   }
 
   void _showConsultantBlockedDialog() {
@@ -169,7 +170,6 @@ class MarriageBodyState extends State<MarriageBody>
     });
   }
 
-  // ✅ faith comes as a separate field from the API (not inside hobbies)
   List<Map<String, dynamic>> _buildFaithItems(Answers? answers) {
     final faithValue = answers?.faith;
     if (faithValue == null || faithValue.trim().isEmpty) return [];
@@ -284,7 +284,6 @@ class MarriageBodyState extends State<MarriageBody>
     );
   }
 
-  // ✅ NEW HELPER: check if current profile is still loading partial data
   bool _isCurrentProfilePartial(MarriageState state, List<UserItem> users) {
     if (users.isEmpty) return false;
     final idx = state.currentIndex.clamp(0, users.length - 1);
@@ -373,12 +372,10 @@ class MarriageBodyState extends State<MarriageBody>
       },
 
       builder: (context, state) {
-        // ✅ GUARD 1: explicit loading state → shimmer
         if (state.marriageProfileState == CubitStates.loading) {
           return _buildShimmerScreen();
         }
 
-        // ✅ GUARD 2: failure state → error screen
         if (state.marriageProfileState == CubitStates.failure) {
           return _buildWithAppBar(
             child: Center(
@@ -392,8 +389,6 @@ class MarriageBodyState extends State<MarriageBody>
 
         final List<UserItem> allUsers = state.allUsers;
 
-        // ✅ GUARD 3: first visible user is still partial → keep shimmer
-        // This catches the case where state flipped to success prematurely
         if (_isCurrentProfilePartial(state, allUsers)) {
           return _buildShimmerScreen();
         }
@@ -404,7 +399,6 @@ class MarriageBodyState extends State<MarriageBody>
                     .where((p) => p.user?.id == widget.personId)
                     .toList();
 
-                // ✅ FIX: if the filtered user is partial, show shimmer
                 if (filtered.isNotEmpty && filtered.first.isPartialData) {
                   return <UserItem>[];
                 }
@@ -421,7 +415,6 @@ class MarriageBodyState extends State<MarriageBody>
               }()
             : allUsers;
 
-        // ✅ GUARD 4: personId provided but user is still partial → shimmer
         if (widget.personId != null) {
           final targetUser = allUsers
               .where((u) => u.user?.id == widget.personId)
@@ -537,7 +530,12 @@ class MarriageBodyState extends State<MarriageBody>
   // EMPTY STATE
   // ═══════════════════════════════════════════════════════════════
   Widget _buildEmptyMarriage(MarriageCubit cubit) {
-    final hasActiveFilters = cubit.state.activeFilters.isNotEmpty;
+    final filters = cubit.state.activeFilters;
+
+    // ✅ فلتر حقيقي = أي حاجة غير minAge/maxAge
+    final hasActiveFilters =
+        filters.isNotEmpty &&
+        filters.keys.any((key) => key != 'minAge' && key != 'maxAge');
 
     return RefreshIndicator.adaptive(
       onRefresh: () => cubit.refreshProfile(),
@@ -726,9 +724,6 @@ class MarriageBodyState extends State<MarriageBody>
     return result;
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // MARRIAGE TAB
-  // ═══════════════════════════════════════════════════════════════
   Widget _buildMarriageContent({
     Key? key,
     required String personId,
@@ -738,8 +733,6 @@ class MarriageBodyState extends State<MarriageBody>
   }) {
     final profile = users[profileIndex];
 
-    // ✅ SAFETY: never render a partial profile — should be caught above but
-    // this is the last line of defence
     if (profile.isPartialData) return _buildShimmerScreen();
 
     final user = profile.user;
@@ -1062,7 +1055,6 @@ class MarriageBodyState extends State<MarriageBody>
                       ),
                     ),
 
-                  // ✅ Hobbies section
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -1083,7 +1075,6 @@ class MarriageBodyState extends State<MarriageBody>
                     ),
                   ),
 
-                  // ✅ Faith section — answers.faith is a separate API field
                   if (faithItems.isNotEmpty)
                     SliverPadding(
                       padding: EdgeInsets.symmetric(
@@ -1185,7 +1176,6 @@ class MarriageBodyState extends State<MarriageBody>
               ),
             ),
 
-            // ✅ Like / Star / Dislike buttons
             AnimatedPositioned(
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOutCubic,
@@ -1301,9 +1291,6 @@ class MarriageBodyState extends State<MarriageBody>
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // INTERACTIONS TAB
-  // ═══════════════════════════════════════════════════════════════
   Widget _buildInteractionsContent({Key? key, required MarriageState state}) {
     final cubit = context.read<MarriageCubit>();
 
@@ -1389,9 +1376,6 @@ class MarriageBodyState extends State<MarriageBody>
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // EMBEDDED HISTORY
-  // ═══════════════════════════════════════════════════════════════
   Widget _buildEmbeddedHistory(MarriageState state) {
     final cubit = context.read<MarriageCubit>();
 
@@ -1426,9 +1410,6 @@ class MarriageBodyState extends State<MarriageBody>
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // CIRCLE BUTTON
-  // ═══════════════════════════════════════════════════════════════
   Widget buildCircleButton(
     IconData icon,
     Color iconColor,
