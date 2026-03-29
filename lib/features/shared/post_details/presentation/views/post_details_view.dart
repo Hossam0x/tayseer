@@ -125,12 +125,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
           arguments: {'query': clean, 'tab': 'posts'},
         );
       },
-      onEdit: (post) {
-        navigatorKey.currentContext?.pushNamed(
-          AppRouter.kAddPostView,
-          arguments: {"post": post, "isEdit": true},
-        );
-      },
+      onEdit: (post) => homeCubit.updateEditedPost(post),
       onReport: (pId) {
         navigatorKey.currentContext?.pushNamed(
           AppRouter.kReportsView,

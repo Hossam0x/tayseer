@@ -451,10 +451,7 @@ class _PostItemState extends State<_PostItem>
   }
 
   void _editPost(PostModel post) {
-    context.pushNamed(
-      AppRouter.kAddPostView,
-      arguments: {"post": post, "isEdit": true},
-    );
+    widget.homeCubit.updateEditedPost(post);
   }
 
   void _archivePost(String postId) {

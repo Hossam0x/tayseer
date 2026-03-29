@@ -378,7 +378,10 @@ class ReelsOverlay extends StatelessWidget {
                   videoUrl: post.videoUrl ?? '',
                 );
               },
-              // onEdit: onEditTapped,
+              onEdit: (updatedPost) {
+                context.read<ReelsCubit>().updateEditedReel(updatedPost);
+                getIt<HomeCubit>().updateEditedPost(updatedPost);
+              },
               // onArchive: onArchiveTapped,
               // onDelete: onDeleteTapped,
             );
