@@ -4,6 +4,7 @@ import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/cache/chat_cache_service.dart';
 import 'package:tayseer/core/utils/hive_service.dart';
+import 'package:tayseer/features/advisor/notification/data/repo/NotificationRepo.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_remote_datasource.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository.dart';
@@ -100,6 +101,7 @@ import 'package:tayseer/features/user/user_profile/views/cubit/email/email_edit_
 import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/phone/phone_edit_cubit.dart';
 
+import '../../features/advisor/notification/presentation/manager/notification_cubit.dart';
 import '../../my_import.dart';
 
 final getIt = GetIt.instance;
@@ -523,6 +525,13 @@ Future<void> setupGetIt() async {
       otpSource: params.otpSource,
     ),
   );
+
+  getIt.registerLazySingleton<NotificationRepo>(
+        () => NotificationRepo(apiService: getIt<ApiService>()),
+  );
+  getIt.registerFactory<NotificationCubit>(
+        () => NotificationCubit(notificationRepo: getIt<NotificationRepo>()),
+  );
 }
 
 class OtpCubitParams {
@@ -537,4 +546,5 @@ class OtpCubitParams {
     required this.isEmailUpdate,
     required this.otpSource,
   });
+
 }

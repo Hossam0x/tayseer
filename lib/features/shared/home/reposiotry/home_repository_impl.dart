@@ -596,4 +596,26 @@ class HomeRepositoryImpl implements HomeRepository {
       return Left(ServerFailure.fromDioError(e));
     }
   }
+
+  @override
+  Future<Either<Failure, PostModel>> fetchPostById({
+    required String postId,
+  }) async {
+    try {
+      final response = await apiService.get(endPoint: '/posts/get/$postId');
+
+      // ✅ Handle null or missing data
+      if (response == null || response['data'] == null) {
+        return Left(ServerFailure(response?['message'] ?? 'فشل تحميل المنشور'));
+      }
+
+      final postData = response['data'] as Map<String, dynamic>;
+      final post = PostModel.fromJson(postData);
+      return Right(post);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
+    }
+  }
 }

@@ -11,12 +11,15 @@ import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_state.dart';
+import 'package:tayseer/main.dart';
 import 'dart:convert';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
 
 class UserProfileCubit extends Cubit<UserProfileState> {
-  final LocalNotification _notificationService = LocalNotification();
+  final LocalNotification _notificationService = LocalNotification(
+    navigatorKey: navigatorKey,
+  );
   final UserProfileRepository _userProfileRepository;
   late StreamSubscription<ProfileUpdateEvent> _profileSubscription;
 
@@ -747,7 +750,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     try {
       final messaging = FirebaseMessaging.instance;
       await messaging.unsubscribeFromTopic("all");
-      await _notificationService.clearAllNotifications();
+       await _notificationService.clearAllNotifications();
 
       if (Platform.isIOS) {
         await messaging.setForegroundNotificationPresentationOptions(
@@ -803,21 +806,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     final currentState = state;
 
     try {
-      await _notificationService.clearAllNotifications();
-
-      // مسح صورة البروفايل من كاش الصور قبل الـ logout
-      final profileImage = CachNetwork.getStringData(key: kMyProfileImage);
-      if (profileImage.isNotEmpty) {
-        try {
-          CachedNetworkImage.evictFromCache(profileImage);
-        } catch (_) {}
-      }
-
-      // مسح كاش البروفايل المحلي
-      await CachNetwork.removeData(key: kUserProfileCache);
-      await CachNetwork.removeData(key: kMyProfileImage);
-      await CachNetwork.removeData(key: kMyProfileName);
-
+       await _notificationService.clearAllNotifications();
       _userProfileRepository.logout();
 
       await CachNetwork.clearCache();

@@ -101,4 +101,8 @@ abstract class HomeRepository {
     required String advisorId,
     required bool isAdding,
   });
+
+  Future<Either<Failure, PostModel>> fetchPostById({
+    required String postId,
+  });
 }

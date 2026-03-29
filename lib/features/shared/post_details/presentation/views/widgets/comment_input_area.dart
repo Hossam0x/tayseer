@@ -234,7 +234,7 @@ class _CommentInputAreaBodyState extends State<_CommentInputAreaBody> {
             if (state.addingCommentState == CubitStates.failure) {
               AppToast.error(
                 context,
-                state.errorMessage ?? "حدث خطأ أثناء إضافة التعليق",
+                state.errorMessage ?? context.tr(AppStrings.errorAddingComment),
               );
             }
           },

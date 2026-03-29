@@ -60,7 +60,7 @@ class AuthRepoImpl implements AuthRepo {
       final platform = Platform.isAndroid ? 'android' : 'ios';
 
       debugPrint('deviceId::$deviceId');
-
+  debugPrint('getFcmToken::$fcmToken');
       final response = await apiService.post(
         endPoint: selectedUserType == UserTypeEnum.asConsultant
             ? '/advisor/login'

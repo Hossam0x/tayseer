@@ -2,6 +2,7 @@
 
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/models/comment_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -29,6 +30,46 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   void changeAnonymous(bool value) {
     if (state.isAnonymousLocked) return;
     emit(state.copyWith(selectedAnonymous: value));
+  }
+
+  /// ✅ Lock anonymous state after first comment (called from _notifyCommented)
+  void lockAnonymousState(bool isAnonymous) {
+    emit(
+      state.copyWith(isAnonymousLocked: true, selectedAnonymous: isAnonymous),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📌 LOAD POST FROM API (from Notification)
+  // ═══════════════════════════════════════════════════════════
+  Future<void> loadPostFromAPI(String postIdFromNotification) async {
+    emit(state.copyWith(postLoadingState: CubitStates.loading));
+
+    final result = await homeRepository.fetchPostById(
+      postId: postIdFromNotification,
+    );
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          postLoadingState: CubitStates.failure,
+          postLoadingError: failure.message,
+        ),
+      ),
+      (post) {
+        // Load comments after successfully fetching the post
+        loadComments();
+        emit(
+          state.copyWith(
+            postLoadingState: CubitStates.success,
+            loadedPost: post,
+            // ✅ تحديث حالة الـ anonymous من البوست المحمل
+            isAnonymousLocked: post.isCommented,
+            selectedAnonymous: post.isAnonymous ?? false,
+          ),
+        );
+      },
+    );
   }
 
   // ═══════════════════════════════════════════════════════════

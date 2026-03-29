@@ -63,6 +63,7 @@ import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
 import 'package:tayseer/features/shared/followers/user_followings_view.dart';
 import 'package:tayseer/features/shared/packages/presentation/views/packages_view.dart';
+import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_cubit.dart';
 import 'package:tayseer/features/shared/reports/presentation/view/report_details_view.dart';
 import 'package:tayseer/features/shared/reports/presentation/view/reports_view.dart';
@@ -130,6 +131,7 @@ abstract class AppRouter {
   static const kOtpView = '/OtpView';
   static const kUserLayoutView = '/UserLayoutView';
   static const kPurposeSelectionView = '/PurposeSelectionView';
+static const kPostDetailsView = '/PostDetailsView';
   static const kChooseGenderView = '/ChooseGenderView';
   static const kNationalityView = '/NationalityView';
   static const kCountryView = '/CountryView';
@@ -258,6 +260,16 @@ abstract class AppRouter {
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case kPostDetailsView:
+final args = settings.arguments as Map<String, dynamic>;
+return MaterialPageRoute(
+  settings: settings,
+  builder: (_) => PostDetailsView(
+  postId_fromNotifc:args["postID"] as String?,
+    isFromProfile:  false,
+   
+  ),
+);
       case kSettingsView:
         return SlideLeftRoute(
           page: const SettingsView(),
