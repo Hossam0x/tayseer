@@ -5,6 +5,7 @@ abstract class WalletRemoteDataSource {
   Future<Map<String, dynamic>> getWallet();
   Future<Map<String, dynamic>> getTransactions({int page = 1, int limit = 20});
   Future<Map<String, dynamic>> getEarnings({int page = 1, int limit = 20});
+  Future<Map<String, dynamic>> getBalancePackages();
 }
 
 class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
@@ -37,5 +38,10 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
       endPoint: ApiEndPoint.walletEarnings,
       query: {'page': page, 'limit': limit},
     );
+  }
+
+  @override
+  Future<Map<String, dynamic>> getBalancePackages() async {
+    return await _apiService.get(endPoint: ApiEndPoint.balancePackages);
   }
 }

@@ -71,6 +71,7 @@ class ApiEndPoint {
   static const String wallet = '/new-wallet/';
   static const String walletTransactions = '/new-wallet/transaction-history';
   static const String walletEarnings = '/new-wallet/advisor-earnings';
+  static const String balancePackages = '/balance-packages';
   static const String reportReasons = '/report-reasons';
   static const String sendReport = "/reports/";
 }
