@@ -64,10 +64,6 @@ class UserAdvisorProfileCubit
     return super.close();
   }
 
-  void _setupSocketListeners() {
-    // deprecated - listeners are now managed in startChat()
-  }
-
   Future<void> _initializeProfile() async {
     await Future.wait([fetchProfile(), fetchPosts()]);
   }

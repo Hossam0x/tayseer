@@ -779,7 +779,7 @@
   "new_video_selected": "تم اختيار فيديو جديد",
   "loading_new_video": "جاري تحميل الفيديو الجديد...",
   "loading_video": "جاري تحميل الفيديو...",
-  "video_deleted_click_to_add": "تم حذف الفيديو (اضغط لإضافة فيديو جديد)",
+  "video_deleted_click_to_add": "اضغط لإضافة فيديو جديد",
   "click_to_upload_intro_video": "اضغط لرفع فيديو التعريف",
   "video_size_limit_hint": "يجب أن يكون حجم الفيديو أقل من 4 MB",
   "select_specialization": "اختر التخصص",

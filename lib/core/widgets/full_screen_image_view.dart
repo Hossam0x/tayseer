@@ -183,55 +183,56 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
     final borderRadius = progress * (screenW * scale / 2);
 
     return Scaffold(
-      backgroundColor: Colors.black.withOpacity(bgOpacity),
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
+          // خلفية سوداء منفصلة عشان ما تأثرش على الـ clip
+          Positioned.fill(
+            child: Container(color: Colors.black.withOpacity(bgOpacity)),
+          ),
+
           // الصورة
-          Listener(
-            onPointerDown: (_) {
-              if (!_isZoomed) _handleDragStart();
-            },
-            onPointerMove: (e) {
-              if (!_isZoomed) _handleDragMove(e.delta.dy);
-            },
-            onPointerUp: (_) {
-              if (!_isZoomed) _handleDragEnd();
-            },
-            child: GestureDetector(
-              onDoubleTapDown: _onDoubleTapDown,
-              onDoubleTap: () {},
-              child: Transform.translate(
-                offset: Offset(0, _dragY),
-                child: Transform.scale(
-                  scale: scale,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(borderRadius),
-                    child: Container(
-                      color: Colors.black,
-                      width: double.infinity,
-                      height: double.infinity,
-                      child: Hero(
-                        tag: widget.heroTag,
-                        child: InteractiveViewer(
-                          transformationController: _transformationController,
-                          minScale: 1.0,
-                          maxScale: 4.0,
-                          panEnabled: true,
-                          scaleEnabled: true,
-                          constrained: true,
-                          boundaryMargin: EdgeInsets.zero,
-                          child: SizedBox.expand(
-                            child: widget.imageFile != null
-                                ? Image.file(
-                                    widget.imageFile!,
-                                    fit: BoxFit.contain,
-                                  )
-                                : AppImage(
-                                    widget.imageUrl,
-                                    fit: BoxFit.contain,
-                                  ),
-                          ),
-                        ),
+          GestureDetector(
+            onDoubleTapDown: _onDoubleTapDown,
+            onDoubleTap: () {},
+            child: Transform.translate(
+              offset: Offset(0, _dragY),
+              child: Transform.scale(
+                scale: scale,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(borderRadius),
+                  child: Hero(
+                    tag: widget.heroTag,
+                    child: InteractiveViewer(
+                      transformationController: _transformationController,
+                      minScale: 1.0,
+                      maxScale: 4.0,
+                      panEnabled: true,
+                      scaleEnabled: true,
+                      constrained: true,
+                      boundaryMargin: EdgeInsets.zero,
+                      onInteractionStart: (details) {
+                        // لو إصبع واحد بس وما فيش zoom → ابدأ drag
+                        if (details.pointerCount == 1 && !_isZoomed) {
+                          _handleDragStart();
+                        }
+                      },
+                      onInteractionUpdate: (details) {
+                        // لو إصبع واحد بس وما فيش zoom → حرك drag
+                        if (details.pointerCount == 1 && !_isZoomed) {
+                          _handleDragMove(details.focalPointDelta.dy);
+                        }
+                      },
+                      onInteractionEnd: (details) {
+                        // لو كان في drag نشط → اتحقق من الـ threshold
+                        if (!_isZoomed && _dragY != 0) {
+                          _handleDragEnd();
+                        }
+                      },
+                      child: SizedBox.expand(
+                        child: widget.imageFile != null
+                            ? Image.file(widget.imageFile!, fit: BoxFit.contain)
+                            : AppImage(widget.imageUrl, fit: BoxFit.contain),
                       ),
                     ),
                   ),
