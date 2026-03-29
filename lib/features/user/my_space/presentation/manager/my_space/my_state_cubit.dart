@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:tayseer/core/cache/chat_cache_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/user/my_space/data/model/advisor_chat_model.dart';
 import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
@@ -7,6 +8,7 @@ import 'package:tayseer/my_import.dart';
 
 class MySpaceCubit extends Cubit<MySpaceState> {
   final MySpaceRepo mySpaceRepo;
+  final ChatCacheService _cacheService = getIt<ChatCacheService>();
   final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
 
   late final String _listenerId;
@@ -32,13 +34,51 @@ class MySpaceCubit extends Cubit<MySpaceState> {
   }
 
   Future<void> getAdvisorChat() async {
-    _safeEmit(state.copyWith(advisorChatState: CubitStates.loading));
+    final userId = kCurrentUserData?.id;
+    if (userId == null) {
+      _safeEmit(
+        state.copyWith(
+          advisorChatState: CubitStates.failure,
+          errorMessage: 'User not logged in',
+        ),
+      );
+      return;
+    }
+
+    // 1. عرض الكاش فوراً لو موجود
+    final cachedRooms = _cacheService.getCachedUserChatRooms(userId: userId);
+    if (cachedRooms != null && cachedRooms.isNotEmpty) {
+      // تحويل الكاش لـ AdvisorChatModel
+      final cachedModel = AdvisorChatModel(
+        success: true,
+        message: 'Cached data',
+        data: AdvisorChatData(
+          chatRooms: cachedRooms,
+          pagination: PaginationModel(
+            totalCount: cachedRooms.length,
+            totalPages: 1,
+            currentPage: 1,
+            pageSize: cachedRooms.length,
+          ),
+        ),
+      );
+      
+      _safeEmit(
+        state.copyWith(
+          advisorChatState: CubitStates.success,
+          advisorChatModel: cachedModel,
+        ),
+      );
+    } else {
+      _safeEmit(state.copyWith(advisorChatState: CubitStates.loading));
+    }
 
     CubitStates.printState(
       stateName: "MySpaceCubit - getAdvisorChat",
       state: CubitStates.loading,
     );
 
+    // 2. جلب من السيرفر وتحديث
     final result = await mySpaceRepo.getadvisorchat();
 
     result.fold(
@@ -48,14 +88,17 @@ class MySpaceCubit extends Cubit<MySpaceState> {
           state: CubitStates.failure,
         );
 
-        _safeEmit(
-          state.copyWith(
-            advisorChatState: CubitStates.failure,
-            errorMessage: failure.message,
-          ),
-        );
+        // لو فشل وما عندناش كاش، نعرض error
+        if (cachedRooms == null || cachedRooms.isEmpty) {
+          _safeEmit(
+            state.copyWith(
+              advisorChatState: CubitStates.failure,
+              errorMessage: failure.message,
+            ),
+          );
+        }
       },
-      (advisorChatModel) {
+      (advisorChatModel) async {
         CubitStates.printState(
           stateName: "MySpaceCubit - getAdvisorChat",
           state: CubitStates.success,
@@ -66,6 +109,12 @@ class MySpaceCubit extends Cubit<MySpaceState> {
             advisorChatState: CubitStates.success,
             advisorChatModel: advisorChatModel,
           ),
+        );
+
+        // 3. حفظ في الكاش
+        await _cacheService.saveUserChatRooms(
+          userId: userId,
+          chatRooms: advisorChatModel.data.chatRooms,
         );
       },
     );

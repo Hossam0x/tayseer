@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:dartz/dartz.dart';
+import 'package:tayseer/core/cache/chat_cache_service.dart';
 import 'package:tayseer/core/enum/message_status_enum.dart';
 import 'package:tayseer/core/services/socket_events/chat_socket_events.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
@@ -15,6 +16,7 @@ import 'package:uuid/uuid.dart';
 
 class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   final ChatRepoSimple _repo;
+  final ChatCacheService _cacheService = getIt<ChatCacheService>();
   final tayseerSocketHelper _socketHelper = getIt.get<tayseerSocketHelper>();
 
   String? _currentChatRoomId;
@@ -44,8 +46,22 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     _currentChatRoomId = chatRoomId;
     _currentReceiverId = receiverId;
 
-    emit(const ChatMessagesState.loading());
+    // 1. عرض الكاش فوراً لو موجود
+    final cachedMessages = _cacheService.getCachedMessages(chatRoomId: chatRoomId);
+    if (cachedMessages != null && cachedMessages.isNotEmpty) {
+      _isBlocked = _checkBlockStatusFromMessages(cachedMessages);
+      emit(
+        ChatMessagesState.loaded(
+          messages: cachedMessages,
+          hasMoreMessages: false,
+          isBlocked: _isBlocked,
+        ),
+      );
+    } else {
+      emit(const ChatMessagesState.loading());
+    }
 
+    // 2. جلب من السيرفر وتحديث
     try {
       final messages = await _repo.loadMessages(chatRoomId);
 
@@ -61,6 +77,12 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
 
       setupSocketListeners();
 
+      // 3. حفظ في الكاش
+      await _cacheService.saveMessages(
+        chatRoomId: chatRoomId,
+        messages: messages,
+      );
+
       // Join the chat room via socket so the server starts delivering events.
       if (isSystemChat) {
         // في حالة System Chat نرسل system: true
@@ -71,7 +93,10 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       }
     } catch (e) {
       log('❌ Error loading messages: $e');
-      emit(ChatMessagesState.failure(message: e.toString()));
+      // لو فشل وما عندناش كاش، نعرض error
+      if (cachedMessages == null || cachedMessages.isEmpty) {
+        emit(ChatMessagesState.failure(message: e.toString()));
+      }
     }
   }
 
@@ -434,6 +459,8 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
             typingInfo: _typingInfo,
           ),
         );
+        // تحديث الكاش
+        _updateCache(updatedMessages);
         return;
       }
     }
@@ -462,19 +489,24 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
             typingInfo: _typingInfo,
           ),
         );
+        // تحديث الكاش
+        _updateCache(updatedMessages);
         return;
       }
     }
 
+    final updatedMessages = [message, ...currentMessages];
     emit(
       ChatMessagesState.loaded(
-        messages: [message, ...currentMessages],
+        messages: updatedMessages,
         hasMoreMessages: false,
         isBlocked: _isBlocked,
         isUserTyping: _isUserTyping,
         typingInfo: _typingInfo,
       ),
     );
+    // تحديث الكاش
+    _updateCache(updatedMessages);
   }
 
   void _handleMessageDeleted(String messageId) {
@@ -492,6 +524,18 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         typingInfo: _typingInfo,
       ),
     );
+    // تحديث الكاش
+    _updateCache(updatedMessages);
+  }
+
+  /// تحديث الكاش بعد أي تغيير في الرسائل
+  Future<void> _updateCache(List<ChatMessage> messages) async {
+    if (_currentChatRoomId != null) {
+      await _cacheService.saveMessages(
+        chatRoomId: _currentChatRoomId!,
+        messages: messages,
+      );
+    }
   }
 
   /// Handles `typingStatus` from the other participant.

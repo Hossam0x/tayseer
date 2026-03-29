@@ -158,6 +158,28 @@ class AdvisorChatRoomModel {
       systemChatImage: systemImage,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      '_id': id,
+      'isBlocked': isBlocked,
+      'blockExists': isBlocked,
+      'isHaveSession': isHaveSession,
+      'users': users.map((u) => u.toJson()).toList(),
+      'lastMessage': lastMessage?.toJson(),
+      'lastMessageAt': lastMessageAt?.toIso8601String(),
+      'status': status,
+      'sender': sender.toJson(),
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'unreadCount': unreadCount,
+      'systemChat': isSystemChat,
+      'systemChatData': isSystemChat && systemChatImage != null
+          ? {'image': systemChatImage}
+          : null,
+    };
+  }
 }
 
 
@@ -190,6 +212,17 @@ class ChatUserModel {
       image: json['image']?.toString(),
       userType: extractString(json['userType']),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      '_id': id,
+      'userId': id,
+      'name': name,
+      'image': image,
+      'userType': userType,
+    };
   }
 }
 
@@ -249,6 +282,24 @@ class LastMessageModel {
       senderName: extractString(json['senderName']),
       timeAgo: extractString(json['timeAgo']),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      '_id': id,
+      'sender': sender,
+      'senderId': sender,
+      'senderType': senderType,
+      'content': content,
+      'messageType': messageType,
+      'contentType': messageType,
+      'chatRoom': chatRoom,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'senderName': senderName,
+      'timeAgo': timeAgo,
+    };
   }
 }
 

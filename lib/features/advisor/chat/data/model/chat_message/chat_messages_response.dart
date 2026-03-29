@@ -303,4 +303,36 @@ class ChatMessage {
       reactions: reactions ?? this.reactions,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      '_id': id,
+      'tempId': tempId,
+      'chatRoomId': chatRoomId,
+      'chatRoom': chatRoomId,
+      'senderId': senderId,
+      'sender': {
+        '_id': senderId,
+        'userId': senderId,
+        'name': senderName,
+        'avatar': senderImage,
+        'image': senderImage,
+        'userType': senderType,
+      },
+      'isMe': isMe,
+      'content': contentList,
+      'messageType': messageType,
+      'contentType': messageType,
+      'sentAt': createdAt,
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
+      'deliveredAt': deliveredAt,
+      'isRead': isRead,
+      'status': status.name,
+      'reply': reply?.toJson(),
+      'action': action.name,
+      'reactions': reactions.map((r) => r.toJson()).toList(),
+    };
+  }
 }

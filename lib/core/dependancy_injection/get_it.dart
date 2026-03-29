@@ -2,6 +2,7 @@ import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/services/connectivity_service.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
+import 'package:tayseer/core/cache/chat_cache_service.dart';
 import 'package:tayseer/core/utils/hive_service.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_remote_datasource.dart';
@@ -147,6 +148,9 @@ Future<void> setupGetIt() async {
   getIt.registerLazySingleton<CacheCleanupService>(
     () => CacheCleanupService(getIt<PostsLocalDatasource>()),
   );
+
+  /// ChatCacheService
+  getIt.registerLazySingleton<ChatCacheService>(() => ChatCacheService());
 
   /// SocketHelper
   getIt.registerLazySingleton<tayseerSocketHelper>(() => tayseerSocketHelper());

@@ -1,6 +1,4 @@
 import 'dart:ui' as ui;
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import 'package:tayseer/core/enum/message_status_enum.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/message_model.dart';
