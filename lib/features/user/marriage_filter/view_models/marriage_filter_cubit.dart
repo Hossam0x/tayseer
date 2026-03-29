@@ -10,6 +10,9 @@ class MarriageFilterCubit extends Cubit<MarriageFilterState> {
 
   final MarriageFilterRepo _repo;
 
+  static const double _defaultMinAge = 22.0;
+  static const double _defaultMaxAge = 35.0;
+
   static const Map<String, String> _keyMapping = {
     'maritalStatus': 'socialStatus',
     'religiousCommitment': 'religiousCommitment',
@@ -83,8 +86,15 @@ class MarriageFilterCubit extends Cubit<MarriageFilterState> {
   Map<String, dynamic> _prepareFiltersForBackend() {
     final Map<String, dynamic> filters = {};
 
-    filters['minAge'] = state.ageRange.start.round();
-    filters['maxAge'] = state.ageRange.end.round();
+    // ✅ بعت الـ age بس لو اتغيرت عن الـ default
+    final ageChanged =
+        state.ageRange.start != _defaultMinAge ||
+        state.ageRange.end != _defaultMaxAge;
+
+    if (ageChanged) {
+      filters['minAge'] = state.ageRange.start.round();
+      filters['maxAge'] = state.ageRange.end.round();
+    }
 
     state.selectedFilters.forEach((key, value) {
       if (value == null) return;
@@ -113,7 +123,6 @@ class MarriageFilterCubit extends Cubit<MarriageFilterState> {
         return;
       }
 
-      // ── كل الباقي يتبعت كما هو ──
       filters[apiKey] = value;
     });
 

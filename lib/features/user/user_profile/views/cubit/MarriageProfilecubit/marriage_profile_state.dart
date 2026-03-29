@@ -10,7 +10,8 @@ class MarriageProfileState extends Equatable {
   final String? successMessage;
   final bool isLoading;
   final bool isUpdating;
-final bool savedFromButton;
+  final bool savedFromButton;
+
   // ⭐ Pending Media (local files, not uploaded yet)
   final File? pendingSingleImage;
   final List<File> pendingImages;
@@ -18,9 +19,14 @@ final bool savedFromButton;
   final File? pendingAudio;
   final bool hasUnsavedFields;
 
-  // ⭐ Deleted Media (URLs to delete on save)
+  // ⭐ Deleted Media
+  // ✅ FIX: deletedSingleImageUrl - الحذف يحصل فوراً، هذا الـ field deprecated
   final String? deletedSingleImageUrl;
+
+  // ✅ FIX: deletedImageUrls - نحتفظ بالـ URLs المحذوفة
+  // عشان نفلترها من نتائج الـ reload ونمنع رجوعها في الـ UI
   final List<String> deletedImageUrls;
+
   final bool pendingDeleteVideo;
   final bool pendingDeleteAudio;
 
@@ -43,7 +49,6 @@ final bool savedFromButton;
     this.savedFromButton = false,
   });
 
-
   // ⭐ Helper getters
   bool get hasPendingSingleImage => pendingSingleImage != null;
   bool get hasPendingVideo => pendingVideo != null;
@@ -53,7 +58,6 @@ final bool savedFromButton;
       pendingImages.isNotEmpty ||
       hasPendingVideo ||
       hasPendingAudio ||
-      deletedSingleImageUrl != null ||
       deletedImageUrls.isNotEmpty ||
       pendingDeleteVideo ||
       pendingDeleteAudio;
@@ -79,6 +83,8 @@ final bool savedFromButton;
     bool clearPendingVideo = false,
     bool clearPendingAudio = false,
     bool clearAllPending = false,
+    // ✅ FIX: flag لمسح deletedSingleImageUrl فوراً بعد الحذف المباشر
+    bool clearDeletedSingleImageUrl = false,
     bool? savedFromButton,
   }) {
     return MarriageProfileState(
@@ -90,12 +96,14 @@ final bool savedFromButton;
       isLoading: isLoading ?? this.isLoading,
       isUpdating: isUpdating ?? this.isUpdating,
       hasUnsavedFields: hasUnsavedFields ?? this.hasUnsavedFields,
-      savedFromButton: savedFromButton ?? this.savedFromButton, 
+      savedFromButton: savedFromButton ?? this.savedFromButton,
+
       // ⭐ Pending Media
       pendingSingleImage: clearAllPending || clearPendingSingleImage
           ? null
           : (pendingSingleImage ?? this.pendingSingleImage),
-      pendingImages: clearAllPending ? [] : (pendingImages ?? this.pendingImages),
+      pendingImages:
+          clearAllPending ? [] : (pendingImages ?? this.pendingImages),
       pendingVideo: clearAllPending || clearPendingVideo
           ? null
           : (pendingVideo ?? this.pendingVideo),
@@ -104,16 +112,36 @@ final bool savedFromButton;
           : (pendingAudio ?? this.pendingAudio),
 
       // ⭐ Deleted Media
-      deletedSingleImageUrl: clearAllPending
-          ? null
-          : (deletedSingleImageUrl ?? this.deletedSingleImageUrl),
+      // ✅ FIX: clearAllPending أو clearDeletedSingleImageUrl يمسح الـ URL
+      deletedSingleImageUrl:
+          (clearAllPending || clearDeletedSingleImageUrl)
+              ? null
+              : (deletedSingleImageUrl ?? this.deletedSingleImageUrl),
+
+      // ✅ FIX: deletedImageUrls لا تُمسح عند clearAllPending
+      // تُمسح فقط لما نتأكد إن السيرفر حذفها فعلاً
+      // هذا يمنع رجوع الصور بعد الـ reload
       deletedImageUrls:
-          clearAllPending ? [] : (deletedImageUrls ?? this.deletedImageUrls),
-      pendingDeleteVideo:
-          clearAllPending ? false : (pendingDeleteVideo ?? this.pendingDeleteVideo),
-      pendingDeleteAudio:
-          clearAllPending ? false : (pendingDeleteAudio ?? this.pendingDeleteAudio),
+          deletedImageUrls ?? this.deletedImageUrls,
+
+      pendingDeleteVideo: clearAllPending
+          ? false
+          : (pendingDeleteVideo ?? this.pendingDeleteVideo),
+      pendingDeleteAudio: clearAllPending
+          ? false
+          : (pendingDeleteAudio ?? this.pendingDeleteAudio),
     );
+  }
+
+  // ✅ Helper: امسح URL محدد من deletedImageUrls
+  MarriageProfileState removeFromDeletedUrls(String url) {
+    final updated = List<String>.from(deletedImageUrls)..remove(url);
+    return copyWith(deletedImageUrls: updated);
+  }
+
+  // ✅ Helper: امسح كل deletedImageUrls (بعد loadProfile ناجح)
+  MarriageProfileState clearDeletedImageUrls() {
+    return copyWith(deletedImageUrls: []);
   }
 
   @override
@@ -132,6 +160,7 @@ final bool savedFromButton;
         deletedImageUrls,
         pendingDeleteVideo,
         pendingDeleteAudio,
+        hasUnsavedFields,
         savedFromButton,
       ];
 }

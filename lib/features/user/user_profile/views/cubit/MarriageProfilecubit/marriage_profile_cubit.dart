@@ -35,9 +35,10 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         );
       },
       (marriageProfile) {
-        final profileWithProgress = _calculateProgressWithMedia(
-          marriageProfile,
-        );
+        // ✅ FIX: فلتر الصور المحذوفة من نتائج السيرفر
+        // لأن السيرفر أحياناً بيرجع صور لسا مش اتحذفت بشكل كامل
+        final filteredProfile = _filterDeletedImages(marriageProfile);
+        final profileWithProgress = _calculateProgressWithMedia(filteredProfile);
 
         emit(
           state.copyWith(
@@ -48,6 +49,33 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         );
       },
     );
+  }
+
+  // ✅ FIX: فلتر الصور المحذوفة من البروفايل القادم من السيرفر
+  MarriageUserProfileModel _filterDeletedImages(
+    MarriageUserProfileModel profile,
+  ) {
+    if (state.deletedImageUrls.isEmpty) return profile;
+
+    final deletedUrls = state.deletedImageUrls;
+
+    // فلتر الـ secondary images
+    final filteredImages = (profile.userMedia?.images ?? [])
+        .where((url) => !deletedUrls.contains(url))
+        .toList();
+
+    // فلتر الـ singleImage لو اتحذفت
+    String? filteredSingleImage = profile.userMedia?.singleImage;
+    if (filteredSingleImage != null && deletedUrls.contains(filteredSingleImage)) {
+      filteredSingleImage = null;
+    }
+
+    final updatedMedia = profile.userMedia?.copyWith(
+      images: filteredImages,
+      singleImage: filteredSingleImage,
+    );
+
+    return profile.copyWith(userMedia: updatedMedia);
   }
 
   Future<void> autoSaveFields() async {
@@ -66,32 +94,34 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   // ✅ PENDING MEDIA - Single Image
   // ════════════════════════════════════════════════════════════════
   void addPendingSingleImage(File file) {
-    final existingUrl = state.profile?.userMedia?.singleImage;
     emit(
       state.copyWith(
         pendingSingleImage: file,
-        deletedSingleImageUrl: existingUrl ?? state.deletedSingleImageUrl,
+        clearDeletedSingleImageUrl: true,
       ),
     );
   }
 
-  void markDeleteSingleImage() {
+  void markDeleteSingleImage() async {
     final url = state.profile?.userMedia?.singleImage;
 
-    MarriageUserProfileModel? updatedProfile;
-    if (state.profile != null) {
-      updatedProfile = state.profile!.copyWith(
-        userMedia: state.profile!.userMedia?.copyWith(singleImage: null),
-      );
-    }
+    // ✅ حدّث الـ UI فوراً
+    final updatedProfile = state.profile!.copyWith(
+      userMedia: state.profile!.userMedia?.copyWith(singleImage: null),
+    );
 
     emit(
       state.copyWith(
-        profile: updatedProfile ?? state.profile,
-        deletedSingleImageUrl: url,
+        profile: updatedProfile,
         clearPendingSingleImage: true,
+        clearDeletedSingleImageUrl: true,
       ),
     );
+
+    // ✅ امسح من السيرفر فوراً
+    if (url != null && url.isNotEmpty && url.startsWith('http')) {
+      await _repository.deleteSingleImage(url);
+    }
   }
 
   void discardAllPending() {
@@ -103,8 +133,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   // ════════════════════════════════════════════════════════════════
   void addPendingImage(File file) {
     final serverCount =
-        (state.profile?.userMedia?.images.length ?? 0) -
-        state.deletedImageUrls.length;
+        (state.profile?.userMedia?.images.length ?? 0);
     final total = serverCount + state.pendingImages.length;
 
     if (total >= 4) {
@@ -115,26 +144,46 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     emit(state.copyWith(pendingImages: updated));
   }
 
-  void markDeleteImage(String imageUrl) {
-    final updatedDeleted = [...state.deletedImageUrls, imageUrl];
+  void markDeleteImage(String imageUrl) async {
+    if (imageUrl.isEmpty || !imageUrl.startsWith('http')) return;
 
-    if (state.profile != null) {
-      final currentImages = List<String>.from(
-        state.profile!.userMedia?.images ?? [],
-      );
-      currentImages.remove(imageUrl);
-      final updatedProfile = state.profile!.copyWith(
-        userMedia: state.profile!.userMedia?.copyWith(images: currentImages),
-      );
-      emit(
-        state.copyWith(
-          profile: updatedProfile,
-          deletedImageUrls: updatedDeleted,
-        ),
-      );
-    } else {
-      emit(state.copyWith(deletedImageUrls: updatedDeleted));
+    // ✅ امسح من الـ UI فوراً
+    final currentImages = List<String>.from(
+      state.profile?.userMedia?.images ?? [],
+    );
+    currentImages.remove(imageUrl);
+
+    final updatedProfile = state.profile!.copyWith(
+      userMedia: state.profile!.userMedia?.copyWith(images: currentImages),
+    );
+
+    // ✅ FIX: أضف الـ URL لـ deletedImageUrls عشان نفلتره بعد الـ reload
+    final updatedDeletedUrls = List<String>.from(state.deletedImageUrls);
+    if (!updatedDeletedUrls.contains(imageUrl)) {
+      updatedDeletedUrls.add(imageUrl);
     }
+
+    emit(state.copyWith(
+      profile: updatedProfile,
+      deletedImageUrls: updatedDeletedUrls,
+    ));
+
+    // ✅ امسح من السيرفر فوراً
+    final result = await _repository.deleteMarriageImage(imageUrl);
+
+    result.fold(
+      (failure) {
+        // ✅ لو فشل الحذف، شيل الـ URL من القائمة
+        debugPrint('⚠️ [DELETE_IMAGE] Failed: ${failure.message}');
+        final revertedUrls = List<String>.from(state.deletedImageUrls)
+          ..remove(imageUrl);
+        emit(state.copyWith(deletedImageUrls: revertedUrls));
+      },
+      (success) {
+        // ✅ الحذف نجح — الـ URL باقي في deletedImageUrls لحد ما يتعمل loadProfile ناجح
+        debugPrint('✅ [DELETE_IMAGE] Success: $imageUrl');
+      },
+    );
   }
 
   void removePendingImage(int index) {
@@ -148,74 +197,71 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   // ════════════════════════════════════════════════════════════════
   // ✅ PENDING MEDIA - Video
   // ════════════════════════════════════════════════════════════════
-
-  /// ✅ FIX: لما المستخدم يسجل فيديو جديد بعد ما مسح القديم،
-  /// نخلي pendingDeleteVideo = false عشان الـ UI يظهر الفيديو الجديد فوراً.
-  /// وفي saveProfile هيمسح القديم من السيرفر لو كان موجود ويرفع الجديد.
   void addPendingVideo(File file) {
     emit(
       state.copyWith(
         pendingVideo: file,
-        // ✅ دايماً false لما بيضيف فيديو جديد
-        // - لو في فيديو قديم على السيرفر: saveProfile هيتولى حذفه
-        // - لو المستخدم مسح وسجل جديد: مش عايزين الـ flag يخبي الفيديو الجديد
         pendingDeleteVideo: false,
       ),
     );
   }
 
-  void markDeleteVideo() {
-    MarriageUserProfileModel? updatedProfile;
-    if (state.profile != null) {
-      updatedProfile = state.profile!.copyWith(
-        userMedia: state.profile!.userMedia?.copyWith(video: null),
-      );
-    }
+  void markDeleteVideo() async {
+    final videoUrl = state.profile?.userMedia?.video;
+
+    final updatedProfile = state.profile!.copyWith(
+      userMedia: state.profile!.userMedia?.copyWith(video: null),
+    );
 
     emit(
       state.copyWith(
-        profile: updatedProfile ?? state.profile,
-        pendingDeleteVideo: true,
+        profile: updatedProfile,
+        pendingDeleteVideo: false,
         clearPendingVideo: true,
       ),
     );
+
+    // ✅ امسح فوراً من السيرفر
+    if (videoUrl != null && videoUrl.isNotEmpty) {
+      await _repository.deleteVideo(videoUrl);
+    }
+  }
+
+  void markDeleteAudio() async {
+    final audioUrl = state.profile?.userMedia?.audio;
+
+    final updatedProfile = state.profile!.copyWith(
+      userMedia: state.profile!.userMedia?.copyWith(audio: null),
+    );
+
+    emit(
+      state.copyWith(
+        profile: updatedProfile,
+        pendingDeleteAudio: false,
+        clearPendingAudio: true,
+      ),
+    );
+
+    // ✅ امسح فوراً من السيرفر
+    if (audioUrl != null && audioUrl.isNotEmpty) {
+      await _repository.deleteAudio(audioUrl);
+    }
   }
 
   // ════════════════════════════════════════════════════════════════
   // ✅ PENDING MEDIA - Audio
   // ════════════════════════════════════════════════════════════════
-
-  /// ✅ FIX: نفس منطق الفيديو - لما المستخدم يسجل صوت جديد بعد ما مسح القديم،
-  /// نخلي pendingDeleteAudio = false عشان الـ UI يظهر الصوت الجديد فوراً.
   void addPendingAudio(File file) {
     emit(
       state.copyWith(
         pendingAudio: file,
-        // ✅ دايماً false لما بيضيف صوت جديد
         pendingDeleteAudio: false,
       ),
     );
   }
 
-  void markDeleteAudio() {
-    MarriageUserProfileModel? updatedProfile;
-    if (state.profile != null) {
-      updatedProfile = state.profile!.copyWith(
-        userMedia: state.profile!.userMedia?.copyWith(audio: null),
-      );
-    }
-
-    emit(
-      state.copyWith(
-        profile: updatedProfile ?? state.profile,
-        pendingDeleteAudio: true,
-        clearPendingAudio: true,
-      ),
-    );
-  }
-
   // ════════════════════════════════════════════════════════════════
-  // ✅ REORDER - محلي فقط، هيتحفظ مع saveProfile
+  // ✅ REORDER
   // ════════════════════════════════════════════════════════════════
   void reorderImageLocally(int currentIndex, List<String> allImages) {
     if (currentIndex == 0 || state.profile == null) return;
@@ -232,7 +278,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ✅✅✅ SAVE PROFILE - يرفع كل الـ pending media عند الحفظ
+  // ✅✅✅ SAVE PROFILE
   // ════════════════════════════════════════════════════════════════
   Future<void> saveProfile() async {
     if (state.profile == null) return;
@@ -245,51 +291,11 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         savedFromButton: true,
       ),
     );
+
     try {
-      // ════════════════════
-      // Step 1: Deletions
-      // ════════════════════
-      if (state.deletedSingleImageUrl != null) {
-        await _repository.deleteSingleImage(state.deletedSingleImageUrl!);
-      }
-
-      for (final url in state.deletedImageUrls) {
-        await _repository.deleteMarriageImage(url);
-      }
-
-      // ✅ FIX: امسح الفيديو القديم من السيرفر لو:
-      // 1. pendingDeleteVideo = true (المستخدم ضغط delete)
-      // 2. أو في فيديو على السيرفر وبيرفع فيديو جديد (استبدال)
-      if (state.pendingDeleteVideo) {
-        final videoUrl = state.profile?.userMedia?.video;
-        if (videoUrl != null && videoUrl.isNotEmpty) {
-          await _repository.deleteVideo(videoUrl);
-        }
-      } else if (state.pendingVideo != null) {
-        // ✅ لو في فيديو جديد وفيه قديم على السيرفر، امسح القديم أولاً
-        final existingVideo = state.profile?.userMedia?.video;
-        if (existingVideo != null && existingVideo.isNotEmpty) {
-          await _repository.deleteVideo(existingVideo);
-        }
-      }
-
-      // ✅ FIX: نفس المنطق للأوديو
-      if (state.pendingDeleteAudio) {
-        final audioUrl = state.profile?.userMedia?.audio;
-        if (audioUrl != null && audioUrl.isNotEmpty) {
-          await _repository.deleteAudio(audioUrl);
-        }
-      } else if (state.pendingAudio != null) {
-        // ✅ لو في صوت جديد وفيه قديم على السيرفر، امسح القديم أولاً
-        final existingAudio = state.profile?.userMedia?.audio;
-        if (existingAudio != null && existingAudio.isNotEmpty) {
-          await _repository.deleteAudio(existingAudio);
-        }
-      }
-
-      // ════════════════════
-      // Step 2: Uploads
-      // ════════════════════
+      // ════════════════════════════════
+      // Step 1: Uploads فقط
+      // ════════════════════════════════
       if (state.pendingSingleImage != null) {
         await _repository.uploadSingleImage(state.pendingSingleImage!);
       }
@@ -306,9 +312,9 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         await _repository.uploadVideoAndAudio(audioFile: state.pendingAudio!);
       }
 
-      // ════════════════════
-      // Step 3: Save Profile
-      // ════════════════════
+      // ════════════════════════════════
+      // Step 2: Save Profile fields
+      // ════════════════════════════════
       final result = await _repository.updateMarriageProfile(state.profile!);
 
       result.fold(
@@ -329,14 +335,16 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
               hasUnsavedFields: false,
             ),
           );
+
+          // ✅ FIX: loadProfile هيفلتر الصور المحذوفة تلقائياً عبر _filterDeletedImages
           await loadProfile();
-          emit(
-            state.copyWith(
-              state: CubitStates.success,
-              isUpdating: false,
-              savedFromButton: true,
-            ),
-          );
+
+          // ✅ بعد loadProfile ناجح، امسح deletedImageUrls
+          emit(state.clearDeletedImageUrls().copyWith(
+            state: CubitStates.success,
+            isUpdating: false,
+            savedFromButton: true,
+          ));
         },
       );
     } catch (e) {
@@ -348,30 +356,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         ),
       );
     }
-  }
-
-  void reorderSecondaryImages(
-    List<String> reorderedImages,
-    List<String> filteredServerImages,
-  ) {
-    if (state.profile == null) return;
-
-    final newServerOrder = reorderedImages
-        .where((img) => filteredServerImages.contains(img))
-        .toList();
-
-    final newPendingOrder = reorderedImages
-        .where((img) => !filteredServerImages.contains(img))
-        .map((path) => File(path))
-        .toList();
-
-    final updatedProfile = state.profile!.copyWith(
-      userMedia: state.profile!.userMedia?.copyWith(images: newServerOrder),
-    );
-
-    emit(
-      state.copyWith(profile: updatedProfile, pendingImages: newPendingOrder),
-    );
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -559,7 +543,13 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       updatedProfile = profile;
     }
 
-    emit(state.copyWith(profile: updatedProfile, hasUnsavedFields: true, savedFromButton: false));
+    emit(
+      state.copyWith(
+        profile: updatedProfile,
+        hasUnsavedFields: true,
+        savedFromButton: false,
+      ),
+    );
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -612,54 +602,52 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   }
 
   bool _isAboutMeField(String f) => [
-    'country',
-    'nationality',
-    'height',
-    'weight',
-    'skinColor',
-    'ethnicity',
-    'healthStatus',
-    'religiousCommitment',
-    'religiosity',
-    'smoker',
-    'smoking',
-    'socialStatus',
-    'maritalStatus',
-    'age',
-    'drinkAlcohol',
-    'eatHalalOnly',
+    'country', 'nationality', 'height', 'weight', 'skinColor', 'ethnicity',
+    'healthStatus', 'religiousCommitment', 'religiosity', 'smoker', 'smoking',
+    'socialStatus', 'maritalStatus', 'age', 'drinkAlcohol', 'eatHalalOnly',
   ].contains(f);
 
   bool _isProfessionalLifeField(String f) => [
-    'education_level',
-    'educationLevel',
-    'choose_job',
-    'job',
-    'occupation',
-    'choose_employer',
-    'employer',
-    'chooseEmployer',
+    'education_level', 'educationLevel', 'choose_job', 'job', 'occupation',
+    'choose_employer', 'employer', 'chooseEmployer',
   ].contains(f);
 
   bool _isFamilyField(String f) => [
-    'hasChildren',
-    'childrenNumber',
-    'childrenLiveWithYou',
-    'childrenLivingStatus',
+    'hasChildren', 'childrenNumber', 'childrenLiveWithYou', 'childrenLivingStatus',
   ].contains(f);
 
   bool _isGoalsField(String f) => [
-    'engagement',
-    'engagementTimeline',
-    'marry',
-    'marriage_intentions',
-    'communicationTimeline',
-    'familyAcceptance',
-    'intendTravelAbroad',
+    'engagement', 'engagementTimeline', 'marry', 'marriage_intentions',
+    'communicationTimeline', 'familyAcceptance', 'intendTravelAbroad',
   ].contains(f);
 
   Future<void> clearAllData() async {
     await _repository.clearLocalStorage();
     emit(const MarriageProfileState());
+  }
+
+  Future<void> reorderSecondaryImages(
+    List<String> reorderedImages,
+    List<String> filteredServerImages,
+  ) async {
+    final Map<String, String> imagesIndex = {};
+    for (int i = 0; i < reorderedImages.length; i++) {
+      imagesIndex[i.toString()] = reorderedImages[i];
+    }
+
+    final updatedMedia = state.profile?.userMedia?.copyWith(
+      images: reorderedImages,
+      imagesIndex: imagesIndex,
+    );
+    final updatedProfile = state.profile?.copyWith(userMedia: updatedMedia);
+    if (updatedProfile != null) {
+      emit(state.copyWith(profile: updatedProfile));
+    }
+
+    final result = await _repository.reorderImages(imagesIndex);
+    result.fold(
+      (failure) => emit(state.copyWith(profile: state.profile)),
+      (_) {},
+    );
   }
 }

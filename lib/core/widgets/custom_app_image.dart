@@ -1,3 +1,6 @@
+import 'dart:ui';
+
+import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:vector_graphics/vector_graphics.dart';
 import '../../my_import.dart';
 
@@ -366,22 +369,138 @@ class _ConnectivityNetworkImageState extends State<_ConnectivityNetworkImage> {
 
   @override
   Widget build(BuildContext context) {
-    Widget image = CachedNetworkImage(
-      key: ValueKey('${widget.imageUrl}_$_retryKey'),
-      memCacheWidth: _memCacheWidth,
-      memCacheHeight: _memCacheHeight,
-      imageUrl: widget.imageUrl,
-      fit: widget.fit,
-      height: widget.height,
-      width: widget.width,
-      color: widget.blur != null ? null : widget.color,
+    Widget image = BlocListener<ConnectivityCubit, ConnectivityState>(
+      listenWhen: (prev, curr) => !prev.isConnected && curr.isConnected,
+      listener: (_, __) {
+        if (_hasFailed && mounted) {
+          setState(() {
+            _retryKey++;
+            _hasFailed = false;
+          });
+        }
+      },
+      child: CachedNetworkImage(
+        key: ValueKey('${widget.imageUrl}_$_retryKey'),
+        memCacheWidth: _memCacheWidth,
+        memCacheHeight: _memCacheHeight,
+        imageUrl: widget.imageUrl,
+        fit: widget.fit, // ✅ use widget.fit, not hardcoded cover
+        height: widget.height,
+        width: widget.width,
+        color: widget.blur != null ? null : widget.color,
+        colorBlendMode: BlendMode.srcIn, // ✅ required when color is set
+        fadeOutDuration: Duration.zero,
+        fadeInDuration: Duration.zero,
+        placeholderFadeInDuration: Duration.zero,
+        useOldImageOnUrlChange:
+            false, // ✅ disable — conflicts with _localPreviousUrl
+
+        placeholder: (_, __) {
+          final prev = _localPreviousUrl;
+          if (prev != null && prev.isNotEmpty) {
+            return CachedNetworkImage(
+              imageUrl: prev,
+              fit: widget.fit, // ✅ consistent fit
+              height: widget.height,
+              width: widget.width,
+              memCacheWidth: _memCacheWidth,
+              memCacheHeight: _memCacheHeight,
+              fadeInDuration: Duration.zero,
+              fadeOutDuration: Duration.zero,
+              color: widget.color, // ✅ apply color to old image too
+              colorBlendMode: BlendMode.srcIn,
+              errorWidget: (_, __, ___) => _buildPlaceholder(),
+            );
+          }
+          return _buildPlaceholder();
+        },
+
+        errorWidget: (_, __, ___) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && !_hasFailed) _hasFailed = true;
+          });
+          return _buildErrorWidget();
+        },
+
+        imageBuilder: widget.blur != null
+            ? (context, imageProvider) => ImageFiltered(
+                imageFilter: ImageFilter.blur(
+                  sigmaX: widget.blur!,
+                  sigmaY: widget.blur!,
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: imageProvider,
+                      fit: widget.fit,
+                      colorFilter: widget.color != null
+                          ? ColorFilter.mode(widget.color!, BlendMode.srcIn)
+                          : null,
+                    ),
+                  ),
+                ),
+              )
+            : null,
+      ),
     );
 
-    return widget.radius != null && widget.radius! > 0
-        ? ClipRRect(
-            borderRadius: BorderRadius.circular(widget.radius!),
-            child: image,
-          )
-        : image;
+    // ⭐ RepaintBoundary + ClipRRect
+    return RepaintBoundary(
+      child: widget.radius != null && widget.radius! > 0
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(widget.radius!),
+              child: image,
+            )
+          : image,
+    );
+  }
+
+  // ──────────────── Placeholders ────────────────
+
+  Widget _buildPlaceholder() {
+    if (widget.placeholderImage != null) {
+      return Image.asset(
+        widget.placeholderImage!,
+        height: widget.height,
+        width: widget.width,
+        fit: widget.fit,
+      );
+    }
+    if (widget.isAvatar) {
+      return Image.asset(
+        AssetsData.defaultProfileImage,
+        height: widget.height,
+        width: widget.width,
+        fit: BoxFit.cover,
+      );
+    }
+    return widget.loadingPlaceholder;
+  }
+
+  Widget _buildErrorWidget() {
+    if (widget.placeholderImage != null) {
+      return Image.asset(
+        widget.placeholderImage!,
+        height: widget.height,
+        width: widget.width,
+        fit: widget.fit,
+      );
+    }
+    if (widget.isAvatar) {
+      return Image.asset(
+        AssetsData.defaultProfileImage,
+        height: widget.height,
+        width: widget.width,
+        fit: BoxFit.cover,
+      );
+    }
+    return Container(
+      height: widget.height,
+      width: widget.width,
+      color: Colors.grey[200],
+      child: Center(
+        child: Icon(Icons.image_outlined, color: Colors.grey[350], size: 32.sp),
+      ),
+    );
   }
 }
