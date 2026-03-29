@@ -31,7 +31,7 @@ class AdvisorChatData {
 
   factory AdvisorChatData.fromJson(Map<String, dynamic> json) {
     return AdvisorChatData(
-      chatRooms: (json['chatRooms'] as List? ?? [])
+      chatRooms: (json['data'] as List? ?? json['chatRooms'] as List? ?? [])
           .map((e) => AdvisorChatRoomModel.fromJson(e))
           .toList(),
       pagination: PaginationModel.fromJson(json['pagination'] ?? {}),
@@ -51,6 +51,8 @@ class AdvisorChatRoomModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final int unreadCount;
+  final bool isSystemChat;
+  final String? systemChatImage;
 
   AdvisorChatRoomModel({
     required this.id,
@@ -60,11 +62,33 @@ class AdvisorChatRoomModel {
     this.lastMessage,
     this.lastMessageAt,
     required this.status,
-    required this.sender, // <--- هنا
+    required this.sender,
     required this.createdAt,
     required this.updatedAt,
     required this.unreadCount,
+    this.isSystemChat = false,
+    this.systemChatImage,
   });
+
+  /// Display title للـ chat room (System أو اسم المستخدم)
+  String get displayTitle => isSystemChat ? 'System' : _getOtherUser().name;
+
+  /// Display image للـ chat room (صورة System أو صورة المستخدم)
+  String? get displayImage =>
+      isSystemChat ? systemChatImage : _getOtherUser().image;
+
+  /// Display receiver ID للـ chat room (system أو ID المستخدم)
+  String get displayReceiverId => isSystemChat ? 'system' : _getOtherUser().id;
+
+  /// الحصول على المستخدم الآخر في المحادثة
+  ChatUserModel _getOtherUser() {
+    return users.isNotEmpty
+        ? users.firstWhere(
+            (user) => user.id == sender.id,
+            orElse: () => users.first,
+          )
+        : sender;
+  }
 
   factory AdvisorChatRoomModel.fromJson(Map<String, dynamic> json) {
     String extractString(dynamic value) {
@@ -74,32 +98,87 @@ class AdvisorChatRoomModel {
       return value.toString();
     }
 
+    // Get system chat image from systemChatData
+    final String? systemImage = json['systemChatData']?['image']?.toString();
+    final bool isSystemChat = json['systemChat'] ?? false;
+
+    // New API format uses 'otherUser'
+    final otherUserJson = json['otherUser'] as Map<String, dynamic>?;
+    final otherUser = otherUserJson != null ? ChatUserModel.fromJson(otherUserJson) : null;
+    
+    // Fallback for older systems
+    final users = (json['users'] as List? ?? [])
+        .map((e) => ChatUserModel.fromJson(e is Map<String, dynamic> ? e : {}))
+        .toList();
+    if (otherUser != null && !users.any((u) => u.id == otherUser.id)) {
+      users.add(otherUser);
+    }
+
+    // If system chat, create a system user with the image
+    ChatUserModel senderUser;
+    if (isSystemChat) {
+      senderUser = ChatUserModel(
+        id: 'system',
+        name: 'System',
+        image: systemImage,
+        userType: 'System',
+      );
+    } else {
+      senderUser = otherUser ?? ChatUserModel.fromJson(
+        json['sender'] is Map<String, dynamic> ? json['sender'] : {},
+      );
+    }
+
     return AdvisorChatRoomModel(
-      id: extractString(json['id']),
-      isBlocked: json['isBlocked'] ?? false,
+      id: extractString(json['id'] ?? json['_id']),
+      isBlocked: json['blockExists'] ?? json['isBlocked'] ?? false,
       isHaveSession: json['isHaveSession'] ?? false,
-      users: (json['users'] as List? ?? [])
-          .map((e) => ChatUserModel.fromJson(e is Map<String, dynamic> ? e : {}))
-          .toList(),
+      users: users,
       lastMessage: json['lastMessage'] is Map<String, dynamic>
           ? LastMessageModel.fromJson(json['lastMessage'])
           : null,
       lastMessageAt: json['lastMessageAt'] != null
           ? DateTime.tryParse(json['lastMessageAt'].toString()) ??
               DateTime.now()
-          : null,
+          : (json['lastMessage']?['sentAt'] != null 
+             ? DateTime.tryParse(json['lastMessage']['sentAt'].toString())
+             : null),
       status: extractString(json['status']),
-      sender: ChatUserModel.fromJson(
-        json['sender'] is Map<String, dynamic> ? json['sender'] : {},
-      ),
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
-          : DateTime.now(),
+      sender: senderUser,
+      createdAt: json['sentAt'] != null
+          ? DateTime.tryParse(json['sentAt'].toString()) ?? DateTime.now()
+          : (json['createdAt'] != null
+              ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
+              : DateTime.now()),
       updatedAt: json['updatedAt'] != null
           ? DateTime.tryParse(json['updatedAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
       unreadCount: json['unreadCount'] ?? 0,
+      isSystemChat: isSystemChat,
+      systemChatImage: systemImage,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      '_id': id,
+      'isBlocked': isBlocked,
+      'blockExists': isBlocked,
+      'isHaveSession': isHaveSession,
+      'users': users.map((u) => u.toJson()).toList(),
+      'lastMessage': lastMessage?.toJson(),
+      'lastMessageAt': lastMessageAt?.toIso8601String(),
+      'status': status,
+      'sender': sender.toJson(),
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'unreadCount': unreadCount,
+      'systemChat': isSystemChat,
+      'systemChatData': isSystemChat && systemChatImage != null
+          ? {'image': systemChatImage}
+          : null,
+    };
   }
 }
 
@@ -128,11 +207,22 @@ class ChatUserModel {
     }
 
     return ChatUserModel(
-      id: extractString(json['id']),
+      id: extractString(json['userId'] ?? json['id'] ?? json['_id']),
       name: extractString(json['name']),
       image: json['image']?.toString(),
       userType: extractString(json['userType']),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      '_id': id,
+      'userId': id,
+      'name': name,
+      'image': image,
+      'userType': userType,
+    };
   }
 }
 
@@ -171,12 +261,17 @@ class LastMessageModel {
       return value.toString();
     }
 
+    final rawContent = json['content'];
+    final content = (rawContent is List)
+        ? (rawContent.isEmpty ? '' : rawContent.first.toString())
+        : extractString(rawContent);
+
     return LastMessageModel(
-      id: extractString(json['id']),
-      sender: extractString(json['sender']),
+      id: extractString(json['id'] ?? json['_id']),
+      sender: extractString(json['sender'] ?? json['senderId']),
       senderType: extractString(json['senderType']),
-      content: extractString(json['content']),
-      messageType: extractString(json['messageType']),
+      content: content,
+      messageType: extractString(json['contentType'] ?? json['messageType']),
       chatRoom: extractString(json['chatRoom']),
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
@@ -187,6 +282,24 @@ class LastMessageModel {
       senderName: extractString(json['senderName']),
       timeAgo: extractString(json['timeAgo']),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      '_id': id,
+      'sender': sender,
+      'senderId': sender,
+      'senderType': senderType,
+      'content': content,
+      'messageType': messageType,
+      'contentType': messageType,
+      'chatRoom': chatRoom,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'senderName': senderName,
+      'timeAgo': timeAgo,
+    };
   }
 }
 

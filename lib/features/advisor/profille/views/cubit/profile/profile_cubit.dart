@@ -6,10 +6,11 @@ import 'package:tayseer/core/functions/set_advisor_status.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/features/shared/profile/widgets/profile_posts_tab.dart';
 import 'package:tayseer/my_import.dart';
 import 'profile_state.dart';
 
-class ProfileCubit extends Cubit<ProfileState> {
+class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
   final ProfileRepository _profileRepository;
   final int _pageSize = 10;
 
@@ -19,6 +20,40 @@ class ProfileCubit extends Cubit<ProfileState> {
     _initializeProfile();
     _listenToProfileUpdates();
   }
+
+  // ── ProfilePostsCubitContract implementation ──
+  @override
+  List<PostModel> get posts => state.posts;
+  @override
+  CubitStates get postsState => state.postsState;
+  @override
+  String? get postsErrorMessage => state.postsErrorMessage;
+  @override
+  bool get hasMore => state.hasMore;
+  @override
+  bool get isLoadingMore => state.isLoadingMore;
+  @override
+  CubitStates get shareActionState => state.shareActionState;
+  @override
+  String? get shareMessage => state.shareMessage;
+  @override
+  bool? get isShareAdded => state.isShareAdded;
+  @override
+  CubitStates get saveActionState => state.saveActionState;
+  @override
+  String? get saveMessage => state.saveMessage;
+  @override
+  CubitStates get deletePostActionState => state.deletePostActionState;
+  @override
+  String? get deletePostMessage => state.deletePostMessage;
+  @override
+  CubitStates get archivePostActionState => state.archivePostActionState;
+  @override
+  String? get archivePostMessage => state.archivePostMessage;
+  @override
+  CubitStates get blockUserActionState => state.blockUserActionState;
+  @override
+  String? get blockUserMessage => state.blockUserMessage;
 
   void _listenToProfileUpdates() {
     _profileSubscription = ProfileEventBus.instance.onProfileUpdated.listen((
@@ -182,6 +217,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   // ═══════════════════════════════════════════════════════════
   // 📌 FETCH POSTS
   // ═══════════════════════════════════════════════════════════
+  @override
   Future<void> fetchPosts({bool loadMore = false}) async {
     if (loadMore) {
       // لا تسمح بتحميل المزيد إذا كان التحميل جارياً أو لا يوجد المزيد
@@ -591,7 +627,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   // 🚫 BLOCK USER
   // ═══════════════════════════════════════════════════════════
   Future<void> blockUser({
-    required String visiblePostId,
+    String? visiblePostId,
     required String advisorId,
   }) async {
     emit(state.copyWith(blockUserActionState: CubitStates.loading));

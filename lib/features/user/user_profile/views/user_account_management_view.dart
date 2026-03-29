@@ -1,10 +1,10 @@
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/account_management/account_management_state.dart';
+import 'package:tayseer/features/shared/settings/cubit/account_management_cubit.dart';
+import 'package:tayseer/features/shared/settings/cubit/account_management_state.dart';
+import 'package:tayseer/features/shared/settings/repositories/account_management_repository.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
-import 'package:tayseer/features/user/user_profile/data/repositories/user_account_management_repository.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_account_management/user_account_management_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserAccountManagementView extends StatefulWidget {
@@ -17,13 +17,18 @@ class UserAccountManagementView extends StatefulWidget {
 
 class _UserAccountManagementViewState extends State<UserAccountManagementView> {
   AccountAction? selectedAction;
-  late UserAccountManagementCubit _cubit;
+  late AccountManagementCubit _cubit;
 
   @override
   void initState() {
     super.initState();
-    _cubit = UserAccountManagementCubit(
-      getIt<UserAccountManagementRepository>(),
+    _cubit = AccountManagementCubit(
+      AccountManagementRepositoryImpl(
+        apiService: getIt<ApiService>(),
+        suspendEndpoint: '/user/suspend-user',
+        deleteEndpoint: '/user/delete-user',
+        deleteMethod: 'patch',
+      ),
     );
   }
 
@@ -37,7 +42,7 @@ class _UserAccountManagementViewState extends State<UserAccountManagementView> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _cubit,
-      child: BlocConsumer<UserAccountManagementCubit, AccountManagementState>(
+      child: BlocConsumer<AccountManagementCubit, AccountManagementState>(
         listener: (context, state) {
           _handleStateChanges(context, state);
         },

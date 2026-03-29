@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:tayseer/features/advisor/profille/data/models/certificate_model.dart';
+import 'package:tayseer/features/shared/profile/data/models/certificate_model.dart';
 import 'package:tayseer/my_import.dart';
 
 class EditCertificateState extends Equatable {

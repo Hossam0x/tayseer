@@ -1,24 +1,22 @@
 import 'dart:async';
 import 'dart:developer';
-import 'dart:io';
 
 import 'package:dartz/dartz.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tayseer/core/dependancy_injection/get_it.dart';
+import 'package:tayseer/core/cache/chat_cache_service.dart';
 import 'package:tayseer/core/enum/message_status_enum.dart';
+import 'package:tayseer/core/services/socket_events/chat_socket_events.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
-import 'package:tayseer/features/advisor/chat/data/model/chat_message/send_media_message_response.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/typing_model.dart';
 import 'package:tayseer/features/advisor/chat/data/repo/chat_repo_simple.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/state/chat_messages_state.dart';
+import 'package:tayseer/my_import.dart';
 import 'package:uuid/uuid.dart';
 
-/// Simplified Chat Messages Cubit - No Cache, No Complexity
-///
-/// All data comes from server, no local storage
+
 class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   final ChatRepoSimple _repo;
+  final ChatCacheService _cacheService = getIt<ChatCacheService>();
   final tayseerSocketHelper _socketHelper = getIt.get<tayseerSocketHelper>();
 
   String? _currentChatRoomId;
@@ -26,8 +24,8 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   bool _isBlocked = false;
   bool _isUserTyping = false;
   TypingModel? _typingInfo;
+  int? _freeChatMinsLeft;
 
-  // Upload progress tracking
   final Map<String, double> _uploadProgress = {};
 
   ChatMessagesCubit({required ChatRepoSimple repo})
@@ -35,39 +33,83 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       super(const ChatMessagesState.initial());
 
   // ══════════════════════════════════════════════════════════════════════════
-  // LOAD MESSAGES
+  // JOIN / LEAVE ROOM
   // ══════════════════════════════════════════════════════════════════════════
 
+  /// Join a chat room with [targetId] and load messages.
+  /// Emits `joinChatRoom` socket event, then waits for `chatRoomJoined`.
   Future<void> loadInitialMessages(
     String chatRoomId, {
     String? receiverId,
+    bool isSystemChat = false,
   }) async {
     _currentChatRoomId = chatRoomId;
     _currentReceiverId = receiverId;
 
-    emit(const ChatMessagesState.loading());
+    // 1. عرض الكاش فوراً لو موجود
+    final cachedMessages = _cacheService.getCachedMessages(chatRoomId: chatRoomId);
+    if (cachedMessages != null && cachedMessages.isNotEmpty) {
+      _isBlocked = _checkBlockStatusFromMessages(cachedMessages);
+      emit(
+        ChatMessagesState.loaded(
+          messages: cachedMessages,
+          hasMoreMessages: false,
+          isBlocked: _isBlocked,
+        ),
+      );
+    } else {
+      emit(const ChatMessagesState.loading());
+    }
 
+    // 2. جلب من السيرفر وتحديث
     try {
       final messages = await _repo.loadMessages(chatRoomId);
 
-      // Check block status from messages
       _isBlocked = _checkBlockStatusFromMessages(messages);
 
       emit(
         ChatMessagesState.loaded(
           messages: messages,
-          hasMoreMessages: false, // No pagination for now
+          hasMoreMessages: false,
           isBlocked: _isBlocked,
         ),
       );
 
-      markMessagesAsRead(); // ✅ Mark as read immediately when entering
-
       setupSocketListeners();
+
+      // 3. حفظ في الكاش
+      await _cacheService.saveMessages(
+        chatRoomId: chatRoomId,
+        messages: messages,
+      );
+
+      // Join the chat room via socket so the server starts delivering events.
+      if (isSystemChat) {
+        // في حالة System Chat نرسل system: true
+        _socketHelper.send('joinChatRoom', {'system': true}, null);
+      } else if (receiverId != null) {
+        // في حالة المحادثات العادية نرسل targetId
+        _socketHelper.send('joinChatRoom', {'targetId': receiverId}, null);
+      }
     } catch (e) {
       log('❌ Error loading messages: $e');
-      emit(ChatMessagesState.failure(message: e.toString()));
+      // لو فشل وما عندناش كاش، نعرض error
+      if (cachedMessages == null || cachedMessages.isEmpty) {
+        emit(ChatMessagesState.failure(message: e.toString()));
+      }
     }
+  }
+
+  /// Leave the current chat room and remove all socket listeners.
+  void leaveCurrentChatRoom() {
+    if (_currentChatRoomId == null) return;
+
+    _socketHelper.send('leaveChatRoom', {
+      'chatRoomId': _currentChatRoomId,
+    }, null);
+
+    final listenerId = 'ChatMessagesCubit_$_currentChatRoomId';
+    _socketHelper.offAllForListener(listenerId);
   }
 
   bool _checkBlockStatusFromMessages(List<ChatMessage> messages) {
@@ -81,7 +123,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // SEND MESSAGE
+  // SEND TEXT MESSAGE
   // ══════════════════════════════════════════════════════════════════════════
 
   Future<void> sendMessage(
@@ -96,11 +138,10 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     final localId = 'temp_$tempId';
     final now = DateTime.now().toIso8601String();
 
-    // Create optimistic message
     final optimisticMessage = ChatMessage(
       id: localId,
       chatRoomId: chatRoomId,
-      senderId: receiverId,
+      senderId: kCurrentUserData?.id ?? '',
       senderName: 'Me',
       senderImage: '',
       senderType: 'user',
@@ -111,6 +152,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       updatedAt: now,
       isRead: false,
       status: MessageStatusEnum.pending,
+      tempId: tempId,
       reply: replyMessageId != null && replyToMessage != null
           ? ReplyInfo(
               replyMessageId: replyMessageId,
@@ -122,11 +164,10 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
           : null,
     );
 
-    // Add to UI immediately
     final currentMessages = state.messagesOrEmpty;
     emit(
       ChatMessagesState.loaded(
-        messages: [...currentMessages, optimisticMessage],
+        messages: [optimisticMessage, ...currentMessages],
         hasMoreMessages: false,
         isBlocked: _isBlocked,
         isUserTyping: _isUserTyping,
@@ -134,19 +175,20 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       ),
     );
 
-    // Send via socket
+    // New event name: sendTextMessage
+    // New payload: chatRoomId + text (not content) + optional replyToMessageId + tempId
     final socketData = <String, dynamic>{
-      'receiverId': receiverId,
-      'content': message,
+      'chatRoomId': chatRoomId,
+      'text': message,
       'tempId': tempId,
     };
 
     if (replyMessageId != null && !replyMessageId.startsWith('temp_')) {
-      socketData['replyMessageId'] = replyMessageId;
+      socketData['replyToMessageId'] = replyMessageId;
     }
 
-    _socketHelper.send('send_message', socketData, (ack) {
-      log('✅ Send message ACK: $ack');
+    _socketHelper.send('sendTextMessage', socketData, (ack) {
+      log('✅ sendTextMessage ACK: $ack');
     });
   }
 
@@ -167,19 +209,14 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     final localId = 'temp_$tempId';
     final now = DateTime.now().toIso8601String();
 
-    // Create optimistic message with local file paths
     final localPaths = <String>[];
-    if (images != null) {
-      localPaths.addAll(images.map((f) => f.path));
-    }
-    if (videos != null) {
-      localPaths.addAll(videos.map((f) => f.path));
-    }
+    if (images != null) localPaths.addAll(images.map((f) => f.path));
+    if (videos != null) localPaths.addAll(videos.map((f) => f.path));
 
     final optimisticMessage = ChatMessage(
       id: localId,
       chatRoomId: chatRoomId,
-      senderId: _currentReceiverId ?? '',
+      senderId: kCurrentUserData?.id ?? '',
       senderName: 'Me',
       senderImage: '',
       senderType: 'user',
@@ -191,6 +228,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       isRead: false,
       status: MessageStatusEnum.pending,
       localFilePaths: localPaths,
+      tempId: tempId,
       reply: replyMessageId != null && replyToMessage != null
           ? ReplyInfo(
               replyMessageId: replyMessageId,
@@ -202,11 +240,10 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
           : null,
     );
 
-    // Add to UI immediately
     final currentMessages = state.messagesOrEmpty;
     emit(
       ChatMessagesState.loaded(
-        messages: [...currentMessages, optimisticMessage],
+        messages: [optimisticMessage, ...currentMessages],
         hasMoreMessages: false,
         isBlocked: _isBlocked,
         isUserTyping: _isUserTyping,
@@ -214,21 +251,18 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       ),
     );
 
-    // Initialize progress
     _uploadProgress[localId] = 0.0;
 
-    // Upload to server
     final result = await _repo.sendMediaMessage(
       chatRoomId: chatRoomId,
-      messageType: messageType,
+      contentType: messageType,
       images: images,
       videos: videos,
-      replyMessageId: replyMessageId,
+      replyToMessageId: replyMessageId,
       tempId: tempId,
       onProgress: (sent, total) {
         final progress = sent / total;
         _uploadProgress[localId] = progress;
-        // Emit progress update
         _emitProgressUpdate(localId, progress);
       },
     );
@@ -236,14 +270,12 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     result.fold(
       (error) {
         log('❌ Media upload failed: $error');
-        // Update message status to failed
         _updateMessageStatus(localId, MessageStatusEnum.failed);
         _uploadProgress.remove(localId);
       },
       (response) {
-        log('✅ Media uploaded: ${response.data.id}');
-        // Replace optimistic message with server message
-        _replaceOptimisticMessage(localId, response.data);
+        log('✅ Media uploaded: ${response.message.id}');
+        _replaceOptimisticMessage(localId, response.message);
         _uploadProgress.remove(localId);
       },
     );
@@ -270,9 +302,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     );
   }
 
-  double? getUploadProgress(String messageId) {
-    return _uploadProgress[messageId];
-  }
+  double? getUploadProgress(String messageId) => _uploadProgress[messageId];
 
   void _updateMessageStatus(String messageId, MessageStatusEnum status) {
     final currentMessages = state.messagesOrEmpty;
@@ -293,30 +323,15 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     );
   }
 
-  void _replaceOptimisticMessage(String localId, SentMessage serverMessage) {
+  void _replaceOptimisticMessage(String localId, ChatMessage serverMessage) {
     final currentMessages = state.messagesOrEmpty;
     final index = currentMessages.indexWhere((m) => m.id == localId);
     if (index == -1) return;
 
-    final updatedMessage = ChatMessage(
-      id: serverMessage.id,
-      chatRoomId: serverMessage.chatRoomId,
-      senderId: serverMessage.senderId,
-      senderName: serverMessage.senderName,
-      senderImage: serverMessage.senderImage ?? '',
-      senderType: serverMessage.senderType,
-      isMe: serverMessage.isMe,
-      contentList: serverMessage.contentList,
-      messageType: serverMessage.messageType,
-      createdAt: serverMessage.createdAt,
-      updatedAt: serverMessage.updatedAt,
-      isRead: serverMessage.isRead,
-      status: MessageStatusEnum.sent,
-      reply: serverMessage.reply,
-    );
-
     final updatedMessages = List<ChatMessage>.from(currentMessages);
-    updatedMessages[index] = updatedMessage;
+    updatedMessages[index] = serverMessage.copyWith(
+      status: MessageStatusEnum.sent,
+    );
 
     emit(
       ChatMessagesState.loaded(
@@ -334,43 +349,101 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   // ══════════════════════════════════════════════════════════════════════════
 
   void setupSocketListeners() {
-    _socketHelper.listen('new_message', (data) {
-      dynamic messageData = data;
-      // Handle nested message object if present (common in socket events)
-      if (data is Map && data['message'] != null && data['message'] is Map) {
-        messageData = data['message'];
-      }
+    final listenerId = 'ChatMessagesCubit_$_currentChatRoomId';
 
+    // SERVER → CLIENT: newMessage  { message: {...}, chatRoom: {...} }
+    _socketHelper.listenWithId('newMessage', listenerId, (data) {
+      if (data is! Map) return;
+      final messageData = data['message'];
+      if (messageData is! Map) return;
       final message = ChatMessage.fromJson(messageData as Map<String, dynamic>);
       _handleNewMessage(message);
     });
 
-    _socketHelper.listen('message_deleted', (data) {
-      final messageId = data['messageId'] as String;
-      _handleMessageDeleted(messageId);
+    // SERVER → CLIENT: messageDeleted  { chatMessageIds: string[] }
+    _socketHelper.listenWithId('messageDeleted', listenerId, (data) {
+      if (data is! Map) return;
+      final ids = data['chatMessageIds'];
+      if (ids is List) {
+        for (final id in ids) {
+          _handleMessageDeleted(id.toString());
+        }
+      }
     });
 
-    _socketHelper.listen('user_typing', (data) {
-      final userId = data['userId'] as String;
-      final userName = data['userName'] as String;
-      _handleUserTyping(userId, userName);
+    // SERVER → CLIENT: typingStatus  { isTyping: boolean }
+    _socketHelper.listenWithId('typingStatus', listenerId, (data) {
+      if (data is! Map) return;
+      final isTyping = data['isTyping'] as bool? ?? false;
+      _handleTypingStatus(isTyping);
     });
 
-    _socketHelper.listen('messages_read', (data) {
-      _handleMessagesRead();
+    // SERVER → CLIENT: newMessageState  { status: "RECEIVED"|"READ", messageIds: string[] }
+    _socketHelper.listenWithId('newMessageState', listenerId, (data) {
+      if (data is! Map) return;
+      final status = data['status']?.toString() ?? '';
+      final messageIds = data['messageIds'];
+      if (messageIds is List) {
+        _handleMessageStateUpdate(
+          status: status,
+          messageIds: messageIds.map((e) => e.toString()).toList(),
+        );
+      }
+    });
+
+    // SERVER → CLIENT: blockerStatus  { userId, newBlockStatus }
+    _socketHelper.listenWithId('blockerStatus', listenerId, (data) {
+      if (data is! Map) return;
+      final newBlockStatus = data['newBlockStatus'] as bool? ?? false;
+      _handleBlockStatusChanged(newBlockStatus);
+    });
+
+    // SERVER → CLIENT: blockedStatus  { userId, newBlockStatus }
+    _socketHelper.listenWithId('blockedStatus', listenerId, (data) {
+      if (data is! Map) return;
+      final newBlockStatus = data['newBlockStatus'] as bool? ?? false;
+      _handleBlockStatusChanged(newBlockStatus);
+    });
+
+    // SERVER → CLIENT: chatRoomJoined  { chatRoomId, blockExists, isMe, ... }
+    _socketHelper.listenWithId('chatRoomJoined', listenerId, (data) {
+      if (data is! Map) return;
+      final blockExists = data['blockExists'] as bool? ?? false;
+      final isMe = data['isMe'] as bool?;
+      _freeChatMinsLeft = data['freeChatMinsLeft'] as int?;
+      _isBlocked = blockExists;
+      log('✅ chatRoomJoined: blockExists=$blockExists, isMe=$isMe, freeChatMinsLeft=$_freeChatMinsLeft');
+      _emitCurrentState();
+    });
+
+    // SERVER → CLIENT: chatRoomLeft  { chatRoomId }
+    _socketHelper.listenWithId('chatRoomLeft', listenerId, (data) {
+      log('👋 chatRoomLeft: $data');
+    });
+
+    // SERVER → CLIENT: messageReaction  { chatMessageId, reactions: [{userId, emoji}] }
+    _socketHelper.listenWithId('messageReaction', listenerId, (data) {
+      if (data is! Map) return;
+      _handleMessageReaction(data);
     });
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // HANDLERS
+  // ══════════════════════════════════════════════════════════════════════════
 
   void _handleNewMessage(ChatMessage message) {
     if (message.chatRoomId != _currentChatRoomId) return;
 
     final currentMessages = state.messagesOrEmpty;
 
-    // Check if this is a confirmation of our optimistic message
+    // Match by tempId first (most reliable), then fall back to content match
     if (message.isMe) {
-      // Find and replace temp message (Text/Media)
       final tempIndex = currentMessages.indexWhere(
-        (m) => m.id.startsWith('temp_') && m.content == message.content,
+        (m) =>
+            m.id.startsWith('temp_') &&
+            (m.tempId == message.tempId ||
+                (message.tempId == null && m.content == message.content)),
       );
       if (tempIndex != -1) {
         final updatedMessages = List<ChatMessage>.from(currentMessages);
@@ -386,29 +459,27 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
             typingInfo: _typingInfo,
           ),
         );
+        // تحديث الكاش
+        _updateCache(updatedMessages);
         return;
       }
     }
 
     // Handle system messages (block/unblock)
     if (message.messageType == 'system') {
-      if (message.action.isBlock) {
-        _isBlocked = true;
-      } else if (message.action.isUnblock) {
-        _isBlocked = false;
-      }
+      if (message.action.isBlock) _isBlocked = true;
+      if (message.action.isUnblock) _isBlocked = false;
 
-      final localSystemMsgIndex = currentMessages.indexWhere(
+      final localIndex = currentMessages.indexWhere(
         (m) =>
             m.id.startsWith('temp_') &&
             m.messageType == 'system' &&
             (m.action == message.action || m.content == message.content),
       );
 
-      if (localSystemMsgIndex != -1) {
+      if (localIndex != -1) {
         final updatedMessages = List<ChatMessage>.from(currentMessages);
-        updatedMessages[localSystemMsgIndex] =
-            message; // Replace with proper ID
+        updatedMessages[localIndex] = message;
         emit(
           ChatMessagesState.loaded(
             messages: updatedMessages,
@@ -418,24 +489,24 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
             typingInfo: _typingInfo,
           ),
         );
+        // تحديث الكاش
+        _updateCache(updatedMessages);
         return;
       }
     }
 
-    // Add new message
+    final updatedMessages = [message, ...currentMessages];
     emit(
       ChatMessagesState.loaded(
-        messages: [...currentMessages, message],
+        messages: updatedMessages,
         hasMoreMessages: false,
         isBlocked: _isBlocked,
         isUserTyping: _isUserTyping,
         typingInfo: _typingInfo,
       ),
     );
-
-    if (!message.isMe) {
-      markMessagesAsRead(); // ✅ Mark new received messages as read immediately
-    }
+    // تحديث الكاش
+    _updateCache(updatedMessages);
   }
 
   void _handleMessageDeleted(String messageId) {
@@ -453,85 +524,77 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         typingInfo: _typingInfo,
       ),
     );
+    // تحديث الكاش
+    _updateCache(updatedMessages);
   }
 
-  void _handleUserTyping(String userId, String userName) {
-    _isUserTyping = true;
-    _typingInfo = TypingModel(
-      userId: userId,
-      userName: userName,
-      chatRoomId: _currentChatRoomId ?? '',
-    );
+  /// تحديث الكاش بعد أي تغيير في الرسائل
+  Future<void> _updateCache(List<ChatMessage> messages) async {
+    if (_currentChatRoomId != null) {
+      await _cacheService.saveMessages(
+        chatRoomId: _currentChatRoomId!,
+        messages: messages,
+      );
+    }
+  }
+
+  /// Handles `typingStatus` from the other participant.
+  void _handleTypingStatus(bool isTyping) {
+    _isUserTyping = isTyping;
+    if (isTyping) {
+      _typingInfo = TypingModel(
+        userId: _currentReceiverId ?? '',
+        userName: '',
+        chatRoomId: _currentChatRoomId ?? '',
+      );
+    } else {
+      _typingInfo = null;
+    }
 
     emit(
       ChatMessagesState.loaded(
         messages: state.messagesOrEmpty,
         hasMoreMessages: false,
         isBlocked: _isBlocked,
-        isUserTyping: true,
+        isUserTyping: _isUserTyping,
         typingInfo: _typingInfo,
       ),
     );
 
-    // Clear typing after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
-      _isUserTyping = false;
-      _typingInfo = null;
-      emit(
-        ChatMessagesState.loaded(
-          messages: state.messagesOrEmpty,
-          hasMoreMessages: false,
-          isBlocked: _isBlocked,
-          isUserTyping: false,
-        ),
-      );
-    });
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // MARK AS READ
-  // ══════════════════════════════════════════════════════════════════════════
-
-  void markMessagesAsRead() {
-    if (_currentChatRoomId == null) return;
-
-    // 1. Emit socket event
-    _socketHelper.send('mark_messages_read', {
-      'chatRoomId': _currentChatRoomId,
-    }, null);
-
-    // 2. Optimistic Update (Local)
-    final currentMessages = state.messagesOrEmpty;
-    bool needsUpdate = false;
-
-    final updatedMessages = currentMessages.map((m) {
-      // Mark messages received from others as read
-      if (!m.isMe && !m.isRead) {
-        needsUpdate = true;
-        return m.copyWith(isRead: true, status: MessageStatusEnum.read);
-      }
-      return m;
-    }).toList();
-
-    if (needsUpdate) {
-      emit(
-        ChatMessagesState.loaded(
-          messages: updatedMessages,
-          hasMoreMessages: false,
-          isBlocked: _isBlocked,
-          isUserTyping: _isUserTyping,
-          typingInfo: _typingInfo,
-        ),
-      );
+    // Auto-clear after 3 s in case the stop event never arrives
+    if (isTyping) {
+      Future.delayed(const Duration(seconds: 3), () {
+        if (_isUserTyping) {
+          _isUserTyping = false;
+          _typingInfo = null;
+          emit(
+            ChatMessagesState.loaded(
+              messages: state.messagesOrEmpty,
+              hasMoreMessages: false,
+              isBlocked: _isBlocked,
+              isUserTyping: false,
+            ),
+          );
+        }
+      });
     }
   }
 
-  void _handleMessagesRead() {
-    // This handler handles when the *other* user reads *my* messages
+  /// Handles `newMessageState` — updates delivery/read status for specific messages.
+  void _handleMessageStateUpdate({
+    required String status,
+    required List<String> messageIds,
+  }) {
+    final parsedStatus = MessageStatusExtension.fromString(status);
     final currentMessages = state.messagesOrEmpty;
+    final messageIdSet = messageIds.toSet();
+
     final updatedMessages = currentMessages.map((m) {
-      if (m.isMe && !m.isRead) {
-        return m.copyWith(isRead: true, status: MessageStatusEnum.read);
+      if (messageIdSet.contains(m.id)) {
+        return m.copyWith(
+          status: parsedStatus,
+          isRead: parsedStatus == MessageStatusEnum.read,
+        );
       }
       return m;
     }).toList();
@@ -547,16 +610,48 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     );
   }
 
+  void _handleBlockStatusChanged(bool isBlocked) {
+    _isBlocked = isBlocked;
+    emit(
+      ChatMessagesState.loaded(
+        messages: state.messagesOrEmpty,
+        hasMoreMessages: false,
+        isBlocked: _isBlocked,
+        isUserTyping: _isUserTyping,
+        typingInfo: _typingInfo,
+      ),
+    );
+  }
+
+  void _emitCurrentState() {
+    emit(
+      ChatMessagesState.loaded(
+        messages: state.messagesOrEmpty,
+        hasMoreMessages: false,
+        isBlocked: _isBlocked,
+        isUserTyping: _isUserTyping,
+        typingInfo: _typingInfo,
+        freeChatMinsLeft: _freeChatMinsLeft,
+      ),
+    );
+  }
+
   // ══════════════════════════════════════════════════════════════════════════
-  // TYPING
+  // TYPING  (CLIENT → SERVER)
   // ══════════════════════════════════════════════════════════════════════════
 
   void typingStart(String chatRoomId) {
-    _socketHelper.send('typing_start', {'chatRoomId': chatRoomId}, null);
+    _socketHelper.send('typingStatus', {
+      'chatRoomId': chatRoomId,
+      'isTyping': true,
+    }, null);
   }
 
   void typingStop(String chatRoomId) {
-    _socketHelper.send('typing_stop', {'chatRoomId': chatRoomId}, null);
+    _socketHelper.send('typingStatus', {
+      'chatRoomId': chatRoomId,
+      'isTyping': false,
+    }, null);
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -598,22 +693,21 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   }) async {
     if (_currentChatRoomId == null) return false;
 
+    // Optimistic delete: remove from UI immediately
+    _handleMessageDeleted(messageId);
+
     final result = await _repo.deleteMessage(
       messageId: messageId,
       chatRoomId: _currentChatRoomId!,
       deleteType: deleteType,
     );
 
-    return result.fold(
-      (error) {
-        log('❌ Delete failed: $error');
-        return false;
-      },
-      (_) {
-        _handleMessageDeleted(messageId);
-        return true;
-      },
-    );
+    return result.fold((error) {
+      log('❌ Delete failed on server: $error');
+      // We could potentially reload messages here to revert the optimistic delete,
+      // but removing it is usually safer for UX.
+      return false;
+    }, (_) => true);
   }
 
   Future<bool> deleteMessages({
@@ -622,29 +716,22 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   }) async {
     if (_currentChatRoomId == null) return false;
 
+    // Optimistic delete
+    for (final id in messageIds) {
+      _handleMessageDeleted(id);
+    }
+
     final result = await _repo.deleteMessages(
       messageIds: messageIds,
       chatRoomId: _currentChatRoomId!,
       deleteType: deleteType,
     );
 
-    return result.fold(
-      (error) {
-        log('❌ Delete failed: $error');
-        return false;
-      },
-      (_) {
-        for (final id in messageIds) {
-          _handleMessageDeleted(id);
-        }
-        return true;
-      },
-    );
+    return result.fold((error) {
+      log('❌ Delete failed on server: $error');
+      return false;
+    }, (_) => true);
   }
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // BLOCK/UNBLOCK
-  // ══════════════════════════════════════════════════════════════════════════
 
   // ══════════════════════════════════════════════════════════════════════════
   // BLOCK/UNBLOCK
@@ -652,22 +739,19 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
 
   Future<Either<String, String>> blockUser({required String blockedId}) async {
     const uuid = Uuid();
-    final tempId = uuid.v4();
-    final localId = 'temp_$tempId';
+    final localId = 'temp_${uuid.v4()}';
     final now = DateTime.now().toIso8601String();
 
-    // 1. Optimistic Update
     _isBlocked = true;
 
-    // Create optimistic system message
     final optimisticMessage = ChatMessage(
       id: localId,
       chatRoomId: _currentChatRoomId ?? '',
-      senderId: _currentReceiverId ?? '', // Or 'system'
+      senderId: _currentReceiverId ?? '',
       senderName: 'System',
       senderImage: '',
       senderType: 'system',
-      isMe: true, // As per logs
+      isMe: true,
       contentList: ['المستخدم محظور من إرسال الرسائل في هذه الدردشة'],
       messageType: 'system',
       action: SystemMessageAction.block,
@@ -680,7 +764,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     final currentMessages = state.messagesOrEmpty;
     emit(
       ChatMessagesState.loaded(
-        messages: [...currentMessages, optimisticMessage],
+        messages: [optimisticMessage, ...currentMessages],
         hasMoreMessages: false,
         isBlocked: true,
         isUserTyping: _isUserTyping,
@@ -688,12 +772,10 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       ),
     );
 
-    // 2. Call API
     final result = await _repo.blockUser(blockedId: blockedId);
 
     result.fold(
       (error) {
-        // Revert on failure
         _isBlocked = false;
         final revertedMessages = currentMessages
             .where((m) => m.id != localId)
@@ -709,8 +791,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         );
       },
       (_) {
-        // Success: Keep the optimistic state.
-        // Socket event will eventually come and replace/confirm this logic via _handleNewMessage
+        // blockerStatus socket event will confirm the final state.
       },
     );
     return result;
@@ -720,14 +801,11 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     required String blockedId,
   }) async {
     const uuid = Uuid();
-    final tempId = uuid.v4();
-    final localId = 'temp_$tempId';
+    final localId = 'temp_${uuid.v4()}';
     final now = DateTime.now().toIso8601String();
 
-    // 1. Optimistic Update
     _isBlocked = false;
 
-    // Create optimistic system message
     final optimisticMessage = ChatMessage(
       id: localId,
       chatRoomId: _currentChatRoomId ?? '',
@@ -748,7 +826,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     final currentMessages = state.messagesOrEmpty;
     emit(
       ChatMessagesState.loaded(
-        messages: [...currentMessages, optimisticMessage],
+        messages: [optimisticMessage, ...currentMessages],
         hasMoreMessages: false,
         isBlocked: false,
         isUserTyping: _isUserTyping,
@@ -756,12 +834,10 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       ),
     );
 
-    // 2. Call API
     final result = await _repo.unblockUser(blockedId: blockedId);
 
     result.fold(
       (error) {
-        // Revert on failure
         _isBlocked = true;
         final revertedMessages = currentMessages
             .where((m) => m.id != localId)
@@ -777,7 +853,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         );
       },
       (_) {
-        // Success
+        // blockerStatus socket event will confirm the final state.
       },
     );
     return result;
@@ -793,14 +869,93 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
 
   @override
   Future<void> close() {
-    _socketHelper.off('new_message');
-    _socketHelper.off('message_deleted');
-    _socketHelper.off('user_typing');
-    _socketHelper.off('messages_read');
+    if (_currentChatRoomId != null) {
+      final listenerId = 'ChatMessagesCubit_$_currentChatRoomId';
+      _socketHelper.offAllForListener(listenerId);
+    }
+    leaveCurrentChatRoom();
     return super.close();
   }
 
   Future<void> loadOlderMessages() async {
-    // Not implemented for now - no pagination
+    // TODO: implement cursor-based pagination using repo.loadMessages(before:)
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // REACTIONS
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /// إضافة أو إزالة reaction على رسالة
+  void reactToMessage({
+    required String messageId,
+    required String emoji,
+  }) {
+    final currentMessages = state.messagesOrEmpty;
+    final messageIndex = currentMessages.indexWhere((m) => m.id == messageId);
+    
+    if (messageIndex == -1) return;
+
+    final message = currentMessages[messageIndex];
+    final currentUserId = kCurrentUserData?.id ?? '';
+    
+    // Check if user already reacted with this emoji
+    final existingReaction = message.reactions.firstWhere(
+      (r) => r.userId == currentUserId && r.emoji == emoji,
+      orElse: () => const MessageReaction(userId: '', emoji: ''),
+    );
+
+    if (existingReaction.userId.isNotEmpty) {
+      // User already reacted with this emoji, so remove it
+      _socketHelper.send('unreactToMessage', {
+        'chatMessageId': messageId,
+      }, (ack) {
+        log('✅ unreactToMessage ACK: $ack');
+      });
+    } else {
+      // Add new reaction
+      _socketHelper.send('reactToMessage', {
+        'chatMessageId': messageId,
+        'emoji': emoji,
+      }, (ack) {
+        log('✅ reactToMessage ACK: $ack');
+      });
+    }
+  }
+
+  /// Handle reaction update from server
+  void _handleMessageReaction(Map data) {
+    final chatMessageId = data['chatMessageId']?.toString();
+    final reactionsData = data['reactions'] as List?;
+
+    if (chatMessageId == null || reactionsData == null) return;
+
+    final reactions = reactionsData
+        .map((r) {
+          final reactionMap = Map<String, dynamic>.from(r as Map);
+          return MessageReaction.fromJson(reactionMap);
+        })
+        .toList();
+
+    final currentMessages = state.messagesOrEmpty;
+    final messageIndex = currentMessages.indexWhere((m) => m.id == chatMessageId);
+
+    if (messageIndex == -1) return;
+
+    final updatedMessages = List<ChatMessage>.from(currentMessages);
+    updatedMessages[messageIndex] = currentMessages[messageIndex].copyWith(
+      reactions: reactions,
+    );
+
+    emit(
+      ChatMessagesState.loaded(
+        messages: updatedMessages,
+        hasMoreMessages: false,
+        isBlocked: _isBlocked,
+        isUserTyping: _isUserTyping,
+        typingInfo: _typingInfo,
+      ),
+    );
+
+    log('✅ Message reactions updated: $chatMessageId - ${reactions.length} reactions');
   }
 }

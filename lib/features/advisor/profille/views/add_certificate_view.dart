@@ -1,6 +1,6 @@
 import 'package:tayseer/core/widgets/profile_text_field.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
+import 'package:tayseer/features/shared/profile/data/repositories/certificates_repository.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates/add_certificate_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates/add_certificate_state.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/add_certificate/add_certificate_action_button.dart';

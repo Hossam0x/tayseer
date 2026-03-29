@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
+import 'package:tayseer/features/shared/settings/models/setting_item_model.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_state.dart';
 import 'package:tayseer/my_import.dart';

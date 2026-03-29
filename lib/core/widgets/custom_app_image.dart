@@ -1,6 +1,7 @@
 import 'dart:ui';
-import 'package:vector_graphics/vector_graphics.dart';
+
 import 'package:tayseer/core/services/connectivity_cubit.dart';
+import 'package:vector_graphics/vector_graphics.dart';
 import '../../my_import.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -16,7 +17,7 @@ class AppImage extends StatefulWidget {
   final bool flipOnLtr;
   final double? blur;
   final bool isAvatar;
-  final double? radius; // ⭐ جديد
+  final double? radius;
 
   const AppImage(
     this.path, {
@@ -50,8 +51,6 @@ class _AppImageState extends State<AppImage> {
     }
   }
 
-  // ──────────────── Helper Wrappers ────────────────
-
   Widget _flipIfLtr(Widget child, BuildContext context) {
     if (!widget.flipOnLtr) return child;
     final isLtr = Directionality.of(context) == TextDirection.ltr;
@@ -59,7 +58,6 @@ class _AppImageState extends State<AppImage> {
     return Transform.scale(scaleX: -1, child: child);
   }
 
-  /// ⭐ ClipRRect لو فيه radius
   Widget _wrapWithClip(Widget child) {
     if (widget.radius != null && widget.radius! > 0) {
       return ClipRRect(
@@ -70,7 +68,6 @@ class _AppImageState extends State<AppImage> {
     return child;
   }
 
-  /// ⭐ Gradient wrapper
   Widget _wrapWithGradient(Widget child) {
     if (widget.gradientColorSvg != null) {
       return ShaderMask(
@@ -83,31 +80,20 @@ class _AppImageState extends State<AppImage> {
     return child;
   }
 
-  // ──────────────── Build ────────────────
-
   @override
   Widget build(BuildContext context) {
     final path = widget.path;
     final pixelRatio = MediaQuery.of(context).devicePixelRatio;
 
-    // ── Empty path ──
     if (path == null || path.isEmpty) {
       return _buildFallback();
     }
 
     final ext = path.split('.').last.toLowerCase();
 
-    // ── Vector Graphics (.vec) – الأسرع ──
-    if (ext == 'vec') {
-      return _buildVec(path);
-    }
+    if (ext == 'vec') return _buildVec(path);
+    if (ext == 'svg') return _buildSvg(path);
 
-    // ── SVG ──
-    if (ext == 'svg') {
-      return _buildSvg(path);
-    }
-
-    // ── Lottie ──
     if (ext == 'json') {
       return _wrapWithClip(
         Lottie.asset(
@@ -119,12 +105,8 @@ class _AppImageState extends State<AppImage> {
       );
     }
 
-    // ── GIF ──
-    if (ext == 'gif') {
-      return _buildGif(path, pixelRatio);
-    }
+    if (ext == 'gif') return _buildGif(path, pixelRatio);
 
-    // ── Network image ──
     if (path.startsWith('http')) {
       return _wrapWithGradient(
         _ConnectivityNetworkImage(
@@ -144,13 +126,9 @@ class _AppImageState extends State<AppImage> {
       );
     }
 
-    // ── Asset image (png, jpg, webp …) ──
     return _buildAssetRaster(path, pixelRatio);
   }
 
-  // ──────────────── Builders ────────────────
-
-  /// ⭐ جديد – Vector Graphics (.vec)
   Widget _buildVec(String path) {
     Widget vecWidget = SizedBox(
       height: widget.height,
@@ -169,45 +147,41 @@ class _AppImageState extends State<AppImage> {
   }
 
   Widget _buildSvg(String path) {
-    // ⭐ استخدام colorFilter بدل color المحذوف
     final colorFilter = widget.gradientColorSvg == null && widget.color != null
         ? ColorFilter.mode(widget.color!, BlendMode.srcIn)
         : null;
 
-    Widget svgWidget;
-    if (path.startsWith('http')) {
-      svgWidget = SvgPicture.network(
-        path,
-        fit: widget.fit,
-        height: widget.height,
-        width: widget.width,
-        colorFilter: colorFilter,
-        placeholderBuilder: (_) => widget.placeholderImage != null
-            ? Image.asset(
-                widget.placeholderImage!,
-                height: widget.height,
-                width: widget.width,
-                fit: widget.fit,
-              )
-            : _buildLoadingPlaceholder(),
-      );
-    } else {
-      svgWidget = SvgPicture.asset(
-        path,
-        fit: widget.fit,
-        height: widget.height,
-        width: widget.width,
-        colorFilter: colorFilter,
-        placeholderBuilder: (_) => widget.placeholderImage != null
-            ? Image.asset(
-                widget.placeholderImage!,
-                height: widget.height,
-                width: widget.width,
-                fit: widget.fit,
-              )
-            : _buildLoadingPlaceholder(),
-      );
-    }
+    Widget svgWidget = path.startsWith('http')
+        ? SvgPicture.network(
+            path,
+            fit: widget.fit,
+            height: widget.height,
+            width: widget.width,
+            colorFilter: colorFilter,
+            placeholderBuilder: (_) => widget.placeholderImage != null
+                ? Image.asset(
+                    widget.placeholderImage!,
+                    height: widget.height,
+                    width: widget.width,
+                    fit: widget.fit,
+                  )
+                : _buildLoadingPlaceholder(),
+          )
+        : SvgPicture.asset(
+            path,
+            fit: widget.fit,
+            height: widget.height,
+            width: widget.width,
+            colorFilter: colorFilter,
+            placeholderBuilder: (_) => widget.placeholderImage != null
+                ? Image.asset(
+                    widget.placeholderImage!,
+                    height: widget.height,
+                    width: widget.width,
+                    fit: widget.fit,
+                  )
+                : _buildLoadingPlaceholder(),
+          );
 
     return _flipIfLtr(_wrapWithClip(_wrapWithGradient(svgWidget)), context);
   }
@@ -242,22 +216,25 @@ class _AppImageState extends State<AppImage> {
     );
   }
 
-  /// ⭐ محسّن – cacheWidth/cacheHeight + errorBuilder
   Widget _buildAssetRaster(String path, double pixelRatio) {
+    final safeWidth = widget.width;
+    final safeHeight = widget.height;
+
     Widget assetImage = Image.asset(
       path,
       height: widget.height,
       width: widget.width,
       fit: widget.fit,
       color: widget.color,
-      cacheWidth: widget.width != null
-          ? (widget.width! * pixelRatio).toInt()
+      cacheWidth: (safeWidth != null && safeWidth.isFinite && safeWidth > 0)
+          ? (safeWidth * pixelRatio).toInt()
           : null,
-      cacheHeight: widget.height != null
-          ? (widget.height! * pixelRatio).toInt()
+      cacheHeight: (safeHeight != null && safeHeight.isFinite && safeHeight > 0)
+          ? (safeHeight * pixelRatio).toInt()
           : null,
       errorBuilder: (_, __, ___) => _buildErrorWidget(),
     );
+
     return _flipIfLtr(_wrapWithClip(_wrapWithGradient(assetImage)), context);
   }
 
@@ -284,8 +261,6 @@ class _AppImageState extends State<AppImage> {
     }
     return const SizedBox.shrink();
   }
-
-  // ──────────────── Placeholders ────────────────
 
   Widget _buildLoadingPlaceholder() {
     return Shimmer.fromColors(
@@ -320,7 +295,7 @@ class _AppImageState extends State<AppImage> {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// 🔄 صورة شبكة مع إعادة تحميل تلقائية عند عودة الاتصال
+// 🔄 Connectivity Image
 // ══════════════════════════════════════════════════════════════════════════════
 class _ConnectivityNetworkImage extends StatefulWidget {
   final String imageUrl;
@@ -331,10 +306,10 @@ class _ConnectivityNetworkImage extends StatefulWidget {
   final String? placeholderImage;
   final bool isAvatar;
   final Widget loadingPlaceholder;
-  final double pixelRatio; // ⭐ بدل الـ hardcoded 600
+  final double pixelRatio;
   final double? blur;
   final String? previousUrl;
-  final double? radius; // ⭐ جديد
+  final double? radius;
 
   const _ConnectivityNetworkImage({
     required this.imageUrl,
@@ -376,13 +351,21 @@ class _ConnectivityNetworkImageState extends State<_ConnectivityNetworkImage> {
     }
   }
 
-  // ⭐ حساب ديناميكي بناءً على pixelRatio
-  int? get _memCacheWidth =>
-      widget.width != null ? (widget.width! * widget.pixelRatio).toInt() : null;
+  int? get _memCacheWidth {
+    final w = widget.width;
+    if (w != null && w.isFinite && w > 0) {
+      return (w * widget.pixelRatio).toInt();
+    }
+    return null;
+  }
 
-  int? get _memCacheHeight => widget.height != null
-      ? (widget.height! * widget.pixelRatio).toInt()
-      : null;
+  int? get _memCacheHeight {
+    final h = widget.height;
+    if (h != null && h.isFinite && h > 0) {
+      return (h * widget.pixelRatio).toInt();
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {

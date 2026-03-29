@@ -2,7 +2,6 @@ import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/account_management_repository.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/account_management/account_management_cubit.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/account_management/account_management_state.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/account_management/account_action_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/account_management/account_confirm_dialog.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/account_management/account_option_card.dart';

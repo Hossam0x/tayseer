@@ -43,7 +43,6 @@ class _PostDetailsViewState extends State<PostDetailsView> {
     _scrollController = ScrollController();
     _currentPost = widget.post;
 
-    // ✅ الاشتراك في الـ Stream
     _postSubscription = widget.callbacks.postUpdatesStream?.listen(
       _onPostUpdated,
     );
@@ -52,7 +51,6 @@ class _PostDetailsViewState extends State<PostDetailsView> {
   void _onPostUpdated(PostModel? updatedPost) {
     if (!mounted) return;
 
-    // ✅ لو البوست اتحذف -> اخرج
     if (updatedPost == null) {
       Navigator.of(context).pop();
       return;
@@ -94,7 +92,6 @@ class _PostDetailsViewState extends State<PostDetailsView> {
         appBar: _buildAppBar(context),
         body: MultiBlocListener(
           listeners: [
-            // ✅ Comment success
             BlocListener<PostDetailsCubit, PostDetailsState>(
               listenWhen: (prev, curr) =>
                   prev.addingCommentState != curr.addingCommentState,
@@ -105,7 +102,6 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                 }
               },
             ),
-            // ✅ Reply success
             BlocListener<PostDetailsCubit, PostDetailsState>(
               listenWhen: (prev, curr) =>
                   prev.addingReplyState != curr.addingReplyState,
@@ -137,7 +133,6 @@ class _PostDetailsViewState extends State<PostDetailsView> {
     );
   }
 
-  /// Notify HomeCubit about the comment/reply + update local post
   void _notifyCommented(bool isAnonymous) {
     setState(() {
       _currentPost = _currentPost.copyWith(
@@ -169,9 +164,6 @@ class _PostDetailsViewState extends State<PostDetailsView> {
   }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Body Widget
-// ══════════════════════════════════════════════════════════════════════════════
 class _PostDetailsBody extends StatefulWidget {
   final PostModel currentPost;
   final VideoPlayerController? cachedController;
@@ -198,16 +190,15 @@ class _PostDetailsBody extends StatefulWidget {
 class _PostDetailsBodyState extends State<_PostDetailsBody> {
   final Map<String, GlobalKey> _commentKeys = {};
 
+  // ✅ MODIFIED: سكرول متطور يراعي الكيبورد ويضيف مساحة لتظهر الأزرار
   void _scrollToComment(String commentId, {bool isForReply = false}) async {
     final key = _commentKeys[commentId];
     if (key?.currentContext == null) return;
 
-    // 1. ننتظر 500 ملي ثانية لضمان انتهاء أنيميشن الكيبورد وبناء الـ UI
     await Future.delayed(const Duration(milliseconds: 500));
 
     if (!mounted || key!.currentContext == null) return;
 
-    // 2. عمل سكرول ليحاذي العنصر الكيبورد
     Scrollable.ensureVisible(
       key.currentContext!,
       duration: const Duration(milliseconds: 300),
@@ -215,13 +206,11 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
       alignment: 1.0,
     );
 
-    // 3. (تِريك إضافي): نعمل سكرول زيادة 60 بيكسل للأسفل لضمان إعطاء مساحة تنفس للأزرار وعدم قصها
+    // تريك إضافي: نعمل سكرول 60 بيكسل إضافية لضمان عدم قص الأزرار
     await Future.delayed(const Duration(milliseconds: 350));
     if (mounted && widget.scrollController.hasClients) {
       final currentOffset = widget.scrollController.offset;
       final maxScroll = widget.scrollController.position.maxScrollExtent;
-
-      // نزود 60 بيكسل للسكرول بس بشرط منتخطاش الـ maxScroll
       final targetOffset = (currentOffset + 60).clamp(0.0, maxScroll);
 
       widget.scrollController.animateTo(
@@ -260,7 +249,6 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
               builder: (context, uiState) {
                 final cubit = context.read<PostDetailsCubit>();
 
-                // ✅ تجميع كل الـ Callbacks في الـ Bundle
                 final commentCallbacks = CommentCallbacks(
                   onLike: (comment, isReply) =>
                       cubit.toggleLike(isReply, comment.id),
@@ -328,10 +316,6 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
         isReplyLoading: state.addingReplyState == CubitStates.loading,
       );
 }
-
-// ══════════════════════════════════════════════════════════════════════════════
-// State Model
-// ══════════════════════════════════════════════════════════════════════════════
 
 class _CommentsUIState extends Equatable {
   final List<CommentModel> comments;

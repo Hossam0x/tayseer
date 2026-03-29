@@ -310,6 +310,10 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   // 📌 ADD REPLY (with Auto-Scroll)
   // ═══════════════════════════════════════════════════════════
 
+  // ═══════════════════════════════════════════════════════════
+  // 📌 ADD REPLY (FIXED)
+  // ═══════════════════════════════════════════════════════════
+
   Future<void> addReply(String parentCommentId, String content) async {
     if (content.trim().isEmpty) return;
 
@@ -339,17 +343,14 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
           (parentComment) {
             final updatedReplies = [newReply, ...parentComment.replies];
 
-            int newCurrentPage = parentComment.repliesCurrentPage;
-            int newTotalPages = parentComment.repliesTotalPages;
-
-            if (newCurrentPage == 0) newCurrentPage = 1;
-            if (newTotalPages == 0) newTotalPages = 1;
-
+            // ✅ FIXED: لا نغيّر الـ pagination لو الردود مش محملة أصلاً
+            // نخليهم زي ما هم عشان loadReplies يشتغل صح بعدين
             return parentComment.copyWith(
               replies: updatedReplies,
               repliesNumber: parentComment.repliesNumber + 1,
-              repliesCurrentPage: newCurrentPage,
-              repliesTotalPages: newTotalPages,
+              // ❌ شيلنا السطور دي:
+              // repliesCurrentPage: newCurrentPage,
+              // repliesTotalPages: newTotalPages,
             );
           },
         );
@@ -359,7 +360,6 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
             addingReplyState: CubitStates.success,
             comments: updatedComments,
             clearActiveReplyId: true,
-            // ✅ NEW: Scroll للرد الجديد
             scrollToCommentId: newReply.id,
             scrollTrigger: state.scrollTrigger + 1,
             isAnonymousLocked: true,
@@ -367,6 +367,76 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
         );
 
         emit(state.copyWith(addingReplyState: CubitStates.initial));
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📌 LOAD REPLIES (FIXED - with deduplication)
+  // ═══════════════════════════════════════════════════════════
+
+  Future<void> loadReplies(String commentId) async {
+    final targetComment = _findCommentById(state.comments, commentId);
+    if (targetComment == null || targetComment.isLoadingReplies) return;
+
+    if (targetComment.repliesCurrentPage > 0 &&
+        targetComment.repliesCurrentPage >= targetComment.repliesTotalPages) {
+      return;
+    }
+
+    final int nextPage = targetComment.repliesCurrentPage + 1;
+
+    emit(
+      state.copyWith(
+        comments: _updateCommentById(
+          state.comments,
+          commentId,
+          (c) => c.copyWith(isLoadingReplies: true),
+        ),
+      ),
+    );
+
+    final result = await homeRepository.fetchReplies(
+      commentId: commentId,
+      page: nextPage,
+    );
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            comments: _updateCommentById(
+              state.comments,
+              commentId,
+              (c) => c.copyWith(isLoadingReplies: false),
+            ),
+            errorMessage: failure.message,
+          ),
+        );
+      },
+      (response) {
+        final updatedComments = _updateCommentById(state.comments, commentId, (
+          oldComment,
+        ) {
+          // ✅ FIXED: Deduplication - نشيل أي رد موجود فعلاً من النتائج الجديدة
+          final existingIds = oldComment.replies.map((r) => r.id).toSet();
+          final uniqueNewReplies = response.comments
+              .where((r) => !existingIds.contains(r.id))
+              .toList();
+
+          final newRepliesList = [...oldComment.replies, ...uniqueNewReplies];
+
+          return oldComment.copyWith(
+            isLoadingReplies: false,
+            replies: newRepliesList,
+            repliesCurrentPage: response.pagination.currentPage,
+            repliesTotalPages: response.pagination.totalPages,
+            repliesNumber: (oldComment.repliesNumber > newRepliesList.length)
+                ? oldComment.repliesNumber
+                : newRepliesList.length,
+          );
+        });
+        emit(state.copyWith(comments: updatedComments));
       },
     );
   }
@@ -446,69 +516,6 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
 
   void clearScrollTarget() {
     emit(state.copyWith(clearScrollToCommentId: true));
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // 📌 FETCH REPLIES & OTHER ACTIONS (كما هي)
-  // ═══════════════════════════════════════════════════════════
-
-  Future<void> loadReplies(String commentId) async {
-    final targetComment = _findCommentById(state.comments, commentId);
-    if (targetComment == null || targetComment.isLoadingReplies) return;
-
-    if (targetComment.repliesCurrentPage > 0 &&
-        targetComment.repliesCurrentPage >= targetComment.repliesTotalPages) {
-      return;
-    }
-
-    final int nextPage = targetComment.repliesCurrentPage + 1;
-
-    emit(
-      state.copyWith(
-        comments: _updateCommentById(
-          state.comments,
-          commentId,
-          (c) => c.copyWith(isLoadingReplies: true),
-        ),
-      ),
-    );
-
-    final result = await homeRepository.fetchReplies(
-      commentId: commentId,
-      page: nextPage,
-    );
-
-    result.fold(
-      (failure) {
-        emit(
-          state.copyWith(
-            comments: _updateCommentById(
-              state.comments,
-              commentId,
-              (c) => c.copyWith(isLoadingReplies: false),
-            ),
-            errorMessage: failure.message,
-          ),
-        );
-      },
-      (response) {
-        final updatedComments = _updateCommentById(state.comments, commentId, (
-          oldComment,
-        ) {
-          final newRepliesList = [...oldComment.replies, ...response.comments];
-          return oldComment.copyWith(
-            isLoadingReplies: false,
-            replies: newRepliesList,
-            repliesCurrentPage: response.pagination.currentPage,
-            repliesTotalPages: response.pagination.totalPages,
-            repliesNumber: (oldComment.repliesNumber > newRepliesList.length)
-                ? oldComment.repliesNumber
-                : newRepliesList.length,
-          );
-        });
-        emit(state.copyWith(comments: updatedComments));
-      },
-    );
   }
 
   // ═══════════════════════════════════════════════════════════

@@ -26,7 +26,11 @@ android {
         versionName = "1.4.5"
         multiDexEnabled = true  // ← أضف هذا
     }
-
+ packaging {
+        resources {
+            pickFirsts += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+        }
+    }
     signingConfigs {
         if (keystorePropertiesFile.exists()) {
             create("release") {

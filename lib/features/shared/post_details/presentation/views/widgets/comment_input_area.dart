@@ -23,7 +23,7 @@ class CommentInputArea extends StatelessWidget {
 }
 
 class _CommentInputAreaBody extends StatefulWidget {
-  const _CommentInputAreaBody({super.key});
+  const _CommentInputAreaBody();
 
   @override
   State<_CommentInputAreaBody> createState() => _CommentInputAreaBodyState();
@@ -92,6 +92,17 @@ class _CommentInputAreaBodyState extends State<_CommentInputAreaBody> {
 
   void _onTextChangedForMention() {
     final text = _controller.text;
+
+    // ✅ FIXED: لو النص فاضي، امسح القائمة فوراً
+    if (text.isEmpty) {
+      if (_mentionStart != -1) {
+        _mentionStart = -1;
+        _mentionEnd = -1;
+        context.read<MentionSearchCubit>().clearSearch();
+      }
+      return;
+    }
+
     final selection = _controller.selection;
     if (!selection.isValid || !selection.isCollapsed) {
       if (_mentionStart != -1) {
@@ -104,13 +115,21 @@ class _CommentInputAreaBodyState extends State<_CommentInputAreaBody> {
 
     final cursorPosition = selection.baseOffset;
 
-    // Find limits of the current word
+    // ✅ FIXED: لو الكيرسر في البداية مفيش mention
+    if (cursorPosition == 0) {
+      if (_mentionStart != -1) {
+        _mentionStart = -1;
+        _mentionEnd = -1;
+        context.read<MentionSearchCubit>().clearSearch();
+      }
+      return;
+    }
+
     int start = cursorPosition - 1;
     while (start >= 0 && text[start] != ' ' && text[start] != '\n') {
       start--;
     }
     start++;
-
     int end = cursorPosition;
     while (end < text.length && text[end] != ' ' && text[end] != '\n') {
       end++;
@@ -127,7 +146,6 @@ class _CommentInputAreaBodyState extends State<_CommentInputAreaBody> {
       }
     }
 
-    // Not a mention
     if (_mentionStart != -1) {
       _mentionStart = -1;
       _mentionEnd = -1;
@@ -164,12 +182,10 @@ class _CommentInputAreaBodyState extends State<_CommentInputAreaBody> {
     }
   }
 
-  // ✅ NEW: Method لإرسال الكومنت
   void _sendComment() {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
-    // 1️⃣ مسح الـ TextField فوراً (قبل الـ API call)
     _controller.clear();
     setState(() {
       _textDirection = _defaultDirection;
@@ -177,7 +193,6 @@ class _CommentInputAreaBodyState extends State<_CommentInputAreaBody> {
     });
     _focusNode.unfocus();
 
-    // 2️⃣ إرسال الكومنت للـ Cubit
     context.read<PostDetailsCubit>().addComment(text);
   }
 
@@ -212,13 +227,10 @@ class _CommentInputAreaBodyState extends State<_CommentInputAreaBody> {
             }
           },
         ),
-        // ✅ MODIFIED: Listener للـ addingCommentState
         BlocListener<PostDetailsCubit, PostDetailsState>(
           listenWhen: (previous, current) =>
               previous.addingCommentState != current.addingCommentState,
           listener: (context, state) {
-            // ❌ فقط في حالة الفشل نعرض Toast
-            // (الـ TextField اتمسح فعلاً في _sendComment)
             if (state.addingCommentState == CubitStates.failure) {
               AppToast.error(
                 context,
@@ -228,6 +240,7 @@ class _CommentInputAreaBodyState extends State<_CommentInputAreaBody> {
           },
         ),
       ],
+      // ✅ MODIFIED: أول BlocSelector بيحدد هل نخفي الـ Input ولا لأ
       child: BlocSelector<PostDetailsCubit, PostDetailsState, bool>(
         selector: (state) =>
             state.activeReplyId != null || state.editingCommentId != null,
@@ -236,177 +249,199 @@ class _CommentInputAreaBodyState extends State<_CommentInputAreaBody> {
             return const SizedBox.shrink();
           }
 
-          final cubit = context.watch<PostDetailsCubit>();
-          final isLocked = cubit.state.isAnonymousLocked;
-          final selectedAnonymous = cubit.state.selectedAnonymous;
-
-          return PopScope(
-            canPop: !_showEmojiPicker,
-            onPopInvokedWithResult: (didPop, result) {
-              if (didPop) return;
-              setState(() => _showEmojiPicker = false);
+          // ✅ MODIFIED: تاني BlocSelector بيسمع بس على isAnonymousLocked و selectedAnonymous
+          // بدل context.watch اللي كانت بتعمل rebuild لكل حاجة
+          return BlocSelector<
+            PostDetailsCubit,
+            PostDetailsState,
+            ({bool isLocked, bool selectedAnonymous})
+          >(
+            selector: (state) => (
+              isLocked: state.isAnonymousLocked,
+              selectedAnonymous: state.selectedAnonymous,
+            ),
+            builder: (context, data) {
+              return _buildInputUI(
+                context,
+                isLocked: data.isLocked,
+                selectedAnonymous: data.selectedAnonymous,
+              );
             },
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                MentionSuggestionsPopup(onMentionSelected: _onMentionSelected),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 12.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF6F8),
-                    border: Border(
-                      top: BorderSide(color: Colors.grey.shade100),
-                    ),
-                  ),
-                  child: SafeArea(
-                    top: false,
-                    bottom: !_showEmojiPicker,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        if (isUser)
-                          CommentAvatar(
-                            iscommented: isLocked,
-                            isAnonymous: selectedAnonymous,
-                            currentSelection: selectedAnonymous,
-                            onSelectionChanged: (value) {
-                              context.read<PostDetailsCubit>().changeAnonymous(
-                                value,
-                              );
-                            },
-                          )
-                        else
-                          const MyProfileImage(isAnnonymous: false),
-                        Gap(12.w),
-                        Expanded(
-                          child: Container(
-                            constraints: BoxConstraints(
-                              minHeight: 45.h,
-                              maxHeight: 120.h,
-                            ),
-                            padding: EdgeInsets.symmetric(horizontal: 12.w),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(25.r),
-                              border: Border.all(color: Colors.grey.shade200),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: _controller,
-                                    focusNode: _focusNode,
-                                    textDirection: _textDirection,
-                                    textAlign:
-                                        _textDirection == TextDirection.rtl
-                                        ? TextAlign.right
-                                        : TextAlign.left,
-                                    maxLines: null,
-                                    keyboardType: TextInputType.multiline,
-                                    style: TextStyle(
-                                      fontSize: 14.sp,
-                                      color: Colors.black,
-                                    ),
-                                    decoration: InputDecoration(
-                                      hintText: context.tr(
-                                        AppStrings.writeComment,
-                                      ),
-                                      hintStyle: TextStyle(
-                                        fontSize: 12.sp,
-                                        color: Colors.grey.shade400,
-                                      ),
-                                      hintTextDirection: Directionality.of(
-                                        context,
-                                      ),
-                                      border: InputBorder.none,
-                                      isDense: true,
-                                      contentPadding: EdgeInsets.symmetric(
-                                        vertical: 14.h,
-                                      ),
-                                    ),
-                                  ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ✅ MODIFIED: فصل الـ UI في method منفصلة لسهولة القراءة
+  Widget _buildInputUI(
+    BuildContext context, {
+    required bool isLocked,
+    required bool selectedAnonymous,
+  }) {
+    return PopScope(
+      canPop: !_showEmojiPicker,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        setState(() => _showEmojiPicker = false);
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ✅ TapRegion لإغلاق المنشن عند الضغط خارجه
+          TapRegion(
+            onTapOutside: (event) {
+              final state = context.read<MentionSearchCubit>().state;
+              if (state.state != CubitStates.initial) {
+                context.read<MentionSearchCubit>().clearSearch();
+              }
+            },
+            child: RepaintBoundary(
+              child: MentionSuggestionsPopup(
+                onMentionSelected: _onMentionSelected,
+              ),
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEF6F8),
+              border: Border(top: BorderSide(color: Colors.grey.shade100)),
+            ),
+            child: SafeArea(
+              top: false,
+              bottom: !_showEmojiPicker,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (isUser)
+                    CommentAvatar(
+                      iscommented: isLocked,
+                      isAnonymous: selectedAnonymous,
+                      currentSelection: selectedAnonymous,
+                      onSelectionChanged: (value) {
+                        context.read<PostDetailsCubit>().changeAnonymous(value);
+                      },
+                    )
+                  else
+                    const MyProfileImage(isAnnonymous: false),
+                  Gap(12.w),
+                  Expanded(
+                    child: Container(
+                      constraints: BoxConstraints(
+                        minHeight: 45.h,
+                        maxHeight: 120.h,
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 12.w),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(25.r),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _controller,
+                              focusNode: _focusNode,
+                              textDirection: _textDirection,
+                              textAlign: _textDirection == TextDirection.rtl
+                                  ? TextAlign.right
+                                  : TextAlign.left,
+                              maxLines: null,
+                              keyboardType: TextInputType.multiline,
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                color: Colors.black,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: context.tr(AppStrings.writeComment),
+                                hintStyle: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: Colors.grey.shade400,
                                 ),
-                                Gap(4.w),
-                                GestureDetector(
-                                  onTap: _toggleEmojiPicker,
-                                  child: Container(
-                                    height: 45.h,
-                                    alignment: Alignment.center,
-                                    child: Icon(
-                                      _showEmojiPicker
-                                          ? Icons.keyboard_outlined
-                                          : Icons.emoji_emotions_outlined,
-                                      color: _showEmojiPicker
-                                          ? Theme.of(context).primaryColor
-                                          : Colors.grey.shade400,
-                                      size: 22.sp,
-                                    ),
-                                  ),
+                                hintTextDirection: Directionality.of(context),
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(
+                                  vertical: 14.h,
                                 ),
-                              ],
+                              ),
                             ),
                           ),
-                        ),
-                        Gap(10.w),
-                        // ✅ MODIFIED: زر الإرسال
-                        CustomClick(
-                          onTap: _sendComment,
-                          child: AppImage(
-                            flipOnLtr: true,
-                            AssetsData.send,
-                            height: 26.w,
-                            width: 26.w,
+                          Gap(4.w),
+                          GestureDetector(
+                            onTap: _toggleEmojiPicker,
+                            child: Container(
+                              height: 45.h,
+                              alignment: Alignment.center,
+                              child: Icon(
+                                _showEmojiPicker
+                                    ? Icons.keyboard_outlined
+                                    : Icons.emoji_emotions_outlined,
+                                color: _showEmojiPicker
+                                    ? Theme.of(context).primaryColor
+                                    : Colors.grey.shade400,
+                                size: 22.sp,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (_showEmojiPicker)
-                  SizedBox(
-                    height: 250.h,
-                    child: EmojiPicker(
-                      textEditingController: _controller,
-                      config: Config(
-                        height: 250.h,
-                        checkPlatformCompatibility: true,
-                        emojiViewConfig: EmojiViewConfig(
-                          emojiSizeMax:
-                              28 *
-                              (foundation.defaultTargetPlatform ==
-                                      TargetPlatform.iOS
-                                  ? 1.30
-                                  : 1.0),
-                          columns: 7,
-                          backgroundColor: const Color(0xFFFEF6F8),
-                        ),
-                        categoryViewConfig: const CategoryViewConfig(
-                          initCategory: Category.SMILEYS,
-                          indicatorColor: Colors.pink,
-                          iconColorSelected: Colors.pink,
-                          iconColor: Colors.grey,
-                          backspaceColor: Colors.pink,
-                          backgroundColor: Color(0xFFFEF6F8),
-                        ),
-                        bottomActionBarConfig: const BottomActionBarConfig(
-                          enabled: false,
-                        ),
-                        searchViewConfig: SearchViewConfig(
-                          backgroundColor: const Color(0xFFFEF6F8),
-                          buttonIconColor: Colors.pink,
-                          hintText: context.tr(AppStrings.search),
-                        ),
+                        ],
                       ),
                     ),
                   ),
-              ],
+                  Gap(10.w),
+                  CustomClick(
+                    onTap: _sendComment,
+                    child: AppImage(
+                      flipOnLtr: true,
+                      AssetsData.send,
+                      height: 26.w,
+                      width: 26.w,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          );
-        },
+          ),
+          if (_showEmojiPicker)
+            SizedBox(
+              height: 250.h,
+              child: EmojiPicker(
+                textEditingController: _controller,
+                config: Config(
+                  height: 250.h,
+                  checkPlatformCompatibility: true,
+                  emojiViewConfig: EmojiViewConfig(
+                    emojiSizeMax:
+                        28 *
+                        (foundation.defaultTargetPlatform == TargetPlatform.iOS
+                            ? 1.30
+                            : 1.0),
+                    columns: 7,
+                    backgroundColor: const Color(0xFFFEF6F8),
+                  ),
+                  categoryViewConfig: const CategoryViewConfig(
+                    initCategory: Category.SMILEYS,
+                    indicatorColor: Colors.pink,
+                    iconColorSelected: Colors.pink,
+                    iconColor: Colors.grey,
+                    backspaceColor: Colors.pink,
+                    backgroundColor: Color(0xFFFEF6F8),
+                  ),
+                  bottomActionBarConfig: const BottomActionBarConfig(
+                    enabled: false,
+                  ),
+                  searchViewConfig: SearchViewConfig(
+                    backgroundColor: const Color(0xFFFEF6F8),
+                    buttonIconColor: Colors.pink,
+                    hintText: context.tr(AppStrings.search),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

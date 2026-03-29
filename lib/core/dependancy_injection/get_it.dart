@@ -2,6 +2,7 @@ import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/services/connectivity_service.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
+import 'package:tayseer/core/cache/chat_cache_service.dart';
 import 'package:tayseer/core/utils/hive_service.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_remote_datasource.dart';
@@ -9,6 +10,7 @@ import 'package:tayseer/features/advisor/add_post/repo/posts_repository.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository_impl.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/upload_post/upload_post_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit_simple.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_list_cubit.dart';
 import 'package:tayseer/features/advisor/update_posts/view_model/update_posts_cubit.dart';
 import 'package:tayseer/features/shared/event/repo/event_repo.dart';
 import 'package:tayseer/features/shared/event/repo/event_repo_impl.dart';
@@ -32,17 +34,17 @@ import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository_impl.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/archive_repository.dart';
-import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository.dart';
-import 'package:tayseer/features/advisor/profille/data/repositories/certificates_repository_impl.dart';
+import 'package:tayseer/features/shared/profile/data/repositories/certificates_repository.dart';
+import 'package:tayseer/features/shared/profile/data/repositories/certificates_repository_impl.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository_impl.dart';
-import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository.dart';
-import 'package:tayseer/features/advisor/profille/data/repositories/ratings_repository_impl.dart';
+import 'package:tayseer/features/shared/profile/data/repositories/ratings_repository.dart';
+import 'package:tayseer/features/shared/profile/data/repositories/ratings_repository_impl.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_cubits.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/certificates/certificates_cubit.dart';
+import 'package:tayseer/features/shared/profile/cubit/certificates/certificates_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates/edit_certificate_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/ratings/ratings_cubit.dart';
+import 'package:tayseer/features/shared/profile/cubit/ratings/ratings_cubit.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository_impl.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
@@ -147,6 +149,9 @@ Future<void> setupGetIt() async {
     () => CacheCleanupService(getIt<PostsLocalDatasource>()),
   );
 
+  /// ChatCacheService
+  getIt.registerLazySingleton<ChatCacheService>(() => ChatCacheService());
+
   /// SocketHelper
   getIt.registerLazySingleton<tayseerSocketHelper>(() => tayseerSocketHelper());
 
@@ -195,9 +200,13 @@ Future<void> setupGetIt() async {
     () => StoriesCubit(getIt<StoriesRepository>()),
   );
 
-  /// Chat Repository (Simplified - No Cache)
   getIt.registerLazySingleton<ChatRepoSimple>(
     () => ChatRepoSimple(getIt<ApiService>()),
+  );
+
+  /// ChatListCubit (LazySingleton to keep listeners alive in background)
+  getIt.registerLazySingleton<ChatListCubit>(
+    () => ChatListCubit(getIt<ChatRepoSimple>()),
   );
 
   /// ChatMessagesCubit (Simplified)
@@ -307,7 +316,12 @@ Future<void> setupGetIt() async {
   );
 
   getIt.registerLazySingleton<AccountManagementRepository>(
-    () => AccountManagementRepositoryImpl(getIt<ApiService>()),
+    () => AccountManagementRepositoryImpl(
+      apiService: getIt<ApiService>(),
+      suspendEndpoint: '/advisor/suspend',
+      deleteEndpoint: '/advisor/deleteUser',
+      deleteMethod: 'delete',
+    ),
   );
 
   getIt.registerLazySingleton<AdvisorPackagesRepository>(
@@ -417,10 +431,8 @@ Future<void> setupGetIt() async {
     () => MarriageRepositoryImpl(getIt<ApiService>()),
   );
 
-  // User
-  getIt.registerFactory<UserAccountManagementRepository>(
-    () => UserAccountManagementRepositoryImpl(getIt<ApiService>()),
-  );
+  // User account management — uses shared repo with user-specific endpoints
+  // (no getIt registration needed; view creates it directly with endpoints)
 
   getIt.registerLazySingleton<FollowersRepository>(
     () => FollowersRepositoryImpl(getIt<ApiService>()),

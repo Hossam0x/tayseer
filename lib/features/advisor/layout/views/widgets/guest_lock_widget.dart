@@ -33,8 +33,8 @@ class GuestLockWidget extends StatelessWidget {
           if (showBackgroundImage)
             AppImage(
               AssetsData.homeBarBackgroundImage,
-              width: MediaQuery.of(context).size.width, // ✅ was double.infinity
-              height: MediaQuery.of(context).size.height * 0.05,
+              width: MediaQuery.sizeOf(context).width,
+              height: MediaQuery.sizeOf(context).height * 0.05,
               fit: BoxFit.cover,
             ),
 

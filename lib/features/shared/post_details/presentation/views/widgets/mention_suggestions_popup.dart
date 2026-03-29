@@ -14,6 +14,9 @@ class MentionSuggestionsPopup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<MentionSearchCubit, MentionSearchState>(
+      buildWhen: (previous, current) =>
+          previous.state != current.state ||
+          previous.mentions != current.mentions,
       builder: (context, state) {
         if (state.state == CubitStates.initial) {
           return const SizedBox.shrink();
@@ -27,15 +30,25 @@ class MentionSuggestionsPopup extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
-        Widget child = const SizedBox.shrink();
-
-        if (state.state == CubitStates.loading) {
-          child = _buildShimmer();
-        } else if (state.state == CubitStates.success ||
-            state.mentions.isNotEmpty) {
-          child = _buildMentionsList(state.mentions);
+        // ✅ MODIFIED: فصل الشيمر عن القائمة في الـ Container
+        if (state.state == CubitStates.loading && state.mentions.isEmpty) {
+          // ✅ الشيمر: Container بدون maxHeight، يلف المحتوى بس
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 5,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: _buildShimmer(),
+          );
         }
 
+        // ✅ القائمة الحقيقية: Container بـ maxHeight
         return Container(
           constraints: BoxConstraints(maxHeight: 400.h),
           decoration: BoxDecoration(
@@ -48,127 +61,128 @@ class MentionSuggestionsPopup extends StatelessWidget {
               ),
             ],
           ),
-          child: child,
+          child: _buildMentionsList(state.mentions),
         );
       },
     );
   }
 
-  // ✅ extracted method للقائمة الحقيقية
   Widget _buildMentionsList(List<MentionSearchModel> mentions) {
-    return ListView.separated(
-      shrinkWrap: true,
-      padding: EdgeInsets.zero,
+    return SingleChildScrollView(
       physics: const ClampingScrollPhysics(),
-      itemCount: mentions.length,
-      separatorBuilder: (context, index) =>
-          Divider(height: 1, color: Colors.grey.shade200),
-      itemBuilder: (context, index) {
-        final user = mentions[index];
-        return ListTile(
-          dense: true,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-          leading: AppImage(
-            user.image ?? '',
-            width: 36.w,
-            height: 36.w,
-            radius: 18.r,
-            isAvatar: true,
-            blur: user.imageBlur ? 1.5 : 0.0,
-          ),
-          // 👇 التعديل هنا 👇
-          title: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(mentions.length, (index) {
+          final user = mentions[index];
+          return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // استخدمنا Flexible عشان لو الاسم طويل جداً ميعملش Overflow
-              Flexible(
-                child: Text(
-                  user.name ?? user.username,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+              if (index > 0) Divider(height: 1, color: Colors.grey.shade200),
+              _MentionTile(
+                key: ValueKey(user.username),
+                user: user,
+                onTap: () => onMentionSelected(user),
               ),
-              // شرط إظهار علامة التوثيق
-              if (user.isVerified == true) ...[
-                SizedBox(width: 4.w),
-                Icon(
-                  Icons.verified, // يمكنك تغييرها بصورة SVG لو عندك تصميم مخصص
-                  color: Colors.blue,
-                  size: 16.sp,
-                ),
-              ],
             ],
-          ),
-          // 👆 نهاية التعديل 👆
-          subtitle: Text(
-            user.username,
-            style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade600),
-          ),
-          onTap: () => onMentionSelected(user),
-        );
-      },
+          );
+        }),
+      ),
     );
   }
 
-  // ✅ extracted method للشيمر
   Widget _buildShimmer() {
     return Shimmer.fromColors(
       baseColor: Colors.grey.shade300,
       highlightColor: Colors.grey.shade100,
-      child: ListView.separated(
-        shrinkWrap: true,
-        padding: EdgeInsets.zero,
-        physics: const ClampingScrollPhysics(),
-        itemCount: 1,
-        separatorBuilder: (context, index) =>
-            Divider(height: 1, color: Colors.grey.shade200),
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-            child: Row(
-              children: [
-                Container(
-                  width: 36.w,
-                  height: 36.w,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 120.w,
-                        height: 12.h,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(4.r),
-                        ),
-                      ),
-                      SizedBox(height: 8.h),
-                      Container(
-                        width: 80.w,
-                        height: 10.h,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(4.r),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+        child: Row(
+          children: [
+            Container(
+              width: 36.w,
+              height: 36.w,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
             ),
-          );
-        },
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 120.w,
+                    height: 12.h,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4.r),
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Container(
+                    width: 80.w,
+                    height: 10.h,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4.r),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _MentionTile extends StatelessWidget {
+  final MentionSearchModel user;
+  final VoidCallback onTap;
+
+  const _MentionTile({super.key, required this.user, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      dense: true,
+      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
+      leading: RepaintBoundary(
+        child: AppImage(
+          user.image ?? '',
+          width: 36.w,
+          height: 36.w,
+          radius: 18.r,
+          isAvatar: true,
+          blur: user.imageBlur ? 1.5 : 0.0,
+          fit: BoxFit.cover,
+        ),
+      ),
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              user.name ?? user.username,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600),
+            ),
+          ),
+          if (user.isVerified == true) ...[
+            SizedBox(width: 4.w),
+            Icon(Icons.verified, color: Colors.blue, size: 16.sp),
+          ],
+        ],
+      ),
+      subtitle: Text(
+        user.username,
+        style: TextStyle(fontSize: 12.sp, color: Colors.grey.shade600),
+      ),
+      onTap: onTap,
     );
   }
 }
