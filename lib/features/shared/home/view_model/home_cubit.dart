@@ -1009,10 +1009,7 @@ class HomeCubit extends Cubit<HomeState> {
   // ═══════════════════════════════════════════════════════════════════════════
   void updateEditedPost(PostModel updatedPost) {
     emit(
-      state.updatePostInAllCategories(
-        updatedPost.postId,
-        (_) => updatedPost,
-      ),
+      state.updatePostInAllCategories(updatedPost.postId, (_) => updatedPost),
     );
   }
 
@@ -1316,9 +1313,7 @@ class HomeCubit extends Cubit<HomeState> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   PostModel? _findPost(String postId) {
-    final posts = state.posts;
-    final index = posts.indexWhere((p) => p.postId == postId);
-    return index != -1 ? posts[index] : null;
+    return state.postsMap[postId];
   }
 
   /// حقن بوست في الكاتيجوري الحالية إذا لم يكن موجودًا
