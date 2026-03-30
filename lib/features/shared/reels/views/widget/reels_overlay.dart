@@ -2,7 +2,6 @@ import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/functions/count_formate.dart';
 import 'package:tayseer/core/widgets/follow_button.dart';
 import 'package:tayseer/core/widgets/post_card/circular_icon_button.dart';
-import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_contect_text.dart';
 import 'package:tayseer/core/widgets/post_card/post_options_bottom_sheet.dart';
 import 'package:tayseer/core/utils/video_download_service.dart';
@@ -10,10 +9,9 @@ import 'package:tayseer/core/widgets/post_card/reaction_like_button.dart';
 import 'package:tayseer/core/widgets/post_card/share_button.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
-import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/features/shared/reels/view_model/cubit/reels_cubit.dart';
+import 'package:tayseer/features/shared/reels/views/widget/reels_comments_bottom_sheet.dart';
 import 'package:tayseer/my_import.dart';
-// تأكد من استيراد AppImage
 
 class ReelsOverlay extends StatelessWidget {
   final PostModel post;
@@ -41,12 +39,8 @@ class ReelsOverlay extends StatelessWidget {
       top: false,
       child: Column(
         children: [
-          // 1. Header
           _buildHeader(context),
-
           const Spacer(),
-
-          // 2. Bottom Content (UserInfo + Actions)
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -63,11 +57,8 @@ class ReelsOverlay extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // أ. الأزرار الجانبية (نضعها أولاً لتظهر على اليمين في العربي)
                   _buildSideActions(context),
-
-                  Gap(10.w), // مسافة بين الأزرار والنص
-                  // ب. معلومات المستخدم (تأخذ باقي المساحة وتظهر على اليسار)
+                  Gap(10.w),
                   Expanded(child: _buildUserInfo(context)),
                 ],
               ),
@@ -79,20 +70,14 @@ class ReelsOverlay extends StatelessWidget {
     );
   }
 
-  // --- Header Section ---
   Widget _buildHeader(BuildContext context) {
     return ClipRRect(
-      // 1. البوردر ريدياس من تحت بس (للقص)
       borderRadius: BorderRadius.vertical(bottom: Radius.circular(20.r)),
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
         decoration: BoxDecoration(
           color: Colors.black.withOpacity(0.4),
-
-          // 2. البوردر ريدياس من تحت بس (للشكل)
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(20.r)),
-
-          // 3. البوردر (الخط) من تحت بس
           border: Border(
             bottom: BorderSide(
               color: Colors.white.withOpacity(0.3),
@@ -102,7 +87,6 @@ class ReelsOverlay extends StatelessWidget {
         ),
         child: SafeArea(
           bottom: false,
-
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -125,7 +109,6 @@ class ReelsOverlay extends StatelessWidget {
                       arguments: {'type': ReportType.post, 'id': post.postId},
                     );
                   },
-
                   icon: Icon(
                     Icons.info_outline,
                     color: Colors.white,
@@ -201,9 +184,7 @@ class ReelsOverlay extends StatelessWidget {
                       ),
                     ],
                   ),
-
                   Gap(4.h),
-
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -236,9 +217,7 @@ class ReelsOverlay extends StatelessWidget {
                 ],
               ),
             ),
-
             Gap(10.w),
-
             GestureDetector(
               onTap: () {
                 context.pushNamed(
@@ -268,7 +247,6 @@ class ReelsOverlay extends StatelessWidget {
             ),
           ],
         ),
-
         PostContentText(
           maxLines: 1,
           text: post.content,
@@ -299,47 +277,15 @@ class ReelsOverlay extends StatelessWidget {
           ),
           count: post.likesCount,
         ),
+
+        // ✅ التعديل: فتح Bottom Sheet بدل Navigation
         _buildCircleActionBtn(
           child: CircularIconButton(
             height: 50,
             width: 50,
             icon: AssetsData.commentIcon,
             backgroundColor: const Color(0xFFFCE9ED),
-
-            onTap: () {
-              final homeCubit = getIt<HomeCubit>();
-              homeCubit.setInitialPost(post);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PostDetailsView(
-                    isFromProfile: false,
-                    post: post,
-                    cachedController: cachedController,
-                    callbacks: PostCallbacks(
-                      postUpdatesStream: homeCubit.stream.map((state) {
-                        return state.posts.firstWhere(
-                          (p) => p.postId == post.postId,
-                          orElse: () => post,
-                        );
-                      }),
-                      onReactionChanged: (postId, reactionType) {
-                        homeCubit.reactToPost(
-                          postId: postId,
-                          reactionType: reactionType,
-                        );
-                      },
-                      onShareTap: (postId) {
-                        homeCubit.toggleSharePost(postId: postId);
-                      },
-                      onHashtagTap: (hashtag) {
-                        context.pushNamed(AppRouter.kAdvisorSearchView);
-                      },
-                    ),
-                  ),
-                ),
-              );
-            },
+            onTap: () => _openCommentsSheet(context),
           ),
           count: post.commentsCount,
         ),
@@ -353,7 +299,7 @@ class ReelsOverlay extends StatelessWidget {
           ),
           count: post.sharesCount,
         ),
-        // 4. More
+
         CircularIconButton(
           height: 50,
           width: 50,
@@ -367,10 +313,6 @@ class ReelsOverlay extends StatelessWidget {
               onShare: onShareTapped,
               isShared: post.isRepostedByMe,
               isFromReels: true,
-
-              // onReport: onReportTapped,
-              // onBlock: onBlockTapped,
-              // onHide: onHideTapped,
               onSave: onSaveTapped,
               onDownload: () {
                 VideoDownloadService().downloadVideo(
@@ -382,12 +324,34 @@ class ReelsOverlay extends StatelessWidget {
                 context.read<ReelsCubit>().updateEditedReel(updatedPost);
                 getIt<HomeCubit>().updateEditedPost(updatedPost);
               },
-              // onArchive: onArchiveTapped,
-              // onDelete: onDeleteTapped,
             );
           },
         ),
       ],
+    );
+  }
+
+  // ✅ فصل لوجيك فتح الـ Bottom Sheet في method منفصلة
+  void _openCommentsSheet(BuildContext context) {
+    // ✅ احفظ reference للـ ReelsCubit قبل فتح الـ sheet
+    final reelsCubit = context.read<ReelsCubit>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ReelsCommentsBottomSheet(
+        post: post,
+        onCommentCountChanged: (newCount, isCommented, isAnonymous) {
+          // ✅ مزامنة عدد الكومنتات مع ReelsCubit
+          reelsCubit.updateReelCommentCount(
+            postId: post.postId,
+            newCount: newCount,
+            isCommented: isCommented,
+            isAnonymous: isAnonymous,
+          );
+        },
+      ),
     );
   }
 

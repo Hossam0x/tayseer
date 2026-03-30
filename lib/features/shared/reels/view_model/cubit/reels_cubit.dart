@@ -360,6 +360,7 @@ class ReelsCubit extends Cubit<ReelsState> {
       },
     );
   }
+
   // ═══════════════════════════════════════════════════════════
   // ✏️ UPDATE EDITED REEL (بعد تعديل ريل من صفحة التعديل)
   // ═══════════════════════════════════════════════════════════
@@ -394,5 +395,35 @@ class ReelsCubit extends Cubit<ReelsState> {
   /// ✅ الحصول على كل ريلز الـ Advisor
   List<PostModel> getReelsByAdvisor(String advisorId) {
     return state.reels.where((reel) => reel.advisorId == advisorId).toList();
+  }
+  // ═══════════════════════════════════════════════════════════
+  // 💬 UPDATE COMMENT COUNT (من الـ Comments Bottom Sheet)
+  // ═══════════════════════════════════════════════════════════
+
+  void updateReelCommentCount({
+    required String postId,
+    required int newCount,
+    required bool isCommented,
+    bool? isAnonymous,
+  }) {
+    final reelIndex = state.reels.indexWhere((r) => r.postId == postId);
+    if (reelIndex == -1) return;
+
+    final reel = state.reels[reelIndex];
+
+    // ✅ تجنب emit لو مفيش تغيير
+    if (reel.commentsCount == newCount &&
+        reel.isCommented == isCommented &&
+        reel.isAnonymous == isAnonymous) {
+      return;
+    }
+
+    final updatedReel = reel.copyWith(
+      commentsCount: newCount,
+      isCommented: isCommented,
+      isAnonymous: isAnonymous,
+    );
+
+    _updateReelInList(postId, updatedReel);
   }
 }
