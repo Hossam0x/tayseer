@@ -10,8 +10,8 @@ class WalletCubit extends Cubit<WalletState> {
   final WalletRepo _walletRepo;
   final tayseerSocketHelper _socketHelper;
 
-  static const _listenerId = 'wallet_cubit_points';
-  static const _pointsEvent = 'advisorPointsUpdate';
+  static const _listenerId = 'wallet_cubit';
+  static const _walletEvent = 'advisorWalletUpdate';
 
   WalletCubit(this._walletRepo, this._socketHelper)
     : super(const WalletState());
@@ -28,21 +28,35 @@ class WalletCubit extends Cubit<WalletState> {
   // ── Socket ──────────────────────────────────────────────────────────────
 
   void _listenToPointsUpdate() {
-    _socketHelper.listenWithId(_pointsEvent, _listenerId, (data) {
+    _socketHelper.listenWithId(_walletEvent, _listenerId, (data) {
       try {
-        final event = AdvisorPointsUpdateEvent.fromJson(
+        final event = AdvisorWalletUpdateEvent.fromJson(
           Map<String, dynamic>.from(data as Map),
         );
-        log('[Wallet] 🔔 Points updated via socket: ${event.points}');
-        if (state.walletData != null) {
-          emit(
-            state.copyWith(
-              walletData: state.walletData!.copyWith(points: event.points),
-            ),
-          );
-        }
+        log(
+          '[Wallet] 🔔 Wallet updated via socket — balance: ${event.balance}, points: ${event.points}',
+        );
+
+        // Update wallet balance + points
+        final updatedWallet = state.walletData?.copyWith(
+          balance: event.balance,
+          points: event.points,
+        );
+
+        // Prepend new transaction to the list if present
+        final updatedTransactions = event.transaction != null
+            ? [event.transaction!, ...state.transactions]
+            : state.transactions;
+
+        emit(
+          state.copyWith(
+            walletData: updatedWallet,
+            transactions: updatedTransactions,
+            transactionsStatus: ListStatus.loaded,
+          ),
+        );
       } catch (e) {
-        log('[Wallet] ❌ Error parsing points update: $e');
+        log('[Wallet] ❌ Error parsing wallet update: $e');
       }
     });
   }
@@ -172,7 +186,7 @@ class WalletCubit extends Cubit<WalletState> {
 
   @override
   Future<void> close() {
-    _socketHelper.offWithId(_pointsEvent, _listenerId);
+    _socketHelper.offWithId(_walletEvent, _listenerId);
     return super.close();
   }
 }
