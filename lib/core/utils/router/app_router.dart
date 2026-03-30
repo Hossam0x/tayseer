@@ -48,6 +48,7 @@ import 'package:tayseer/features/advisor/wallet/view/transactions_log_view.dart'
 import 'package:tayseer/features/advisor/wallet/view/wallet_view.dart';
 import 'package:tayseer/features/advisor/wallet/view/withdraw_success_view.dart';
 import 'package:tayseer/features/advisor/wallet/view/withdraw_view.dart';
+import 'package:tayseer/features/advisor/wallet/view/recharge_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_activation_pending_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_review_view.dart';
 import 'package:tayseer/features/shared/auth/view/activation_success_view.dart';
@@ -63,6 +64,7 @@ import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
 import 'package:tayseer/features/shared/followers/user_followings_view.dart';
 import 'package:tayseer/features/shared/packages/presentation/views/packages_view.dart';
+import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_cubit.dart';
 import 'package:tayseer/features/shared/reports/presentation/view/report_details_view.dart';
 import 'package:tayseer/features/shared/reports/presentation/view/reports_view.dart';
@@ -130,6 +132,7 @@ abstract class AppRouter {
   static const kOtpView = '/OtpView';
   static const kUserLayoutView = '/UserLayoutView';
   static const kPurposeSelectionView = '/PurposeSelectionView';
+  static const kPostDetailsView = '/PostDetailsView';
   static const kChooseGenderView = '/ChooseGenderView';
   static const kNationalityView = '/NationalityView';
   static const kCountryView = '/CountryView';
@@ -224,6 +227,7 @@ abstract class AppRouter {
   static const kBookingsLogView = '/bookings_log_view';
   static const kTransactionsLogView = '/transactions_log_view';
   static const kWithdrawalView = '/widthdrawal_view';
+  static const kRechargeView = '/recharge_view';
   static const kWithdrawSuccessView = '/widthdrawal_success_view';
   static const kUserProfileView = '/userProfileView';
   static const kFollowersView = '/followers_view';
@@ -258,6 +262,15 @@ abstract class AppRouter {
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case kPostDetailsView:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => PostDetailsView(
+            postId_fromNotifc: args["postID"] as String?,
+            isFromProfile: false,
+          ),
+        );
       case kSettingsView:
         return SlideLeftRoute(
           page: const SettingsView(),
@@ -399,6 +412,12 @@ abstract class AppRouter {
       case AppRouter.kWithdrawalView:
         return SlideLeftRoute(
           page: const WithdrawView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kRechargeView:
+        return SlideLeftRoute(
+          page: const RechargeView(),
           routeSettings: settings,
         );
 
@@ -692,7 +711,7 @@ abstract class AppRouter {
         final post = settings.arguments as PostModel;
         return MaterialPageRoute(
           builder: (_) => BlocProvider(
-            create: (_) => getIt<UpdatePostCubit>(),
+            create: (_) => UpdatePostCubit(),
             child: UpdatePostView(post: post),
           ),
         );
@@ -736,11 +755,11 @@ abstract class AppRouter {
         final args = settings.arguments as Map<String, dynamic>?;
         final isSystemChat = args?['isSystemChat'] as bool? ?? false;
         final bool hasSystem = args?['system'] as bool? ?? false;
-        
+
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => AdvisorChatScreen(
-            receiverId: (isSystemChat || hasSystem) 
+            receiverId: (isSystemChat || hasSystem)
                 ? null // في حالة System Chat لا نرسل receiverId
                 : (args?['receiverid'] as String?),
             chatRoomId: args?['chatroomid'] as String?,
@@ -749,7 +768,8 @@ abstract class AppRouter {
             isBlocked: args?['isBlocked'] as bool? ?? false,
             isHaveSession: args?['isHaveSession'] as bool? ?? true,
             isSystemChat: isSystemChat || hasSystem,
-            onBlockStatusChanged: args?['onBlockStatusChanged'] as void Function(bool)?,
+            onBlockStatusChanged:
+                args?['onBlockStatusChanged'] as void Function(bool)?,
           ),
         );
       case notification:

@@ -14,12 +14,14 @@ class UpdatePostCubit extends Cubit<UpdatePostState> {
 
   final PostsRepository _repo;
   final contentController = TextEditingController();
+  PostModel? _originalPost;
   String? _pendingCategoryName;
 
   // ════════════════════════════════════════════
   // ✅ تهيئة الكيوبت بداتا البوست
   // ════════════════════════════════════════════
   void initWithPost(PostModel post) {
+    _originalPost = post;
     final postType = post.isReel ? AddPostEnum.reel : AddPostEnum.post;
 
     emit(
@@ -285,9 +287,13 @@ class UpdatePostCubit extends Cubit<UpdatePostState> {
         ),
       ),
       (_) {
+        // ✅ بناء الموديل المعدل لوكال من البوست الأصلي
+        final updatedPost = _buildUpdatedPost();
+
         emit(
           state.copyWith(
             updatePostState: CubitStates.success,
+            updatedPost: updatedPost,
             capturedImages: [],
             capturedVideo: null,
             existingImageUrls: [],
@@ -299,6 +305,25 @@ class UpdatePostCubit extends Cubit<UpdatePostState> {
         );
         contentController.clear();
       },
+    );
+  }
+
+  /// ✅ بناء الموديل المعدل من البيانات المحلية
+  PostModel? _buildUpdatedPost() {
+    if (_originalPost == null) return null;
+
+    // حساب اسم الكاتيجوري من الـ ID
+    String categoryName = _originalPost!.category;
+    if (state.selectedCategoryId != null && state.categories.isNotEmpty) {
+      final match = state.categories.where(
+        (c) => c.id == state.selectedCategoryId,
+      );
+      if (match.isNotEmpty) categoryName = match.first.name;
+    }
+
+    return _originalPost!.copyWith(
+      content: contentController.text,
+      category: categoryName,
     );
   }
 

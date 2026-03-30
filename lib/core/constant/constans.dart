@@ -14,7 +14,6 @@ const String kbaseUrl = 'https://tayser-app.net/api/v1';
 // bool kShowOnBoarding = false;
 UserModel? kCurrentUserData;
 Gender? selectedGender;
-
 UserTypeEnum? selectedUserType = UserTypeEnum.user;
 String phone = '201009119795';
 bool get isUserAnonymous =>

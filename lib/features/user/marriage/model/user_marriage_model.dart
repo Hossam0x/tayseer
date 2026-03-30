@@ -45,7 +45,12 @@ class UserItem {
   Answers? answers;
   bool? allowInteractions;
   final bool isPartialData;
-  UserItem({this.user, this.answers, this.allowInteractions, this.isPartialData = false});
+  UserItem({
+    this.user,
+    this.answers,
+    this.allowInteractions,
+    this.isPartialData = false,
+  });
 
   factory UserItem.fromJson(Map<String, dynamic> json) => UserItem(
     user: json["user"] != null ? User.fromJson(json["user"]) : null,
@@ -348,11 +353,27 @@ class UserMedia {
 
   UserMedia({this.image, this.video, this.audio});
 
-  factory UserMedia.fromJson(Map<String, dynamic> json) => UserMedia(
-    image: json["image"] != null ? List<String>.from(json["image"]) : null,
-    video: json["video"],
-    audio: json["audio"],
-  );
+  factory UserMedia.fromJson(Map<String, dynamic> json) {
+    List<String>? parsedImages;
+
+    final rawImage = json["image"];
+    if (rawImage is List) {
+      // لو جه list عادية
+      parsedImages = List<String>.from(rawImage);
+    } else if (rawImage is Map) {
+      // لو جه map زي {"0": "url1", "1": "url2"}
+      parsedImages = rawImage.values
+          .whereType<String>()
+          .where((v) => v.isNotEmpty)
+          .toList();
+    }
+
+    return UserMedia(
+      image: (parsedImages?.isEmpty ?? true) ? null : parsedImages,
+      video: json["video"],
+      audio: json["audio"],
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     "image": image,

@@ -11,12 +11,15 @@ import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_state.dart';
+import 'package:tayseer/main.dart';
 import 'dart:convert';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
 
 class UserProfileCubit extends Cubit<UserProfileState> {
-  final LocalNotification _notificationService = LocalNotification();
+  final LocalNotification _notificationService = LocalNotification(
+    navigatorKey: navigatorKey,
+  );
   final UserProfileRepository _userProfileRepository;
   late StreamSubscription<ProfileUpdateEvent> _profileSubscription;
 
@@ -24,7 +27,8 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     _loadInitialData();
     _listenToProfileUpdates();
   }
-
+  static final StreamController<bool> marriageStatusStream =
+      StreamController<bool>.broadcast();
   void _listenToProfileUpdates() {
     _profileSubscription = ProfileEventBus.instance.onProfileUpdated.listen((
       event,
@@ -691,20 +695,19 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       emit(currentState.copyWith(isMarriageSectionDeactivated: value));
       await _saveMarriageSectionDeactivated(value);
 
-      // ✅ أعد بناء الـ settings عشان يخفي/يظهر item الزواج
+      // ✅ أضف السطر ده
+      UserProfileCubit.marriageStatusStream.add(value);
+
       final updatedSettings = await _loadSettings(
         isProfileComplete: currentState.isMarriageProfileComplete,
-
-        isMarriageDeactivated: value, // ✅
+        isMarriageDeactivated: value,
       );
-
       emit(
         currentState.copyWith(
           isMarriageSectionDeactivated: value,
-          settings: updatedSettings, // ✅
+          settings: updatedSettings,
         ),
       );
-
       debugPrint(
         '✅ Marriage section ${value ? "deactivated" : "activated"} locally',
       );

@@ -43,6 +43,8 @@ typedef PollVoteCallback = void Function(String postId, String choiceText);
 /// Callback when user adds a comment (to update isCommented/isAnonymous)
 typedef CommentedCallback = void Function(String postId, bool isAnonymous);
 
+/// Callback when PostDetailsView is popped — carries the latest post model
+
 /// Bundle of post-related callbacks for easy passing
 class PostCallbacks {
   // Existing callbacks

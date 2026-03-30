@@ -188,7 +188,7 @@ class HomeCubit extends Cubit<HomeState> {
             homeInfo: ImageAndNameModel(
               image: cachedImage,
               name: cachedName,
-              notifications: 0,
+              notifications: state.homeInfo?.notifications ?? 0,
             ),
             fetchNameAndImageState: CubitStates.success,
           ),
@@ -206,7 +206,8 @@ class HomeCubit extends Cubit<HomeState> {
           homeInfo: ImageAndNameModel(
             image: cachedImage,
             name: cachedName,
-            notifications: 0,
+            notifications: state.homeInfo?.notifications ?? 0,
+
             approvalKey: state.homeInfo?.approvalKey ?? '',
           ),
           fetchNameAndImageState: CubitStates.success,
@@ -1004,6 +1005,18 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // ✏️ UPDATE EDITED POST (بعد تعديل بوست من صفحة التعديل)
+  // ═══════════════════════════════════════════════════════════════════════════
+  void updateEditedPost(PostModel updatedPost) {
+    emit(
+      state.updatePostInAllCategories(
+        updatedPost.postId,
+        (_) => updatedPost,
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // 👁️ TOGGLE HIDE POST
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -1306,6 +1319,18 @@ class HomeCubit extends Cubit<HomeState> {
     final posts = state.posts;
     final index = posts.indexWhere((p) => p.postId == postId);
     return index != -1 ? posts[index] : null;
+  }
+
+  /// حقن بوست في الكاتيجوري الحالية إذا لم يكن موجودًا
+  /// (يُستخدم عند الدخول للبوست من الإشعارات)
+  void injectPost(PostModel post) {
+    if (_findPost(post.postId) != null) return;
+    emit(
+      state.updateCategoryPosts(
+        state.selectedCategoryId,
+        (data) => data.copyWith(posts: [post, ...data.posts]),
+      ),
+    );
   }
 
   /// إزالة البوستات المكررة بالـ postId

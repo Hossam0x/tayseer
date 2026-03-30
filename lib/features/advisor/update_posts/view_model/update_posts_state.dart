@@ -1,5 +1,6 @@
 import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/core/models/category_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/my_import.dart';
 
 class UpdatePostState {
@@ -28,6 +29,9 @@ class UpdatePostState {
   final List<String> imagesToDelete;
   final List<String> videosToDelete;
 
+  // ✅ البوست المعدل (يتم بناؤه لوكال عند نجاح التعديل)
+  final PostModel? updatedPost;
+
   const UpdatePostState({
     this.updatePostState = CubitStates.initial,
     this.categoryState = CubitStates.initial,
@@ -47,6 +51,7 @@ class UpdatePostState {
     this.capturedVideo,
     this.imagesToDelete = const [],
     this.videosToDelete = const [],
+    this.updatedPost,
   });
 
   UpdatePostState copyWith({
@@ -68,6 +73,7 @@ class UpdatePostState {
     Object? capturedVideo = _capturedVideoSentinel,
     List<String>? imagesToDelete,
     List<String>? videosToDelete,
+    PostModel? updatedPost,
   }) {
     return UpdatePostState(
       updatePostState: updatePostState ?? this.updatePostState,
@@ -92,6 +98,7 @@ class UpdatePostState {
           : (capturedVideo as XFile?),
       imagesToDelete: imagesToDelete ?? this.imagesToDelete,
       videosToDelete: videosToDelete ?? this.videosToDelete,
+      updatedPost: updatedPost ?? this.updatedPost,
     );
   }
 }

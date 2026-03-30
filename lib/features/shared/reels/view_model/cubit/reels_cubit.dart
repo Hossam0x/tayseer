@@ -361,6 +361,13 @@ class ReelsCubit extends Cubit<ReelsState> {
     );
   }
   // ═══════════════════════════════════════════════════════════
+  // ✏️ UPDATE EDITED REEL (بعد تعديل ريل من صفحة التعديل)
+  // ═══════════════════════════════════════════════════════════
+  void updateEditedReel(PostModel updatedPost) {
+    _updateReelInList(updatedPost.postId, updatedPost);
+  }
+
+  // ═══════════════════════════════════════════════════════════
   // 📌 HELPER METHODS
   // ═══════════════════════════════════════════════════════════
 

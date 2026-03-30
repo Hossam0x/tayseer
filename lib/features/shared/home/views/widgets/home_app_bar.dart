@@ -82,7 +82,6 @@ class _HomeAppBarState extends State<HomeAppBar> {
                       },
                       icon: Stack(
                         clipBehavior: Clip.none,
-
                         children: [
                           AppImage(
                             AssetsData.notificationIcon,
@@ -95,9 +94,9 @@ class _HomeAppBarState extends State<HomeAppBar> {
                             Positioned(
                               top: context.responsiveHeight(-8),
                               right: context.responsiveWidth(-6),
-
                               child: Container(
-                                padding: EdgeInsets.all(4.r),
+                                width: context.responsiveWidth(16),   // ← fixed width
+                                height: context.responsiveHeight(16), // ← fixed height
                                 decoration: BoxDecoration(
                                   color: AppColors.kprimaryColor,
                                   shape: BoxShape.circle,

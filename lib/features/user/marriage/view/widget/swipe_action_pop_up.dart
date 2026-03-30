@@ -119,28 +119,28 @@ class _SwipeActionPopupState extends State<SwipeActionPopup>
           icon: Icons.check,
           color: HexColor('f8d3da'),
           iconColor: AppColors.kprimaryTextColor,
-          label: 'like_action',
+          // label: 'like_action',
         );
       case SwipeActionType.dislike:
         return _ActionConfig(
           icon: Icons.close,
           color: HexColor('e44e6c'),
           iconColor: Colors.white,
-          label: 'dislike_action',
+          // label: 'dislike_action',
         );
       case SwipeActionType.favorite:
         return _ActionConfig(
           icon: Icons.favorite,
           color: Colors.white,
           iconColor: Colors.red,
-          label: 'favorite_action',
+          // label: 'favorite_action',
         );
       case SwipeActionType.regard:
         return _ActionConfig(
           icon: Icons.star,
           color: HexColor('cccab3'),
           iconColor: Colors.white,
-          label: 'regard_action',
+          // label: 'regard_action',
         );
     }
   }
@@ -149,7 +149,7 @@ class _SwipeActionPopupState extends State<SwipeActionPopup>
   Widget build(BuildContext context) {
     final config = _config;
     // ✅ استخدم الـ labelOverride لو موجود، غير كده جرب context.tr
-    final label = widget.labelOverride ?? context.tr(config.label);
+    // final label = widget.labelOverride ?? context.tr(config.label);
 
     return AnimatedBuilder(
       animation: _controller,
@@ -197,15 +197,15 @@ class _SwipeActionPopupState extends State<SwipeActionPopup>
                       ),
                     ),
                     SizedBox(height: 12.h),
-                    Text(
-                      label, // ✅ استخدم الـ label المحلول
-                      style: Styles.textStyle18Bold.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                         decoration: TextDecoration.none, 
-                      ),
-                    ),
+                    // Text(
+                    //   label, // ✅ استخدم الـ label المحلول
+                    //   style: Styles.textStyle18Bold.copyWith(
+                    //     color: Colors.white,
+                    //     fontWeight: FontWeight.w700,
+                    //     letterSpacing: 0.5,
+                    //      decoration: TextDecoration.none, 
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
@@ -221,12 +221,12 @@ class _ActionConfig {
   final IconData icon;
   final Color color;
   final Color iconColor;
-  final String label;
+
 
   const _ActionConfig({
     required this.icon,
     required this.color,
     required this.iconColor,
-    required this.label,
+  
   });
 }

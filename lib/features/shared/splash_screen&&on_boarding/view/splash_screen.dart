@@ -1,28 +1,19 @@
-// import 'dart:developer';
-
-// import 'package:tayseer/core/utils/helper/socket_helper.dart';
-
 import 'dart:developer';
-
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/core/notifications/notificationHelper.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/main.dart';
-
 import '../../../../my_import.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _SplashScreenState createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  // double _opacity = 0.0;
-  // late AnimationController _controller;
-
   @override
   void initState() {
     super.initState();
@@ -39,7 +30,6 @@ class _SplashScreenState extends State<SplashScreen>
 
       final socketHelper = getIt<tayseerSocketHelper>();
       final connected = await socketHelper.connect();
-
       if (connected) {
         log('✅ Socket connected successfully');
       } else {
@@ -54,11 +44,11 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 4800));
     if (!mounted) return;
 
-    final String? token = CachNetwork.getStringData(key: ktoken);
+    final String token = CachNetwork.getStringData(key: ktoken);
     final String? userType = CachNetwork.getStringData(key: kUserType);
 
     log(
-      '🔍 Navigation check - Token: ${token?.isNotEmpty}, '
+      '🔍 Navigation check - Token: ${token.isNotEmpty}, '
       'UserType: $userType, selectedUserType: $selectedUserType',
     );
 
@@ -68,33 +58,25 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    if (token != null && token.isNotEmpty) {
-      // ─── المستخدم مسجل دخول ───
-      String destination;
+    if (token.isNotEmpty) {
+      // ─── مسجل دخول ───
+      _navigateLoggedInUser();
 
-      if (selectedUserType == UserTypeEnum.asConsultant) {
-        destination = kCurrentUserData?.compeletedData == true
-            ? AppRouter.kAdvisorLayoutView
-            : AppRouter.kRegisrationView;
-      } else if (selectedUserType == UserTypeEnum.user) {
-        destination = kCurrentUserData?.isNew == false
-            ? AppRouter.kUserLayoutView
-            : AppRouter.kRegisrationView;
-      } else if (selectedUserType == UserTypeEnum.guest) {
-        log('✅ Guest user detected, navigating to user layout');
-        destination = AppRouter.kUserLayoutView;
-      } else {
-        log('⚠️ Unknown user type, navigating to registration');
-        destination = AppRouter.kRegisrationView;
-      }
+      // ✅ handle pending notification
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (pendingNotificationMessage != null) {
+            debugPrint('✅ Handling pending notification from terminated state');
+            NotificationHelper.handleNotificationClick(
+              message: pendingNotificationMessage,
+            );
+            pendingNotificationMessage = null;
+          }
+        });
+      });
 
-      if (!mounted) return;
-      await context.pushReplacementNamed(destination);
-
-      // ✅ بعد الـ navigation، نعالج الـ deep link بـ delay أكبر
+      // ✅ handle cold start deep link
       if (coldUri != null) {
-        _handleDeepLinkAfterLogin(coldUri);
-      } else {
         Future.delayed(const Duration(milliseconds: 1000), () {
           consumePendingDeepLink();
         });
@@ -117,11 +99,31 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
+  void _navigateLoggedInUser() {
+    if (!mounted) return;
+
+    if (selectedUserType == UserTypeEnum.asConsultant) {
+      if (kCurrentUserData?.compeletedData == true) {
+        context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
+      } else {
+        context.pushReplacementNamed(AppRouter.kRegisrationView);
+      }
+    } else if (selectedUserType == UserTypeEnum.user) {
+      kCurrentUserData?.isNew == false
+          ? context.pushReplacementNamed(AppRouter.kUserLayoutView)
+          : context.pushReplacementNamed(AppRouter.kRegisrationView);
+    } else {
+      // fallback لو selectedUserType مش محدد
+      navigatorKey.currentState?.pushReplacementNamed(
+        AppRouter.kRegisrationView,
+      );
+    }
+  }
+
   void _handleDeepLinkAfterLogin(Uri uri) {
     final personId = _extractPersonId(uri);
     if (personId == null) return;
 
-    // ✅ delay أكبر عشان الـ destination screen يتبني خالص
     Future.delayed(const Duration(milliseconds: 1000), () {
       if (!mounted) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {

@@ -10,6 +10,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_volume_controller
   gtk
   pro_video_editor
+  record_linux
   url_launcher_linux
   zego_express_engine
 )

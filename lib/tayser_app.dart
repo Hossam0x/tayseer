@@ -1,9 +1,12 @@
 import 'package:tayseer/core/appLocalizations/appLocalizations.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
+import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/splash_screen.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/main.dart';
 import 'package:tayseer/my_import.dart';
+
+import 'main.dart';
 
 class TayseerApp extends StatelessWidget {
   const TayseerApp({super.key});
@@ -16,6 +19,7 @@ class TayseerApp extends StatelessWidget {
       splitScreenMode: true,
       builder: (context, child) {
         return MultiBlocProvider(
+          
           providers: [
             BlocProvider(create: (context) => LanguageCubit()),
             BlocProvider.value(value: getIt<ConnectivityCubit>()),
@@ -25,13 +29,11 @@ class TayseerApp extends StatelessWidget {
             child: BlocBuilder<LanguageCubit, Locale>(
               builder: (context, state) {
                 final cubit = context.read<LanguageCubit>();
-                final pendingRoute = cubit.consumePendingRoute();
-                final safeInitialRoute = _safeInitialRoute(pendingRoute);
+                final pendingRoute = cubit.consumePendingWidget();
 
                 return MaterialApp(
-                  // ✅ مهم جداً — بدونه الـ deep link مش هيشتغل
-                  navigatorKey: navigatorKey,
-                  key: ValueKey(state.languageCode),
+                  navigatorKey:navigatorKey ,
+                key: ValueKey(state.languageCode),
                   builder: (context, child) {
                     return MediaQuery(
                       data: MediaQuery.of(
@@ -64,7 +66,7 @@ class TayseerApp extends StatelessWidget {
                     videoRouteObserver,
                   ],
                   onGenerateRoute: AppRouter.onGenerateRoute,
-                  initialRoute: safeInitialRoute,
+                  home: pendingRoute ?? SplashScreen(),
                 );
               },
             ),
@@ -72,12 +74,5 @@ class TayseerApp extends StatelessWidget {
         );
       },
     );
-  }
-
-  String _safeInitialRoute(String? pendingRoute) {
-    if (pendingRoute == null || pendingRoute.isEmpty || pendingRoute == '/') {
-      return AppRouter.kSplashView;
-    }
-    return pendingRoute;
   }
 }

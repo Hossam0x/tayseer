@@ -22,7 +22,7 @@ import 'package:tayseer/features/user/marriage/view/widget/interests_section.dar
 import 'package:tayseer/features/user/marriage/view/widget/religious.dart';
 import 'widgets/MarriageProfileSkeleton .dart';
 import 'widgets/profile_statistics_cards.dart';
-
+import 'package:cached_network_image/cached_network_image.dart';
 class MarriagefilePage extends StatefulWidget {
   final UserProfileModel? userProfile;
   final int initialTabIndex;
@@ -666,20 +666,10 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
             tag: heroTag,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16.r),
-              child: Container(
+              child: buildCachedImage(
+                url: imageUrl,
                 height: 400.h,
-                width: double.infinity,
-                color: Colors.grey.shade200, // background while loading
-                child: Container(
-                  height: 400.h,
-                  width: double.infinity,
-                  color: Colors.grey.shade200,
-                  child: buildCachedImage(
-                    url: imageUrl,
-                    height: 400.h,
-                    radius: BorderRadius.circular(16.r),
-                  ),
-                ),
+                radius: BorderRadius.circular(16.r),
               ),
             ),
           ),

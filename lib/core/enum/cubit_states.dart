@@ -1,25 +1,31 @@
 enum CubitStates {
   initial,
   loading,
+  loadingMore,
   success,
   failure;
 
-  static printState({
+  static void printState({
     required String? stateName,
     required CubitStates? state,
   }) {
+    if (state == null) return;
+
     String stateNameString() {
-      if (state == CubitStates.initial) {
-        return "Initial State";
-      } else if (state == CubitStates.loading) {
-        return "Loading State";
-      } else if (state == CubitStates.success) {
-        return "Success State";
-      } else {
-        return "Failure State";
+      switch (state) {
+        case CubitStates.initial:
+          return "Initial State";
+        case CubitStates.loading:
+          return "Loading State";
+        case CubitStates.loadingMore:
+          return "Loading More State";
+        case CubitStates.success:
+          return "Success State";
+        case CubitStates.failure:
+          return "Failure State";
       }
     }
 
-    state != null ? print("$stateName: ${stateNameString()}") : null;
+    print("$stateName: ${stateNameString()}");
   }
 }
