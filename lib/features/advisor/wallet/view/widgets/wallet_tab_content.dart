@@ -31,71 +31,81 @@ class WalletTabContent extends StatelessWidget {
         final isLoading = state.transactionsStatus == ListStatus.loading;
         final items = state.previewTransactions;
 
-        return SingleChildScrollView(
-          child: Column(
-            children: [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: const BalanceCard(),
-              ),
-              SizedBox(height: 20.h),
-              WalletSectionHeader(
-                title: context.tr('transactions_log'),
-                onViewAll: () => Navigator.pushNamed(
-                  context,
-                  AppRouter.kTransactionsLogView,
+        return RefreshIndicator(
+          color: AppColors.primary400,
+          onRefresh: () => context.read<WalletCubit>().refresh(),
+          child: SingleChildScrollView(
+            // AlwaysScrollableScrollPhysics ensures pull-to-refresh
+            // works even when content doesn't fill the screen
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  child: const BalanceCard(),
                 ),
-              ),
-              Skeletonizer(
-                enabled: isLoading,
-                child: (items.isEmpty && !isLoading)
-                    ? WalletEmptyState(label: context.tr('no_transactions'))
-                    : ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: isLoading ? 5 : items.length,
-                        itemBuilder: (_, i) => TransactionItem(
-                          transaction: isLoading ? _skeleton : items[i],
-                        ),
-                      ),
-              ),
-              SizedBox(height: 20.h),
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 40.w),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: CustomBotton(
-                        height: 54.h,
-                        width: double.infinity,
-                        title: context.tr('withdraw'),
-                        onPressed: () => Navigator.pushNamed(
-                          context,
-                          AppRouter.kWithdrawalView,
-                        ),
-                        useGradient: true,
-                      ),
-                    ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: CustomBotton(
-                        height: 54.h,
-                        width: double.infinity,
-                        title: context.tr('recharge'),
-                        onPressed: () => Navigator.pushNamed(
-                          context,
-                          AppRouter.kRechargeView,
-                        ),
-                        useGradient: false,
-                        backGroundcolor: AppColors.primary100,
-                        titleColor: AppColors.primary500,
-                      ),
-                    ),
-                  ],
+                SizedBox(height: 20.h),
+                WalletSectionHeader(
+                  title: context.tr('transactions_log'),
+                  onViewAll: () => Navigator.pushNamed(
+                    context,
+                    AppRouter.kTransactionsLogView,
+                  ),
                 ),
-              ),
-              SizedBox(height: 20.h),
-            ],
+                Skeletonizer(
+                  enabled: isLoading,
+                  child: (items.isEmpty && !isLoading)
+                      ? WalletEmptyState(label: context.tr('no_transactions'))
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: isLoading ? 5 : items.length,
+                          itemBuilder: (_, i) => TransactionItem(
+                            transaction: isLoading ? _skeleton : items[i],
+                          ),
+                        ),
+                ),
+                SizedBox(height: 20.h),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    vertical: 20.h,
+                    horizontal: 40.w,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: CustomBotton(
+                          height: 54.h,
+                          width: double.infinity,
+                          title: context.tr('withdraw'),
+                          onPressed: () => Navigator.pushNamed(
+                            context,
+                            AppRouter.kWithdrawalView,
+                          ),
+                          useGradient: true,
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: CustomBotton(
+                          height: 54.h,
+                          width: double.infinity,
+                          title: context.tr('recharge'),
+                          onPressed: () => Navigator.pushNamed(
+                            context,
+                            AppRouter.kRechargeView,
+                          ),
+                          useGradient: false,
+                          backGroundcolor: AppColors.primary100,
+                          titleColor: AppColors.primary500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 20.h),
+              ],
+            ),
           ),
         );
       },
@@ -124,29 +134,34 @@ class EarningsTabContent extends StatelessWidget {
         final isLoading = state.earningsStatus == ListStatus.loading;
         final items = state.previewEarnings;
 
-        return SingleChildScrollView(
-          child: Column(
-            children: [
-              WalletSectionHeader(
-                title: context.tr('earnings_log'),
-                onViewAll: () =>
-                    Navigator.pushNamed(context, AppRouter.kBookingsLogView),
-              ),
-              Skeletonizer(
-                enabled: isLoading,
-                child: (items.isEmpty && !isLoading)
-                    ? WalletEmptyState(label: context.tr('no_bookings'))
-                    : ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: isLoading ? 5 : items.length,
-                        itemBuilder: (_, i) => TransactionItem(
-                          transaction: isLoading ? _skeleton : items[i],
+        return RefreshIndicator(
+          color: AppColors.primary400,
+          onRefresh: () => context.read<WalletCubit>().refresh(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                WalletSectionHeader(
+                  title: context.tr('earnings_log'),
+                  onViewAll: () =>
+                      Navigator.pushNamed(context, AppRouter.kBookingsLogView),
+                ),
+                Skeletonizer(
+                  enabled: isLoading,
+                  child: (items.isEmpty && !isLoading)
+                      ? WalletEmptyState(label: context.tr('no_bookings'))
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: isLoading ? 5 : items.length,
+                          itemBuilder: (_, i) => TransactionItem(
+                            transaction: isLoading ? _skeleton : items[i],
+                          ),
                         ),
-                      ),
-              ),
-              SizedBox(height: 30.h),
-            ],
+                ),
+                SizedBox(height: 30.h),
+              ],
+            ),
           ),
         );
       },

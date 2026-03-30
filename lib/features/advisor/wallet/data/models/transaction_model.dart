@@ -4,7 +4,8 @@ class TransactionModel {
   final String type;
   final num amount;
   final String displayAmount;
-  final String currency;
+  final String? currency;
+  final String? walletType;
   final DateTime? createdAt;
 
   const TransactionModel({
@@ -13,7 +14,8 @@ class TransactionModel {
     required this.type,
     required this.amount,
     required this.displayAmount,
-    required this.currency,
+    this.currency,
+    this.walletType,
     this.createdAt,
   });
 
@@ -24,7 +26,8 @@ class TransactionModel {
       type: json['type'] ?? '',
       amount: json['amount'] ?? 0,
       displayAmount: json['displayAmount'] ?? '',
-      currency: json['currency'] ?? 'USD',
+      currency: json['currency'] as String?,
+      walletType: json['walletType'] as String?,
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'])
           : null,
@@ -32,6 +35,7 @@ class TransactionModel {
   }
 
   bool get isPositive => displayAmount.startsWith('+');
+  bool get isPoints => walletType == 'points';
 }
 
 class PaginationModel {
