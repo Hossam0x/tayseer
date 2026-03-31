@@ -41,6 +41,9 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
   bool _isEnded = false;
   bool _isDisposed = false;
 
+  // ✅ الإضافة الجديدة: منع الـ ping-pong بين فيديوهات بنفس اللينك
+  bool _isInPlayZone = false;
+
   // Completer لمنع التهيئة المتكررة
   Completer<void>? _initCompleter;
 
@@ -404,6 +407,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
 
   // ─── Visibility & Interaction ────────────────────────────────────────
 
+  // ✅ التعديل الرئيسي هنا — حل مشكلة الفيديو اللي بيفضل شغال في الخلفية
   void _handleVisibility(VisibilityInfo info) {
     if (!mounted || _isDisposed) return;
 
@@ -413,38 +417,48 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     final visibleFraction = info.visibleFraction;
 
     if (visibleFraction > 0.7) {
-      // ألغِ أي timer dispose — الفيديو رجع للشاشة
+      // ألغِ أي timer dispose — الفيديو لسه في الشاشة
       _disposeDelayTimer?.cancel();
       _disposeDelayTimer = null;
 
-      if (_controller == null && !_hasError) {
-        _initializeVideo().then((_) {
-          if (mounted && !_isDisposed && _isInitialized) {
+      // ✅ فقط لما يدخل منطقة التشغيل لأول مرة
+      // لو كان فيها أصلاً (_isInPlayZone == true) → ما نعملش حاجة
+      // ده بيمنع الـ ping-pong بين بوستين بنفس لينك الفيديو
+      if (!_isInPlayZone) {
+        _isInPlayZone = true;
+
+        if (_controller == null && !_hasError) {
+          _initializeVideo().then((_) {
+            if (mounted && !_isDisposed && _isInitialized) {
+              VideoManager.instance.playVideo(widget.postId);
+              _controller?.play();
+            }
+          });
+        } else if (_controller != null &&
+            _isInitialized &&
+            !_isEnded &&
+            !_hasError) {
+          try {
             VideoManager.instance.playVideo(widget.postId);
-            _controller?.play();
+            if (!_controller!.value.isPlaying) {
+              _controller!.play();
+            }
+          } catch (e) {
+            debugPrint('⚠️ Cannot play, controller disposed');
           }
-        });
-      } else if (_controller != null &&
-          _isInitialized &&
-          !_isEnded &&
-          !_hasError) {
-        try {
-          if (!_controller!.value.isPlaying) {
-            VideoManager.instance.playVideo(widget.postId);
-            _controller!.play();
-          }
-        } catch (e) {
-          debugPrint('⚠️ Cannot play, controller disposed');
         }
       }
+      // ✅ لو _isInPlayZone == true بالفعل → SKIP تماماً
+      // ده بيمنع الفيديو الأول من إعادة تشغيل نفسه لما التاني يوقفه
     } else if (visibleFraction > 0.0) {
       // ظاهر جزئياً — إيقاف مؤقت فقط بدون dispose
+      _isInPlayZone = false; // ✅ خرج من منطقة التشغيل
       _disposeDelayTimer?.cancel();
       _disposeDelayTimer = null;
       _pauseAndSave();
     } else {
       // خرج من الشاشة تماماً — إيقاف مؤقت + dispose بعد 2 ثانية
-      // لتحرير hardware decoder slot
+      _isInPlayZone = false; // ✅ خرج من منطقة التشغيل
       _pauseAndSave();
       _disposeDelayTimer?.cancel();
       _disposeDelayTimer = Timer(const Duration(seconds: 2), () {

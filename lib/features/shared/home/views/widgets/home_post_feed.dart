@@ -11,7 +11,6 @@ import 'package:tayseer/features/shared/post_details/presentation/views/post_det
 import 'package:tayseer/core/widgets/post_card/post_shimmer.dart';
 import 'package:tayseer/my_import.dart';
 
-// ✅ حد أقصى للبوستات اللي هتفضل حية في الميموري
 const int _kMaxKeepAliveCount = 50;
 
 class HomePostFeed extends StatelessWidget {
@@ -30,45 +29,32 @@ class HomePostFeed extends StatelessWidget {
       value: homeCubit,
       child: MultiBlocListener(
         listeners: [
-          // 📢 1. Share Listener
           BlocListener<HomeCubit, HomeState>(
             listenWhen: _shouldListenToShare,
             listener: _handleShareFeedback,
           ),
-
-          // 💾 2. Save Listener
           BlocListener<HomeCubit, HomeState>(
             listenWhen: _shouldListenToSave,
             listener: _handleSaveFeedback,
           ),
-
-          // 3. delete post Listener
           BlocListener<HomeCubit, HomeState>(
             listenWhen: _shouldListenToDelete,
             listener: _handleDeleteFeedback,
           ),
-
-          // 4. hide post Listener
           BlocListener<HomeCubit, HomeState>(
             listenWhen: (prev, curr) =>
                 prev.hidePostActionState != curr.hidePostActionState,
             listener: _handleHideFeedback,
           ),
-
-          // 5. block user Listener
           BlocListener<HomeCubit, HomeState>(
             listenWhen: (prev, curr) =>
                 prev.blockUserActionState != curr.blockUserActionState,
             listener: _handleBlockFeedback,
           ),
-
-          // 6. archive post Listener
           BlocListener<HomeCubit, HomeState>(
             listenWhen: _shouldListenToArchive,
             listener: _handleArchiveFeedback,
           ),
-
-          // 7. poll vote Listener
           BlocListener<HomeCubit, HomeState>(
             listenWhen: _shouldListenToPollVote,
             listener: _handlePollVoteFeedback,
@@ -261,7 +247,6 @@ class HomePostFeed extends StatelessWidget {
 
   Widget _buildContent(BuildContext context, _FeedState state) {
     if (state.isLoading && state.isEmpty) return _buildShimmerList();
-    // Offline with no cache → show friendly offline empty state
     if (state.isError && state.isEmpty && state.isOffline) {
       return const OfflineEmptyState();
     }
@@ -296,7 +281,7 @@ class HomePostFeed extends StatelessWidget {
     ),
   );
 
-  // ✅ التعديل الرئيسي هنا - إضافة index
+  // ✅ CHANGED: أضفنا findChildIndexCallback
   Widget _buildPostList(_FeedState state) => SliverList(
     delegate: SliverChildBuilderDelegate(
       (context, index) {
@@ -305,27 +290,23 @@ class HomePostFeed extends StatelessWidget {
             key: ValueKey(state.postIds[index]),
             postId: state.postIds[index],
             homeCubit: homeCubit,
-            index: index, // ✅ بنمرر الـ index
+            index: index,
             showGap: index < state.postIds.length - 1,
           );
         }
 
-        // Don't show loading spinner when offline (unless loading from cache)
         if (state.isLoadingMore) {
           return const _LoadingMoreIndicator();
         }
 
-        // Show cached-data footer when viewing cache
         if (state.isShowingCachedData && !state.hasMore) {
           return const EndOfCachedPosts();
         }
 
-        // أوفلاين ولسه فيه بوستات على السيرفر → عرض رسالة اتصل بالنت
         if (state.isOffline && state.hasMore) {
           return const EndOfCachedPosts();
         }
 
-        // السيرفر فشل واللوكال خلص → زرار إعادة المحاولة
         if (state.loadMoreServerFailed) {
           return _LoadMoreFailedRetry(onRetry: () => homeCubit.retryLoadMore());
         }
@@ -337,7 +318,15 @@ class HomePostFeed extends StatelessWidget {
         return _EndOfCategoryIndicator(onViewAllTap: _goToAllCategory);
       },
       childCount: state.postIds.length + 1,
-      addAutomaticKeepAlives: true, // ✅ تأكيد إنها true
+      addAutomaticKeepAlives: true,
+      // ✅ NEW: يخلي Flutter يلاقي البوست بسرعة لما الليستة تتغير
+      findChildIndexCallback: (key) {
+        if (key is ValueKey<String>) {
+          final index = state.postIds.indexOf(key.value);
+          return index != -1 ? index : null;
+        }
+        return null;
+      },
     ),
   );
 }
@@ -388,7 +377,7 @@ class _FeedState extends Equatable {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Post Item Widget ✅ معدّل بالكامل
+// Post Item Widget ✅ معدّل — بدون Stream + O(1) lookup
 // ══════════════════════════════════════════════════════════════════════════════
 
 class _PostItem extends StatefulWidget {
@@ -396,13 +385,13 @@ class _PostItem extends StatefulWidget {
     super.key,
     required this.postId,
     required this.homeCubit,
-    required this.index, // ✅ جديد
+    required this.index,
     this.showGap = false,
   });
 
   final String postId;
   final HomeCubit homeCubit;
-  final int index; // ✅ جديد
+  final int index;
   final bool showGap;
 
   @override
@@ -411,31 +400,43 @@ class _PostItem extends StatefulWidget {
 
 class _PostItemState extends State<_PostItem>
     with AutomaticKeepAliveClientMixin {
-  // ✅ 1️⃣ الـ Mixin
-
-  late final Stream<PostModel?> _postStream;
+  // ✅ CHANGED: شيلنا الـ _postStream — الـ BlocSelector هيهاندل الـ updates
   late final PostCallbacks _callbacks;
 
-  // ✅ 2️⃣ أول 50 بوست بس يتحفظوا في الميموري
   @override
   bool get wantKeepAlive => widget.index < _kMaxKeepAliveCount;
 
   @override
   void initState() {
     super.initState();
-    _initializeStreamAndCallbacks();
+    _initializeCallbacks();
   }
 
-  void _initializeStreamAndCallbacks() {
-    _postStream = widget.homeCubit.stream
-        .map(
-          (state) =>
-              state.posts.where((p) => p.postId == widget.postId).firstOrNull,
-        )
+  // ✅ CHANGED: callbacks بدون stream
+  void _initializeCallbacks() {
+    _callbacks = PostCallbacks(
+      onReactionChanged: _onReaction,
+      onShareTap: _onShare,
+      onHashtagTap: _onHashtagTap,
+      onSave: _onSave,
+      onDelete: _onDelete,
+      onHide: _hidePost,
+      onBlock: _blockUser,
+      onArchive: _archivePost,
+      onEdit: _editPost,
+      onPollVote: _onPollVote,
+      onCommented: _onCommented,
+    );
+  }
+
+  // ✅ NEW: Stream يتعمل بس لما تفتح PostDetailsView
+  PostCallbacks _buildCallbacksWithStream() {
+    final stream = widget.homeCubit.stream
+        .map((state) => state.postsMap[widget.postId])
         .distinct();
 
-    _callbacks = PostCallbacks(
-      postUpdatesStream: _postStream,
+    return PostCallbacks(
+      postUpdatesStream: stream,
       onReactionChanged: _onReaction,
       onShareTap: _onShare,
       onHashtagTap: _onHashtagTap,
@@ -504,6 +505,7 @@ class _PostItemState extends State<_PostItem>
     );
   }
 
+  // ✅ CHANGED: بنستخدم _buildCallbacksWithStream هنا بس
   void _onNavigateToDetails(
     BuildContext ctx,
     PostModel post,
@@ -516,7 +518,7 @@ class _PostItemState extends State<_PostItem>
           isFromProfile: false,
           post: post,
           cachedController: controller,
-          callbacks: _callbacks,
+          callbacks: _buildCallbacksWithStream(), // ✅ Stream بس هنا
         ),
       ),
     );
@@ -524,13 +526,13 @@ class _PostItemState extends State<_PostItem>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // ✅ 3️⃣ لازم تنادي super.build
+    super.build(context);
 
     return Column(
       children: [
+        // ✅ CHANGED: O(1) lookup بدل O(n)
         BlocSelector<HomeCubit, HomeState, PostModel?>(
-          selector: (state) =>
-              state.posts.where((p) => p.postId == widget.postId).firstOrNull,
+          selector: (state) => state.postsMap[widget.postId],
           builder: (context, post) {
             if (post == null) return const SizedBox.shrink();
             return PostCard(

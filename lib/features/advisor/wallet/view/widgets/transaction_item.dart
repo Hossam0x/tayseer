@@ -128,7 +128,9 @@ class TransactionItem extends StatelessWidget {
             ),
           ),
           Text(
-            '${transaction.displayAmount} ${transaction.currency}',
+            transaction.isPoints
+                ? transaction.displayAmount
+                : '${transaction.displayAmount} ${transaction.currency ?? ''}',
             style: Styles.textStyle16Bold.copyWith(color: _getAmountColor()),
           ),
         ],

@@ -93,6 +93,7 @@ import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profi
 import 'package:tayseer/features/advisor/search/data/repos/search_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/order_management_repository.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/order_management/order_management_cubit.dart';
+import 'package:tayseer/core/services/iap_service.dart';
 import 'package:tayseer/features/advisor/wallet/data/datasources/wallet_remote_data_source.dart';
 import 'package:tayseer/features/advisor/wallet/data/repos/wallet_repo.dart';
 import 'package:tayseer/features/advisor/wallet/view/cubit/wallet_cubit.dart';
@@ -494,9 +495,12 @@ Future<void> setupGetIt() async {
   getIt.registerLazySingleton<WalletRepo>(
     () => WalletRepo(getIt<WalletRemoteDataSource>()),
   );
-  getIt.registerFactory<WalletCubit>(() => WalletCubit(getIt<WalletRepo>()));
+  getIt.registerLazySingleton<IAPService>(() => IAPService());
+  getIt.registerFactory<WalletCubit>(
+    () => WalletCubit(getIt<WalletRepo>(), getIt<tayseerSocketHelper>()),
+  );
   getIt.registerFactory<RechargeCubit>(
-    () => RechargeCubit(getIt<WalletRepo>()),
+    () => RechargeCubit(getIt<WalletRepo>(), getIt<IAPService>()),
   );
 
   // Reports

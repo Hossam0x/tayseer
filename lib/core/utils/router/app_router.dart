@@ -25,6 +25,10 @@ import 'package:tayseer/features/advisor/settings/view/hide_story_form_view.dart
 import 'package:tayseer/features/advisor/settings/view/language_selection_view.dart';
 import 'package:tayseer/features/advisor/settings/view/saved_posts_view.dart';
 import 'package:tayseer/features/advisor/settings/view/sessions_pricing_view.dart';
+import 'package:tayseer/features/advisor/profille/views/add_certificate_view.dart';
+import 'package:tayseer/features/advisor/profille/views/edit_certificate_view.dart';
+import 'package:tayseer/features/shared/profile/cubit/certificates/certificates_cubit.dart';
+import 'package:tayseer/features/shared/profile/data/models/certificate_model.dart';
 import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
 
 import 'package:tayseer/features/advisor/update_posts/view_model/update_posts_cubit.dart';
@@ -199,6 +203,7 @@ abstract class AppRouter {
   static const kUpdatePostView = '/UpdatePostView';
   static const kCameraView = '/CameraView';
   static const kEditCertificateView = '/editCertificateView';
+  static const kAddCertificateView = '/addCertificateView';
   static const kSettingsView = '/settings';
   static const kEditPersonalDataView = '/edit_personal_data';
   static const kProfessionalInfoDashboardView = '/professional_info_dashboard';
@@ -1048,28 +1053,28 @@ abstract class AppRouter {
             child: const OtherReportReasonView(),
           ),
         );
-      // case kEditCertificateView:
-      //   final cert = settings.arguments as CertificateModelProfile;
-      //   return PageRouteBuilder(
-      //     settings: settings,
-      //     pageBuilder: (context, animation, secondaryAnimation) =>
-      //         EditCertificateView(certificate: cert),
-      //     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      //       const begin = Offset(1.0, 0.0);
-      //       const end = Offset.zero;
-      //       const curve = Curves.easeInOut;
 
-      //       var tween = Tween(
-      //         begin: begin,
-      //         end: end,
-      //       ).chain(CurveTween(curve: curve));
+      case kAddCertificateView:
+        return SlideLeftRoute(
+          page: const AddCertificateView(),
+          routeSettings: settings,
+        );
 
-      //       return SlideTransition(
-      //         position: animation.drive(tween),
-      //         child: child,
-      //       );
-      //     },
-      //   );
+      case kEditCertificateView:
+        final args = settings.arguments as Map<String, dynamic>;
+        final certificatesCubit =
+            args['certificatesCubit'] as CertificatesCubit;
+        return SlideLeftRoute(
+          page: BlocProvider.value(
+            value: certificatesCubit,
+            child: EditCertificateView(
+              certificates: args['certificates'] as List<CertificateModel>,
+              selectedCertificate:
+                  args['selectedCertificate'] as CertificateModel?,
+            ),
+          ),
+          routeSettings: settings,
+        );
     }
     return null;
   }

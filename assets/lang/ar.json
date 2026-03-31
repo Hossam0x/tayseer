@@ -1736,5 +1736,10 @@
   "camera_access_denied": "لم يتم السماح بالوصول للكاميرا",
   "api_error": "خطأ في الاتصال بالخادم",
   "view_who_interacted": "شاهد من تفاعلت معه",
+  "recharge_success_title": "تمت عملية الدفع بنجاح",
+  "recharge_success_subtitle": "تم شحن رصيدك بنجاح، يمكنك الآن استخدامه لحجز الجلسات.",
+  "recharge_success_go_to_wallet": "الذهاب للمحفظة",
+  "recharge_success_done": "تم",
+  "points": "النقاط",
   "distance_away": " على بعد منك {} كم"
 }

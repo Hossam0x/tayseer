@@ -163,4 +163,7 @@ class AppStrings {
       "account_under_review_description";
   static const String accountDisapprovedDescription =
       "account_disapproved_description";
+
+  static const String comments = "comments";
+  static const String loadMore = "load_more";
 }

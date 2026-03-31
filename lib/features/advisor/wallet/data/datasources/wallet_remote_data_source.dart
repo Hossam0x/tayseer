@@ -6,6 +6,10 @@ abstract class WalletRemoteDataSource {
   Future<Map<String, dynamic>> getTransactions({int page = 1, int limit = 20});
   Future<Map<String, dynamic>> getEarnings({int page = 1, int limit = 20});
   Future<Map<String, dynamic>> getBalancePackages();
+  Future<Map<String, dynamic>> initiatePurchase({
+    required String productId,
+    required String platform,
+  });
 }
 
 class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
@@ -43,5 +47,16 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
   @override
   Future<Map<String, dynamic>> getBalancePackages() async {
     return await _apiService.get(endPoint: ApiEndPoint.balancePackages);
+  }
+
+  @override
+  Future<Map<String, dynamic>> initiatePurchase({
+    required String productId,
+    required String platform,
+  }) async {
+    return await _apiService.post(
+      endPoint: ApiEndPoint.initiatePurchase,
+      data: {'productId': productId, 'platform': platform},
+    );
   }
 }

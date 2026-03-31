@@ -31,10 +31,11 @@ class HomeViewBodyState extends State<HomeViewBody> {
   double _scrollDelta = 0;
   static const double _scrollThreshold = 20.0;
 
+  // ✅ NEW: Throttle للـ scroll listener
+  DateTime _lastScrollUpdate = DateTime.now();
+
   final StoriesCubit storiesCubit = getIt<StoriesCubit>();
   final HomeCubit homeCubit = getIt<HomeCubit>();
-
-  // ✅ الـ UploadPostCubit من GetIt
   final UploadPostCubit uploadPostCubit = getIt<UploadPostCubit>();
 
   final GlobalKey _filterSectionKey = GlobalKey();
@@ -80,6 +81,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
     }
   }
 
+  // ✅ CHANGED: أضفنا Throttle — الـ LayoutCubit بيتحدث كل 100ms بدل كل بيكسل
   void _scrollListener() {
     final currentOffset = _scrollController.offset;
     final delta = currentOffset - _lastOffset;
@@ -92,9 +94,14 @@ class HomeViewBodyState extends State<HomeViewBody> {
     }
 
     _lastOffset = currentOffset;
-    context.read<LayoutCubit>().setHomeAtTop(currentOffset <= 0);
 
-    // السماح بالباجنيشن أوفلاين لو بيعرض كاش — الـ cubit هيهاندل الباقي
+    // ✅ Throttle: كل 100ms بس بدل كل بيكسل
+    final now = DateTime.now();
+    if (now.difference(_lastScrollUpdate).inMilliseconds > 100) {
+      _lastScrollUpdate = now;
+      context.read<LayoutCubit>().setHomeAtTop(currentOffset <= 0);
+    }
+
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent * 0.8) {
       homeCubit.loadMorePosts();
@@ -118,14 +125,11 @@ class HomeViewBodyState extends State<HomeViewBody> {
         BlocProvider.value(value: storiesCubit),
         BlocProvider.value(value: homeCubit),
         BlocProvider.value(value: getIt<ConnectivityCubit>()),
-        // ✅ إضافة الـ UploadPostCubit
         BlocProvider.value(value: uploadPostCubit),
       ],
       child: BlocListener<ConnectivityCubit, ConnectivityState>(
-        listenWhen: (prev, curr) =>
-            !prev.isConnected && curr.isConnected, // offline → online
+        listenWhen: (prev, curr) => !prev.isConnected && curr.isConnected,
         listener: (context, connState) {
-          // لما النت يرجع → جلب الاستوريز لو كانت فاشلة أو فاضية
           final storiesState = storiesCubit.state;
           if (storiesState.storiesState == CubitStates.failure ||
               storiesState.storiesList.isEmpty) {
@@ -135,7 +139,6 @@ class HomeViewBodyState extends State<HomeViewBody> {
         child: RefreshIndicator(
           color: AppColors.kprimaryColor,
           onRefresh: () async {
-            // Don't refresh when offline
             if (getIt<ConnectivityCubit>().isOffline) return;
             VideoManager.instance.stopAll();
             await Future.wait([
@@ -148,7 +151,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
             children: [
               CustomScrollView(
                 physics: const ClampingScrollPhysics(),
-                cacheExtent: 1000,
+                cacheExtent: 300, // ✅ CHANGED: من 1000 لـ 300
                 controller: _scrollController,
                 slivers: [
                   const HomeAppBar(),
@@ -161,15 +164,10 @@ class HomeViewBodyState extends State<HomeViewBody> {
                     ),
                   ),
                   const StoriesSection(),
-
-                  // ────────────────────────────────────
-                  // ✅ شريط رفع البوست (يظهر بين الستوريز والفلتر)
-                  // ────────────────────────────────────
                   SliverToBoxAdapter(
                     child:
                         BlocConsumer<UploadPostCubit, UploadPostProgressState>(
                           listener: (context, state) {
-                            // ✅ لما ينجح الرفع → نعمل ريفرش للبوستات
                             if (state.status == UploadPostStatus.success) {
                               homeCubit.refreshHome();
                             }
@@ -179,7 +177,6 @@ class HomeViewBodyState extends State<HomeViewBody> {
                           },
                         ),
                   ),
-
                   HomeFilterSection(
                     key: _filterSectionKey,
                     scrollController: _filterScrollController,

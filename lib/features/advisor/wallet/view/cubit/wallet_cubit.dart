@@ -1,11 +1,20 @@
+import 'dart:developer';
+
+import 'package:tayseer/core/services/socket_events/wallet_socket_events.dart';
+import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/advisor/wallet/view/cubit/wallet_state.dart';
 import 'package:tayseer/features/advisor/wallet/data/repos/wallet_repo.dart';
 import 'package:tayseer/my_import.dart';
 
 class WalletCubit extends Cubit<WalletState> {
   final WalletRepo _walletRepo;
+  final tayseerSocketHelper _socketHelper;
 
-  WalletCubit(this._walletRepo) : super(const WalletState());
+  static const _listenerId = 'wallet_cubit';
+  static const _walletEvent = 'advisorWalletUpdate';
+
+  WalletCubit(this._walletRepo, this._socketHelper)
+    : super(const WalletState());
 
   Future<void> loadInitialData() async {
     await Future.wait([
@@ -13,7 +22,56 @@ class WalletCubit extends Cubit<WalletState> {
       fetchTransactions(refresh: true, limit: 5),
       fetchEarnings(refresh: true, limit: 9),
     ]);
+    _listenToPointsUpdate();
   }
+
+  // ── Socket ──────────────────────────────────────────────────────────────
+
+  void _listenToPointsUpdate() {
+    _socketHelper.listenWithId(_walletEvent, _listenerId, (data) {
+      try {
+        final event = AdvisorWalletUpdateEvent.fromJson(
+          Map<String, dynamic>.from(data as Map),
+        );
+        log(
+          '[Wallet] 🔔 Wallet updated via socket — balance: ${event.balance}, points: ${event.points}',
+        );
+
+        // Update wallet balance + points
+        final updatedWallet = state.walletData?.copyWith(
+          balance: event.balance,
+          points: event.points,
+        );
+
+        // Prepend new transaction to the list if present
+        final updatedTransactions = event.transaction != null
+            ? [event.transaction!, ...state.transactions]
+            : state.transactions;
+
+        emit(
+          state.copyWith(
+            walletData: updatedWallet,
+            transactions: updatedTransactions,
+            transactionsStatus: ListStatus.loaded,
+          ),
+        );
+      } catch (e) {
+        log('[Wallet] ❌ Error parsing wallet update: $e');
+      }
+    });
+  }
+
+  // ── Refresh ──────────────────────────────────────────────────────────────
+
+  Future<void> refresh() async {
+    await Future.wait([
+      fetchWallet(),
+      fetchTransactions(refresh: true, limit: 5),
+      fetchEarnings(refresh: true, limit: 9),
+    ]);
+  }
+
+  // ── Wallet ───────────────────────────────────────────────────────────────
 
   Future<void> fetchWallet() async {
     emit(state.copyWith(walletStatus: WalletStatus.loading));
@@ -30,6 +88,8 @@ class WalletCubit extends Cubit<WalletState> {
       ),
     );
   }
+
+  // ── Transactions ─────────────────────────────────────────────────────────
 
   Future<void> fetchTransactions({bool refresh = false, int limit = 15}) async {
     if (!refresh && state.transactionsStatus == ListStatus.loadingMore) return;
@@ -75,6 +135,8 @@ class WalletCubit extends Cubit<WalletState> {
     );
   }
 
+  // ── Earnings ─────────────────────────────────────────────────────────────
+
   Future<void> fetchEarnings({bool refresh = false, int limit = 15}) async {
     if (!refresh && state.earningsStatus == ListStatus.loadingMore) return;
 
@@ -115,9 +177,16 @@ class WalletCubit extends Cubit<WalletState> {
     );
   }
 
-  // Legacy compat used by withdraw_cubit etc.
+  // ── Legacy compat ─────────────────────────────────────────────────────────
+
   Future<void> getWallet() => fetchWallet();
   Future<void> getAllTransactions({int page = 1}) =>
       fetchTransactions(refresh: page == 1);
   Future<void> loadAllData() => loadInitialData();
+
+  @override
+  Future<void> close() {
+    _socketHelper.offWithId(_walletEvent, _listenerId);
+    return super.close();
+  }
 }

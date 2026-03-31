@@ -1731,12 +1731,18 @@
   "camera_access_denied": "Camera access was not allowed",
   "api_error": "Server connection error",
   "earnings": "Earnings",
+  "earnings_log": "Earnings Log",
   "withdraw_request": "Withdrawal Request",
   "deposit": "Deposit",
   "enter_certificate_name": "Please enter the certificate name",
   "enter_issuing_entity": "Please enter the issuing institution",
   "choose_year": "Please select the year obtained",
   "certificate_added_success": "Certificate added successfully",
+  "recharge_success_title": "Payment Successful",
+  "recharge_success_subtitle": "Your balance has been topped up successfully. You can now use it to book sessions.",
+  "recharge_success_go_to_wallet": "Go to Wallet",
+  "recharge_success_done": "Done",
+  "points": "Points",
   "view_who_interacted": "Who Interact",
   "distance_away": "{} km away"
 }
