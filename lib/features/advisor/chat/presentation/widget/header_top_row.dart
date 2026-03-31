@@ -1,3 +1,5 @@
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_list_cubit.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_list_state.dart';
 import 'package:tayseer/features/advisor/session/presentation/manager/pending_session_cubit/pending_session_cubit.dart';
 import 'package:tayseer/features/advisor/session/presentation/manager/pending_session_cubit/pending_session_state.dart';
 import 'package:tayseer/my_import.dart';
@@ -37,15 +39,24 @@ class HeaderTopRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Badge(
-                label: BlocBuilder<PendingSessionCubit, PendingSessionState>(
-                  builder: (context, state) {
-                    if (isChatsSelected) {
-                      return const Text("0");
-                    }
-                    final count = state.pendingSessionData?.count ?? 0;
-                    return Text("$count");
-                  },
-                ),
+                label: isChatsSelected
+                    ? BlocSelector<ChatListCubit, ChatListState, int>(
+                        selector: (state) {
+                          return state.maybeWhen(
+                            loaded: (_, pendingRequestsCount) => pendingRequestsCount,
+                            orElse: () => 0,
+                          );
+                        },
+                        builder: (context, count) {
+                          return Text("$count");
+                        },
+                      )
+                    : BlocBuilder<PendingSessionCubit, PendingSessionState>(
+                        builder: (context, state) {
+                          final count = state.pendingSessionData?.count ?? 0;
+                          return Text("$count");
+                        },
+                      ),
                 backgroundColor: const Color(0xFFE96E88),
                 child: AppImage(
                   AssetsData.chatNotificationIcon,
@@ -56,7 +67,6 @@ class HeaderTopRow extends StatelessWidget {
             ),
           ),
           Text(
-            // ✅ تغيير العنوان حسب السيكشن (اختياري)
             isChatsSelected ? "محادثاتك" : "جلساتك",
             style: TextStyle(
               fontSize: fontSize,

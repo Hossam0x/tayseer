@@ -77,7 +77,12 @@ class ChatSocketService {
     _socket.listenWithId('blockerStatus', _id, (data) {
       if (data is! Map) return;
       try {
-        _blockStatus.add(BlockStatusSocketEvent.fromJson(data as Map<String, dynamic>));
+        _blockStatus.add(
+          BlockStatusSocketEvent.fromJson(
+            data as Map<String, dynamic>,
+            BlockType.blocker,
+          ),
+        );
       } catch (e) {
         log('❌ [ChatSocketService] blockerStatus parse error: $e');
       }
@@ -87,7 +92,12 @@ class ChatSocketService {
     _socket.listenWithId('blockedStatus', _id, (data) {
       if (data is! Map) return;
       try {
-        _blockStatus.add(BlockStatusSocketEvent.fromJson(data as Map<String, dynamic>));
+        _blockStatus.add(
+          BlockStatusSocketEvent.fromJson(
+            data as Map<String, dynamic>,
+            BlockType.blocked,
+          ),
+        );
       } catch (e) {
         log('❌ [ChatSocketService] blockedStatus parse error: $e');
       }

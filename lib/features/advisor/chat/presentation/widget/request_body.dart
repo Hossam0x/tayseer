@@ -1,73 +1,72 @@
-import 'package:tayseer/features/advisor/chat/data/model/chatView/request_item_model.dart';
-import 'package:tayseer/features/advisor/chat/presentation/widget/request/custome_request_appbar.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayseer/core/widgets/error_state_widget.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_requests_cubit.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_requests_state.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/request/request_list.dart';
+import 'package:tayseer/features/user/my_space/presentation/widget/session_history/empty_session_widget.dart';
 import 'package:tayseer/my_import.dart';
 
-class RequestBody extends StatelessWidget {
+class RequestBody extends StatefulWidget {
   const RequestBody({super.key});
 
   @override
+  State<RequestBody> createState() => _RequestBodyState();
+}
+
+class _RequestBodyState extends State<RequestBody> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<ChatRequestsCubit>().loadChatRequests();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 600;
-    final paddingH = isMobile ? 16.0 : 20.0;
-    final paddingV = isMobile ? 8.0 : 10.0;
+    final screenHeight = MediaQuery.of(context).size.height;
 
-    final List<RequestItemModel> requests = [
-      RequestItemModel(
-        name: "ارسال اليك احمد منصور رسالة",
-        imageUrl: 'https://i.pravatar.cc/150?img=3',
-      ),
-      RequestItemModel(
-        name: "ارسال اليك سارة محمد رسالة",
-        imageUrl: 'https://i.pravatar.cc/150?img=5',
-      ),
-      RequestItemModel(
-        name: "ارسال اليك محمود علي رسالة",
-        imageUrl: 'https://i.pravatar.cc/150?img=11',
-      ),
-      RequestItemModel(
-        name: "ارسال اليك يارا حسن رسالة",
-        imageUrl: 'https://i.pravatar.cc/150?img=9',
-      ),
-    ];
+    return BlocBuilder<ChatRequestsCubit, ChatRequestsState>(
+      builder: (context, state) {
+        return state.when(
+          initial: () => const SizedBox.shrink(),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          failure: (message) => ErrorStateWidget(
+            errorMessage: message,
+            onRetry: () => context.read<ChatRequestsCubit>().loadChatRequests(),
+          ),
+          loaded: (requests) {
+            if (requests.isEmpty) {
+              return const Center(
+                child: EmptySessionsState(
+                  title: 'لا توجد طلبات',
+                  subtitle: 'طلبات الدردشة ستظهر هنا',
+                ),
+              );
+            }
 
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage(AssetsData.homeBackgroundImage),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Column(
-        children: [
-          // استدعاء البار العلوي المخصص
-          const CustomAppBar(title: "الطلبات"),
-
-          // القائمة
-          Expanded(
-            child: Directionality(
-              textDirection: TextDirection.rtl,
+            return RefreshIndicator(
+              onRefresh: () => context.read<ChatRequestsCubit>().loadChatRequests(),
+              color: const Color(0xFFE96E88),
               child: ListView.separated(
-                padding: EdgeInsets.symmetric(
-                  horizontal: paddingH,
-                  vertical: paddingV,
+                padding: EdgeInsets.only(
+                  bottom: screenHeight * 0.12,
+                  left: 16,
+                  right: 16,
+                  top: 8,
                 ),
                 itemCount: requests.length,
                 separatorBuilder: (context, index) => Divider(
-                  color: Colors.grey[300],
-                  thickness: isMobile ? 0.5 : 0.8,
+                  color: Colors.grey.shade200,
+                  height: MediaQuery.of(context).size.width < 600 ? 0.5 : 1,
                 ),
                 itemBuilder: (context, index) {
                   return RequestListTile(item: requests[index]);
                 },
               ),
-            ),
-          ),
-        ],
-      ),
+            );
+          },
+        );
+      },
     );
   }
 }

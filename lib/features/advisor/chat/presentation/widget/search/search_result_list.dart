@@ -1,74 +1,79 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:tayseer/core/utils/assets.dart';
+import 'package:tayseer/core/utils/router/app_router.dart';
+import 'package:tayseer/core/widgets/chat_room_list_item/chat_room_list_item.dart';
+import 'package:tayseer/core/widgets/chat_room_list_item/helpers/chat_room_dialog_helper.dart';
+import 'package:tayseer/features/advisor/chat/data/model/chatView/chat_item_model.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_search_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class SearchResultsList extends StatelessWidget {
-  const SearchResultsList({super.key});
+  final List<ChatRoom> rooms;
+
+  const SearchResultsList({super.key, required this.rooms});
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 600;
-    final padding = isMobile ? 16.0 : 20.0;
-    final avatarRadius = isMobile ? 24.0 : 28.0;
-    final spacing1 = isMobile ? 10.0 : 12.0;
-    final spacing2 = isMobile ? 2.0 : 4.0;
-    final nameFontSize = isMobile ? 14.0 : 16.0;
-    final messageFontSize = isMobile ? 10.0 : 12.0;
-    final timeFontSize = isMobile ? 10.0 : 12.0;
-
     return ListView.separated(
-      padding: EdgeInsets.all(padding),
-      itemCount: 3, // عدد العناصر الوهمية
+      padding: EdgeInsets.all(16.w),
+      itemCount: rooms.length,
       separatorBuilder: (context, index) => Divider(color: Colors.grey[300]),
       itemBuilder: (context, index) {
-        return Padding(
-          padding: EdgeInsets.symmetric(vertical: isMobile ? 6.0 : 8.0),
-          child: Row(
-            children: [
-              // الصورة الشخصية
-              CircleAvatar(
-                radius: avatarRadius,
-                backgroundImage: const NetworkImage(
-                  'https://i.pravatar.cc/150?img=12',
-                ), // صورة وهمية
-                backgroundColor: Colors.grey,
-              ),
+        final room = rooms[index];
+        final otherUser = room.participants.isNotEmpty
+            ? room.participants.first
+            : null;
 
-              SizedBox(width: spacing1),
-
-              // الاسم والرسالة
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "احمد منصور",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: nameFontSize,
-                        color: Colors.black87,
-                        fontFamily: 'Cairo',
-                      ),
-                    ),
-                    SizedBox(height: spacing2),
-                    Text(
-                      "مرحبا بك",
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: messageFontSize,
-                        fontFamily: 'Cairo',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // الوقت (على اليسار)
-              Text(
-                "9:41 AM",
-                style: TextStyle(color: Colors.grey, fontSize: timeFontSize),
-              ),
-            ],
-          ),
+        return ChatRoomListItem(
+          id: room.id,
+          title: otherUser?.name ?? 'Unknown',
+          subtitle: room.lastMessage?.content ?? '',
+          imageUrl: room.isSystemChat
+              ? room.systemChatImage
+              : otherUser?.image,
+          lastUpdate: room.lastMessage?.sentAt,
+          unreadCount: room.unreadCount,
+          isBlocked: room.isBlocked,
+          fallbackAsset: AssetsData.defaultProfileImage,
+          onTap: () {
+            Navigator.pushNamed(
+              context,
+              AppRouter.kConversitionView,
+              arguments: {
+                'chatroomid': room.id,
+                'receiverid': otherUser?.id,
+                'username': otherUser?.name,
+                'userimage': otherUser?.image,
+                'isBlocked': room.isBlocked,
+                'isSystemChat': room.isSystemChat,
+              },
+            );
+          },
+          onArchive: () {
+            ChatRoomDialogHelper.showArchiveDialog(
+              context: context,
+              onConfirm: () {
+                context.read<ChatSearchCubit>().archiveChatRoom(room.id);
+              },
+            );
+          },
+          onDelete: () {
+            ChatRoomDialogHelper.showDeleteDialog(
+              context: context,
+              onConfirm: () {
+                context.read<ChatSearchCubit>().deleteChatRoom(room.id);
+              },
+            );
+          },
+          onReport: () {
+            ChatRoomDialogHelper.showReportDialog(
+              context: context,
+              onConfirm: () {
+                // TODO: Implement report functionality
+              },
+            );
+          },
         );
       },
     );

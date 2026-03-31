@@ -6,6 +6,7 @@ import 'package:tayseer/core/utils/api_service.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chatView/chat_item_model.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/send_media_message_response.dart';
+import 'package:tayseer/features/advisor/chat/data/model/chat_requests/chat_request_model.dart';
 import 'package:tayseer/my_import.dart';
 
 /// Chat Repository — aligned with the new /new-chat backend.
@@ -243,6 +244,7 @@ class ChatRepoSimple {
     }
   }
 
+
   Future<Either<String, bool>> deleteChatRoom(String chatRoomId) async {
     try {
       final response = await _apiService.delete(
@@ -263,8 +265,9 @@ class ChatRepoSimple {
 
   Future<Either<String, bool>> archiveChatRoom(String chatRoomId) async {
     try {
-      final response = await _apiService.patch(
-        endPoint: ApiEndPoint.archiveChatRoom(chatRoomId),
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.archiveChatRoom,
+        data: {'chatRoomId': chatRoomId},
       );
       if (response['success'] == true) {
         return const Right(true);
@@ -275,6 +278,71 @@ class ChatRepoSimple {
       }
     } catch (e) {
       return Left('Failed to archive chat room: $e');
+    }
+  }
+
+  // ==================== CHAT REQUESTS ====================
+
+  Future<Either<String, ChatRequestsResponse>> getChatRequests() async {
+    try {
+      final response = await _apiService.get(
+        endPoint: ApiEndPoint.getChatRequests,
+      );
+      if (response['success'] == true) {
+        final chatRequestsResponse = ChatRequestsResponse.fromJson(response);
+        return Right(chatRequestsResponse);
+      } else {
+        return Left(response['message']?.toString() ?? 'فشل جلب الطلبات');
+      }
+    } catch (e) {
+      return Left('فشل جلب الطلبات: $e');
+    }
+  }
+
+  // ==================== UNARCHIVE ====================
+
+  Future<Either<String, bool>> unarchiveChatRoom(String chatRoomId) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.unarchiveChatRoom,
+        data: {'chatRoomId': chatRoomId},
+      );
+      if (response['success'] == true) {
+        return const Right(true);
+      } else {
+        return Left(
+          response['message']?.toString() ?? 'Failed to unarchive chat room',
+        );
+      }
+    } catch (e) {
+      return Left('Failed to unarchive chat room: $e');
+    }
+  }
+
+  // ==================== SEARCH CHAT ROOMS ====================
+
+  Future<Either<String, ChatRoomsResponse>> searchChatRooms({
+    required String searchKey,
+    required String chatRoomType,
+  }) async {
+    try {
+      final response = await _apiService.get(
+        endPoint: ApiEndPoint.searchChatRooms,
+        query: {
+          'searchKey': searchKey,
+          'chatRoomType': chatRoomType,
+        },
+      );
+      if (response['success'] == true) {
+        final chatRoomsResponse = ChatRoomsResponse.fromJson(response);
+        return Right(chatRoomsResponse);
+      } else {
+        return Left(
+          response['message']?.toString() ?? 'فشل البحث عن المحادثات',
+        );
+      }
+    } catch (e) {
+      return Left('فشل البحث عن المحادثات: $e');
     }
   }
 }

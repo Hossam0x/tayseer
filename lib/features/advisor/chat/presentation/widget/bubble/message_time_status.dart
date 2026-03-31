@@ -49,27 +49,62 @@ class MessageTimeStatus extends StatelessWidget {
   }
 
   Widget _buildStatusIcon() {
-    // ✅ Pending state: أيقونة الساعة بيضاء
+    // ✅ Pending state: أيقونة الساعة
     if (status == MessageStatusEnum.pending) {
       final pendingIconSize = isMobile ? 12.0 : 16.0;
       return Icon(
         Icons.access_time,
         size: pendingIconSize,
-        color: isMe ? Colors.black : Colors.white,
+        color: isMe ? Colors.white : Colors.black,
       );
     }
 
-    final iconSize = status != MessageStatusEnum.sent
-        ? (isMobile ? 10.0 : 14.0)
-        : (isMobile ? 24.0 : 30.0);
+    // ✅ Failed state: أيقونة خطأ
+    if (status == MessageStatusEnum.failed) {
+      final failedIconSize = isMobile ? 12.0 : 16.0;
+      return Icon(
+        Icons.error_outline,
+        size: failedIconSize,
+        color: Colors.red,
+      );
+    }
 
-    return SvgPicture.asset(
-      status == MessageStatusEnum.sent
-          ? AssetsData.sentMessageIcon
-          : AssetsData.readMessageIcon,
+    // تحديد حجم الأيقونة بناءً على الحالة
+    double iconSize;
+    if (status == MessageStatusEnum.sent) {
+      // SENT: صح واحد - أكبر بكتير
+      iconSize = isMobile ? 20.0 : 24.0;
+    } else {
+      // READ/DELIVERED: صحين
+      iconSize = isMobile ? 14.0 : 18.0;
+    }
+    
+    // تحديد اللون بناءً على الحالة
+    Color iconColor;
+    if (status == MessageStatusEnum.read) {
+      // READ: صحين أحمر
+      iconColor = const Color(0xFFE96E88); // اللون الأحمر بتاع التطبيق
+    } else {
+      // SENT/DELIVERED: صحين أبيض
+      iconColor = Colors.white;
+    }
+
+    // تحديد الأيقونة بناءً على الحالة
+    String iconAsset;
+    if (status == MessageStatusEnum.sent) {
+      iconAsset = AssetsData.sentMessageIcon; // صح واحد
+    } else {
+      iconAsset = AssetsData.readMessageIcon; // صحين
+    }
+
+    return SizedBox(
       width: iconSize,
       height: iconSize,
-      colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+      child: SvgPicture.asset(
+        iconAsset,
+        fit: BoxFit.contain,
+        colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+      ),
     );
   }
 }

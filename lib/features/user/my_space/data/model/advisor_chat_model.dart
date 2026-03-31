@@ -30,11 +30,31 @@ class AdvisorChatData {
   });
 
   factory AdvisorChatData.fromJson(Map<String, dynamic> json) {
+    // Handle nested data structure: data.data.chatRooms or data.chatRooms
+    Map<String, dynamic>? innerData;
+    List? roomsList;
+
+    // Check if there's a nested "data" object
+    if (json['data'] is Map<String, dynamic>) {
+      innerData = json['data'] as Map<String, dynamic>;
+      roomsList = innerData['chatRooms'] as List?;
+    } else if (json['chatRooms'] is List) {
+      // Direct chatRooms array
+      roomsList = json['chatRooms'] as List;
+      innerData = json;
+    } else if (json['data'] is List) {
+      // data is directly the array
+      roomsList = json['data'] as List;
+      innerData = json;
+    }
+
     return AdvisorChatData(
-      chatRooms: (json['data'] as List? ?? json['chatRooms'] as List? ?? [])
+      chatRooms: (roomsList ?? [])
           .map((e) => AdvisorChatRoomModel.fromJson(e))
           .toList(),
-      pagination: PaginationModel.fromJson(json['pagination'] ?? {}),
+      pagination: PaginationModel.fromJson(
+        (innerData?['pagination'] ?? json['pagination']) ?? {},
+      ),
     );
   }
 }
@@ -239,6 +259,7 @@ class LastMessageModel {
   final DateTime updatedAt;
   final String senderName;
   final String timeAgo;
+  final String? status; // SENT, DELIVERED, READ
 
   LastMessageModel({
     required this.id,
@@ -251,6 +272,7 @@ class LastMessageModel {
     required this.updatedAt,
     required this.senderName,
     required this.timeAgo,
+    this.status,
   });
 
   factory LastMessageModel.fromJson(Map<String, dynamic> json) {
@@ -262,16 +284,34 @@ class LastMessageModel {
     }
 
     final rawContent = json['content'];
-    final content = (rawContent is List)
-        ? (rawContent.isEmpty ? '' : rawContent.first.toString())
-        : extractString(rawContent);
+    final messageType = extractString(json['contentType'] ?? json['messageType']);
+    
+    // معالجة المحتوى بناءً على نوع الرسالة
+    String content;
+    if (messageType == 'image' || messageType == 'images/videos') {
+      content = 'صورة';
+    } else if (messageType == 'video') {
+      content = 'فيديو';
+    } else if (messageType == 'audio' || messageType == 'voice' || messageType == 'record') {
+      content = 'رسالة صوتية';
+    } else if (messageType == 'system') {
+      // للرسائل النظام، نعرض المحتوى كما هو
+      content = (rawContent is List)
+          ? (rawContent.isEmpty ? '' : rawContent.first.toString())
+          : extractString(rawContent);
+    } else {
+      // للرسائل النصية العادية
+      content = (rawContent is List)
+          ? (rawContent.isEmpty ? '' : rawContent.first.toString())
+          : extractString(rawContent);
+    }
 
     return LastMessageModel(
       id: extractString(json['id'] ?? json['_id']),
       sender: extractString(json['sender'] ?? json['senderId']),
       senderType: extractString(json['senderType']),
       content: content,
-      messageType: extractString(json['contentType'] ?? json['messageType']),
+      messageType: messageType,
       chatRoom: extractString(json['chatRoom']),
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
@@ -281,6 +321,7 @@ class LastMessageModel {
           : DateTime.now(),
       senderName: extractString(json['senderName']),
       timeAgo: extractString(json['timeAgo']),
+      status: json['status']?.toString(),
     );
   }
 
@@ -299,6 +340,7 @@ class LastMessageModel {
       'updatedAt': updatedAt.toIso8601String(),
       'senderName': senderName,
       'timeAgo': timeAgo,
+      'status': status,
     };
   }
 }
