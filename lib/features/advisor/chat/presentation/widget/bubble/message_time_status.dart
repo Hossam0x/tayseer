@@ -69,7 +69,15 @@ class MessageTimeStatus extends StatelessWidget {
       );
     }
 
-    final iconSize = isMobile ? 14.0 : 18.0;
+    // تحديد حجم الأيقونة بناءً على الحالة
+    double iconSize;
+    if (status == MessageStatusEnum.sent) {
+      // SENT: صح واحد - أكبر بكتير
+      iconSize = isMobile ? 20.0 : 24.0;
+    } else {
+      // READ/DELIVERED: صحين
+      iconSize = isMobile ? 14.0 : 18.0;
+    }
     
     // تحديد اللون بناءً على الحالة
     Color iconColor;
@@ -89,11 +97,14 @@ class MessageTimeStatus extends StatelessWidget {
       iconAsset = AssetsData.readMessageIcon; // صحين
     }
 
-    return SvgPicture.asset(
-      iconAsset,
+    return SizedBox(
       width: iconSize,
       height: iconSize,
-      colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+      child: SvgPicture.asset(
+        iconAsset,
+        fit: BoxFit.contain,
+        colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+      ),
     );
   }
 }

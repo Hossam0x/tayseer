@@ -30,11 +30,31 @@ class AdvisorChatData {
   });
 
   factory AdvisorChatData.fromJson(Map<String, dynamic> json) {
+    // Handle nested data structure: data.data.chatRooms or data.chatRooms
+    Map<String, dynamic>? innerData;
+    List? roomsList;
+
+    // Check if there's a nested "data" object
+    if (json['data'] is Map<String, dynamic>) {
+      innerData = json['data'] as Map<String, dynamic>;
+      roomsList = innerData['chatRooms'] as List?;
+    } else if (json['chatRooms'] is List) {
+      // Direct chatRooms array
+      roomsList = json['chatRooms'] as List;
+      innerData = json;
+    } else if (json['data'] is List) {
+      // data is directly the array
+      roomsList = json['data'] as List;
+      innerData = json;
+    }
+
     return AdvisorChatData(
-      chatRooms: (json['data'] as List? ?? json['chatRooms'] as List? ?? [])
+      chatRooms: (roomsList ?? [])
           .map((e) => AdvisorChatRoomModel.fromJson(e))
           .toList(),
-      pagination: PaginationModel.fromJson(json['pagination'] ?? {}),
+      pagination: PaginationModel.fromJson(
+        (innerData?['pagination'] ?? json['pagination']) ?? {},
+      ),
     );
   }
 }
