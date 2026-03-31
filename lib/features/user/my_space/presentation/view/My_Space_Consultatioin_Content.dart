@@ -127,7 +127,6 @@ class _MySpaceConsultationContentState
                       'isSystemChat': chatRoom.isSystemChat,
                     };
 
-                    // في حالة System Chat نرسل system: true بدلاً من receiverid
                     if (chatRoom.isSystemChat) {
                       arguments['system'] = true;
                     } else {

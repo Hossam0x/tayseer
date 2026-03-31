@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:developer';
 import 'package:tayseer/core/cache/chat_cache_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/features/advisor/chat/data/event_bus/chat_event_bus.dart';
 import 'package:tayseer/features/user/my_space/data/model/advisor_chat_model.dart';
 import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_space_state.dart';
@@ -13,11 +15,98 @@ class MySpaceCubit extends Cubit<MySpaceState> {
 
   late final String _listenerId;
   String? _activeChatRoomId;
+  
+  StreamSubscription<ChatUnarchiveEvent>? _unarchiveSubscription;
+  StreamSubscription<ChatArchiveEvent>? _archiveSubscription;
+  StreamSubscription<ChatDeleteEvent>? _deleteSubscription;
 
   MySpaceCubit(this.mySpaceRepo) : super(const MySpaceState()) {
     _listenerId =
         'MySpaceCubit_${DateTime.now().millisecondsSinceEpoch}_$hashCode';
     log('🆔 MySpaceCubit created with ID: $_listenerId');
+    
+    // Listen to chat events
+    _setupEventBusListeners();
+  }
+
+  void _setupEventBusListeners() {
+    // Listen to unarchive events
+    _unarchiveSubscription = ChatEventBus.instance.onChatUnarchived.listen((event) {
+      _handleChatUnarchived(event.chatRoomId);
+    });
+
+    // Listen to archive events
+    _archiveSubscription = ChatEventBus.instance.onChatArchived.listen((event) {
+      _handleChatArchived(event.chatRoomId);
+    });
+
+    // Listen to delete events
+    _deleteSubscription = ChatEventBus.instance.onChatDeleted.listen((event) {
+      _handleChatDeleted(event.chatRoomId);
+    });
+  }
+
+  void _handleChatUnarchived(String chatRoomId) {
+    // Reload chat rooms to get the unarchived chat
+    log('📥 [$_listenerId] Chat unarchived: $chatRoomId - reloading');
+    getAdvisorChat();
+  }
+
+  void _handleChatArchived(String chatRoomId) {
+    // Remove the archived chat from the list
+    log('📤 [$_listenerId] Chat archived: $chatRoomId - removing from list');
+    final currentChatData = state.advisorChatModel?.data;
+    if (currentChatData == null) return;
+
+    final updatedRooms = currentChatData.chatRooms
+        .where((room) => room.id != chatRoomId)
+        .toList();
+
+    final updatedData = AdvisorChatData(
+      chatRooms: updatedRooms,
+      pagination: currentChatData.pagination,
+    );
+
+    final updatedModel = AdvisorChatModel(
+      success: state.advisorChatModel?.success ?? true,
+      message: state.advisorChatModel?.message ?? '',
+      data: updatedData,
+    );
+
+    _safeEmit(
+      state.copyWith(
+        advisorChatModel: updatedModel,
+        lastUpdateTime: DateTime.now(),
+      ),
+    );
+  }
+
+  void _handleChatDeleted(String chatRoomId) {
+    log('🗑️ [$_listenerId] Chat deleted: $chatRoomId - removing from list');
+    final currentChatData = state.advisorChatModel?.data;
+    if (currentChatData == null) return;
+
+    final updatedRooms = currentChatData.chatRooms
+        .where((room) => room.id != chatRoomId)
+        .toList();
+
+    final updatedData = AdvisorChatData(
+      chatRooms: updatedRooms,
+      pagination: currentChatData.pagination,
+    );
+
+    final updatedModel = AdvisorChatModel(
+      success: state.advisorChatModel?.success ?? true,
+      message: state.advisorChatModel?.message ?? '',
+      data: updatedData,
+    );
+
+    _safeEmit(
+      state.copyWith(
+        advisorChatModel: updatedModel,
+        lastUpdateTime: DateTime.now(),
+      ),
+    );
   }
 
   void _safeEmit(MySpaceState newState) {
@@ -45,10 +134,8 @@ class MySpaceCubit extends Cubit<MySpaceState> {
       return;
     }
 
-    // 1. عرض الكاش فوراً لو موجود
     final cachedRooms = _cacheService.getCachedUserChatRooms(userId: userId);
     if (cachedRooms != null && cachedRooms.isNotEmpty) {
-      // تحويل الكاش لـ AdvisorChatModel
       final cachedModel = AdvisorChatModel(
         success: true,
         message: 'Cached data',
@@ -78,7 +165,6 @@ class MySpaceCubit extends Cubit<MySpaceState> {
       state: CubitStates.loading,
     );
 
-    // 2. جلب من السيرفر وتحديث
     final result = await mySpaceRepo.getadvisorchat();
 
     result.fold(
@@ -88,7 +174,6 @@ class MySpaceCubit extends Cubit<MySpaceState> {
           state: CubitStates.failure,
         );
 
-        // لو فشل وما عندناش كاش، نعرض error
         if (cachedRooms == null || cachedRooms.isEmpty) {
           _safeEmit(
             state.copyWith(
@@ -111,7 +196,6 @@ class MySpaceCubit extends Cubit<MySpaceState> {
           ),
         );
 
-        // 3. حفظ في الكاش
         await _cacheService.saveUserChatRooms(
           userId: userId,
           chatRooms: advisorChatModel.data.chatRooms,
@@ -120,7 +204,6 @@ class MySpaceCubit extends Cubit<MySpaceState> {
     );
   }
 
-  /// Listen to new messages from socket
   bool _isListening = false;
 
   void listenToNewMessages() {
@@ -136,13 +219,11 @@ class MySpaceCubit extends Cubit<MySpaceState> {
       _handleNewMessageForChatList(data);
     });
 
-    // Listen to message status updates
     socketHelper.listenWithId('newMessageState', _listenerId, (data) {
       _handleMessageStateUpdateForChatList(data);
     });
   }
 
-  /// Handle new message and update chat list
   void _handleNewMessageForChatList(dynamic data) {
     if (isClosed) {
       log('⚠️ [$_listenerId] Received message but Cubit is closed - ignoring');
@@ -213,7 +294,6 @@ class MySpaceCubit extends Cubit<MySpaceState> {
     }
   }
 
-  /// Update last message in a chat room
   void _updateChatRoomLastMessage({
     required String chatRoomId,
     required String messageId,
@@ -244,7 +324,7 @@ class MySpaceCubit extends Cubit<MySpaceState> {
         final updatedLastMessage = LastMessageModel(
           id: messageId.isNotEmpty
               ? messageId
-              : (room.lastMessage?.id ?? ''), // Use new ID if available
+              : (room.lastMessage?.id ?? ''), 
           sender: room.lastMessage?.sender ?? '',
           senderType: room.lastMessage?.senderType ?? '',
           content: content,
@@ -257,7 +337,6 @@ class MySpaceCubit extends Cubit<MySpaceState> {
           status: 'SENT', // New messages start as SENT
         );
 
-        // Don't increment unread count if user is viewing this chat
         final isCurrentlyViewing = chatRoomId == _activeChatRoomId;
         final shouldIncrementUnread = !isMe && !isCurrentlyViewing;
         final newUnreadCount = shouldIncrementUnread
@@ -268,7 +347,6 @@ class MySpaceCubit extends Cubit<MySpaceState> {
           log(
             '🔕 [$_listenerId] Skipping unread increment - user is viewing this chat',
           );
-          // ✅ مهم جداً: نبعت للسيرفر إننا قرينا الرسالة دي حالاً
           markMessageAsReadOnSocket(chatRoomId);
         }
 
@@ -578,7 +656,11 @@ class MySpaceCubit extends Cubit<MySpaceState> {
         ),
       );
       return false;
-    }, (_) => true);
+    }, (_) {
+      // Notify other parts of the app
+      ChatEventBus.instance.notifyChatDeleted(chatRoomId);
+      return true;
+    });
   }
 
   /// Archive chat room (optimistic update)
@@ -623,7 +705,11 @@ class MySpaceCubit extends Cubit<MySpaceState> {
         ),
       );
       return false;
-    }, (_) => true);
+    }, (_) {
+      // Notify other parts of the app
+      ChatEventBus.instance.notifyChatArchived(chatRoomId);
+      return true;
+    });
   }
 
   /// Reset State
@@ -635,6 +721,9 @@ class MySpaceCubit extends Cubit<MySpaceState> {
   Future<void> close() {
     log('🔴 [$_listenerId] Closing MySpaceCubit...');
     socketHelper.offAllForListener(_listenerId);
+    _unarchiveSubscription?.cancel();
+    _archiveSubscription?.cancel();
+    _deleteSubscription?.cancel();
     log('✅ [$_listenerId] MySpaceCubit closed and cleaned up');
     return super.close();
   }
