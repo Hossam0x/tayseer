@@ -75,4 +75,5 @@ class ApiEndPoint {
   static const String reportReasons = '/report-reasons';
   static const String sendReport = "/reports/";
   static const String getChatRequests = '/advisor/chat-requests';
+  static const String searchChatRooms = '/new-chat/rooms/search';
 }

@@ -318,4 +318,31 @@ class ChatRepoSimple {
       return Left('Failed to unarchive chat room: $e');
     }
   }
+
+  // ==================== SEARCH CHAT ROOMS ====================
+
+  Future<Either<String, ChatRoomsResponse>> searchChatRooms({
+    required String searchKey,
+    required String chatRoomType,
+  }) async {
+    try {
+      final response = await _apiService.get(
+        endPoint: ApiEndPoint.searchChatRooms,
+        query: {
+          'searchKey': searchKey,
+          'chatRoomType': chatRoomType,
+        },
+      );
+      if (response['success'] == true) {
+        final chatRoomsResponse = ChatRoomsResponse.fromJson(response);
+        return Right(chatRoomsResponse);
+      } else {
+        return Left(
+          response['message']?.toString() ?? 'فشل البحث عن المحادثات',
+        );
+      }
+    } catch (e) {
+      return Left('فشل البحث عن المحادثات: $e');
+    }
+  }
 }

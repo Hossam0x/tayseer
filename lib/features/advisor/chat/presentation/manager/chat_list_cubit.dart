@@ -13,11 +13,23 @@ class ChatListCubit extends Cubit<ChatListState> {
   final ChatCacheService _cacheService = getIt<ChatCacheService>();
   final tayseerSocketHelper _socketHelper = getIt<tayseerSocketHelper>();
   StreamSubscription<ChatUnarchiveEvent>? _unarchiveSubscription;
+  StreamSubscription<ChatArchiveEvent>? _archiveSubscription;
+  StreamSubscription<ChatDeleteEvent>? _deleteSubscription;
 
   ChatListCubit(this._repo) : super(const ChatListState.initial()) {
     // Listen to unarchive events
     _unarchiveSubscription = ChatEventBus.instance.onChatUnarchived.listen((event) {
       _handleChatUnarchived(event.chatRoomId);
+    });
+
+    // Listen to archive events
+    _archiveSubscription = ChatEventBus.instance.onChatArchived.listen((event) {
+      _handleChatArchived(event.chatRoomId);
+    });
+
+    // Listen to delete events
+    _deleteSubscription = ChatEventBus.instance.onChatDeleted.listen((event) {
+      _handleChatDeleted(event.chatRoomId);
     });
   }
 
@@ -157,6 +169,44 @@ class ChatListCubit extends Cubit<ChatListState> {
     loadChatRooms();
   }
 
+  void _handleChatArchived(String chatRoomId) {
+    // Remove the archived chat from the list
+    final currentState = state.maybeMap(
+      loaded: (state) => state,
+      orElse: () => null,
+    );
+
+    if (currentState == null) return;
+
+    final updatedRooms = currentState.chatRooms
+        .where((room) => room.id != chatRoomId)
+        .toList();
+
+    emit(ChatListState.loaded(
+      chatRooms: updatedRooms,
+      pendingRequestsCount: currentState.pendingRequestsCount,
+    ));
+  }
+
+  void _handleChatDeleted(String chatRoomId) {
+    // Remove the deleted chat from the list
+    final currentState = state.maybeMap(
+      loaded: (state) => state,
+      orElse: () => null,
+    );
+
+    if (currentState == null) return;
+
+    final updatedRooms = currentState.chatRooms
+        .where((room) => room.id != chatRoomId)
+        .toList();
+
+    emit(ChatListState.loaded(
+      chatRooms: updatedRooms,
+      pendingRequestsCount: currentState.pendingRequestsCount,
+    ));
+  }
+
   void _handleIncomingMessage(dynamic data) {
     if (data is! Map) return;
     final chatRoomData = data['chatRoom'];
@@ -230,7 +280,8 @@ class ChatListCubit extends Cubit<ChatListState> {
         emit(ChatListState.failure(error));
       },
       (success) {
-        // Already updated optimally
+        // Notify other parts of the app
+        ChatEventBus.instance.notifyChatDeleted(chatRoomId);
       },
     );
   }
@@ -257,7 +308,10 @@ class ChatListCubit extends Cubit<ChatListState> {
         chatRooms: currentState.chatRooms,
         pendingRequestsCount: currentState.pendingRequestsCount,
       ));
-    }, (success) {});
+    }, (success) {
+      // Notify other parts of the app
+      ChatEventBus.instance.notifyChatArchived(chatRoomId);
+    });
   }
 
   Future<void> blockUser({
@@ -332,6 +386,8 @@ class ChatListCubit extends Cubit<ChatListState> {
   Future<void> close() {
     _socketHelper.offAllForListener('ChatListCubit_Listener');
     _unarchiveSubscription?.cancel();
+    _archiveSubscription?.cancel();
+    _deleteSubscription?.cancel();
     return super.close();
   }
 }

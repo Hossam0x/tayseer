@@ -14,17 +14,8 @@ class CustomSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 600;
-    final height = isMobile ? 34.h : 38.h;
-    final borderRadius = isMobile ? 25.0 : 30.0;
-    final fontSize = isMobile ? 12.0 : 14.0;
-    final contentPaddingH = isMobile ? 16.0 : 20.0;
-    final contentPaddingV = isMobile ? 10.0 : 12.0;
-    final iconSize = isMobile ? 18.0 : 20.0;
-
     return SizedBox(
-      height: height,
+      height: 38.h,
       width: double.infinity,
       child: TextField(
         controller: controller,
@@ -38,24 +29,24 @@ class CustomSearchBar extends StatelessWidget {
         textDirection: TextDirection.rtl,
         decoration: InputDecoration(
           hintText: 'ابحث عن ما تريده',
-          hintStyle: TextStyle(color: Colors.grey[400], fontSize: fontSize),
-          prefixIcon: Icon(Icons.search, color: Colors.grey, size: iconSize),
+          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14.sp),
+          prefixIcon: Icon(Icons.search, color: Colors.grey, size: 20.sp),
           filled: true,
           fillColor: Colors.white,
           contentPadding: EdgeInsets.symmetric(
-            vertical: contentPaddingV,
-            horizontal: contentPaddingH,
+            vertical: 12.h,
+            horizontal: 20.w,
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(borderRadius),
+            borderRadius: BorderRadius.circular(30.r),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(borderRadius),
+            borderRadius: BorderRadius.circular(30.r),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(borderRadius),
+            borderRadius: BorderRadius.circular(30.r),
             borderSide: BorderSide.none,
           ),
         ),
