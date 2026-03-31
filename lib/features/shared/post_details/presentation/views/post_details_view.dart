@@ -93,7 +93,6 @@ class _PostDetailsViewState extends State<PostDetailsView> {
   void dispose() {
     _scrollController.dispose();
     _postSubscription?.cancel();
-    // ✅ بعت الـ post المحدث للـ parent لما نطلع
     if (_currentPost != null) {
       widget.callbacks.onEdit?.call(_currentPost!);
     }
@@ -228,7 +227,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Body Widget
+// Body Widget ✅ MODIFIED
 // ══════════════════════════════════════════════════════════════════════════════
 class _PostDetailsBody extends StatefulWidget {
   final PostModel currentPost;
@@ -260,12 +259,10 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
     final key = _commentKeys[commentId];
     if (key?.currentContext == null) return;
 
-    // 1. ننتظر 500 ملي ثانية لضمان انتهاء أنيميشن الكيبورد وبناء الـ UI
     await Future.delayed(const Duration(milliseconds: 500));
 
     if (!mounted || key!.currentContext == null) return;
 
-    // 2. عمل سكرول ليحاذي العنصر الكيبورد
     Scrollable.ensureVisible(
       key.currentContext!,
       duration: const Duration(milliseconds: 300),
@@ -273,13 +270,11 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
       alignment: 1.0,
     );
 
-    // 3. (تِريك إضافي): نعمل سكرول زيادة 60 بيكسل للأسفل لضمان إعطاء مساحة تنفس للأزرار وعدم قصها
     await Future.delayed(const Duration(milliseconds: 350));
     if (mounted && widget.scrollController.hasClients) {
       final currentOffset = widget.scrollController.offset;
       final maxScroll = widget.scrollController.position.maxScrollExtent;
 
-      // نزود 60 بيكسل للسكرول بس بشرط منتخطاش الـ maxScroll
       final targetOffset = (currentOffset + 60).clamp(0.0, maxScroll);
 
       widget.scrollController.animateTo(
@@ -299,26 +294,94 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
       color: AppColors.kprimaryColor,
       onRefresh: () async =>
           context.read<PostDetailsCubit>().loadComments(isRefresh: true),
-      child: BlocListener<PostDetailsCubit, PostDetailsState>(
-        listenWhen: (prev, curr) =>
-            prev.scrollTrigger != curr.scrollTrigger &&
-            curr.scrollToCommentId != null,
-        listener: (context, state) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _scrollToComment(
-              state.scrollToCommentId!,
-              isForReply: state.activeReplyId == state.scrollToCommentId,
-            );
-            context.read<PostDetailsCubit>().clearScrollTarget();
-          });
-        },
+      child: MultiBlocListener(
+        listeners: [
+          // 1️⃣ ليسنر السكرول
+          BlocListener<PostDetailsCubit, PostDetailsState>(
+            listenWhen: (prev, curr) =>
+                prev.scrollTrigger != curr.scrollTrigger &&
+                curr.scrollToCommentId != null,
+            listener: (context, state) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _scrollToComment(
+                  state.scrollToCommentId!,
+                  isForReply: state.activeReplyId == state.scrollToCommentId,
+                );
+                context.read<PostDetailsCubit>().clearScrollTarget();
+              });
+            },
+          ),
+
+          // 2️⃣ ليسنر حذف الكومنت ✅ NEW
+          BlocListener<PostDetailsCubit, PostDetailsState>(
+            listenWhen: (prev, curr) =>
+                prev.deleteCommentActionState != curr.deleteCommentActionState,
+            listener: (context, state) {
+              switch (state.deleteCommentActionState) {
+                case CubitStates.loading:
+                  CustomloadingApp.show(context);
+                  break;
+                case CubitStates.success:
+                  CustomloadingApp.hide(context);
+                  AppToast.success(context, state.deleteCommentMessage);
+                  break;
+                case CubitStates.failure:
+                  CustomloadingApp.hide(context);
+                  AppToast.error(context, state.deleteCommentMessage);
+                  break;
+                default:
+                  break;
+              }
+            },
+          ),
+
+          // 3️⃣ ليسنر حذف الرد ✅ NEW
+          BlocListener<PostDetailsCubit, PostDetailsState>(
+            listenWhen: (prev, curr) =>
+                prev.deleteReplyActionState != curr.deleteReplyActionState,
+            listener: (context, state) {
+              switch (state.deleteReplyActionState) {
+                case CubitStates.loading:
+                  CustomloadingApp.show(context);
+                  break;
+                case CubitStates.success:
+                  CustomloadingApp.hide(context);
+                  AppToast.success(context, state.deleteReplyMessage);
+                  break;
+                case CubitStates.failure:
+                  CustomloadingApp.hide(context);
+                  AppToast.error(context, state.deleteReplyMessage);
+                  break;
+                default:
+                  break;
+              }
+            },
+          ),
+
+          // 4️⃣ ✅ NEW: ليسنر مزامنة عدد الكومنتات مع الـ HomeCubit
+          BlocListener<PostDetailsCubit, PostDetailsState>(
+            listenWhen: (prev, curr) =>
+                prev.commentCountDeltaTrigger != curr.commentCountDeltaTrigger,
+            listener: (context, state) {
+              final postId = widget.currentPost.postId;
+              final delta = state.pendingCommentCountDelta;
+
+              getIt<HomeCubit>().updateCommentCountByDelta(
+                postId: postId,
+                countDelta: delta,
+                // ✅ لو إضافة (delta > 0) → نحدث isCommented و isAnonymous
+                isCommented: delta > 0 ? true : null,
+                isAnonymous: delta > 0 ? state.selectedAnonymous : null,
+              );
+            },
+          ),
+        ],
         child:
             BlocSelector<PostDetailsCubit, PostDetailsState, _CommentsUIState>(
               selector: _selectCommentsState,
               builder: (context, uiState) {
                 final cubit = context.read<PostDetailsCubit>();
 
-                // ✅ تجميع كل الـ Callbacks في الـ Bundle
                 final commentCallbacks = CommentCallbacks(
                   onLike: (comment, isReply) =>
                       cubit.toggleLike(isReply, comment.id),
@@ -390,7 +453,6 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
 // ══════════════════════════════════════════════════════════════════════════════
 // State Model
 // ══════════════════════════════════════════════════════════════════════════════
-
 class _CommentsUIState extends Equatable {
   final List<CommentModel> comments;
   final bool isLoading;

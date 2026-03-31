@@ -26,10 +26,10 @@ class PostDetailsState extends Equatable {
   final CubitStates addingReplyState;
   final CubitStates editingState;
 
-  // ✅ Optimistic Update
+  // Optimistic Update
   final String? pendingCommentTempId;
 
-  // ✅ Auto-Scroll
+  // Auto-Scroll
   final String? scrollToCommentId;
   final int scrollTrigger;
 
@@ -41,9 +41,13 @@ class PostDetailsState extends Equatable {
   final String deleteReplyMessage;
   final CubitStates deleteReplyActionState;
 
-  // ✅ Anonymous state
+  // Anonymous state
   final bool isAnonymousLocked;
   final bool selectedAnonymous;
+
+  // ✅ NEW: Comment Count Delta Sync
+  final int pendingCommentCountDelta;
+  final int commentCountDeltaTrigger;
 
   const PostDetailsState({
     this.postLoadingState = CubitStates.initial,
@@ -70,6 +74,9 @@ class PostDetailsState extends Equatable {
     this.deleteReplyActionState = CubitStates.initial,
     this.isAnonymousLocked = false,
     this.selectedAnonymous = false,
+    // ✅ NEW
+    this.pendingCommentCountDelta = 0,
+    this.commentCountDeltaTrigger = 0,
   });
 
   bool get hasMoreComments => currentPage < totalPages;
@@ -100,17 +107,18 @@ class PostDetailsState extends Equatable {
     String? scrollToCommentId,
     bool? clearScrollToCommentId,
     int? scrollTrigger,
-
-    //
+    // Delete Comment
     String? deleteCommentMessage,
     CubitStates? deleteCommentActionState,
-
-    // DELETE REPLY
+    // Delete Reply
     String? deleteReplyMessage,
     CubitStates? deleteReplyActionState,
     // Anonymous state
     bool? isAnonymousLocked,
     bool? selectedAnonymous,
+    // ✅ NEW: Delta
+    int? pendingCommentCountDelta,
+    int? commentCountDeltaTrigger,
   }) {
     return PostDetailsState(
       postLoadingState: postLoadingState ?? this.postLoadingState,
@@ -134,11 +142,9 @@ class PostDetailsState extends Equatable {
       addingCommentState: addingCommentState ?? this.addingCommentState,
       addingReplyState: addingReplyState ?? this.addingReplyState,
       editingState: editingState ?? this.editingState,
-      // Optimistic Update
       pendingCommentTempId: (clearPendingCommentTempId == true)
           ? null
           : (pendingCommentTempId ?? this.pendingCommentTempId),
-      // Auto-Scroll
       scrollToCommentId: (clearScrollToCommentId == true)
           ? null
           : (scrollToCommentId ?? this.scrollToCommentId),
@@ -151,6 +157,11 @@ class PostDetailsState extends Equatable {
           deleteReplyActionState ?? this.deleteReplyActionState,
       isAnonymousLocked: isAnonymousLocked ?? this.isAnonymousLocked,
       selectedAnonymous: selectedAnonymous ?? this.selectedAnonymous,
+      // ✅ NEW
+      pendingCommentCountDelta:
+          pendingCommentCountDelta ?? this.pendingCommentCountDelta,
+      commentCountDeltaTrigger:
+          commentCountDeltaTrigger ?? this.commentCountDeltaTrigger,
     );
   }
 
@@ -180,5 +191,8 @@ class PostDetailsState extends Equatable {
     deleteReplyActionState,
     isAnonymousLocked,
     selectedAnonymous,
+    // ✅ NEW
+    pendingCommentCountDelta,
+    commentCountDeltaTrigger,
   ];
 }

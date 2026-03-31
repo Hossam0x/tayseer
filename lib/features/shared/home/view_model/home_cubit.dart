@@ -1343,7 +1343,7 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // 📌 MARK POST AS COMMENTED
+  // 📌 MARK POST AS COMMENTED ✅ MODIFIED — شلنا زيادة العدد
   // ═══════════════════════════════════════════════════════════
   void markPostAsCommented({
     required String postId,
@@ -1355,10 +1355,36 @@ class HomeCubit extends Cubit<HomeState> {
         (p) => p.copyWith(
           isCommented: true,
           isAnonymous: isAnonymous,
-          commentsCount: p.commentsCount + 1,
+          // ❌ شلنا: commentsCount: p.commentsCount + 1,
+          // ✅ الـ Delta في BlocListener بيتكفل بالعدد
         ),
       ),
     );
+    _syncPostToCacheById(postId);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 💬 UPDATE COMMENT COUNT BY DELTA ✅ NEW
+  // ═══════════════════════════════════════════════════════════════════════════
+  void updateCommentCountByDelta({
+    required String postId,
+    required int countDelta,
+    bool? isCommented,
+    bool? isAnonymous,
+  }) {
+    if (countDelta == 0 && isCommented == null && isAnonymous == null) return;
+
+    emit(
+      state.updatePostInAllCategories(postId, (p) {
+        final newCount = (p.commentsCount + countDelta).clamp(0, 999999);
+        return p.copyWith(
+          commentsCount: newCount,
+          isCommented: isCommented ?? p.isCommented,
+          isAnonymous: isAnonymous ?? p.isAnonymous,
+        );
+      }),
+    );
+
     _syncPostToCacheById(postId);
   }
 

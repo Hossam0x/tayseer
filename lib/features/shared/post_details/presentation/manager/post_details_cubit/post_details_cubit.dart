@@ -1,5 +1,3 @@
-// lib/features/advisor/home/cubit/post_details_cubit.dart
-
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
@@ -32,10 +30,22 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
     emit(state.copyWith(selectedAnonymous: value));
   }
 
-  /// ✅ Lock anonymous state after first comment (called from _notifyCommented)
+  /// Lock anonymous state after first comment
   void lockAnonymousState(bool isAnonymous) {
     emit(
       state.copyWith(isAnonymousLocked: true, selectedAnonymous: isAnonymous),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 🔔 EMIT DELTA (Helper) ✅ NEW
+  // ═══════════════════════════════════════════════════════════
+  void _emitCommentCountDelta(int delta) {
+    emit(
+      state.copyWith(
+        pendingCommentCountDelta: delta,
+        commentCountDeltaTrigger: state.commentCountDeltaTrigger + 1,
+      ),
     );
   }
 
@@ -57,13 +67,11 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
         ),
       ),
       (post) {
-        // Load comments after successfully fetching the post
         loadComments();
         emit(
           state.copyWith(
             postLoadingState: CubitStates.success,
             loadedPost: post,
-            // ✅ تحديث حالة الـ anonymous من البوست المحمل
             isAnonymousLocked: post.isCommented,
             selectedAnonymous: post.isAnonymous ?? false,
           ),
@@ -102,95 +110,91 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // DELTE COMMENT
+  // 🗑️ DELETE COMMENT (Pessimistic + Delta) ✅ MODIFIED
   // ═══════════════════════════════════════════════════════════
-  void deleteComment({required String commentId}) {
+  Future<void> deleteComment({required String commentId}) async {
     final comment = _findCommentById(state.comments, commentId);
     if (comment == null) return;
 
-    final originalComments = List.of(state.comments);
+    // 1️⃣ Loading فقط — بدون تغيير في الـ UI
+    emit(state.copyWith(deleteCommentActionState: CubitStates.loading));
 
-    // 1️⃣ Optimistic Update
-    final updatedComments = state.comments
-        .where((c) => c.id != commentId)
-        .toList();
+    // 2️⃣ ننتظر رد السيرفر
+    final result = await homeRepository.deleteComment(commentId: commentId);
 
-    emit(
-      state.copyWith(
-        comments: updatedComments,
-        deleteCommentActionState: CubitStates.initial,
-      ),
+    result.fold(
+      (failure) {
+        // ❌ فشل → مفيش تغيير، نعرض الرسالة بس
+        emit(
+          state.copyWith(
+            deleteCommentActionState: CubitStates.failure,
+            deleteCommentMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        // ✅ نجاح → نحذف من اللوكال
+        final updatedComments = state.comments
+            .where((c) => c.id != commentId)
+            .toList();
+
+        emit(
+          state.copyWith(
+            comments: updatedComments,
+            deleteCommentActionState: CubitStates.success,
+            deleteCommentMessage: message,
+          ),
+        );
+
+        // ✅ ننقص العدد: الكومنت نفسه (1) + عدد ردوده
+        final removedCount = 1 + comment.repliesNumber;
+        _emitCommentCountDelta(-removedCount);
+      },
     );
-
-    // 2️⃣ Server Request
-    homeRepository.deleteComment(commentId: commentId).then((result) {
-      result.fold(
-        (failure) {
-          emit(
-            state.copyWith(
-              comments: originalComments,
-              deleteCommentActionState: CubitStates.failure,
-              deleteCommentMessage: failure.message,
-            ),
-          );
-        },
-        (message) {
-          emit(
-            state.copyWith(
-              deleteCommentActionState: CubitStates.success,
-              deleteCommentMessage: message,
-            ),
-          );
-        },
-      );
-    });
   }
 
   // ═══════════════════════════════════════════════════════════
-  // DELTE REPLY
+  // 🗑️ DELETE REPLY (Pessimistic + Delta) ✅ MODIFIED
   // ═══════════════════════════════════════════════════════════
-  void deleteReply({required String replyId}) {
-    final originalComments = state.comments
-        .map((c) => c.copyWith(replies: List.from(c.replies)))
-        .toList();
+  Future<void> deleteReply({required String replyId}) async {
+    // 1️⃣ Loading فقط
+    emit(state.copyWith(deleteReplyActionState: CubitStates.loading));
 
-    // 1️⃣ Optimistic Update
-    final updatedComments = state.comments.map((comment) {
-      final hasReply = comment.replies.any((r) => r.id == replyId);
-      if (hasReply) {
-        return comment.copyWith(
-          replies: comment.replies.where((r) => r.id != replyId).toList(),
-          repliesNumber: comment.repliesNumber - 1,
-        );
-      }
-      return comment;
-    }).toList();
+    // 2️⃣ ننتظر رد السيرفر
+    final result = await homeRepository.deleteReply(replyId: replyId);
 
-    emit(
-      state.copyWith(
-        comments: updatedComments,
-        deleteReplyActionState: CubitStates.loading,
-      ),
-    );
-
-    // 2️⃣ Server Request
-    homeRepository.deleteReply(replyId: replyId).then((result) {
-      result.fold(
-        (failure) => emit(
-          state.copyWith(
-            comments: originalComments,
-            deleteReplyActionState: CubitStates.failure,
-            deleteReplyMessage: failure.message,
-          ),
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          deleteReplyActionState: CubitStates.failure,
+          deleteReplyMessage: failure.message,
         ),
-        (message) => emit(
+      ),
+      (message) {
+        // ✅ نجاح → نحذف الرد من اللوكال
+        final updatedComments = state.comments.map((comment) {
+          final hasReply = comment.replies.any((r) => r.id == replyId);
+          if (hasReply) {
+            return comment.copyWith(
+              replies: comment.replies.where((r) => r.id != replyId).toList(),
+              repliesNumber: (comment.repliesNumber - 1).clamp(0, 999999),
+            );
+          }
+          return comment;
+        }).toList();
+
+        emit(
           state.copyWith(
+            comments: updatedComments,
             deleteReplyActionState: CubitStates.success,
             deleteReplyMessage: message,
           ),
-        ),
-      );
-    });
+        );
+
+        // ✅ ننقص العدد بواحد (رد واحد بس)
+        _emitCommentCountDelta(-1);
+      },
+    );
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -224,7 +228,6 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
 
     final newHideState = !reply.isHidden;
 
-    // 1️⃣ Local Update
     emit(
       state.copyWith(
         comments: state.comments.map((comment) {
@@ -239,7 +242,6 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
       ),
     );
 
-    // 2️⃣ Fire Request
     homeRepository.hideReply(replyId: replyId, isHide: newHideState);
   }
 
@@ -268,10 +270,10 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
       ),
     );
   }
-  // ═══════════════════════════════════════════════════════════
-  // 📌 ADD COMMENT (Optimistic Update + Auto-Scroll)
-  // ═══════════════════════════════════════════════════════════
 
+  // ═══════════════════════════════════════════════════════════
+  // 💬 ADD COMMENT (Optimistic + Delta) ✅ MODIFIED
+  // ═══════════════════════════════════════════════════════════
   Future<void> addComment(String content) async {
     if (content.trim().isEmpty) return;
 
@@ -335,12 +337,14 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
             addingCommentState: CubitStates.success,
             comments: updatedComments,
             clearPendingCommentTempId: true,
-            // ✅ NEW: Scroll للكومنت الجديد
             scrollToCommentId: newComment.id,
             scrollTrigger: state.scrollTrigger + 1,
             isAnonymousLocked: true,
           ),
         );
+
+        // ✅ زيادة العدد في البوست عبر الـ Delta
+        _emitCommentCountDelta(1);
 
         emit(state.copyWith(addingCommentState: CubitStates.initial));
       },
@@ -348,13 +352,8 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // 📌 ADD REPLY (with Auto-Scroll)
+  // 💬 ADD REPLY (With Delta) ✅ MODIFIED
   // ═══════════════════════════════════════════════════════════
-
-  // ═══════════════════════════════════════════════════════════
-  // 📌 ADD REPLY (FIXED)
-  // ═══════════════════════════════════════════════════════════
-
   Future<void> addReply(String parentCommentId, String content) async {
     if (content.trim().isEmpty) return;
 
@@ -383,15 +382,9 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
           parentCommentId,
           (parentComment) {
             final updatedReplies = [newReply, ...parentComment.replies];
-
-            // ✅ FIXED: لا نغيّر الـ pagination لو الردود مش محملة أصلاً
-            // نخليهم زي ما هم عشان loadReplies يشتغل صح بعدين
             return parentComment.copyWith(
               replies: updatedReplies,
               repliesNumber: parentComment.repliesNumber + 1,
-              // ❌ شيلنا السطور دي:
-              // repliesCurrentPage: newCurrentPage,
-              // repliesTotalPages: newTotalPages,
             );
           },
         );
@@ -407,6 +400,9 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
           ),
         );
 
+        // ✅ زيادة العدد في البوست عبر الـ Delta
+        _emitCommentCountDelta(1);
+
         emit(state.copyWith(addingReplyState: CubitStates.initial));
       },
     );
@@ -415,7 +411,6 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   // ═══════════════════════════════════════════════════════════
   // 📌 LOAD REPLIES (FIXED - with deduplication)
   // ═══════════════════════════════════════════════════════════
-
   Future<void> loadReplies(String commentId) async {
     final targetComment = _findCommentById(state.comments, commentId);
     if (targetComment == null || targetComment.isLoadingReplies) return;
@@ -459,7 +454,6 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
         final updatedComments = _updateCommentById(state.comments, commentId, (
           oldComment,
         ) {
-          // ✅ FIXED: Deduplication - نشيل أي رد موجود فعلاً من النتائج الجديدة
           final existingIds = oldComment.replies.map((r) => r.id).toSet();
           final uniqueNewReplies = response.comments
               .where((r) => !existingIds.contains(r.id))
@@ -485,13 +479,11 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   // ═══════════════════════════════════════════════════════════
   // 📌 TOGGLE REPLY (with Auto-Scroll to comment)
   // ═══════════════════════════════════════════════════════════
-
   void toggleReply(String commentId) {
     emit(
       state.copyWith(
         activeReplyId: commentId,
         clearEditingCommentId: true,
-        // ✅ NEW: Scroll للكومنت اللي هنرد عليه
         scrollToCommentId: commentId,
         scrollTrigger: state.scrollTrigger + 1,
       ),
@@ -501,7 +493,6 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   // ═══════════════════════════════════════════════════════════
   // 📌 SAVE EDITED COMMENT (with Auto-Scroll)
   // ═══════════════════════════════════════════════════════════
-
   Future<void> saveEditedComment({
     required String commentId,
     required String newContent,
@@ -544,7 +535,6 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
             editingState: CubitStates.success,
             comments: updatedComments,
             clearEditingCommentId: true,
-            // ✅ Scroll للكومنت اللي اتعدل
             scrollToCommentId: commentId,
             scrollTrigger: state.scrollTrigger + 1,
           ),
@@ -556,9 +546,8 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // 📌 CLEAR SCROLL (يُستدعى بعد ما الـ UI يعمل scroll)
+  // 📌 CLEAR SCROLL
   // ═══════════════════════════════════════════════════════════
-
   void clearScrollTarget() {
     emit(state.copyWith(clearScrollToCommentId: true));
   }
@@ -566,9 +555,8 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   // ═══════════════════════════════════════════════════════════
   // 📌 LIKE
   // ═══════════════════════════════════════════════════════════
-
   void toggleLike(bool isReply, String commentId) {
-    bool? newIsLiked; // نعرّفه برا
+    bool? newIsLiked;
 
     final updatedComments = _updateCommentById(state.comments, commentId, (
       comment,
@@ -609,7 +597,9 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
     );
   }
 
-  // Helpers
+  // ═══════════════════════════════════════════════════════════
+  // 🔧 HELPERS
+  // ═══════════════════════════════════════════════════════════
   CommentModel? _findCommentById(List<CommentModel> comments, String targetId) {
     for (var comment in comments) {
       if (comment.id == targetId) return comment;
@@ -623,7 +613,6 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
 
   CommentModel? _findReplyById(List<CommentModel> comments, String replyId) {
     for (var comment in comments) {
-      // البحث في الـ replies الخاصة بكل كومنت
       for (var reply in comment.replies) {
         if (reply.id == replyId) return reply;
       }
