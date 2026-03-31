@@ -66,8 +66,8 @@ class MySpaceMarriageContent extends StatelessWidget {
                     radius: 16.r,
                     useGradient: true,
                     title: context.tr('complete_your_profile_bott'),
-                    onPressed: () {
-                      context.pushNamed(AppRouter.kMarriageView);
+                    onPressed: () async {
+                      context.read<LayoutCubit>().changeIndex(1);
                     },
                   ),
                 ],

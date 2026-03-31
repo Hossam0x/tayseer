@@ -1743,15 +1743,6 @@
   "recharge_success_go_to_wallet": "Go to Wallet",
   "recharge_success_done": "Done",
   "points": "Points",
-  "full_name_length_error": "Name must be between 3 and 24 characters",
-  "first_name_required": "First name is required",
-  "first_name_length_error": "First name must be between 3 and 12 characters",
-  "first_name_letters_only": "First name must contain letters only",
-  "second_name_length_error": "Last name must be between 3 and 12 characters",
-  "second_name_letters_only": "Last name must contain letters only",
-  "name_updated_success": "Name updated successfully",
-  "name_update_failed": "Failed to update name",
-  "second_name_optional": "Last name (optional)",
-  "enter_first_name": "Enter first name",
-  "enter_second_name": "Enter last name"
+  "view_who_interacted": "Who Interact",
+  "distance_away": "{} km away"
 }

@@ -1741,15 +1741,5 @@
   "recharge_success_go_to_wallet": "الذهاب للمحفظة",
   "recharge_success_done": "تم",
   "points": "النقاط",
-  "full_name_length_error": "يجب أن يكون الاسم بين 3 و 24 حرفاً",
-  "first_name_required": "الاسم الأول مطلوب",
-  "first_name_length_error": "يجب أن يكون الاسم الأول بين 3 و 12 حرفاً",
-  "first_name_letters_only": "يجب أن يحتوي الاسم الأول على أحرف فقط",
-  "second_name_length_error": "يجب أن يكون الاسم الثاني بين 3 و 12 حرفاً",
-  "second_name_letters_only": "يجب أن يحتوي الاسم الثاني على أحرف فقط",
-  "name_updated_success": "تم تحديث الاسم بنجاح",
-  "name_update_failed": "فشل تحديث الاسم",
-  "second_name_optional": "الاسم الثاني (اختياري)",
-  "enter_first_name": "أدخل الاسم الأول",
-  "enter_second_name": "أدخل الاسم الثاني"
+  "distance_away": " على بعد منك {} كم"
 }

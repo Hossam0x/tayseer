@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
@@ -65,6 +66,9 @@ class MarriageBodyState extends State<MarriageBody>
   Timer? _scrollIdleTimer;
   static const Duration _scrollIdleDelay = Duration(milliseconds: 800);
 
+  bool get _isConsultantViewingProfile =>
+      widget.personId != null && selectedUserType == UserTypeEnum.asConsultant;
+
   InteractionsCubit get interactionsCubit {
     if (_interactionsCubit == null) {
       _interactionsCubit = getIt<InteractionsCubit>();
@@ -92,8 +96,6 @@ class MarriageBodyState extends State<MarriageBody>
     }
 
     final cubit = context.read<MarriageCubit>();
-
-    // ✅ دايماً fetch البيانات بغض النظر عن الـ userType
     cubit.fetchMarriageProfile(
       seedFavoriteId: (cubit.seedPersonId != null && cubit.seedIsFavorite)
           ? cubit.seedPersonId
@@ -101,12 +103,18 @@ class MarriageBodyState extends State<MarriageBody>
     );
     cubit.initAnimation(this);
 
-    // ✅ لو مستشار، بس اعرض الـ dialog من غير ما توقف الـ fetch
-    if (widget.personId != null &&
-        selectedUserType == UserTypeEnum.asConsultant) {
+    // ✅ جيب العدد من الـ API مباشرةً عند الفتح
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<MarriageCubit>().fetchNotificationCount();
+    });
+
+    if (_isConsultantViewingProfile) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _showConsultantBlockedDialog();
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (!mounted) return;
+          _showConsultantBlockedDialog();
+        });
       });
     }
   }
@@ -316,7 +324,9 @@ class MarriageBodyState extends State<MarriageBody>
           previous.selectedHistoryFilter != current.selectedHistoryFilter ||
           previous.favoritedIds != current.favoritedIds ||
           previous.isLoadingMore != current.isLoadingMore ||
-          previous.userHistory != current.userHistory,
+          previous.userHistory != current.userHistory ||
+          previous.interactionsNotificationCount !=
+              current.interactionsNotificationCount,
 
       listener: (context, state) {
         if ((state.sendRegardState == CubitStates.failure ||
@@ -375,17 +385,16 @@ class MarriageBodyState extends State<MarriageBody>
       builder: (context, state) {
         if (state.marriageProfileState == CubitStates.loading) {
           return _buildShimmerScreen();
-        }
-
-        if (state.marriageProfileState == CubitStates.failure) {
-          return _buildWithAppBar(
-            child: Center(
-              child: Text(
-                state.errorMessage ?? 'حدث خطأ ما',
-                style: const TextStyle(color: Colors.red, fontSize: 16),
-              ),
-            ),
-          );
+        } else if (state.marriageProfileState == CubitStates.failure) {
+          return _isConsultantViewingProfile
+              ? _buildConsultantErrorScreen(state.errorMessage)
+              : _buildWithAppBar(
+                  child: CustomErrorView(
+                    message: state.errorMessage ?? context.tr('error_occurred'),
+                    onRetry: () =>
+                        context.read<MarriageCubit>().refreshProfile(),
+                  ),
+                );
         }
 
         final List<UserItem> allUsers = state.allUsers;
@@ -450,7 +459,6 @@ class MarriageBodyState extends State<MarriageBody>
           });
         }
 
-        // ✅ GUARD 5: final safety check — if profile at index is partial, shimmer
         if (users[profileIndex].isPartialData) {
           return _buildShimmerScreen();
         }
@@ -474,9 +482,22 @@ class MarriageBodyState extends State<MarriageBody>
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // APP BAR WRAPPER
-  // ═══════════════════════════════════════════════════════════════
+  Widget _buildConsultantErrorScreen(String? errorMessage) {
+    return Directionality(
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+      child: CustomBackground(
+        child: SafeArea(
+          child: Center(
+            child: Text(
+              errorMessage ?? 'حدث خطأ ما',
+              style: const TextStyle(color: Colors.red, fontSize: 16),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildWithAppBar({Key? key, required Widget child}) {
     return Directionality(
       key: key,
@@ -527,13 +548,9 @@ class MarriageBodyState extends State<MarriageBody>
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // EMPTY STATE
-  // ═══════════════════════════════════════════════════════════════
   Widget _buildEmptyMarriage(MarriageCubit cubit) {
     final filters = cubit.state.activeFilters;
 
-    // ✅ فلتر حقيقي = أي حاجة غير minAge/maxAge
     final hasActiveFilters =
         filters.isNotEmpty &&
         filters.keys.any((key) => key != 'minAge' && key != 'maxAge');
@@ -777,9 +794,32 @@ class MarriageBodyState extends State<MarriageBody>
         ? _buildTimelineEventsFromAnswers(answers!.yourGoals!)
         : <Map<String, dynamic>>[];
 
-    final bool canInteract = widget.fromInteractions
-        ? true
-        : (profile.allowInteractions ?? true);
+    final bool isViewingSharedProfile = widget.personId != null;
+    final bool isSameGender;
+
+    if (selectedGender == Gender.male) {
+      final hasHijab =
+          answers?.aboutMe?.wearHijab != null &&
+          answers!.aboutMe!.wearHijab!.isNotEmpty;
+      isSameGender = !hasHijab;
+    } else {
+      final hasHijab =
+          answers?.aboutMe?.wearHijab != null &&
+          answers!.aboutMe!.wearHijab!.isNotEmpty;
+      isSameGender = hasHijab;
+    }
+
+    final bool canInteract;
+    if (_isConsultantViewingProfile) {
+      canInteract = false;
+    } else if (isSameGender && !isViewingSharedProfile) {
+      canInteract = false;
+    } else {
+      canInteract = widget.fromInteractions
+          ? true
+          : (profile.allowInteractions ?? true);
+    }
+
     final faithItems = _buildFaithItems(answers);
 
     return Directionality(
@@ -809,9 +849,12 @@ class MarriageBodyState extends State<MarriageBody>
                     educationLevel: "🎓 ${_tr(user?.about?.educationLevel)}",
                     religiousCommitment:
                         "🕌 ${_tr(user?.about?.religiousCommitment)}",
-                    nationality: "🌍 ${_tr(user?.about?.nationality)}",
+                    nationality:
+                        "${CountryFlagUtils.getFlag(_tr(user?.about?.nationality))} ${_tr(user?.about?.nationality)}",
                     height: "📏 ${user?.about?.height ?? ''}",
-                    toggleWidget: _buildToggle(),
+                    toggleWidget: _isConsultantViewingProfile
+                        ? null
+                        : _buildToggle(),
                     swipeDirection: state.swipeDirection,
                     swipeProgress: state.swipeProgress,
                     shouldBlur: shouldBlurImages,
@@ -835,7 +878,7 @@ class MarriageBodyState extends State<MarriageBody>
                         ? "🕌 ${_tr(nextUser?.about?.religiousCommitment)}"
                         : null,
                     nextNationality: hasNext
-                        ? "🌍 ${_tr(nextUser?.about?.nationality)}"
+                        ? "${CountryFlagUtils.getFlag(_tr(nextUser?.about?.nationality))} ${_tr(nextUser?.about?.nationality)}"
                         : null,
                     nextHeight: hasNext
                         ? "📏 ${nextUser?.about?.height ?? ''}"
@@ -1105,18 +1148,19 @@ class MarriageBodyState extends State<MarriageBody>
                     ),
                   ),
 
-                  SliverPadding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 10.h,
-                    ),
-                    sliver: SliverToBoxAdapter(
-                      child: MessageInputSection(
-                        name: user?.name ?? '',
-                        personId: user?.id ?? '',
+                  if (!_isConsultantViewingProfile)
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 10.h,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: MessageInputSection(
+                          name: user?.name ?? '',
+                          personId: user?.id ?? '',
+                        ),
                       ),
                     ),
-                  ),
 
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
@@ -1179,115 +1223,117 @@ class MarriageBodyState extends State<MarriageBody>
               ),
             ),
 
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutCubic,
-              bottom: state.isScrollingDown ? 30.h : 130.h,
-              left: 0,
-              right: 0,
-              child: canInteract
-                  ? IgnorePointer(
-                      ignoring: state.isAnimating,
-                      child: Row(
-                        mainAxisAlignment: state.userHistory.isEmpty
-                            ? MainAxisAlignment.spaceAround
-                            : MainAxisAlignment.spaceEvenly,
-                        children: [
-                          buildCircleButton(
-                            onTap: () async {
-                              await _showSwipePopup(
-                                context,
-                                SwipeActionType.like,
-                              );
-                              if (widget.fromInteractions) {
-                                cubit.userInteraction(
-                                  personId: profile.user?.id ?? '',
-                                  interactionType: 'like',
-                                );
-                              } else {
-                                await cubit.swipeLike(
-                                  personId: profile.user?.id ?? '',
-                                  usersLength: users.length,
-                                  hasSinglePerson: widget.personId != null,
-                                );
-                                if (widget.personId == null && mounted) {
-                                  _resetScrollTracking();
-                                  scrollToTop();
-                                }
-                              }
-                              if (widget.fromInteractions && mounted) {
-                                context.pop();
-                              }
-                            },
-                            Icons.check,
-                            AppColors.kprimaryTextColor,
-                            HexColor('f8d3da'),
-                          ),
-
-                          buildCircleButton(
-                            onTap: () async {
-                              cubit.sendRegard(
-                                personId: profile.user?.id ?? '',
-                              );
-                            },
-                            Icons.star,
-                            Colors.white,
-                            HexColor('cccab3'),
-                          ),
-
-                          buildCircleButton(
-                            onTap: () async {
-                              await _showSwipePopup(
-                                context,
-                                SwipeActionType.dislike,
-                              );
-                              if (widget.fromInteractions) {
-                                cubit.userInteraction(
-                                  personId: profile.user?.id ?? '',
-                                  interactionType: 'dislike',
-                                );
-                              } else {
-                                await cubit.swipeDislike(
-                                  personId: profile.user?.id ?? '',
-                                  usersLength: users.length,
-                                  hasSinglePerson: widget.personId != null,
-                                );
-                                if (widget.personId == null && mounted) {
-                                  _resetScrollTracking();
-                                  scrollToTop();
-                                }
-                              }
-                              if (widget.fromInteractions && mounted) {
-                                context.pop();
-                              }
-                            },
-                            Icons.close,
-                            Colors.white,
-                            HexColor('e44e6c'),
-                          ),
-
-                          if (state.userHistory.isNotEmpty)
+            if (!_isConsultantViewingProfile)
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                bottom: state.isScrollingDown ? 30.h : 130.h,
+                left: 0,
+                right: 0,
+                child: canInteract
+                    ? IgnorePointer(
+                        ignoring: state.isAnimating,
+                        child: Row(
+                          mainAxisAlignment: state.userHistory.isEmpty
+                              ? MainAxisAlignment.spaceAround
+                              : MainAxisAlignment.spaceEvenly,
+                          children: [
+                            SizedBox.shrink(),
                             buildCircleButton(
                               onTap: () async {
-                                final cubit = context.read<MarriageCubit>();
-                                cubit.goBackToPreviousUser();
-                                _resetScrollTracking();
-                                scrollToTop();
+                                await _showSwipePopup(
+                                  context,
+                                  SwipeActionType.like,
+                                );
+                                if (widget.fromInteractions) {
+                                  cubit.userInteraction(
+                                    personId: profile.user?.id ?? '',
+                                    interactionType: 'like',
+                                  );
+                                } else {
+                                  await cubit.swipeLike(
+                                    personId: profile.user?.id ?? '',
+                                    usersLength: users.length,
+                                    hasSinglePerson: widget.personId != null,
+                                  );
+                                  if (widget.personId == null && mounted) {
+                                    _resetScrollTracking();
+                                    scrollToTop();
+                                  }
+                                }
+                                if (widget.fromInteractions && mounted) {
+                                  context.pop();
+                                }
                               },
-                              isArabic
-                                  ? Icons.subdirectory_arrow_left_outlined
-                                  : Icons.subdirectory_arrow_right_outlined,
+                              Icons.check,
+                              AppColors.kprimaryTextColor,
+                              HexColor('f8d3da'),
+                            ),
+
+                            buildCircleButton(
+                              onTap: () async {
+                                cubit.sendRegard(
+                                  personId: profile.user?.id ?? '',
+                                );
+                              },
+                              Icons.star,
                               Colors.white,
-                              flipVertical: true,
-                              AppColors.primary200,
-                            )
-                          else
-                            const SizedBox.shrink(),
-                        ],
-                      ),
-                    )
-                  : const SizedBox.shrink(),
-            ),
+                              HexColor('cccab3'),
+                            ),
+
+                            buildCircleButton(
+                              onTap: () async {
+                                await _showSwipePopup(
+                                  context,
+                                  SwipeActionType.dislike,
+                                );
+                                if (widget.fromInteractions) {
+                                  cubit.userInteraction(
+                                    personId: profile.user?.id ?? '',
+                                    interactionType: 'dislike',
+                                  );
+                                } else {
+                                  await cubit.swipeDislike(
+                                    personId: profile.user?.id ?? '',
+                                    usersLength: users.length,
+                                    hasSinglePerson: widget.personId != null,
+                                  );
+                                  if (widget.personId == null && mounted) {
+                                    _resetScrollTracking();
+                                    scrollToTop();
+                                  }
+                                }
+                                if (widget.fromInteractions && mounted) {
+                                  context.pop();
+                                }
+                              },
+                              Icons.close,
+                              Colors.white,
+                              HexColor('e44e6c'),
+                            ),
+
+                            if (state.userHistory.isNotEmpty)
+                              buildCircleButton(
+                                onTap: () async {
+                                  final cubit = context.read<MarriageCubit>();
+                                  cubit.goBackToPreviousUser();
+                                  _resetScrollTracking();
+                                  scrollToTop();
+                                },
+                                isArabic
+                                    ? Icons.subdirectory_arrow_left_outlined
+                                    : Icons.subdirectory_arrow_right_outlined,
+                                Colors.white,
+                                flipVertical: true,
+                                AppColors.primary200,
+                              )
+                            else
+                              const SizedBox.shrink(),
+                          ],
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
           ],
         ),
       ),
@@ -1338,6 +1384,8 @@ class MarriageBodyState extends State<MarriageBody>
                           Positioned(
                             left: 0,
                             child: AnimatedHistoryButton(
+                              notificationCount:
+                                  state.interactionsNotificationCount,
                               onTap: () {
                                 cubit.showHistoryView();
                                 WidgetsBinding.instance.addPostFrameCallback((
@@ -1431,9 +1479,6 @@ class MarriageBodyState extends State<MarriageBody>
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // SHIMMER
-  // ═══════════════════════════════════════════════════════════════
   Widget _buildShimmerScreen() {
     return Directionality(
       textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,

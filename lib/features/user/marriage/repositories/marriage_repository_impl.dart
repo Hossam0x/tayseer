@@ -113,71 +113,97 @@ class MarriageRepositoryImpl implements MarriageRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
   @override
-Future<Either<Failure, List<String>>> getFavoriteIds() async {
-  try {
-    final response = await _apiService.get(
-      endPoint: '/user/user-interaction',
-      query: {'interactionType': 'favorite'},
-    );
-    if (response['success'] == true) {
-      final List data = response['data'] ?? [];
-      final ids = data
-          .map((item) => item['personInteractedWith']?.toString() ?? '')
-          .where((id) => id.isNotEmpty)
-          .toList();
-      return Right(ids);
-    } else {
-      return Left(ServerFailure(response['message'] ?? ''));
+  Future<Either<Failure, List<String>>> getFavoriteIds() async {
+    try {
+      final response = await _apiService.get(
+        endPoint: '/user/user-interaction',
+        query: {'interactionType': 'favorite'},
+      );
+      if (response['success'] == true) {
+        final List data = response['data'] ?? [];
+        final ids = data
+            .map((item) => item['personInteractedWith']?.toString() ?? '')
+            .where((id) => id.isNotEmpty)
+            .toList();
+        return Right(ids);
+      } else {
+        return Left(ServerFailure(response['message'] ?? ''));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
-  } on DioException catch (e) {
-    return Left(ServerFailure.fromDioError(e));
-  } catch (e) {
-    return Left(ServerFailure(e.toString()));
   }
-}
-@override
-Future<Either<Failure, String>> blockUser({required String personId}) async {
-  try {
-    final response = await _apiService.post(
-      endPoint: ApiEndPoint.blockuser,
-      data: {'blockedId': personId},
-    );
-    if (response['success'] == true) {
-      return Right(response['message'] ?? 'تم الحظر بنجاح');
-    } else {
-      return Left(ServerFailure(response['message'] ?? 'فشل الحظر'));
-    }
-  } on DioException catch (e) {
-    return Left(ServerFailure.fromDioError(e));
-  } catch (e) {
-    return Left(ServerFailure(e.toString()));
-  }
-}
 
-@override
-Future<Either<Failure, UserItem>> getProfileById(String userId) async {
-  try {
-    final response = await _apiService.get(
-      endPoint: '/user/one-user-for-marry/$userId',
-    );
-    if (response['success'] == true) {
-      final data = response['data'];
-      final userData = data['userData'];
-      final allowInteractions = data['allowInteractions'] as bool? ?? true; // ✅
-
-      final userItem = UserItem.fromJson({
-        ...userData,
-        'allowInteractions': allowInteractions, // ✅ حطه في الـ UserItem
-      });
-      return Right(userItem);
-    } else {
-      return Left(ServerFailure(response['message'] ?? ''));
+  @override
+  Future<Either<Failure, String>> blockUser({required String personId}) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.blockuser,
+        data: {'blockedId': personId},
+      );
+      if (response['success'] == true) {
+        return Right(response['message'] ?? 'تم الحظر بنجاح');
+      } else {
+        return Left(ServerFailure(response['message'] ?? 'فشل الحظر'));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
-  } on DioException catch (e) {
-    return Left(ServerFailure.fromDioError(e));
-  } catch (e) {
-    return Left(ServerFailure(e.toString()));
   }
-}
+
+  @override
+  Future<Either<Failure, UserItem>> getProfileById(String userId) async {
+    try {
+      final response = await _apiService.get(
+        endPoint: '/user/one-user-for-marry/$userId',
+      );
+      if (response['success'] == true) {
+        final data = response['data'];
+        final userData = data['userData'];
+        final allowInteractions =
+            data['allowInteractions'] as bool? ?? true; // ✅
+
+        final userItem = UserItem.fromJson({
+          ...userData,
+          'allowInteractions': allowInteractions, // ✅ حطه في الـ UserItem
+        });
+        return Right(userItem);
+      } else {
+        return Left(ServerFailure(response['message'] ?? ''));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, int>> getInteractionNotificationCount() async {
+    try {
+      final response = await _apiService.get(
+        endPoint: '/user/interactions-notification-count',
+      );
+      print('📦 notification count raw response: $response');
+      if (response['success'] == true) {
+      final count = response['data']?['interactionsNotificationCount'] ?? 0;
+        print('📊 parsed count: $count');
+        return Right(count);
+      } else {
+        return Left(ServerFailure(response['message'] ?? ''));
+      }
+    } on DioException catch (e) {
+      print('🚨 DioException: ${e.message}');
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      print('🚨 Exception: $e');
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }
