@@ -186,12 +186,8 @@ class InteractionsCubit extends Cubit<InteractionsState> {
       return;
     }
 
-    // ✅ FIX: was blocking loadMore because historyState stays "loading"
-    // after the initial fetch in some edge cases. Use a dedicated isLoadingMore
-    // flag on state instead — but since we don't have that field on
-    // InteractionsState, we guard only against a *fresh* loading (no data yet).
     final hasExistingData = state.historyData[filter]?.isNotEmpty ?? false;
-    if (!hasExistingData) return; // still on initial load — don't paginate yet
+    if (!hasExistingData) return;
 
     final currentPage = state.historyCurrentPage[filter] ?? 1;
     final nextPage = currentPage + 1;
@@ -231,7 +227,6 @@ class InteractionsCubit extends Cubit<InteractionsState> {
             return user;
           }).toList();
 
-          // ✅ FIX: deduplicate by userId to avoid duplicate cards on re-fetch
           final existingIds = existingUsers.map((u) => u.userId).toSet();
           final uniqueNew = newUsers
               .where((u) => !existingIds.contains(u.userId))

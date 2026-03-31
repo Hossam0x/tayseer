@@ -2,7 +2,6 @@ import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
 
-// ✅ Sentinel so copyWith can explicitly clear nullable String fields to null
 const _clearString = Object();
 
 class MarriageState extends Equatable {
@@ -30,6 +29,7 @@ class MarriageState extends Equatable {
   final Map<String, dynamic> activeFilters;
   final Set<String> favoritedIds;
   final bool showActionSnackbar;
+  final int interactionsNotificationCount; // ✅ NEW
 
   const MarriageState({
     this.marriageProfileState = CubitStates.initial,
@@ -56,6 +56,7 @@ class MarriageState extends Equatable {
     this.activeFilters = const {},
     this.favoritedIds = const {},
     this.showActionSnackbar = false,
+    this.interactionsNotificationCount = 0, // ✅ NEW
   });
 
   MarriageState copyWith({
@@ -68,7 +69,6 @@ class MarriageState extends Equatable {
     int? currentIndex,
     bool? isScrollingDown,
     bool? isMarriageTab,
-    // ✅ FIX: use Object? sentinel so callers can pass null explicitly to clear
     Object? errorMessage = _clearString,
     Object? blockMessage = _clearString,
     double? swipeDirection,
@@ -84,6 +84,7 @@ class MarriageState extends Equatable {
     Map<String, dynamic>? activeFilters,
     Set<String>? favoritedIds,
     bool? showActionSnackbar,
+    int? interactionsNotificationCount, // ✅ NEW
   }) {
     return MarriageState(
       marriageProfileState: marriageProfileState ?? this.marriageProfileState,
@@ -95,7 +96,6 @@ class MarriageState extends Equatable {
       currentIndex: currentIndex ?? this.currentIndex,
       isScrollingDown: isScrollingDown ?? this.isScrollingDown,
       isMarriageTab: isMarriageTab ?? this.isMarriageTab,
-      // ✅ FIX: if sentinel → keep existing value; if null passed → clear to null; if value → use it
       errorMessage: identical(errorMessage, _clearString)
           ? this.errorMessage
           : errorMessage as String?,
@@ -116,6 +116,8 @@ class MarriageState extends Equatable {
       activeFilters: activeFilters ?? this.activeFilters,
       favoritedIds: favoritedIds ?? this.favoritedIds,
       showActionSnackbar: showActionSnackbar ?? this.showActionSnackbar,
+      interactionsNotificationCount: // ✅ NEW
+          interactionsNotificationCount ?? this.interactionsNotificationCount,
     );
   }
 
@@ -145,5 +147,6 @@ class MarriageState extends Equatable {
     activeFilters,
     favoritedIds,
     showActionSnackbar,
+    interactionsNotificationCount, // ✅ NEW
   ];
 }

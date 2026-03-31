@@ -1735,5 +1735,6 @@
   "network_error": "خطأ في الاتصال بالإنترنت",
   "camera_access_denied": "لم يتم السماح بالوصول للكاميرا",
   "api_error": "خطأ في الاتصال بالخادم",
-  "view_who_interacted": "شاهد من تفاعلت معه"
+  "view_who_interacted": "شاهد من تفاعلت معه",
+  "distance_away": " على بعد منك {} كم"
 }

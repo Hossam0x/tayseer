@@ -100,7 +100,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             alignment: 0.1,
           );
         } else {
-          debugPrint('⚠️ Retrying scroll for $section...');
           Future.delayed(const Duration(milliseconds: 200), () {
             if (targetKey?.currentContext != null) {
               Scrollable.ensureVisible(
@@ -133,9 +132,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return translated;
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ✅ Open image in FullScreen
-  // ════════════════════════════════════════════════════════════════
   void _openFullScreen(BuildContext context, String imageUrl, String heroTag) {
     FullScreenImageView.show(
       context,
@@ -209,24 +205,28 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     final serverSingleImage = profile.userMedia?.singleImage;
     final pendingSingle = widget.state.pendingSingleImage;
     final pendingImgs = widget.state.pendingImages;
-    final deletedSingleUrl = widget.state.deletedSingleImageUrl;
-
-    final displaySingleUrl = deletedSingleUrl != null
-        ? null
-        : serverSingleImage;
+    final displaySingleUrl = profile.userMedia?.singleImage;
     final hasSingleToShow = pendingSingle != null || displaySingleUrl != null;
 
+    // ✅ فلتر الصور المحذوفة
     final filteredServerImages = serverImages
         .where((url) => !widget.state.deletedImageUrls.contains(url))
         .toList();
-    final allDisplayImages = [
-      ...filteredServerImages,
-      ...pendingImgs.map((f) => f.path),
-    ];
+
+    // ✅ FIX: allDisplayImages تحتوي فقط على server URLs
+    // الـ local files موجودة في pendingImgs منفصلة
+    final allDisplayImages = filteredServerImages;
+
     final secondaryImages = allDisplayImages.length > 4
         ? allDisplayImages.sublist(0, 4)
         : allDisplayImages;
-    final totalCount = (hasSingleToShow ? 1 : 0) + allDisplayImages.length;
+
+    // ✅ FIX: العدد الحقيقي = server images + pending images
+    final totalCount =
+        (hasSingleToShow ? 1 : 0) +
+        allDisplayImages.length +
+        pendingImgs.length;
+
     final canDrag = secondaryImages.length > 1;
 
     return Container(
@@ -348,6 +348,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                   secondaryImages: secondaryImages,
                   filteredServerImages: filteredServerImages,
                   allDisplayImages: allDisplayImages,
+                  pendingImgs: pendingImgs,
                 )
               : _buildNormalGrid(
                   context,
@@ -359,6 +360,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                   secondaryImages: secondaryImages,
                   filteredServerImages: filteredServerImages,
                   allDisplayImages: allDisplayImages,
+                  pendingImgs: pendingImgs,
                 ),
         ],
       ),
@@ -366,7 +368,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ✅ NORMAL GRID
+  // ✅ NORMAL GRID - FIX: الـ pending images تُعرض بـ File مش NetworkImage
   // ════════════════════════════════════════════════════════════════
   Widget _buildNormalGrid(
     BuildContext context,
@@ -378,7 +380,14 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     required List<String> secondaryImages,
     required List<String> filteredServerImages,
     required List<String> allDisplayImages,
+    required List<File> pendingImgs,
   }) {
+    // ✅ FIX: نبني قائمة موحدة من الـ slots
+    // Server images أولاً، ثم pending images
+    final totalServerCount = secondaryImages.length;
+    final totalPendingCount = pendingImgs.length;
+    final totalSlots = totalServerCount + totalPendingCount;
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: GridView.builder(
@@ -393,6 +402,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         ),
         itemCount: 6,
         itemBuilder: (context, index) {
+          // ════ Slot 0: Main Image ════
           if (index == 0) {
             return GestureDetector(
               onTap: hasSingleToShow && displaySingleUrl != null
@@ -413,6 +423,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             );
           }
 
+          // ════ Slot 5: Guidelines ════
           if (index == 5) {
             return GestureDetector(
               onTap: () => ImageGuidelinesBottomSheet.show(
@@ -428,7 +439,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                       size: 28,
                       color: AppColors.kscandryTextColor,
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
                       context.tr('photo_guidelines'),
                       textAlign: TextAlign.center,
@@ -442,44 +453,48 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             );
           }
 
-          final listIndex = index - 1;
-          if (listIndex < secondaryImages.length) {
-            final isLocal = listIndex >= filteredServerImages.length;
-            final pendingIndex = listIndex - filteredServerImages.length;
-            final imageUrl = isLocal ? null : secondaryImages[listIndex];
-            final heroTag = 'secondary_image_$listIndex';
+          // ════ Slots 1-4: Secondary Images ════
+          final listIndex = index - 1; // 0, 1, 2, 3
 
+          // ✅ FIX: أول نعرض server images، ثم pending images
+          if (listIndex < totalServerCount) {
+            // Server image
+            final imageUrl = secondaryImages[listIndex];
+            final heroTag = 'secondary_image_$listIndex';
             return GestureDetector(
-              onTap: !isLocal && imageUrl != null
-                  ? () => _openFullScreen(context, imageUrl, heroTag)
-                  : null,
+              onTap: () => _openFullScreen(context, imageUrl, heroTag),
               child: ImageSlotCard(
                 imageUrl: imageUrl,
-                localFile: isLocal
-                    ? widget.state.pendingImages[pendingIndex]
-                    : null,
+                localFile: null,
                 isMain: false,
                 onTap: null,
-                onRemove: () {
-                  if (isLocal) {
-                    cubit.removePendingImage(pendingIndex);
-                  } else {
-                    _removeImage(
-                      context,
-                      cubit,
-                      listIndex,
-                      filteredServerImages,
-                    );
-                  }
-                },
+                onRemove: () => _removeImage(
+                  context,
+                  cubit,
+                  listIndex,
+                  filteredServerImages,
+                ),
               ),
+            );
+          } else if (listIndex < totalSlots) {
+            // ✅ FIX: Pending image - تعرض كـ File مباشرة مش NetworkImage
+            final pendingIndex = listIndex - totalServerCount;
+            return ImageSlotCard(
+              imageUrl: null, // ✅ مش بنبعت URL هنا
+              localFile: pendingImgs[pendingIndex], // ✅ بنبعت الـ File مباشرة
+              isMain: false,
+              onTap: null,
+              onRemove: () => cubit.removePendingImage(pendingIndex),
             );
           }
 
+          // ════ Empty Slot ════
+          // ✅ FIX: نحسب الـ capacity الصحيحة
+          final currentTotal = totalServerCount + totalPendingCount;
           return ImageSlotCard(
             imageUrl: null,
             isMain: false,
-            onTap: allDisplayImages.length < 4
+            onTap: currentTotal < 4
                 ? () => _pickImage(context, cubit, profile, isMain: false)
                 : null,
             onRemove: null,
@@ -490,7 +505,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ✅ DRAG GRID
+  // ✅ DRAG GRID - يعمل فقط على server images
   // ════════════════════════════════════════════════════════════════
   Widget _buildDragGrid(
     BuildContext context,
@@ -502,6 +517,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     required List<String> secondaryImages,
     required List<String> filteredServerImages,
     required List<String> allDisplayImages,
+    required List<File> pendingImgs,
   }) {
     final screenWidth = MediaQuery.of(context).size.width - 40.w - 20.w;
     final cellWidth = (screenWidth - 24) / 3;
@@ -520,55 +536,96 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
 
     Widget secSlot(int listIndex) {
-      if (listIndex >= secondaryImages.length) {
-        return Container(
-          key: ValueKey('empty_$listIndex'),
-          child: ImageSlotCard(
-            imageUrl: null,
-            isMain: false,
-            onTap: null,
-            onRemove: null,
+      // ✅ Server images
+      if (listIndex < secondaryImages.length) {
+        final imageUrl = secondaryImages[listIndex];
+        return AnimatedContainer(
+          key: ValueKey('sec_$imageUrl'),
+          duration: const Duration(milliseconds: 200),
+          child: Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12.r),
+                child: ImageSlotCard(
+                  imageUrl: imageUrl,
+                  localFile: null,
+                  isMain: false,
+                  onTap: null,
+                  onRemove: null,
+                ),
+              ),
+              Positioned(
+                top: 6.h,
+                right: 6.w,
+                child: Container(
+                  padding: EdgeInsets.all(3.w),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(5.r),
+                  ),
+                  child: Icon(
+                    Icons.drag_indicator_rounded,
+                    color: Colors.white,
+                    size: 13.w,
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       }
-      final isLocal = listIndex >= filteredServerImages.length;
-      final pendingIndex = listIndex - filteredServerImages.length;
-      final imageUrl = isLocal ? null : secondaryImages[listIndex];
 
-      return AnimatedContainer(
-        key: ValueKey('sec_${secondaryImages[listIndex]}'),
-        duration: const Duration(milliseconds: 200),
-        child: Stack(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12.r),
-              child: ImageSlotCard(
-                imageUrl: imageUrl,
-                localFile: isLocal
-                    ? widget.state.pendingImages[pendingIndex]
-                    : null,
-                isMain: false,
-                onTap: null,
-                onRemove: null,
-              ),
-            ),
-            Positioned(
-              top: 6.h,
-              right: 6.w,
-              child: Container(
-                padding: EdgeInsets.all(3.w),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(5.r),
-                ),
-                child: Icon(
-                  Icons.drag_indicator_rounded,
-                  color: Colors.white,
-                  size: 13.w,
+      // ✅ Pending images (بدون drag)
+      final pendingIndex = listIndex - secondaryImages.length;
+      if (pendingIndex < pendingImgs.length) {
+        return Container(
+          key: ValueKey('pending_$pendingIndex'),
+          child: Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12.r),
+                child: ImageSlotCard(
+                  imageUrl: null,
+                  localFile: pendingImgs[pendingIndex],
+                  isMain: false,
+                  onTap: null,
+                  onRemove: null,
                 ),
               ),
-            ),
-          ],
+              Positioned(
+                bottom: 6.h,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 6.w,
+                      vertical: 2.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.85),
+                      borderRadius: BorderRadius.circular(6.r),
+                    ),
+                    child: Text(
+                      context.tr('pending'),
+                      style: TextStyle(fontSize: 10.sp, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      // ✅ Empty slot
+      return Container(
+        key: ValueKey('empty_$listIndex'),
+        child: ImageSlotCard(
+          imageUrl: null,
+          isMain: false,
+          onTap: null,
+          onRemove: null,
         ),
       );
     }
@@ -596,11 +653,14 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                   if (newIdx >= updatedImages.length) return;
                   final item = updatedImages.removeAt(oldIdx);
                   updatedImages.insert(newIdx, item);
+
+                  // ✅ FIX: لا يبعت للسيرفر هنا - بس يحدث الـ UI
                   cubit.reorderSecondaryImages(
                     updatedImages,
                     filteredServerImages,
                   );
                   setState(() {});
+
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       CustomSnackBar(
@@ -611,7 +671,10 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                     );
                   }
                 },
-                children: List.generate(4, (i) => secSlot(i)),
+                children: List.generate(
+                  (secondaryImages.length + pendingImgs.length).clamp(0, 4),
+                  (i) => secSlot(i),
+                ),
               ),
             ),
           ),
@@ -776,10 +839,14 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     MarriageUserProfileModel profile, {
     bool isMain = false,
   }) async {
+    // ✅ FIX: نحسب الـ capacity الصحيحة
     final serverCount =
         (profile.userMedia?.images.length ?? 0) -
         widget.state.deletedImageUrls.length;
-    if (serverCount + widget.state.pendingImages.length >= 4) {
+    final pendingCount = widget.state.pendingImages.length;
+    final total = serverCount + pendingCount;
+
+    if (total >= 4) {
       ScaffoldMessenger.of(context).showSnackBar(
         CustomSnackBar(
           context,
@@ -920,7 +987,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       );
       if (v != null) await _processVideoFile(context, v);
     } catch (e) {
-      debugPrint('❌ $e');
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           CustomSnackBar(
@@ -970,7 +1036,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       );
       if (v != null) await _processVideoFile(context, v);
     } catch (e) {
-      debugPrint('❌ $e');
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           CustomSnackBar(
@@ -999,7 +1064,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       widget.cubit.addPendingVideo(file);
       if (mounted) setState(() {});
     } catch (e) {
-      debugPrint('❌ $e');
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           CustomSnackBar(
@@ -1280,8 +1344,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   // ════════════════════════════════════════════════════════════════
   // INFO SECTIONS
   // ════════════════════════════════════════════════════════════════
-
-  // ✅ FIX 2: حذف سكشن "هل تأكل الحلال" من هنا
   Widget _buildPersonalInfoSection(
     BuildContext context,
     MarriageProfileCubit cubit,
@@ -1392,7 +1454,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
               profile.aboutMe?.drinkAlcohol,
             ),
           ),
-          // ✅ تم حذف سكشن "هل تأكل الحلال" (eatHalalOnly) من هنا
         ],
       ),
     );
@@ -1461,7 +1522,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
-  // ✅ FIX 1: إخفاء سكشن الأطفال للأعزب/الأنسة
   Widget _buildFamilyAndPreferencesSection(
     BuildContext context,
     MarriageProfileCubit cubit,
@@ -1470,7 +1530,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     final hasChildren = profile.family?.hasChildren ?? '';
     final socialStatus = profile.aboutMe?.socialStatus ?? '';
 
-    // ✅ إذا كان أعزب أو آنسة، يُخفى سكشن الأطفال كاملاً
     final isSingle =
         socialStatus == 'social_single' || socialStatus == 'F_social_single';
     final showChildrenSection = !isSingle;
@@ -1503,7 +1562,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
               profile.aboutMe?.socialStatus,
             ),
           ),
-          // ✅ إظهار سكشن الأطفال فقط لغير الأعزب/الأنسة
           if (showChildrenSection) ...[
             _buildInfoRow(
               context.tr('has_childrens'),
@@ -1683,7 +1741,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           );
           widget.onTabChanged?.call(1);
         } else if (state.state == CubitStates.failure) {
-          debugPrint('❌ [SAVE] Error: ${state.errorMessage}');
           if (state.errorMessage != null)
             ScaffoldMessenger.of(context).showSnackBar(
               CustomSnackBar(context, text: state.errorMessage!, isError: true),
@@ -1801,16 +1858,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           fieldName: fieldKey,
           currentValue: currentValue,
           onValueSelected: (value) {
-            if (fieldKey == 'interests' || fieldKey == 'hobbies') {
-              for (var part in value.split(', ')) {
-                final isKey =
-                    part.startsWith('interest_') || part.startsWith('faith_');
-                debugPrint(
-                  '  ${isKey ? "✅" : "❌"} $part ${isKey ? "(KEY)" : "(VALUE - WRONG!)"}',
-                );
-              }
-            }
-            debugPrint('═══════════════════════════════════════════');
             cubit.updateField(fieldKey, value);
           },
         ),

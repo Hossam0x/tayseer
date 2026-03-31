@@ -23,4 +23,5 @@ abstract class MarriageRepository {
 });
 Future<Either<Failure, List<String>>> getFavoriteIds();
 Future<Either<Failure, UserItem>> getProfileById(String userId);
+Future<Either<Failure, int>> getInteractionNotificationCount();
 }

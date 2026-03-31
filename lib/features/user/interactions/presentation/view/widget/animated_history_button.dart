@@ -2,9 +2,13 @@ import 'dart:async';
 import 'package:tayseer/my_import.dart';
 
 class AnimatedHistoryButton extends StatefulWidget {
-  const AnimatedHistoryButton({super.key, this.onTap});
+  const AnimatedHistoryButton({
+    super.key,
+    this.onTap,
+    this.notificationCount = 0,
+  });
   final VoidCallback? onTap;
-
+  final int notificationCount;
   @override
   State<AnimatedHistoryButton> createState() => _AnimatedHistoryButtonState();
 }
@@ -44,7 +48,7 @@ class _AnimatedHistoryButtonState extends State<AnimatedHistoryButton> {
         curve: Curves.easeInOutBack,
         padding: EdgeInsets.symmetric(
           horizontal: _isExpanded ? 12.w : 0.w,
-          vertical:_isExpanded ? 15.h: 0.h,
+          vertical: _isExpanded ? 15.h : 0.h,
         ),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
@@ -53,37 +57,62 @@ class _AnimatedHistoryButtonState extends State<AnimatedHistoryButton> {
             end: Alignment.centerLeft,
           ),
           borderRadius: BorderRadius.circular(30.r),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF7B2FF7).withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             // ✅ الأيكون بيختفي مع الـ animation
-            AnimatedSize(
-              duration: const Duration(milliseconds: 600),
-              curve: Curves.easeInOut,
-              child: AnimatedOpacity(
-                opacity: _isExpanded ? 0.0 : 1.0,
-                duration: const Duration(milliseconds: 400),
-                child: SizedBox(
-                  width: _isExpanded ? 0 : 50.w,
-                  height: _isExpanded ? 24.h : 50.h,
-                  child: _isExpanded
-                      ? null
-                      : SvgPicture.asset(
-                          AssetsData.archiveIcon,
-                          width: 50.w,
-                          height: 50.h,
-                        
-                        ),
+            Stack(
+              
+              children: [
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeInOut,
+                  child: AnimatedOpacity(
+                    opacity: _isExpanded ? 0.0 : 1.0,
+                    duration: const Duration(milliseconds: 400),
+                    child: SizedBox(
+                      width: _isExpanded ? 0 : 50.w,
+                      height: _isExpanded ? 22.h : 50.h,
+                      child: _isExpanded
+                          ? null
+                          : SvgPicture.asset(
+                              AssetsData.archiveIcon,
+                              width: 50.w,
+                              height: 50.h,
+                            ),
+                    ),
+                  ),
                 ),
-              ),
+                if (widget.notificationCount > 0)
+                  Positioned(
+                    top: -3.w,
+                    right: 0.w,
+                    child: Container(
+                      padding: EdgeInsets.all(4.w),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                      constraints: BoxConstraints(
+                        minWidth: 18.w,
+                        minHeight: 18.w,
+                      ),
+                      child: Text(
+                        widget.notificationCount > 99
+                            ? '99+'
+                            : widget.notificationCount.toString(),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
             ),
 
             AnimatedSize(

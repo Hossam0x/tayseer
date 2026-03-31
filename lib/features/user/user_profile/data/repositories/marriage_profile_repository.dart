@@ -44,11 +44,12 @@ class MarriageProfileRepository {
 
   // ════════════════════════════════════════════════════════════════
   // ⭐ UPDATE MARRIAGE PROFILE
+  // ✅ FIX: لا يعمل getMarriageProfile تلقائياً - الـ cubit هو المسؤول
   // ════════════════════════════════════════════════════════════════
-  Future<Either<Failure, MarriageUserProfileModel>> updateMarriageProfile(
+  Future<Either<Failure, bool>> updateMarriageProfile(
     MarriageUserProfileModel profile,
   ) async {
-    try {
+    try {  
       final requestData = _convertToServerFormat(profile);
       final response = await _apiService.patch(
         endPoint: '/user/update-marry-profile',
@@ -56,11 +57,7 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        final fetchResult = await getMarriageProfile();
-        return fetchResult.fold(
-          (failure) => Left(failure),
-          (updatedProfile) => Right(updatedProfile),
-        );
+        return const Right(true);
       }
 
       return Left(ServerFailure(response['message'] ?? 'فشل التحديث'));
@@ -149,7 +146,10 @@ class MarriageProfileRepository {
           .toList();
 
       if (interestHobbies.isNotEmpty) {
-        answers.add({'category': 'hobbies', 'answer': interestHobbies.join(', ')});
+        answers.add({
+          'category': 'hobbies',
+          'answer': interestHobbies.join(', '),
+        });
       }
     }
 
@@ -197,6 +197,7 @@ class MarriageProfileRepository {
 
   // ════════════════════════════════════════════════════════════════
   // ⭐ UPLOAD IMAGE
+  // ✅ FIX: لا يعمل getMarriageProfile تلقائياً
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, String>> uploadMarriageImage(File imageFile) async {
     try {
@@ -213,7 +214,7 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        await getMarriageProfile();
+        // ✅ FIX: مش بنعمل getMarriageProfile هنا - الـ cubit هو المسؤول
         return const Right('uploaded');
       }
 
@@ -225,7 +226,7 @@ class MarriageProfileRepository {
 
   // ════════════════════════════════════════════════════════════════
   // ⭐ DELETE IMAGE
-  // ✅ FIX: بيتحقق إن الـ URL موجود فعلاً قبل الحذف
+  // ✅ FIX: لا يعمل getMarriageProfile تلقائياً
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, bool>> deleteMarriageImage(String imageUrl) async {
     if (imageUrl.isEmpty || !imageUrl.startsWith('http')) {
@@ -240,15 +241,13 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        await getMarriageProfile();
         return const Right(true);
       }
 
       return Left(ServerFailure(response['message'] ?? 'فشل حذف الصورة'));
     } on DioException catch (e) {
-      // ✅ FIX: لو 404 يعني الصورة مش موجودة على السيرفر، نعتبرها نجاح
       if (e.response?.statusCode == 404) {
-        debugPrint('⚠️ [DELETE_IMAGE] 404 - Image already deleted: $imageUrl');
+        debugPrint('⚠️ [DELETE_IMAGE] 404 - Already deleted: $imageUrl');
         return const Right(true);
       }
       return Left(ServerFailure.fromDioError(e));
@@ -259,6 +258,7 @@ class MarriageProfileRepository {
 
   // ════════════════════════════════════════════════════════════════
   // ⭐ UPLOAD VIDEO/AUDIO
+  // ✅ FIX: لا يعمل getMarriageProfile تلقائياً
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, Map<String, String>>> uploadVideoAndAudio({
     File? videoFile,
@@ -290,7 +290,6 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        await getMarriageProfile();
         return Right({
           'video': response['data']['video'] ?? '',
           'audio': response['data']['audio'] ?? '',
@@ -305,7 +304,7 @@ class MarriageProfileRepository {
 
   // ════════════════════════════════════════════════════════════════
   // ⭐ DELETE VIDEO
-  // ✅ FIX: 404 = already deleted = success
+  // ✅ FIX: لا يعمل getMarriageProfile تلقائياً
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, bool>> deleteVideo(String videoUrl) async {
     if (videoUrl.isEmpty || !videoUrl.startsWith('http')) {
@@ -320,14 +319,13 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        await getMarriageProfile();
         return const Right(true);
       }
 
       return Left(ServerFailure(response['message'] ?? 'فشل حذف الفيديو'));
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
-        debugPrint('⚠️ [DELETE_VIDEO] 404 - Video already deleted: $videoUrl');
+        debugPrint('⚠️ [DELETE_VIDEO] 404 - Already deleted: $videoUrl');
         return const Right(true);
       }
       return Left(ServerFailure.fromDioError(e));
@@ -338,7 +336,7 @@ class MarriageProfileRepository {
 
   // ════════════════════════════════════════════════════════════════
   // ⭐ DELETE AUDIO
-  // ✅ FIX: 404 = already deleted = success
+  // ✅ FIX: لا يعمل getMarriageProfile تلقائياً
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, bool>> deleteAudio(String audioUrl) async {
     if (audioUrl.isEmpty || !audioUrl.startsWith('http')) {
@@ -353,14 +351,15 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        await getMarriageProfile();
         return const Right(true);
       }
 
-      return Left(ServerFailure(response['message'] ?? 'فشل حذف التسجيل الصوتي'));
+      return Left(
+        ServerFailure(response['message'] ?? 'فشل حذف التسجيل الصوتي'),
+      );
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
-        debugPrint('⚠️ [DELETE_AUDIO] 404 - Audio already deleted: $audioUrl');
+        debugPrint('⚠️ [DELETE_AUDIO] 404 - Already deleted: $audioUrl');
         return const Right(true);
       }
       return Left(ServerFailure.fromDioError(e));
@@ -371,6 +370,7 @@ class MarriageProfileRepository {
 
   // ════════════════════════════════════════════════════════════════
   // ⭐ UPLOAD SINGLE IMAGE
+  // ✅ FIX: لا يعمل getMarriageProfile تلقائياً
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, String>> uploadSingleImage(File imageFile) async {
     try {
@@ -387,7 +387,6 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        await getMarriageProfile();
         return const Right('uploaded');
       }
 
@@ -399,7 +398,7 @@ class MarriageProfileRepository {
 
   // ════════════════════════════════════════════════════════════════
   // ⭐ DELETE SINGLE IMAGE
-  // ✅ FIX: 404 = already deleted = success
+  // ✅ FIX: لا يعمل getMarriageProfile تلقائياً
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, bool>> deleteSingleImage(String imageUrl) async {
     if (imageUrl.isEmpty || !imageUrl.startsWith('http')) {
@@ -407,7 +406,6 @@ class MarriageProfileRepository {
       return const Right(false);
     }
 
-    // ✅ FIX: لا تحذف الـ placeholder الافتراضية
     if (imageUrl.contains('cdn-icons-png.flaticon.com') ||
         imageUrl.contains('149071.png')) {
       debugPrint('⚠️ [DELETE_SINGLE] Default placeholder, skipping: $imageUrl');
@@ -421,13 +419,11 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        await getMarriageProfile();
         return const Right(true);
       }
 
       return Left(ServerFailure(response['message'] ?? 'فشل حذف الصورة'));
     } on DioException catch (e) {
-      // ✅ FIX: 404 = الصورة مش موجودة = نعتبرها محذوفة بالفعل
       if (e.response?.statusCode == 404) {
         debugPrint('⚠️ [DELETE_SINGLE] 404 - Already deleted: $imageUrl');
         return const Right(true);
@@ -440,21 +436,35 @@ class MarriageProfileRepository {
 
   // ════════════════════════════════════════════════════════════════
   // ⭐ REORDER IMAGES
+  // ✅ FIX: يقبل فقط server URLs - لا يقبل local paths
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, bool>> reorderImages(
     Map<String, String> imagesIndex,
   ) async {
+    // ✅ FIX: تأكد إن كل القيم URLs حقيقية مش local paths
+    final validIndex = <String, String>{};
+    int idx = 0;
+    for (final entry in imagesIndex.entries) {
+      if (entry.value.startsWith('http')) {
+        validIndex[idx.toString()] = entry.value;
+        idx++;
+      } else {
+        debugPrint('⚠️ [REORDER] Skipping local path: ${entry.value}');
+      }
+    }
+
+    if (validIndex.isEmpty) {
+      debugPrint('⚠️ [REORDER] No valid URLs to reorder, skipping');
+      return const Right(true);
+    }
+
     try {
       final response = await _apiService.patch(
         endPoint: '/user/update-marry-profile',
-        data: {
-          'answers': [],
-          'imagesIndex': imagesIndex,
-        },
+        data: {'answers': [], 'imagesIndex': validIndex},
       );
 
       if (response['success'] == true) {
-        await getMarriageProfile();
         return const Right(true);
       }
 

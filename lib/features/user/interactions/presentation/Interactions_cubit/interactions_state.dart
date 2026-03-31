@@ -67,7 +67,8 @@ class InteractionsState extends Equatable {
       answerCompleted: answerCompleted ?? this.answerCompleted, // ✅ NEW
       explorationState: explorationState ?? this.explorationState,
       explorationData: explorationData ?? this.explorationData,
-      explorationCurrentPage: explorationCurrentPage ?? this.explorationCurrentPage,
+      explorationCurrentPage:
+          explorationCurrentPage ?? this.explorationCurrentPage,
       explorationHasMore: explorationHasMore ?? this.explorationHasMore,
       explorationErrorMessage: explorationErrorMessage,
       historyState: historyState ?? this.historyState,

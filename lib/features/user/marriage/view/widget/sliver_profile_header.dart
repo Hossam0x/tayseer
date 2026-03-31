@@ -299,8 +299,7 @@ class _FrontProfileCard extends StatelessWidget {
                   ),
                 ),
 
-                if (shouldBlur)
-                  Container(color: Colors.black.withOpacity(0.2)),
+                if (shouldBlur) Container(color: Colors.black.withOpacity(0.2)),
               ],
             ),
           ),
@@ -505,6 +504,7 @@ class _InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    double distance = 10;
     return _glassCard(
       borderRadius: 24,
       blur: useBlur ? 18 : 0,
@@ -565,25 +565,40 @@ class _InfoCard extends StatelessWidget {
                   ),
                 ),
               ],
+              SizedBox(width: 12.w),
+              AppImage(AssetsData.goldIcon, width: 35.w, height: 35.h),
             ],
           ),
           Gap(5.h),
           if (location.isNotEmpty)
-            Row(
-              children: [
-                Text(
-                  CountryFlagUtils.getFlag(location),
-                  style: const TextStyle(fontSize: 16),
-                ),
-                Gap(5.w),
-                Flexible(
-                  child: Text(
-                    location,
-                    style: Styles.textStyle12.copyWith(color: Colors.white70),
-                    overflow: TextOverflow.ellipsis,
+            Container(
+              
+              child: Row(
+                children: [
+                  Text(
+                    CountryFlagUtils.getFlag(location),
+                    style: const TextStyle(fontSize: 16),
                   ),
-                ),
-              ],
+                  Gap(5.w),
+                  Flexible(
+                    child: Text(
+                      location,
+                      style: Styles.textStyle12.copyWith(color: Colors.white70),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (distance != null) ...[
+                    Gap(8.w),
+                    Text(
+                      context.tr(
+                        'distance_away',
+                        args: [distance!.toStringAsFixed(0)],
+                      ),
+                      style: Styles.textStyle12.copyWith(color: Colors.white70),
+                    ),
+                  ],
+                ],
+              ),
             ),
           Gap(10.h),
           Wrap(
