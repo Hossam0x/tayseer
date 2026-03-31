@@ -84,7 +84,7 @@ class EditPersonalDataForm extends StatelessWidget {
           builder: (context, _) => ProfileTextField(
             controller: nameController,
             maxLength: 24,
-            minLength: 4,
+            minLength: 3,
             showCharacterCount: true,
             validationErrorKey: 'full_name_length_error',
             onChanged: (value) {

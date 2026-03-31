@@ -48,7 +48,7 @@ class BlockedUserInfo extends Equatable {
     return BlockedUserInfo(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
-      userName: json['userName'] ?? '',
+      userName: json['username'] ?? '',
       image: json['image'],
     );
   }
@@ -56,7 +56,7 @@ class BlockedUserInfo extends Equatable {
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
-    'userName': userName,
+    'username': userName,
     'image': image,
   };
 
