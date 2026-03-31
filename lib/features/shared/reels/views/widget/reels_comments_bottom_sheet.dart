@@ -42,9 +42,6 @@ class _ReelsCommentsBottomSheetState extends State<ReelsCommentsBottomSheet> {
   // ═══════════════════════════════════════════════════════════
   StreamSubscription<PostDetailsState>? _deltaSubscription;
   PostDetailsState? _prevState;
-  bool _initialLoadDone = false;
-  // ignore: unused_field
-  int _baseline = 0;
   int _commentDelta = 0;
 
   @override
@@ -62,39 +59,14 @@ class _ReelsCommentsBottomSheetState extends State<ReelsCommentsBottomSheet> {
     _deltaSubscription = _postDetailsCubit.stream.listen(_trackCommentDelta);
   }
 
-  /// ✅ تتبع الـ delta بين الإضافات والحذف (مع تجاهل Initial Load والـ Pagination)
+  /// ✅ تتبع الـ delta بين الإضافات والحذف
   void _trackCommentDelta(PostDetailsState curr) {
     final prev = _prevState;
     _prevState = curr;
     if (prev == null) return;
 
-    final prevNonTemp = prev.comments.where((c) => !c.isTemp).length;
-    final currNonTemp = curr.comments.where((c) => !c.isTemp).length;
-
-    // 1️⃣ أول تحميل خلص — سجّل الـ baseline وارجع
-    if (!_initialLoadDone && curr.commentsState == CubitStates.success) {
-      _initialLoadDone = true;
-      _baseline = currNonTemp;
-      return;
-    }
-
-    if (!_initialLoadDone) return;
-
-    // 2️⃣ Pagination خلصت — حدّث الـ baseline بس (مش تغيير حقيقي)
-    if (prev.isLoadingMore && !curr.isLoadingMore) {
-      _baseline = currNonTemp;
-      return;
-    }
-
-    // 3️⃣ تغيير حقيقي (إضافة أو حذف) — مش pagination ومش loading
-    if (prevNonTemp != currNonTemp &&
-        !curr.isLoadingMore &&
-        !prev.isLoadingMore) {
-      final localDelta = currNonTemp - prevNonTemp;
-      _commentDelta += localDelta;
-      _baseline = currNonTemp;
-
-      // ✅ تحديث فوري لعدد الكومنتات في الريلز
+    if (curr.commentCountDeltaTrigger != prev.commentCountDeltaTrigger) {
+      _commentDelta += curr.pendingCommentCountDelta;
       _notifyCountChange();
     }
   }
