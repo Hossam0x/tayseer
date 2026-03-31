@@ -156,14 +156,14 @@ class ProfileHeader extends StatelessWidget {
   }
 
   void _openSettings(BuildContext context) async {
-    final result = await Navigator.push(
+    await Navigator.push(
       context,
       SlideLeftRoute(
         page: const SettingsView(),
         routeSettings: const RouteSettings(name: AppRouter.kSettingsView),
       ),
     );
-    if (context.mounted && result == true) {
+    if (context.mounted) {
       context.read<ProfileCubit>().fetchProfile();
     }
   }

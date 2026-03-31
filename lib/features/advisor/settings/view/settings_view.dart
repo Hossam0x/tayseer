@@ -20,7 +20,6 @@ class SettingsView extends StatefulWidget {
 
 class _SettingsViewState extends State<SettingsView> {
   late final SettingsCubit _settingsCubit;
-  bool _hasDataChanged = false;
 
   @override
   void initState() {
@@ -34,35 +33,27 @@ class _SettingsViewState extends State<SettingsView> {
     super.dispose();
   }
 
-  void _markDataChanged() => _hasDataChanged = true;
-
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (bool didPop, _) {
-        if (!didPop) Navigator.of(context).pop(_hasDataChanged);
-      },
-      child: BlocProvider.value(
-        value: _settingsCubit,
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          body: AdvisorBackground(
-            child: BlocListener<SettingsCubit, SettingsState>(
-              listenWhen: (prev, curr) {
-                if (curr is SettingsLoaded && prev is SettingsLoaded) {
-                  return curr.actionTimestamp != prev.actionTimestamp;
-                }
-                return curr is SettingsLoaded &&
-                    (curr.actionSuccess != null || curr.actionError != null);
-              },
-              listener: _onStateChanged,
-              child: SettingsBody(
-                onDataChanged: _markDataChanged,
-                onLogout: () => _showLogoutConfirmation(context),
-                onRateApp: () => _showRateAppDialog(context),
-                onSettingTap: _handleSettingTap,
-              ),
+    return BlocProvider.value(
+      value: _settingsCubit,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: AdvisorBackground(
+          child: BlocListener<SettingsCubit, SettingsState>(
+            listenWhen: (prev, curr) {
+              if (curr is SettingsLoaded && prev is SettingsLoaded) {
+                return curr.actionTimestamp != prev.actionTimestamp;
+              }
+              return curr is SettingsLoaded &&
+                  (curr.actionSuccess != null || curr.actionError != null);
+            },
+            listener: _onStateChanged,
+            child: SettingsBody(
+              onDataChanged: () {},
+              onLogout: () => _showLogoutConfirmation(context),
+              onRateApp: () => _showRateAppDialog(context),
+              onSettingTap: _handleSettingTap,
             ),
           ),
         ),
@@ -73,7 +64,6 @@ class _SettingsViewState extends State<SettingsView> {
   void _onStateChanged(BuildContext context, SettingsState state) {
     if (state is! SettingsLoaded) return;
     if (state.actionSuccess != null) {
-      _markDataChanged();
       if (state.actionSuccess == 'update_language_success') {
         SharedPreferences.getInstance().then((p) {
           final lang = p.getString(kAppLanguage) ?? 'ar';
@@ -84,7 +74,9 @@ class _SettingsViewState extends State<SettingsView> {
       } else {
         AppToast.success(
           context,
-          state.isActionKey ? context.tr(state.actionSuccess!) : state.actionSuccess!,
+          state.isActionKey
+              ? context.tr(state.actionSuccess!)
+              : state.actionSuccess!,
         );
       }
       _settingsCubit.clearMessages();
@@ -116,12 +108,15 @@ class _SettingsViewState extends State<SettingsView> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => Center(child: CircularProgressIndicator(color: AppColors.primary100)),
+      builder: (_) =>
+          Center(child: CircularProgressIndicator(color: AppColors.primary100)),
     );
     try {
       final img = CachNetwork.getStringData(key: kMyProfileImage);
       if (img.isNotEmpty) {
-        try { CachedNetworkImage.evictFromCache(img); } catch (_) {}
+        try {
+          CachedNetworkImage.evictFromCache(img);
+        } catch (_) {}
       }
       await CachNetwork.removeData(key: kAdvisorProfileCache);
       await CachNetwork.removeData(key: kMyProfileImage);
@@ -130,10 +125,16 @@ class _SettingsViewState extends State<SettingsView> {
       await CachNetwork.clearCache();
       await getIt<CacheCleanupService>().clearAllUserCache();
       getIt<tayseerSocketHelper>().disconnect();
-      if (getIt.isRegistered<HomeCubit>()) getIt.resetLazySingleton<HomeCubit>();
-      if (getIt.isRegistered<ProfileCubit>()) getIt.resetLazySingleton<ProfileCubit>();
+      if (getIt.isRegistered<HomeCubit>())
+        getIt.resetLazySingleton<HomeCubit>();
+      if (getIt.isRegistered<ProfileCubit>())
+        getIt.resetLazySingleton<ProfileCubit>();
       if (!context.mounted) return;
-      Navigator.pushNamedAndRemoveUntil(context, AppRouter.kRegisrationView, (_) => false);
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRouter.kRegisrationView,
+        (_) => false,
+      );
       AppToast.success(context, context.tr('logout_success'));
     } catch (_) {
       if (!context.mounted) return;
@@ -149,7 +150,10 @@ class _SettingsViewState extends State<SettingsView> {
     );
   }
 
-  Future<void> _handleSettingTap(BuildContext context, SettingItemModel setting) async {
+  Future<void> _handleSettingTap(
+    BuildContext context,
+    SettingItemModel setting,
+  ) async {
     if (setting.onTap != null) {
       await setting.onTap!();
       return;
@@ -169,12 +173,10 @@ class _SettingsViewState extends State<SettingsView> {
     if (setting.id == 'language') {
       final result = await Navigator.pushNamed(context, setting.routeName);
       if (result is String && context.mounted) {
-        _markDataChanged();
         _settingsCubit.updateLanguage(result);
       }
     } else {
-      final result = await Navigator.pushNamed(context, setting.routeName);
-      if (result != null && result != false) _markDataChanged();
+      await Navigator.pushNamed(context, setting.routeName);
     }
   }
 }

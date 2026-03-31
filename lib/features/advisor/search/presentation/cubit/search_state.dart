@@ -116,7 +116,20 @@ class SearchState extends Equatable {
   bool get isError => searchStatus == CubitStates.failure;
 
   // للـ backward compatibility مع الـ post actions
-  List<PostModel> get posts => tabData('posts').posts;
+  // نجمع posts من الـ 'all' tab و 'posts' tab عشان AdvisorSearchPostItem يلاقي الـ post بغض النظر عن الـ tab الحالي
+  List<PostModel> get posts {
+    final allPosts = tabData('all').posts;
+    final postsPosts = tabData('posts').posts;
+    if (allPosts.isEmpty) return postsPosts;
+    if (postsPosts.isEmpty) return allPosts;
+    // دمج بدون تكرار
+    final seen = <String>{};
+    return [
+      ...allPosts,
+      ...postsPosts,
+    ].where((p) => seen.add(p.postId)).toList();
+  }
+
   List<SearchAdvisor> get advisors => tabData('advisors').advisors;
   List<SearchUser> get users => tabData('users').users;
   List<SearchEvent> get events => tabData('events').events;

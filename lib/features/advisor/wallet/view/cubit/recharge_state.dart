@@ -1,7 +1,15 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/features/advisor/wallet/data/models/balance_package_model.dart';
 
-enum RechargeStatus { initial, loading, loaded, error }
+enum RechargeStatus {
+  initial,
+  loading,
+  loaded,
+  purchasing,
+  success,
+  canceled,
+  error,
+}
 
 class RechargeState extends Equatable {
   final RechargeStatus status;
