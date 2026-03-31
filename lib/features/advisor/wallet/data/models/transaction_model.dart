@@ -29,13 +29,19 @@ class TransactionModel {
       currency: json['currency'] as String?,
       walletType: json['walletType'] as String?,
       createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'])
+          ? _parseUtcDate(json['createdAt'] as String)
           : null,
     );
   }
 
   bool get isPositive => displayAmount.startsWith('+');
   bool get isPoints => walletType == 'points';
+
+  /// Parses a UTC date string, appending 'Z' if missing to ensure correct timezone conversion.
+  static DateTime? _parseUtcDate(String raw) {
+    final normalized = raw.endsWith('Z') ? raw : '${raw}Z';
+    return DateTime.tryParse(normalized)?.toLocal();
+  }
 }
 
 class PaginationModel {

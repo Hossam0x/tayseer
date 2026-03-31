@@ -151,7 +151,7 @@ class _RechargeBody extends StatelessWidget {
               // ── Header with primary gradient ──
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 32.h),
+                padding: EdgeInsets.symmetric(vertical: 16.h),
                 decoration: BoxDecoration(
                   gradient: AppColors.backgroundGradient,
                   borderRadius: BorderRadius.only(
@@ -161,16 +161,11 @@ class _RechargeBody extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    Container(
-                      width: 96.w,
-                      height: 96.w,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.18),
-                        shape: BoxShape.circle,
-                      ),
+                    SizedBox(
+                      height: 120.w,
                       child: Lottie.asset(
                         AssetsData.kSuccessMarriageAnimationsLottie,
-                        repeat: false,
+                        repeat: true,
                         fit: BoxFit.contain,
                       ),
                     ),
@@ -200,8 +195,6 @@ class _RechargeBody extends StatelessWidget {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    Gap(20.h),
-                    Divider(color: AppColors.secondary100, thickness: 1),
                     Gap(16.h),
 
                     // ── Go to wallet — CustomBotton ──
