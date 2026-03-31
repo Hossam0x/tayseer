@@ -49,19 +49,46 @@ class ChatBottomArea extends StatelessWidget {
                 context.read<MessageSelectionCubit>().exitSelectionMode(),
           );
         } else if (messageState.isBlocked) {
-          return BlockedActionArea(
-            onUnblockTap: () async {
-              if (receiverId != null) {
-                await context.read<ChatMessagesCubit>().unblockUser(
-                      blockedId: receiverId!,
-                    );
-                onBlockStatusChanged?.call(false);
-              }
-            },
-            onDeleteChatTap: () {
-              // TODO: Implement delete chat
-            },
-          );
+          // التحقق من نوع الحظر
+          final cubit = context.read<ChatMessagesCubit>();
+          final amIBlocker = cubit.amIBlocker;
+          
+          if (amIBlocker) {
+            // أنا الحاظر - أعرض إلغاء الحظر ومسح الدردشة
+            return BlockedActionArea(
+              onUnblockTap: () async {
+                if (receiverId != null) {
+                  await context.read<ChatMessagesCubit>().unblockUser(
+                        blockedId: receiverId!,
+                      );
+                  onBlockStatusChanged?.call(false);
+                }
+              },
+              onDeleteChatTap: () {
+                // TODO: Implement delete chat
+              },
+            );
+          } else {
+            // أنا محظور - أعرض رسالة فقط
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              color: const Color(0xFFFDF0F4),
+              child: SafeArea(
+                top: false,
+                child: Center(
+                  child: Text(
+                    'أنت محظور من إرسال الرسائل في هذه الدردشة',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.red.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            );
+          }
         } else if (isSystemChat) {
           return const SizedBox.shrink();
         } else {

@@ -66,13 +66,28 @@ class MessageStateSocketEvent extends ChatSocketEvent {
 /// Event لتغيير حالة الحظر
 class BlockStatusSocketEvent extends ChatSocketEvent {
   final bool isBlocked;
-  const BlockStatusSocketEvent(this.isBlocked);
+  final BlockType blockType; // blocker أو blocked
+  
+  const BlockStatusSocketEvent({
+    required this.isBlocked,
+    required this.blockType,
+  });
 
-  factory BlockStatusSocketEvent.fromJson(Map<String, dynamic> json) {
+  factory BlockStatusSocketEvent.fromJson(
+    Map<String, dynamic> json,
+    BlockType type,
+  ) {
     return BlockStatusSocketEvent(
-      json['newBlockStatus'] as bool? ?? false,
+      isBlocked: json['newBlockStatus'] as bool? ?? false,
+      blockType: type,
     );
   }
+}
+
+/// نوع الحظر
+enum BlockType {
+  blocker, // أنا اللي حاظر (يظهر لي حذف المحادثة أو إلغاء الحظر)
+  blocked, // أنا محظور (مقدرش أبعت رسائل)
 }
 
 /// Event للانضمام لـ chat room

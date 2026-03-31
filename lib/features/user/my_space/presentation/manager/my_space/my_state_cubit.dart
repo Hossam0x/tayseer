@@ -135,6 +135,11 @@ class MySpaceCubit extends Cubit<MySpaceState> {
     socketHelper.listenWithId('newMessage', _listenerId, (data) {
       _handleNewMessageForChatList(data);
     });
+
+    // Listen to message status updates
+    socketHelper.listenWithId('newMessageState', _listenerId, (data) {
+      _handleMessageStateUpdateForChatList(data);
+    });
   }
 
   /// Handle new message and update chat list
@@ -188,7 +193,7 @@ class MySpaceCubit extends Cubit<MySpaceState> {
         _updateChatRoomLastMessage(
           chatRoomId: chatRoomId,
           messageId: messageId,
-          content: _extractContent(content),
+          content: _extractContentForDisplay(content, messageType),
           createdAt: createdAt,
           updatedAt: updatedAt,
           isMe: isMe,
@@ -234,6 +239,7 @@ class MySpaceCubit extends Cubit<MySpaceState> {
     final updatedRooms = currentRooms.map((room) {
       if (room.id == chatRoomId) {
         log('✅ [$_listenerId] Updating lastMessage for room: $chatRoomId');
+        log('📝 [$_listenerId] New content: "$content", messageType: $messageType');
 
         final updatedLastMessage = LastMessageModel(
           id: messageId.isNotEmpty
@@ -248,6 +254,7 @@ class MySpaceCubit extends Cubit<MySpaceState> {
           updatedAt: DateTime.tryParse(updatedAt) ?? DateTime.now(),
           senderName: senderName,
           timeAgo: 'الآن',
+          status: 'SENT', // New messages start as SENT
         );
 
         // Don't increment unread count if user is viewing this chat
@@ -310,15 +317,165 @@ class MySpaceCubit extends Cubit<MySpaceState> {
     log('✅ [$_listenerId] User chat list updated successfully');
   }
 
+  /// Handle message status updates for chat list
+  void _handleMessageStateUpdateForChatList(dynamic data) {
+    if (isClosed) {
+      log('⚠️ [$_listenerId] Received message state update but Cubit is closed - ignoring');
+      return;
+    }
+
+    log('📊 [$_listenerId] Processing message status update for chat list');
+
+    try {
+      if (data is! Map) return;
+      
+      final status = data['status']?.toString() ?? '';
+      final messageIds = data['messageIds'];
+      
+      if (messageIds is! List || messageIds.isEmpty) return;
+
+      log('📊 [$_listenerId] Status: $status, Message IDs: ${messageIds.length}');
+
+      // Update status in chat list's last message if it matches
+      final currentChatData = state.advisorChatModel?.data;
+      if (currentChatData == null) return;
+
+      bool hasUpdates = false;
+      final updatedRooms = currentChatData.chatRooms.map((room) {
+        final lastMessageId = room.lastMessage?.id;
+        if (lastMessageId != null && messageIds.contains(lastMessageId)) {
+          log('✅ [$_listenerId] Updating status for room ${room.id} last message');
+          hasUpdates = true;
+          
+          final updatedLastMessage = LastMessageModel(
+            id: room.lastMessage!.id,
+            sender: room.lastMessage!.sender,
+            senderType: room.lastMessage!.senderType,
+            content: room.lastMessage!.content,
+            messageType: room.lastMessage!.messageType,
+            chatRoom: room.lastMessage!.chatRoom,
+            createdAt: room.lastMessage!.createdAt,
+            updatedAt: room.lastMessage!.updatedAt,
+            senderName: room.lastMessage!.senderName,
+            timeAgo: room.lastMessage!.timeAgo,
+            status: status, // Update status
+          );
+
+          return AdvisorChatRoomModel(
+            id: room.id,
+            isBlocked: room.isBlocked,
+            isHaveSession: room.isHaveSession,
+            users: room.users,
+            lastMessage: updatedLastMessage,
+            lastMessageAt: room.lastMessageAt,
+            status: room.status,
+            sender: room.sender,
+            createdAt: room.createdAt,
+            updatedAt: room.updatedAt,
+            unreadCount: room.unreadCount,
+          );
+        }
+        return room;
+      }).toList();
+
+      if (hasUpdates) {
+        final updatedData = AdvisorChatData(
+          chatRooms: updatedRooms,
+          pagination: currentChatData.pagination,
+        );
+
+        final updatedModel = AdvisorChatModel(
+          success: state.advisorChatModel?.success ?? true,
+          message: state.advisorChatModel?.message ?? '',
+          data: updatedData,
+        );
+
+        _safeEmit(
+          state.copyWith(
+            advisorChatModel: updatedModel,
+            lastUpdateTime: DateTime.now(),
+          ),
+        );
+
+        log('✅ [$_listenerId] Chat list status updated successfully');
+      }
+    } catch (e, stackTrace) {
+      log('❌ [$_listenerId] Error processing message state update: $e');
+      log('StackTrace: $stackTrace');
+    }
+  }
+
+  /// Extract content from message for display
+  String _extractContentForDisplay(dynamic content, String messageType) {
+    log('🔍 [$_listenerId] _extractContentForDisplay - messageType: $messageType');
+    
+    // معالجة أنواع الميديا
+    if (messageType == 'image' || messageType == 'images/videos') {
+      log('✅ [$_listenerId] Detected image/video, returning "صورة"');
+      return 'صورة';
+    } else if (messageType == 'video') {
+      log('✅ [$_listenerId] Detected video, returning "فيديو"');
+      return 'فيديو';
+    } else if (messageType == 'audio' || messageType == 'voice' || messageType == 'record') {
+      log('✅ [$_listenerId] Detected audio/voice/record, returning "رسالة صوتية"');
+      return 'رسالة صوتية';
+    }
+    
+    // للرسائل النصية والنظام
+    log('📝 [$_listenerId] Text/system message, extracting content');
+    return _extractContent(content);
+  }
+
   /// Extract content from message
   String _extractContent(dynamic content) {
     if (content == null) return '';
     if (content is String) {
+      // Check if it's a media URL (audio/video/image)
+      final lowerContent = content.toLowerCase();
+      if (lowerContent.contains('.mp3') || 
+          lowerContent.contains('.wav') || 
+          lowerContent.contains('.m4a') ||
+          lowerContent.contains('.aac') ||
+          lowerContent.contains('audio') ||
+          lowerContent.contains('record')) {
+        return 'رسالة صوتية';
+      } else if (lowerContent.contains('.mp4') || 
+                 lowerContent.contains('.mov') || 
+                 lowerContent.contains('.avi') ||
+                 lowerContent.contains('video')) {
+        return 'فيديو';
+      } else if (lowerContent.contains('.jpg') || 
+                 lowerContent.contains('.jpeg') || 
+                 lowerContent.contains('.png') || 
+                 lowerContent.contains('.gif') ||
+                 lowerContent.contains('image')) {
+        return 'صورة';
+      }
       return content;
     } else if (content is List && content.isNotEmpty) {
       final first = content.first;
       if (first is Map) {
-        return first['media']?.toString() ?? first['url']?.toString() ?? first.toString();
+        final mediaUrl = first['media']?.toString() ?? first['url']?.toString() ?? '';
+        if (mediaUrl.isNotEmpty) {
+          // Check media type from URL
+          final lowerUrl = mediaUrl.toLowerCase();
+          if (lowerUrl.contains('.mp3') || 
+              lowerUrl.contains('.wav') || 
+              lowerUrl.contains('.m4a') ||
+              lowerUrl.contains('.aac')) {
+            return 'رسالة صوتية';
+          } else if (lowerUrl.contains('.mp4') || 
+                     lowerUrl.contains('.mov') || 
+                     lowerUrl.contains('.avi')) {
+            return 'فيديو';
+          } else if (lowerUrl.contains('.jpg') || 
+                     lowerUrl.contains('.jpeg') || 
+                     lowerUrl.contains('.png') || 
+                     lowerUrl.contains('.gif')) {
+            return 'صورة';
+          }
+        }
+        return mediaUrl;
       }
       return first.toString();
     }

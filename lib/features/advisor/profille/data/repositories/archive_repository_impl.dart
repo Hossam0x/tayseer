@@ -17,7 +17,7 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
   }) async {
     try {
       final response = await _apiService.get(
-        endPoint: '/chat/archived',
+        endPoint: ApiEndPoint.getArchivedChatRooms,
         query: {'page': page, 'limit': limit},
       );
 
@@ -51,8 +51,9 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
   @override
   Future<Either<Failure, void>> unarchiveChat(String chatId) async {
     try {
-      final response = await _apiService.patch(
-        endPoint: '/chat/$chatId/unarchive',
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.unarchiveChatRoom,
+        data: {'chatRoomId': chatId},
       );
       if (response['success'] == true) return const Right(null);
       return Left(
@@ -284,7 +285,10 @@ class ArchiveRepositoryImpl implements ArchiveRepository {
   @override
   Future<Either<Failure, void>> deleteChatRoom(String chatId) async {
     try {
-      final response = await _apiService.delete(endPoint: '/chat/$chatId');
+      final response = await _apiService.delete(
+        endPoint: ApiEndPoint.deleteChatRoom,
+        data: {'chatRoomId': chatId},
+      );
       if (response['success'] == true) return const Right(null);
       return Left(
         ServerFailure(response['message']?.toString() ?? 'فشل حذف المحادثة'),

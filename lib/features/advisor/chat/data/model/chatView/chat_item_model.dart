@@ -2,24 +2,44 @@
 class ChatRoomsResponse {
   final bool success;
   final List<ChatRoom> rooms;
+  final int pendingRequestsCount;
 
-  ChatRoomsResponse({required this.success, required this.rooms});
+  ChatRoomsResponse({
+    required this.success,
+    required this.rooms,
+    this.pendingRequestsCount = 0,
+  });
 
   factory ChatRoomsResponse.fromJson(Map<String, dynamic> json) {
     // Handle multiple server structure variations:
-    // 1. { "success": true, "data": { "data": [ ... ] } }
+    // 1. { "success": true, "data": { "data": { "chatRooms": [...], "pendingRequestsCount": 1 } } }
     // 2. { "success": true, "data": { "chatRooms": [ ... ] } }
     final dataObj = json['data'];
-    final roomsList = (dataObj is Map<String, dynamic>)
-        ? (dataObj['data'] ?? dataObj['chatRooms'])
-        : null;
+    
+    Map<String, dynamic>? innerData;
+    List? roomsList;
+    int pendingCount = 0;
+
+    if (dataObj is Map<String, dynamic>) {
+      // Check if there's a nested "data" object
+      if (dataObj['data'] is Map<String, dynamic>) {
+        innerData = dataObj['data'] as Map<String, dynamic>;
+        roomsList = innerData['chatRooms'] as List?;
+        pendingCount = innerData['pendingRequestsCount'] ?? 0;
+      } else {
+        // Direct chatRooms array
+        roomsList = dataObj['chatRooms'] as List? ?? dataObj['data'] as List?;
+        pendingCount = dataObj['pendingRequestsCount'] ?? 0;
+      }
+    }
 
     return ChatRoomsResponse(
       success: json['success'] ?? false,
-      rooms: (roomsList as List?)
+      rooms: (roomsList)
               ?.map((e) => ChatRoom.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
+      pendingRequestsCount: pendingCount,
     );
   }
 }

@@ -271,8 +271,9 @@ class MySpaceRepo {
 
   Future<Either<Failure, bool>> archiveChatRoom(String chatRoomId) async {
     try {
-      final response = await apiService.patch(
-        endPoint: ApiEndPoint.archiveChatRoom(chatRoomId),
+      final response = await apiService.post(
+        endPoint: ApiEndPoint.archiveChatRoom,
+        data: {'chatRoomId': chatRoomId},
       );
       if (response['success'] == true) {
         return const Right(true);
@@ -292,4 +293,5 @@ class MySpaceRepo {
       return Left(ServerFailure(e.toString()));
     }
   }
+
 }

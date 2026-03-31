@@ -146,9 +146,29 @@ class ArchiveChatRoomModel extends Equatable {
   }
 
   factory ArchiveChatRoomModel.fromJson(Map<String, dynamic> json) {
+    // Handle new API format
+    final otherUser = json['otherUser'] as Map<String, dynamic>?;
+    final lastMessageData = json['lastMessage'] as Map<String, dynamic>?;
+    
     List<ArchiveUserModel> usersList = [];
-    try {
-      if (json['users'] is List) {
+    
+    // New format: otherUser object
+    if (otherUser != null) {
+      final imageBlur = otherUser['imageBlur'] as bool? ?? false;
+      usersList = [
+        ArchiveUserModel(
+          id: otherUser['userId']?.toString() ?? '',
+          name: otherUser['name']?.toString() ?? 'مستخدم',
+          image: imageBlur 
+              ? otherUser['socialImage']?.toString()
+              : otherUser['image']?.toString(),
+          userType: json['otherUserType']?.toString() ?? 'User',
+        )
+      ];
+    }
+    // Old format: users array
+    else if (json['users'] is List) {
+      try {
         usersList = (json['users'] as List)
             .map(
               (user) => ArchiveUserModel.fromJson(
@@ -158,17 +178,33 @@ class ArchiveChatRoomModel extends Equatable {
               ),
             )
             .toList();
-      }
-    } catch (_) {}
+      } catch (_) {}
+    }
 
     ArchiveLastMessageModel? lastMessage;
-    try {
-      if (json['lastMessage'] is Map) {
+    if (lastMessageData != null) {
+      try {
+        // New format: sentAt instead of createdAt
+        final sentAt = lastMessageData['sentAt']?.toString() ?? '';
+        lastMessage = ArchiveLastMessageModel(
+          id: '',
+          sender: '',
+          senderType: '',
+          content: lastMessageData['content']?.toString() ?? '',
+          messageType: 'text',
+          chatRoom: json['id']?.toString() ?? '',
+          createdAt: sentAt,
+          updatedAt: sentAt,
+          senderName: '',
+          timeAgo: '',
+        );
+      } catch (_) {
+        // Fallback to old format
         lastMessage = ArchiveLastMessageModel.fromJson(
-          (json['lastMessage'] as Map).cast<String, dynamic>(),
+          (lastMessageData as Map).cast<String, dynamic>(),
         );
       }
-    } catch (_) {}
+    }
 
     ArchiveUserModel? sender;
     try {
@@ -181,11 +217,11 @@ class ArchiveChatRoomModel extends Equatable {
 
     return ArchiveChatRoomModel(
       id: json['id']?.toString() ?? '',
-      isBlocked: json['isBlocked'] as bool? ?? false,
+      isBlocked: (json['blockExists'] ?? json['isBlocked']) as bool? ?? false,
       isHaveSession: json['isHaveSession'] as bool? ?? false,
       users: usersList,
       lastMessage: lastMessage,
-      lastMessageAt: json['lastMessageAt']?.toString(),
+      lastMessageAt: lastMessageData?['sentAt']?.toString() ?? json['lastMessageAt']?.toString(),
       status: json['status']?.toString() ?? 'active',
       sender: sender,
       createdAt: json['createdAt']?.toString() ?? '',
@@ -317,8 +353,22 @@ class ArchivedChatsResponseModel extends Equatable {
 
   factory ArchivedChatsResponseModel.fromJson(Map<String, dynamic> json) {
     List<ArchiveChatRoomModel> chatRoomsList = [];
-    try {
-      if (json['chatRooms'] is List) {
+    
+    // Handle new format: data is array directly
+    if (json['data'] is List) {
+      try {
+        chatRoomsList = (json['data'] as List).map((chatRoom) {
+          return ArchiveChatRoomModel.fromJson(
+            chatRoom is Map<String, dynamic>
+                ? chatRoom
+                : (chatRoom as Map).cast<String, dynamic>(),
+          );
+        }).toList();
+      } catch (_) {}
+    }
+    // Handle old format: chatRooms array
+    else if (json['chatRooms'] is List) {
+      try {
         chatRoomsList = (json['chatRooms'] as List).map((chatRoom) {
           return ArchiveChatRoomModel.fromJson(
             chatRoom is Map<String, dynamic>
@@ -326,8 +376,8 @@ class ArchivedChatsResponseModel extends Equatable {
                 : (chatRoom as Map).cast<String, dynamic>(),
           );
         }).toList();
-      }
-    } catch (_) {}
+      } catch (_) {}
+    }
 
     Map<String, dynamic> pagination = {};
     try {

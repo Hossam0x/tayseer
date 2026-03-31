@@ -245,7 +245,12 @@ class ChatMessage {
       updatedAt: json['updatedAt']?.toString() ?? '',
       deliveredAt: json['deliveredAt']?.toString(),
       isRead: json['isRead'] ?? true,
-      status: MessageStatusExtension.fromString(json['status']?.toString()),
+      status: () {
+        final rawStatus = json['status']?.toString();
+        final parsedStatus = MessageStatusExtension.fromString(rawStatus);
+        print('🔍 Parsing status: "$rawStatus" → $parsedStatus');
+        return parsedStatus;
+      }(),
       reply: ReplyInfo.fromJson(json['reply']),
       action: SystemMessageAction.fromString(json['action']?.toString()),
       reactions: parseReactions(json['reactions']),
