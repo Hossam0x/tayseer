@@ -33,6 +33,8 @@ import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
 
 import 'package:tayseer/features/advisor/update_posts/view_model/update_posts_cubit.dart';
 import 'package:tayseer/features/advisor/update_posts/view/update_post_view.dart';
+import 'package:tayseer/features/advisor/membership/presentation/cubit/membership_cubit.dart';
+import 'package:tayseer/features/advisor/membership/presentation/views/membership_management_view.dart';
 import 'package:tayseer/features/shared/auth/view/purpose_selection_view.dart';
 import 'package:tayseer/features/shared/packages/presentation/views/advisor_subscription_view.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/advisor_subscription_cubit.dart';
@@ -250,6 +252,7 @@ abstract class AppRouter {
   static const kEventReservationPeopleView = '/EventReservationPeopleView';
   static const kOrderManagementView = '/order_management_view';
   static const kAdvisorSubscriptionView = '/advisor_subscription_view';
+  static const kMembershipManagementView = '/membership_management_view';
   static const kEventView = '/event-view';
   static const kUserPackagesView = '/user-packages-view';
   static const kUserPackageDetailsView = '/user-package-details-view';
@@ -353,6 +356,13 @@ abstract class AppRouter {
             child: const AdvisorSubscriptionView(),
           ),
           routeSettings: settings,
+        );
+      case AppRouter.kMembershipManagementView:
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (context) => getIt<MembershipCubit>(),
+            child: const MembershipManagementView(),
+          ),
         );
       case AppRouter.kArchiveView:
         return SlideLeftRoute(

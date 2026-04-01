@@ -4,7 +4,9 @@ class NewAdvisorSubModel {
   final String subscriptionType; // "gold" | "ultra"
   final String subscriptionDurationType; // "monthly" | "weekly"
   final bool isCurrentSub;
+  final bool isCancelled;
   final String? subscriptionExpiresAt;
+  final String? subscribedSince;
   final int numberOfSessions; // -1 = unlimited
   final int sessionsAppInterestPercentage;
   final int numberOfChatRooms; // -1 = unlimited
@@ -20,7 +22,9 @@ class NewAdvisorSubModel {
     required this.subscriptionType,
     required this.subscriptionDurationType,
     required this.isCurrentSub,
+    this.isCancelled = false,
     this.subscriptionExpiresAt,
+    this.subscribedSince,
     required this.numberOfSessions,
     required this.sessionsAppInterestPercentage,
     required this.numberOfChatRooms,
@@ -42,7 +46,9 @@ class NewAdvisorSubModel {
           .toString()
           .toLowerCase(),
       isCurrentSub: json['isCurrentSub'] ?? false,
+      isCancelled: json['isCancelled'] ?? false,
       subscriptionExpiresAt: json['subscriptionExpiresAt'],
+      subscribedSince: json['subscribedSince'] ?? json['createdAt'],
       numberOfSessions: json['numberOfSessions'] ?? 0,
       sessionsAppInterestPercentage: json['sessionsAppInterestPercentage'] ?? 0,
       numberOfChatRooms: json['numberOfChatRooms'] ?? 0,

@@ -103,6 +103,8 @@ import 'package:tayseer/features/user/user_profile/data/repositories/user_settin
 import 'package:tayseer/features/user/user_profile/views/cubit/email/email_edit_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/phone/phone_edit_cubit.dart';
+import 'package:tayseer/features/advisor/membership/presentation/cubit/membership_cubit.dart';
+import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
 
 import '../../features/advisor/notification/presentation/manager/notification_cubit.dart';
 import '../../my_import.dart';
@@ -342,6 +344,13 @@ Future<void> setupGetIt() async {
 
   getIt.registerFactory<PackagesCubit>(
     () => PackagesCubit(getIt<AdvisorPackagesRepository>()),
+  );
+  getIt.registerFactory<MembershipCubit>(
+    () => MembershipCubit(getIt<MembershipRepository>()),
+  );
+
+  getIt.registerLazySingleton<MembershipRepository>(
+    () => MembershipRepositoryImpl(getIt<ApiService>()),
   );
 
   getIt.registerLazySingleton<OrderManagementRepository>(

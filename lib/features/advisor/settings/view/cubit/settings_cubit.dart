@@ -92,6 +92,12 @@ class SettingsCubit extends Cubit<SettingsState> {
           routeName: AppRouter.kArchiveView,
         ),
         SettingItemModel(
+          id: 'membership_management',
+          title: 'membership_management',
+          iconAsset: AssetsData.icMembershipManagement,
+          routeName: AppRouter.kMembershipManagementView,
+        ),
+        SettingItemModel(
           id: 'hide_story',
           title: 'hide_story_from',
           iconAsset: AssetsData.icHideSettings,

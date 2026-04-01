@@ -79,4 +79,8 @@ class ApiEndPoint {
   static const String sendReport = "/reports/";
   static const String getChatRequests = '/advisor/chat-requests';
   static const String searchChatRooms = '/new-chat/rooms/search';
+  static const String myAdvisorSubscription =
+      '/new-advisor-sub/my-subscription';
+  static const String cancelAdvisorSubscription =
+      '/new-advisor-sub/cancel-my-subscription';
 }
