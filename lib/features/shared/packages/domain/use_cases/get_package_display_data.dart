@@ -3,8 +3,7 @@ import 'package:tayseer/core/functions/country_helper.dart';
 import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/utils/colors.dart';
 import 'package:tayseer/core/utils/extensions/extensions.dart';
-import 'package:tayseer/features/advisor/settings/data/models/package_model.dart'
-    hide PackageFeatureModel;
+import 'package:tayseer/features/shared/packages/data/models/new_advisor_sub_model.dart';
 import 'package:tayseer/features/shared/packages/data/models/package_display_model.dart';
 import 'package:tayseer/features/shared/packages/data/models/package_feature_model.dart';
 import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
@@ -13,34 +12,35 @@ class GetPackageDisplayData {
   PackageDisplayModel call({
     required BuildContext context,
     required PackageType packageType,
-    required List<AdvisorPackageModel> apiPackages,
+    required List<NewAdvisorSubModel> apiPackages,
   }) {
     final bool gulf = isGulfGroup();
     final String currency = getCurrency();
-
-    final apiPkg = _findApiPackage(apiPackages, packageType);
+    final apiSub = _findApiSub(apiPackages, packageType);
 
     switch (packageType) {
       case PackageType.basic:
-        return _getBasicPackage(context, currency, gulf, apiPkg);
+        return _getBasicPackage(context, currency, gulf);
       case PackageType.pro:
-        return _getProPackage(context, currency, gulf, apiPkg);
+        return _getProPackage(context, currency, gulf, apiSub);
       case PackageType.elite:
-        return _getElitePackage(context, currency, gulf, apiPkg);
+        return _getElitePackage(context, currency, gulf, apiSub);
     }
   }
 
-  AdvisorPackageModel? _findApiPackage(
-    List<AdvisorPackageModel> packages,
+  NewAdvisorSubModel? _findApiSub(
+    List<NewAdvisorSubModel> subs,
     PackageType type,
   ) {
-    if (packages.isEmpty) return null;
+    if (subs.isEmpty || type == PackageType.basic) return null;
+    final targetType = type == PackageType.pro ? 'gold' : 'ultra';
     try {
-      return packages.firstWhere(
-        (e) => e.type.toLowerCase() == type.apiType.toLowerCase(),
+      return subs.firstWhere(
+        (e) => e.subscriptionType == targetType && e.isMonthly,
+        orElse: () => subs.firstWhere((e) => e.subscriptionType == targetType),
       );
     } catch (_) {
-      return packages.first;
+      return null;
     }
   }
 
@@ -48,13 +48,11 @@ class GetPackageDisplayData {
     BuildContext context,
     String currency,
     bool gulf,
-    AdvisorPackageModel? apiPkg,
   ) {
-    final price = gulf ? "0" : "0";
     return PackageDisplayModel(
       id: 'basic',
-      packageTitle: context.tr(apiPkg?.name ?? 'basic_plan_title'),
-      price: '$price $currency',
+      packageTitle: context.tr('basic_plan_title'),
+      price: '0 $currency',
       buttonText: context.tr('continue_limited_account'),
       themeColor: AppColors.primary500,
       backgroundGradient: const [Color(0xFFFFFFFF), Color(0xFFFDE9ED)],
@@ -91,11 +89,17 @@ class GetPackageDisplayData {
     BuildContext context,
     String currency,
     bool gulf,
-    AdvisorPackageModel? apiPkg,
+    NewAdvisorSubModel? apiSub,
   ) {
-    final price = apiPkg != null
-        ? (gulf ? apiPkg.sarPrice.toString() : apiPkg.egPrice.toString())
-        : (gulf ? "200" : "40");
+    final price = apiSub?.price?.toString() ?? (gulf ? '200' : '40');
+    final sessions = apiSub?.numberOfSessions == -1
+        ? context.tr('unlimited_sessions')
+        : context.tr('20_sessions_monthly');
+    final chats = apiSub?.numberOfChatRooms == -1
+        ? context.tr('unlimited_messages')
+        : context.tr('20_messages_monthly');
+    final boosts = apiSub?.numberOfMonthlyReinforcements.toString() ?? '4';
+    final events = apiSub?.numberOfMonthlyEvents.toString() ?? '1';
 
     return PackageDisplayModel(
       id: 'pro',
@@ -108,12 +112,9 @@ class GetPackageDisplayData {
       themeColor: const Color(0xFFCF9916),
       backgroundGradient: const [Color(0xFFFFFFFF), Color(0xFFFFF8E5)],
       features: [
+        PackageFeatureModel(title: chats, iconPath: AssetsData.threeMessages),
         PackageFeatureModel(
-          title: context.tr('20_messages_monthly'),
-          iconPath: AssetsData.threeMessages,
-        ),
-        PackageFeatureModel(
-          title: context.tr('1_event_monthly'),
+          title: '$events ${context.tr('event_monthly')}',
           iconPath: AssetsData.noEvents,
         ),
         PackageFeatureModel(
@@ -121,11 +122,11 @@ class GetPackageDisplayData {
           iconPath: AssetsData.essentialStats,
         ),
         PackageFeatureModel(
-          title: context.tr('4_boosts_monthly'),
+          title: '$boosts ${context.tr('boosts_monthly')}',
           iconPath: AssetsData.oneBoost,
         ),
         PackageFeatureModel(
-          title: context.tr('20_sessions_monthly'),
+          title: sessions,
           iconPath: AssetsData.graySessionIcon,
         ),
       ],
@@ -136,11 +137,17 @@ class GetPackageDisplayData {
     BuildContext context,
     String currency,
     bool gulf,
-    AdvisorPackageModel? apiPkg,
+    NewAdvisorSubModel? apiSub,
   ) {
-    final price = apiPkg != null
-        ? (gulf ? apiPkg.sarPrice.toString() : apiPkg.egPrice.toString())
-        : (gulf ? "399" : "80");
+    final price = apiSub?.price?.toString() ?? (gulf ? '399' : '80');
+    final sessions = apiSub?.numberOfSessions == -1
+        ? context.tr('unlimited_sessions')
+        : context.tr('unlimited_sessions');
+    final chats = apiSub?.numberOfChatRooms == -1
+        ? context.tr('unlimited_messages')
+        : context.tr('unlimited_messages');
+    final boosts = apiSub?.numberOfMonthlyReinforcements.toString() ?? '10';
+    final events = apiSub?.numberOfMonthlyEvents.toString() ?? '1';
 
     return PackageDisplayModel(
       id: 'elite',
@@ -153,12 +160,9 @@ class GetPackageDisplayData {
       themeColor: const Color(0xFF4BB8F9),
       backgroundGradient: const [Color(0xFFFFFFFF), Color(0xFFE5F1FF)],
       features: [
+        PackageFeatureModel(title: chats, iconPath: AssetsData.threeMessages),
         PackageFeatureModel(
-          title: context.tr('unlimited_messages'),
-          iconPath: AssetsData.threeMessages,
-        ),
-        PackageFeatureModel(
-          title: context.tr('10_boosts_monthly'),
+          title: '$boosts ${context.tr('boosts_monthly')}',
           iconPath: AssetsData.oneBoost,
         ),
         PackageFeatureModel(
@@ -174,7 +178,7 @@ class GetPackageDisplayData {
           iconPath: AssetsData.verifiedBegin,
         ),
         PackageFeatureModel(
-          title: context.tr('unlimited_sessions'),
+          title: sessions,
           iconPath: AssetsData.eightSessionMonthIcon,
         ),
         PackageFeatureModel(
@@ -182,8 +186,8 @@ class GetPackageDisplayData {
           iconPath: AssetsData.performanceReports,
         ),
         PackageFeatureModel(
-          title: context.tr('appearance_count'),
-          iconPath: AssetsData.performanceReports,
+          title: '$events ${context.tr('event_monthly')}',
+          iconPath: AssetsData.noEvents,
         ),
         PackageFeatureModel(
           title: context.tr('who_visited_profile_action'),

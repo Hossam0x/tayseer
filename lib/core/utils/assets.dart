@@ -235,6 +235,7 @@ abstract class AssetsData {
   static const String icHelpSettings = "assets/icons/icHelpSettings.svg";
   static const String backArrow = "assets/icons/backArrow.svg";
   static const String icOrderManagment = "assets/icons/icOrderManagment.svg";
+  static const String icMembershipManagement = "assets/icons/icMembershipManagement.svg";
 
   // Wallet Icons
   static const String icWallet = "assets/icons/icWallet.svg";

@@ -294,12 +294,12 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
 
   Widget _buildPage(PackageType packageType) {
     return BlocBuilder<PackagesCubit, PackagesState>(
-      buildWhen: (prev, curr) => prev.packages != curr.packages,
+      buildWhen: (prev, curr) => prev.subscriptions != curr.subscriptions,
       builder: (context, state) {
         final packageData = _getPackageData(
           context: context,
           packageType: packageType,
-          apiPackages: state.packages,
+          apiPackages: state.subscriptions,
         );
         // Show only the title without the feature grid
         return _buildSimplePackageContent(packageData, packageType);

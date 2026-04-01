@@ -38,6 +38,7 @@ import 'package:tayseer/features/shared/packages/presentation/views/advisor_subs
 import 'package:tayseer/features/shared/packages/presentation/view_model/advisor_subscription_cubit.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
+import 'package:tayseer/core/services/iap_service.dart';
 import 'package:tayseer/features/shared/event/view/event_view.dart';
 import 'package:tayseer/features/shared/event/view/creat_event_view.dart';
 import 'package:tayseer/features/shared/event_detail/view/event_detail_view.dart';
@@ -336,8 +337,19 @@ abstract class AppRouter {
       case AppRouter.kAdvisorSubscriptionView:
         final packageType = settings.arguments as SelectedPackage;
         return SlideLeftRoute(
-          page: BlocProvider(
-            create: (context) => AdvisorSubscriptionCubit(packageType),
+          page: MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (context) => AdvisorSubscriptionCubit(
+                  packageType,
+                  getIt<IAPService>(),
+                  getIt<ApiService>(),
+                ),
+              ),
+              BlocProvider(
+                create: (context) => getIt<PackagesCubit>()..getPackages(),
+              ),
+            ],
             child: const AdvisorSubscriptionView(),
           ),
           routeSettings: settings,

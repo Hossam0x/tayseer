@@ -74,6 +74,7 @@ class ApiEndPoint {
   static const String walletEarnings = '/new-wallet/advisor-earnings';
   static const String balancePackages = '/balance-packages';
   static const String initiatePurchase = '/iap/initiate-purchase';
+  static const String initiateSubscriptionPurchase = '/iap/initiate-purchase';
   static const String reportReasons = '/report-reasons';
   static const String sendReport = "/reports/";
   static const String getChatRequests = '/advisor/chat-requests';

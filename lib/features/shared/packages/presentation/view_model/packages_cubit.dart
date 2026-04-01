@@ -1,31 +1,32 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../advisor/settings/data/models/package_model.dart';
+import 'package:tayseer/features/shared/packages/data/models/new_advisor_sub_model.dart';
+import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
 import '../../../../advisor/settings/data/repositories/advisor_packages_repository.dart';
 
 enum SelectedPackage { basic, pro, elite }
 
 class PackagesState {
   final SelectedPackage selectedPackage;
-  final List<AdvisorPackageModel> packages;
+  final List<NewAdvisorSubModel> subscriptions;
   final bool isLoading;
   final String? errorMessage;
 
   PackagesState({
     required this.selectedPackage,
-    this.packages = const [],
+    this.subscriptions = const [],
     this.isLoading = false,
     this.errorMessage,
   });
 
   PackagesState copyWith({
     SelectedPackage? selectedPackage,
-    List<AdvisorPackageModel>? packages,
+    List<NewAdvisorSubModel>? subscriptions,
     bool? isLoading,
     String? errorMessage,
   }) {
     return PackagesState(
       selectedPackage: selectedPackage ?? this.selectedPackage,
-      packages: packages ?? this.packages,
+      subscriptions: subscriptions ?? this.subscriptions,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage ?? this.errorMessage,
     );
@@ -44,11 +45,19 @@ class PackagesCubit extends Cubit<PackagesState> {
     result.fold(
       (failure) =>
           emit(state.copyWith(isLoading: false, errorMessage: failure.message)),
-      (packages) => emit(state.copyWith(isLoading: false, packages: packages)),
+      (subs) => emit(state.copyWith(isLoading: false, subscriptions: subs)),
     );
   }
 
-  void selectPackage(SelectedPackage package) {
-    emit(state.copyWith(selectedPackage: package));
+  /// يرجع الـ PackageType اللي المستخدم مشترك فيها حالياً (null لو مفيش)
+  PackageType? get currentSubscribedPackage {
+    if (state.subscriptions.isEmpty) return null;
+    final current = state.subscriptions
+        .where((s) => s.isCurrentSub)
+        .firstOrNull;
+    if (current == null) return null;
+    if (current.subscriptionType == 'gold') return PackageType.pro;
+    if (current.subscriptionType == 'ultra') return PackageType.elite;
+    return null;
   }
 }
