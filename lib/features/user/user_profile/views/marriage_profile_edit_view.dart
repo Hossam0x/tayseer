@@ -194,7 +194,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ✅ IMAGES SECTION
+  // IMAGES SECTION
   // ════════════════════════════════════════════════════════════════
   Widget _buildImagesSection(
     BuildContext context,
@@ -202,32 +202,35 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     MarriageUserProfileModel profile,
   ) {
     final serverImages = profile.userMedia?.images ?? [];
-    final serverSingleImage = profile.userMedia?.singleImage;
     final pendingSingle = widget.state.pendingSingleImage;
     final pendingImgs = widget.state.pendingImages;
-    final displaySingleUrl = profile.userMedia?.singleImage;
+    final displaySingleUrl = widget.state.pendingDeleteSingleImage
+        ? null
+        : profile.userMedia?.singleImage;
     final hasSingleToShow = pendingSingle != null || displaySingleUrl != null;
 
-    // ✅ فلتر الصور المحذوفة
+    // فلتر الصور المحذوفة locally
     final filteredServerImages = serverImages
         .where((url) => !widget.state.deletedImageUrls.contains(url))
         .toList();
 
-    // ✅ FIX: allDisplayImages تحتوي فقط على server URLs
-    // الـ local files موجودة في pendingImgs منفصلة
     final allDisplayImages = filteredServerImages;
 
     final secondaryImages = allDisplayImages.length > 4
         ? allDisplayImages.sublist(0, 4)
         : allDisplayImages;
 
-    // ✅ FIX: العدد الحقيقي = server images + pending images
     final totalCount =
         (hasSingleToShow ? 1 : 0) +
         allDisplayImages.length +
         pendingImgs.length;
 
-    final canDrag = secondaryImages.length > 1;
+    final hasPendingChanges =
+        widget.state.pendingImages.isNotEmpty ||
+        widget.state.deletedImageUrls.isNotEmpty ||
+        widget.state.pendingDeleteSingleImage;
+
+    final canDrag = secondaryImages.length > 1 && !hasPendingChanges;
 
     return Container(
       padding: EdgeInsets.all(10.w),
@@ -303,7 +306,11 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                     ),
                 ],
               ),
-              if (pendingSingle != null || pendingImgs.isNotEmpty) ...[
+              // badge لو في أي تغييرات معلقة (رفع أو حذف)
+              if (pendingSingle != null ||
+                  pendingImgs.isNotEmpty ||
+                  widget.state.pendingDeleteSingleImage ||
+                  widget.state.deletedImageUrls.isNotEmpty) ...[
                 Gap(6.h),
                 _buildPendingBadge(context, context.tr('images_pending_save')),
               ],
@@ -368,7 +375,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ✅ NORMAL GRID - FIX: الـ pending images تُعرض بـ File مش NetworkImage
+  // NORMAL GRID
   // ════════════════════════════════════════════════════════════════
   Widget _buildNormalGrid(
     BuildContext context,
@@ -382,8 +389,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     required List<String> allDisplayImages,
     required List<File> pendingImgs,
   }) {
-    // ✅ FIX: نبني قائمة موحدة من الـ slots
-    // Server images أولاً، ثم pending images
     final totalServerCount = secondaryImages.length;
     final totalPendingCount = pendingImgs.length;
     final totalSlots = totalServerCount + totalPendingCount;
@@ -454,9 +459,8 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           }
 
           // ════ Slots 1-4: Secondary Images ════
-          final listIndex = index - 1; // 0, 1, 2, 3
+          final listIndex = index - 1;
 
-          // ✅ FIX: أول نعرض server images، ثم pending images
           if (listIndex < totalServerCount) {
             // Server image
             final imageUrl = secondaryImages[listIndex];
@@ -477,11 +481,11 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
               ),
             );
           } else if (listIndex < totalSlots) {
-            // ✅ FIX: Pending image - تعرض كـ File مباشرة مش NetworkImage
+            // Pending image — تعرض كـ File مباشرة
             final pendingIndex = listIndex - totalServerCount;
             return ImageSlotCard(
-              imageUrl: null, // ✅ مش بنبعت URL هنا
-              localFile: pendingImgs[pendingIndex], // ✅ بنبعت الـ File مباشرة
+              imageUrl: null,
+              localFile: pendingImgs[pendingIndex],
               isMain: false,
               onTap: null,
               onRemove: () => cubit.removePendingImage(pendingIndex),
@@ -489,7 +493,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           }
 
           // ════ Empty Slot ════
-          // ✅ FIX: نحسب الـ capacity الصحيحة
           final currentTotal = totalServerCount + totalPendingCount;
           return ImageSlotCard(
             imageUrl: null,
@@ -505,7 +508,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ✅ DRAG GRID - يعمل فقط على server images
+  // DRAG GRID
   // ════════════════════════════════════════════════════════════════
   Widget _buildDragGrid(
     BuildContext context,
@@ -536,7 +539,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
 
     Widget secSlot(int listIndex) {
-      // ✅ Server images
       if (listIndex < secondaryImages.length) {
         final imageUrl = secondaryImages[listIndex];
         return AnimatedContainer(
@@ -575,7 +577,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         );
       }
 
-      // ✅ Pending images (بدون drag)
       final pendingIndex = listIndex - secondaryImages.length;
       if (pendingIndex < pendingImgs.length) {
         return Container(
@@ -618,7 +619,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         );
       }
 
-      // ✅ Empty slot
       return Container(
         key: ValueKey('empty_$listIndex'),
         child: ImageSlotCard(
@@ -654,7 +654,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                   final item = updatedImages.removeAt(oldIdx);
                   updatedImages.insert(newIdx, item);
 
-                  // ✅ FIX: لا يبعت للسيرفر هنا - بس يحدث الـ UI
                   cubit.reorderSecondaryImages(
                     updatedImages,
                     filteredServerImages,
@@ -774,6 +773,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // SHARED WIDGETS
+  // ════════════════════════════════════════════════════════════════
   Widget _buildPendingBadge(BuildContext context, String message) {
     return Container(
       margin: EdgeInsets.only(bottom: 8.h),
@@ -839,7 +841,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     MarriageUserProfileModel profile, {
     bool isMain = false,
   }) async {
-    // ✅ FIX: نحسب الـ capacity الصحيحة
     final serverCount =
         (profile.userMedia?.images.length ?? 0) -
         widget.state.deletedImageUrls.length;
@@ -1147,7 +1148,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
-  void _startRecordingInPlace(BuildContext context) async {
+  void _startRecordingInPlace(BuildContext context) {
     if (mounted) setState(() => _isRecordingInPlace = true);
   }
 
@@ -1529,11 +1530,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   ) {
     final hasChildren = profile.family?.hasChildren ?? '';
     final socialStatus = profile.aboutMe?.socialStatus ?? '';
-
     final isSingle =
         socialStatus == 'social_single' || socialStatus == 'F_social_single';
     final showChildrenSection = !isSingle;
-
     final showChildrenDetails =
         showChildrenSection &&
         hasChildren.isNotEmpty &&
@@ -1857,9 +1856,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         builder: (context) => MarriageFieldSelectionView(
           fieldName: fieldKey,
           currentValue: currentValue,
-          onValueSelected: (value) {
-            cubit.updateField(fieldKey, value);
-          },
+          onValueSelected: (value) => cubit.updateField(fieldKey, value),
         ),
       ),
     );

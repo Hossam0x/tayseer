@@ -566,40 +566,39 @@ class _InfoCard extends StatelessWidget {
                 ),
               ],
               SizedBox(width: 12.w),
+
               AppImage(AssetsData.goldIcon, width: 35.w, height: 35.h),
             ],
           ),
           Gap(5.h),
           if (location.isNotEmpty)
-            Container(
-              
-              child: Row(
-                children: [
+            Row(
+              children: [
+                Text(
+                  CountryFlagUtils.getFlag(location),
+                  style: const TextStyle(fontSize: 16),
+                ),
+                Gap(5.w),
+                Flexible(
+                  child: Text(
+                    location,
+                    style: Styles.textStyle12.copyWith(color: Colors.white70),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (distance != null) ...[
+                  Gap(8.w),
                   Text(
-                    CountryFlagUtils.getFlag(location),
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  Gap(5.w),
-                  Flexible(
-                    child: Text(
-                      location,
-                      style: Styles.textStyle12.copyWith(color: Colors.white70),
-                      overflow: TextOverflow.ellipsis,
+                    context.tr(
+                      'distance_away',
+                      args: [distance.toStringAsFixed(0)],
                     ),
+                    style: Styles.textStyle12.copyWith(color: Colors.white70),
                   ),
-                  if (distance != null) ...[
-                    Gap(8.w),
-                    Text(
-                      context.tr(
-                        'distance_away',
-                        args: [distance!.toStringAsFixed(0)],
-                      ),
-                      style: Styles.textStyle12.copyWith(color: Colors.white70),
-                    ),
-                  ],
                 ],
-              ),
+              ],
             ),
+
           Gap(10.h),
           Wrap(
             spacing: 8.w,

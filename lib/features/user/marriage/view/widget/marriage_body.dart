@@ -1316,7 +1316,20 @@ class MarriageBodyState extends State<MarriageBody>
                               buildCircleButton(
                                 onTap: () async {
                                   final cubit = context.read<MarriageCubit>();
+
+                                  // 1️⃣ شغل نفس اتجاه dislike animation
+                                  cubit.emitSwipeLikeDislikeAnimation(
+                                    direction: -1,
+                                  );
+
+                                  // 2️⃣ استنى animation تخلص
+                                  await Future.delayed(
+                                    const Duration(milliseconds: 250),
+                                  );
+
+                                  // 3️⃣ بعد كده نفذ الرجوع الفعلي
                                   cubit.goBackToPreviousUser();
+
                                   _resetScrollTracking();
                                   scrollToTop();
                                 },

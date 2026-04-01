@@ -37,7 +37,9 @@ class MarriagefilePage extends StatefulWidget {
   State<MarriagefilePage> createState() => _MarriagefilePageState();
 }
 
-class _MarriagefilePageState extends State<MarriagefilePage> {
+class _MarriagefilePageState extends State<MarriagefilePage> with TickerProviderStateMixin {
+late AnimationController _floatController;
+late Animation<double> _floatAnimation;
   late int _selectedTabIndex;
   final int _maxImages = 5;
   String? _scrollToSection;
@@ -47,10 +49,24 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
   @override
-  void initState() {
-    super.initState();
-    _selectedTabIndex = widget.initialTabIndex;
-  }
+void initState() {
+  super.initState();
+  _selectedTabIndex = widget.initialTabIndex;
+
+  _floatController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 800),
+  )..repeat(reverse: true);
+
+  _floatAnimation = Tween<double>(begin: 0, end: 8).animate(
+    CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
+  );
+}
+@override
+void dispose() {
+  _floatController.dispose();
+  super.dispose();
+}
 
   // ════════════════════════════════════════════════════════════════
   // ⭐⭐⭐ NEW: دالة ترجمة عامة
@@ -728,15 +744,21 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       ),
     );
   }
+Widget _buildCompletionCard(
+  double progress, {
+  required MarriageUserProfileModel profile,
+}) {
+  final int realPercent = (progress * 100).toInt();
 
-  Widget _buildCompletionCard(
-    double progress, {
-    required MarriageUserProfileModel profile,
-  }) {
-    // ⭐ Real percentage as integer (e.g. 65%)
-    final int realPercent = (progress * 100).toInt();
-
-    return Container(
+  return AnimatedBuilder(
+    animation: _floatAnimation,
+    builder: (context, child) {
+      return Transform.translate(
+        offset: Offset(0, -_floatAnimation.value),
+        child: child,
+      );
+    },
+    child: Container(
       margin: EdgeInsets.symmetric(horizontal: 5.w, vertical: 12.h),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24.r),
@@ -777,7 +799,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // ⭐ Show real percentage dynamically
                           Text(
                             "${context.tr('complete_profile_100_percent')}$realPercent%",
                             textAlign: TextAlign.start,
@@ -801,7 +822,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                         ],
                       ),
                     ),
-                    Spacer(),
+                    const Spacer(),
                     _buildGradientButton(profile, progress: progress),
                   ],
                 ),
@@ -811,9 +832,9 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
           ),
         ),
       ),
-    );
-  }
-
+    ),
+  );
+}
   Widget _buildGradientButton(
     MarriageUserProfileModel profile, {
     required double progress,

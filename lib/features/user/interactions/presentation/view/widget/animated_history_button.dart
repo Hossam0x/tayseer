@@ -51,8 +51,8 @@ class _AnimatedHistoryButtonState extends State<AnimatedHistoryButton> {
           vertical: _isExpanded ? 15.h : 0.h,
         ),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFFC107), Color(0xFFFF9800), Color(0xFFE91E63)],
+          gradient:  LinearGradient(
+            colors: [AppColors.primary300, AppColors.primary200],
             begin: Alignment.centerRight,
             end: Alignment.centerLeft,
           ),
