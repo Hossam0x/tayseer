@@ -255,6 +255,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   Future<void> saveProfile() async {
     if (state.profile == null) return;
 
+    // ✅ احفظ كل القيم المهمة قبل أي emit
     final singleImageUrlToDelete = state.pendingDeleteSingleImage
         ? state.deletedSingleImageUrl
         : null;
@@ -265,6 +266,15 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         ? state.deletedAudioUrl
         : null;
     final imageUrlsToDelete = List<String>.from(state.deletedImageUrls);
+    final savedProfile = state.profile!; // ✅ مهم
+    final savedImagesIndex = Map<String, String>.from(
+      // ✅ مهم
+      state.profile?.userMedia?.imagesIndex ?? {},
+    );
+    final savedPendingImages = List<File>.from(state.pendingImages);
+    final savedPendingSingleImage = state.pendingSingleImage;
+    final savedPendingVideo = state.pendingVideo;
+    final savedPendingAudio = state.pendingAudio;
 
     emit(
       state.copyWith(
@@ -276,10 +286,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     );
 
     try {
-      // ════════════════════════════
-      // Step 0: كل الحذف المعلق
-      // ════════════════════════════
-
       if (singleImageUrlToDelete != null && singleImageUrlToDelete.isNotEmpty) {
         await _repository.deleteSingleImage(singleImageUrlToDelete);
       }
@@ -296,44 +302,27 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         await _repository.deleteAudio(audioUrlToDelete);
       }
 
-      // ════════════════════════════
-      // Step 1: Upload single image
-      // ════════════════════════════
-
-      if (state.pendingSingleImage != null) {
-        await _repository.uploadSingleImage(state.pendingSingleImage!);
+      if (savedPendingSingleImage != null) {
+        // ✅ استخدم المحفوظ
+        await _repository.uploadSingleImage(savedPendingSingleImage);
       }
 
-      // ════════════════════════════
-      // Step 2: Upload secondary images
-      // ════════════════════════════
-
-      for (final file in state.pendingImages) {
+      for (final file in savedPendingImages) {
+        // ✅ استخدم المحفوظ
         await _repository.uploadMarriageImage(file);
       }
 
-      // ════════════════════════════
-      // Step 3: Upload video / audio
-      // ════════════════════════════
-
-      if (state.pendingVideo != null) {
-        await _repository.uploadVideoAndAudio(videoFile: state.pendingVideo!);
+      if (savedPendingVideo != null) {
+        await _repository.uploadVideoAndAudio(videoFile: savedPendingVideo);
       }
-      if (state.pendingAudio != null) {
-        await _repository.uploadVideoAndAudio(audioFile: state.pendingAudio!);
+      if (savedPendingAudio != null) {
+        await _repository.uploadVideoAndAudio(audioFile: savedPendingAudio);
       }
 
       // ════════════════════════════
       // Step 4: Reorder
       // ════════════════════════════
-
-      // Step 4: Reorder
-      final hasNewImages = state.pendingImages.isNotEmpty;
-      // ✅ نعتبر في reorder بس لو فيه تغيير حقيقي في الترتيب
-      // مش لو في حذف بس — السيرفر بيرتب لوحده بعد الحذف
-      final hasReorder =
-          state.profile?.userMedia?.imagesIndex.isNotEmpty == true &&
-          state.pendingImages.isNotEmpty; // ← فقط لو في صور جديدة اتضافت
+      final hasNewImages = savedPendingImages.isNotEmpty;
 
       if (hasNewImages) {
         final reloadResult = await _repository.getMarriageProfile();
@@ -341,14 +330,12 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
           final serverImages = freshProfile.userMedia?.images ?? [];
           if (serverImages.isEmpty) return;
 
-          // ✅ استخدم ترتيب السيرفر الجديد كـ base
-          // وأضف الصور الجديدة المرفوعة في الآخر
-          final userOrderedUrls = state.profile?.userMedia?.imagesIndex;
           List<String> finalOrder;
 
-          if (userOrderedUrls != null && userOrderedUrls.isNotEmpty) {
+          if (savedImagesIndex.isNotEmpty) {
+            // ✅ استخدم المحفوظ
             final sorted =
-                userOrderedUrls.entries
+                savedImagesIndex.entries
                     .where((e) => e.value.startsWith('http'))
                     .toList()
                   ..sort(
@@ -359,7 +346,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
 
             final orderedExisting = sorted
                 .map((e) => e.value)
-                // ✅ فلتر الـ URLs المحذوفة من القائمة قبل الإرسال
                 .where((url) => serverImages.contains(url))
                 .toList();
 
@@ -379,13 +365,35 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
             await _repository.reorderImages(finalIndex);
           }
         });
+      } else if (savedImagesIndex.isNotEmpty && imageUrlsToDelete.isEmpty) {
+        // ✅ لو في reorder بدون إضافة أو حذف — ابعت الـ reorder عادي
+        final sorted =
+            savedImagesIndex.entries
+                .where((e) => e.value.startsWith('http'))
+                .toList()
+              ..sort(
+                (a, b) => (int.tryParse(a.key) ?? 0).compareTo(
+                  int.tryParse(b.key) ?? 0,
+                ),
+              );
+
+        final finalOrder = sorted.map((e) => e.value).toList();
+
+        if (finalOrder.length > 1) {
+          final finalIndex = {
+            for (int i = 0; i < finalOrder.length; i++)
+              i.toString(): finalOrder[i],
+          };
+          await _repository.reorderImages(finalIndex);
+        }
       }
-      // ✅ لو في حذف بس بدون صور جديدة، مش محتاج reorder خالص
+
       // ════════════════════════════
       // Step 5: Update profile fields
       // ════════════════════════════
-
-      final result = await _repository.updateMarriageProfile(state.profile!);
+      final result = await _repository.updateMarriageProfile(
+        savedProfile,
+      ); // ✅ استخدم المحفوظ
 
       result.fold(
         (failure) => emit(
@@ -426,7 +434,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       );
     }
   }
-
   // ════════════════════════════════════════════════════════════════
   // CALCULATE PROGRESS
   // ════════════════════════════════════════════════════════════════

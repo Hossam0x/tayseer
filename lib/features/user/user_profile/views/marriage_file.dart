@@ -23,6 +23,7 @@ import 'package:tayseer/features/user/marriage/view/widget/religious.dart';
 import 'widgets/MarriageProfileSkeleton .dart';
 import 'widgets/profile_statistics_cards.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
 class MarriagefilePage extends StatefulWidget {
   final UserProfileModel? userProfile;
   final int initialTabIndex;
@@ -37,9 +38,10 @@ class MarriagefilePage extends StatefulWidget {
   State<MarriagefilePage> createState() => _MarriagefilePageState();
 }
 
-class _MarriagefilePageState extends State<MarriagefilePage> with TickerProviderStateMixin {
-late AnimationController _floatController;
-late Animation<double> _floatAnimation;
+class _MarriagefilePageState extends State<MarriagefilePage>
+    with TickerProviderStateMixin {
+  late AnimationController _floatController;
+  late Animation<double> _floatAnimation;
   late int _selectedTabIndex;
   final int _maxImages = 5;
   String? _scrollToSection;
@@ -49,24 +51,25 @@ late Animation<double> _floatAnimation;
       "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
   @override
-void initState() {
-  super.initState();
-  _selectedTabIndex = widget.initialTabIndex;
+  void initState() {
+    super.initState();
+    _selectedTabIndex = widget.initialTabIndex;
 
-  _floatController = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 800),
-  )..repeat(reverse: true);
+    _floatController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    )..repeat(reverse: true);
 
-  _floatAnimation = Tween<double>(begin: 0, end: 8).animate(
-    CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
-  );
-}
-@override
-void dispose() {
-  _floatController.dispose();
-  super.dispose();
-}
+    _floatAnimation = Tween<double>(begin: 0, end: 8).animate(
+      CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _floatController.dispose();
+    super.dispose();
+  }
 
   // ════════════════════════════════════════════════════════════════
   // ⭐⭐⭐ NEW: دالة ترجمة عامة
@@ -682,10 +685,12 @@ void dispose() {
             tag: heroTag,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16.r),
-              child: buildCachedImage(
-                url: imageUrl,
+              child: AppImage(
+                imageUrl,
                 height: 400.h,
-                radius: BorderRadius.circular(16.r),
+                width: double.infinity,
+                fit: BoxFit.cover,
+                radius: 16.r,
               ),
             ),
           ),
@@ -715,7 +720,7 @@ void dispose() {
                 height: 650.h,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200, // background while loading
+                  color: Colors.grey.shade200,
                   borderRadius: BorderRadius.vertical(
                     top: Radius.circular(33.r),
                   ),
@@ -724,17 +729,11 @@ void dispose() {
                   borderRadius: BorderRadius.vertical(
                     top: Radius.circular(33.r),
                   ),
-                  child: buildCachedImage(
-                    url: mainImage,
+                  child: AppImage(
+                    mainImage,
                     height: 650.h,
-                    radius: BorderRadius.vertical(top: Radius.circular(33.r)),
-                    errorWidget: Center(
-                      child: Icon(
-                        Icons.person_outline,
-                        color: Colors.grey,
-                        size: 80.w,
-                      ),
-                    ),
+                    width: double.infinity,
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
@@ -744,97 +743,99 @@ void dispose() {
       ),
     );
   }
-Widget _buildCompletionCard(
-  double progress, {
-  required MarriageUserProfileModel profile,
-}) {
-  final int realPercent = (progress * 100).toInt();
 
-  return AnimatedBuilder(
-    animation: _floatAnimation,
-    builder: (context, child) {
-      return Transform.translate(
-        offset: Offset(0, -_floatAnimation.value),
-        child: child,
-      );
-    },
-    child: Container(
-      margin: EdgeInsets.symmetric(horizontal: 5.w, vertical: 12.h),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24.r),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            padding: EdgeInsets.all(5.r),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withOpacity(0.9),
-                  Colors.white.withOpacity(0.7),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(24.r),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.5),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.4),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(height: 20.h),
-                Row(
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8.w),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "${context.tr('complete_profile_100_percent')}$realPercent%",
-                            textAlign: TextAlign.start,
-                            style: TextStyle(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.primary600,
-                            ),
-                          ),
-                          SizedBox(height: 8.h),
-                          Text(
-                            context.tr('complete_profile_description'),
-                            textAlign: TextAlign.start,
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              color: AppColors.secondary700,
-                              height: 1.6,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Spacer(),
-                    _buildGradientButton(profile, progress: progress),
+  Widget _buildCompletionCard(
+    double progress, {
+    required MarriageUserProfileModel profile,
+  }) {
+    final int realPercent = (progress * 100).toInt();
+
+    return AnimatedBuilder(
+      animation: _floatAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, -_floatAnimation.value),
+          child: child,
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 5.w, vertical: 12.h),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24.r),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              padding: EdgeInsets.all(5.r),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withOpacity(0.9),
+                    Colors.white.withOpacity(0.7),
                   ],
                 ),
-                SizedBox(height: 20.h),
-              ],
+                borderRadius: BorderRadius.circular(24.r),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.5),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.4),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(height: 20.h),
+                  Row(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8.w),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "${context.tr('complete_profile_100_percent')}$realPercent%",
+                              textAlign: TextAlign.start,
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.primary600,
+                              ),
+                            ),
+                            SizedBox(height: 8.h),
+                            Text(
+                              context.tr('complete_profile_description'),
+                              textAlign: TextAlign.start,
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: AppColors.secondary700,
+                                height: 1.6,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      _buildGradientButton(profile, progress: progress),
+                    ],
+                  ),
+                  SizedBox(height: 20.h),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
+
   Widget _buildGradientButton(
     MarriageUserProfileModel profile, {
     required double progress,

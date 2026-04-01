@@ -1,13 +1,9 @@
-// ════════════════════════════════════════════════════════════════
-// ✅ ImageSlotCard - يدعم local files و network images
-// ════════════════════════════════════════════════════════════════
 import 'dart:ui' as ui;
-
 import 'package:tayseer/my_import.dart';
 
 class ImageSlotCard extends StatelessWidget {
   final String? imageUrl;
-  final File? localFile; // ✅ للصور المحلية pending
+  final File? localFile;
   final bool isMain;
   final VoidCallback? onTap;
   final VoidCallback? onRemove;
@@ -49,21 +45,32 @@ class ImageSlotCard extends StatelessWidget {
               ),
             )
           else
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300),
-                image: DecorationImage(
-                  // ✅ FileImage للصور المحلية، NetworkImage للسيرفر
-                  image: localFile != null
-                      ? FileImage(localFile!) as ImageProvider
-                      : NetworkImage(imageUrl!),
-                  fit: BoxFit.cover,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade300),
                 ),
+                width: double.infinity,
+                height: double.infinity,
+                child: localFile != null
+                    ? Image.file(
+                        localFile!,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                      )
+                    : AppImage(
+                        imageUrl!,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                      ),
               ),
             ),
 
-          // ✅ أيقونة صغيرة للصور الـ pending
+          // أيقونة صغيرة للصور الـ pending
           if (localFile != null)
             Positioned(
               bottom: 2,
@@ -107,6 +114,7 @@ class ImageSlotCard extends StatelessWidget {
                 ),
               ),
             ),
+
           if (hasImage && onRemove != null)
             Positioned(
               top: 4,
