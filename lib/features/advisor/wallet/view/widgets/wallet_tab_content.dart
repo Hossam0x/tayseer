@@ -93,19 +93,19 @@ class WalletTabContent extends StatelessWidget {
                       useGradient: true,
                     ),
                   ),
-                  SizedBox(width: 12.w),
-                  Expanded(
-                    child: CustomBotton(
-                      height: 54.h,
-                      width: double.infinity,
-                      title: context.tr('recharge'),
-                      onPressed: () =>
-                          Navigator.pushNamed(context, AppRouter.kRechargeView),
-                      useGradient: false,
-                      backGroundcolor: AppColors.primary100,
-                      titleColor: AppColors.primary500,
-                    ),
-                  ),
+                  // SizedBox(width: 12.w),
+                  // Expanded(
+                  //   child: CustomBotton(
+                  //     height: 54.h,
+                  //     width: double.infinity,
+                  //     title: context.tr('recharge'),
+                  //     onPressed: () =>
+                  //         Navigator.pushNamed(context, AppRouter.kRechargeView),
+                  //     useGradient: false,
+                  //     backGroundcolor: AppColors.primary100,
+                  //     titleColor: AppColors.primary500,
+                  //   ),
+                  // ),
                 ],
               ),
             ),
