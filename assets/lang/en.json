@@ -427,7 +427,7 @@
   "my_interests": "My Interests",
   "my_cv": "CV",
   "messge_profil_title": "Express your interest and start chatting with",
-  "messge_profil_sub_title": "You and Ahmed are similar, say hello",
+  "messge_profil_sub_title": "You and {name} are similar, say hello",
   "type_your_message": "Register your interest",
   "share_profil": "Share Profile",
   "ban": "Ban",

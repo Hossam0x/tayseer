@@ -55,7 +55,21 @@ class MarriageCubit extends Cubit<MarriageState> {
       emit(state.copyWith(swipeProgress: newProgress));
     }
   }
+void emitSwipeLikeDislikeAnimation({required double direction}) {
+  emit(state.copyWith(
+    swipeDirection: direction,
+    isAnimating: true,
+    swipeProgress: 1,
+  ));
 
+  Future.delayed(const Duration(milliseconds: 300), () {
+    emit(state.copyWith(
+      swipeDirection: 0,
+      swipeProgress: 0,
+      isAnimating: false,
+    ));
+  });
+}
   // ═══════════════════════════════════════════════════════════════
   // FETCH
   // ═══════════════════════════════════════════════════════════════
