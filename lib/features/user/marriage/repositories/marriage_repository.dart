@@ -15,13 +15,17 @@ abstract class MarriageRepository {
     required String personId,
     String? text,
   });
-   Future<Either<Failure, String>> blockUser({required String personId});
+  Future<Either<Failure, String>> blockUser({required String personId});
 
   Future<Either<Failure, void>> toggleFavorite({
-  required String userId,
-  required bool isAdd,
-});
-Future<Either<Failure, List<String>>> getFavoriteIds();
-Future<Either<Failure, UserItem>> getProfileById(String userId);
-Future<Either<Failure, int>> getInteractionNotificationCount();
+    required String userId,
+    required bool isAdd,
+  });
+  Future<Either<Failure, List<String>>> getFavoriteIds();
+  Future<Either<Failure, UserItem>> getProfileById(String userId);
+  Future<Either<Failure, int>> getInteractionNotificationCount();
+  Future<Either<Failure, void>> setUserLocation({
+    required double lat,
+    required double lng,
+  });
 }

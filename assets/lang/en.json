@@ -1780,5 +1780,18 @@
   "cancel_membership_success": "Subscription cancelled successfully",
   "membership_cancel_error": "An error occurred while cancelling the subscription",
   "cancel_subscription": "Cancel Subscription",
-  "commission_percentage": "{}% app commission"
+  "commission_percentage": "{}% app commission",
+  "location_permission_required": "Location permission is required to use this feature.",
+  "location_permission_denied_forever": "Location permission is permanently denied, please enable it from settings.",
+  "location_permission_denied_multiple": "Location permission has been denied multiple times, please enable it from settings.",
+  "location_settings_open": "Open Settings",
+  "location_grant_permission": "Grant Permission",
+  "location_service_disabled": "Location service is disabled",
+  "location_service_disabled_desc": "Please enable GPS service on your device to continue.",
+  "location_service_enable": "Enable Location",
+  "location_error_occurred": "An error occurred",
+  "location_retry": "Retry",
+  "location_permission_title": "Location permission required",
+  "location_permission_desc": "We need your location to provide the best results and nearby partners.",
+  "location_fetch_error": "An error occurred while trying to fetch the location: "
 }

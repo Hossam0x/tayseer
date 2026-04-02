@@ -192,7 +192,7 @@ class MarriageRepositoryImpl implements MarriageRepository {
       );
       print('📦 notification count raw response: $response');
       if (response['success'] == true) {
-      final count = response['data']?['interactionsNotificationCount'] ?? 0;
+        final count = response['data']?['interactionsNotificationCount'] ?? 0;
         print('📊 parsed count: $count');
         return Right(count);
       } else {
@@ -203,6 +203,29 @@ class MarriageRepositoryImpl implements MarriageRepository {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
       print('🚨 Exception: $e');
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> setUserLocation({
+    required double lat,
+    required double lng,
+  }) async {
+    try {
+      final response = await _apiService.patch(
+        endPoint: '/user/set-location',
+        data: {'lat': lat, 'lng': lng},
+      );
+
+      if (response['success'] == true) {
+        return const Right(null);
+      } else {
+        return Left(ServerFailure(response['message'] ?? 'فشل تحديث الموقع'));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
   }

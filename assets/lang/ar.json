@@ -1777,5 +1777,18 @@
   "cancel_membership_success": "تم إلغاء الاشتراك بنجاح",
   "membership_cancel_error": "حدث خطأ أثناء إلغاء الاشتراك",
   "cancel_subscription": "إلغاء الاشتراك",
-  "commission_percentage": "عمولة {}% للتطبيق"
+  "commission_percentage": "عمولة {}% للتطبيق",
+  "location_permission_required": "مطلوب إذن الوصول للموقع لاستخدام هذه الخاصية.",
+  "location_permission_denied_forever": "تم رفض إذن الوصول للموقع بشكل دائم، يرجى تفعيله من الإعدادات.",
+  "location_permission_denied_multiple": "تم رفض إذن الوصول للموقع عدة مرات، يرجى تفعيله من الإعدادات.",
+  "location_settings_open": "فتح الإعدادات",
+  "location_grant_permission": "إعطاء الصلاحية",
+  "location_service_disabled": "خدمة الموقع معطلة",
+  "location_service_disabled_desc": "يرجى تفعيل خدمة الـ GPS في جهازك للمتابعة.",
+  "location_service_enable": "تفعيل الموقع",
+  "location_error_occurred": "حدث خطأ",
+  "location_retry": "إعادة المحاولة",
+  "location_permission_title": "مطلوب إذن الوصول للموقع",
+  "location_permission_desc": "نحتاج موقعك لتقديم أفضل النتائج وشركاء قريبين منك.",
+  "location_fetch_error": "حدث خطأ أثناء محاولة جلب الموقع: "
 }
