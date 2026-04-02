@@ -208,7 +208,6 @@ abstract class AssetsData {
   static const String uplaodCertificate = "assets/icons/uplaodCertificate.svg";
   static const String emptyFilter = "assets/icons/empty_filtter.svg";
 
-
   // Settings assets
   static const String icNotificationSettings =
       "assets/icons/icNotificationSettings.svg";
@@ -235,7 +234,8 @@ abstract class AssetsData {
   static const String icHelpSettings = "assets/icons/icHelpSettings.svg";
   static const String backArrow = "assets/icons/backArrow.svg";
   static const String icOrderManagment = "assets/icons/icOrderManagment.svg";
-  static const String icMembershipManagement = "assets/icons/icMembershipManagement.svg";
+  static const String icMembershipManagement =
+      "assets/icons/icMembershipManagement.svg";
 
   // Wallet Icons
   static const String icWallet = "assets/icons/icWallet.svg";
@@ -300,6 +300,9 @@ abstract class AssetsData {
   static const String eliteBackgroundPng = "assets/images/eliteBackground.png";
 
   static const String kingIcon = "assets/icons/kingIcon.svg";
+
+  static const String kGifOverlayLoading =
+      "assets/images/gif_overlay_loading.gif";
 
   static const String defaultProfileImage =
       "assets/images/default_profile_image.png";
