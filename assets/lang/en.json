@@ -1779,5 +1779,6 @@
   "membership_cancel_confirm_desc": "Your subscription will be cancelled through Apple. After confirmation, your subscription status will be updated automatically.",
   "cancel_membership_success": "Subscription cancelled successfully",
   "membership_cancel_error": "An error occurred while cancelling the subscription",
-  "cancel_subscription": "Cancel Subscription"
+  "cancel_subscription": "Cancel Subscription",
+  "commission_percentage": "{}% app commission"
 }

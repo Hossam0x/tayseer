@@ -1776,5 +1776,6 @@
   "membership_cancel_confirm_desc": "سيتم إلغاء اشتراكك من خلال Apple، وبعد التأكيد سيتم تحديث حالة اشتراكك تلقائياً.",
   "cancel_membership_success": "تم إلغاء الاشتراك بنجاح",
   "membership_cancel_error": "حدث خطأ أثناء إلغاء الاشتراك",
-  "cancel_subscription": "إلغاء الاشتراك"
+  "cancel_subscription": "إلغاء الاشتراك",
+  "commission_percentage": "عمولة {}% للتطبيق"
 }

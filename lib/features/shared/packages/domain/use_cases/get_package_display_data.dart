@@ -100,6 +100,8 @@ class GetPackageDisplayData {
         : context.tr('20_messages_monthly');
     final boosts = apiSub?.numberOfMonthlyReinforcements.toString() ?? '4';
     final events = apiSub?.numberOfMonthlyEvents.toString() ?? '1';
+    final sessionsCommission = apiSub?.sessionsAppInterestPercentage;
+    final eventsCommission = apiSub?.eventsAppInterestPercentage;
 
     return PackageDisplayModel(
       id: 'pro',
@@ -116,6 +118,11 @@ class GetPackageDisplayData {
         PackageFeatureModel(
           title: '$events ${context.tr('event_monthly')}',
           iconPath: AssetsData.noEvents,
+          subtitle: eventsCommission != null && eventsCommission > 0
+              ? context
+                    .tr('commission_percentage')
+                    .replaceFirst('{}', eventsCommission.toString())
+              : null,
         ),
         PackageFeatureModel(
           title: context.tr('basic_stats'),
@@ -128,6 +135,11 @@ class GetPackageDisplayData {
         PackageFeatureModel(
           title: sessions,
           iconPath: AssetsData.graySessionIcon,
+          subtitle: sessionsCommission != null && sessionsCommission > 0
+              ? context
+                    .tr('commission_percentage')
+                    .replaceFirst('{}', sessionsCommission.toString())
+              : null,
         ),
       ],
     );
@@ -148,6 +160,8 @@ class GetPackageDisplayData {
         : context.tr('unlimited_messages');
     final boosts = apiSub?.numberOfMonthlyReinforcements.toString() ?? '10';
     final events = apiSub?.numberOfMonthlyEvents.toString() ?? '1';
+    final sessionsCommission = apiSub?.sessionsAppInterestPercentage;
+    final eventsCommission = apiSub?.eventsAppInterestPercentage;
 
     return PackageDisplayModel(
       id: 'elite',
@@ -180,6 +194,11 @@ class GetPackageDisplayData {
         PackageFeatureModel(
           title: sessions,
           iconPath: AssetsData.eightSessionMonthIcon,
+          subtitle: sessionsCommission != null && sessionsCommission > 0
+              ? context
+                    .tr('commission_percentage')
+                    .replaceFirst('{}', sessionsCommission.toString())
+              : null,
         ),
         PackageFeatureModel(
           title: context.tr('advanced_performance_reports'),
@@ -188,6 +207,11 @@ class GetPackageDisplayData {
         PackageFeatureModel(
           title: '$events ${context.tr('event_monthly')}',
           iconPath: AssetsData.noEvents,
+          subtitle: eventsCommission != null && eventsCommission > 0
+              ? context
+                    .tr('commission_percentage')
+                    .replaceFirst('{}', eventsCommission.toString())
+              : null,
         ),
         PackageFeatureModel(
           title: context.tr('who_visited_profile_action'),
