@@ -8,6 +8,7 @@ import 'package:tayseer/features/user/questions/presentation/widgets/image_guide
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_state.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/LoadingOverlay.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/audio_widget.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/image_slot_card.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/marriage_field_selection_view.dart';
@@ -41,7 +42,11 @@ class MarriageProfileEditView extends StatefulWidget {
       _MarriageProfileEditViewState();
 }
 
-class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
+class _MarriageProfileEditViewState extends State<MarriageProfileEditView>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   bool _isRecordingInPlace = false;
   bool _isDragMode = false;
 
@@ -141,8 +146,32 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // BUILD — wrapped with MarriageLoadingOverlay
+  // ════════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
+    // Determine loading state:
+    // • isUpdating  → save button was pressed, uploading to server
+    // • CubitStates.loading → initial profile fetch
+    final isLoading =
+        widget.state.isUpdating ||
+        widget.state.state == CubitStates.loading;
+
+    final loadingMessage = widget.state.isUpdating
+        ? context.tr('saving')
+        : context.tr('loading');
+
+    return MarriageLoadingOverlay(
+      isLoading: isLoading,
+      message: loadingMessage,
+      child: _buildScrollContent(context),
+    );
+  }
+
+  Widget _buildScrollContent(BuildContext context) {
     return CustomScrollView(
       controller: _scrollController,
       cacheExtent: 3000,
@@ -209,7 +238,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         : profile.userMedia?.singleImage;
     final hasSingleToShow = pendingSingle != null || displaySingleUrl != null;
 
-    // فلتر الصور المحذوفة locally
     final filteredServerImages = serverImages
         .where((url) => !widget.state.deletedImageUrls.contains(url))
         .toList();
@@ -306,7 +334,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                     ),
                 ],
               ),
-              // badge لو في أي تغييرات معلقة (رفع أو حذف)
               if (pendingSingle != null ||
                   pendingImgs.isNotEmpty ||
                   widget.state.pendingDeleteSingleImage ||
@@ -406,8 +433,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           mainAxisSpacing: 12,
         ),
         itemCount: 6,
+        addRepaintBoundaries: true,
+        addAutomaticKeepAlives: true,
         itemBuilder: (context, index) {
-          // ════ Slot 0: Main Image ════
           if (index == 0) {
             return GestureDetector(
               onTap: hasSingleToShow && displaySingleUrl != null
@@ -417,6 +445,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                   ? () => _pickSingleImage(context, cubit, profile)
                   : null,
               child: ImageSlotCard(
+                key: ValueKey(
+                  displaySingleUrl ?? pendingSingle?.path ?? 'main_empty',
+                ),
                 imageUrl: displaySingleUrl,
                 localFile: pendingSingle,
                 isMain: true,
@@ -428,7 +459,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             );
           }
 
-          // ════ Slot 5: Guidelines ════
           if (index == 5) {
             return GestureDetector(
               onTap: () => ImageGuidelinesBottomSheet.show(
@@ -458,16 +488,16 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             );
           }
 
-          // ════ Slots 1-4: Secondary Images ════
           final listIndex = index - 1;
 
           if (listIndex < totalServerCount) {
-            // Server image
             final imageUrl = secondaryImages[listIndex];
             final heroTag = 'secondary_image_$listIndex';
             return GestureDetector(
+              key: ValueKey(imageUrl),
               onTap: () => _openFullScreen(context, imageUrl, heroTag),
               child: ImageSlotCard(
+                key: ValueKey('slot_$imageUrl'),
                 imageUrl: imageUrl,
                 localFile: null,
                 isMain: false,
@@ -481,9 +511,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
               ),
             );
           } else if (listIndex < totalSlots) {
-            // Pending image — تعرض كـ File مباشرة
             final pendingIndex = listIndex - totalServerCount;
             return ImageSlotCard(
+              key: ValueKey('pending_${pendingImgs[pendingIndex].path}'),
               imageUrl: null,
               localFile: pendingImgs[pendingIndex],
               isMain: false,
@@ -492,9 +522,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             );
           }
 
-          // ════ Empty Slot ════
           final currentTotal = totalServerCount + totalPendingCount;
           return ImageSlotCard(
+            key: ValueKey('empty_$listIndex'),
             imageUrl: null,
             isMain: false,
             onTap: currentTotal < 4
@@ -530,6 +560,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       width: cellWidth,
       height: cellHeight,
       child: ImageSlotCard(
+        key: ValueKey(
+          displaySingleUrl ?? pendingSingle?.path ?? 'drag_main_empty',
+        ),
         imageUrl: displaySingleUrl,
         localFile: pendingSingle,
         isMain: true,
@@ -549,6 +582,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(12.r),
                 child: ImageSlotCard(
+                  key: ValueKey('drag_slot_$imageUrl'),
                   imageUrl: imageUrl,
                   localFile: null,
                   isMain: false,
@@ -586,6 +620,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(12.r),
                 child: ImageSlotCard(
+                  key: ValueKey(
+                    'drag_pending_${pendingImgs[pendingIndex].path}',
+                  ),
                   imageUrl: null,
                   localFile: pendingImgs[pendingIndex],
                   isMain: false,
@@ -622,6 +659,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       return Container(
         key: ValueKey('empty_$listIndex'),
         child: ImageSlotCard(
+          key: ValueKey('drag_empty_$listIndex'),
           imageUrl: null,
           isMain: false,
           onTap: null,
@@ -689,11 +727,11 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     final serverVideoUrl = widget.profile.userMedia?.video;
     final pendingVideo = widget.state.pendingVideo;
     final pendingDeleteVideo = widget.state.pendingDeleteVideo;
+
+    final displayVideoUrl = pendingDeleteVideo ? null : serverVideoUrl;
     final hasVideo =
         pendingVideo != null ||
-        (!pendingDeleteVideo &&
-            serverVideoUrl != null &&
-            serverVideoUrl.isNotEmpty);
+        (displayVideoUrl != null && displayVideoUrl.isNotEmpty);
 
     return Container(
       padding: EdgeInsets.all(12.w),
@@ -722,12 +760,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             ),
           ] else
             VideoSection(
-              videoUrl:
-                  (!pendingDeleteVideo &&
-                      serverVideoUrl != null &&
-                      serverVideoUrl.isNotEmpty)
-                  ? serverVideoUrl
-                  : null,
+              videoUrl: displayVideoUrl,
               onDelete: hasVideo ? () => _deleteVideo(context) : null,
               onUpload: !hasVideo ? () => _showVideoOptions(context) : null,
               showControls: true,
@@ -744,11 +777,11 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     final serverAudioUrl = widget.profile.userMedia?.audio;
     final pendingAudio = widget.state.pendingAudio;
     final pendingDeleteAudio = widget.state.pendingDeleteAudio;
+
+    final displayAudioUrl = pendingDeleteAudio ? null : serverAudioUrl;
     final hasAudio =
         pendingAudio != null ||
-        (!pendingDeleteAudio &&
-            serverAudioUrl != null &&
-            serverAudioUrl.isNotEmpty);
+        (displayAudioUrl != null && displayAudioUrl.isNotEmpty);
 
     return Container(
       padding: EdgeInsets.all(12.w),
@@ -1241,8 +1274,11 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   Widget _buildAudioPreviewFull(BuildContext context, {File? pendingAudio}) {
-    final audioPath =
-        pendingAudio?.path ?? widget.profile.userMedia?.audio ?? '';
+    final pendingDeleteAudio = widget.state.pendingDeleteAudio;
+    final serverAudioUrl = widget.profile.userMedia?.audio;
+    final displayAudioUrl = pendingDeleteAudio ? null : serverAudioUrl;
+    final audioPath = pendingAudio?.path ?? displayAudioUrl ?? '';
+
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -1365,95 +1401,47 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           _buildInfoRow(
             context.tr('country'),
             _translateValue(profile.aboutMe?.country ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'country',
-              profile.aboutMe?.country,
-            ),
+            () => _navigateToFieldSelection(context, cubit, 'country', profile.aboutMe?.country),
           ),
           _buildInfoRow(
             context.tr('nationality'),
             _translateValue(profile.aboutMe?.nationality ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'nationality',
-              profile.aboutMe?.nationality,
-            ),
+            () => _navigateToFieldSelection(context, cubit, 'nationality', profile.aboutMe?.nationality),
           ),
           _buildInfoRow(
             context.tr('height'),
             profile.aboutMe?.height ?? context.tr('select'),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'height',
-              profile.aboutMe?.height,
-            ),
+            () => _navigateToFieldSelection(context, cubit, 'height', profile.aboutMe?.height),
           ),
           _buildInfoRow(
             context.tr('weight'),
             profile.aboutMe?.weight ?? context.tr('select'),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'weight',
-              profile.aboutMe?.weight,
-            ),
+            () => _navigateToFieldSelection(context, cubit, 'weight', profile.aboutMe?.weight),
           ),
           _buildInfoRow(
             context.tr('skin_color'),
             _translateValue(profile.aboutMe?.skinColor ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'skinColor',
-              profile.aboutMe?.skinColor,
-            ),
+            () => _navigateToFieldSelection(context, cubit, 'skinColor', profile.aboutMe?.skinColor),
           ),
           _buildInfoRow(
             context.tr('select_health_status_title'),
             _translateValue(profile.aboutMe?.healthStatus ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'healthStatus',
-              profile.aboutMe?.healthStatus,
-            ),
+            () => _navigateToFieldSelection(context, cubit, 'healthStatus', profile.aboutMe?.healthStatus),
           ),
           _buildInfoRow(
             context.tr('commitment_to_religion'),
-            _translateValue(
-              profile.aboutMe?.religiousCommitment ?? '',
-              context,
-            ),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'religiousCommitment',
-              profile.aboutMe?.religiousCommitment,
-            ),
+            _translateValue(profile.aboutMe?.religiousCommitment ?? '', context),
+            () => _navigateToFieldSelection(context, cubit, 'religiousCommitment', profile.aboutMe?.religiousCommitment),
           ),
           _buildInfoRow(
             context.tr('smoking'),
             _translateValue(profile.aboutMe?.smoker ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'smoker',
-              profile.aboutMe?.smoker,
-            ),
+            () => _navigateToFieldSelection(context, cubit, 'smoker', profile.aboutMe?.smoker),
           ),
           _buildInfoRow(
             context.tr('drink_alcohol'),
             _translateValue(profile.aboutMe?.drinkAlcohol ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'drinkAlcohol',
-              profile.aboutMe?.drinkAlcohol,
-            ),
+            () => _navigateToFieldSelection(context, cubit, 'drinkAlcohol', profile.aboutMe?.drinkAlcohol),
           ),
         ],
       ),
@@ -1475,48 +1463,24 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            context.tr('professional_info'),
-            style: Styles.textStyle18Meduim,
-          ),
+          Text(context.tr('professional_info'), style: Styles.textStyle18Meduim),
           Gap(12.h),
           _buildInfoRow(
             context.tr('qualification'),
-            _translateValue(
-              profile.professionalLife?.educationLevel ?? '',
-              context,
-            ),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'education_level',
-              profile.professionalLife?.educationLevel,
-            ),
+            _translateValue(profile.professionalLife?.educationLevel ?? '', context),
+            () => _navigateToFieldSelection(context, cubit, 'education_level', profile.professionalLife?.educationLevel),
           ),
           Gap(12.h),
           _buildInfoRow(
             context.tr('job'),
             _translateValue(profile.professionalLife?.job ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'choose_job',
-              profile.professionalLife?.job,
-            ),
+            () => _navigateToFieldSelection(context, cubit, 'choose_job', profile.professionalLife?.job),
           ),
           Gap(12.h),
           _buildInfoRow(
             context.tr('employer'),
-            _translateValue(
-              profile.professionalLife?.chooseEmployer ?? '',
-              context,
-            ),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'choose_employer',
-              profile.professionalLife?.chooseEmployer,
-            ),
+            _translateValue(profile.professionalLife?.chooseEmployer ?? '', context),
+            () => _navigateToFieldSelection(context, cubit, 'choose_employer', profile.professionalLife?.chooseEmployer),
           ),
         ],
       ),
@@ -1554,47 +1518,24 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           _buildInfoRow(
             context.tr('marital_status'),
             _translateValue(profile.aboutMe?.socialStatus ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'maritalStatus',
-              profile.aboutMe?.socialStatus,
-            ),
+            () => _navigateToFieldSelection(context, cubit, 'maritalStatus', profile.aboutMe?.socialStatus),
           ),
           if (showChildrenSection) ...[
             _buildInfoRow(
               context.tr('has_childrens'),
               _translateValue(profile.family?.hasChildren ?? '', context),
-              () => _navigateToFieldSelection(
-                context,
-                cubit,
-                'hasChildren',
-                profile.family?.hasChildren,
-              ),
+              () => _navigateToFieldSelection(context, cubit, 'hasChildren', profile.family?.hasChildren),
             ),
             if (showChildrenDetails) ...[
               _buildInfoRow(
                 context.tr('children_count'),
                 _translateValue(profile.family?.childrenNumber ?? '', context),
-                () => _navigateToFieldSelection(
-                  context,
-                  cubit,
-                  'childrenNumber',
-                  profile.family?.childrenNumber,
-                ),
+                () => _navigateToFieldSelection(context, cubit, 'childrenNumber', profile.family?.childrenNumber),
               ),
               _buildInfoRow(
                 context.tr('children_live_with_you'),
-                _translateValue(
-                  profile.family?.childrenLivingStatus ?? '',
-                  context,
-                ),
-                () => _navigateToFieldSelection(
-                  context,
-                  cubit,
-                  'childrenLiveWithYou',
-                  profile.family?.childrenLivingStatus,
-                ),
+                _translateValue(profile.family?.childrenLivingStatus ?? '', context),
+                () => _navigateToFieldSelection(context, cubit, 'childrenLiveWithYou', profile.family?.childrenLivingStatus),
               ),
             ],
           ],
@@ -1623,45 +1564,22 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           _buildInfoRow(
             context.tr('engagement'),
             _translateValue(profile.yourGoals?.engagement ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'engagement',
-              profile.yourGoals?.engagement,
-            ),
+            () => _navigateToFieldSelection(context, cubit, 'engagement', profile.yourGoals?.engagement),
           ),
           _buildInfoRow(
             context.tr('marriage'),
             _translateValue(profile.yourGoals?.marry ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'marriage_intentions',
-              profile.yourGoals?.marry,
-            ),
+            () => _navigateToFieldSelection(context, cubit, 'marriage_intentions', profile.yourGoals?.marry),
           ),
           _buildInfoRow(
             context.tr('family'),
             _translateValue(profile.yourGoals?.familyAcceptance ?? '', context),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'familyAcceptance',
-              profile.yourGoals?.familyAcceptance,
-            ),
+            () => _navigateToFieldSelection(context, cubit, 'familyAcceptance', profile.yourGoals?.familyAcceptance),
           ),
           _buildInfoRow(
             context.tr('travel'),
-            _translateValue(
-              profile.yourGoals?.intendTravelAbroad ?? '',
-              context,
-            ),
-            () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'intendTravelAbroad',
-              profile.yourGoals?.intendTravelAbroad,
-            ),
+            _translateValue(profile.yourGoals?.intendTravelAbroad ?? '', context),
+            () => _navigateToFieldSelection(context, cubit, 'intendTravelAbroad', profile.yourGoals?.intendTravelAbroad),
           ),
         ],
       ),
@@ -1721,6 +1639,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // SAVE BUTTON
+  // ════════════════════════════════════════════════════════════════
   Widget _buildSaveButton(
     BuildContext context,
     MarriageProfileCubit cubit,
@@ -1763,6 +1684,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // INFO ROW
+  // ════════════════════════════════════════════════════════════════
   Widget _buildInfoRow(String label, String value, VoidCallback onTap) {
     final isLongText = value.length > 20;
     return GestureDetector(
@@ -1844,6 +1768,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // NAVIGATION HELPERS
+  // ════════════════════════════════════════════════════════════════
   void _navigateToFieldSelection(
     BuildContext context,
     MarriageProfileCubit cubit,

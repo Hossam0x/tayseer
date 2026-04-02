@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:tayseer/features/user/interactions/data/Model/history_response_model.dart';
 import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -23,5 +24,10 @@ abstract class MarriageRepository {
 });
 Future<Either<Failure, List<String>>> getFavoriteIds();
 Future<Either<Failure, UserItem>> getProfileById(String userId);
-Future<Either<Failure, int>> getInteractionNotificationCount();
+
+Future<Either<Failure, void>> resetAllNotificationCounts();
+Future<Either<Failure, NotificationCountModel>> getInteractionNotificationCount();
+ Future<Either<Failure, void>> resetLikesNotificationCount();
+ Future<Either<Failure, void>> resetFavoritesNotificationCount();
+Future<Either<Failure, void>> resetRegardsNotificationCount();
 }

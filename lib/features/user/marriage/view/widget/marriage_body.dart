@@ -326,7 +326,9 @@ class MarriageBodyState extends State<MarriageBody>
           previous.isLoadingMore != current.isLoadingMore ||
           previous.userHistory != current.userHistory ||
           previous.interactionsNotificationCount !=
-              current.interactionsNotificationCount,
+              current.interactionsNotificationCount ||
+          previous.likesNotificationCount !=
+              current.likesNotificationCount, // ✅ أضف هذا
 
       listener: (context, state) {
         if ((state.sendRegardState == CubitStates.failure ||
@@ -836,6 +838,8 @@ class MarriageBodyState extends State<MarriageBody>
                 controller: _mainScrollController,
                 slivers: [
                   SliverProfileHeader(
+                    city: user?.city, 
+                    distanceKm: user?.distanceKm, 
                     isVerified: isVerifiedUser,
                     nextIsVerified: hasNext
                         ? (nextUser?.isVerified ?? false)
@@ -1397,6 +1401,7 @@ class MarriageBodyState extends State<MarriageBody>
                           Positioned(
                             left: 0,
                             child: AnimatedHistoryButton(
+                              // ✅ بدل likesNotificationCount استخدم interactionsNotificationCount
                               notificationCount:
                                   state.interactionsNotificationCount,
                               onTap: () {
@@ -1448,6 +1453,10 @@ class MarriageBodyState extends State<MarriageBody>
             FilterChips(
               onFilterChanged: (filterKey) {
                 cubit.setHistoryFilter(filterKey);
+
+                // ✅ reset الـ count في MarriageCubit
+                cubit.resetNotificationForFilter(filterKey);
+
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   Future.delayed(
                     const Duration(milliseconds: 100),

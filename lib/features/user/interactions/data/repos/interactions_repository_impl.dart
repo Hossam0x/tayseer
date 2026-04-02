@@ -186,4 +186,63 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
       return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
     }
   }
+  // ═══════════════════════════════════════════════════════════════════
+// NOTIFICATION COUNTS
+// ═══════════════════════════════════════════════════════════════════
+
+@override
+Future<Either<Failure, NotificationCountModel>> fetchInteractionNotificationCount() async {
+  try {
+    final response = await apiService.get(
+      endPoint: '/user/interactions-notification-count',
+    );
+    return Right(NotificationCountModel.fromJson(response));
+  } on DioException catch (e) {
+    return Left(ServerFailure.fromDioError(e));
+  } catch (e) {
+    return Left(ServerFailure('حدث خطأ غير متوقع: ${e.toString()}'));
+  }
+}
+
+@override
+Future<Either<Failure, void>> resetLikesNotificationCount() async {
+  try {
+    await apiService.patch(
+      endPoint: '/user/reset-likes-notification-count',
+    );
+    return const Right(null);
+  } on DioException catch (e) {
+    return Left(ServerFailure.fromDioError(e));
+  } catch (e) {
+    return Left(ServerFailure('حدث خطأ غير متوقع: ${e.toString()}'));
+  }
+}
+
+@override
+Future<Either<Failure, void>> resetFavoritesNotificationCount() async {
+  try {
+    await apiService.patch(
+      endPoint: '/user/reset-favorites-notification-count',
+    );
+    return const Right(null);
+  } on DioException catch (e) {
+    return Left(ServerFailure.fromDioError(e));
+  } catch (e) {
+    return Left(ServerFailure('حدث خطأ غير متوقع: ${e.toString()}'));
+  }
+}
+
+@override
+Future<Either<Failure, void>> resetRegardsNotificationCount() async {
+  try {
+    await apiService.patch(
+      endPoint: '/user/reset-regards-notification-count',
+    );
+    return const Right(null);
+  } on DioException catch (e) {
+    return Left(ServerFailure.fromDioError(e));
+  } catch (e) {
+    return Left(ServerFailure('حدث خطأ غير متوقع: ${e.toString()}'));
+  }
+}
 }

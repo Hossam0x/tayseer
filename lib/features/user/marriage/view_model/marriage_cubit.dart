@@ -55,21 +55,23 @@ class MarriageCubit extends Cubit<MarriageState> {
       emit(state.copyWith(swipeProgress: newProgress));
     }
   }
-void emitSwipeLikeDislikeAnimation({required double direction}) {
-  emit(state.copyWith(
-    swipeDirection: direction,
-    isAnimating: true,
-    swipeProgress: 1,
-  ));
 
-  Future.delayed(const Duration(milliseconds: 300), () {
-    emit(state.copyWith(
-      swipeDirection: 0,
-      swipeProgress: 0,
-      isAnimating: false,
-    ));
-  });
-}
+  void emitSwipeLikeDislikeAnimation({required double direction}) {
+    emit(
+      state.copyWith(
+        swipeDirection: direction,
+        isAnimating: true,
+        swipeProgress: 1,
+      ),
+    );
+
+    Future.delayed(const Duration(milliseconds: 300), () {
+      emit(
+        state.copyWith(swipeDirection: 0, swipeProgress: 0, isAnimating: false),
+      );
+    });
+  }
+
   // ═══════════════════════════════════════════════════════════════
   // FETCH
   // ═══════════════════════════════════════════════════════════════
@@ -161,7 +163,9 @@ void emitSwipeLikeDislikeAnimation({required double direction}) {
           final found = serverUsers.any((u) => u.user?.id == seedPersonId);
           if (!found) {
             if (interactionUser != null) {
-              final seededItem = _buildUserItemFromInteraction(interactionUser!);
+              final seededItem = _buildUserItemFromInteraction(
+                interactionUser!,
+              );
               finalUsers = [seededItem, ...serverUsers];
             } else {
               final placeholder = UserItem(
@@ -240,82 +244,87 @@ void emitSwipeLikeDislikeAnimation({required double direction}) {
       );
     });
   }
-// ═══════════════════════════════════════════════════════════════
-// FETCH NOTIFICATION COUNT
-// ═══════════════════════════════════════════════════════════════
-Future<void> fetchNotificationCount() async {
-  final result = await _repo.getInteractionNotificationCount();
-  result.fold(
-    (failure) => print('❌ fetchNotificationCount failed: ${failure.message}'),
-    (count) {
-      print('✅ fetchNotificationCount success — count: $count');
-      emit(state.copyWith(interactionsNotificationCount: count));
-    },
-  );
-}
 
-// ═══════════════════════════════════════════════════════════════
-// USER INTERACTION — استبدل incrementNotificationCount بـ fetch
-// ═══════════════════════════════════════════════════════════════
-Future<void> userInteraction({
-  required String personId,
-  required String interactionType,
-}) async {
-  final result = await _repo.userInteraction(
-    personId: personId,
-    interactionType: interactionType,
-  );
-  if (isClosed) return;
+  // ═══════════════════════════════════════════════════════════════
+  // FETCH NOTIFICATION COUNT
+  // ═══════════════════════════════════════════════════════════════
+  Future<void> fetchNotificationCount() async {
+    final result = await _repo.getInteractionNotificationCount();
+    result.fold(
+      (failure) => print('❌ fetchNotificationCount failed: ${failure.message}'),
+      (model) {
+        emit(
+          state.copyWith(
+            interactionsNotificationCount: model.total,
+            likesNotificationCount: model.likes,
+            favoritesNotificationCount: model.favorites,
+            regardsNotificationCount: model.regards,
+          ),
+        );
+      },
+    );
+  }
 
-  result.fold(
-    (failure) => emit(state.copyWith(
-      userInteractionState: CubitStates.failure,
-      errorMessage: failure.message,
-      showActionSnackbar: false,
-    )),
-    (_) {
-      emit(state.copyWith(
-        userInteractionState: CubitStates.success,
-        showActionSnackbar: false,
-      ));
-      fetchNotificationCount(); // ✅ بدل incrementNotificationCount
-    },
-  );
-}
+  // ═══════════════════════════════════════════════════════════════
+  // USER INTERACTION — استبدل incrementNotificationCount بـ fetch
+  // ═══════════════════════════════════════════════════════════════
+  Future<void> userInteraction({
+    required String personId,
+    required String interactionType,
+  }) async {
+    final result = await _repo.userInteraction(
+      personId: personId,
+      interactionType: interactionType,
+    );
+    if (isClosed) return;
 
-// ═══════════════════════════════════════════════════════════════
-// SEND REGARD — استبدل incrementNotificationCount بـ fetch
-// ═══════════════════════════════════════════════════════════════
-Future<void> sendRegard({required String personId}) async {
-  final result = await _repo.sendRegard(personId: personId);
-  if (isClosed) return;
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          userInteractionState: CubitStates.failure,
+          errorMessage: failure.message,
+          showActionSnackbar: false,
+        ),
+      ),
+      (_) {
+        emit(
+          state.copyWith(
+            userInteractionState: CubitStates.success,
+            showActionSnackbar: false,
+          ),
+        );
+        fetchNotificationCount(); // ✅ بدل incrementNotificationCount
+      },
+    );
+  }
 
-  result.fold(
-    (failure) => emit(state.copyWith(
-      sendRegardState: CubitStates.failure,
-      errorMessage: failure.message,
-      showActionSnackbar: true,
-    )),
-    (_) {
-      emit(state.copyWith(
-        sendRegardState: CubitStates.success,
-        showActionSnackbar: true,
-      ));
-      fetchNotificationCount(); // ✅ بدل incrementNotificationCount
-    },
-  );
-}
+  // ═══════════════════════════════════════════════════════════════
+  // SEND REGARD — استبدل incrementNotificationCount بـ fetch
+  // ═══════════════════════════════════════════════════════════════
+  Future<void> sendRegard({required String personId}) async {
+    final result = await _repo.sendRegard(personId: personId);
+    if (isClosed) return;
 
-// ═══════════════════════════════════════════════════════════════
-// SHOW HISTORY VIEW — reset local فقط
-// ═══════════════════════════════════════════════════════════════
-void showHistoryView() {
-  emit(state.copyWith(
-    showHistory: true,
-    selectedHistoryFilter: "liked_you",
-    interactionsNotificationCount: 0, // ✅ reset local بدل InteractionsCubit
-  ));
-}
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          sendRegardState: CubitStates.failure,
+          errorMessage: failure.message,
+          showActionSnackbar: true,
+        ),
+      ),
+      (_) {
+        emit(
+          state.copyWith(
+            sendRegardState: CubitStates.success,
+            showActionSnackbar: true,
+          ),
+        );
+        fetchNotificationCount(); // ✅ بدل incrementNotificationCount
+      },
+    );
+  }
+
   // ═══════════════════════════════════════════════════════════════
   // ENSURE PLACEHOLDER EXISTS
   // ═══════════════════════════════════════════════════════════════
@@ -638,7 +647,6 @@ void showHistoryView() {
     }
   }
 
-
   void hideHistoryView() => emit(state.copyWith(showHistory: false));
   void setHistoryFilter(String filter) =>
       emit(state.copyWith(selectedHistoryFilter: filter));
@@ -663,7 +671,7 @@ void showHistoryView() {
     }
   }
 
-    Future<void> sendRegardText({
+  Future<void> sendRegardText({
     required String personId,
     required String text,
   }) async {
@@ -775,18 +783,21 @@ void showHistoryView() {
       isAdd: !isCurrentlyFavorited,
     );
 
-    result.fold((failure) {
-      if (isClosed) return;
-      final revertFavorites = Set<String>.from(state.favoritedIds);
-      if (isCurrentlyFavorited) {
-        revertFavorites.add(userId);
-      } else {
-        revertFavorites.remove(userId);
-      }
-      emit(state.copyWith(favoritedIds: revertFavorites));
-    }, (_) {
-      fetchNotificationCount();
-    });
+    result.fold(
+      (failure) {
+        if (isClosed) return;
+        final revertFavorites = Set<String>.from(state.favoritedIds);
+        if (isCurrentlyFavorited) {
+          revertFavorites.add(userId);
+        } else {
+          revertFavorites.remove(userId);
+        }
+        emit(state.copyWith(favoritedIds: revertFavorites));
+      },
+      (_) {
+        fetchNotificationCount();
+      },
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -838,8 +849,62 @@ void showHistoryView() {
     );
   }
 
+// ═══════════════════════════════════════════════════════════════
+// SHOW HISTORY VIEW (likes)
+// ═══════════════════════════════════════════════════════════════
+Future<void> showHistoryView() async {
+  final likesToSubtract = state.likesNotificationCount;
+  
+  emit(state.copyWith(
+    showHistory: true,
+    selectedHistoryFilter: "liked_you",
+    likesNotificationCount: 0,
+    interactionsNotificationCount: 
+        (state.interactionsNotificationCount - likesToSubtract).clamp(0, 999),
+  ));
 
+  await _repo.resetLikesNotificationCount();
+}
 
+// ═══════════════════════════════════════════════════════════════
+// RESET NOTIFICATION FOR FILTER (يُستدعى من FilterChips)
+// ═══════════════════════════════════════════════════════════════
+Future<void> resetNotificationForFilter(String filter) async {
+  switch (filter) {
+    case 'liked_you':
+      final toSubtract = state.likesNotificationCount;
+      if (toSubtract == 0) return;
+      emit(state.copyWith(
+        likesNotificationCount: 0,
+        interactionsNotificationCount:
+            (state.interactionsNotificationCount - toSubtract).clamp(0, 999),
+      ));
+      await _repo.resetLikesNotificationCount();
+      break;
+
+    case 'favorites':
+      final toSubtract = state.favoritesNotificationCount;
+      if (toSubtract == 0) return;
+      emit(state.copyWith(
+        favoritesNotificationCount: 0,
+        interactionsNotificationCount:
+            (state.interactionsNotificationCount - toSubtract).clamp(0, 999),
+      ));
+      await _repo.resetFavoritesNotificationCount();
+      break;
+
+    case 'sent_compliment':
+      final toSubtract = state.regardsNotificationCount;
+      if (toSubtract == 0) return;
+      emit(state.copyWith(
+        regardsNotificationCount: 0,
+        interactionsNotificationCount:
+            (state.interactionsNotificationCount - toSubtract).clamp(0, 999),
+      ));
+      await _repo.resetRegardsNotificationCount();
+      break;
+  }
+}
   // ═══════════════════════════════════════════════════════════════
   // DISPOSE
   // ═══════════════════════════════════════════════════════════════

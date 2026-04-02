@@ -31,4 +31,8 @@ abstract class InteractionsRepository {
   Future<Either<Failure, String>> likeUser({
     required String userId,
   });
+  Future<Either<Failure, NotificationCountModel>> fetchInteractionNotificationCount();
+Future<Either<Failure, void>> resetLikesNotificationCount();
+Future<Either<Failure, void>> resetFavoritesNotificationCount();
+Future<Either<Failure, void>> resetRegardsNotificationCount();
 }

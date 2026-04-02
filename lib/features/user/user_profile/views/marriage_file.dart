@@ -933,7 +933,7 @@ class _MarriagefilePageState extends State<MarriagefilePage>
       if (profile.aboutMe?.age != null)
         {
           'icon': AssetsData.kdrawingIcon,
-          'label': "🎂 ${context.tr('age')} ${profile.aboutMe?.age}",
+        'label': "🎂\u200F ${profile.aboutMe?.age} ${context.tr('age')}",
         },
       if (profile.aboutMe?.skinColor != null)
         {

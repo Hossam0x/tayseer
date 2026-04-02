@@ -32,7 +32,8 @@ class SliverProfileHeader extends StatelessWidget {
   final String? nextNationality;
   final String? nextHeight;
   final bool? nextIsVerified;
-
+  final String? city; // ✅
+  final double? distanceKm; // ✅
   final double swipeDirection;
   final double swipeProgress;
 
@@ -68,6 +69,8 @@ class SliverProfileHeader extends StatelessWidget {
     this.swipeProgress = 0,
     this.onFavoriteTap,
     this.isFavorited = false,
+    this.city, // ✅
+    this.distanceKm, // ✅
   });
 
   bool get _isAnimating => swipeProgress > 0.01;
@@ -156,6 +159,8 @@ class SliverProfileHeader extends StatelessWidget {
                   ..rotateZ(currentAngle),
                 child: RepaintBoundary(
                   child: _FrontProfileCard(
+                    city: city,
+                    distanceKm: distanceKm,
                     images: images,
                     coverImage: coverImage,
                     reportId: reportId,
@@ -188,6 +193,8 @@ class SliverProfileHeader extends StatelessWidget {
 // FRONT CARD
 // ═══════════════════════════════════════════════════════════════
 class _FrontProfileCard extends StatelessWidget {
+  final String? city;
+  final double? distanceKm;
   final List<String> images;
   final String coverImage;
   final String? reportId;
@@ -224,6 +231,8 @@ class _FrontProfileCard extends StatelessWidget {
     this.isFavorited = false,
     this.shouldBlur = false,
     this.isVerified = false,
+    this.city,
+    this.distanceKm,
   });
 
   bool get _hasImage => coverImage.isNotEmpty;
@@ -238,7 +247,7 @@ class _FrontProfileCard extends StatelessWidget {
         // ========= الصورة أو الـ Placeholder =========
         GestureDetector(
           onTap: () {
-            if (images.isNotEmpty) {
+            if (images.isNotEmpty && !shouldBlur) {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -324,6 +333,8 @@ class _FrontProfileCard extends StatelessWidget {
             onFavoriteTap: onFavoriteTap,
             isFavorited: isFavorited,
             isVerified: isVerified,
+            city: city, // ✅ أضف
+            distanceKm: distanceKm,
           ),
         ),
       ],
@@ -485,6 +496,8 @@ class _InfoCard extends StatelessWidget {
   final VoidCallback? onFavoriteTap;
   final bool isFavorited;
   final bool isVerified;
+  final double? distanceKm;
+  final String? city;
 
   const _InfoCard({
     required this.name,
@@ -500,11 +513,13 @@ class _InfoCard extends StatelessWidget {
     this.onFavoriteTap,
     this.isFavorited = false,
     this.isVerified = false,
+    this.distanceKm,
+    this.city,
   });
 
   @override
   Widget build(BuildContext context) {
-    double distance = 10;
+    // double distance = 10;
     return _glassCard(
       borderRadius: 24,
       blur: useBlur ? 18 : 0,
@@ -567,13 +582,13 @@ class _InfoCard extends StatelessWidget {
               ],
               SizedBox(width: 12.w),
 
-              AppImage(AssetsData.goldIcon, width: 35.w, height: 35.h),
+              AppImage(AssetsData.goldIcon),
             ],
           ),
           Gap(5.h),
-          if (location.isNotEmpty)
-            Row(
-              children: [
+          Row(
+            children: [
+              if (location.isNotEmpty) ...[
                 Text(
                   CountryFlagUtils.getFlag(location),
                   style: const TextStyle(fontSize: 16),
@@ -581,24 +596,35 @@ class _InfoCard extends StatelessWidget {
                 Gap(5.w),
                 Flexible(
                   child: Text(
-                    location,
-                    style: Styles.textStyle12.copyWith(color: Colors.white70),
+                    city != null && city!.isNotEmpty
+                        ? '$location، ( $city )'
+                        : location,
+                    style: Styles.textStyle14.copyWith(color: Colors.white70),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                if (distance != null) ...[
-                  Gap(8.w),
-                  Text(
-                    context.tr(
-                      'distance_away',
-                      args: [distance.toStringAsFixed(0)],
-                    ),
-                    style: Styles.textStyle12.copyWith(color: Colors.white70),
+              ] else if (city != null && city!.isNotEmpty) ...[
+                // ✅ لو مفيش country، اعرض الـ city لوحده
+                Flexible(
+                  child: Text(
+                    city!,
+                    style: Styles.textStyle14.copyWith(color: Colors.white70),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ],
+                ),
               ],
-            ),
-
+              if (distanceKm != null) ...[
+                Gap(8.w),
+                Text(
+                  context.tr(
+                    'distance_away',
+                    args: [distanceKm!.toStringAsFixed(0)],
+                  ),
+                  style: Styles.textStyle14.copyWith(color: Colors.white70),
+                ),
+              ],
+            ],
+          ),
           Gap(10.h),
           Wrap(
             spacing: 8.w,
