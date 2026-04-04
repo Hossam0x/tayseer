@@ -3,12 +3,12 @@ import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/core/widgets/custom_video_and_edit/custom_uploaded_video_preview.dart';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
+import 'package:tayseer/core/widgets/gif_overlay.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 import 'package:tayseer/features/user/questions/presentation/widgets/image_guidelines_bottom_sheet.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_state.dart';
-import 'package:tayseer/features/user/user_profile/views/widgets/LoadingOverlay.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/audio_widget.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/image_slot_card.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/marriage_field_selection_view.dart';
@@ -27,6 +27,8 @@ class MarriageProfileEditView extends StatefulWidget {
     required this.maxImages,
     this.onTabChanged,
     this.scrollToSection,
+    // ⭐⭐⭐ callback جديد: يُستدعى بعد الحفظ الناجح
+    this.onSaveSuccess,
   });
 
   final int maxImages;
@@ -36,6 +38,8 @@ class MarriageProfileEditView extends StatefulWidget {
   late int selectedTabIndex;
   final Function(int)? onTabChanged;
   final String? scrollToSection;
+  // ⭐⭐⭐
+  final VoidCallback? onSaveSuccess;
 
   @override
   State<MarriageProfileEditView> createState() =>
@@ -49,6 +53,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView>
 
   bool _isRecordingInPlace = false;
   bool _isDragMode = false;
+
+  // ⭐ track previous isUpdating to detect transition false→true (save started)
+  bool _wasUpdating = false;
 
   final GlobalKey _imagesKey = GlobalKey();
   final GlobalKey _videoKey = GlobalKey();
@@ -147,40 +154,44 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView>
   }
 
   // ════════════════════════════════════════════════════════════════
-  // BUILD — wrapped with MarriageLoadingOverlay
+  // BUILD
   // ════════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
-    // Determine loading state:
-    // • isUpdating  → save button was pressed, uploading to server
-    // • CubitStates.loading → initial profile fetch
-    final isLoading =
-        widget.state.isUpdating ||
-        widget.state.state == CubitStates.loading;
+    // ⭐ لما يبدأ الـ saving (transition من false → true) شغّل الـ GIF
+    final isUpdatingNow = widget.state.isUpdating;
+    if (isUpdatingNow && !_wasUpdating) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          showGifOverlay(
+            context,
+            repeatCount: 10,
+            gifDuration: const Duration(milliseconds: 900),
+          );
+        }
+      });
+    }
+    _wasUpdating = isUpdatingNow;
 
-    final loadingMessage = widget.state.isUpdating
-        ? context.tr('saving')
-        : context.tr('loading');
-
-    return MarriageLoadingOverlay(
-      isLoading: isLoading,
-      message: loadingMessage,
-      child: _buildScrollContent(context),
-    );
+    return _buildScrollContent(context);
   }
 
-  Widget _buildScrollContent(BuildContext context) {
-    return CustomScrollView(
-      controller: _scrollController,
-      cacheExtent: 3000,
-      physics: const BouncingScrollPhysics(),
-      slivers: [
-        SliverPadding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate([
+Widget _buildScrollContent(BuildContext context) {
+  return CustomScrollView(
+    controller: _scrollController,
+    cacheExtent: 5000, // ✅ زيادة الـ cache
+    physics: const AlwaysScrollableScrollPhysics(
+      parent: BouncingScrollPhysics(),
+    ), // ✅ الـ scroll يشتغل فوراً حتى لو الصور لسه بتتحمل
+    slivers: [
+      SliverPadding(
+        padding: EdgeInsets.symmetric(horizontal: 20.w),
+        sliver: SliverList(
+          delegate: SliverChildListDelegate(
+            addRepaintBoundaries: false, // ✅ منع إعادة الرسم الزيادة
+            [
               Gap(24.h),
               _buildPersonalInfoSection(context, widget.cubit, widget.profile),
               Gap(20.h),
@@ -215,192 +226,218 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView>
               Gap(32.h),
               _buildSaveButton(context, widget.cubit, widget.state),
               Gap(100.h),
-            ]),
+            ],
           ),
         ),
-      ],
-    );
-  }
-
+      ),
+    ],
+  );
+}
   // ════════════════════════════════════════════════════════════════
   // IMAGES SECTION
   // ════════════════════════════════════════════════════════════════
-  Widget _buildImagesSection(
-    BuildContext context,
-    MarriageProfileCubit cubit,
-    MarriageUserProfileModel profile,
-  ) {
-    final serverImages = profile.userMedia?.images ?? [];
-    final pendingSingle = widget.state.pendingSingleImage;
-    final pendingImgs = widget.state.pendingImages;
-    final displaySingleUrl = widget.state.pendingDeleteSingleImage
-        ? null
-        : profile.userMedia?.singleImage;
-    final hasSingleToShow = pendingSingle != null || displaySingleUrl != null;
+// ════════════════════════════════════════════════
+// _buildImagesSection — الجزء اللي فيه الـ grid
+// بدّل الـ ternary بـ Offstage
+// ════════════════════════════════════════════════
+Widget _buildImagesSection(
+  BuildContext context,
+  MarriageProfileCubit cubit,
+  MarriageUserProfileModel profile,
+) {
+  final serverImages = profile.userMedia?.images ?? [];
+  final pendingSingle = widget.state.pendingSingleImage;
+  final pendingImgs = widget.state.pendingImages;
+  final displaySingleUrl = widget.state.pendingDeleteSingleImage
+      ? null
+      : profile.userMedia?.singleImage;
+  final hasSingleToShow = pendingSingle != null || displaySingleUrl != null;
 
-    final filteredServerImages = serverImages
-        .where((url) => !widget.state.deletedImageUrls.contains(url))
-        .toList();
+  final filteredServerImages = serverImages
+      .where((url) => !widget.state.deletedImageUrls.contains(url))
+      .toList();
 
-    final allDisplayImages = filteredServerImages;
+  final allDisplayImages = filteredServerImages;
 
-    final secondaryImages = allDisplayImages.length > 4
-        ? allDisplayImages.sublist(0, 4)
-        : allDisplayImages;
+  final secondaryImages = allDisplayImages.length > 4
+      ? allDisplayImages.sublist(0, 4)
+      : allDisplayImages;
 
-    final totalCount =
-        (hasSingleToShow ? 1 : 0) +
-        allDisplayImages.length +
-        pendingImgs.length;
+  final totalCount =
+      (hasSingleToShow ? 1 : 0) +
+      allDisplayImages.length +
+      pendingImgs.length;
 
-    final hasPendingChanges =
-        widget.state.pendingImages.isNotEmpty ||
-        widget.state.deletedImageUrls.isNotEmpty ||
-        widget.state.pendingDeleteSingleImage;
+  final hasPendingChanges =
+      widget.state.pendingImages.isNotEmpty ||
+      widget.state.deletedImageUrls.isNotEmpty ||
+      widget.state.pendingDeleteSingleImage;
 
-    final canDrag = secondaryImages.length > 1 && !hasPendingChanges;
+  final canDrag = secondaryImages.length > 1 && !hasPendingChanges;
 
-    return Container(
-      padding: EdgeInsets.all(10.w),
-      decoration: BoxDecoration(
-        color: const Color.fromRGBO(251, 251, 251, 0.64),
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      '${context.tr('images_count')} ( $totalCount )',
-                      style: Styles.textStyle18Meduim,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+  // ✅ الـ args المشتركة
+  final sharedArgs = (
+    displaySingleUrl: displaySingleUrl,
+    pendingSingle: pendingSingle,
+    hasSingleToShow: hasSingleToShow,
+    secondaryImages: secondaryImages,
+    filteredServerImages: filteredServerImages,
+    allDisplayImages: allDisplayImages,
+    pendingImgs: pendingImgs,
+  );
+
+  return Container(
+    padding: EdgeInsets.all(10.w),
+    decoration: BoxDecoration(
+      color: const Color.fromRGBO(251, 251, 251, 0.64),
+      borderRadius: BorderRadius.circular(12.r),
+      border: Border.all(color: const Color.fromRGBO(251, 251, 251, 0.64)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    '${context.tr('images_count')} ( $totalCount )',
+                    style: Styles.textStyle18Meduim,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  if (canDrag)
-                    GestureDetector(
-                      onTap: () => setState(() => _isDragMode = !_isDragMode),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10.w,
-                          vertical: 6.h,
-                        ),
-                        decoration: BoxDecoration(
+                ),
+                if (canDrag)
+                  GestureDetector(
+                    onTap: () => setState(() => _isDragMode = !_isDragMode),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 6.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _isDragMode
+                            ? AppColors.primary300.withOpacity(0.15)
+                            : Colors.grey.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8.r),
+                        border: Border.all(
                           color: _isDragMode
-                              ? AppColors.primary300.withOpacity(0.15)
-                              : Colors.grey.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8.r),
-                          border: Border.all(
+                              ? AppColors.primary300
+                              : Colors.grey.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _isDragMode
+                                ? Icons.check_rounded
+                                : Icons.swap_vert_rounded,
+                            size: 17.w,
                             color: _isDragMode
                                 ? AppColors.primary300
-                                : Colors.grey.withOpacity(0.3),
+                                : Colors.grey,
                           ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _isDragMode
-                                  ? Icons.check_rounded
-                                  : Icons.swap_vert_rounded,
-                              size: 17.w,
+                          Gap(4.w),
+                          Text(
+                            _isDragMode
+                                ? context.tr('done')
+                                : context.tr('reorder'),
+                            style: TextStyle(
+                              fontSize: 13.sp,
                               color: _isDragMode
                                   ? AppColors.primary300
                                   : Colors.grey,
+                              fontWeight: FontWeight.w500,
                             ),
-                            Gap(4.w),
-                            Text(
-                              _isDragMode
-                                  ? context.tr('done')
-                                  : context.tr('reorder'),
-                              style: TextStyle(
-                                fontSize: 13.sp,
-                                color: _isDragMode
-                                    ? AppColors.primary300
-                                    : Colors.grey,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                ],
-              ),
-              if (pendingSingle != null ||
-                  pendingImgs.isNotEmpty ||
-                  widget.state.pendingDeleteSingleImage ||
-                  widget.state.deletedImageUrls.isNotEmpty) ...[
-                Gap(6.h),
-                _buildPendingBadge(context, context.tr('images_pending_save')),
+                  ),
               ],
+            ),
+            if (pendingSingle != null ||
+                pendingImgs.isNotEmpty ||
+                widget.state.pendingDeleteSingleImage ||
+                widget.state.deletedImageUrls.isNotEmpty) ...[
+              Gap(6.h),
+              _buildPendingBadge(context, context.tr('images_pending_save')),
             ],
-          ),
-          if (_isDragMode) ...[
-            Gap(8.h),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-              decoration: BoxDecoration(
-                color: AppColors.primary50.withOpacity(0.5),
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.touch_app_outlined,
-                    size: 16.w,
+          ],
+        ),
+        if (_isDragMode) ...[
+          Gap(8.h),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+            decoration: BoxDecoration(
+              color: AppColors.primary50.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.touch_app_outlined,
+                  size: 16.w,
+                  color: AppColors.primary400,
+                ),
+                Gap(6.w),
+                Text(
+                  context.tr('long_press_to_drag'),
+                  style: TextStyle(
+                    fontSize: 13.sp,
                     color: AppColors.primary400,
                   ),
-                  Gap(6.w),
-                  Text(
-                    context.tr('long_press_to_drag'),
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      color: AppColors.primary400,
-                    ),
-                  ),
-                ],
+                ),
+              ],
+            ),
+          ),
+        ],
+        Gap(12.h),
+
+        // ✅ Offstage بدل ternary — الاتنين موجودين في الـ tree دايمًا
+        // الصور بتتحمل مرة واحدة بس ومش بتتحمل تاني عند التبديل
+        Stack(
+          children: [
+            Offstage(
+              offstage: _isDragMode,
+              child: _buildNormalGrid(
+                context,
+                cubit,
+                profile,
+                displaySingleUrl: sharedArgs.displaySingleUrl,
+                pendingSingle: sharedArgs.pendingSingle,
+                hasSingleToShow: sharedArgs.hasSingleToShow,
+                secondaryImages: sharedArgs.secondaryImages,
+                filteredServerImages: sharedArgs.filteredServerImages,
+                allDisplayImages: sharedArgs.allDisplayImages,
+                pendingImgs: sharedArgs.pendingImgs,
+              ),
+            ),
+            Offstage(
+              offstage: !_isDragMode,
+              child: _buildDragGrid(
+                context,
+                cubit,
+                profile,
+                displaySingleUrl: sharedArgs.displaySingleUrl,
+                pendingSingle: sharedArgs.pendingSingle,
+                hasSingleToShow: sharedArgs.hasSingleToShow,
+                secondaryImages: sharedArgs.secondaryImages,
+                filteredServerImages: sharedArgs.filteredServerImages,
+                allDisplayImages: sharedArgs.allDisplayImages,
+                pendingImgs: sharedArgs.pendingImgs,
               ),
             ),
           ],
-          Gap(12.h),
-          _isDragMode
-              ? _buildDragGrid(
-                  context,
-                  cubit,
-                  profile,
-                  displaySingleUrl: displaySingleUrl,
-                  pendingSingle: pendingSingle,
-                  hasSingleToShow: hasSingleToShow,
-                  secondaryImages: secondaryImages,
-                  filteredServerImages: filteredServerImages,
-                  allDisplayImages: allDisplayImages,
-                  pendingImgs: pendingImgs,
-                )
-              : _buildNormalGrid(
-                  context,
-                  cubit,
-                  profile,
-                  displaySingleUrl: displaySingleUrl,
-                  pendingSingle: pendingSingle,
-                  hasSingleToShow: hasSingleToShow,
-                  secondaryImages: secondaryImages,
-                  filteredServerImages: filteredServerImages,
-                  allDisplayImages: allDisplayImages,
-                  pendingImgs: pendingImgs,
-                ),
-        ],
-      ),
-    );
-  }
-
+        ),
+      ],
+    ),
+  );
+}
   // ════════════════════════════════════════════════════════════════
   // NORMAL GRID
   // ════════════════════════════════════════════════════════════════
@@ -697,16 +734,14 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView>
                     filteredServerImages,
                   );
                   setState(() {});
-
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      CustomSnackBar(
-                        context,
-                        text: context.tr('image_reordered_successfully'),
-                        isSuccess: true,
-                      ),
-                    );
-                  }
+                  // ✅ SnackBar اتحذف من هنا
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    CustomSnackBar(
+                      context,
+                      text: context.tr('image_reordered_successfully'),
+                      isSuccess: true,
+                    ),
+                  );
                 },
                 children: List.generate(
                   (secondaryImages.length + pendingImgs.length).clamp(0, 4),
@@ -1401,47 +1436,95 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView>
           _buildInfoRow(
             context.tr('country'),
             _translateValue(profile.aboutMe?.country ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'country', profile.aboutMe?.country),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'country',
+              profile.aboutMe?.country,
+            ),
           ),
           _buildInfoRow(
             context.tr('nationality'),
             _translateValue(profile.aboutMe?.nationality ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'nationality', profile.aboutMe?.nationality),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'nationality',
+              profile.aboutMe?.nationality,
+            ),
           ),
           _buildInfoRow(
             context.tr('height'),
             profile.aboutMe?.height ?? context.tr('select'),
-            () => _navigateToFieldSelection(context, cubit, 'height', profile.aboutMe?.height),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'height',
+              profile.aboutMe?.height,
+            ),
           ),
           _buildInfoRow(
             context.tr('weight'),
             profile.aboutMe?.weight ?? context.tr('select'),
-            () => _navigateToFieldSelection(context, cubit, 'weight', profile.aboutMe?.weight),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'weight',
+              profile.aboutMe?.weight,
+            ),
           ),
           _buildInfoRow(
             context.tr('skin_color'),
             _translateValue(profile.aboutMe?.skinColor ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'skinColor', profile.aboutMe?.skinColor),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'skinColor',
+              profile.aboutMe?.skinColor,
+            ),
           ),
           _buildInfoRow(
             context.tr('select_health_status_title'),
             _translateValue(profile.aboutMe?.healthStatus ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'healthStatus', profile.aboutMe?.healthStatus),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'healthStatus',
+              profile.aboutMe?.healthStatus,
+            ),
           ),
           _buildInfoRow(
             context.tr('commitment_to_religion'),
-            _translateValue(profile.aboutMe?.religiousCommitment ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'religiousCommitment', profile.aboutMe?.religiousCommitment),
+            _translateValue(
+              profile.aboutMe?.religiousCommitment ?? '',
+              context,
+            ),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'religiousCommitment',
+              profile.aboutMe?.religiousCommitment,
+            ),
           ),
           _buildInfoRow(
             context.tr('smoking'),
             _translateValue(profile.aboutMe?.smoker ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'smoker', profile.aboutMe?.smoker),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'smoker',
+              profile.aboutMe?.smoker,
+            ),
           ),
           _buildInfoRow(
             context.tr('drink_alcohol'),
             _translateValue(profile.aboutMe?.drinkAlcohol ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'drinkAlcohol', profile.aboutMe?.drinkAlcohol),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'drinkAlcohol',
+              profile.aboutMe?.drinkAlcohol,
+            ),
           ),
         ],
       ),
@@ -1463,24 +1546,48 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(context.tr('professional_info'), style: Styles.textStyle18Meduim),
+          Text(
+            context.tr('professional_info'),
+            style: Styles.textStyle18Meduim,
+          ),
           Gap(12.h),
           _buildInfoRow(
             context.tr('qualification'),
-            _translateValue(profile.professionalLife?.educationLevel ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'education_level', profile.professionalLife?.educationLevel),
+            _translateValue(
+              profile.professionalLife?.educationLevel ?? '',
+              context,
+            ),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'education_level',
+              profile.professionalLife?.educationLevel,
+            ),
           ),
           Gap(12.h),
           _buildInfoRow(
             context.tr('job'),
             _translateValue(profile.professionalLife?.job ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'choose_job', profile.professionalLife?.job),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'choose_job',
+              profile.professionalLife?.job,
+            ),
           ),
           Gap(12.h),
           _buildInfoRow(
             context.tr('employer'),
-            _translateValue(profile.professionalLife?.chooseEmployer ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'choose_employer', profile.professionalLife?.chooseEmployer),
+            _translateValue(
+              profile.professionalLife?.chooseEmployer ?? '',
+              context,
+            ),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'choose_employer',
+              profile.professionalLife?.chooseEmployer,
+            ),
           ),
         ],
       ),
@@ -1518,24 +1625,47 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView>
           _buildInfoRow(
             context.tr('marital_status'),
             _translateValue(profile.aboutMe?.socialStatus ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'maritalStatus', profile.aboutMe?.socialStatus),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'maritalStatus',
+              profile.aboutMe?.socialStatus,
+            ),
           ),
           if (showChildrenSection) ...[
             _buildInfoRow(
               context.tr('has_childrens'),
               _translateValue(profile.family?.hasChildren ?? '', context),
-              () => _navigateToFieldSelection(context, cubit, 'hasChildren', profile.family?.hasChildren),
+              () => _navigateToFieldSelection(
+                context,
+                cubit,
+                'hasChildren',
+                profile.family?.hasChildren,
+              ),
             ),
             if (showChildrenDetails) ...[
               _buildInfoRow(
                 context.tr('children_count'),
                 _translateValue(profile.family?.childrenNumber ?? '', context),
-                () => _navigateToFieldSelection(context, cubit, 'childrenNumber', profile.family?.childrenNumber),
+                () => _navigateToFieldSelection(
+                  context,
+                  cubit,
+                  'childrenNumber',
+                  profile.family?.childrenNumber,
+                ),
               ),
               _buildInfoRow(
                 context.tr('children_live_with_you'),
-                _translateValue(profile.family?.childrenLivingStatus ?? '', context),
-                () => _navigateToFieldSelection(context, cubit, 'childrenLiveWithYou', profile.family?.childrenLivingStatus),
+                _translateValue(
+                  profile.family?.childrenLivingStatus ?? '',
+                  context,
+                ),
+                () => _navigateToFieldSelection(
+                  context,
+                  cubit,
+                  'childrenLiveWithYou',
+                  profile.family?.childrenLivingStatus,
+                ),
               ),
             ],
           ],
@@ -1564,22 +1694,45 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView>
           _buildInfoRow(
             context.tr('engagement'),
             _translateValue(profile.yourGoals?.engagement ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'engagement', profile.yourGoals?.engagement),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'engagement',
+              profile.yourGoals?.engagement,
+            ),
           ),
           _buildInfoRow(
             context.tr('marriage'),
             _translateValue(profile.yourGoals?.marry ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'marriage_intentions', profile.yourGoals?.marry),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'marriage_intentions',
+              profile.yourGoals?.marry,
+            ),
           ),
           _buildInfoRow(
             context.tr('family'),
             _translateValue(profile.yourGoals?.familyAcceptance ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'familyAcceptance', profile.yourGoals?.familyAcceptance),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'familyAcceptance',
+              profile.yourGoals?.familyAcceptance,
+            ),
           ),
           _buildInfoRow(
             context.tr('travel'),
-            _translateValue(profile.yourGoals?.intendTravelAbroad ?? '', context),
-            () => _navigateToFieldSelection(context, cubit, 'intendTravelAbroad', profile.yourGoals?.intendTravelAbroad),
+            _translateValue(
+              profile.yourGoals?.intendTravelAbroad ?? '',
+              context,
+            ),
+            () => _navigateToFieldSelection(
+              context,
+              cubit,
+              'intendTravelAbroad',
+              profile.yourGoals?.intendTravelAbroad,
+            ),
           ),
         ],
       ),
@@ -1640,7 +1793,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView>
   }
 
   // ════════════════════════════════════════════════════════════════
-  // SAVE BUTTON
+  // ⭐⭐⭐ SAVE BUTTON — مع GIF callback
   // ════════════════════════════════════════════════════════════════
   Widget _buildSaveButton(
     BuildContext context,
@@ -1652,6 +1805,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView>
         if (state.state == CubitStates.success &&
             !state.isUpdating &&
             state.savedFromButton) {
+          // ⭐⭐⭐ شغّل الـ GIF overlay بعد الحفظ الناجح
+          widget.onSaveSuccess?.call();
+
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,

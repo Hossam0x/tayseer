@@ -1,3 +1,4 @@
+
 import 'dart:ui' as ui;
 import 'package:tayseer/my_import.dart';
 
@@ -45,7 +46,7 @@ class ImageSlotCard extends StatelessWidget {
               ),
             )
           else
-            // ✅ FIX: RepaintBoundary يمنع إعادة رسم الصورة عند أي تغيير في الـ state
+            // ✅ RepaintBoundary يعزل الصورة عن باقي الـ widget tree
             RepaintBoundary(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
@@ -62,10 +63,8 @@ class ImageSlotCard extends StatelessWidget {
                           fit: BoxFit.cover,
                           width: double.infinity,
                           height: double.infinity,
-                          // ✅ FIX: gaplessPlayback يمنع الوميض عند rebuild
-                          gaplessPlayback: true,
-                          // ✅ FIX: cacheWidth يمنع إعادة decode الصورة
-                          cacheWidth: 300,
+                          gaplessPlayback: true, // ✅ منع الوميض عند rebuild
+                          cacheWidth: 300,        // ✅ منع إعادة decode
                         )
                       : AppImage(
                           imageUrl!,
@@ -77,7 +76,6 @@ class ImageSlotCard extends StatelessWidget {
               ),
             ),
 
-          // أيقونة صغيرة للصور الـ pending
           if (localFile != null)
             Positioned(
               bottom: 2,
@@ -144,9 +142,6 @@ class ImageSlotCard extends StatelessWidget {
   }
 }
 
-// ════════════════════════════════════════════════════════════════
-// DashedRectPainter
-// ════════════════════════════════════════════════════════════════
 class DashedRectPainter extends CustomPainter {
   final double strokeWidth;
   final Color color;
@@ -192,5 +187,5 @@ class DashedRectPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
+  bool shouldRepaint(CustomPainter oldDelegate) => false; // ✅ كان true — غلط
 }

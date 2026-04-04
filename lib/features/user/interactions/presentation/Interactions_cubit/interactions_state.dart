@@ -7,7 +7,7 @@ class InteractionsState extends Equatable {
   // Subscription
   final bool isSubscribed;
   final bool answerCompleted; // ✅ NEW
-    final int likesNotificationCount;
+  final int likesNotificationCount;
   final int favoritesNotificationCount;
   final int regardsNotificationCount;
   final int totalNotificationCount;
@@ -47,7 +47,7 @@ class InteractionsState extends Equatable {
     this.historyErrorMessage,
     this.actionState = CubitStates.initial,
     this.actionMessage,
-     this.likesNotificationCount = 0,
+    this.likesNotificationCount = 0,
     this.favoritesNotificationCount = 0,
     this.regardsNotificationCount = 0,
     this.totalNotificationCount = 0,
@@ -91,35 +91,38 @@ class InteractionsState extends Equatable {
       historyErrorMessage: historyErrorMessage,
       actionState: actionState ?? this.actionState,
       actionMessage: actionMessage,
-      likesNotificationCount: likesNotificationCount ?? this.likesNotificationCount,
-      favoritesNotificationCount: favoritesNotificationCount ?? this.favoritesNotificationCount,
-      regardsNotificationCount: regardsNotificationCount ?? this.regardsNotificationCount,
-      totalNotificationCount: totalNotificationCount ?? this.totalNotificationCount,
-   
+      likesNotificationCount:
+          likesNotificationCount ?? this.likesNotificationCount,
+      favoritesNotificationCount:
+          favoritesNotificationCount ?? this.favoritesNotificationCount,
+      regardsNotificationCount:
+          regardsNotificationCount ?? this.regardsNotificationCount,
+      totalNotificationCount:
+          totalNotificationCount ?? this.totalNotificationCount,
     );
   }
 
-@override
-List<Object?> get props => [
-  isSubscribed,
-  answerCompleted,
-  explorationState,
-  explorationData,
-  explorationCurrentPage,
-  explorationHasMore,
-  explorationErrorMessage,
-  historyState,
-  historyData,
-  historyCurrentPage,
-  historyHasMore,
-  historyPagination,
-  historyErrorMessage,
-  actionState,
-  actionMessage,
-  // ✅ أضف دول
-  likesNotificationCount,
-  favoritesNotificationCount,
-  regardsNotificationCount,
-  totalNotificationCount,
-];
+  @override
+  List<Object?> get props => [
+    isSubscribed,
+    answerCompleted,
+    explorationState,
+    explorationData,
+    explorationCurrentPage,
+    explorationHasMore,
+    explorationErrorMessage,
+    historyState,
+    historyData,
+    historyCurrentPage,
+    historyHasMore,
+    historyPagination,
+    historyErrorMessage,
+    actionState,
+    actionMessage,
+    // ✅ أضف دول
+    likesNotificationCount,
+    favoritesNotificationCount,
+    regardsNotificationCount,
+    totalNotificationCount,
+  ];
 }
