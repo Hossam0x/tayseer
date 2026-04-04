@@ -83,7 +83,7 @@ class _AppImageState extends State<AppImage> {
   @override
   Widget build(BuildContext context) {
     final path = widget.path;
-    final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+    final pixelRatio = MediaQuery.devicePixelRatioOf(context);
 
     if (path == null || path.isEmpty) {
       return _buildFallback();
@@ -263,14 +263,14 @@ class _AppImageState extends State<AppImage> {
   }
 
   Widget _buildLoadingPlaceholder() {
-    return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
-      child: Container(
-        height: widget.height,
-        width: widget.width,
-        color: Colors.white,
-      ),
+    // ✅ Static placeholder — NOT Shimmer!
+    // Shimmer.fromColors creates a visible animated flash during the
+    // brief disk-cache → memory-cache load (1-2 frames). A static
+    // box is invisible during that window.
+    return Container(
+      height: widget.height,
+      width: widget.width,
+      color: Colors.grey[200],
     );
   }
 

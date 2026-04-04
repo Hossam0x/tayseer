@@ -24,19 +24,99 @@ class UserLayOutViewBody extends StatefulWidget {
 }
 
 class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
-  // ✅ إضافة Key للـ MarriageBody للتحكم في الـ Scroll
   final GlobalKey<MarriageBodyState> _marriageKey =
       GlobalKey<MarriageBodyState>();
 
+  // ✅ Cached pages — created once, reused forever
+  late final LayoutCubit _cubit;
+
+  // ✅ User pages (cached individually so marriage swap is cheap)
+  late final Widget _homeView;
+  late final Widget _marriageView;
+  late final Widget _consultationTab;
+  late final Widget _mySpaceView;
+  late final Widget _reelsView;
+  late final Widget _profileView;
+
+  // ✅ Guest pages
+  late final List<Widget> _guestPages;
+
+  @override
+  void initState() {
+    super.initState();
+    _cubit = context.read<LayoutCubit>();
+
+    // User pages
+    _homeView = HomeView(onScroll: _cubit.onScroll);
+    _marriageView = MarriageView(key: _marriageKey, onScroll: _cubit.onScroll);
+    _consultationTab = const _ConsultationTab();
+    _mySpaceView = MySpaceView();
+    _reelsView = const ReelsNavView(tabIndex: 3);
+    _profileView = const UserProfileView();
+
+    // Guest pages (static, created once)
+    _guestPages = [
+      _homeView,
+      GuestLockWidget(
+        onTap: () => _guestAction(context),
+        message: 'فرص التوافق تبدأ بعد التسجيل',
+        description:
+            'أنشئ حسابك عشان تقدر تتعرف على أشخاص مناسبين ليك بطريقة آمنة ومُنظمة.',
+      ),
+      GuestLockWidget(
+        message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
+        description:
+            'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
+        onTap: () => _guestAction(context),
+      ),
+      const ReelsNavView(tabIndex: 3),
+      GuestLockWidget(
+        message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
+        description:
+            'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
+        onTap: () => _guestAction(context),
+      ),
+    ];
+  }
+
+  void _guestAction(BuildContext context) {
+    CachNetwork.clearGuestAndProfileCache();
+    if (getIt.isRegistered<HomeCubit>()) {
+      getIt.resetLazySingleton<HomeCubit>();
+    }
+    context.pushNamedAndRemoveUntil(
+      AppRouter.kRegisrationView,
+      predicate: (_) => false,
+    );
+  }
+
+  // ✅ Returns cached pages — only the marriage/consultation swap is dynamic
+  List<Widget> _getPages(bool isMarriageVisible) {
+    switch (selectedUserType) {
+      case UserTypeEnum.user:
+        return [
+          _homeView,
+          isMarriageVisible ? _marriageView : _consultationTab,
+          _mySpaceView,
+          _reelsView,
+          _profileView,
+        ];
+      case UserTypeEnum.guest:
+        return _guestPages;
+      case UserTypeEnum.asConsultant:
+        return [];
+      default:
+        return [];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<LayoutCubit>();
-
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        _handleBackButton(context, cubit, cubit.state);
+        _handleBackButton(context, _cubit, _cubit.state);
       },
       child: BlocConsumer<LayoutCubit, LayoutState>(
         listenWhen: (prev, curr) => prev.currentIndex != curr.currentIndex,
@@ -44,8 +124,13 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
           // وقف كل الفيديوهات لما تتغير الـ tab
           VideoManager.instance.stopAll();
         },
+        // ✅ Only rebuild for visual changes — not scroll/trigger state
+        buildWhen: (prev, curr) =>
+            prev.currentIndex != curr.currentIndex ||
+            prev.isNavVisible != curr.isNavVisible ||
+            prev.isMarriageVisible != curr.isMarriageVisible,
         builder: (context, state) {
-          final pages = _getPages(context, cubit, state);
+          final pages = _getPages(state.isMarriageVisible);
 
           return Scaffold(
             body: Column(
@@ -68,22 +153,22 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
                             onTabReselect: (index) {
                               // ✅ Home tab - scroll to top
                               if (index == 0 && state.currentIndex == 0) {
-                                cubit.scrollToTop();
-                                cubit.setNavVisibility(true);
+                                _cubit.scrollToTop();
+                                _cubit.setNavVisibility(true);
                               }
                               // ✅ Marriage tab - scroll to top
                               else if (index == 1 && state.currentIndex == 1) {
                                 _marriageKey.currentState?.scrollToTop();
-                                cubit.setNavVisibility(true);
+                                _cubit.setNavVisibility(true);
                               }
                               // ✅ Reels in index 3
                               else if (index == 3) {
-                                cubit.setNavVisibility(false);
+                                _cubit.setNavVisibility(false);
                               }
                               // ✅ Profile in index 4
                               else if (index == 4 && state.currentIndex == 4) {
-                                cubit.scrollToTop();
-                                cubit.setNavVisibility(true);
+                                _cubit.scrollToTop();
+                                _cubit.setNavVisibility(true);
                               }
                             },
                           ),
@@ -125,82 +210,6 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
         cancelText: context.tr('exit_app'),
         onCancel: () => SystemNavigator.pop(),
       );
-    }
-  }
-
-  List<Widget> _getPages(
-    BuildContext context,
-    LayoutCubit cubit,
-    LayoutState state,
-  ) {
-    switch (selectedUserType) {
-      case UserTypeEnum.user:
-        return [
-          HomeView(onScroll: cubit.onScroll),
-          state.isMarriageVisible
-              ? MarriageView(key: _marriageKey, onScroll: cubit.onScroll)
-              : const _ConsultationTab(),
-
-          MySpaceView(),
-          const ReelsNavView(tabIndex: 3),
-          const UserProfileView(),
-        ];
-
-      case UserTypeEnum.guest:
-        return [
-          HomeView(onScroll: cubit.onScroll),
-          GuestLockWidget(
-            onTap: () {
-              CachNetwork.clearGuestAndProfileCache();
-              if (getIt.isRegistered<HomeCubit>()) {
-                getIt.resetLazySingleton<HomeCubit>();
-              }
-              context.pushNamedAndRemoveUntil(
-                AppRouter.kRegisrationView,
-                predicate: (_) => false,
-              );
-            },
-            message: 'فرص التوافق تبدأ بعد التسجيل',
-            description:
-                'أنشئ حسابك عشان تقدر تتعرف على أشخاص مناسبين ليك بطريقة آمنة ومُنظمة.',
-          ),
-          GuestLockWidget(
-            message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
-            description:
-                'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
-            onTap: () {
-              CachNetwork.clearGuestAndProfileCache();
-              if (getIt.isRegistered<HomeCubit>()) {
-                getIt.resetLazySingleton<HomeCubit>();
-              }
-              context.pushNamedAndRemoveUntil(
-                AppRouter.kRegisrationView,
-                predicate: (_) => false,
-              );
-            },
-          ),
-          const ReelsNavView(tabIndex: 3),
-          GuestLockWidget(
-            message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
-            description:
-                'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
-            onTap: () {
-              CachNetwork.clearGuestAndProfileCache();
-              if (getIt.isRegistered<HomeCubit>()) {
-                getIt.resetLazySingleton<HomeCubit>();
-              }
-              context.pushNamedAndRemoveUntil(
-                AppRouter.kRegisrationView,
-                predicate: (_) => false,
-              );
-            },
-          ),
-        ];
-
-      case UserTypeEnum.asConsultant:
-        return [];
-      default:
-        return [];
     }
   }
 }

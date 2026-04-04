@@ -139,6 +139,26 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
   @override
   void didPushNext() => _pauseAndSave();
 
+  @override
+  void didPopNext() {
+    // ✅ عند pop — رجّع الفيديو بشكل هادي بدل ما كل الـ VisibilityDetector
+    // يشتغلوا مرة واحدة ويسببوا jank
+    if (_isDisposed || !mounted) return;
+    final controller = _controller;
+    if (controller != null &&
+        _isInitialized &&
+        !_hasError &&
+        VideoManager.instance.currentlyPlayingPostId.value == widget.postId) {
+      try {
+        if (!controller.value.isPlaying) {
+          controller.play();
+        }
+      } catch (e) {
+        debugPrint('⚠️ Cannot resume on pop: $e');
+      }
+    }
+  }
+
   // ─── Helpers ─────────────────────────────────────────────────────────
 
   void _pauseAndSave() {

@@ -66,6 +66,12 @@ void main() async {
 
   Bloc.observer = SimpleBlocObserver();
 
+  // ✅ زود حجم الـ ImageCache — الـ default (100 صورة / 100MB) قليل جداً
+  // للـ social media feed. بدونها الصور بتتطرد من الـ memory cache
+  // ولما ترجع بـ pop بتتحمل من الـ disk cache → flicker
+  PaintingBinding.instance.imageCache.maximumSize = 500;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 300 << 20; // 300 MB
+
   // ✅ أولاً runApp عشان الـ Navigator يكون جاهز
   runApp(const TayseerApp());
 
@@ -152,7 +158,6 @@ void _navigateSafely(String personId) {
         arguments: {'personId': personId},
       );
     } else {
-      
       pendingDeepLinkPersonId = personId;
       debugPrint('🔗 Navigator not ready, saved as pending: $personId');
     }

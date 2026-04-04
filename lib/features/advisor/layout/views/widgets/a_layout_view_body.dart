@@ -9,30 +9,48 @@ import 'package:tayseer/features/shared/reels/views/reels_nav_view.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
 import 'package:tayseer/my_import.dart';
 
-class ALayOutViewBody extends StatelessWidget {
+class ALayOutViewBody extends StatefulWidget {
   const ALayOutViewBody({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final cubit = context.read<LayoutCubit>();
-    final pages = [
-      HomeView(onScroll: cubit.onScroll),
+  State<ALayOutViewBody> createState() => _ALayOutViewBodyState();
+}
+
+class _ALayOutViewBodyState extends State<ALayOutViewBody> {
+  // ✅ Cached — created once, reused forever
+  late final LayoutCubit _cubit;
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _cubit = context.read<LayoutCubit>();
+    _pages = [
+      HomeView(onScroll: _cubit.onScroll),
       const ChatView(),
       const ReelsNavView(tabIndex: 2),
       ProfileView(),
     ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return BlocConsumer<LayoutCubit, LayoutState>(
       listenWhen: (prev, curr) => prev.currentIndex != curr.currentIndex,
       listener: (context, state) {
         // وقف كل الفيديوهات لما تتغير الـ tab
         VideoManager.instance.stopAll();
       },
+      // ✅ Only rebuild for visual changes — not scroll/trigger state
+      buildWhen: (prev, curr) =>
+          prev.currentIndex != curr.currentIndex ||
+          prev.isNavVisible != curr.isNavVisible,
       builder: (context, state) {
         return PopScope(
           canPop: false,
           onPopInvokedWithResult: (didPop, result) {
             if (didPop) return;
-            _handleBackButton(context, cubit, state);
+            _handleBackButton(context, _cubit, state);
           },
           child: Scaffold(
             body: Column(
@@ -42,7 +60,7 @@ class ALayOutViewBody extends StatelessWidget {
                   child: Stack(
                     alignment: Alignment.bottomCenter,
                     children: [
-                      IndexedStack(index: state.currentIndex, children: pages),
+                      IndexedStack(index: state.currentIndex, children: _pages),
                       Positioned(
                         left: 0,
                         right: 0,
@@ -111,3 +129,4 @@ class ALayOutViewBody extends StatelessWidget {
     }
   }
 }
+
