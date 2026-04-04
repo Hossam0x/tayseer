@@ -96,14 +96,21 @@ class MarriageBodyState extends State<MarriageBody>
     }
 
     final cubit = context.read<MarriageCubit>();
-    cubit.fetchMarriageProfile(
-      seedFavoriteId: (cubit.seedPersonId != null && cubit.seedIsFavorite)
-          ? cubit.seedPersonId
-          : null,
-    );
+
+    // ✅ لو فيه personId معين — اجيب هو بس مش كل الـ list
+    if (widget.personId != null) {
+      cubit.fetchOnlySpecificProfile(widget.personId!);
+    } else {
+      cubit.fetchMarriageProfile(
+        seedFavoriteId: (cubit.seedPersonId != null && cubit.seedIsFavorite)
+            ? cubit.seedPersonId
+            : null,
+      );
+    }
+
     cubit.initAnimation(this);
 
-    // ✅ جيب العدد من الـ API مباشرةً عند الفتح
+    // ✅ fetch الـ count دايماً عند فتح الصفحة
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<MarriageCubit>().fetchNotificationCount();
@@ -299,6 +306,7 @@ class MarriageBodyState extends State<MarriageBody>
     return users[idx].isPartialData;
   }
 
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<MarriageCubit, MarriageState>(
@@ -325,10 +333,10 @@ class MarriageBodyState extends State<MarriageBody>
           previous.favoritedIds != current.favoritedIds ||
           previous.isLoadingMore != current.isLoadingMore ||
           previous.userHistory != current.userHistory ||
+          previous.activeFilters != current.activeFilters ||
           previous.interactionsNotificationCount !=
               current.interactionsNotificationCount ||
-          previous.likesNotificationCount !=
-              current.likesNotificationCount, // ✅ أضف هذا
+          previous.likesNotificationCount != current.likesNotificationCount,
 
       listener: (context, state) {
         if ((state.sendRegardState == CubitStates.failure ||
@@ -442,7 +450,10 @@ class MarriageBodyState extends State<MarriageBody>
             child: state.isMarriageTab
                 ? _buildWithAppBar(
                     key: const ValueKey('empty_marriage'),
-                    child: _buildEmptyMarriage(context.read<MarriageCubit>()),
+                    child: _buildEmptyMarriage(
+                      context.read<MarriageCubit>(),
+                      state,
+                    ),
                   )
                 : _buildInteractionsContent(
                     key: const ValueKey('interactions'),
@@ -549,81 +560,113 @@ class MarriageBodyState extends State<MarriageBody>
       ),
     );
   }
+// ✅ في MarriageBody — بدّل الدالتين دول
 
-  Widget _buildEmptyMarriage(MarriageCubit cubit) {
-    final filters = cubit.state.activeFilters;
+bool _hasActiveFilters(Map<String, dynamic> filters) {
+  if (filters.isEmpty) return false;
 
-    final hasActiveFilters =
-        filters.isNotEmpty &&
-        filters.keys.any((key) => key != 'minAge' && key != 'maxAge');
+  // لو فيه أي key غير minAge/maxAge — فيه فلتر فعلي
+  final hasNonAgeFilter = filters.entries.any(
+    (e) =>
+        e.key != 'minAge' &&
+        e.key != 'maxAge' &&
+        e.value != null &&
+        e.value.toString().isNotEmpty &&
+        e.value != 'no_preference' &&
+        e.value != false,
+  );
 
-    return RefreshIndicator.adaptive(
-      onRefresh: () => cubit.refreshProfile(),
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          SizedBox(
-            height: MediaQuery.of(context).size.height * 0.7,
-            child: Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 32.w),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    AppImage(
-                      hasActiveFilters
-                          ? AssetsData.emptyFilter
-                          : AssetsData.noPersonsBlocked,
-                      width: 180.w,
-                      height: 180.h,
+  if (hasNonAgeFilter) return true;
+
+  // لو الـ age range اتغيرت عن الـ default (22-35)
+  final minAge = filters['minAge'];
+  final maxAge = filters['maxAge'];
+  if (minAge != null || maxAge != null) {
+    final min = (minAge is num) ? minAge.toInt() : 22;
+    final max = (maxAge is num) ? maxAge.toInt() : 35;
+    return min != 22 || max != 35;
+  }
+
+  return false;
+}
+
+Widget _buildEmptyMarriage(MarriageCubit cubit, MarriageState state) {
+  // ✅ استخدم activeFilters مباشرةً — لو مش فاضي = فيه فلتر
+  final hasActiveFilters = state.activeFilters.isNotEmpty;
+
+  return RefreshIndicator.adaptive(
+    onRefresh: () async {
+      if (hasActiveFilters) {
+        await cubit.clearFiltersAndRefresh();
+      } else {
+        await cubit.refreshProfile();
+      }
+    },
+    child: ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.7,
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 32.w),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AppImage(
+                    hasActiveFilters
+                        ? AssetsData.emptyFilter
+                        : AssetsData.noPersonsBlocked,
+                    width: 180.w,
+                    height: 180.h,
+                  ),
+                  Gap(24.h),
+                  if (hasActiveFilters) ...[
+                    Text(
+                      context.tr('seen_all_recommendations'),
+                      style: Styles.textStyle18Bold.copyWith(
+                        color: AppColors.kprimaryTextColor,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    Gap(12.h),
+                    Text(
+                      context.tr('try_expanding_filter'),
+                      style: Styles.textStyle14.copyWith(color: Colors.grey),
+                      textAlign: TextAlign.center,
                     ),
                     Gap(24.h),
-                    if (hasActiveFilters) ...[
-                      Text(
-                        context.tr('seen_all_recommendations'),
-                        style: Styles.textStyle18Bold.copyWith(
-                          color: AppColors.kprimaryTextColor,
-                        ),
-                        textAlign: TextAlign.center,
+                    CustomBotton(
+                      title: context.tr('expand_filter'),
+                      width: context.width * 0.7,
+                      onPressed: () =>
+                          context.pushNamed(AppRouter.kMarriageFilterView),
+                    ),
+                
+                  ] else ...[
+                    Text(
+                      context.tr('no_marriage_users'),
+                      style: Styles.textStyle18Bold.copyWith(
+                        color: AppColors.kprimaryTextColor,
                       ),
-                      Gap(12.h),
-                      Text(
-                        context.tr('try_expanding_filter'),
-                        style: Styles.textStyle14.copyWith(color: Colors.grey),
-                        textAlign: TextAlign.center,
-                      ),
-                      Gap(24.h),
-                      CustomBotton(
-                        title: context.tr('expand_filter'),
-                        width: context.width * 0.7,
-                        onPressed: () =>
-                            context.pushNamed(AppRouter.kMarriageFilterView),
-                      ),
-                    ] else ...[
-                      Text(
-                        context.tr('no_marriage_users'),
-                        style: Styles.textStyle18Bold.copyWith(
-                          color: AppColors.kprimaryTextColor,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      Gap(12.h),
-                      Text(
-                        context.tr('share_app_to_find_users'),
-                        style: Styles.textStyle14.copyWith(color: Colors.grey),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                      textAlign: TextAlign.center,
+                    ),
+                    Gap(12.h),
+                    Text(
+                      context.tr('share_app_to_find_users'),
+                      style: Styles.textStyle14.copyWith(color: Colors.grey),
+                      textAlign: TextAlign.center,
+                    ),
                   ],
-                ),
+                ],
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
+        ),
+      ],
+    ),
+  );
+}
   Widget _buildVerifiedCard() {
     return CustomPaint(
       painter: DashedBorderPainter(
@@ -838,8 +881,8 @@ class MarriageBodyState extends State<MarriageBody>
                 controller: _mainScrollController,
                 slivers: [
                   SliverProfileHeader(
-                    city: user?.city, 
-                    distanceKm: user?.distanceKm, 
+                    city: user?.city,
+                    distanceKm: user?.distanceKm,
                     isVerified: isVerifiedUser,
                     nextIsVerified: hasNext
                         ? (nextUser?.isVerified ?? false)
@@ -1320,20 +1363,13 @@ class MarriageBodyState extends State<MarriageBody>
                               buildCircleButton(
                                 onTap: () async {
                                   final cubit = context.read<MarriageCubit>();
-
-                                  // 1️⃣ شغل نفس اتجاه dislike animation
                                   cubit.emitSwipeLikeDislikeAnimation(
                                     direction: -1,
                                   );
-
-                                  // 2️⃣ استنى animation تخلص
                                   await Future.delayed(
                                     const Duration(milliseconds: 250),
                                   );
-
-                                  // 3️⃣ بعد كده نفذ الرجوع الفعلي
                                   cubit.goBackToPreviousUser();
-
                                   _resetScrollTracking();
                                   scrollToTop();
                                 },
@@ -1401,7 +1437,6 @@ class MarriageBodyState extends State<MarriageBody>
                           Positioned(
                             left: 0,
                             child: AnimatedHistoryButton(
-                              // ✅ بدل likesNotificationCount استخدم interactionsNotificationCount
                               notificationCount:
                                   state.interactionsNotificationCount,
                               onTap: () {
@@ -1453,10 +1488,7 @@ class MarriageBodyState extends State<MarriageBody>
             FilterChips(
               onFilterChanged: (filterKey) {
                 cubit.setHistoryFilter(filterKey);
-
-                // ✅ reset الـ count في MarriageCubit
                 cubit.resetNotificationForFilter(filterKey);
-
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   Future.delayed(
                     const Duration(milliseconds: 100),

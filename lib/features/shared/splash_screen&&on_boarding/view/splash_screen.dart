@@ -76,9 +76,12 @@ class _SplashScreenState extends State<SplashScreen>
       });
 
       // ✅ handle cold start deep link
+
       if (coldUri != null) {
-        Future.delayed(const Duration(milliseconds: 1000), () {
-          consumePendingDeepLink();
+        Future.delayed(const Duration(milliseconds: 2000), () {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            consumePendingDeepLink();
+          });
         });
       }
     } else {
@@ -86,12 +89,23 @@ class _SplashScreenState extends State<SplashScreen>
       log('⚠️ No token found, navigating to registration');
 
       // ✅ حفظ الـ cold start deep link لما يسجل دخول
+      // في _navigateBasedOnToken — قبل _navigateLoggedInUser()
       if (coldUri != null) {
         final personId = _extractPersonId(coldUri);
         if (personId != null) {
-          pendingDeepLinkPersonId = personId;
-          debugPrint('🔗 Cold start: saved for after login: $personId');
+          pendingDeepLinkPersonId = personId; // ✅ حطه هنا الأول
         }
+      }
+
+      _navigateLoggedInUser();
+
+      // ✅ بعدين استهلكه
+      if (coldUri != null) {
+        Future.delayed(const Duration(milliseconds: 2000), () {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            consumePendingDeepLink();
+          });
+        });
       }
 
       if (!mounted) return;
@@ -118,21 +132,6 @@ class _SplashScreenState extends State<SplashScreen>
         AppRouter.kRegisrationView,
       );
     }
-  }
-
-  void _handleDeepLinkAfterLogin(Uri uri) {
-    final personId = _extractPersonId(uri);
-    if (personId == null) return;
-
-    Future.delayed(const Duration(milliseconds: 1000), () {
-      if (!mounted) return;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        navigatorKey.currentState?.pushNamed(
-          AppRouter.kMarriageView,
-          arguments: {'personId': personId},
-        );
-      });
-    });
   }
 
   String? _extractPersonId(Uri uri) {

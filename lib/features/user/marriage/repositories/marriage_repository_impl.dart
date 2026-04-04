@@ -12,12 +12,12 @@ class MarriageRepositoryImpl implements MarriageRepository {
   @override
   Future<Either<Failure, UsersMarriageResponse>> getMarriageProfile(
     String? page, {
-    Map<String, dynamic>? filters, // ✅
+    Map<String, dynamic>? filters,
   }) async {
     try {
       final query = <String, dynamic>{
         'page': page,
-        if (filters != null && filters.isNotEmpty) ...filters, // ✅
+        if (filters != null && filters.isNotEmpty) ...filters,
       };
 
       final response = await _apiService.get(
@@ -52,7 +52,7 @@ class MarriageRepositoryImpl implements MarriageRepository {
       );
 
       if (response['success'] == true) {
-        return Right(null);
+        return const Right(null);
       } else {
         return Left(
           ServerFailure(response['message'] ?? 'فشل التفاعل مع المستخدم'),
@@ -80,7 +80,7 @@ class MarriageRepositoryImpl implements MarriageRepository {
       );
 
       if (response['success'] == true) {
-        return Right(null);
+        return const Right(null);
       } else {
         return Left(ServerFailure(response['message'] ?? 'فشل ارسال التحيه'));
       }
@@ -99,12 +99,12 @@ class MarriageRepositoryImpl implements MarriageRepository {
     try {
       final response = await _apiService.post(
         endPoint: '/user/user-interaction',
-        query: isAdd ? null : {'action': 'remove'}, // ✅ query منفصل
+        query: isAdd ? null : {'action': 'remove'},
         data: {'personInteractedWith': userId, 'interactionType': 'favorite'},
       );
 
       if (response['success'] == true) {
-        return Right(null);
+        return const Right(null);
       } else {
         return Left(ServerFailure(response['message'] ?? 'فشل تعديل المفضلة'));
       }
@@ -167,12 +167,11 @@ class MarriageRepositoryImpl implements MarriageRepository {
       if (response['success'] == true) {
         final data = response['data'];
         final userData = data['userData'];
-        final allowInteractions =
-            data['allowInteractions'] as bool? ?? true; // ✅
+        final allowInteractions = data['allowInteractions'] as bool? ?? true;
 
         final userItem = UserItem.fromJson({
           ...userData,
-          'allowInteractions': allowInteractions, // ✅ حطه في الـ UserItem
+          'allowInteractions': allowInteractions,
         });
         return Right(userItem);
       } else {
@@ -227,6 +226,7 @@ class MarriageRepositoryImpl implements MarriageRepository {
     }
   }
 
+  @override
   Future<Either<Failure, void>> resetAllNotificationCounts() async {
     try {
       await Future.wait([

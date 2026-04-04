@@ -47,10 +47,10 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await CachNetwork.cacheInitializaion();
   await setupGetIt();
-  
+
   // Initialize ChatCacheService
   await getIt<ChatCacheService>().init();
-  
+
   await getIt<ConnectivityService>().initialize();
   await _initializeVideoSystem();
   await GlobalMuteManager.instance.init();
@@ -98,26 +98,18 @@ Future<void> _captureColdStartLink() async {
 
 void _listenToWarmStartLinks() {
   final appLinks = AppLinks();
-  appLinks.uriLinkStream.listen(
-        (uri) {
-      debugPrint('🔗 Warm start DeepLink received: $uri');
+  appLinks.uriLinkStream.listen((uri) {
+    debugPrint('🔗 Warm start DeepLink received: $uri');
 
-      // ✅ تجاهل لو نفس الـ cold start URI
-      if (pendingDeepLinkUri != null &&
-          uri.toString() == pendingDeepLinkUri.toString()) {
-        debugPrint('🔗 Ignoring duplicate warm start (same as cold start)');
-        return;
-      }
+    // ✅ تجاهل لو نفس الـ cold start URI
+    if (pendingDeepLinkUri != null &&
+        uri.toString() == pendingDeepLinkUri.toString()) {
+      debugPrint('🔗 Ignoring duplicate warm start (same as cold start)');
+      return;
+    }
 
-      // ✅ delay + postFrameCallback عشان Navigator يكون جاهز
-      Future.delayed(const Duration(milliseconds: 300), () {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _navigateFromUri(uri);
-        });
-      });
-    },
-    onError: (e) => debugPrint('DeepLink stream error: $e'),
-  );
+    _navigateFromUri(uri);
+  }, onError: (e) => debugPrint('DeepLink stream error: $e'));
 }
 
 String? _extractPersonId(Uri uri) {
@@ -160,6 +152,7 @@ void _navigateSafely(String personId) {
         arguments: {'personId': personId},
       );
     } else {
+      
       pendingDeepLinkPersonId = personId;
       debugPrint('🔗 Navigator not ready, saved as pending: $personId');
     }
@@ -174,12 +167,23 @@ void consumePendingDeepLink() {
   pendingDeepLinkPersonId = null;
   debugPrint('🔗 Consuming pending deep link: $personId');
 
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    navigatorKey.currentState?.pushNamed(
-      AppRouter.kMarriageView,
-      arguments: {'personId': personId},
-    );
-  });
+  // ✅ retry لو الـ Navigator لسه مش جاهز
+  void tryNavigate([int retries = 5]) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (navigatorKey.currentState != null) {
+        navigatorKey.currentState!.pushNamed(
+          AppRouter.kMarriageView,
+          arguments: {'personId': personId},
+        );
+      } else if (retries > 0) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          tryNavigate(retries - 1);
+        });
+      }
+    });
+  }
+
+  tryNavigate();
 }
 
 // ─────────────────────────────────────────────
