@@ -251,14 +251,13 @@ class _ZoomableImageState extends State<_ZoomableImage>
         minScale: 1.0,
         maxScale: 5.0,
         panEnabled: true,
-        scaleEnabled: true, // زوم الأصابع (Pinch to zoom) مفعل
+        scaleEnabled: true,
         clipBehavior: Clip.none,
-        child: Center(
+        child: SizedBox.expand(
+          // ← بدل Center
           child: AppImage(
             widget.imageUrl,
-            width: context.width,
-            height: context.height,
-            fit: BoxFit.contain, // لضمان عرض الصورة بالكامل
+            fit: BoxFit.contain, // ← من غير width/height
           ),
         ),
       ),

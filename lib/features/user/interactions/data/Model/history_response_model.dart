@@ -94,3 +94,26 @@ class PaginationModel {
     };
   }
 }
+class NotificationCountModel {
+  final int likes;
+  final int favorites;
+  final int regards;
+  final int total;
+
+  NotificationCountModel({
+    required this.likes,
+    required this.favorites,
+    required this.regards,
+    required this.total,
+  });
+
+  factory NotificationCountModel.fromJson(Map<String, dynamic> json) {
+    final data = json['data'] as Map<String, dynamic>? ?? {};
+    return NotificationCountModel(
+      likes: (data['likes'] as num?)?.toInt() ?? 0,
+      favorites: (data['favorites'] as num?)?.toInt() ?? 0,
+      regards: (data['regards'] as num?)?.toInt() ?? 0,
+      total: (data['total'] as num?)?.toInt() ?? 0,
+    );
+  }
+}

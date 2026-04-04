@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:tayseer/features/user/interactions/data/Model/history_response_model.dart';
 import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
 import 'package:tayseer/features/user/marriage/repositories/marriage_repository.dart';
 import 'package:tayseer/my_import.dart';
@@ -185,29 +186,32 @@ class MarriageRepositoryImpl implements MarriageRepository {
   }
 
   @override
-  Future<Either<Failure, int>> getInteractionNotificationCount() async {
+  Future<Either<Failure, NotificationCountModel>>
+  getInteractionNotificationCount() async {
     try {
       final response = await _apiService.get(
         endPoint: '/user/interactions-notification-count',
       );
-      print('📦 notification count raw response: $response');
       if (response['success'] == true) {
+<<<<<<< HEAD
         final count = response['data']?['interactionsNotificationCount'] ?? 0;
         print('📊 parsed count: $count');
         return Right(count);
+=======
+        return Right(NotificationCountModel.fromJson(response));
+>>>>>>> c8a365470b0148595ce23c2a1d4e5324f5ab7164
       } else {
         return Left(ServerFailure(response['message'] ?? ''));
       }
     } on DioException catch (e) {
-      print('🚨 DioException: ${e.message}');
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
-      print('🚨 Exception: $e');
       return Left(ServerFailure(e.toString()));
     }
   }
 
   @override
+<<<<<<< HEAD
   Future<Either<Failure, void>> setUserLocation({
     required double lat,
     required double lng,
@@ -229,4 +233,60 @@ class MarriageRepositoryImpl implements MarriageRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+=======
+  Future<Either<Failure, void>> resetAllNotificationCounts() async {
+    try {
+      await Future.wait([
+        _apiService.patch(endPoint: '/user/reset-likes-notification-count'),
+        _apiService.patch(endPoint: '/user/reset-favorites-notification-count'),
+        _apiService.patch(endPoint: '/user/reset-regards-notification-count'),
+      ]);
+      return const Right(null);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
+    }
+  }
+  @override
+Future<Either<Failure, void>> resetLikesNotificationCount() async {
+  try {
+    await _apiService.patch(
+      endPoint: '/user/reset-likes-notification-count',
+    );
+    return const Right(null);
+  } on DioException catch (e) {
+    return Left(ServerFailure.fromDioError(e));
+  } catch (e) {
+    return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
+  }
+}
+@override
+Future<Either<Failure, void>> resetFavoritesNotificationCount() async {
+  try {
+    await _apiService.patch(
+      endPoint: '/user/reset-favorites-notification-count',
+    );
+    return const Right(null);
+  } on DioException catch (e) {
+    return Left(ServerFailure.fromDioError(e));
+  } catch (e) {
+    return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
+  }
+}
+
+@override
+Future<Either<Failure, void>> resetRegardsNotificationCount() async {
+  try {
+    await _apiService.patch(
+      endPoint: '/user/reset-regards-notification-count',
+    );
+    return const Right(null);
+  } on DioException catch (e) {
+    return Left(ServerFailure.fromDioError(e));
+  } catch (e) {
+    return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
+  }
+}
+>>>>>>> c8a365470b0148595ce23c2a1d4e5324f5ab7164
 }

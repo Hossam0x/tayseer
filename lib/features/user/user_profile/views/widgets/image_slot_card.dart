@@ -45,28 +45,35 @@ class ImageSlotCard extends StatelessWidget {
               ),
             )
           else
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
+            // ✅ FIX: RepaintBoundary يمنع إعادة رسم الصورة عند أي تغيير في الـ state
+            RepaintBoundary(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  width: double.infinity,
+                  height: double.infinity,
+                  child: localFile != null
+                      ? Image.file(
+                          localFile!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          // ✅ FIX: gaplessPlayback يمنع الوميض عند rebuild
+                          gaplessPlayback: true,
+                          // ✅ FIX: cacheWidth يمنع إعادة decode الصورة
+                          cacheWidth: 300,
+                        )
+                      : AppImage(
+                          imageUrl!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
                 ),
-                width: double.infinity,
-                height: double.infinity,
-                child: localFile != null
-                    ? Image.file(
-                        localFile!,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: double.infinity,
-                      )
-                    : AppImage(
-                        imageUrl!,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: double.infinity,
-                      ),
               ),
             ),
 

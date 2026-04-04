@@ -75,7 +75,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   void markDeleteSingleImage() {
     final url = state.profile?.userMedia?.singleImage;
 
-    // ✅ لا نعدل الـ profile — نحط flag بس زي الفيديو
+    // ✅ لا نعدل الـ profile — نحط flag بس
     emit(
       state.copyWith(
         clearPendingSingleImage: true,
@@ -115,7 +115,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   void markDeleteImage(String imageUrl) {
     if (imageUrl.isEmpty || !imageUrl.startsWith('http')) return;
 
-    // ✅ لا نعدل الـ profile — نضيف الـ URL للقائمة بس زي الفيديو
+    // ✅ لا نعدل الـ profile — نضيف الـ URL للقائمة بس
     final updatedDeletedUrls = List<String>.from(state.deletedImageUrls);
     if (!updatedDeletedUrls.contains(imageUrl)) {
       updatedDeletedUrls.add(imageUrl);
@@ -266,9 +266,8 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
         ? state.deletedAudioUrl
         : null;
     final imageUrlsToDelete = List<String>.from(state.deletedImageUrls);
-    final savedProfile = state.profile!; // ✅ مهم
+    final savedProfile = state.profile!;
     final savedImagesIndex = Map<String, String>.from(
-      // ✅ مهم
       state.profile?.userMedia?.imagesIndex ?? {},
     );
     final savedPendingImages = List<File>.from(state.pendingImages);
@@ -303,12 +302,10 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       }
 
       if (savedPendingSingleImage != null) {
-        // ✅ استخدم المحفوظ
         await _repository.uploadSingleImage(savedPendingSingleImage);
       }
 
       for (final file in savedPendingImages) {
-        // ✅ استخدم المحفوظ
         await _repository.uploadMarriageImage(file);
       }
 
@@ -333,7 +330,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
           List<String> finalOrder;
 
           if (savedImagesIndex.isNotEmpty) {
-            // ✅ استخدم المحفوظ
             final sorted =
                 savedImagesIndex.entries
                     .where((e) => e.value.startsWith('http'))
@@ -366,7 +362,6 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
           }
         });
       } else if (savedImagesIndex.isNotEmpty && imageUrlsToDelete.isEmpty) {
-        // ✅ لو في reorder بدون إضافة أو حذف — ابعت الـ reorder عادي
         final sorted =
             savedImagesIndex.entries
                 .where((e) => e.value.startsWith('http'))
@@ -391,9 +386,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       // ════════════════════════════
       // Step 5: Update profile fields
       // ════════════════════════════
-      final result = await _repository.updateMarriageProfile(
-        savedProfile,
-      ); // ✅ استخدم المحفوظ
+      final result = await _repository.updateMarriageProfile(savedProfile);
 
       result.fold(
         (failure) => emit(
@@ -434,6 +427,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       );
     }
   }
+
   // ════════════════════════════════════════════════════════════════
   // CALCULATE PROGRESS
   // ════════════════════════════════════════════════════════════════

@@ -362,7 +362,50 @@ class InteractionsCubit extends Cubit<InteractionsState> {
       },
     );
   }
+// ═══════════════════════════════════════════════════════════════════
+// NOTIFICATION COUNTS
+// ═══════════════════════════════════════════════════════════════════
 
+Future<void> fetchInteractionNotificationCount() async {
+  final result = await repository.fetchInteractionNotificationCount();
+  result.fold(
+    (failure) => log('Fetch notification count failed: ${failure.message}'),
+    (model) {
+      emit(state.copyWith(
+        likesNotificationCount: model.likes,
+        favoritesNotificationCount: model.favorites,
+        regardsNotificationCount: model.regards,
+        totalNotificationCount: model.total,
+      ));
+    },
+  );
+}
+
+Future<void> resetNotificationCountForFilter(String filter) async {
+  switch (filter) {
+    case 'liked_you':
+      final result = await repository.resetLikesNotificationCount();
+      result.fold(
+        (failure) => log('Reset likes count failed: ${failure.message}'),
+        (_) => emit(state.copyWith(likesNotificationCount: 0)),
+      );
+      break;
+    case 'favorites':
+      final result = await repository.resetFavoritesNotificationCount();
+      result.fold(
+        (failure) => log('Reset favorites count failed: ${failure.message}'),
+        (_) => emit(state.copyWith(favoritesNotificationCount: 0)),
+      );
+      break;
+    case 'sent_compliment':
+      final result = await repository.resetRegardsNotificationCount();
+      result.fold(
+        (failure) => log('Reset regards count failed: ${failure.message}'),
+        (_) => emit(state.copyWith(regardsNotificationCount: 0)),
+      );
+      break;
+  }
+}
   void resetActionState() {
     emit(state.copyWith(actionState: CubitStates.initial, actionMessage: null));
   }

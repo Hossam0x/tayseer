@@ -251,9 +251,15 @@ class MarriageCubit extends Cubit<MarriageState> {
     final result = await _repo.getInteractionNotificationCount();
     result.fold(
       (failure) => print('❌ fetchNotificationCount failed: ${failure.message}'),
-      (count) {
-        print('✅ fetchNotificationCount success — count: $count');
-        emit(state.copyWith(interactionsNotificationCount: count));
+      (model) {
+        emit(
+          state.copyWith(
+            interactionsNotificationCount: model.total,
+            likesNotificationCount: model.likes,
+            favoritesNotificationCount: model.favorites,
+            regardsNotificationCount: model.regards,
+          ),
+        );
       },
     );
   }
@@ -315,19 +321,6 @@ class MarriageCubit extends Cubit<MarriageState> {
         );
         fetchNotificationCount(); // ✅ بدل incrementNotificationCount
       },
-    );
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  // SHOW HISTORY VIEW — reset local فقط
-  // ═══════════════════════════════════════════════════════════════
-  void showHistoryView() {
-    emit(
-      state.copyWith(
-        showHistory: true,
-        selectedHistoryFilter: "liked_you",
-        interactionsNotificationCount: 0, // ✅ reset local بدل InteractionsCubit
-      ),
     );
   }
 
@@ -853,6 +846,83 @@ class MarriageCubit extends Cubit<MarriageState> {
         showActionSnackbar: false,
       ),
     );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SHOW HISTORY VIEW (likes)
+  // ═══════════════════════════════════════════════════════════════
+  Future<void> showHistoryView() async {
+    final likesToSubtract = state.likesNotificationCount;
+
+    emit(
+      state.copyWith(
+        showHistory: true,
+        selectedHistoryFilter: "liked_you",
+        likesNotificationCount: 0,
+        interactionsNotificationCount:
+            (state.interactionsNotificationCount - likesToSubtract).clamp(
+              0,
+              999,
+            ),
+      ),
+    );
+
+    await _repo.resetLikesNotificationCount();
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // RESET NOTIFICATION FOR FILTER (يُستدعى من FilterChips)
+  // ═══════════════════════════════════════════════════════════════
+  Future<void> resetNotificationForFilter(String filter) async {
+    switch (filter) {
+      case 'liked_you':
+        final toSubtract = state.likesNotificationCount;
+        if (toSubtract == 0) return;
+        emit(
+          state.copyWith(
+            likesNotificationCount: 0,
+            interactionsNotificationCount:
+                (state.interactionsNotificationCount - toSubtract).clamp(
+                  0,
+                  999,
+                ),
+          ),
+        );
+        await _repo.resetLikesNotificationCount();
+        break;
+
+      case 'favorites':
+        final toSubtract = state.favoritesNotificationCount;
+        if (toSubtract == 0) return;
+        emit(
+          state.copyWith(
+            favoritesNotificationCount: 0,
+            interactionsNotificationCount:
+                (state.interactionsNotificationCount - toSubtract).clamp(
+                  0,
+                  999,
+                ),
+          ),
+        );
+        await _repo.resetFavoritesNotificationCount();
+        break;
+
+      case 'sent_compliment':
+        final toSubtract = state.regardsNotificationCount;
+        if (toSubtract == 0) return;
+        emit(
+          state.copyWith(
+            regardsNotificationCount: 0,
+            interactionsNotificationCount:
+                (state.interactionsNotificationCount - toSubtract).clamp(
+                  0,
+                  999,
+                ),
+          ),
+        );
+        await _repo.resetRegardsNotificationCount();
+        break;
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════
