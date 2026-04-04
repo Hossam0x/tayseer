@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/animation.dart';
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
-import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_event_bus.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_state.dart';
@@ -208,6 +207,60 @@ class MarriageCubit extends Cubit<MarriageState> {
   }
 
   // ═══════════════════════════════════════════════════════════════
+  // FETCH ONLY SPECIFIC PROFILE (للـ deep link - أسرع بكتير)
+  // ═══════════════════════════════════════════════════════════════
+  Future<void> fetchOnlySpecificProfile(String targetPersonId) async {
+    // ✅ لو موجود بالفعل متعملش حاجة
+    final existing = state.allUsers.firstWhere(
+      (u) => u.user?.id == targetPersonId && !u.isPartialData,
+      orElse: () => UserItem(user: User(id: ''), answers: null),
+    );
+    if (existing.user?.id == targetPersonId) return;
+
+    // ✅ حط placeholder فوراً عشان الـ UI يظهر shimmer
+    emit(
+      state.copyWith(
+        marriageProfileState: CubitStates.loading,
+        allUsers: [
+          UserItem(
+            user: User(id: targetPersonId),
+            answers: null,
+            isPartialData: true,
+          ),
+        ],
+        currentIndex: 0,
+      ),
+    );
+
+    // ✅ API call واحد بس
+    final result = await _repo.getProfileById(targetPersonId);
+
+    result.fold(
+      (failure) {
+        if (isClosed) return;
+        emit(
+          state.copyWith(
+            marriageProfileState: CubitStates.failure,
+            errorMessage: failure.message,
+          ),
+        );
+      },
+      (userItem) {
+        if (isClosed) return;
+        emit(
+          state.copyWith(
+            allUsers: [userItem],
+            currentIndex: 0,
+            marriageProfileState: CubitStates.success,
+          ),
+        );
+        // ✅ refresh الـ count بعد فتح البروفايل
+        fetchNotificationCount();
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   // FETCH SPECIFIC PROFILE
   // ═══════════════════════════════════════════════════════════════
   Future<void> fetchSpecificProfile(String targetPersonId) async {
@@ -242,6 +295,8 @@ class MarriageCubit extends Cubit<MarriageState> {
           marriageProfileState: CubitStates.success,
         ),
       );
+      // ✅ refresh الـ count بعد فتح البروفايل
+      fetchNotificationCount();
     });
   }
 
@@ -266,7 +321,7 @@ class MarriageCubit extends Cubit<MarriageState> {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // USER INTERACTION — استبدل incrementNotificationCount بـ fetch
+  // USER INTERACTION
   // ═══════════════════════════════════════════════════════════════
   Future<void> userInteraction({
     required String personId,
@@ -293,13 +348,13 @@ class MarriageCubit extends Cubit<MarriageState> {
             showActionSnackbar: false,
           ),
         );
-        fetchNotificationCount(); // ✅ بدل incrementNotificationCount
+        fetchNotificationCount();
       },
     );
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // SEND REGARD — استبدل incrementNotificationCount بـ fetch
+  // SEND REGARD
   // ═══════════════════════════════════════════════════════════════
   Future<void> sendRegard({required String personId}) async {
     final result = await _repo.sendRegard(personId: personId);
@@ -320,7 +375,7 @@ class MarriageCubit extends Cubit<MarriageState> {
             showActionSnackbar: true,
           ),
         );
-        fetchNotificationCount(); // ✅ بدل incrementNotificationCount
+        fetchNotificationCount();
       },
     );
   }
@@ -503,6 +558,15 @@ class MarriageCubit extends Cubit<MarriageState> {
   }
 
   // ═══════════════════════════════════════════════════════════════
+  // ✅ CLEAR FILTERS AND REFRESH
+  // امسح الفلتر وجيب البيانات الأصلية من أول
+  // ═══════════════════════════════════════════════════════════════
+  Future<void> clearFiltersAndRefresh() async {
+    emit(state.copyWith(activeFilters: {}, userHistory: []));
+    await fetchMarriageProfile(filters: {});
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   // REFRESH SILENTLY
   // ═══════════════════════════════════════════════════════════════
   Future<void> refreshProfileSilently() async {
@@ -617,7 +681,7 @@ class MarriageCubit extends Cubit<MarriageState> {
           .toList();
       final newLength = updatedUsers.length;
 
-      if (newLength <= 5) loadMoreUsers(); // ✅ كان 3
+      if (newLength <= 5) loadMoreUsers();
 
       int newIndex = state.currentIndex;
       if (newIndex >= newLength) {
@@ -729,7 +793,7 @@ class MarriageCubit extends Cubit<MarriageState> {
       ),
     );
 
-    if (newLength <= 5) loadMoreUsers(); // ✅ كان 3
+    if (newLength <= 5) loadMoreUsers();
     if (newLength == 0) refreshProfileSilently();
   }
 
@@ -773,7 +837,7 @@ class MarriageCubit extends Cubit<MarriageState> {
           isScrollingDown: false,
         ),
       );
-      if (newLength <= 5) loadMoreUsers(); // ✅ كان 3
+      if (newLength <= 5) loadMoreUsers();
     } else {
       emit(state.copyWith(favoritedIds: updatedFavorites));
     }
@@ -849,62 +913,83 @@ class MarriageCubit extends Cubit<MarriageState> {
     );
   }
 
-// ═══════════════════════════════════════════════════════════════
-// SHOW HISTORY VIEW (likes)
-// ═══════════════════════════════════════════════════════════════
-Future<void> showHistoryView() async {
-  final likesToSubtract = state.likesNotificationCount;
-  
-  emit(state.copyWith(
-    showHistory: true,
-    selectedHistoryFilter: "liked_you",
-    likesNotificationCount: 0,
-    interactionsNotificationCount: 
-        (state.interactionsNotificationCount - likesToSubtract).clamp(0, 999),
-  ));
+  // ═══════════════════════════════════════════════════════════════
+  // SHOW HISTORY VIEW
+  // ═══════════════════════════════════════════════════════════════
+  Future<void> showHistoryView() async {
+    final likesToSubtract = state.likesNotificationCount;
 
-  await _repo.resetLikesNotificationCount();
-}
-
-// ═══════════════════════════════════════════════════════════════
-// RESET NOTIFICATION FOR FILTER (يُستدعى من FilterChips)
-// ═══════════════════════════════════════════════════════════════
-Future<void> resetNotificationForFilter(String filter) async {
-  switch (filter) {
-    case 'liked_you':
-      final toSubtract = state.likesNotificationCount;
-      if (toSubtract == 0) return;
-      emit(state.copyWith(
+    emit(
+      state.copyWith(
+        showHistory: true,
+        selectedHistoryFilter: "liked_you",
         likesNotificationCount: 0,
         interactionsNotificationCount:
-            (state.interactionsNotificationCount - toSubtract).clamp(0, 999),
-      ));
-      await _repo.resetLikesNotificationCount();
-      break;
+            (state.interactionsNotificationCount - likesToSubtract).clamp(
+              0,
+              999,
+            ),
+      ),
+    );
 
-    case 'favorites':
-      final toSubtract = state.favoritesNotificationCount;
-      if (toSubtract == 0) return;
-      emit(state.copyWith(
-        favoritesNotificationCount: 0,
-        interactionsNotificationCount:
-            (state.interactionsNotificationCount - toSubtract).clamp(0, 999),
-      ));
-      await _repo.resetFavoritesNotificationCount();
-      break;
-
-    case 'sent_compliment':
-      final toSubtract = state.regardsNotificationCount;
-      if (toSubtract == 0) return;
-      emit(state.copyWith(
-        regardsNotificationCount: 0,
-        interactionsNotificationCount:
-            (state.interactionsNotificationCount - toSubtract).clamp(0, 999),
-      ));
-      await _repo.resetRegardsNotificationCount();
-      break;
+    await _repo.resetLikesNotificationCount();
   }
-}
+
+  // ═══════════════════════════════════════════════════════════════
+  // RESET NOTIFICATION FOR FILTER
+  // ═══════════════════════════════════════════════════════════════
+  Future<void> resetNotificationForFilter(String filter) async {
+    switch (filter) {
+      case 'liked_you':
+        final toSubtract = state.likesNotificationCount;
+        if (toSubtract == 0) return;
+        emit(
+          state.copyWith(
+            likesNotificationCount: 0,
+            interactionsNotificationCount:
+                (state.interactionsNotificationCount - toSubtract).clamp(
+                  0,
+                  999,
+                ),
+          ),
+        );
+        await _repo.resetLikesNotificationCount();
+        break;
+
+      case 'favorites':
+        final toSubtract = state.favoritesNotificationCount;
+        if (toSubtract == 0) return;
+        emit(
+          state.copyWith(
+            favoritesNotificationCount: 0,
+            interactionsNotificationCount:
+                (state.interactionsNotificationCount - toSubtract).clamp(
+                  0,
+                  999,
+                ),
+          ),
+        );
+        await _repo.resetFavoritesNotificationCount();
+        break;
+
+      case 'sent_compliment':
+        final toSubtract = state.regardsNotificationCount;
+        if (toSubtract == 0) return;
+        emit(
+          state.copyWith(
+            regardsNotificationCount: 0,
+            interactionsNotificationCount:
+                (state.interactionsNotificationCount - toSubtract).clamp(
+                  0,
+                  999,
+                ),
+          ),
+        );
+        await _repo.resetRegardsNotificationCount();
+        break;
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════
   // DISPOSE
   // ═══════════════════════════════════════════════════════════════

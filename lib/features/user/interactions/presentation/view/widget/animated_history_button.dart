@@ -7,8 +7,10 @@ class AnimatedHistoryButton extends StatefulWidget {
     this.onTap,
     this.notificationCount = 0,
   });
+
   final VoidCallback? onTap;
   final int notificationCount;
+
   @override
   State<AnimatedHistoryButton> createState() => _AnimatedHistoryButtonState();
 }
@@ -47,99 +49,79 @@ class _AnimatedHistoryButtonState extends State<AnimatedHistoryButton> {
         duration: const Duration(milliseconds: 600),
         curve: Curves.easeInOutBack,
         padding: EdgeInsets.symmetric(
-          horizontal: _isExpanded ? 12.w : 0.w,
-          vertical: _isExpanded ? 15.h : 0.h,
+          horizontal: _isExpanded ? 12.w :  0.w,
+          vertical:  _isExpanded ? 15.h : 0.h,
         ),
         decoration: BoxDecoration(
-          gradient:  LinearGradient(
-            colors: [AppColors.primary300, AppColors.primary200],
-            begin: Alignment.centerRight,
-            end: Alignment.centerLeft,
-          ),
+          // ✅ gradient بس لما expanded | شفاف خالص لما collapsed
+          gradient: _isExpanded
+              ? LinearGradient(
+                  colors: [AppColors.primary300, AppColors.primary200],
+                  begin: Alignment.centerRight,
+                  end: Alignment.centerLeft,
+                )
+              : null,
           borderRadius: BorderRadius.circular(30.r),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
           children: [
-            // ✅ الأيكون بيختفي مع الـ animation
-            Stack(
-              
-              children: [
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 600),
-                  curve: Curves.easeInOut,
-                  child: AnimatedOpacity(
-                    opacity: _isExpanded ? 0.0 : 1.0,
-                    duration: const Duration(milliseconds: 400),
-                    child: SizedBox(
-                      width: _isExpanded ? 0 : 50.w,
-                      height: _isExpanded ? 22.h : 50.h,
-                      child: _isExpanded
-                          ? null
-                          : SvgPicture.asset(
-                              AssetsData.archiveIcon,
-                              width: 50.w,
-                              height: 50.h,
-                            ),
-                    ),
-                  ),
-                ),
-                if (widget.notificationCount > 0)
-                  Positioned(
-                    top: -3.w,
-                    right: 0.w,
-                    child: Container(
-                      padding: EdgeInsets.all(4.w),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 1.5),
-                      ),
-                      constraints: BoxConstraints(
-                        minWidth: 18.w,
-                        minHeight: 18.w,
-                      ),
-                      child: Text(
-                        widget.notificationCount > 99
-                            ? '99+'
-                            : widget.notificationCount.toString(),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-
-            AnimatedSize(
-              duration: const Duration(milliseconds: 600),
-              curve: Curves.easeInOut,
-              child: SizedBox(
-                width: _isExpanded ? null : 0,
-                child: Padding(
-                  padding: EdgeInsetsDirectional.only(
-                    start: _isExpanded ? 0 : 8.w,
-                  ),
-                  child: AnimatedOpacity(
-                    opacity: _isExpanded ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 400),
-                    child: Text(
+            // ── لما expanded: النص بس ──
+            // ── لما collapsed: الأيكون بس ──
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: child,
+              ),
+              child: _isExpanded
+                  ? Text(
+                      key: const ValueKey('text'),
                       context.tr('view_who_interacted'),
                       style: Styles.textStyle12Bold.copyWith(
                         color: Colors.white,
                       ),
                       maxLines: 1,
-                      overflow: TextOverflow.visible,
                       softWrap: false,
+                    )
+                  : SvgPicture.asset(
+                      key: const ValueKey('icon'),
+                      AssetsData.archiveIcon,
+                    width: 44.w,
+                              height: 44.h,
                     ),
+            ),
+
+            // ── Badge فوق الأيكون لما collapsed ──
+            if (widget.notificationCount > 0 && !_isExpanded)
+              Positioned(
+                top: -3.w,
+                right: 0.w,
+                child: Container(
+                  padding: EdgeInsets.all(3.w),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1.5),
+                  ),
+                  constraints: BoxConstraints(
+                    minWidth: 16.w,
+                    minHeight: 16.w,
+                  ),
+                  child: Text(
+                    widget.notificationCount > 99
+                        ? '99+'
+                        : widget.notificationCount.toString(),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
