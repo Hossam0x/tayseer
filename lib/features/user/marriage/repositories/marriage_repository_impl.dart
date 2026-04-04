@@ -193,13 +193,7 @@ class MarriageRepositoryImpl implements MarriageRepository {
         endPoint: '/user/interactions-notification-count',
       );
       if (response['success'] == true) {
-<<<<<<< HEAD
-        final count = response['data']?['interactionsNotificationCount'] ?? 0;
-        print('📊 parsed count: $count');
-        return Right(count);
-=======
         return Right(NotificationCountModel.fromJson(response));
->>>>>>> c8a365470b0148595ce23c2a1d4e5324f5ab7164
       } else {
         return Left(ServerFailure(response['message'] ?? ''));
       }
@@ -211,7 +205,6 @@ class MarriageRepositoryImpl implements MarriageRepository {
   }
 
   @override
-<<<<<<< HEAD
   Future<Either<Failure, void>> setUserLocation({
     required double lat,
     required double lng,
@@ -233,7 +226,7 @@ class MarriageRepositoryImpl implements MarriageRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
-=======
+
   Future<Either<Failure, void>> resetAllNotificationCounts() async {
     try {
       await Future.wait([
@@ -248,45 +241,44 @@ class MarriageRepositoryImpl implements MarriageRepository {
       return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
     }
   }
-  @override
-Future<Either<Failure, void>> resetLikesNotificationCount() async {
-  try {
-    await _apiService.patch(
-      endPoint: '/user/reset-likes-notification-count',
-    );
-    return const Right(null);
-  } on DioException catch (e) {
-    return Left(ServerFailure.fromDioError(e));
-  } catch (e) {
-    return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
-  }
-}
-@override
-Future<Either<Failure, void>> resetFavoritesNotificationCount() async {
-  try {
-    await _apiService.patch(
-      endPoint: '/user/reset-favorites-notification-count',
-    );
-    return const Right(null);
-  } on DioException catch (e) {
-    return Left(ServerFailure.fromDioError(e));
-  } catch (e) {
-    return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
-  }
-}
 
-@override
-Future<Either<Failure, void>> resetRegardsNotificationCount() async {
-  try {
-    await _apiService.patch(
-      endPoint: '/user/reset-regards-notification-count',
-    );
-    return const Right(null);
-  } on DioException catch (e) {
-    return Left(ServerFailure.fromDioError(e));
-  } catch (e) {
-    return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
+  @override
+  Future<Either<Failure, void>> resetLikesNotificationCount() async {
+    try {
+      await _apiService.patch(endPoint: '/user/reset-likes-notification-count');
+      return const Right(null);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
+    }
   }
-}
->>>>>>> c8a365470b0148595ce23c2a1d4e5324f5ab7164
+
+  @override
+  Future<Either<Failure, void>> resetFavoritesNotificationCount() async {
+    try {
+      await _apiService.patch(
+        endPoint: '/user/reset-favorites-notification-count',
+      );
+      return const Right(null);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> resetRegardsNotificationCount() async {
+    try {
+      await _apiService.patch(
+        endPoint: '/user/reset-regards-notification-count',
+      );
+      return const Right(null);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
+    }
+  }
 }
