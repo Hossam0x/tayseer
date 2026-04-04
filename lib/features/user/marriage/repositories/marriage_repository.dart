@@ -6,28 +6,42 @@ import 'package:tayseer/my_import.dart';
 abstract class MarriageRepository {
   Future<Either<Failure, UsersMarriageResponse>> getMarriageProfile(
     String? page, {
-    Map<String, dynamic>? filters, // ✅
+    Map<String, dynamic>? filters,
   });
+
   Future<Either<Failure, void>> userInteraction({
     required String personId,
     required String interactionType,
   });
+
   Future<Either<Failure, void>> sendRegard({
     required String personId,
     String? text,
   });
-   Future<Either<Failure, String>> blockUser({required String personId});
+
+  Future<Either<Failure, String>> blockUser({required String personId});
 
   Future<Either<Failure, void>> toggleFavorite({
-  required String userId,
-  required bool isAdd,
-});
-Future<Either<Failure, List<String>>> getFavoriteIds();
-Future<Either<Failure, UserItem>> getProfileById(String userId);
+    required String userId,
+    required bool isAdd,
+  });
 
-Future<Either<Failure, void>> resetAllNotificationCounts();
-Future<Either<Failure, NotificationCountModel>> getInteractionNotificationCount();
- Future<Either<Failure, void>> resetLikesNotificationCount();
- Future<Either<Failure, void>> resetFavoritesNotificationCount();
-Future<Either<Failure, void>> resetRegardsNotificationCount();
+  Future<Either<Failure, List<String>>> getFavoriteIds();
+
+  Future<Either<Failure, UserItem>> getProfileById(String userId);
+
+  Future<Either<Failure, NotificationCountModel>> getInteractionNotificationCount();
+
+  Future<Either<Failure, void>> setUserLocation({
+    required double lat,
+    required double lng,
+  });
+
+  Future<Either<Failure, void>> resetAllNotificationCounts();
+
+  Future<Either<Failure, void>> resetLikesNotificationCount();
+
+  Future<Either<Failure, void>> resetFavoritesNotificationCount();
+
+  Future<Either<Failure, void>> resetRegardsNotificationCount();
 }

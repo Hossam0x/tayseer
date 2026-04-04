@@ -162,9 +162,7 @@ class MarriageCubit extends Cubit<MarriageState> {
           final found = serverUsers.any((u) => u.user?.id == seedPersonId);
           if (!found) {
             if (interactionUser != null) {
-              final seededItem = _buildUserItemFromInteraction(
-                interactionUser!,
-              );
+              final seededItem = _buildUserItemFromInteraction(interactionUser!);
               finalUsers = [seededItem, ...serverUsers];
             } else {
               final placeholder = UserItem(
@@ -210,14 +208,12 @@ class MarriageCubit extends Cubit<MarriageState> {
   // FETCH ONLY SPECIFIC PROFILE (للـ deep link - أسرع بكتير)
   // ═══════════════════════════════════════════════════════════════
   Future<void> fetchOnlySpecificProfile(String targetPersonId) async {
-    // ✅ لو موجود بالفعل متعملش حاجة
     final existing = state.allUsers.firstWhere(
       (u) => u.user?.id == targetPersonId && !u.isPartialData,
       orElse: () => UserItem(user: User(id: ''), answers: null),
     );
     if (existing.user?.id == targetPersonId) return;
 
-    // ✅ حط placeholder فوراً عشان الـ UI يظهر shimmer
     emit(
       state.copyWith(
         marriageProfileState: CubitStates.loading,
@@ -232,7 +228,6 @@ class MarriageCubit extends Cubit<MarriageState> {
       ),
     );
 
-    // ✅ API call واحد بس
     final result = await _repo.getProfileById(targetPersonId);
 
     result.fold(
@@ -254,7 +249,6 @@ class MarriageCubit extends Cubit<MarriageState> {
             marriageProfileState: CubitStates.success,
           ),
         );
-        // ✅ refresh الـ count بعد فتح البروفايل
         fetchNotificationCount();
       },
     );
@@ -295,7 +289,6 @@ class MarriageCubit extends Cubit<MarriageState> {
           marriageProfileState: CubitStates.success,
         ),
       );
-      // ✅ refresh الـ count بعد فتح البروفايل
       fetchNotificationCount();
     });
   }
@@ -377,6 +370,40 @@ class MarriageCubit extends Cubit<MarriageState> {
         );
         fetchNotificationCount();
       },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SEND REGARD TEXT
+  // ═══════════════════════════════════════════════════════════════
+  Future<void> sendRegardText({
+    required String personId,
+    required String text,
+  }) async {
+    emit(
+      state.copyWith(
+        sendRegardTextState: CubitStates.initial,
+        errorMessage: null,
+        showActionSnackbar: false,
+      ),
+    );
+
+    final result = await _repo.sendRegard(personId: personId, text: text);
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          sendRegardTextState: CubitStates.failure,
+          errorMessage: failure.message,
+          showActionSnackbar: true,
+        ),
+      ),
+      (_) => emit(
+        state.copyWith(
+          sendRegardTextState: CubitStates.success,
+          showActionSnackbar: true,
+        ),
+      ),
     );
   }
 
@@ -558,8 +585,7 @@ class MarriageCubit extends Cubit<MarriageState> {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // ✅ CLEAR FILTERS AND REFRESH
-  // امسح الفلتر وجيب البيانات الأصلية من أول
+  // CLEAR FILTERS AND REFRESH
   // ═══════════════════════════════════════════════════════════════
   Future<void> clearFiltersAndRefresh() async {
     emit(state.copyWith(activeFilters: {}, userHistory: []));
@@ -711,7 +737,11 @@ class MarriageCubit extends Cubit<MarriageState> {
     }
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  // HISTORY
+  // ═══════════════════════════════════════════════════════════════
   void hideHistoryView() => emit(state.copyWith(showHistory: false));
+
   void setHistoryFilter(String filter) =>
       emit(state.copyWith(selectedHistoryFilter: filter));
 
@@ -733,37 +763,6 @@ class MarriageCubit extends Cubit<MarriageState> {
     } else {
       emit(state.copyWith(isMarriageTab: isMarriage));
     }
-  }
-
-  Future<void> sendRegardText({
-    required String personId,
-    required String text,
-  }) async {
-    emit(
-      state.copyWith(
-        sendRegardTextState: CubitStates.initial,
-        errorMessage: null,
-        showActionSnackbar: false,
-      ),
-    );
-
-    final result = await _repo.sendRegard(personId: personId, text: text);
-
-    result.fold(
-      (failure) => emit(
-        state.copyWith(
-          sendRegardTextState: CubitStates.failure,
-          errorMessage: failure.message,
-          showActionSnackbar: true,
-        ),
-      ),
-      (_) => emit(
-        state.copyWith(
-          sendRegardTextState: CubitStates.success,
-          showActionSnackbar: true,
-        ),
-      ),
-    );
   }
 
   // ═══════════════════════════════════════════════════════════════

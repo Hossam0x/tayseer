@@ -1,3 +1,4 @@
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/features/advisor/membership/presentation/cubit/membership_cubit.dart';
 import 'package:tayseer/features/advisor/membership/presentation/cubit/membership_state.dart';
 import 'package:tayseer/features/advisor/membership/presentation/widgets/membership_action_buttons.dart';
@@ -100,9 +101,7 @@ class _MembershipBody extends StatelessWidget {
     return BlocBuilder<MembershipCubit, MembershipState>(
       builder: (context, state) {
         if (state is MembershipLoading || state is MembershipInitial) {
-          return Center(
-            child: CircularProgressIndicator(color: AppColors.kprimaryColor),
-          );
+          return const _SkeletonBody();
         }
         if (state is MembershipError) {
           return _ErrorBody(message: state.message);
@@ -149,6 +148,38 @@ class _LoadedBody extends StatelessWidget {
     showMembershipCancelDialog(
       ctx,
       onConfirm: () => ctx.read<MembershipCubit>().cancelMembership(),
+    );
+  }
+}
+
+// ── Skeleton ──────────────────────────────────────────────────────────────────
+const _dummySub = MySubscriptionModel(
+  subscriptionType: 'gold',
+  subscriptionDurationType: 'monthly',
+  subscriptionActivatedAt: '2025-01-01T00:00:00Z',
+  subscriptionExpiresAt: '2025-12-01T00:00:00Z',
+  subscriptionStatus: 'active',
+);
+
+class _SkeletonBody extends StatelessWidget {
+  const _SkeletonBody();
+
+  @override
+  Widget build(BuildContext context) {
+    return Skeletonizer(
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 20.h),
+        child: Column(
+          children: [
+            MembershipStatusBanner(sub: _dummySub),
+            Gap(20.h),
+            MembershipInfoCard(sub: _dummySub),
+            Gap(32.h),
+            MembershipActionButtons(sub: _dummySub, onCancelTap: () {}),
+          ],
+        ),
+      ),
     );
   }
 }

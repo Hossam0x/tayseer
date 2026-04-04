@@ -62,7 +62,9 @@ class _MembershipSuccessDialog extends StatelessWidget {
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
                     child: Text(
                       context.tr(messageKey),
-                      style: Styles.textStyle18Bold.copyWith(color: Colors.white),
+                      style: Styles.textStyle18Bold.copyWith(
+                        color: Colors.white,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ),
