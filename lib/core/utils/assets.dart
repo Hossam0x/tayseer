@@ -303,6 +303,9 @@ abstract class AssetsData {
 
   static const String kingIcon = "assets/icons/kingIcon.svg";
 
+  static const String kGifOverlayLoading =
+      "assets/images/gif_overlay_loading.gif";
+
   static const String defaultProfileImage =
       "assets/images/default_profile_image.png";
   static const String noInternet = "assets/images/no_internet_image.png";
