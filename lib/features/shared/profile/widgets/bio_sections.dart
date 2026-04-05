@@ -1,14 +1,15 @@
+import 'package:tayseer/core/enum/verification_type.dart';
 import 'package:tayseer/my_import.dart';
 
-/// Name + verification badge — works with any profile that has [name] and [isVerified].
+/// Name + verification badge — works with any profile that has [name] and [verificationType].
 class SharedBioNameSection extends StatelessWidget {
   final String name;
-  final bool isVerified;
+  final VerificationType verificationType;
 
   const SharedBioNameSection({
     super.key,
     required this.name,
-    required this.isVerified,
+    this.verificationType = VerificationType.none,
   });
 
   @override
@@ -25,9 +26,12 @@ class SharedBioNameSection extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        if (isVerified) ...[
+        if (verificationType == VerificationType.full) ...[
           Gap(8.w),
           Icon(Icons.verified, color: Colors.blue, size: 20.w),
+        ] else if (verificationType == VerificationType.basic) ...[
+          Gap(8.w),
+          Icon(Icons.verified, color: Colors.grey, size: 20.w),
         ],
       ],
     );

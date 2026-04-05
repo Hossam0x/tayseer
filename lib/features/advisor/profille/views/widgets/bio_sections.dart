@@ -17,8 +17,10 @@ class _BioNameSectionWrapper extends StatelessWidget {
   const _BioNameSectionWrapper({required this.profile});
 
   @override
-  Widget build(BuildContext context) =>
-      SharedBioNameSection(name: profile.name, isVerified: profile.isVerified);
+  Widget build(BuildContext context) => SharedBioNameSection(
+    name: profile.name,
+    verificationType: profile.verificationType,
+  );
 }
 
 class _BioLocationSectionWrapper extends StatelessWidget {

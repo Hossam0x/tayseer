@@ -21,7 +21,8 @@ class ProfileHeader extends StatelessWidget {
           return previous.profile!.image != current.profile!.image ||
               previous.profile!.followers != current.profile!.followers ||
               previous.profile!.following != current.profile!.following ||
-              previous.profile!.isVerified != current.profile!.isVerified;
+              previous.profile!.verificationType !=
+                  current.profile!.verificationType;
         }
         return false;
       },
@@ -54,7 +55,6 @@ class ProfileHeader extends StatelessWidget {
         imageUrl: '',
         following: '0',
         followers: '0',
-        isVerified: false,
         context: context,
       ),
     );
@@ -65,7 +65,6 @@ class ProfileHeader extends StatelessWidget {
       imageUrl: profile.image,
       following: profile.following.toString(),
       followers: profile.followers.toString(),
-      isVerified: profile.isVerified,
       context: context,
     );
   }
@@ -116,7 +115,6 @@ class ProfileHeader extends StatelessWidget {
     required String imageUrl,
     required String following,
     required String followers,
-    required bool isVerified,
     required BuildContext context,
   }) {
     return Padding(
