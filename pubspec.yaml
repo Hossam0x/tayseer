@@ -21,7 +21,7 @@ dependencies:
   debounce_throttle: ^2.0.0
   device_info_plus: ^11.5.0
   device_preview: ^1.2.0
-  didit_sdk: ^3.4.2
+  didit_sdk: any
   dio: ^5.9.0
   dotted_border: ^3.1.0
   dropdown_button2: ^2.3.9

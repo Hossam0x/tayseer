@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:tayseer/core/utils/profile_event_bus.dart';
+import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/functions/set_advisor_status.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
@@ -15,10 +16,12 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
   final int _pageSize = 10;
 
   late StreamSubscription<ProfileUpdateEvent> _profileSubscription;
+  late StreamSubscription<SubscriptionChangedEvent> _subscriptionSubscription;
 
   ProfileCubit(this._profileRepository) : super(const ProfileState()) {
     _initializeProfile();
     _listenToProfileUpdates();
+    _listenToSubscriptionChanges();
   }
 
   // ── ProfilePostsCubitContract implementation ──
@@ -88,7 +91,18 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
   @override
   Future<void> close() {
     _profileSubscription.cancel();
+    _subscriptionSubscription.cancel();
     return super.close();
+  }
+
+  void _listenToSubscriptionChanges() {
+    _subscriptionSubscription = SubscriptionEventBus
+        .instance
+        .onSubscriptionChanged
+        .listen((_) {
+          if (isClosed) return;
+          fetchAnalytics();
+        });
   }
 
   // ═══════════════════════════════════════════════════════════
