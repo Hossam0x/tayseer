@@ -189,15 +189,13 @@ class MarriageBodyState extends State<MarriageBody>
   // ✅ الإصلاح الرئيسي — sync الـ notification للـ InteractionsCubit
   // بعد أي تفاعل من صفحة الـ interactions
   // ════════════════════════════════════════════════════════════════
-  void _syncNotificationAfterInteraction() {
-    if (!widget.fromInteractions) return;
-    // ✅ نستخدم الـ _interactionsCubit المحلي اللي هو نفس instance
-    // اللي الـ bottom nav badge بيقرأ منه
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _interactionsCubit?.fetchAndSyncNotificationCount();
-    });
-  }
+void _syncNotificationAfterInteraction() {
+  // ✅ اشتغل دايماً — مش بس لما fromInteractions
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!mounted) return;
+    interactionsCubit.fetchAndSyncNotificationCount();
+  });
+}
 
   List<Map<String, dynamic>> _buildFaithItems(Answers? answers) {
     final faithValue = answers?.faith;
