@@ -53,7 +53,13 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     final result = await _repository.getMarriageProfile();
     result.fold((_) {}, (profile) {
       final withProgress = _calculateProgressWithMedia(profile);
-      emit(state.copyWith(profile: withProgress, state: CubitStates.success));
+      emit(
+        state.copyWith(
+          profile: withProgress,
+          state: CubitStates.success,
+          savedFromButton: false,
+        ),
+      );
     });
   }
 
@@ -210,7 +216,7 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
       userMedia: state.profile!.userMedia?.copyWith(images: reordered),
     );
 
-    emit(state.copyWith(profile: updatedProfile));
+    emit(state.copyWith(profile: updatedProfile, savedFromButton: false));
   }
 
   void reorderSecondaryImages(
@@ -229,7 +235,13 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     final updatedProfile = state.profile?.copyWith(userMedia: updatedMedia);
 
     if (updatedProfile != null) {
-      emit(state.copyWith(profile: updatedProfile, hasUnsavedFields: true));
+      emit(
+        state.copyWith(
+          profile: updatedProfile,
+          hasUnsavedFields: true,
+          savedFromButton: false,
+        ),
+      );
     }
   }
 
