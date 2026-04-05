@@ -52,6 +52,10 @@ typedef CommentCountDeltaCallback =
       bool? isAnonymous,
     });
 
+/// Callback for syncing comment count from backend
+typedef CommentCountSyncCallback =
+    void Function({required String postId, required int totalCount});
+
 /// Bundle of post-related callbacks for easy passing
 class PostCallbacks {
   // Existing callbacks
@@ -70,6 +74,7 @@ class PostCallbacks {
   final PollVoteCallback? onPollVote;
   final CommentedCallback? onCommented;
   final CommentCountDeltaCallback? onCommentCountDelta;
+  final CommentCountSyncCallback? onCommentCountSync;
 
   const PostCallbacks({
     this.onReactionChanged,
@@ -87,6 +92,7 @@ class PostCallbacks {
     this.onPollVote,
     this.onCommented,
     this.onCommentCountDelta,
+    this.onCommentCountSync,
   });
 
   /// Empty callbacks (for optional usage)
@@ -106,5 +112,6 @@ class PostCallbacks {
       onBlock != null ||
       onPollVote != null ||
       onCommented != null ||
-      onCommentCountDelta != null;
+      onCommentCountDelta != null ||
+      onCommentCountSync != null;
 }

@@ -1388,6 +1388,22 @@ class HomeCubit extends Cubit<HomeState> {
     _syncPostToCacheById(postId);
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🔄 SYNC COMMENT COUNT FROM BACKEND ✅ NEW
+  // ═══════════════════════════════════════════════════════════════════════════
+  void syncCommentCountFromBackend({
+    required String postId,
+    required int totalCount,
+  }) {
+    emit(
+      state.updatePostInAllCategories(postId, (p) {
+        return p.copyWith(commentsCount: totalCount);
+      }),
+    );
+
+    _syncPostToCacheById(postId);
+  }
+
   final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
 
   void sessionStart() {

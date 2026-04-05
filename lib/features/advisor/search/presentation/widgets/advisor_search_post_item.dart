@@ -59,6 +59,11 @@ class _AdvisorSearchPostItemState extends State<AdvisorSearchPostItem>
                 isCommented: isCommented,
                 isAnonymous: isAnonymous,
               ),
+      onCommentCountSync: ({required postId, required totalCount}) =>
+          _searchCubit.syncCommentCountFromBackend(
+            postId: postId,
+            totalCount: totalCount,
+          ),
       onHashtagTap: (hashtag) {
         final clean = hashtag.startsWith('#') ? hashtag.substring(1) : hashtag;
         Navigator.push(

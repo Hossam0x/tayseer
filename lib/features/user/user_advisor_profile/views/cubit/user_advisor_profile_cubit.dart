@@ -584,6 +584,18 @@ class UserAdvisorProfileCubit
     }
   }
 
+  @override
+  void syncCommentCountFromBackend({
+    required String postId,
+    required int totalCount,
+  }) {
+    final index = state.posts.indexWhere((p) => p.postId == postId);
+    if (index != -1) {
+      final post = state.posts[index];
+      _updatePostInList(postId, post.copyWith(commentsCount: totalCount));
+    }
+  }
+
   PostModel? _findPost(String postId) {
     final index = state.posts.indexWhere((p) => p.postId == postId);
     return index != -1 ? state.posts[index] : null;

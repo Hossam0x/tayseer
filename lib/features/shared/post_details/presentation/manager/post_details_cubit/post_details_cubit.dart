@@ -50,6 +50,18 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
   }
 
   // ═══════════════════════════════════════════════════════════
+  // 🔄 SYNC COMMENT COUNT WITH BACKEND ✅ NEW
+  // ═══════════════════════════════════════════════════════════
+  void _syncCommentCountWithBackend(int backendCount) {
+    emit(
+      state.copyWith(
+        syncCommentCountFromBackend: backendCount,
+        syncCommentCountTrigger: state.syncCommentCountTrigger + 1,
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
   // 📌 LOAD POST FROM API (from Notification)
   // ═══════════════════════════════════════════════════════════
   Future<void> loadPostFromAPI(String postIdFromNotification) async {
@@ -97,15 +109,21 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
           errorMessage: failure.message,
         ),
       ),
-      (response) => emit(
-        state.copyWith(
-          commentsState: CubitStates.success,
-          comments: response.comments,
-          currentPage: response.pagination.currentPage,
-          totalPages: response.pagination.totalPages,
-          isLoadingMore: false,
-        ),
-      ),
+      (response) {
+        emit(
+          state.copyWith(
+            commentsState: CubitStates.success,
+            comments: response.comments,
+            currentPage: response.pagination.currentPage,
+            totalPages: response.pagination.totalPages,
+            isLoadingMore: false,
+            totalCommentsAndRepliesCount: response.totalCommentsAndRepliesCount,
+          ),
+        );
+
+        // ✅ تحديث عدد التعليقات في البوست بناءً على الرقم من الباك اند
+        _syncCommentCountWithBackend(response.totalCommentsAndRepliesCount);
+      },
     );
   }
 

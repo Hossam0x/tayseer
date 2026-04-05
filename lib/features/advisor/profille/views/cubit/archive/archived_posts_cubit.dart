@@ -331,6 +331,17 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
     }
   }
 
+  void syncCommentCountFromBackend({
+    required String postId,
+    required int totalCount,
+  }) {
+    final index = state.posts.indexWhere((p) => p.postId == postId);
+    if (index != -1) {
+      final post = state.posts[index];
+      _updatePostInList(postId, post.copyWith(commentsCount: totalCount));
+    }
+  }
+
   void resetArchivePostState() => emit(
     state.copyWith(
       archivePostActionState: CubitStates.initial,

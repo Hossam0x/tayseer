@@ -737,6 +737,24 @@ class SearchCubit extends Cubit<SearchState> {
     );
   }
 
+  void syncCommentCountFromBackend({
+    required String postId,
+    required int totalCount,
+  }) {
+    final found = _findPost(postId);
+    if (found.post == null) return;
+    final updatedPost = found.post!.copyWith(commentsCount: totalCount);
+    emit(
+      _updatePostInBothTabs(
+        postsData: found.postsData,
+        allData: found.allData,
+        postsIdx: found.postsIdx,
+        allIdx: found.allIdx,
+        updatedPost: updatedPost,
+      ),
+    );
+  }
+
   @override
   Future<void> close() {
     _searchDebounce?.cancel();

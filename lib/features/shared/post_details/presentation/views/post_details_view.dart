@@ -153,6 +153,8 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                 isCommented: isCommented,
                 isAnonymous: isAnonymous,
               ),
+      onCommentCountSync: ({required postId, required totalCount}) => homeCubit
+          .syncCommentCountFromBackend(postId: postId, totalCount: totalCount),
     );
   }
 
@@ -380,6 +382,21 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
                 // ✅ لو إضافة (delta > 0) → نحدث isCommented و isAnonymous
                 isCommented: delta > 0 ? true : null,
                 isAnonymous: delta > 0 ? state.selectedAnonymous : null,
+              );
+            },
+          ),
+
+          // 5️⃣ ✅ NEW: ليسنر تحديث عدد التعليقات من الباك اند
+          BlocListener<PostDetailsCubit, PostDetailsState>(
+            listenWhen: (prev, curr) =>
+                prev.syncCommentCountTrigger != curr.syncCommentCountTrigger,
+            listener: (context, state) {
+              final postId = widget.currentPost.postId;
+              final backendCount = state.syncCommentCountFromBackend;
+
+              widget.callbacks.onCommentCountSync?.call(
+                postId: postId,
+                totalCount: backendCount,
               );
             },
           ),
