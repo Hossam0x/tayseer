@@ -5,6 +5,7 @@ import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
+import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_state.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/animated_history_button.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/history_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_FilterChips.dart';
@@ -97,7 +98,6 @@ class MarriageBodyState extends State<MarriageBody>
 
     final cubit = context.read<MarriageCubit>();
 
-    // ✅ لو فيه personId معين — اجيب هو بس مش كل الـ list
     if (widget.personId != null) {
       cubit.fetchOnlySpecificProfile(widget.personId!);
     } else {
@@ -110,7 +110,6 @@ class MarriageBodyState extends State<MarriageBody>
 
     cubit.initAnimation(this);
 
-    // ✅ fetch الـ count دايماً عند فتح الصفحة
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<MarriageCubit>().fetchNotificationCount();
@@ -183,6 +182,20 @@ class MarriageBodyState extends State<MarriageBody>
         cubit.setScrollingDown(false);
         widget.onScroll?.call(false);
       }
+    });
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ✅ الإصلاح الرئيسي — sync الـ notification للـ InteractionsCubit
+  // بعد أي تفاعل من صفحة الـ interactions
+  // ════════════════════════════════════════════════════════════════
+  void _syncNotificationAfterInteraction() {
+    if (!widget.fromInteractions) return;
+    // ✅ نستخدم الـ _interactionsCubit المحلي اللي هو نفس instance
+    // اللي الـ bottom nav badge بيقرأ منه
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _interactionsCubit?.fetchAndSyncNotificationCount();
     });
   }
 
@@ -306,6 +319,107 @@ class MarriageBodyState extends State<MarriageBody>
     return users[idx].isPartialData;
   }
 
+  bool _hasActiveFilters(Map<String, dynamic> filters) {
+    if (filters.isEmpty) return false;
+
+    final hasNonAgeFilter = filters.entries.any(
+      (e) =>
+          e.key != 'minAge' &&
+          e.key != 'maxAge' &&
+          e.value != null &&
+          e.value.toString().isNotEmpty &&
+          e.value != 'no_preference' &&
+          e.value != false,
+    );
+
+    if (hasNonAgeFilter) return true;
+
+    final minAge = filters['minAge'];
+    final maxAge = filters['maxAge'];
+    if (minAge != null || maxAge != null) {
+      final min = (minAge is num) ? minAge.toInt() : 22;
+      final max = (maxAge is num) ? maxAge.toInt() : 35;
+      return min != 22 || max != 35;
+    }
+
+    return false;
+  }
+
+  Widget _buildEmptyMarriage(MarriageCubit cubit, MarriageState state) {
+    final hasActiveFilters = state.activeFilters.isNotEmpty;
+
+    return RefreshIndicator.adaptive(
+      onRefresh: () async {
+        if (hasActiveFilters) {
+          await cubit.clearFiltersAndRefresh();
+        } else {
+          await cubit.refreshProfile();
+        }
+      },
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.7,
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 32.w),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    AppImage(
+                      hasActiveFilters
+                          ? AssetsData.emptyFilter
+                          : AssetsData.noPersonsBlocked,
+                      width: 180.w,
+                      height: 180.h,
+                    ),
+                    Gap(24.h),
+                    if (hasActiveFilters) ...[
+                      Text(
+                        context.tr('seen_all_recommendations'),
+                        style: Styles.textStyle18Bold.copyWith(
+                          color: AppColors.kprimaryTextColor,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      Gap(12.h),
+                      Text(
+                        context.tr('try_expanding_filter'),
+                        style: Styles.textStyle14.copyWith(color: Colors.grey),
+                        textAlign: TextAlign.center,
+                      ),
+                      Gap(24.h),
+                      CustomBotton(
+                        title: context.tr('expand_filter'),
+                        width: context.width * 0.7,
+                        onPressed: () =>
+                            context.pushNamed(AppRouter.kMarriageFilterView),
+                      ),
+                    ] else ...[
+                      Text(
+                        context.tr('no_marriage_users'),
+                        style: Styles.textStyle18Bold.copyWith(
+                          color: AppColors.kprimaryTextColor,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      Gap(12.h),
+                      Text(
+                        context.tr('share_app_to_find_users'),
+                        style: Styles.textStyle14.copyWith(color: Colors.grey),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -560,113 +674,7 @@ class MarriageBodyState extends State<MarriageBody>
       ),
     );
   }
-// ✅ في MarriageBody — بدّل الدالتين دول
 
-bool _hasActiveFilters(Map<String, dynamic> filters) {
-  if (filters.isEmpty) return false;
-
-  // لو فيه أي key غير minAge/maxAge — فيه فلتر فعلي
-  final hasNonAgeFilter = filters.entries.any(
-    (e) =>
-        e.key != 'minAge' &&
-        e.key != 'maxAge' &&
-        e.value != null &&
-        e.value.toString().isNotEmpty &&
-        e.value != 'no_preference' &&
-        e.value != false,
-  );
-
-  if (hasNonAgeFilter) return true;
-
-  // لو الـ age range اتغيرت عن الـ default (22-35)
-  final minAge = filters['minAge'];
-  final maxAge = filters['maxAge'];
-  if (minAge != null || maxAge != null) {
-    final min = (minAge is num) ? minAge.toInt() : 22;
-    final max = (maxAge is num) ? maxAge.toInt() : 35;
-    return min != 22 || max != 35;
-  }
-
-  return false;
-}
-
-Widget _buildEmptyMarriage(MarriageCubit cubit, MarriageState state) {
-  // ✅ استخدم activeFilters مباشرةً — لو مش فاضي = فيه فلتر
-  final hasActiveFilters = state.activeFilters.isNotEmpty;
-
-  return RefreshIndicator.adaptive(
-    onRefresh: () async {
-      if (hasActiveFilters) {
-        await cubit.clearFiltersAndRefresh();
-      } else {
-        await cubit.refreshProfile();
-      }
-    },
-    child: ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      children: [
-        SizedBox(
-          height: MediaQuery.of(context).size.height * 0.7,
-          child: Center(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 32.w),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  AppImage(
-                    hasActiveFilters
-                        ? AssetsData.emptyFilter
-                        : AssetsData.noPersonsBlocked,
-                    width: 180.w,
-                    height: 180.h,
-                  ),
-                  Gap(24.h),
-                  if (hasActiveFilters) ...[
-                    Text(
-                      context.tr('seen_all_recommendations'),
-                      style: Styles.textStyle18Bold.copyWith(
-                        color: AppColors.kprimaryTextColor,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    Gap(12.h),
-                    Text(
-                      context.tr('try_expanding_filter'),
-                      style: Styles.textStyle14.copyWith(color: Colors.grey),
-                      textAlign: TextAlign.center,
-                    ),
-                    Gap(24.h),
-                    CustomBotton(
-                      title: context.tr('expand_filter'),
-                      width: context.width * 0.7,
-                      onPressed: () =>
-                          context.pushNamed(AppRouter.kMarriageFilterView),
-                    ),
-                
-                  ] else ...[
-                    Text(
-                      context.tr('no_marriage_users'),
-                      style: Styles.textStyle18Bold.copyWith(
-                        color: AppColors.kprimaryTextColor,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    Gap(12.h),
-                    Text(
-                      context.tr('share_app_to_find_users'),
-                      style: Styles.textStyle14.copyWith(color: Colors.grey),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
   Widget _buildVerifiedCard() {
     return CustomPaint(
       painter: DashedBorderPainter(
@@ -943,6 +951,8 @@ Widget _buildEmptyMarriage(MarriageCubit cubit, MarriageState state) {
                                   widget.personId == null &&
                                   !widget.fromInteractions,
                             );
+                            // ✅ sync الـ notification بعد الـ favorite
+                            _syncNotificationAfterInteraction();
                             if (widget.fromInteractions && mounted) {
                               context.pop();
                             }
@@ -1270,6 +1280,9 @@ Widget _buildEmptyMarriage(MarriageCubit cubit, MarriageState state) {
               ),
             ),
 
+            // ════════════════════════════════════════════════════
+            // ACTION BUTTONS — مع الإصلاح في كل زرار
+            // ════════════════════════════════════════════════════
             if (!_isConsultantViewingProfile)
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 300),
@@ -1286,6 +1299,8 @@ Widget _buildEmptyMarriage(MarriageCubit cubit, MarriageState state) {
                               : MainAxisAlignment.spaceEvenly,
                           children: [
                             SizedBox.shrink(),
+
+                            // ✅ زرار الـ LIKE — مع sync
                             buildCircleButton(
                               onTap: () async {
                                 await _showSwipePopup(
@@ -1297,6 +1312,9 @@ Widget _buildEmptyMarriage(MarriageCubit cubit, MarriageState state) {
                                     personId: profile.user?.id ?? '',
                                     interactionType: 'like',
                                   );
+                                  // ✅ الإصلاح — sync بعد اللايك مباشرةً
+                                  _syncNotificationAfterInteraction();
+                                  if (mounted) context.pop();
                                 } else {
                                   await cubit.swipeLike(
                                     personId: profile.user?.id ?? '',
@@ -1308,26 +1326,27 @@ Widget _buildEmptyMarriage(MarriageCubit cubit, MarriageState state) {
                                     scrollToTop();
                                   }
                                 }
-                                if (widget.fromInteractions && mounted) {
-                                  context.pop();
-                                }
                               },
                               Icons.check,
                               AppColors.kprimaryTextColor,
                               HexColor('f8d3da'),
                             ),
 
+                            // ✅ زرار الـ REGARD — مع sync
                             buildCircleButton(
                               onTap: () async {
                                 cubit.sendRegard(
                                   personId: profile.user?.id ?? '',
                                 );
+                                // ✅ الإصلاح — sync بعد الـ regard
+                                _syncNotificationAfterInteraction();
                               },
                               Icons.star,
                               Colors.white,
                               HexColor('cccab3'),
                             ),
 
+                            // ✅ زرار الـ DISLIKE — مع sync
                             buildCircleButton(
                               onTap: () async {
                                 await _showSwipePopup(
@@ -1339,6 +1358,9 @@ Widget _buildEmptyMarriage(MarriageCubit cubit, MarriageState state) {
                                     personId: profile.user?.id ?? '',
                                     interactionType: 'dislike',
                                   );
+                                  // ✅ الإصلاح — sync بعد الـ dislike
+                                  _syncNotificationAfterInteraction();
+                                  if (mounted) context.pop();
                                 } else {
                                   await cubit.swipeDislike(
                                     personId: profile.user?.id ?? '',
@@ -1349,9 +1371,6 @@ Widget _buildEmptyMarriage(MarriageCubit cubit, MarriageState state) {
                                     _resetScrollTracking();
                                     scrollToTop();
                                   }
-                                }
-                                if (widget.fromInteractions && mounted) {
-                                  context.pop();
                                 }
                               },
                               Icons.close,
@@ -1436,22 +1455,36 @@ Widget _buildEmptyMarriage(MarriageCubit cubit, MarriageState state) {
                           ),
                           Positioned(
                             left: 0,
-                            child: AnimatedHistoryButton(
-                              notificationCount:
-                                  state.interactionsNotificationCount,
-                              onTap: () {
-                                cubit.showHistoryView();
-                                WidgetsBinding.instance.addPostFrameCallback((
-                                  _,
-                                ) {
-                                  Future.delayed(
-                                    const Duration(milliseconds: 150),
-                                    () =>
-                                        _historyKey.currentState?.scrollToTop(),
-                                  );
-                                });
-                              },
-                            ),
+                            // ✅ الإصلاح: اقرأ الـ count من InteractionsCubit مباشرة
+                            child:
+                                BlocBuilder<
+                                  InteractionsCubit,
+                                  InteractionsState
+                                >(
+                                  bloc: interactionsCubit,
+                                  buildWhen: (prev, curr) =>
+                                      prev.totalNotificationCount !=
+                                      curr.totalNotificationCount,
+                                  builder: (context, interactionsState) {
+                                    return AnimatedHistoryButton(
+                                      notificationCount: interactionsState
+                                          .totalNotificationCount,
+                                      onTap: () {
+                                        cubit.showHistoryView();
+                                        WidgetsBinding.instance
+                                            .addPostFrameCallback((_) {
+                                              Future.delayed(
+                                                const Duration(
+                                                  milliseconds: 150,
+                                                ),
+                                                () => _historyKey.currentState
+                                                    ?.scrollToTop(),
+                                              );
+                                            });
+                                      },
+                                    );
+                                  },
+                                ),
                           ),
                         ],
                       ),

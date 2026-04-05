@@ -1,5 +1,4 @@
 import 'package:tayseer/my_import.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_state.dart';
 
@@ -24,8 +23,6 @@ class _FilterChipsState extends State<FilterChips> {
       FilterItem(key: "met_them", labelKey: "met_them"),
       FilterItem(key: "sent_compliment", labelKey: "sent_compliment"),
     ];
-
-  
   }
 
   @override
@@ -118,7 +115,9 @@ class _FilterChipsState extends State<FilterChips> {
                         if (count > 0)
                           Positioned(
                             top: -8.h,
-                            right: -12.w,
+                            // ✅ لو عربي: left | لو إنجليزي: right
+                            left: isArabic ? -12.w : null,
+                            right: isArabic ? null : -12.w,
                             child: Container(
                               padding: EdgeInsets.all(3.r),
                               constraints: BoxConstraints(
@@ -152,6 +151,7 @@ class _FilterChipsState extends State<FilterChips> {
     );
   }
 }
+
 class FilterItem {
   final String key;
   final String labelKey;

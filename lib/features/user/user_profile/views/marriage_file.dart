@@ -22,7 +22,6 @@ import 'package:tayseer/features/user/marriage/view/widget/interests_section.dar
 import 'package:tayseer/features/user/marriage/view/widget/religious.dart';
 import 'widgets/profile_statistics_cards.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-// ⭐ import the GIF overlay helper
 
 class MarriagefilePage extends StatefulWidget {
   final UserProfileModel? userProfile;
@@ -46,9 +45,7 @@ class _MarriagefilePageState extends State<MarriagefilePage>
   final int _maxImages = 5;
   String? _scrollToSection;
 
-  // ⭐ track whether we already showed the welcome GIF
   bool _hasShownLoadGif = false;
-  // ⭐ track whether we already showed the GIF during initial load spinner
   bool _hasStartedLoadingGif = false;
 
   static const String _defaultImageUrl =
@@ -75,9 +72,6 @@ class _MarriagefilePageState extends State<MarriagefilePage>
     super.dispose();
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ⭐ دالة ترجمة عامة
-  // ════════════════════════════════════════════════════════════════
   String _translateValue(String? value) {
     if (value == null || value.isEmpty) return '';
     final translated = context.tr(value);
@@ -85,9 +79,6 @@ class _MarriagefilePageState extends State<MarriagefilePage>
     return translated;
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ⭐ CALCULATE TOTAL PROGRESS (Server + Media)
-  // ════════════════════════════════════════════════════════════════
   double _calculateTotalProgress(MarriageUserProfileModel profile) {
     double questionProgress =
         (profile.answerCompletedPercentage ?? 0).toDouble();
@@ -124,9 +115,6 @@ class _MarriagefilePageState extends State<MarriagefilePage>
     return totalProgress.clamp(0, 100);
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ⭐ Get Main Display Image
-  // ════════════════════════════════════════════════════════════════
   String _getMainDisplayImage(MarriageUserProfileModel profile) {
     if (profile.userMedia?.singleImage != null &&
         profile.userMedia!.singleImage!.isNotEmpty) {
@@ -186,7 +174,6 @@ class _MarriagefilePageState extends State<MarriagefilePage>
                 SafeArea(
                   child: BlocConsumer<MarriageProfileCubit, MarriageProfileState>(
                     listener: (context, state) {
-                      // ⭐ GIF أثناء أول تحميل (بدل الـ skeleton)
                       if (state.isLoading &&
                           state.profile == null &&
                           !_hasStartedLoadingGif) {
@@ -198,7 +185,6 @@ class _MarriagefilePageState extends State<MarriagefilePage>
                         );
                       }
 
-                      // ⭐ GIF لما تخلص الصور وتظهر أول مرة
                       if (state.state == CubitStates.success &&
                           state.profile != null &&
                           !state.isLoading &&
@@ -235,7 +221,6 @@ class _MarriagefilePageState extends State<MarriagefilePage>
                     builder: (context, state) {
                       final cubit = context.read<MarriageProfileCubit>();
 
-                      // ⭐ الـ GIF بيتعرض فوق — بنرجع Container فاضي شفاف
                       if (state.isLoading && state.profile == null) {
                         return const SizedBox.expand();
                       }
@@ -254,6 +239,7 @@ class _MarriagefilePageState extends State<MarriagefilePage>
 
                       return Column(
                         children: [
+                          // ✅ الـ header ثابت فوق
                           Padding(
                             padding: EdgeInsets.symmetric(
                               horizontal: 24.h,
@@ -261,27 +247,41 @@ class _MarriagefilePageState extends State<MarriagefilePage>
                             ),
                             child: _buildFixedHeader(context),
                           ),
+                          // ✅ الـ content يملأ الباقي
                           Expanded(
                             child: _selectedTabIndex == 1
                                 ? _buildViewContent(profile)
-                                : MarriageProfileEditView(
-                                    profile: profile,
-                                    state: state,
-                                    cubit: cubit,
-                                    maxImages: _maxImages,
-                                    selectedTabIndex: _selectedTabIndex,
-                                    scrollToSection: _scrollToSection,
-                                    // ⭐⭐⭐ callback الـ GIF بعد الحفظ من edit
-                                    onSaveSuccess: () {
-                                      if (mounted) {
-                                        showGifOverlay(
-                                          context,
-                                          repeatCount: 1,
-                                          gifDuration: const Duration(
-                                              milliseconds: 900),
-                                        );
-                                      }
-                                    },
+                                // ✅ الإصلاح الرئيسي: MediaQuery.removePadding
+                                // يمنع الـ CustomScrollView من إضافة padding
+                                // زيادة بيسبب مشكلة الـ scroll
+                                : MediaQuery.removePadding(
+                                    context: context,
+                                    removeTop: true,
+                                    removeBottom: false,
+                                    child: MarriageProfileEditView(
+                                      profile: profile,
+                                      state: state,
+                                      cubit: cubit,
+                                      maxImages: _maxImages,
+                                      selectedTabIndex: _selectedTabIndex,
+                                      scrollToSection: _scrollToSection,
+                                      onTabChanged: (index) {
+                                        setState(() {
+                                          _selectedTabIndex = index;
+                                        });
+                                      },
+                                      onSaveSuccess: () {
+                                        if (mounted) {
+                                          showGifOverlay(
+                                            context,
+                                            repeatCount: 1,
+                                            gifDuration: const Duration(
+                                              milliseconds: 900,
+                                            ),
+                                          );
+                                        }
+                                      },
+                                    ),
                                   ),
                           ),
                         ],
@@ -900,8 +900,7 @@ class _MarriagefilePageState extends State<MarriagefilePage>
       if (profile.aboutMe?.age != null)
         {
           'icon': AssetsData.kdrawingIcon,
-          'label':
-              "🎂\u200F ${profile.aboutMe?.age} ${context.tr('age')}",
+          'label': "🎂\u200F ${profile.aboutMe?.age} ${context.tr('age')}",
         },
       if (profile.aboutMe?.skinColor != null)
         {
@@ -1072,7 +1071,6 @@ class _MarriagefilePageState extends State<MarriagefilePage>
   }
 }
 
-// ⭐ plain grey placeholder — no shimmer, GIF overlay handles loading UX
 Widget shimmerImagePlaceholder({double? height, BorderRadius? radius}) {
   return Container(
     height: height ?? double.infinity,
