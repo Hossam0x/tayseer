@@ -1851,5 +1851,6 @@
   "added_items_count": "item(s)",
   "already_added_en": "Already added ✓",
   "add_country_and_sessions_hint": "Add your country and sessions to start receiving requests",
-  "no_sessions_added_yet": "No sessions added yet"
+  "no_sessions_added_yet": "No sessions added yet",
+  "has_no_children": "No children"
 }

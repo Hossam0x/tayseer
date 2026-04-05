@@ -11,8 +11,8 @@ import 'package:tayseer/features/user/interactions/presentation/view/widget/hist
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_FilterChips.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_body.dart';
 import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
-import 'package:tayseer/features/user/marriage/view/widget/section_toggle.dart';
 import 'package:tayseer/features/user/marriage/view/widget/animated_be_first_button.dart';
+import 'package:tayseer/features/user/marriage/view/widget/section_toggle.dart';
 import 'package:tayseer/features/user/marriage/view/widget/swipe_action_pop_up.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_state.dart';
@@ -87,6 +87,12 @@ class MarriageBodyState extends State<MarriageBody>
     super.initState();
     _mainScrollController.addListener(_scrollListener);
 
+    // ✅ جيب الـ notification count فوراً عند فتح الصفحة
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      interactionsCubit.fetchAndSyncNotificationCount();
+    });
+
     if (widget.fromInteractions) {
       _interactionsCubit = getIt<InteractionsCubit>();
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -123,6 +129,20 @@ class MarriageBodyState extends State<MarriageBody>
         });
       });
     }
+  }
+
+  String _translateYesNo(
+    String value, {
+    required String yesKey,
+    required String noKey,
+  }) {
+    final v = value.trim().toLowerCase();
+    if (v == 'yes' || v == 'true' || v == '1') {
+      return context.tr(yesKey);
+    } else if (v == 'no' || v == 'false' || v == '0') {
+      return context.tr(noKey);
+    }
+    return _tr(value);
   }
 
   void _showConsultantBlockedDialog() {
@@ -185,16 +205,37 @@ class MarriageBodyState extends State<MarriageBody>
     });
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ✅ الإصلاح الرئيسي — sync الـ notification للـ InteractionsCubit
-  // بعد أي تفاعل من صفحة الـ interactions
-  // ════════════════════════════════════════════════════════════════
   void _syncNotificationAfterInteraction() {
-    // ✅ اشتغل دايماً — مش بس لما fromInteractions
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       interactionsCubit.fetchAndSyncNotificationCount();
     });
+  }
+
+  // ✅ بيبني الـ AnimatedHistoryButton المتصل بالـ InteractionsCubit
+  Widget _buildHistoryButton({bool forMarriageTab = false}) {
+    return BlocBuilder<InteractionsCubit, InteractionsState>(
+      bloc: interactionsCubit,
+      buildWhen: (prev, curr) =>
+          prev.totalNotificationCount != curr.totalNotificationCount,
+      builder: (context, interactionsState) {
+        final marriageCubit = context.read<MarriageCubit>();
+        return AnimatedHistoryButton(
+          notificationCount: interactionsState.totalNotificationCount,
+          onTap: forMarriageTab
+              ? () => marriageCubit.setMarriageTab(false)
+              : () {
+                  marriageCubit.showHistoryView();
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    Future.delayed(
+                      const Duration(milliseconds: 150),
+                      () => _historyKey.currentState?.scrollToTop(),
+                    );
+                  });
+                },
+        );
+      },
+    );
   }
 
   List<Map<String, dynamic>> _buildFaithItems(Answers? answers) {
@@ -654,6 +695,7 @@ class MarriageBodyState extends State<MarriageBody>
                         ),
                       ),
                     ),
+                    // ✅ الـ AnimatedHistoryButton في الـ left يتحدث من InteractionsCubit
                     Positioned(
                       left: 0,
                       child: AnimatedBeFirstButton(
@@ -806,7 +848,6 @@ class MarriageBodyState extends State<MarriageBody>
     final user = profile.user;
     final answers = profile.answers;
 
-    // ✅ الإصلاح — user.image كأول صورة لو مش موجودة في userMedia
     final List<String> validImages = (answers?.userMedia?.image ?? [])
         .where((img) => img.isNotEmpty)
         .toList();
@@ -834,7 +875,6 @@ class MarriageBodyState extends State<MarriageBody>
     final nextUser = nextProfile?.user;
     final nextAnswers = nextProfile?.answers;
 
-    // ✅ الإصلاح للـ next profile كمان
     final List<String> nextValidImages = (nextAnswers?.userMedia?.image ?? [])
         .where((img) => img.isNotEmpty)
         .toList();
@@ -850,7 +890,6 @@ class MarriageBodyState extends State<MarriageBody>
               : [if (nextMainImage != null) nextMainImage, ...nextValidImages])
         : (nextMainImage != null ? [nextMainImage] : []);
 
-    // ── باقي الكود زي ما هو بدون أي تغيير ──
     final bool isSubscribed = _interactionsCubit?.state.isSubscribed ?? false;
 
     final bool shouldBlurImages;
@@ -1023,11 +1062,13 @@ class MarriageBodyState extends State<MarriageBody>
                             },
                           if (answers?.family?.hasChildren != null)
                             {
-                              'label':
-                                  "👶 ${_tr(answers!.family!.hasChildren)}",
+                            'label': "👶 ${_translateYesNo(answers!.family!.hasChildren!, yesKey: 'has_childrens', noKey: 'has_no_children')}",
                             },
                           if (answers?.aboutMe?.weight != null)
-                            {'label': "⚖️ ${answers?.aboutMe?.weight} "},
+                            {
+                              'label':
+                                  "⚖️ \u200e${answers?.aboutMe?.weight} ${context.tr('kg')}",
+                            },
                           if (answers?.professionalLife?.job != null)
                             {
                               'label':
@@ -1141,7 +1182,10 @@ class MarriageBodyState extends State<MarriageBody>
                                   "🕌 ${_tr(answers!.aboutMe!.religiousCommitment)}",
                             },
                           if (answers?.aboutMe?.smoker != null)
-                            {'label': "🚬 ${_tr(answers!.aboutMe!.smoker)}"},
+                            {
+                              'label':
+                                  "🚬 ${_translateYesNo(answers!.aboutMe!.smoker!, yesKey: 'smoking_yes', noKey: 'smoking_no')}",
+                            },
                         ],
                       ),
                     ),
@@ -1337,6 +1381,7 @@ class MarriageBodyState extends State<MarriageBody>
                                     _resetScrollTracking();
                                     scrollToTop();
                                   }
+                                  _syncNotificationAfterInteraction();
                                 }
                               },
                               Icons.check,
@@ -1367,7 +1412,7 @@ class MarriageBodyState extends State<MarriageBody>
                                     personId: profile.user?.id ?? '',
                                     interactionType: 'dislike',
                                   );
-                                  _syncNotificationAfterInteraction();
+
                                   if (mounted) context.pop();
                                 } else {
                                   await cubit.swipeDislike(
@@ -1461,38 +1506,10 @@ class MarriageBodyState extends State<MarriageBody>
                               ),
                             ),
                           ),
+                          // ✅ نفس الـ widget المتصل بالـ InteractionsCubit
                           Positioned(
                             left: 0,
-                            // ✅ الإصلاح: اقرأ الـ count من InteractionsCubit مباشرة
-                            child:
-                                BlocBuilder<
-                                  InteractionsCubit,
-                                  InteractionsState
-                                >(
-                                  bloc: interactionsCubit,
-                                  buildWhen: (prev, curr) =>
-                                      prev.totalNotificationCount !=
-                                      curr.totalNotificationCount,
-                                  builder: (context, interactionsState) {
-                                    return AnimatedHistoryButton(
-                                      notificationCount: interactionsState
-                                          .totalNotificationCount,
-                                      onTap: () {
-                                        cubit.showHistoryView();
-                                        WidgetsBinding.instance
-                                            .addPostFrameCallback((_) {
-                                              Future.delayed(
-                                                const Duration(
-                                                  milliseconds: 150,
-                                                ),
-                                                () => _historyKey.currentState
-                                                    ?.scrollToTop(),
-                                              );
-                                            });
-                                      },
-                                    );
-                                  },
-                                ),
+                            child: _buildHistoryButton(forMarriageTab: false),
                           ),
                         ],
                       ),
