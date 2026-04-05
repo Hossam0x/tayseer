@@ -153,7 +153,9 @@ class _TrailingWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (setting.id == 'invite' || setting.id == 'account_management') {
+    if (setting.id == 'invite' ||
+        setting.id == 'account_management' ||
+        setting.id == 'rate_app') {
       return const SizedBox(width: 0);
     }
     return setting.subtitle != null

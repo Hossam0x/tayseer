@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tayseer/core/functions/get_language_code_name.dart';
