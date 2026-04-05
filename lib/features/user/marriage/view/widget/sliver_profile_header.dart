@@ -582,7 +582,7 @@ class _InfoCard extends StatelessWidget {
               ],
               SizedBox(width: 12.w),
 
-              AppImage(AssetsData.goldIcon),
+              isVerified ? AppImage(AssetsData.goldIcon) : SizedBox.shrink(),
             ],
           ),
           Gap(5.h),

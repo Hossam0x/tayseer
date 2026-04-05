@@ -189,13 +189,13 @@ class MarriageBodyState extends State<MarriageBody>
   // ✅ الإصلاح الرئيسي — sync الـ notification للـ InteractionsCubit
   // بعد أي تفاعل من صفحة الـ interactions
   // ════════════════════════════════════════════════════════════════
-void _syncNotificationAfterInteraction() {
-  // ✅ اشتغل دايماً — مش بس لما fromInteractions
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (!mounted) return;
-    interactionsCubit.fetchAndSyncNotificationCount();
-  });
-}
+  void _syncNotificationAfterInteraction() {
+    // ✅ اشتغل دايماً — مش بس لما fromInteractions
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      interactionsCubit.fetchAndSyncNotificationCount();
+    });
+  }
 
   List<Map<String, dynamic>> _buildFaithItems(Answers? answers) {
     final faithValue = answers?.faith;
@@ -457,7 +457,7 @@ void _syncNotificationAfterInteraction() {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
-              text: state.errorMessage ?? 'حدث خطأ ما',
+              text: state.errorMessage ?? context.tr('error_occurred'),
               isError: true,
             ),
           );
@@ -614,7 +614,7 @@ void _syncNotificationAfterInteraction() {
         child: SafeArea(
           child: Center(
             child: Text(
-              errorMessage ?? 'حدث خطأ ما',
+              errorMessage ?? context.tr('error_occurred'),
               style: const TextStyle(color: Colors.red, fontSize: 16),
             ),
           ),
@@ -801,20 +801,25 @@ void _syncNotificationAfterInteraction() {
     required List<UserItem> users,
   }) {
     final profile = users[profileIndex];
-
     if (profile.isPartialData) return _buildShimmerScreen();
 
     final user = profile.user;
     final answers = profile.answers;
-    final images = answers?.userMedia?.image ?? [];
 
-    final List<String> validImages = images
+    // ✅ الإصلاح — user.image كأول صورة لو مش موجودة في userMedia
+    final List<String> validImages = (answers?.userMedia?.image ?? [])
         .where((img) => img.isNotEmpty)
         .toList();
 
+    final String? mainImage = user?.image;
+    final bool mainImageAlreadyIncluded =
+        mainImage != null && validImages.any((img) => img == mainImage);
+
     final List<String> displayImages = validImages.isNotEmpty
-        ? validImages
-        : (user?.image != null && user!.image!.isNotEmpty ? [user.image!] : []);
+        ? (mainImageAlreadyIncluded
+              ? validImages
+              : [if (mainImage != null) mainImage, ...validImages])
+        : (mainImage != null ? [mainImage] : []);
 
     final cubit = context.read<MarriageCubit>();
 
@@ -828,8 +833,24 @@ void _syncNotificationAfterInteraction() {
     final nextProfile = hasNext ? users[profileIndex + 1] : null;
     final nextUser = nextProfile?.user;
     final nextAnswers = nextProfile?.answers;
-    final List<String> nextImages = nextAnswers?.userMedia?.image ?? [];
 
+    // ✅ الإصلاح للـ next profile كمان
+    final List<String> nextValidImages = (nextAnswers?.userMedia?.image ?? [])
+        .where((img) => img.isNotEmpty)
+        .toList();
+
+    final String? nextMainImage = nextUser?.image;
+    final bool nextMainIncluded =
+        nextMainImage != null &&
+        nextValidImages.any((img) => img == nextMainImage);
+
+    final List<String> nextImages = nextValidImages.isNotEmpty
+        ? (nextMainIncluded
+              ? nextValidImages
+              : [if (nextMainImage != null) nextMainImage, ...nextValidImages])
+        : (nextMainImage != null ? [nextMainImage] : []);
+
+    // ── باقي الكود زي ما هو بدون أي تغيير ──
     final bool isSubscribed = _interactionsCubit?.state.isSubscribed ?? false;
 
     final bool shouldBlurImages;
@@ -949,11 +970,9 @@ void _syncNotificationAfterInteraction() {
                                   widget.personId == null &&
                                   !widget.fromInteractions,
                             );
-                            // ✅ sync الـ notification بعد الـ favorite
                             _syncNotificationAfterInteraction();
-                            if (widget.fromInteractions && mounted) {
+                            if (widget.fromInteractions && mounted)
                               context.pop();
-                            }
                           }
                         : null,
                   ),
@@ -1278,9 +1297,6 @@ void _syncNotificationAfterInteraction() {
               ),
             ),
 
-            // ════════════════════════════════════════════════════
-            // ACTION BUTTONS — مع الإصلاح في كل زرار
-            // ════════════════════════════════════════════════════
             if (!_isConsultantViewingProfile)
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 300),
@@ -1296,9 +1312,8 @@ void _syncNotificationAfterInteraction() {
                               ? MainAxisAlignment.spaceAround
                               : MainAxisAlignment.spaceEvenly,
                           children: [
-                            SizedBox.shrink(),
+                            const SizedBox.shrink(),
 
-                            // ✅ زرار الـ LIKE — مع sync
                             buildCircleButton(
                               onTap: () async {
                                 await _showSwipePopup(
@@ -1310,7 +1325,6 @@ void _syncNotificationAfterInteraction() {
                                     personId: profile.user?.id ?? '',
                                     interactionType: 'like',
                                   );
-                                  // ✅ الإصلاح — sync بعد اللايك مباشرةً
                                   _syncNotificationAfterInteraction();
                                   if (mounted) context.pop();
                                 } else {
@@ -1330,13 +1344,11 @@ void _syncNotificationAfterInteraction() {
                               HexColor('f8d3da'),
                             ),
 
-                            // ✅ زرار الـ REGARD — مع sync
                             buildCircleButton(
                               onTap: () async {
                                 cubit.sendRegard(
                                   personId: profile.user?.id ?? '',
                                 );
-                                // ✅ الإصلاح — sync بعد الـ regard
                                 _syncNotificationAfterInteraction();
                               },
                               Icons.star,
@@ -1344,7 +1356,6 @@ void _syncNotificationAfterInteraction() {
                               HexColor('cccab3'),
                             ),
 
-                            // ✅ زرار الـ DISLIKE — مع sync
                             buildCircleButton(
                               onTap: () async {
                                 await _showSwipePopup(
@@ -1356,7 +1367,6 @@ void _syncNotificationAfterInteraction() {
                                     personId: profile.user?.id ?? '',
                                     interactionType: 'dislike',
                                   );
-                                  // ✅ الإصلاح — sync بعد الـ dislike
                                   _syncNotificationAfterInteraction();
                                   if (mounted) context.pop();
                                 } else {
