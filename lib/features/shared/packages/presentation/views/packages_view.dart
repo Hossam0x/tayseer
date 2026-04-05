@@ -18,7 +18,8 @@ import 'package:tayseer/features/shared/packages/presentation/widgets/package_ki
 import 'package:tayseer/features/shared/packages/presentation/widgets/package_tab_selector.dart';
 
 class PackagesView extends StatelessWidget {
-  const PackagesView({super.key});
+  final int? initialPage;
+  const PackagesView({super.key, this.initialPage});
 
   @override
   Widget build(BuildContext context) {
@@ -29,13 +30,14 @@ class PackagesView extends StatelessWidget {
         ),
         BlocProvider(create: (context) => PackageSelectionCubit()),
       ],
-      child: const _PackagesViewContent(),
+      child: _PackagesViewContent(initialPage: initialPage),
     );
   }
 }
 
 class _PackagesViewContent extends StatefulWidget {
-  const _PackagesViewContent();
+  final int? initialPage;
+  const _PackagesViewContent({this.initialPage});
 
   @override
   State<_PackagesViewContent> createState() => _PackagesViewContentState();
@@ -50,7 +52,7 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
   void initState() {
     super.initState();
     _pageController = PageController(
-      initialPage: 0,
+      initialPage: widget.initialPage ?? 0,
       viewportFraction: 1.0,
       keepPage: true,
     );
@@ -82,6 +84,21 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
               prev.isLoading && !curr.isLoading && !_initialPageSet,
           listener: (context, state) {
             _initialPageSet = true;
+            // If an explicit initialPage was passed, use it
+            if (widget.initialPage != null) {
+              const packages = [
+                PackageType.basic,
+                PackageType.pro,
+                PackageType.elite,
+              ];
+              context.read<PackageSelectionCubit>().selectPackage(
+                packages[widget.initialPage!],
+              );
+              if (_pageController.hasClients) {
+                _pageController.jumpToPage(widget.initialPage!);
+              }
+              return;
+            }
             final cubit = context.read<PackagesCubit>();
             final currentPkg = cubit.currentSubscribedPackage;
             if (currentPkg != null) {

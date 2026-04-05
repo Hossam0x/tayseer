@@ -16,6 +16,7 @@ class ProfileVisitorsCubit extends Cubit<ProfileVisitorsState> {
         ProfileVisitorsSuccess(
           visitors: data.visitors,
           isSubscribed: data.isSubscribed,
+          subscriptionType: data.subscriptionType,
         ),
       ),
     );

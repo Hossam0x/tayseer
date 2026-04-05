@@ -25,8 +25,13 @@ class ProfileVisitorsResponse {
 class ProfileVisitorsData {
   final List<ProfileVisitorModel> visitors;
   final bool isSubscribed;
+  final String subscriptionType; // 'free', 'gold', 'ultra'
 
-  ProfileVisitorsData({required this.visitors, required this.isSubscribed});
+  ProfileVisitorsData({
+    required this.visitors,
+    required this.isSubscribed,
+    this.subscriptionType = 'free',
+  });
 
   factory ProfileVisitorsData.fromJson(Map<String, dynamic> json) {
     return ProfileVisitorsData(
@@ -36,6 +41,7 @@ class ProfileVisitorsData {
               .toList() ??
           [],
       isSubscribed: json['isSubscribed'] ?? false,
+      subscriptionType: json['subscriptionType'] ?? 'free',
     );
   }
 }

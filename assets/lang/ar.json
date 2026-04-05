@@ -1790,5 +1790,10 @@
   "location_retry": "إعادة المحاولة",
   "location_permission_title": "مطلوب إذن الوصول للموقع",
   "location_permission_desc": "نحتاج موقعك لتقديم أفضل النتائج وشركاء قريبين منك.",
-  "location_fetch_error": "حدث خطأ أثناء محاولة جلب الموقع: "
+  "location_fetch_error": "حدث خطأ أثناء محاولة جلب الموقع: ",
+  "upgrade_button": "الترقية إلى ذهبية",
+  "upgrade_to_elite_button": "الترقية إلى الباقة المميزة",
+  "subscription_required_title": "اشترك لعرض الإحصائيات",
+  "subscription_required_desc": "اشترك في باقة Gold أو Elite للوصول إلى إحصائيات ملفك الشخصي ومعرفة من زارك.",
+  "subscribe_to_view_stats": "اشترك لعرض الإحصائيات"
 }

@@ -1793,5 +1793,10 @@
   "location_retry": "Retry",
   "location_permission_title": "Location permission required",
   "location_permission_desc": "We need your location to provide the best results and nearby partners.",
-  "location_fetch_error": "An error occurred while trying to fetch the location: "
+  "location_fetch_error": "An error occurred while trying to fetch the location: ",
+  "upgrade_button": "Upgrade to Gold",
+  "upgrade_to_elite_button": "Upgrade to Elite",
+  "subscription_required_title": "Subscribe to View Statistics",
+  "subscription_required_desc": "Subscribe to a Gold or Elite plan to access your profile statistics and see who visited you.",
+  "subscribe_to_view_stats": "Subscribe to view statistics"
 }
