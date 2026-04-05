@@ -29,31 +29,30 @@ class BlockedUserItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  blockedUser.blockedUser.name,
-                  style: Styles.textStyle16.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.secondary700,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (blockedUser.blockedUser.verificationType ==
-                    VerificationType.full)
-                  Row(
-                    children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        blockedUser.blockedUser.name,
+                        style: Styles.textStyle16.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.secondary700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (blockedUser.blockedUser.verificationType ==
+                        VerificationType.full) ...[
                       SizedBox(width: 4.w),
                       Icon(Icons.verified, color: Colors.blue, size: 16.w),
-                    ],
-                  )
-                else if (blockedUser.blockedUser.verificationType ==
-                    VerificationType.basic)
-                  Row(
-                    children: [
+                    ] else if (blockedUser.blockedUser.verificationType ==
+                        VerificationType.basic) ...[
                       SizedBox(width: 4.w),
                       Icon(Icons.verified, color: Colors.grey, size: 16.w),
                     ],
-                  ),
+                  ],
+                ),
                 SizedBox(height: 2.h),
                 Text(
                   blockedUser.blockedUser.userName,
