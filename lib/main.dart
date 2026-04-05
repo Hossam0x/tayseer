@@ -106,7 +106,6 @@ void _listenToWarmStartLinks() {
   final appLinks = AppLinks();
   appLinks.uriLinkStream.listen((uri) {
     debugPrint('🔗 Warm start DeepLink received: $uri');
-
     // ✅ تجاهل لو نفس الـ cold start URI
     if (pendingDeepLinkUri != null &&
         uri.toString() == pendingDeepLinkUri.toString()) {
