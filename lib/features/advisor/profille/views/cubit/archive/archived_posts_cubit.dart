@@ -294,6 +294,43 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
     _updatePostInList(updatedPost.postId, updatedPost);
   }
 
+  void markPostAsCommented({
+    required String postId,
+    required bool isAnonymous,
+  }) {
+    final index = state.posts.indexWhere((p) => p.postId == postId);
+    if (index != -1) {
+      _updatePostInList(
+        postId,
+        state.posts[index].copyWith(
+          isCommented: true,
+          isAnonymous: isAnonymous,
+        ),
+      );
+    }
+  }
+
+  void updateCommentCountByDelta({
+    required String postId,
+    required int countDelta,
+    bool? isCommented,
+    bool? isAnonymous,
+  }) {
+    final index = state.posts.indexWhere((p) => p.postId == postId);
+    if (index != -1) {
+      final post = state.posts[index];
+      final newCount = post.commentsCount + countDelta;
+      _updatePostInList(
+        postId,
+        post.copyWith(
+          commentsCount: newCount < 0 ? 0 : newCount,
+          isCommented: isCommented ?? post.isCommented,
+          isAnonymous: isAnonymous ?? post.isAnonymous,
+        ),
+      );
+    }
+  }
+
   void resetArchivePostState() => emit(
     state.copyWith(
       archivePostActionState: CubitStates.initial,

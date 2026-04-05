@@ -691,6 +691,52 @@ class SearchCubit extends Cubit<SearchState> {
     );
   }
 
+  void markPostAsCommented({
+    required String postId,
+    required bool isAnonymous,
+  }) {
+    final found = _findPost(postId);
+    if (found.post == null) return;
+    final updatedPost = found.post!.copyWith(
+      isCommented: true,
+      isAnonymous: isAnonymous,
+    );
+    emit(
+      _updatePostInBothTabs(
+        postsData: found.postsData,
+        allData: found.allData,
+        postsIdx: found.postsIdx,
+        allIdx: found.allIdx,
+        updatedPost: updatedPost,
+      ),
+    );
+  }
+
+  void updateCommentCountByDelta({
+    required String postId,
+    required int countDelta,
+    bool? isCommented,
+    bool? isAnonymous,
+  }) {
+    final found = _findPost(postId);
+    if (found.post == null) return;
+    final newCount = found.post!.commentsCount + countDelta;
+    final updatedPost = found.post!.copyWith(
+      commentsCount: newCount < 0 ? 0 : newCount,
+      isCommented: isCommented ?? found.post!.isCommented,
+      isAnonymous: isAnonymous ?? found.post!.isAnonymous,
+    );
+    emit(
+      _updatePostInBothTabs(
+        postsData: found.postsData,
+        allData: found.allData,
+        postsIdx: found.postsIdx,
+        allIdx: found.allIdx,
+        updatedPost: updatedPost,
+      ),
+    );
+  }
+
   @override
   Future<void> close() {
     _searchDebounce?.cancel();

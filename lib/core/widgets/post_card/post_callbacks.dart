@@ -43,7 +43,14 @@ typedef PollVoteCallback = void Function(String postId, String choiceText);
 /// Callback when user adds a comment (to update isCommented/isAnonymous)
 typedef CommentedCallback = void Function(String postId, bool isAnonymous);
 
-/// Callback when PostDetailsView is popped — carries the latest post model
+/// Callback for updating comment counts dynamically with deltas
+typedef CommentCountDeltaCallback =
+    void Function({
+      required String postId,
+      required int countDelta,
+      bool? isCommented,
+      bool? isAnonymous,
+    });
 
 /// Bundle of post-related callbacks for easy passing
 class PostCallbacks {
@@ -62,6 +69,7 @@ class PostCallbacks {
   final BlockUserCallback? onBlock; // Takes userId
   final PollVoteCallback? onPollVote;
   final CommentedCallback? onCommented;
+  final CommentCountDeltaCallback? onCommentCountDelta;
 
   const PostCallbacks({
     this.onReactionChanged,
@@ -78,6 +86,7 @@ class PostCallbacks {
     this.onBlock,
     this.onPollVote,
     this.onCommented,
+    this.onCommentCountDelta,
   });
 
   /// Empty callbacks (for optional usage)
@@ -95,5 +104,7 @@ class PostCallbacks {
       onHide != null ||
       onSave != null ||
       onBlock != null ||
-      onPollVote != null;
+      onPollVote != null ||
+      onCommented != null ||
+      onCommentCountDelta != null;
 }

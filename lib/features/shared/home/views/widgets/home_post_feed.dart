@@ -426,6 +426,7 @@ class _PostItemState extends State<_PostItem>
       onEdit: _editPost,
       onPollVote: _onPollVote,
       onCommented: _onCommented,
+      onCommentCountDelta: _onCommentCountDelta,
     );
   }
 
@@ -448,6 +449,7 @@ class _PostItemState extends State<_PostItem>
       onEdit: _editPost,
       onPollVote: _onPollVote,
       onCommented: _onCommented,
+      onCommentCountDelta: _onCommentCountDelta,
     );
   }
 
@@ -482,6 +484,20 @@ class _PostItemState extends State<_PostItem>
   void _onCommented(String postId, bool isAnonymous) {
     widget.homeCubit.markPostAsCommented(
       postId: postId,
+      isAnonymous: isAnonymous,
+    );
+  }
+
+  void _onCommentCountDelta({
+    required String postId,
+    required int countDelta,
+    bool? isCommented,
+    bool? isAnonymous,
+  }) {
+    widget.homeCubit.updateCommentCountByDelta(
+      postId: postId,
+      countDelta: countDelta,
+      isCommented: isCommented,
       isAnonymous: isAnonymous,
     );
   }

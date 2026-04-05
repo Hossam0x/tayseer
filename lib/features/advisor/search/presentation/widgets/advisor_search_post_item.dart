@@ -47,6 +47,18 @@ class _AdvisorSearchPostItemState extends State<AdvisorSearchPostItem>
       onHide: (postId) => _searchCubit.toggleHidePost(postId: postId),
       onBlock: (postId, advisorId) =>
           _searchCubit.blockUser(visiblePostId: postId, advisorId: advisorId),
+      onCommented: (postId, isAnonymous) => _searchCubit.markPostAsCommented(
+        postId: postId,
+        isAnonymous: isAnonymous,
+      ),
+      onCommentCountDelta:
+          ({required postId, required countDelta, isCommented, isAnonymous}) =>
+              _searchCubit.updateCommentCountByDelta(
+                postId: postId,
+                countDelta: countDelta,
+                isCommented: isCommented,
+                isAnonymous: isAnonymous,
+              ),
       onHashtagTap: (hashtag) {
         final clean = hashtag.startsWith('#') ? hashtag.substring(1) : hashtag;
         Navigator.push(
@@ -59,8 +71,7 @@ class _AdvisorSearchPostItemState extends State<AdvisorSearchPostItem>
       },
       onPollVote: (postId, choiceText) =>
           _searchCubit.voteInPoll(postId: postId, choiceText: choiceText),
-      onEdit: (updatedPost) =>
-          _searchCubit.updatePostLocally(updatedPost),
+      onEdit: (updatedPost) => _searchCubit.updatePostLocally(updatedPost),
     );
   }
 

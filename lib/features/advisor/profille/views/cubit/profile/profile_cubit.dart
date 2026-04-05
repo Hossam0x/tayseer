@@ -681,4 +681,43 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
   void updatePostLocally(PostModel updatedPost) {
     _updatePostInList(updatedPost.postId, updatedPost);
   }
+
+  @override
+  void markPostAsCommented({
+    required String postId,
+    required bool isAnonymous,
+  }) {
+    final index = state.posts.indexWhere((p) => p.postId == postId);
+    if (index != -1) {
+      _updatePostInList(
+        postId,
+        state.posts[index].copyWith(
+          isCommented: true,
+          isAnonymous: isAnonymous,
+        ),
+      );
+    }
+  }
+
+  @override
+  void updateCommentCountByDelta({
+    required String postId,
+    required int countDelta,
+    bool? isCommented,
+    bool? isAnonymous,
+  }) {
+    final index = state.posts.indexWhere((p) => p.postId == postId);
+    if (index != -1) {
+      final post = state.posts[index];
+      final newCount = post.commentsCount + countDelta;
+      _updatePostInList(
+        postId,
+        post.copyWith(
+          commentsCount: newCount < 0 ? 0 : newCount,
+          isCommented: isCommented ?? post.isCommented,
+          isAnonymous: isAnonymous ?? post.isAnonymous,
+        ),
+      );
+    }
+  }
 }

@@ -145,6 +145,14 @@ class _PostDetailsViewState extends State<PostDetailsView> {
           homeCubit.voteInPoll(postId: pId, choiceText: choice),
       onCommented: (pId, isAnon) =>
           homeCubit.markPostAsCommented(postId: pId, isAnonymous: isAnon),
+      onCommentCountDelta:
+          ({required postId, required countDelta, isCommented, isAnonymous}) =>
+              homeCubit.updateCommentCountByDelta(
+                postId: postId,
+                countDelta: countDelta,
+                isCommented: isCommented,
+                isAnonymous: isAnonymous,
+              ),
     );
   }
 
@@ -366,7 +374,7 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
               final postId = widget.currentPost.postId;
               final delta = state.pendingCommentCountDelta;
 
-              getIt<HomeCubit>().updateCommentCountByDelta(
+              widget.callbacks.onCommentCountDelta?.call(
                 postId: postId,
                 countDelta: delta,
                 // ✅ لو إضافة (delta > 0) → نحدث isCommented و isAnonymous
