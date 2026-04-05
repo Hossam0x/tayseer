@@ -47,10 +47,10 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await CachNetwork.cacheInitializaion();
   await setupGetIt();
-  
+
   // Initialize ChatCacheService
   await getIt<ChatCacheService>().init();
-  
+
   await getIt<ConnectivityService>().initialize();
   await _initializeVideoSystem();
   await GlobalMuteManager.instance.init();
@@ -98,26 +98,23 @@ Future<void> _captureColdStartLink() async {
 
 void _listenToWarmStartLinks() {
   final appLinks = AppLinks();
-  appLinks.uriLinkStream.listen(
-        (uri) {
-      debugPrint('🔗 Warm start DeepLink received: $uri');
+  appLinks.uriLinkStream.listen((uri) {
+    debugPrint('🔗 Warm start DeepLink received: $uri');
 
-      // ✅ تجاهل لو نفس الـ cold start URI
-      if (pendingDeepLinkUri != null &&
-          uri.toString() == pendingDeepLinkUri.toString()) {
-        debugPrint('🔗 Ignoring duplicate warm start (same as cold start)');
-        return;
-      }
+    // ✅ تجاهل لو نفس الـ cold start URI
+    if (pendingDeepLinkUri != null &&
+        uri.toString() == pendingDeepLinkUri.toString()) {
+      debugPrint('🔗 Ignoring duplicate warm start (same as cold start)');
+      return;
+    }
 
-      // ✅ delay + postFrameCallback عشان Navigator يكون جاهز
-      Future.delayed(const Duration(milliseconds: 300), () {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _navigateFromUri(uri);
-        });
+    // ✅ delay + postFrameCallback عشان Navigator يكون جاهز
+    Future.delayed(const Duration(milliseconds: 300), () {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _navigateFromUri(uri);
       });
-    },
-    onError: (e) => debugPrint('DeepLink stream error: $e'),
-  );
+    });
+  }, onError: (e) => debugPrint('DeepLink stream error: $e'));
 }
 
 String? _extractPersonId(Uri uri) {

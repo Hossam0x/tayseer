@@ -30,6 +30,8 @@ import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
 import 'package:tayseer/features/advisor/update_posts/view_model/update_posts_cubit.dart';
 import 'package:tayseer/features/advisor/update_posts/view/update_post_view.dart';
 import 'package:tayseer/features/shared/auth/view/purpose_selection_view.dart';
+import 'package:tayseer/features/shared/auth/view/select_country_view.dart';
+import 'package:tayseer/features/shared/auth/view/setup_summary_view.dart';
 import 'package:tayseer/features/shared/packages/presentation/views/advisor_subscription_view.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/advisor_subscription_cubit.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
@@ -247,6 +249,8 @@ abstract class AppRouter {
   static const kEventView = '/event-view';
   static const kUserPackagesView = '/user-packages-view';
   static const kUserPackageDetailsView = '/user-package-details-view';
+  static const kSelectCountryView = '/SelectCountryView';
+  static const kSetupSummaryView = '/SetupSummaryView';
   ///// report screens /////
   static const kReportsView = '/reportsView';
   static const kReportDetailsView = '/reportDetailsView';
@@ -1006,6 +1010,22 @@ abstract class AppRouter {
       case AppRouter.kOrderManagementView:
         return SlideLeftRoute(
           page: const OrderManagementView(),
+          routeSettings: settings,
+        );
+      case AppRouter.kSelectCountryView:
+        return SlideLeftRoute(
+          page: BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const SelectCountryView(),
+          ),
+          routeSettings: settings,
+        );
+      case AppRouter.kSetupSummaryView:
+        return SlideLeftRoute(
+          page: BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const SetupSummaryView(),
+          ),
           routeSettings: settings,
         );
 

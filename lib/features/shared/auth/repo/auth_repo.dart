@@ -42,9 +42,12 @@ abstract class AuthRepo {
     required List<XFile> nationalImages,
   });
 
-  Future<Either<Failure, RegisterResponse>> addServiceProvider({
+  Future<Either<Failure, RegisterResponse>> addDay({
     required Map<String, dynamic> body,
   });
   Future<Either<Failure, void>> addLanguage({required List<String> languages});
   Future<Either<Failure, RegisterResponse>> setGender({required String gender});
+  Future<Either<Failure, void>> setCountryOfferings({
+    required Map<String, dynamic> body,
+  });
 }

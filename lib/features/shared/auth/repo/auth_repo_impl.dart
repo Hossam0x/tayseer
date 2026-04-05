@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/functions/upload_imageandvideo_to_api.dart';
 import 'package:tayseer/features/shared/auth/model/guest_response_model.dart';
@@ -60,7 +59,7 @@ class AuthRepoImpl implements AuthRepo {
       final platform = Platform.isAndroid ? 'android' : 'ios';
 
       debugPrint('deviceId::$deviceId');
-  debugPrint('getFcmToken::$fcmToken');
+      debugPrint('getFcmToken::$fcmToken');
       final response = await apiService.post(
         endPoint: selectedUserType == UserTypeEnum.asConsultant
             ? '/advisor/login'
@@ -530,12 +529,12 @@ class AuthRepoImpl implements AuthRepo {
   }
 
   @override
-  Future<Either<Failure, RegisterResponse>> addServiceProvider({
+  Future<Either<Failure, RegisterResponse>> addDay({
     required Map<String, dynamic> body,
   }) async {
     try {
       final response = await apiService.post(
-        endPoint: '/advisor/addServiceProvider',
+        endPoint: '/advisor/availability',
         data: body,
       );
 
@@ -623,6 +622,21 @@ class AuthRepoImpl implements AuthRepo {
     } catch (error) {
       debugPrint('setGender error: $error');
       return left(ServerFailure('حدث خطأ غير متوقع: $error'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> setCountryOfferings({
+    required Map<String, dynamic> body,
+  }) async {
+    try {
+      await apiService.post(endPoint: '/advisor/offerings', data: body);
+      return const Right(null);
+    } catch (e) {
+      if (e is DioException) {
+        return Left(ServerFailure.fromDioError(e));
+      }
+      return Left(ServerFailure(e.toString()));
     }
   }
 }

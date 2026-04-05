@@ -19,6 +19,7 @@ abstract class AssetsData {
   static const String kGoogleImage = "assets/images/google_image.png";
   static const String kFemaleImage = "assets/images/female_image.png";
   static const String kMaleImage = "assets/images/male_image.png";
+
   static const String kAccountReviewImage =
       "assets/images/account_review_image.png";
   static const String kAccountActivationPendingImage =
@@ -106,7 +107,10 @@ abstract class AssetsData {
   static const String reelsIcon = "assets/icons/reels_icon.svg";
   static const String selectedReelsIcon = "assets/icons/selected_reels.svg";
   static const String joinedIcon = "assets/icons/Joined.svg";
-
+  static const String kSinventoryOutlinedIcon =
+      "assets/images/inventory_2_outlined.png";
+  static const String kpersonOutlineIcon =
+      "assets/images/person_outline.png";
   static const String notificationIcon = "assets/icons/notification.svg";
   static const String emptynotification = "assets/icons/empty_notification.png";
 
@@ -206,7 +210,6 @@ abstract class AssetsData {
   static const String boostFinish = "assets/icons/boostFinish.svg";
   static const String uplaodCertificate = "assets/icons/uplaodCertificate.svg";
   static const String emptyFilter = "assets/icons/empty_filtter.svg";
-
 
   // Settings assets
   static const String icNotificationSettings =
