@@ -1,16 +1,14 @@
 PODS:
-  - AppAuth (1.7.6):
-    - AppAuth/Core (= 1.7.6)
-    - AppAuth/ExternalUserAgent (= 1.7.6)
-  - AppAuth/Core (1.7.6)
-  - AppAuth/ExternalUserAgent (1.7.6):
+  - AppAuth (2.0.0):
+    - AppAuth/Core (= 2.0.0)
+    - AppAuth/ExternalUserAgent (= 2.0.0)
+  - AppAuth/Core (2.0.0)
+  - AppAuth/ExternalUserAgent (2.0.0):
     - AppAuth/Core
   - AppCheckCore (11.2.0):
     - GoogleUtilities/Environment (~> 8.0)
     - GoogleUtilities/UserDefaults (~> 8.0)
     - PromisesObjC (~> 2.4)
-  - audio_session (0.0.1):
-    - Flutter
   - audioplayers_darwin (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -18,118 +16,44 @@ PODS:
     - Flutter
   - connectivity_plus (0.0.1):
     - Flutter
-  - CryptoSwift (1.8.4)
   - device_info_plus (0.0.1):
     - Flutter
-  - DKImagePickerController/Core (4.3.9):
-    - DKImagePickerController/ImageDataManager
-    - DKImagePickerController/Resource
-  - DKImagePickerController/ImageDataManager (4.3.9)
-  - DKImagePickerController/PhotoGallery (4.3.9):
-    - DKImagePickerController/Core
-    - DKPhotoGallery
-  - DKImagePickerController/Resource (4.3.9)
-  - DKPhotoGallery (0.0.19):
-    - DKPhotoGallery/Core (= 0.0.19)
-    - DKPhotoGallery/Model (= 0.0.19)
-    - DKPhotoGallery/Preview (= 0.0.19)
-    - DKPhotoGallery/Resource (= 0.0.19)
-    - SDWebImage
-    - SwiftyGif
-  - DKPhotoGallery/Core (0.0.19):
-    - DKPhotoGallery/Model
-    - DKPhotoGallery/Preview
-    - SDWebImage
-    - SwiftyGif
-  - DKPhotoGallery/Model (0.0.19):
-    - SDWebImage
-    - SwiftyGif
-  - DKPhotoGallery/Preview (0.0.19):
-    - DKPhotoGallery/Model
-    - DKPhotoGallery/Resource
-    - SDWebImage
-    - SwiftyGif
-  - DKPhotoGallery/Resource (0.0.19):
-    - SDWebImage
-    - SwiftyGif
   - emoji_picker_flutter (0.0.1):
     - Flutter
-  - FaceSDK (6.4.2321):
-    - RegulaCommon (= 7.5.935)
-  - file_picker (0.0.1):
-    - DKImagePickerController/PhotoGallery
+  - Firebase/CoreOnly (12.6.0):
+    - FirebaseCore (~> 12.6.0)
+  - Firebase/Messaging (12.6.0):
+    - Firebase/CoreOnly
+    - FirebaseMessaging (~> 12.6.0)
+  - firebase_core (4.3.0):
+    - Firebase/CoreOnly (= 12.6.0)
     - Flutter
-  - Firebase/Auth (11.15.0):
-    - Firebase/CoreOnly
-    - FirebaseAuth (~> 11.15.0)
-  - Firebase/CoreOnly (11.15.0):
-    - FirebaseCore (~> 11.15.0)
-  - Firebase/Messaging (11.15.0):
-    - Firebase/CoreOnly
-    - FirebaseMessaging (~> 11.15.0)
-  - firebase_auth (5.7.0):
-    - Firebase/Auth (= 11.15.0)
+  - firebase_messaging (16.1.0):
+    - Firebase/Messaging (= 12.6.0)
     - firebase_core
     - Flutter
-  - firebase_core (3.15.2):
-    - Firebase/CoreOnly (= 11.15.0)
-    - Flutter
-  - firebase_messaging (15.2.10):
-    - Firebase/Messaging (= 11.15.0)
-    - firebase_core
-    - Flutter
-  - FirebaseAppCheckInterop (11.15.0)
-  - FirebaseAuth (11.15.0):
-    - FirebaseAppCheckInterop (~> 11.0)
-    - FirebaseAuthInterop (~> 11.0)
-    - FirebaseCore (~> 11.15.0)
-    - FirebaseCoreExtension (~> 11.15.0)
-    - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
-    - GoogleUtilities/Environment (~> 8.1)
-    - GTMSessionFetcher/Core (< 5.0, >= 3.4)
-    - RecaptchaInterop (~> 101.0)
-  - FirebaseAuthInterop (11.15.0)
-  - FirebaseCore (11.15.0):
-    - FirebaseCoreInternal (~> 11.15.0)
+  - FirebaseCore (12.6.0):
+    - FirebaseCoreInternal (~> 12.6.0)
     - GoogleUtilities/Environment (~> 8.1)
     - GoogleUtilities/Logger (~> 8.1)
-  - FirebaseCoreExtension (11.15.0):
-    - FirebaseCore (~> 11.15.0)
-  - FirebaseCoreInternal (11.15.0):
+  - FirebaseCoreInternal (12.6.0):
     - "GoogleUtilities/NSData+zlib (~> 8.1)"
-  - FirebaseInstallations (11.15.0):
-    - FirebaseCore (~> 11.15.0)
+  - FirebaseInstallations (12.6.0):
+    - FirebaseCore (~> 12.6.0)
     - GoogleUtilities/Environment (~> 8.1)
     - GoogleUtilities/UserDefaults (~> 8.1)
     - PromisesObjC (~> 2.4)
-  - FirebaseMessaging (11.15.0):
-    - FirebaseCore (~> 11.15.0)
-    - FirebaseInstallations (~> 11.0)
-    - GoogleDataTransport (~> 10.0)
+  - FirebaseMessaging (12.6.0):
+    - FirebaseCore (~> 12.6.0)
+    - FirebaseInstallations (~> 12.6.0)
+    - GoogleDataTransport (~> 10.1)
     - GoogleUtilities/AppDelegateSwizzler (~> 8.1)
     - GoogleUtilities/Environment (~> 8.1)
     - GoogleUtilities/Reachability (~> 8.1)
     - GoogleUtilities/UserDefaults (~> 8.1)
     - nanopb (~> 3.30910.0)
   - Flutter (1.0.0)
-  - flutter_callkit_incoming (0.0.1):
-    - CryptoSwift
-    - Flutter
-  - flutter_face_api (6.4.875):
-    - FaceSDK (= 6.4.2321)
-    - Flutter
   - flutter_local_notifications (0.0.1):
-    - Flutter
-  - flutter_logs_yoer (0.0.1):
-    - Flutter
-    - ZIPFoundation
-  - flutter_ringtone_player (0.0.1):
-    - Flutter
-  - flutter_sound (9.30.0):
-    - Flutter
-    - flutter_sound_core (= 9.30.0)
-  - flutter_sound_core (9.30.0)
-  - flutter_volume_controller (0.0.1):
     - Flutter
   - geocoding_ios (1.0.5):
     - Flutter
@@ -143,10 +67,9 @@ PODS:
     - Google-Maps-iOS-Utils (< 7.0, >= 5.0)
     - GoogleMaps (< 11.0, >= 8.4)
   - google_sign_in_ios (0.0.1):
-    - AppAuth (>= 1.7.4)
     - Flutter
     - FlutterMacOS
-    - GoogleSignIn (~> 8.0)
+    - GoogleSignIn (~> 9.0)
     - GTMSessionFetcher (>= 3.4.0)
   - GoogleDataTransport (10.1.0):
     - nanopb (~> 3.30910.0)
@@ -154,10 +77,10 @@ PODS:
   - GoogleMaps (9.4.0):
     - GoogleMaps/Maps (= 9.4.0)
   - GoogleMaps/Maps (9.4.0)
-  - GoogleSignIn (8.0.0):
-    - AppAuth (< 2.0, >= 1.7.3)
+  - GoogleSignIn (9.1.0):
+    - AppAuth (~> 2.0)
     - AppCheckCore (~> 11.0)
-    - GTMAppAuth (< 5.0, >= 4.1.1)
+    - GTMAppAuth (~> 5.0)
     - GTMSessionFetcher/Core (~> 3.3)
   - GoogleUtilities/AppDelegateSwizzler (8.1.0):
     - GoogleUtilities/Environment
@@ -183,8 +106,8 @@ PODS:
   - GoogleUtilities/UserDefaults (8.1.0):
     - GoogleUtilities/Logger
     - GoogleUtilities/Privacy
-  - GTMAppAuth (4.1.1):
-    - AppAuth/Core (~> 1.7)
+  - GTMAppAuth (5.0.0):
+    - AppAuth/Core (~> 2.0)
     - GTMSessionFetcher/Core (< 4.0, >= 3.3)
   - GTMSessionFetcher (3.5.0):
     - GTMSessionFetcher/Full (= 3.5.0)
@@ -193,41 +116,20 @@ PODS:
     - GTMSessionFetcher/Core
   - image_picker_ios (0.0.1):
     - Flutter
-  - just_audio (0.0.1):
-    - Flutter
-    - FlutterMacOS
-  - Masonry (1.1.0)
   - nanopb (3.30910.0):
     - nanopb/decode (= 3.30910.0)
     - nanopb/encode (= 3.30910.0)
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
-  - native_device_orientation (0.0.1):
-    - Flutter
   - package_info_plus (0.4.5):
     - Flutter
   - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - permission_handler_apple (9.3.0):
-    - Flutter
-  - photo_manager (3.9.0):
+  - photo_manager (3.8.3):
     - Flutter
     - FlutterMacOS
-  - pro_video_editor (0.0.1):
-    - Flutter
   - PromisesObjC (2.4.0)
-  - proximity_sensor (0.0.1):
-    - Flutter
-  - RecaptchaInterop (101.0.0)
-  - RegulaCommon (7.5.935)
-  - screen_brightness_ios (0.1.0):
-    - Flutter
-  - SDWebImage (5.21.6):
-    - SDWebImage/Core (= 5.21.6)
-  - SDWebImage/Core (5.21.6)
-  - share_plus (0.0.1):
-    - Flutter
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -236,107 +138,42 @@ PODS:
   - sqflite_darwin (0.0.4):
     - Flutter
     - FlutterMacOS
-  - SwiftyGif (5.4.5)
-  - url_launcher_ios (0.0.1):
-    - Flutter
-  - vibration (3.0.0):
-    - Flutter
   - video_player_avfoundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - wakelock_plus (0.0.1):
-    - Flutter
-  - zego_callkit (1.0.0):
-    - Flutter
-  - zego_express_engine (3.23.0):
-    - Flutter
-  - zego_uikit (2.28.42):
-    - Flutter
-    - Masonry
-    - zego_express_engine
-    - ZegoUIKitReport (= 0.2.10)
-  - zego_uikit_prebuilt_call (4.22.2):
-    - Flutter
-  - zego_uikit_signaling_plugin (2.8.19):
-    - Flutter
-  - zego_zim (2.26.0):
-    - Flutter
-    - ZIM (= 2.27.0)
-  - zego_zpns (2.6.0):
-    - Flutter
-    - ZPNs (= 2.6.0)
-  - ZegoUIKitReport (0.2.10)
-  - ZIM (2.27.0)
-  - ZIPFoundation (0.9.20)
-  - ZPNs (2.6.0)
 
 DEPENDENCIES:
-  - audio_session (from `.symlinks/plugins/audio_session/ios`)
   - audioplayers_darwin (from `.symlinks/plugins/audioplayers_darwin/darwin`)
   - camera_avfoundation (from `.symlinks/plugins/camera_avfoundation/ios`)
   - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - emoji_picker_flutter (from `.symlinks/plugins/emoji_picker_flutter/ios`)
-  - file_picker (from `.symlinks/plugins/file_picker/ios`)
-  - firebase_auth (from `.symlinks/plugins/firebase_auth/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
   - firebase_messaging (from `.symlinks/plugins/firebase_messaging/ios`)
   - Flutter (from `Flutter`)
-  - flutter_callkit_incoming (from `.symlinks/plugins/flutter_callkit_incoming/ios`)
-  - flutter_face_api (from `.symlinks/plugins/flutter_face_api/ios`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
-  - flutter_logs_yoer (from `.symlinks/plugins/flutter_logs_yoer/ios`)
-  - flutter_ringtone_player (from `.symlinks/plugins/flutter_ringtone_player/ios`)
-  - flutter_sound (from `.symlinks/plugins/flutter_sound/ios`)
-  - flutter_volume_controller (from `.symlinks/plugins/flutter_volume_controller/ios`)
   - geocoding_ios (from `.symlinks/plugins/geocoding_ios/ios`)
   - geolocator_apple (from `.symlinks/plugins/geolocator_apple/darwin`)
   - google_maps_flutter_ios (from `.symlinks/plugins/google_maps_flutter_ios/ios`)
   - google_sign_in_ios (from `.symlinks/plugins/google_sign_in_ios/darwin`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
-  - just_audio (from `.symlinks/plugins/just_audio/darwin`)
-  - native_device_orientation (from `.symlinks/plugins/native_device_orientation/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
-  - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - photo_manager (from `.symlinks/plugins/photo_manager/darwin`)
-  - pro_video_editor (from `.symlinks/plugins/pro_video_editor/ios`)
-  - proximity_sensor (from `.symlinks/plugins/proximity_sensor/ios`)
-  - screen_brightness_ios (from `.symlinks/plugins/screen_brightness_ios/ios`)
-  - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sign_in_with_apple (from `.symlinks/plugins/sign_in_with_apple/ios`)
   - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
-  - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
-  - vibration (from `.symlinks/plugins/vibration/ios`)
   - video_player_avfoundation (from `.symlinks/plugins/video_player_avfoundation/darwin`)
-  - wakelock_plus (from `.symlinks/plugins/wakelock_plus/ios`)
-  - zego_callkit (from `.symlinks/plugins/zego_callkit/ios`)
-  - zego_express_engine (from `.symlinks/plugins/zego_express_engine/ios`)
-  - zego_uikit (from `.symlinks/plugins/zego_uikit/ios`)
-  - zego_uikit_prebuilt_call (from `.symlinks/plugins/zego_uikit_prebuilt_call/ios`)
-  - zego_uikit_signaling_plugin (from `.symlinks/plugins/zego_uikit_signaling_plugin/ios`)
-  - zego_zim (from `.symlinks/plugins/zego_zim/ios`)
-  - zego_zpns (from `.symlinks/plugins/zego_zpns/ios`)
 
 SPEC REPOS:
   trunk:
     - AppAuth
     - AppCheckCore
-    - CryptoSwift
-    - DKImagePickerController
-    - DKPhotoGallery
-    - FaceSDK
     - Firebase
-    - FirebaseAppCheckInterop
-    - FirebaseAuth
-    - FirebaseAuthInterop
     - FirebaseCore
-    - FirebaseCoreExtension
     - FirebaseCoreInternal
     - FirebaseInstallations
     - FirebaseMessaging
-    - flutter_sound_core
     - Google-Maps-iOS-Utils
     - GoogleDataTransport
     - GoogleMaps
@@ -344,21 +181,10 @@ SPEC REPOS:
     - GoogleUtilities
     - GTMAppAuth
     - GTMSessionFetcher
-    - Masonry
     - nanopb
     - PromisesObjC
-    - RecaptchaInterop
-    - RegulaCommon
-    - SDWebImage
-    - SwiftyGif
-    - ZegoUIKitReport
-    - ZIM
-    - ZIPFoundation
-    - ZPNs
 
 EXTERNAL SOURCES:
-  audio_session:
-    :path: ".symlinks/plugins/audio_session/ios"
   audioplayers_darwin:
     :path: ".symlinks/plugins/audioplayers_darwin/darwin"
   camera_avfoundation:
@@ -369,30 +195,14 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/device_info_plus/ios"
   emoji_picker_flutter:
     :path: ".symlinks/plugins/emoji_picker_flutter/ios"
-  file_picker:
-    :path: ".symlinks/plugins/file_picker/ios"
-  firebase_auth:
-    :path: ".symlinks/plugins/firebase_auth/ios"
   firebase_core:
     :path: ".symlinks/plugins/firebase_core/ios"
   firebase_messaging:
     :path: ".symlinks/plugins/firebase_messaging/ios"
   Flutter:
     :path: Flutter
-  flutter_callkit_incoming:
-    :path: ".symlinks/plugins/flutter_callkit_incoming/ios"
-  flutter_face_api:
-    :path: ".symlinks/plugins/flutter_face_api/ios"
   flutter_local_notifications:
     :path: ".symlinks/plugins/flutter_local_notifications/ios"
-  flutter_logs_yoer:
-    :path: ".symlinks/plugins/flutter_logs_yoer/ios"
-  flutter_ringtone_player:
-    :path: ".symlinks/plugins/flutter_ringtone_player/ios"
-  flutter_sound:
-    :path: ".symlinks/plugins/flutter_sound/ios"
-  flutter_volume_controller:
-    :path: ".symlinks/plugins/flutter_volume_controller/ios"
   geocoding_ios:
     :path: ".symlinks/plugins/geocoding_ios/ios"
   geolocator_apple:
@@ -403,137 +213,59 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/google_sign_in_ios/darwin"
   image_picker_ios:
     :path: ".symlinks/plugins/image_picker_ios/ios"
-  just_audio:
-    :path: ".symlinks/plugins/just_audio/darwin"
-  native_device_orientation:
-    :path: ".symlinks/plugins/native_device_orientation/ios"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
   path_provider_foundation:
     :path: ".symlinks/plugins/path_provider_foundation/darwin"
-  permission_handler_apple:
-    :path: ".symlinks/plugins/permission_handler_apple/ios"
   photo_manager:
     :path: ".symlinks/plugins/photo_manager/darwin"
-  pro_video_editor:
-    :path: ".symlinks/plugins/pro_video_editor/ios"
-  proximity_sensor:
-    :path: ".symlinks/plugins/proximity_sensor/ios"
-  screen_brightness_ios:
-    :path: ".symlinks/plugins/screen_brightness_ios/ios"
-  share_plus:
-    :path: ".symlinks/plugins/share_plus/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
   sign_in_with_apple:
     :path: ".symlinks/plugins/sign_in_with_apple/ios"
   sqflite_darwin:
     :path: ".symlinks/plugins/sqflite_darwin/darwin"
-  url_launcher_ios:
-    :path: ".symlinks/plugins/url_launcher_ios/ios"
-  vibration:
-    :path: ".symlinks/plugins/vibration/ios"
   video_player_avfoundation:
     :path: ".symlinks/plugins/video_player_avfoundation/darwin"
-  wakelock_plus:
-    :path: ".symlinks/plugins/wakelock_plus/ios"
-  zego_callkit:
-    :path: ".symlinks/plugins/zego_callkit/ios"
-  zego_express_engine:
-    :path: ".symlinks/plugins/zego_express_engine/ios"
-  zego_uikit:
-    :path: ".symlinks/plugins/zego_uikit/ios"
-  zego_uikit_prebuilt_call:
-    :path: ".symlinks/plugins/zego_uikit_prebuilt_call/ios"
-  zego_uikit_signaling_plugin:
-    :path: ".symlinks/plugins/zego_uikit_signaling_plugin/ios"
-  zego_zim:
-    :path: ".symlinks/plugins/zego_zim/ios"
-  zego_zpns:
-    :path: ".symlinks/plugins/zego_zpns/ios"
 
 SPEC CHECKSUMS:
-  AppAuth: d4f13a8fe0baf391b2108511793e4b479691fb73
+  AppAuth: 1c1a8afa7e12f2ec3a294d9882dfa5ab7d3cb063
   AppCheckCore: cc8fd0a3a230ddd401f326489c99990b013f0c4f
-  audio_session: 9bb7f6c970f21241b19f5a3658097ae459681ba0
-  audioplayers_darwin: 835ced6edd4c9fc8ebb0a7cc9e294a91d99917d5
+  audioplayers_darwin: 4f9ca89d92d3d21cec7ec580e78ca888e5fb68bd
   camera_avfoundation: be3be85408cd4126f250386828e9b1dfa40ab436
   connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
-  CryptoSwift: e64e11850ede528a02a0f3e768cec8e9d92ecb90
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
-  DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
-  DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
   emoji_picker_flutter: ece213fc274bdddefb77d502d33080dc54e616cc
-  FaceSDK: e96016e36d5507ad9d9ee3b011d735f5fe51829f
-  file_picker: a0560bc09d61de87f12d246fc47d2119e6ef37be
-  Firebase: d99ac19b909cd2c548339c2241ecd0d1599ab02e
-  firebase_auth: 50af8366c87bb88c80ebeae62eb60189c7246b9b
-  firebase_core: 995454a784ff288be5689b796deb9e9fa3601818
-  firebase_messaging: f4a41dd102ac18b840eba3f39d67e77922d3f707
-  FirebaseAppCheckInterop: 06fe5a3799278ae4667e6c432edd86b1030fa3df
-  FirebaseAuth: a6575e5fbf46b046c58dc211a28a5fbdd8d4c83b
-  FirebaseAuthInterop: 7087d7a4ee4bc4de019b2d0c240974ed5d89e2fd
-  FirebaseCore: efb3893e5b94f32b86e331e3bd6dadf18b66568e
-  FirebaseCoreExtension: edbd30474b5ccf04e5f001470bdf6ea616af2435
-  FirebaseCoreInternal: 9afa45b1159304c963da48addb78275ef701c6b4
-  FirebaseInstallations: 317270fec08a5d418fdbc8429282238cab3ac843
-  FirebaseMessaging: 3b26e2cee503815e01c3701236b020aa9b576f09
+  Firebase: a451a7b61536298fd5cbfe3a746fd40443a50679
+  firebase_core: ba00a168e719694f38960502ceb560285603d073
+  firebase_messaging: bf0e29321927edc02a563c984dbfa5b063864b15
+  FirebaseCore: 0e38ad5d62d980a47a64b8e9301ffa311457be04
+  FirebaseCoreInternal: 69bf1306a05b8ac43004f6cc1f804bb7b05b229e
+  FirebaseInstallations: 631b38da2e11a83daa4bfb482f79d286a5dfa7ad
+  FirebaseMessaging: a61bc42dcab3f7a346d94bbb54dab2c9435b18b2
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  flutter_callkit_incoming: cb8138af67cda6dd981f7101a5d709003af21502
-  flutter_face_api: cc9d888512d411ebf7cbda7e3d3fe6e8f9a3b076
   flutter_local_notifications: a5a732f069baa862e728d839dd2ebb904737effb
-  flutter_logs_yoer: 4b6ed7705cc0e5306d9ecce1d5be5568045e0e73
-  flutter_ringtone_player: a77c42464250845611eaa44c27e8714acc800138
-  flutter_sound: d95194f6476c9ad211d22b3a414d852c12c7ca44
-  flutter_sound_core: 7f2626d249d3a57bfa6da892ef7e22d234482c1a
-  flutter_volume_controller: c2be490cb0487e8b88d0d9fc2b7e1c139a4ebccb
   geocoding_ios: 33776c9ebb98d037b5e025bb0e7537f6dd19646e
   geolocator_apple: ab36aa0e8b7d7a2d7639b3b4e48308394e8cef5e
   Google-Maps-iOS-Utils: 0a484b05ed21d88c9f9ebbacb007956edd508a96
   google_maps_flutter_ios: 3213e1e5f5588b6134935cb8fc59acb4e6d88377
-  google_sign_in_ios: b48bb9af78576358a168361173155596c845f0b9
+  google_sign_in_ios: 00dfa94252eb10278b64828c81bcb7158a81a53a
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
   GoogleMaps: 0608099d4870cac8754bdba9b6953db543432438
-  GoogleSignIn: ce8c89bb9b37fb624b92e7514cc67335d1e277e4
+  GoogleSignIn: fcee2257188d5eda57a5e2b6a715550ffff9206d
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
-  GTMAppAuth: f69bd07d68cd3b766125f7e072c45d7340dea0de
+  GTMAppAuth: 217a876b249c3c585a54fd6f73e6b58c4f5c4238
   GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
   image_picker_ios: 7fe1ff8e34c1790d6fff70a32484959f563a928a
-  just_audio: 4e391f57b79cad2b0674030a00453ca5ce817eed
-  Masonry: 678fab65091a9290e40e2832a55e7ab731aad201
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
-  native_device_orientation: f3ba5f2ddbab3deee23a5f6693b4f97b02dafea2
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
-  permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
-  photo_manager: 25fd77df14f4f0ba5ef99e2c61814dde77e2bceb
-  pro_video_editor: 44ef9a6d48dbd757ed428cf35396dd05f35c7830
+  photo_manager: fe4cbb0808b96f8be4af7ce6ae18dcd9c9b983c6
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
-  proximity_sensor: 2aef59f90cf0382935faf58ad0a79e1e860773bd
-  RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
-  RegulaCommon: 2a6406d2d3ebbd720b66a9cfa5b9631701d343eb
-  screen_brightness_ios: 5ed898fa50fa82a26171c086ca5e28228f932576
-  SDWebImage: 1bb6a1b84b6fe87b972a102bdc77dd589df33477
-  share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
   shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
   sign_in_with_apple: c5dcc141574c8c54d5ac99dd2163c0c72ad22418
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
-  SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
-  url_launcher_ios: 694010445543906933d732453a59da0a173ae33d
-  vibration: ca8104a8875b9c493e15b21b04e456befd0ff6eb
   video_player_avfoundation: 2cef49524dd1f16c5300b9cd6efd9611ce03639b
-  wakelock_plus: e29112ab3ef0b318e58cfa5c32326458be66b556
-  zego_callkit: 8e3bc2e9fc6895cff1b27841b1de1100344d2613
-  zego_express_engine: 9b73b5b83129ee033287f6597fd5d700b84b27c8
-  zego_uikit: 909da9057de3803cd6a27a2d3f85df7d56bb5cfc
-  zego_uikit_prebuilt_call: be5d85deb992269ed89736b02f07dca47da56360
-  zego_uikit_signaling_plugin: ffced40608c89b1ac0241a6194dacb9bc5af19b7
-  zego_zim: 98d0946eeca309073e48a43ba14d1dce7a52c80f
-  zego_zpns: e2ef9b972e9b6be00b78b32b71c550c426584752
-  ZegoUIKitReport: a993f7ccc5d243998a7e601a60e16fcd6c084417
-  ZIM: b39b9a5a2ddff4d60de51c3bd6a5574cedbcdf03
-  ZIPFoundation: dfd3d681c4053ff7e2f7350bc4e53b5dba3f5351
-  ZPNs: 73bad0046a74e37315201053f9a0e7ac625d9436
 
 PODFILE CHECKSUM: 4c87e78f6b9eb543973c9dc39f9a30d0872cffc6
 
