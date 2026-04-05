@@ -720,4 +720,16 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
       );
     }
   }
+
+  @override
+  void syncCommentCountFromBackend({
+    required String postId,
+    required int totalCount,
+  }) {
+    final index = state.posts.indexWhere((p) => p.postId == postId);
+    if (index != -1) {
+      final post = state.posts[index];
+      _updatePostInList(postId, post.copyWith(commentsCount: totalCount));
+    }
+  }
 }

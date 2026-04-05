@@ -13,6 +13,7 @@ import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/functions/set_advisor_status.dart';
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/features/shared/auth/model/day_time_range_model.dart';
+import 'package:tayseer/features/shared/auth/model/summar_session_model.dart'; // ★ import جديد
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
 import 'package:crypto/crypto.dart';
@@ -66,6 +67,197 @@ class AuthCubit extends Cubit<AuthState> {
     _isVideoLoading = isLoading;
     emit(state.copyWith());
   }
+
+  // =============================================
+  // ★★★ الدوال الجديدة - إدارة الدول والجلسات ★★★
+  // =============================================
+
+  // ─────────────────────────────────────────────
+  // 1. شاشة اختيار الدولة (SelectCountryBody)
+  // ─────────────────────────────────────────────
+
+  /// اختيار دولة معينة
+  void selectCountry({required String countryKey, required String flagEmoji}) {
+    emit(
+      state.copyWith(
+        selectedCountryKey: countryKey,
+        selectedCountryFlag: flagEmoji,
+        currentSessionsList: [], // تصفير الجلسات المؤقتة
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // 2. شاشة إضافة الجلسات (SelectSessionDurationBody)
+  // ─────────────────────────────────────────────
+
+  /// إضافة جلسة للقائمة المؤقتة
+  void addSessionToCurrentList(SessionItemModel session) {
+    final updatedList = List<SessionItemModel>.from(state.currentSessionsList)
+      ..add(session);
+
+    emit(state.copyWith(currentSessionsList: updatedList));
+  }
+
+  /// حذف جلسة من القائمة المؤقتة
+  void removeSessionFromCurrentList(int index) {
+    final updatedList = List<SessionItemModel>.from(state.currentSessionsList)
+      ..removeAt(index);
+
+    emit(state.copyWith(currentSessionsList: updatedList));
+  }
+
+  /// ★ حفظ الجلسات المؤقتة → نقلها للملخص النهائي
+  void saveCurrentSessionsToSummary() {
+    if (state.selectedCountryKey == null || state.currentSessionsList.isEmpty) {
+      return;
+    }
+
+    final updatedSummary = List<SummaryCountryModel>.from(state.summaryList);
+
+    // هل الدولة موجودة مسبقاً في الملخص؟
+    final existingIndex = updatedSummary.indexWhere(
+      (c) => c.countryKey == state.selectedCountryKey,
+    );
+
+    if (existingIndex != -1) {
+      // موجودة → نضيف الجلسات الجديدة على القديمة
+      final existing = updatedSummary[existingIndex];
+      updatedSummary[existingIndex] = SummaryCountryModel(
+        countryKey: existing.countryKey,
+        flagEmoji: existing.flagEmoji,
+        sessions: [...existing.sessions, ...state.currentSessionsList],
+      );
+    } else {
+      // مش موجودة → نضيف دولة جديدة
+      updatedSummary.add(
+        SummaryCountryModel(
+          countryKey: state.selectedCountryKey!,
+          flagEmoji: state.selectedCountryFlag ?? '',
+          sessions: List.from(state.currentSessionsList),
+        ),
+      );
+    }
+
+    emit(
+      state.copyWith(
+        summaryList: updatedSummary,
+        currentSessionsList: [], // تصفير الجلسات المؤقتة
+        clearSelectedCountry: true, // تصفير الدولة المختارة
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // 3. شاشة الملخص (SetupSummaryBody)
+  // ─────────────────────────────────────────────
+
+  /// حذف دولة كاملة من الملخص
+  void removeCountryFromSummary(int index) {
+    final updatedSummary = List<SummaryCountryModel>.from(state.summaryList)
+      ..removeAt(index);
+
+    emit(state.copyWith(summaryList: updatedSummary));
+  }
+
+  /// حذف جلسة معينة من دولة في الملخص
+  void removeSessionFromSummary({
+    required int countryIndex,
+    required int sessionIndex,
+  }) {
+    final updatedSummary = List<SummaryCountryModel>.from(state.summaryList);
+    final country = updatedSummary[countryIndex];
+
+    final updatedSessions = List<SessionItemModel>.from(country.sessions)
+      ..removeAt(sessionIndex);
+
+    if (updatedSessions.isEmpty) {
+      // لو مفيش جلسات → نحذف الدولة كلها
+      updatedSummary.removeAt(countryIndex);
+    } else {
+      updatedSummary[countryIndex] = SummaryCountryModel(
+        countryKey: country.countryKey,
+        flagEmoji: country.flagEmoji,
+        sessions: updatedSessions,
+      );
+    }
+
+    emit(state.copyWith(summaryList: updatedSummary));
+  }
+
+  /// ★★ إرسال الريكوست النهائي (من شاشة الملخص) ★★
+  Future<void> submitAllSetup() async {
+    emit(state.copyWith(addDayProviderState: CubitStates.loading));
+
+    try {
+      // تجهيز الداتا للباك إند
+      final countriesPayload = state.summaryList
+          .map(
+            (country) => {
+              'country_key': country.countryKey,
+              'flag': country.flagEmoji,
+              'sessions': country.sessions
+                  .map(
+                    (s) => {
+                      'name': s.name,
+                      'type': s.type,
+                      'duration': s.duration,
+                      'price': s.price,
+                    },
+                  )
+                  .toList(),
+            },
+          )
+          .toList();
+
+      debugPrint('📦 Final Payload: $countriesPayload');
+
+      // ★ بناء الـ body النهائي
+      // غيّر الشكل ده حسب الـ API بتاعك
+      final body = {'countries': countriesPayload, 'timezone': 'Asia/Riyadh'};
+
+      final response = await _repo.addDay(body: body);
+
+      response.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              addDayProviderState: CubitStates.failure,
+              errorMessage: failure.message,
+            ),
+          );
+        },
+        (_) {
+          emit(state.copyWith(addDayProviderState: CubitStates.success));
+        },
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          addDayProviderState: CubitStates.failure,
+          errorMessage: e.toString(),
+        ),
+      );
+    }
+  }
+
+  /// إعادة تعيين بيانات الإعداد فقط (بدون مسح باقي الستيت)
+  void resetSetupData() {
+    emit(
+      state.copyWith(
+        selectedCountryKey: null,
+        selectedCountryFlag: null,
+        currentSessionsList: [],
+        summaryList: [],
+        clearSelectedCountry: true,
+        addDayProviderState: CubitStates.initial,
+      ),
+    );
+  }
+
+  // =============================================
+  // ★★★ نهاية الدوال الجديدة ★★★
+  // =============================================
 
   Future<void> logInUser({
     String? email,
@@ -154,23 +346,10 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
-  Future<void> addServiceProvider() async {
-    emit(state.copyWith(addServiceProviderState: CubitStates.loading));
-
-    final sessionTypes = {
-      '30min': {
-        'duration': 30,
-        'price': int.tryParse(state.price30Min) ?? 0,
-        'currency': 'SAR',
-        'isEnabled': state.isThirtyMinutesSelected,
-      },
-      '60min': {
-        'duration': 60,
-        'price': int.tryParse(state.price60Min) ?? 0,
-        'currency': 'SAR',
-        'isEnabled': state.isSixtyMinutesSelected,
-      },
-    };
+  // ★ الدالة القديمة - خليها لو محتاجها في مكان تاني
+  // أو ممكن تشيلها لو مش هتستخدمها
+  Future<void> addDayProvider() async {
+    emit(state.copyWith(addDayProviderState: CubitStates.loading));
 
     final dayOrder = [
       'saturday',
@@ -213,27 +392,74 @@ class AuthCubit extends Cubit<AuthState> {
       }
     }
 
+    // ★ أيام فقط - بدون سيشنز
     final body = {
-      'sessionTypes': sessionTypes,
       'weeklyAvailability': weeklyAvailability,
       'timezone': 'Asia/Riyadh',
     };
 
-    final response = await _repo.addServiceProvider(body: body);
+    debugPrint('📦 addDay body: $body');
+
+    final response = await _repo.addDay(body: body);
 
     response.fold(
       (failure) {
         emit(
           state.copyWith(
-            addServiceProviderState: CubitStates.failure,
+            addDayProviderState: CubitStates.failure,
             errorMessage: failure.message,
           ),
         );
       },
       (_) {
-        emit(state.copyWith(addServiceProviderState: CubitStates.success));
+        emit(state.copyWith(addDayProviderState: CubitStates.success));
       },
     );
+  }
+
+  Future<void> submitOfferings() async {
+    if (state.summaryList.isEmpty) return;
+
+    emit(state.copyWith(setOfferingsState: CubitStates.loading));
+
+    try {
+      // ★ بناء الـ body بالشكل المطلوب من الـ API
+      // Map<String, List<Map>> بدل Array
+      final Map<String, dynamic> body = {};
+
+      for (final country in state.summaryList) {
+        // المفتاح = country.countryKey (مثل 'country_saudi')
+        body[country.countryKey] = country.sessions
+            .map((session) => session.toJson())
+            .toList();
+      }
+
+      debugPrint('📦 submitOfferings body: $body');
+
+      // ★ إرسال الريكوست
+      final response = await _repo.setCountryOfferings(body: body);
+
+      response.fold(
+        (failure) {
+          emit(
+            state.copyWith(
+              setOfferingsState: CubitStates.failure,
+              errorMessage: failure.message,
+            ),
+          );
+        },
+        (_) {
+          emit(state.copyWith(setOfferingsState: CubitStates.success));
+        },
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          setOfferingsState: CubitStates.failure,
+          errorMessage: e.toString(),
+        ),
+      );
+    }
   }
 
   Future<void> addCertificateAsConsultant() async {
@@ -863,49 +1089,21 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
-  /// Days
-  void toggleDay(String day) {
-    final map = Map<String, DayTimeRange>.from(state.availableDays);
+  // /// Days
+  // void toggleDay(String day) {
+  //   final map = Map<String, DayTimeRange>.from(state.availableDays);
 
-    if (map.containsKey(day)) {
-      map.remove(day);
-    } else {
-      map[day] = DayTimeRange(
-        from: const TimeOfDay(hour: 9, minute: 0),
-        to: const TimeOfDay(hour: 17, minute: 0),
-      );
-    }
+  //   if (map.containsKey(day)) {
+  //     map.remove(day);
+  //   } else {
+  //     map[day] = DayTimeRange(
+  //       from: const TimeOfDay(hour: 9, minute: 0),
+  //       to: const TimeOfDay(hour: 17, minute: 0),
+  //     );
+  //   }
 
-    emit(AuthState(availableDays: map));
-  }
-
-  void updateFromTime(String day, TimeOfDay time) {
-    final range = state.availableDays[day];
-    if (range == null) return;
-
-    emit(
-      AuthState(
-        availableDays: {
-          ...state.availableDays,
-          day: DayTimeRange(from: time, to: range.to),
-        },
-      ),
-    );
-  }
-
-  void updateToTime(String day, TimeOfDay time) {
-    final range = state.availableDays[day];
-    if (range == null) return;
-
-    emit(
-      AuthState(
-        availableDays: {
-          ...state.availableDays,
-          day: DayTimeRange(from: range.from, to: time),
-        },
-      ),
-    );
-  }
+  //   emit(AuthState(availableDays: map));
+  // }
 
   void guestLogin() async {
     emit(state.copyWith(guestLoginState: CubitStates.loading));
@@ -1039,7 +1237,7 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  /// Seet Gender
+  /// Set Gender
 
   Future<void> setGender({required String gender}) async {
     emit(state.copyWith(setGenderState: CubitStates.loading));
@@ -1064,6 +1262,99 @@ class AuthCubit extends Cubit<AuthState> {
   ///// clear//////
   void clearControllers() {
     emailController.clear();
+  }
+
+  void toggleDay(String day) {
+    final map = Map<String, DayTimeRange>.from(state.availableDays);
+
+    if (map.containsKey(day)) {
+      map.remove(day);
+    } else {
+      map[day] = DayTimeRange(
+        from: const TimeOfDay(hour: 9, minute: 0),
+        to: const TimeOfDay(hour: 17, minute: 0),
+      );
+    }
+
+    // ✅ copyWith بدل AuthState()
+    emit(state.copyWith(availableDays: map));
+  }
+
+  void updateFromTime(String day, TimeOfDay time) {
+    final range = state.availableDays[day];
+    if (range == null) return;
+
+    // ✅ copyWith بدل AuthState()
+    emit(
+      state.copyWith(
+        availableDays: {
+          ...state.availableDays,
+          day: DayTimeRange(from: time, to: range.to),
+        },
+      ),
+    );
+  }
+
+  void updateToTime(String day, TimeOfDay time) {
+    final range = state.availableDays[day];
+    if (range == null) return;
+
+    // ✅ copyWith بدل AuthState()
+    emit(
+      state.copyWith(
+        availableDays: {
+          ...state.availableDays,
+          day: DayTimeRange(from: range.from, to: time),
+        },
+      ),
+    );
+  }
+  // ★ أضف في AuthCubit
+
+  /// Reset حالة addDayProvider بعد الاستخدام
+  void resetAddDayProviderState() {
+    emit(state.copyWith(addDayProviderState: CubitStates.initial));
+  }
+
+  /// Reset حالة setOfferings بعد الاستخدام
+  void resetSetOfferingsState() {
+    emit(state.copyWith(setOfferingsState: CubitStates.initial));
+  }
+
+  /// ★★★ Reset شامل لكل بيانات الكيوبت ★★★
+  /// بتتنادي بعد نجاح submitOfferings
+  void resetEntireCubit() {
+    // 1. مسح كل الـ Controllers
+    emailController.clear();
+    nameAsConsultantController.clear();
+    bioController.clear();
+    certificateNameController.clear();
+    institutionNameController.clear();
+
+    // 2. مسح الصور والملفات
+    pickedCertificate = null;
+    pickedImage = null;
+    pickedVideo = null;
+    pickedNationalIds.clear();
+
+    // 3. مسح التواريخ
+    obtainDate = null;
+    birthDate = null;
+
+    // 4. مسح البيانات الشخصية
+    selectedGender = null;
+    specialization = null;
+    jobLevel = null;
+    experienceYears = null;
+
+    // 5. مسح الشهادات
+    certificates.clear();
+
+    // 6. مسح الفيديو لودنج
+    _isVideoLoading = false;
+
+    // 7. إعادة الـ State بالكامل للحالة الابتدائية
+    emit(AuthState());
   }
 
   @override

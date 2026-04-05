@@ -317,6 +317,17 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState> {
     }
   }
 
+  void syncCommentCountFromBackend({
+    required String postId,
+    required int totalCount,
+  }) {
+    final index = state.posts.indexWhere((p) => p.postId == postId);
+    if (index != -1) {
+      final post = state.posts[index];
+      _updatePostInList(postId, post.copyWith(commentsCount: totalCount));
+    }
+  }
+
   void _updatePostInList(String postId, PostModel updatedPost) {
     final currentIndex = state.posts.indexWhere((p) => p.postId == postId);
     if (currentIndex == -1) return;

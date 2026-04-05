@@ -427,6 +427,7 @@ class _PostItemState extends State<_PostItem>
       onPollVote: _onPollVote,
       onCommented: _onCommented,
       onCommentCountDelta: _onCommentCountDelta,
+      onCommentCountSync: _onCommentCountSync,
     );
   }
 
@@ -450,6 +451,7 @@ class _PostItemState extends State<_PostItem>
       onPollVote: _onPollVote,
       onCommented: _onCommented,
       onCommentCountDelta: _onCommentCountDelta,
+      onCommentCountSync: _onCommentCountSync,
     );
   }
 
@@ -499,6 +501,13 @@ class _PostItemState extends State<_PostItem>
       countDelta: countDelta,
       isCommented: isCommented,
       isAnonymous: isAnonymous,
+    );
+  }
+
+  void _onCommentCountSync({required String postId, required int totalCount}) {
+    widget.homeCubit.syncCommentCountFromBackend(
+      postId: postId,
+      totalCount: totalCount,
     );
   }
 

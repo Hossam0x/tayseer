@@ -49,6 +49,13 @@ class PostDetailsState extends Equatable {
   final int pendingCommentCountDelta;
   final int commentCountDeltaTrigger;
 
+  // ✅ NEW: Sync Comment Count from Backend
+  final int syncCommentCountFromBackend;
+  final int syncCommentCountTrigger;
+
+  // ✅ NEW: Total Comments and Replies Count from Backend
+  final int totalCommentsAndRepliesCount;
+
   const PostDetailsState({
     this.postLoadingState = CubitStates.initial,
     this.postLoadingError,
@@ -77,6 +84,10 @@ class PostDetailsState extends Equatable {
     // ✅ NEW
     this.pendingCommentCountDelta = 0,
     this.commentCountDeltaTrigger = 0,
+    // ✅ NEW: Sync from Backend
+    this.syncCommentCountFromBackend = 0,
+    this.syncCommentCountTrigger = 0,
+    this.totalCommentsAndRepliesCount = 0,
   });
 
   bool get hasMoreComments => currentPage < totalPages;
@@ -119,6 +130,10 @@ class PostDetailsState extends Equatable {
     // ✅ NEW: Delta
     int? pendingCommentCountDelta,
     int? commentCountDeltaTrigger,
+    // ✅ NEW: Sync from Backend
+    int? syncCommentCountFromBackend,
+    int? syncCommentCountTrigger,
+    int? totalCommentsAndRepliesCount,
   }) {
     return PostDetailsState(
       postLoadingState: postLoadingState ?? this.postLoadingState,
@@ -162,6 +177,13 @@ class PostDetailsState extends Equatable {
           pendingCommentCountDelta ?? this.pendingCommentCountDelta,
       commentCountDeltaTrigger:
           commentCountDeltaTrigger ?? this.commentCountDeltaTrigger,
+      // ✅ NEW: Sync from Backend
+      syncCommentCountFromBackend:
+          syncCommentCountFromBackend ?? this.syncCommentCountFromBackend,
+      syncCommentCountTrigger:
+          syncCommentCountTrigger ?? this.syncCommentCountTrigger,
+      totalCommentsAndRepliesCount:
+          totalCommentsAndRepliesCount ?? this.totalCommentsAndRepliesCount,
     );
   }
 
@@ -194,5 +216,9 @@ class PostDetailsState extends Equatable {
     // ✅ NEW
     pendingCommentCountDelta,
     commentCountDeltaTrigger,
+    // ✅ NEW: Sync from Backend
+    syncCommentCountFromBackend,
+    syncCommentCountTrigger,
+    totalCommentsAndRepliesCount,
   ];
 }

@@ -1,6 +1,5 @@
 import 'package:tayseer/features/shared/profile/cubit/certificates/certificates_cubit.dart';
 import 'package:tayseer/features/shared/profile/cubit/certificates/certificates_state.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/boost/boost_button_sliver.dart';
 import 'package:tayseer/features/shared/profile/widgets/certificates/certificates_error_section.dart';
 import 'package:tayseer/features/shared/profile/widgets/certificates/certificates_header.dart';
 import 'package:tayseer/features/shared/profile/widgets/certificates/certificates_list.dart';
@@ -109,15 +108,6 @@ class _CertificatesBody extends StatelessWidget {
             advisorId: advisorId,
           ),
           Gap(24.h),
-          if (isMe)
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 35.w),
-              child: BoostButton(
-                onPressed: () =>
-                    Navigator.pushNamed(context, AppRouter.kPackagesView),
-                text: context.tr('boost_button'),
-              ),
-            ),
         ],
       ),
     );

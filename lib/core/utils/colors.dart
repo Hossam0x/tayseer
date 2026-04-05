@@ -26,7 +26,7 @@ abstract class AppColors {
     colors: [HexColor('eb9dac'), HexColor('92263c')],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-  );
+  );  
 
   static List<Color> kGradineSplashColor = [
     kprimaryColor,

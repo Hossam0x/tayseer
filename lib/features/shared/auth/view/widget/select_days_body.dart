@@ -8,6 +8,8 @@ class SelectDaysBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authCubit = getIt<AuthCubit>();
+
     final daysKeys = [
       'saturday',
       'sunday',
@@ -25,7 +27,9 @@ class SelectDaysBody extends StatelessWidget {
             children: [
               /// Back
               Align(
-                alignment: isArabic? Alignment.centerRight: Alignment.centerLeft,
+                alignment: isArabic
+                    ? Alignment.centerRight
+                    : Alignment.centerLeft,
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back),
                   onPressed: () => context.pop(),
@@ -72,22 +76,43 @@ class SelectDaysBody extends StatelessWidget {
                 ),
               ),
 
-              /// Button
-              BlocBuilder<AuthCubit, AuthState>(
+              /// ★ Button مربوط بالفانكشن
+              BlocConsumer<AuthCubit, AuthState>(
+                // ★★★ أضف listenWhen ★★★
+                listenWhen: (previous, current) =>
+                    previous.addDayProviderState != current.addDayProviderState,
+                listener: (context, state) {
+                  if (state.addDayProviderState == CubitStates.success) {
+                    // ★★★ Reset أولاً ★★★
+                    authCubit.resetAddDayProviderState();
+                    context.pushNamed(AppRouter.kSelectCountryView);
+                  } else if (state.addDayProviderState == CubitStates.failure) {
+                    // ★★★ Reset كمان هنا ★★★
+                    authCubit.resetAddDayProviderState();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      CustomSnackBar(
+                        context,
+                        isError: true,
+                        text: state.errorMessage ?? '',
+                      ),
+                    );
+                  }
+                },
                 builder: (context, state) {
                   final hasSelection = state.availableDays.isNotEmpty;
+                  final isLoading =
+                      state.addDayProviderState == CubitStates.loading;
 
                   return CustomBotton(
                     width: context.width * .9,
-                    title: context.tr('next'),
-                    useGradient: hasSelection,
+                    title: isLoading
+                        ? context.tr('sending')
+                        : context.tr('next'),
+                    useGradient: hasSelection && !isLoading,
                     backGroundcolor: AppColors.kgreyColor,
-                    onPressed: hasSelection
+                    onPressed: hasSelection && !isLoading
                         ? () {
-                            // authCubit.addServiceProvider();
-                            context.pushNamed(
-                              AppRouter.kSelectSessionDurationView,
-                            );
+                            authCubit.addDayProvider();
                           }
                         : null,
                   );

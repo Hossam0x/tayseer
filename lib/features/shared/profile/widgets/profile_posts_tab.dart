@@ -56,6 +56,10 @@ abstract class ProfilePostsCubitContract<S> extends Cubit<S> {
     bool? isCommented,
     bool? isAnonymous,
   });
+  void syncCommentCountFromBackend({
+    required String postId,
+    required int totalCount,
+  });
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -347,6 +351,9 @@ class _ProfilePostItemState<C extends ProfilePostsCubitContract>
                 isCommented: isCommented,
                 isAnonymous: isAnonymous,
               ),
+      onCommentCountSync: ({required postId, required totalCount}) => widget
+          .cubit
+          .syncCommentCountFromBackend(postId: postId, totalCount: totalCount),
     );
   }
 

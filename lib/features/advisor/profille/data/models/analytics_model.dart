@@ -3,8 +3,13 @@ import 'package:equatable/equatable.dart';
 class AnalyticsModel extends Equatable {
   final AnalyticsOverview overview;
   final List<ChartData> chart;
+  final String subscriptionType; // 'free', 'gold', 'ultra'
 
-  const AnalyticsModel({required this.overview, required this.chart});
+  const AnalyticsModel({
+    required this.overview,
+    required this.chart,
+    this.subscriptionType = 'free',
+  });
 
   factory AnalyticsModel.fromJson(Map<String, dynamic> json) {
     final overviewData = json['overview'] as Map<String, dynamic>;
@@ -15,11 +20,12 @@ class AnalyticsModel extends Equatable {
       chart: chartData
           .map((item) => ChartData.fromJson(item as Map<String, dynamic>))
           .toList(),
+      subscriptionType: json['subscriptionType'] ?? 'free',
     );
   }
 
   @override
-  List<Object?> get props => [overview, chart];
+  List<Object?> get props => [overview, chart, subscriptionType];
 }
 
 class AnalyticsOverview extends Equatable {

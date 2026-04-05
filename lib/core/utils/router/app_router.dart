@@ -14,6 +14,7 @@ import 'package:tayseer/features/advisor/profille/views/consultation_topics_view
 import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/location_selection_view.dart';
 import 'package:tayseer/features/advisor/profille/views/professional_info_dashboard_view.dart';
+import 'package:tayseer/features/advisor/profille/views/subscription_required_view.dart';
 import 'package:tayseer/features/advisor/session/presentation/view/order_session_view.dart';
 import 'package:tayseer/features/advisor/settings/view/account_management_view.dart';
 import 'package:tayseer/features/advisor/settings/view/appointments_view.dart';
@@ -36,6 +37,8 @@ import 'package:tayseer/features/advisor/update_posts/view/update_post_view.dart
 import 'package:tayseer/features/advisor/membership/presentation/cubit/membership_cubit.dart';
 import 'package:tayseer/features/advisor/membership/presentation/views/membership_management_view.dart';
 import 'package:tayseer/features/shared/auth/view/purpose_selection_view.dart';
+import 'package:tayseer/features/shared/auth/view/select_country_view.dart';
+import 'package:tayseer/features/shared/auth/view/setup_summary_view.dart';
 import 'package:tayseer/features/shared/packages/presentation/views/advisor_subscription_view.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/advisor_subscription_cubit.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
@@ -210,6 +213,7 @@ abstract class AppRouter {
   static const kSettingsView = '/settings';
   static const kEditPersonalDataView = '/edit_personal_data';
   static const kProfessionalInfoDashboardView = '/professional_info_dashboard';
+  static const kSubscriptionRequiredView = '/subscription_required_view';
   static const kBoostAccountView = '/boost_account_view';
   static const kBoostPropertiesView = '/boost_properties_view';
   static const kLocationSelectionView = '/location_selection_view';
@@ -256,6 +260,8 @@ abstract class AppRouter {
   static const kEventView = '/event-view';
   static const kUserPackagesView = '/user-packages-view';
   static const kUserPackageDetailsView = '/user-package-details-view';
+  static const kSelectCountryView = '/SelectCountryView';
+  static const kSetupSummaryView = '/SetupSummaryView';
   ///// report screens /////
   static const kReportsView = '/reportsView';
   static const kReportDetailsView = '/reportDetailsView';
@@ -301,6 +307,15 @@ abstract class AppRouter {
           ),
         );
 
+      case AppRouter.kSubscriptionRequiredView:
+        return SlideLeftRoute(
+          page: BlocProvider.value(
+            value: getIt<ProfileCubit>(),
+            child: const SubscriptionRequiredView(),
+          ),
+          routeSettings: settings,
+        );
+
       case AppRouter.kBoostAccountView:
         return CustomRotationRoute(
           page: const BoostAccountView(),
@@ -332,8 +347,10 @@ abstract class AppRouter {
         );
 
       case AppRouter.kPackagesView:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final initialPage = args?['initialPage'] as int?;
         return SlideLeftRoute(
-          page: const PackagesView(),
+          page: PackagesView(initialPage: initialPage),
           routeSettings: settings,
         );
 
@@ -1033,6 +1050,22 @@ abstract class AppRouter {
       case AppRouter.kOrderManagementView:
         return SlideLeftRoute(
           page: const OrderManagementView(),
+          routeSettings: settings,
+        );
+      case AppRouter.kSelectCountryView:
+        return SlideLeftRoute(
+          page: BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const SelectCountryView(),
+          ),
+          routeSettings: settings,
+        );
+      case AppRouter.kSetupSummaryView:
+        return SlideLeftRoute(
+          page: BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const SetupSummaryView(),
+          ),
           routeSettings: settings,
         );
 

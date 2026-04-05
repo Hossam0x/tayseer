@@ -238,6 +238,8 @@ class _PostItemState extends State<_PostItem>
                 isCommented: isCommented,
                 isAnonymous: isAnonymous,
               ),
+      onCommentCountSync: ({required postId, required totalCount}) => _cubit
+          .syncCommentCountFromBackend(postId: postId, totalCount: totalCount),
     );
   }
 

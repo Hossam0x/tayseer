@@ -97,26 +97,27 @@ class VisitorItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    visitor.name,
-                    style: Styles.textStyle16SemiBold,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (visitor.verificationType == VerificationType.full)
-                    Row(
-                      children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          visitor.name,
+                          style: Styles.textStyle16SemiBold,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (visitor.verificationType ==
+                          VerificationType.full) ...[
                         Gap(4.w),
                         Icon(Icons.verified, color: Colors.blue, size: 16.w),
-                      ],
-                    )
-                  else if (visitor.verificationType == VerificationType.basic)
-                    Row(
-                      children: [
+                      ] else if (visitor.verificationType ==
+                          VerificationType.basic) ...[
                         Gap(4.w),
                         Icon(Icons.verified, color: Colors.grey, size: 16.w),
                       ],
-                    ),
+                    ],
+                  ),
                   // if (dateStr.isNotEmpty) ...[
                   //   Gap(4.h),
                   //   Text(

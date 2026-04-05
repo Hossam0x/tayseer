@@ -112,6 +112,62 @@ class CurrencyHelper {
     'AU': 'AUD',
   };
 
+  /// ★ الحصول على كود العملة بناءً على مفتاح الدولة
+  static String getCurrencyCodeByCountryKey(String countryKey) {
+    switch (countryKey) {
+      case 'country_saudi':
+        return 'SAR';
+      case 'country_egypt':
+        return 'EGP';
+      case 'country_emirati':
+        return 'AED';
+      case 'country_kuwait':
+        return 'KWD';
+      case 'country_qatar':
+        return 'QAR';
+      case 'country_bahrain':
+        return 'BHD';
+      case 'country_jordan':
+        return 'JOD';
+      case 'country_palestine':
+        return 'ILS';
+      case 'country_morocco':
+        return 'MAD';
+      case 'country_tunisia':
+        return 'TND';
+      default:
+        return 'SAR';
+    }
+  }
+
+  /// ★ جلب رمز العملة بناءً على مفتاح الدولة الخاص بالتطبيق
+  static String getCurrencySymbolByCountryKey(String countryKey) {
+    switch (countryKey) {
+      case 'country_saudi':
+        return 'ر.س';
+      case 'country_egypt':
+        return 'ج.م';
+      case 'country_emirati':
+        return 'د.إ';
+      case 'country_kuwait':
+        return 'د.ك';
+      case 'country_qatar':
+        return 'ر.ق';
+      case 'country_bahrain':
+        return 'د.ب';
+      case 'country_jordan':
+        return 'د.أ';
+      case 'country_palestine':
+        return '₪';
+      case 'country_morocco':
+        return 'د.م';
+      case 'country_tunisia':
+        return 'د.ت';
+      default:
+        return getCurrencySymbol();
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════
   // ✅ جلب كود البلد من الجهاز
   // ═══════════════════════════════════════════════════════════
