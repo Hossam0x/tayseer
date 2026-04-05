@@ -2,7 +2,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_visitors_model.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_visitors_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_visitors_state.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/boost/boost_button_sliver.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/boost/upgrade_button.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/visitors/visitor_item.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -33,9 +33,12 @@ class VisitorsList extends StatelessWidget {
         }
 
         final isLoading = state is ProfileVisitorsLoading;
-        final isSubscribed = state is ProfileVisitorsSuccess
-            ? state.isSubscribed
-            : false;
+        final subscriptionType = state is ProfileVisitorsSuccess
+            ? state.subscriptionType
+            : 'free';
+        // ultra = can see everything, gold/free = blurred
+        final canSeeVisitors = subscriptionType == 'ultra';
+
         final visitors = state is ProfileVisitorsSuccess
             ? state.visitors
             : _skeletonVisitors;
@@ -49,6 +52,9 @@ class VisitorsList extends StatelessWidget {
           );
         }
 
+        // gold: show upgrade to elite button; free: no button (handled in ProfileView)
+        final showUpgradeButton = subscriptionType == 'gold';
+
         return Skeletonizer(
           enabled: isLoading,
           child: ListView.separated(
@@ -61,9 +67,9 @@ class VisitorsList extends StatelessWidget {
                 children: [
                   VisitorItem(
                     visitor: visitors[index],
-                    isSubscribed: isSubscribed,
+                    canSeeVisitors: canSeeVisitors,
                   ),
-                  if (isLast) ...[
+                  if (isLast && showUpgradeButton) ...[
                     Gap(24.h),
                     Padding(
                       padding: EdgeInsets.only(
@@ -71,11 +77,12 @@ class VisitorsList extends StatelessWidget {
                         left: 50.w,
                         right: 50.w,
                       ),
-                      child: BoostButton(
-                        text: context.tr('boost_button'),
+                      child: UpgradeButton(
+                        text: context.tr('upgrade_to_elite_button'),
                         onPressed: () => Navigator.pushNamed(
                           context,
                           AppRouter.kPackagesView,
+                          arguments: {'initialPage': 2}, // elite tab index
                         ),
                       ),
                     ),
