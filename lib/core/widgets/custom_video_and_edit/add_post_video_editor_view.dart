@@ -140,7 +140,7 @@ class _VideoEditorViewState extends State<VideoEditorView> {
           : null;
 
       // دمج كل الإعدادات والتعديلات لتطبيقها على الفيديو النهائي
-      final renderModel = RenderVideoModel(
+      final renderModel = VideoRenderData(
         video: EditorVideo.file(widget.videoFile.path),
         outputFormat: VideoOutputFormat.mp4,
         enableAudio: !_isMuted, // تفعيل أو كتم الصوت
