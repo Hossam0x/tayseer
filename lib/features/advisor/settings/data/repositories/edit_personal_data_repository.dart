@@ -12,12 +12,32 @@ abstract class EditPersonalDataRepository {
     bool? removeVideo,
     void Function(int, int)? onSendProgress,
   });
+
+  /// جلب الاسم والصورة من endpoint مخصص — يرجع الـ URL الصحيح بعد رفع الصورة
+  Future<Either<Failure, Map<String, String>>> fetchNameAndImage();
 }
 
 class EditPersonalDataRepositoryImpl implements EditPersonalDataRepository {
   final ApiService _apiService;
 
   EditPersonalDataRepositoryImpl(this._apiService);
+
+  @override
+  Future<Either<Failure, Map<String, String>>> fetchNameAndImage() async {
+    try {
+      final response = await _apiService.get(
+        endPoint: ApiEndPoint.nameAndImage,
+      );
+      final data = (response['data'] as Map<String, dynamic>?) ?? {};
+      final name = data['name'] as String? ?? '';
+      final image = data['image'] as String? ?? '';
+      return Right({'name': name, 'image': image});
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 
   @override
   Future<Either<Failure, AdvisorProfileModel>> getAdvisorProfile() async {

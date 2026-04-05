@@ -2,7 +2,7 @@
 
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/errors/failure.dart';
-import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
+import 'package:tayseer/features/shared/home/model/image_and_name_model.dart';
 import 'package:tayseer/features/shared/home/model/categories_response_model.dart';
 import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/features/shared/home/model/comments_response_model.dart';
@@ -62,11 +62,11 @@ abstract class HomeRepository {
     required bool isRemove,
   });
 
-  Future<Either<Failure, String>> editComment({
+  Future<Either<Failure, CommentModel>> editComment({
     required String commentId,
     required String comment,
   });
-  Future<Either<Failure, String>> editReply({
+  Future<Either<Failure, CommentModel>> editReply({
     required String replyId,
     required String reply,
   });
@@ -101,4 +101,6 @@ abstract class HomeRepository {
     required String advisorId,
     required bool isAdding,
   });
+
+  Future<Either<Failure, PostModel>> fetchPostById({required String postId});
 }

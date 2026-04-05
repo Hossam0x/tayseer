@@ -9,6 +9,11 @@ class ReelsState extends Equatable {
   final bool isLoadingMore;
   final String? errorMessage;
 
+  // O(1) lookup map — يتبنى من اللستة
+  Map<String, PostModel> get reelsMap {
+    return {for (final r in reels) r.postId: r};
+  }
+
   // ✅ Share Action States
   final CubitStates shareActionState;
   final String? shareMessage;

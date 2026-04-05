@@ -1,9 +1,8 @@
-import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_cubits.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/service_provider_states.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/service_provider/service_provider_cubits.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/service_provider/service_provider_states.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/session_pricing/session_pricing_skeleton.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/session_price_item.dart';
-import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class SessionPricingView extends StatelessWidget {
@@ -23,7 +22,6 @@ class SessionPricingView extends StatelessWidget {
             );
             context.read<SessionPricingCubit>().clearError();
           }
-
           if (state.successMessage != null &&
               state.successMessage!.isNotEmpty) {
             showSafeSnackBar(
@@ -37,12 +35,10 @@ class SessionPricingView extends StatelessWidget {
         },
         builder: (context, state) {
           final cubit = context.read<SessionPricingCubit>();
-
           return Scaffold(
             body: AdvisorBackground(
               child: Stack(
                 children: [
-                  // الخلفية
                   Positioned(
                     top: 0,
                     left: 0,
@@ -57,8 +53,6 @@ class SessionPricingView extends StatelessWidget {
                       ),
                     ),
                   ),
-
-                  // المحتوى
                   SafeArea(
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -69,55 +63,26 @@ class SessionPricingView extends StatelessWidget {
                             title: context.tr('session_pricing_title'),
                           ),
                           Gap(30.h),
-
-                          // Loading State with Skeletonizer
                           if (state.state == CubitStates.loading)
-                            Expanded(child: _buildSkeletonLoading())
-                          // Error State
+                            const Expanded(child: SessionPricingSkeleton())
                           else if (state.state == CubitStates.failure)
-                            Expanded(
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.error_outline,
-                                      color: AppColors.kRedColor,
-                                      size: 48.w,
-                                    ),
-                                    Gap(16.h),
-                                    Text(
-                                      state.errorMessage ??
-                                          context.tr('error_loading_data'),
-                                      textAlign: TextAlign.center,
-                                      style: Styles.textStyle16.copyWith(
-                                        color: AppColors.kRedColor,
-                                      ),
-                                    ),
-                                    Gap(24.h),
-                                    ElevatedButton(
-                                      onPressed: () =>
-                                          cubit.loadServiceProvider(),
-                                      child: Text(context.tr('retry')),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                            CustomErrorView(
+                              verticalPadding: 100,
+                              message: state.errorMessage,
+                              onRetry: () => cubit.loadServiceProvider(),
                             )
-                          // Success State
                           else
                             Expanded(
                               child: Column(
                                 children: [
                                   Expanded(
-                                    child: _buildPricingList(
-                                      context,
-                                      state,
-                                      cubit,
+                                    child: _PricingList(
+                                      state: state,
+                                      cubit: cubit,
                                     ),
                                   ),
                                   Gap(20.h),
-                                  _buildSaveButton(context, cubit, state),
+                                  _SaveButton(cubit: cubit, state: state),
                                   Gap(40.h),
                                 ],
                               ),
@@ -134,152 +99,44 @@ class SessionPricingView extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildSkeletonLoading() {
-    return Skeletonizer(
-      enabled: true,
-      child: ListView.separated(
-        padding: EdgeInsets.symmetric(vertical: 10.h),
-        itemCount: 2, // جلستين
-        separatorBuilder: (context, index) => Gap(20.h),
-        itemBuilder: (context, index) {
-          return Container(
-            padding: EdgeInsets.all(16.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // المدة والتبديل
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      width: 100.w,
-                      height: 24.h,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                    ),
-                    Container(
-                      width: 48.w,
-                      height: 24.h,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                    ),
-                  ],
-                ),
-                Gap(16.h),
+class _PricingList extends StatelessWidget {
+  final SessionPricingState state;
+  final SessionPricingCubit cubit;
+  const _PricingList({required this.state, required this.cubit});
 
-                // حقل السعر
-                Row(
-                  children: [
-                    Container(
-                      width: 60.w,
-                      height: 20.h,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(4.r),
-                      ),
-                    ),
-                    Gap(8.w),
-                    Expanded(
-                      child: Container(
-                        height: 55.h,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(16.r),
-                          border: Border.all(
-                            color: AppColors.secondary200.withOpacity(0.5),
-                          ),
-                        ),
-                        padding: EdgeInsets.symmetric(horizontal: 16.w),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 24.w,
-                              height: 24.h,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade400,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            Gap(8.w),
-                            Container(
-                              width: 1.w,
-                              height: 25.h,
-                              color: Colors.grey.shade400,
-                            ),
-                            Gap(8.w),
-                            Expanded(
-                              child: Container(
-                                height: 20.h,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade400,
-                                  borderRadius: BorderRadius.circular(4.r),
-                                ),
-                              ),
-                            ),
-                            Gap(16.w),
-                            Container(
-                              width: 40.w,
-                              height: 20.h,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade400,
-                                borderRadius: BorderRadius.circular(4.r),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildPricingList(
-    BuildContext context,
-    SessionPricingState state,
-    SessionPricingCubit cubit,
-  ) {
+  @override
+  Widget build(BuildContext context) {
     final sessionTypes = state.sessionTypes;
-
     return ListView.separated(
       padding: EdgeInsets.symmetric(vertical: 10.h),
       itemCount: sessionTypes.length,
-      separatorBuilder: (context, index) => Gap(20.h),
-      itemBuilder: (context, index) {
+      separatorBuilder: (_, __) => Gap(20.h),
+      itemBuilder: (_, index) {
         final sessionKey = sessionTypes.keys.elementAt(index);
         final session = sessionTypes[sessionKey]!;
-
         return SessionPriceItem(
           duration: session.durationText,
           initialPrice: session.price.toString(),
           initialStatus: session.isEnabled,
-          onPriceChanged: (price) {
-            final priceInt = int.tryParse(price) ?? 0;
-            cubit.updateSessionPrice(sessionKey, priceInt);
-          },
-          onStatusChanged: (isActive) {
-            cubit.toggleSessionStatus(sessionKey, isActive);
-          },
+          onPriceChanged: (price) =>
+              cubit.updateSessionPrice(sessionKey, int.tryParse(price) ?? 0),
+          onStatusChanged: (isActive) =>
+              cubit.toggleSessionStatus(sessionKey, isActive),
         );
       },
     );
   }
+}
 
-  Widget _buildSaveButton(
-    BuildContext context,
-    SessionPricingCubit cubit,
-    SessionPricingState state,
-  ) {
+class _SaveButton extends StatelessWidget {
+  final SessionPricingCubit cubit;
+  final SessionPricingState state;
+  const _SaveButton({required this.cubit, required this.state});
+
+  @override
+  Widget build(BuildContext context) {
     return CustomBotton(
       height: 54.h,
       width: double.infinity,

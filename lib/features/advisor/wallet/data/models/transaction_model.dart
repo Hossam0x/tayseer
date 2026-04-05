@@ -1,55 +1,77 @@
 class TransactionModel {
   final String id;
+  final String userId;
+  final String type;
   final num amount;
   final String displayAmount;
-  final String type; // session, event
-  final String? eventId;
-  final String? sessionId;
-  final int eventTicketsNumber;
+  final String? currency;
+  final String? walletType;
   final DateTime? createdAt;
-  final String formattedDate;
 
-  TransactionModel({
+  const TransactionModel({
     required this.id,
+    required this.userId,
+    required this.type,
     required this.amount,
     required this.displayAmount,
-    required this.type,
-    this.eventId,
-    this.sessionId,
-    required this.eventTicketsNumber,
+    this.currency,
+    this.walletType,
     this.createdAt,
-    required this.formattedDate,
   });
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
     return TransactionModel(
       id: json['id'] ?? '',
+      userId: json['userId'] ?? '',
+      type: json['type'] ?? '',
       amount: json['amount'] ?? 0,
       displayAmount: json['displayAmount'] ?? '',
-      type: json['type'] ?? '',
-      eventId: json['eventId'],
-      sessionId: json['sessionId'],
-      eventTicketsNumber: json['eventTicketsNumber'] ?? 0,
+      currency: json['currency'] as String?,
+      walletType: json['walletType'] as String?,
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
+          ? _parseUtcDate(json['createdAt'] as String)
           : null,
-      formattedDate: json['formattedDate'] ?? '',
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'amount': amount,
-      'displayAmount': displayAmount,
-      'type': type,
-      'eventId': eventId,
-      'sessionId': sessionId,
-      'eventTicketsNumber': eventTicketsNumber,
-      'createdAt': createdAt?.toIso8601String(),
-      'formattedDate': formattedDate,
-    };
+  bool get isPositive => displayAmount.startsWith('+');
+  bool get isPoints => walletType == 'points';
+
+  /// Parses a UTC date string, appending 'Z' if missing to ensure correct timezone conversion.
+  static DateTime? _parseUtcDate(String raw) {
+    final normalized = raw.endsWith('Z') ? raw : '${raw}Z';
+    return DateTime.tryParse(normalized)?.toLocal();
+  }
+}
+
+class PaginationModel {
+  final int totalCount;
+  final int totalPages;
+  final int currentPage;
+  final int pageSize;
+
+  const PaginationModel({
+    required this.totalCount,
+    required this.totalPages,
+    required this.currentPage,
+    required this.pageSize,
+  });
+
+  factory PaginationModel.fromJson(Map<String, dynamic> json) {
+    return PaginationModel(
+      totalCount: json['totalCount'] ?? 0,
+      totalPages: json['totalPages'] ?? 1,
+      currentPage: json['currentPage'] ?? 1,
+      pageSize: json['pageSize'] ?? 10,
+    );
   }
 
-  bool get isPositive => displayAmount.startsWith('+');
+  bool get hasNextPage => currentPage < totalPages;
+}
+
+class PaginatedTransactions {
+  final List<TransactionModel> data;
+  final PaginationModel pagination;
+
+  const PaginatedTransactions({required this.data, required this.pagination});
 }

@@ -13,17 +13,36 @@ class UserAdvisorProfileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<UserAdvisorProfileCubit, UserAdvisorProfileState>(
-      buildWhen: (previous, current) =>
-          previous.profileState != current.profileState ||
-          previous.profile != current.profile,
+      buildWhen: (previous, current) {
+        if (previous.profileState != current.profileState) return true;
+        if (previous.profile == null && current.profile != null) return true;
+        if (previous.profile != null && current.profile == null) return true;
+
+        if (previous.profile != null && current.profile != null) {
+          final oldImage = previous.profile!.image.split('?').first;
+          final newImage = current.profile!.image.split('?').first;
+          return oldImage != newImage ||
+              previous.profile!.followers != current.profile!.followers ||
+              previous.profile!.following != current.profile!.following ||
+              previous.profile!.verificationType !=
+                  current.profile!.verificationType ||
+              previous.profile!.room?.isBlocked !=
+                  current.profile!.room?.isBlocked;
+        }
+        return false;
+      },
       builder: (context, state) {
         switch (state.profileState) {
           case CubitStates.loading:
             return SliverToBoxAdapter(child: _buildSkeletonHeader(context));
           case CubitStates.failure:
             return SliverToBoxAdapter(
-              child: _buildErrorHeader(context, state.profileErrorMessage),
+              child: CustomErrorView(
+                onRetry: () =>
+                    context.read<UserAdvisorProfileCubit>().fetchProfile(),
+              ),
             );
+
           case CubitStates.success:
             if (state.profile != null) {
               return SliverToBoxAdapter(
@@ -45,7 +64,6 @@ class UserAdvisorProfileHeader extends StatelessWidget {
         imageUrl: '',
         following: '0',
         followers: '0',
-        isVerified: false,
         context: context,
         profileId: '',
       ),
@@ -61,10 +79,10 @@ class UserAdvisorProfileHeader extends StatelessWidget {
       imageUrl: profile.image,
       following: profile.following.toString(),
       followers: profile.followers.toString(),
-      isVerified: profile.isVerified,
       context: context,
       profileId: profile.id,
       profileName: profile.name,
+      imageBlur: profile.imageBlur ?? false,
     );
   }
 
@@ -72,48 +90,62 @@ class UserAdvisorProfileHeader extends StatelessWidget {
     required String imageUrl,
     required String following,
     required String followers,
-    required bool isVerified,
     required BuildContext context,
     required String profileId,
     String? profileName,
+    bool imageBlur = false,
   }) {
     final isBlocked = context.select<UserAdvisorProfileCubit, bool>(
       (cubit) => cubit.state.profile?.room?.isBlocked ?? false,
     );
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+      padding: EdgeInsetsDirectional.only(
+        start: 20.w,
+        end: 20.w,
+        top: 12.h,
+        bottom: 12.h,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Gap(1.w),
-          // Profile picture with Hero animation
-          Stack(
+          Row(
             children: [
-              MyProfileImage(
-                width: 85.w,
-                imageUrl: imageUrl,
-                heroTag: 'advisor_profile_image_$profileId',
-                onTap: imageUrl.isNotEmpty && !isBlocked
-                    ? () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => FullScreenImageView(
-                              imageUrl: imageUrl,
-                              heroTag: 'advisor_profile_image_$profileId',
-                              userName: profileName,
-                            ),
-                          ),
-                        );
-                      }
-                    : null,
+              InkWell(
+                onTap: () => Navigator.pop(context),
+                child: Padding(
+                  padding: EdgeInsets.all(8.w),
+                  child: Icon(
+                    Icons.arrow_back_ios,
+                    color: AppColors.secondary600,
+                    size: 20.sp,
+                  ),
+                ),
+              ),
+              // Profile picture with Hero animation
+              Stack(
+                children: [
+                  MyProfileImage(
+                    width: 85.w,
+                    imageUrl: imageUrl,
+                    isBlur: imageBlur,
+                    heroTag: 'advisor_profile_image_$profileId',
+                    onTap: imageUrl.isNotEmpty && !isBlocked && !imageBlur
+                        ? () => FullScreenImageView.show(
+                            context,
+                            imageUrl: imageUrl,
+                            heroTag: 'advisor_profile_image_$profileId',
+                            userName: profileName,
+                          )
+                        : null,
+                  ),
+                ],
               ),
             ],
           ),
-          Gap(10.w),
+          Gap(20.w),
           // Stats
-          GestureDetector(
+          CustomClick(
             onTap: isBlocked
                 ? null
                 : () => Navigator.pushNamed(
@@ -128,8 +160,8 @@ class UserAdvisorProfileHeader extends StatelessWidget {
               ],
             ),
           ),
-          Gap(20.w),
-          GestureDetector(
+          Gap(40.w),
+          CustomClick(
             onTap: isBlocked
                 ? null
                 : () => Navigator.pushNamed(
@@ -144,7 +176,7 @@ class UserAdvisorProfileHeader extends StatelessWidget {
               ],
             ),
           ),
-          Gap(10.w),
+          Gap(40.w),
 
           // More button
           Column(
@@ -159,75 +191,10 @@ class UserAdvisorProfileHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildErrorHeader(BuildContext context, String? errorMessage) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              SizedBox(height: 40.w),
-              _buildMoreButton(context),
-            ],
-          ),
-          Gap(10.h),
-          Icon(Icons.error_outline, color: AppColors.kRedColor, size: 48.w),
-          Gap(10.h),
-          Text(
-            errorMessage ?? context.tr("error_loading_data"),
-            style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
-            textAlign: TextAlign.center,
-          ),
-          Gap(10.h),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.kprimaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-            ),
-            onPressed: () =>
-                context.read<UserAdvisorProfileCubit>().fetchProfile(),
-            child: Text(
-              context.tr("retry"),
-              style: Styles.textStyle14Meduim.copyWith(
-                color: AppColors.kWhiteColor,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildMoreButton(BuildContext context) {
     final cubit = context.read<UserAdvisorProfileCubit>();
-    return GestureDetector(
+    return CustomClick(
       onTap: () {
-        if (isGuest) {
-          CustomshowDialogWithImage(
-            context,
-            title: context.tr('joinUs'),
-            supTitle: context.tr("guest_login_first"),
-            icon: Icons.lock_person_outlined,
-            iconColor: AppColors.kprimaryColor,
-            bottonText: context.tr("login"),
-            showCancelButton: true,
-            cancelText: context.tr('skip'),
-            onPressed: () {
-              CachNetwork.removeData(key: ktoken);
-              context.pushNamedAndRemoveUntil(
-                AppRouter.kRegisrationView,
-                predicate: (_) => false,
-              );
-            },
-            onCancel: () {},
-          );
-          return;
-        }
-
         final profileId = cubit.advisorId;
         final name = cubit.state.profile?.name;
 

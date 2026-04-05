@@ -1,7 +1,10 @@
+import 'package:country_picker/country_picker.dart';
 import 'package:tayseer/core/appLocalizations/appLocalizations.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
+import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/splash_screen.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
+import 'package:tayseer/main.dart';
 import 'package:tayseer/my_import.dart';
 
 class TayseerApp extends StatelessWidget {
@@ -24,9 +27,10 @@ class TayseerApp extends StatelessWidget {
             child: BlocBuilder<LanguageCubit, Locale>(
               builder: (context, state) {
                 final cubit = context.read<LanguageCubit>();
-                final pendingRoute = cubit.consumePendingRoute();
+                final pendingRoute = cubit.consumePendingWidget();
 
                 return MaterialApp(
+                  navigatorKey: navigatorKey,
                   key: ValueKey(state.languageCode),
                   builder: (context, child) {
                     return MediaQuery(
@@ -39,6 +43,8 @@ class TayseerApp extends StatelessWidget {
                   locale: state,
                   supportedLocales: const [Locale('ar'), Locale('en')],
                   localizationsDelegates: [
+                    CountryLocalizations.delegate, // <--- أضف هذا السطر هنا
+
                     AppLocalizations.delegate,
                     GlobalCupertinoLocalizations.delegate,
                     GlobalMaterialLocalizations.delegate,
@@ -60,7 +66,8 @@ class TayseerApp extends StatelessWidget {
                     videoRouteObserver,
                   ],
                   onGenerateRoute: AppRouter.onGenerateRoute,
-                  initialRoute: pendingRoute ?? AppRouter.kSplashView,
+                  home: pendingRoute ?? SplashScreen(),
+                  // initialRoute: AppRouter.kSelectCountryView,
                 );
               },
             ),

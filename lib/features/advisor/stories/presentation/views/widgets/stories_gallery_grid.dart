@@ -28,14 +28,6 @@ class _StoriesGalleryGridState extends State<StoriesGalleryGrid> {
           return _buildShimmerGrid();
         }
 
-        // Handle case where no assets are found (permission or generic failure)
-        if (state.galleryAssets.isEmpty && !state.isLoadingAssets) {
-          // Re-trigger load if assets list is unexpectedly empty to be sure
-          if (state.hasMoreAssets) {
-            context.read<AddStoryCubit>().loadGalleryAssets();
-          }
-        }
-
         return NotificationListener<ScrollNotification>(
           onNotification: (ScrollNotification scrollInfo) {
             if (scrollInfo.metrics.pixels >=

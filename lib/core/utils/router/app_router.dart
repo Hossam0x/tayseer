@@ -11,9 +11,10 @@ import 'package:tayseer/features/advisor/chat/presentation/view/search_view.dart
 import 'package:tayseer/features/advisor/profille/views/boost_account_view.dart';
 import 'package:tayseer/features/advisor/profille/views/boost_properties_view.dart';
 import 'package:tayseer/features/advisor/profille/views/consultation_topics_view.dart';
-import 'package:tayseer/features/advisor/profille/views/cubit/profile_cubit.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/location_selection_view.dart';
 import 'package:tayseer/features/advisor/profille/views/professional_info_dashboard_view.dart';
+import 'package:tayseer/features/advisor/profille/views/subscription_required_view.dart';
 import 'package:tayseer/features/advisor/session/presentation/view/order_session_view.dart';
 import 'package:tayseer/features/advisor/settings/view/account_management_view.dart';
 import 'package:tayseer/features/advisor/settings/view/appointments_view.dart';
@@ -25,10 +26,24 @@ import 'package:tayseer/features/advisor/settings/view/hide_story_form_view.dart
 import 'package:tayseer/features/advisor/settings/view/language_selection_view.dart';
 import 'package:tayseer/features/advisor/settings/view/saved_posts_view.dart';
 import 'package:tayseer/features/advisor/settings/view/sessions_pricing_view.dart';
+import 'package:tayseer/features/advisor/profille/views/add_certificate_view.dart';
+import 'package:tayseer/features/advisor/profille/views/edit_certificate_view.dart';
+import 'package:tayseer/features/shared/profile/cubit/certificates/certificates_cubit.dart';
+import 'package:tayseer/features/shared/profile/data/models/certificate_model.dart';
 import 'package:tayseer/features/advisor/settings/view/settings_view.dart';
+
+import 'package:tayseer/features/advisor/update_posts/view_model/update_posts_cubit.dart';
+import 'package:tayseer/features/advisor/update_posts/view/update_post_view.dart';
+import 'package:tayseer/features/advisor/membership/presentation/cubit/membership_cubit.dart';
+import 'package:tayseer/features/advisor/membership/presentation/views/membership_management_view.dart';
+import 'package:tayseer/features/shared/auth/view/purpose_selection_view.dart';
+import 'package:tayseer/features/shared/auth/view/select_country_view.dart';
+import 'package:tayseer/features/shared/auth/view/setup_summary_view.dart';
 import 'package:tayseer/features/shared/packages/presentation/views/advisor_subscription_view.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/advisor_subscription_cubit.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
+import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
+import 'package:tayseer/core/services/iap_service.dart';
 import 'package:tayseer/features/shared/event/view/event_view.dart';
 import 'package:tayseer/features/shared/event/view/creat_event_view.dart';
 import 'package:tayseer/features/shared/event_detail/view/event_detail_view.dart';
@@ -43,6 +58,7 @@ import 'package:tayseer/features/advisor/wallet/view/transactions_log_view.dart'
 import 'package:tayseer/features/advisor/wallet/view/wallet_view.dart';
 import 'package:tayseer/features/advisor/wallet/view/withdraw_success_view.dart';
 import 'package:tayseer/features/advisor/wallet/view/withdraw_view.dart';
+import 'package:tayseer/features/advisor/wallet/view/recharge_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_activation_pending_view.dart';
 import 'package:tayseer/features/shared/auth/view/account_review_view.dart';
 import 'package:tayseer/features/shared/auth/view/activation_success_view.dart';
@@ -58,6 +74,7 @@ import 'package:tayseer/features/shared/followers/followers_view.dart';
 import 'package:tayseer/features/shared/followers/following_view.dart';
 import 'package:tayseer/features/shared/followers/user_followings_view.dart';
 import 'package:tayseer/features/shared/packages/presentation/views/packages_view.dart';
+import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_cubit.dart';
 import 'package:tayseer/features/shared/reports/presentation/view/report_details_view.dart';
 import 'package:tayseer/features/shared/reports/presentation/view/reports_view.dart';
@@ -68,21 +85,20 @@ import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
 import 'package:tayseer/features/user/marriage_filter/view/marriage_filter_view.dart';
 import 'package:tayseer/features/user/my_tickets_event/view/my_tickets_view.dart';
 import 'package:tayseer/features/user/my_tickets_event/view/ticket_details_view.dart';
-import 'package:tayseer/features/user/questions/view/account_review_view.dart';
-import 'package:tayseer/features/user/questions/view/add_phone_view.dart';
-import 'package:tayseer/features/user/questions/view/added_images_view.dart';
-import 'package:tayseer/features/user/questions/view/face_verification_view.dart';
-import 'package:tayseer/features/user/questions/view/otp_phone_user_question.dart';
-import 'package:tayseer/features/user/questions/view/partner_filter_view.dart';
-import 'package:tayseer/features/user/questions/view/questions_page_view.dart';
-import 'package:tayseer/features/user/questions/view/choose_gender_view.dart';
-import 'package:tayseer/features/user/questions/view/personal_info_view.dart';
-import 'package:tayseer/features/user/questions/view/subscription_view.dart';
-import 'package:tayseer/features/user/questions/view/verify_data_view.dart';
-import 'package:tayseer/features/user/questions/view/widget/blocked_contacts_success_widget.dart';
-import 'package:tayseer/features/user/questions/view/widget/commitment_view_body.dart';
-
-import 'package:tayseer/features/user/questions/view_model/questions_cubit.dart';
+import 'package:tayseer/features/user/questions/presentation/views/account_review_view.dart';
+import 'package:tayseer/features/user/questions/presentation/views/add_phone_view.dart';
+import 'package:tayseer/features/user/questions/presentation/views/added_images_view.dart';
+import 'package:tayseer/features/user/questions/presentation/views/face_verification_view.dart';
+import 'package:tayseer/features/user/questions/presentation/views/otp_phone_user_question.dart';
+import 'package:tayseer/features/user/questions/presentation/views/partner_filter_view.dart';
+import 'package:tayseer/features/user/questions/presentation/views/questions_page_view.dart';
+import 'package:tayseer/features/shared/auth/view/choose_gender_view.dart';
+import 'package:tayseer/features/user/questions/presentation/views/personal_info_view.dart';
+import 'package:tayseer/features/user/questions/presentation/views/subscription_view.dart';
+import 'package:tayseer/features/user/questions/presentation/views/verify_data_view.dart';
+import 'package:tayseer/features/user/questions/presentation/manager/questions_cubit.dart';
+import 'package:tayseer/features/user/questions/presentation/widgets/blocked_contacts_success_widget.dart';
+import 'package:tayseer/features/user/questions/presentation/widgets/commitment_view_body.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/advisor_profile/advisor_profile_cubit.dart';
 import 'package:tayseer/features/user/my_space/data/model/create_session/create_session_response.dart';
@@ -110,7 +126,9 @@ import 'package:tayseer/features/user/user_profile/views/user_archive_chats_view
 import 'package:tayseer/features/user/user_profile/views/user_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/features/user/user_profile/views/general_settings_view.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/user_packages_view.dart';
+import 'package:tayseer/features/user/user_profile/views/user_package_details_view.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_cubit.dart';
 import '../../../my_import.dart';
 import 'package:tayseer/features/advisor/settings/view/order_management_view.dart';
 
@@ -123,7 +141,8 @@ abstract class AppRouter {
   static const kRegisterView = '/RegisterView';
   static const kOtpView = '/OtpView';
   static const kUserLayoutView = '/UserLayoutView';
-
+  static const kPurposeSelectionView = '/PurposeSelectionView';
+  static const kPostDetailsView = '/PostDetailsView';
   static const kChooseGenderView = '/ChooseGenderView';
   static const kNationalityView = '/NationalityView';
   static const kCountryView = '/CountryView';
@@ -187,11 +206,14 @@ abstract class AppRouter {
   static const kAdvisorLayoutView = '/AdvisorLayoutView';
   static const kAdvisorSearchView = '/SearchView';
   static const kAddPostView = '/AddPostView';
+  static const kUpdatePostView = '/UpdatePostView';
   static const kCameraView = '/CameraView';
   static const kEditCertificateView = '/editCertificateView';
+  static const kAddCertificateView = '/addCertificateView';
   static const kSettingsView = '/settings';
   static const kEditPersonalDataView = '/edit_personal_data';
   static const kProfessionalInfoDashboardView = '/professional_info_dashboard';
+  static const kSubscriptionRequiredView = '/subscription_required_view';
   static const kBoostAccountView = '/boost_account_view';
   static const kBoostPropertiesView = '/boost_properties_view';
   static const kLocationSelectionView = '/location_selection_view';
@@ -217,6 +239,7 @@ abstract class AppRouter {
   static const kBookingsLogView = '/bookings_log_view';
   static const kTransactionsLogView = '/transactions_log_view';
   static const kWithdrawalView = '/widthdrawal_view';
+  static const kRechargeView = '/recharge_view';
   static const kWithdrawSuccessView = '/widthdrawal_success_view';
   static const kUserProfileView = '/userProfileView';
   static const kFollowersView = '/followers_view';
@@ -233,7 +256,12 @@ abstract class AppRouter {
   static const kEventReservationPeopleView = '/EventReservationPeopleView';
   static const kOrderManagementView = '/order_management_view';
   static const kAdvisorSubscriptionView = '/advisor_subscription_view';
+  static const kMembershipManagementView = '/membership_management_view';
   static const kEventView = '/event-view';
+  static const kUserPackagesView = '/user-packages-view';
+  static const kUserPackageDetailsView = '/user-package-details-view';
+  static const kSelectCountryView = '/SelectCountryView';
+  static const kSetupSummaryView = '/SetupSummaryView';
   ///// report screens /////
   static const kReportsView = '/reportsView';
   static const kReportDetailsView = '/reportDetailsView';
@@ -249,6 +277,15 @@ abstract class AppRouter {
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case kPostDetailsView:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => PostDetailsView(
+            postId_fromNotifc: args["postID"] as String?,
+            isFromProfile: false,
+          ),
+        );
       case kSettingsView:
         return SlideLeftRoute(
           page: const SettingsView(),
@@ -268,6 +305,15 @@ abstract class AppRouter {
             value: getIt<ProfileCubit>(),
             child: const ProfessionalInfoDashboardView(),
           ),
+        );
+
+      case AppRouter.kSubscriptionRequiredView:
+        return SlideLeftRoute(
+          page: BlocProvider.value(
+            value: getIt<ProfileCubit>(),
+            child: const SubscriptionRequiredView(),
+          ),
+          routeSettings: settings,
         );
 
       case AppRouter.kBoostAccountView:
@@ -301,19 +347,39 @@ abstract class AppRouter {
         );
 
       case AppRouter.kPackagesView:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final initialPage = args?['initialPage'] as int?;
         return SlideLeftRoute(
-          page: const PackagesView(),
+          page: PackagesView(initialPage: initialPage),
           routeSettings: settings,
         );
 
       case AppRouter.kAdvisorSubscriptionView:
         final packageType = settings.arguments as SelectedPackage;
         return SlideLeftRoute(
-          page: BlocProvider(
-            create: (context) => AdvisorSubscriptionCubit(packageType),
+          page: MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (context) => AdvisorSubscriptionCubit(
+                  packageType,
+                  getIt<IAPService>(),
+                  getIt<ApiService>(),
+                ),
+              ),
+              BlocProvider(
+                create: (context) => getIt<PackagesCubit>()..getPackages(),
+              ),
+            ],
             child: const AdvisorSubscriptionView(),
           ),
           routeSettings: settings,
+        );
+      case AppRouter.kMembershipManagementView:
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (context) => getIt<MembershipCubit>(),
+            child: const MembershipManagementView(),
+          ),
         );
       case AppRouter.kArchiveView:
         return SlideLeftRoute(
@@ -393,6 +459,12 @@ abstract class AppRouter {
           routeSettings: settings,
         );
 
+      case AppRouter.kRechargeView:
+        return SlideLeftRoute(
+          page: const RechargeView(),
+          routeSettings: settings,
+        );
+
       case AppRouter.kWithdrawSuccessView:
         return SlideLeftRoute(
           page: const WithdrawSuccessView(),
@@ -461,6 +533,19 @@ abstract class AppRouter {
           builder: (_) => UserFollowingsView(userId: userId),
         );
 
+      case AppRouter.kUserPackagesView:
+        return SlideLeftRoute(
+          page: const UserPackagesView(),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kUserPackageDetailsView:
+        final packageType = settings.arguments as PackageType;
+        return SlideLeftRoute(
+          page: UserPackageDetailsView(packageType: packageType),
+          routeSettings: settings,
+        );
+
       case kHomeScreen:
         return MaterialPageRoute(
           settings: settings,
@@ -516,6 +601,8 @@ abstract class AppRouter {
             ),
           ),
         );
+      case AppRouter.kPurposeSelectionView:
+        return MaterialPageRoute(builder: (_) => const PurposeSelectionView());
 
       case kOtpView:
         return MaterialPageRoute(
@@ -664,7 +751,14 @@ abstract class AppRouter {
             ),
           ),
         );
-
+      case AppRouter.kUpdatePostView:
+        final post = settings.arguments as PostModel;
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (_) => UpdatePostCubit(),
+            child: UpdatePostView(post: post),
+          ),
+        );
       case kMapView:
         final args = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
@@ -702,34 +796,24 @@ abstract class AppRouter {
           ),
         );
       case kConversitionView:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final isSystemChat = args?['isSystemChat'] as bool? ?? false;
+        final bool hasSystem = args?['system'] as bool? ?? false;
+
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => AdvisorChatScreen(
-            receiverId: settings.arguments != null
-                ? (settings.arguments as Map<String, dynamic>)['receiverid']
-                      as String
-                : '',
-            chatRoomId:
-                (settings.arguments as Map<String, dynamic>?)?['chatroomid']
-                    as String?,
-            username:
-                (settings.arguments as Map<String, dynamic>?)?['username']
-                    as String?,
-            userimage:
-                (settings.arguments as Map<String, dynamic>?)?['userimage']
-                    as String?,
-            isBlocked:
-                (settings.arguments as Map<String, dynamic>?)?['isBlocked']
-                    as bool? ??
-                false,
-            isHaveSession:
-                (settings.arguments as Map<String, dynamic>?)?['isHaveSession']
-                    as bool? ??
-                true,
+            receiverId: (isSystemChat || hasSystem)
+                ? null // في حالة System Chat لا نرسل receiverId
+                : (args?['receiverid'] as String?),
+            chatRoomId: args?['chatroomid'] as String?,
+            username: args?['username'] as String?,
+            userimage: args?['userimage'] as String?,
+            isBlocked: args?['isBlocked'] as bool? ?? false,
+            isHaveSession: args?['isHaveSession'] as bool? ?? true,
+            isSystemChat: isSystemChat || hasSystem,
             onBlockStatusChanged:
-                (settings.arguments
-                        as Map<String, dynamic>?)?['onBlockStatusChanged']
-                    as void Function(bool)?,
+                args?['onBlockStatusChanged'] as void Function(bool)?,
           ),
         );
       case notification:
@@ -959,11 +1043,29 @@ abstract class AppRouter {
           builder: (_) => MarriageView(
             personId: args?['personId'],
             fromInteractions: args?['fromInteractions'] ?? false, // ✅
+            initialIsFavorite: args?['isFavorite'] ?? false, // ✅
+            interactionUser: args?['interactionUser'], // ✅
           ),
         );
       case AppRouter.kOrderManagementView:
         return SlideLeftRoute(
           page: const OrderManagementView(),
+          routeSettings: settings,
+        );
+      case AppRouter.kSelectCountryView:
+        return SlideLeftRoute(
+          page: BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const SelectCountryView(),
+          ),
+          routeSettings: settings,
+        );
+      case AppRouter.kSetupSummaryView:
+        return SlideLeftRoute(
+          page: BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const SetupSummaryView(),
+          ),
           routeSettings: settings,
         );
 
@@ -1006,28 +1108,28 @@ abstract class AppRouter {
             child: const OtherReportReasonView(),
           ),
         );
-      // case kEditCertificateView:
-      //   final cert = settings.arguments as CertificateModelProfile;
-      //   return PageRouteBuilder(
-      //     settings: settings,
-      //     pageBuilder: (context, animation, secondaryAnimation) =>
-      //         EditCertificateView(certificate: cert),
-      //     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      //       const begin = Offset(1.0, 0.0);
-      //       const end = Offset.zero;
-      //       const curve = Curves.easeInOut;
 
-      //       var tween = Tween(
-      //         begin: begin,
-      //         end: end,
-      //       ).chain(CurveTween(curve: curve));
+      case kAddCertificateView:
+        return SlideLeftRoute(
+          page: const AddCertificateView(),
+          routeSettings: settings,
+        );
 
-      //       return SlideTransition(
-      //         position: animation.drive(tween),
-      //         child: child,
-      //       );
-      //     },
-      //   );
+      case kEditCertificateView:
+        final args = settings.arguments as Map<String, dynamic>;
+        final certificatesCubit =
+            args['certificatesCubit'] as CertificatesCubit;
+        return SlideLeftRoute(
+          page: BlocProvider.value(
+            value: certificatesCubit,
+            child: EditCertificateView(
+              certificates: args['certificates'] as List<CertificateModel>,
+              selectedCertificate:
+                  args['selectedCertificate'] as CertificateModel?,
+            ),
+          ),
+          routeSettings: settings,
+        );
     }
     return null;
   }

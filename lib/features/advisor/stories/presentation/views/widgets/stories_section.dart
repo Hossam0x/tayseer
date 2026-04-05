@@ -42,6 +42,9 @@ class StoriesSection extends StatelessWidget {
       case CubitStates.success:
       case CubitStates.initial:
         return const _StoriesListView();
+      case CubitStates.loadingMore:
+        // TODO: Handle this case.
+        throw UnimplementedError();
     }
   }
 }
@@ -73,6 +76,7 @@ class _StoriesListViewState extends State<_StoriesListView> {
     if (_isBottom) {
       context.read<StoriesCubit>().fetchStories(
         loadMore: true,
+        isSpecial: false,
         context: context,
       );
     }
@@ -170,30 +174,8 @@ class _UserStoryItem extends StatelessWidget {
       builder: (context, userStoryModel) {
         if (userStoryModel == null) return const SizedBox.shrink();
 
-        return GestureDetector(
+        return CustomClick(
           onTap: () {
-            if (isGuest) {
-              CustomshowDialogWithImage(
-                context,
-                title: context.tr('joinUs'),
-                supTitle: context.tr("guest_login_first"),
-                icon: Icons.lock_person_outlined,
-                iconColor: AppColors.kprimaryColor,
-                bottonText: context.tr("login"),
-                showCancelButton: true,
-                cancelText: context.tr('skip'),
-                onPressed: () {
-                  CachNetwork.removeData(key: ktoken);
-                  context.pushNamedAndRemoveUntil(
-                    AppRouter.kRegisrationView,
-                    predicate: (_) => false,
-                  );
-                },
-                onCancel: () {},
-              );
-              return;
-            }
-
             final myUserId = kCurrentUserData?.id;
             final allStories = context
                 .read<StoriesCubit>()
@@ -321,42 +303,6 @@ class _StoriesLoadingShimmer extends StatelessWidget {
   }
 }
 
-class _StoriesErrorWidget extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-
-  const _StoriesErrorWidget({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            message.isEmpty
-                ? context.tr(AppStrings.errorLoadingStories)
-                : message,
-            style: Styles.textStyle12.copyWith(color: AppColors.kGreyB3),
-            textAlign: TextAlign.center,
-          ),
-          Gap(context.responsiveHeight(8)),
-          GestureDetector(
-            onTap: onRetry,
-            child: Text(
-              context.tr(AppStrings.retry),
-              style: Styles.textStyle12.copyWith(
-                color: AppColors.kprimaryColor,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _AddStoryItem extends StatelessWidget {
   const _AddStoryItem();
 
@@ -367,23 +313,13 @@ class _AddStoryItem extends StatelessWidget {
       builder: (context, profileImage) {
         return BlocBuilder<StoriesCubit, StoriesState>(
           buildWhen: (previous, current) {
-            final myUserId = kCurrentUserData?.id;
-            final prevMyStory = previous.storiesList
-                .where((s) => s.userId == myUserId)
-                .firstOrNull;
-            final currentMyStory = current.storiesList
-                .where((s) => s.userId == myUserId)
-                .firstOrNull;
-
             return previous.createStoryState != current.createStoryState ||
                 previous.uploadProgress != current.uploadProgress ||
-                prevMyStory != currentMyStory;
+                previous.myStories != current.myStories ||
+                previous.myStoriesState != current.myStoriesState;
           },
           builder: (context, storyState) {
-            final myUserId = kCurrentUserData?.id;
-            final myStory = storyState.storiesList
-                .where((s) => s.userId == myUserId)
-                .firstOrNull;
+            final myStory = storyState.myStories;
             final isUploading =
                 storyState.createStoryState == CubitStates.loading;
 
@@ -407,43 +343,64 @@ class _AddStoryItem extends StatelessWidget {
                         ),
                       ),
 
-                    GestureDetector(
-                      onTap: () {
+                    CustomClick(
+                      onTap: () async {
                         if (isUploading) return;
                         if (myStory != null) {
-                          // Open my story
-                          final chronologicalUserStory = myStory.copyWith(
-                            stories: myStory.stories.reversed.toList(),
+                          final storiesCubit = context.read<StoriesCubit>();
+
+// Open my story fast without blocking the transition with a loading indicator.
+                          // It will use the current story data instantly.
+                          
+                          // We still request a quiet refetch in the background to keep data fresh later
+                          storiesCubit.fetchMyStories(isSilent: true);
+
+                          // Use current cached stories
+                          final latestMyStories =
+                              storiesCubit.state.myStories ?? myStory;
+
+                          // Open my story in chronological order
+                          final chronologicalUserStory = latestMyStories.copyWith(
+                            stories: latestMyStories.stories.reversed.toList(),
                           );
-                          Navigator.push(
-                            context,
-                            PageRouteBuilder(
-                              opaque: false,
-                              pageBuilder:
-                                  (newContext, animation, secondaryAnimation) =>
-                                      BlocProvider.value(
-                                        value: context.read<StoriesCubit>(),
-                                        child: StoryDetailsView(
-                                          usersStories: [
-                                            chronologicalUserStory,
-                                          ],
-                                          initialUserIndex: 0,
-                                        ),
+                          
+                          if (context.mounted) {
+                            Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                opaque: false,
+                                pageBuilder: (
+                                  newContext,
+                                  animation,
+                                  secondaryAnimation,
+                                ) =>
+                                    BlocProvider.value(
+                                      value: storiesCubit,
+                                      child: StoryDetailsView(
+                                        usersStories: [chronologicalUserStory],
+                                        initialUserIndex: 0,
                                       ),
-                              transitionsBuilder:
-                                  (
-                                    context,
-                                    animation,
-                                    secondaryAnimation,
-                                    child,
-                                  ) {
-                                    return FadeTransition(
-                                      opacity: animation,
-                                      child: child,
-                                    );
-                                  },
-                            ),
-                          );
+                                    ),
+                                transitionsBuilder: (
+                                  context,
+                                  animation,
+                                  secondaryAnimation,
+                                  child,
+                                ) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  );
+                                },
+                              ),
+                            ).then((_) {
+                              // Re-fetch my stories when viewer is closed so the
+                              // ring border and counters reflect the latest data.
+                              if (context.mounted) {
+                                context.read<StoriesCubit>().fetchMyStories(isSilent: true);
+                              }
+                            });
+                          }
                         } else {
                           // Open add story
                           if (context.mounted) {
@@ -494,7 +451,7 @@ class _AddStoryItem extends StatelessWidget {
                       Positioned(
                         bottom: 0,
                         right: 0,
-                        child: GestureDetector(
+                        child: CustomClick(
                           onTap: () {
                             if (context.mounted) {
                               final storiesCubit = context.read<StoriesCubit>();

@@ -17,6 +17,7 @@ class SelectableMessageListView extends StatefulWidget {
   final Function(ChatMessage message, GlobalKey key)? onMessageLongPress;
   final Function(String? replyMessageId, List<ChatMessage> messages)?
   onReplyTap;
+  final Function(String messageId, String emoji)? onReactionTap;
 
   const SelectableMessageListView({
     super.key,
@@ -24,6 +25,7 @@ class SelectableMessageListView extends StatefulWidget {
     required this.scrollController,
     this.onMessageLongPress,
     this.onReplyTap,
+    this.onReactionTap,
   });
 
   @override
@@ -71,7 +73,7 @@ class _SelectableMessageListViewState extends State<SelectableMessageListView> {
               addAutomaticKeepAlives: true,
               cacheExtent: 500,
               itemBuilder: (context, index) {
-                final msg = widget.messages[widget.messages.length - 1 - index];
+                final msg = widget.messages[index];
                 final currentMsgId = msg.id;
                 final messageKey = currentMsgId.isNotEmpty
                     ? _getOrCreateKey(currentMsgId)
@@ -108,6 +110,9 @@ class _SelectableMessageListViewState extends State<SelectableMessageListView> {
                   onReplyTap: (replyMessageId) {
                     widget.onReplyTap?.call(replyMessageId, widget.messages);
                   },
+                  onReactionTap: (emoji) {
+                    widget.onReactionTap?.call(msg.id, emoji);
+                  },
                 );
               },
             );
@@ -129,6 +134,7 @@ class _SelectableMessageItem extends StatefulWidget {
   final VoidCallback onLongPress;
   final VoidCallback onTap;
   final Function(String?) onReplyTap;
+  final Function(String emoji)? onReactionTap;
 
   const _SelectableMessageItem({
     super.key,
@@ -141,6 +147,7 @@ class _SelectableMessageItem extends StatefulWidget {
     required this.onLongPress,
     required this.onTap,
     required this.onReplyTap,
+    this.onReactionTap,
   });
 
   @override
@@ -197,6 +204,7 @@ class _SelectableMessageItemState extends State<_SelectableMessageItem>
                   chatMessage: widget.message,
                   isHighlighted: widget.isHighlighted,
                   onReplyTap: widget.onReplyTap,
+                  onReactionTap: widget.onReactionTap,
                 ),
               ),
             ],

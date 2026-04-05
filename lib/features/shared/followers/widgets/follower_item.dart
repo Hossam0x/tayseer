@@ -1,3 +1,5 @@
+import 'dart:ui';
+import 'package:tayseer/core/enum/verification_type.dart';
 import 'package:tayseer/features/shared/followers/data/models/follower_model.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
@@ -40,6 +42,7 @@ class FollowerItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMe = follower.isMe;
     return Column(
       children: [
         GestureDetector(
@@ -90,11 +93,19 @@ class FollowerItem extends StatelessWidget {
                                       ),
                                     ),
                                     SizedBox(width: 4.w),
-                                    if (follower.isVerified)
+                                    if (follower.verificationType ==
+                                        VerificationType.full)
                                       Icon(
                                         Icons.verified,
                                         size: 16.w,
                                         color: Colors.blue,
+                                      )
+                                    else if (follower.verificationType ==
+                                        VerificationType.basic)
+                                      Icon(
+                                        Icons.verified,
+                                        size: 16.w,
+                                        color: Colors.grey,
                                       ),
                                   ],
                                 ),
@@ -110,7 +121,7 @@ class FollowerItem extends StatelessWidget {
                               ),
                             )
                           : Text(
-                              follower.username,
+                              isMe ? 'You' : follower.username,
                               style: Styles.textStyle14.copyWith(
                                 color: Colors.grey,
                               ),
@@ -122,16 +133,8 @@ class FollowerItem extends StatelessWidget {
                 SizedBox(width: 12.w),
 
                 // Follow Button
-                if (!isSkeleton && follower.isAdvisor && !follower.isMe)
+                if (!isSkeleton && follower.isAdvisor && !isMe)
                   _buildFollowButton(context),
-                // if (!isSkeleton && follower.isMe)
-                //   Text(
-                //     'Me',
-                //     style: Styles.textStyle16.copyWith(
-                //       fontWeight: FontWeight.bold,
-                //       color: Colors.black87,
-                //     ),
-                //   ),
               ],
             ),
           ),
@@ -162,24 +165,15 @@ class FollowerItem extends StatelessWidget {
             ),
             child: ClipOval(
               child: follower.imageUrl != null && follower.imageUrl!.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: follower.imageUrl!,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: Colors.grey.shade200,
-                        child: Icon(
-                          Icons.person,
-                          size: 24.w,
-                          color: Colors.grey.shade400,
-                        ),
+                  ? ImageFiltered(
+                      imageFilter: ImageFilter.blur(
+                        sigmaX: follower.imageBlur ? 10.0 : 0.0,
+                        sigmaY: follower.imageBlur ? 10.0 : 0.0,
                       ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Colors.grey.shade200,
-                        child: Icon(
-                          Icons.person,
-                          size: 24.w,
-                          color: Colors.grey.shade400,
-                        ),
+                      child: AppImage(
+                        follower.imageUrl!,
+                        fit: BoxFit.cover,
+                        isAvatar: true,
                       ),
                     )
                   : Container(
@@ -208,22 +202,18 @@ class FollowerItem extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(6.r),
-            onTap: () {
-              if (isGuest) {
-                _navigateToRegistration(context);
-              } else {
-                onToggleFollow();
-              }
-            },
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10.w),
-              child: Center(
-                child: Text(
-                  context.tr('unfollow'),
-                  style: Styles.textStyle16SemiBold.copyWith(
-                    color: AppColors.primary400,
+            child: CustomClick(
+              onTap: onToggleFollow,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 10.w),
+                child: Center(
+                  child: Text(
+                    context.tr('unfollow'),
+                    style: Styles.textStyle16SemiBold.copyWith(
+                      color: AppColors.primary400,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
                 ),
               ),
             ),
@@ -231,42 +221,18 @@ class FollowerItem extends StatelessWidget {
         ),
       );
     } else {
-      return CustomBotton(
-        title: context.tr('follow'),
-        onPressed: () {
-          if (isGuest) {
-            _navigateToRegistration(context);
-          } else {
-            onToggleFollow();
-          }
-        },
-        width: 110.w,
-        height: 45.h,
-        radius: 10.r,
-        useGradient: true,
+      return CustomClick(
+        onTap: onToggleFollow,
+        child: CustomBotton(
+          title: context.tr('follow'),
+          onPressed: null, // CustomClick handles it
+          width: 110.w,
+          height: 45.h,
+          radius: 10.r,
+          useGradient: true,
+        ),
       );
     }
-  }
-
-  void _navigateToRegistration(BuildContext context) {
-    CustomshowDialogWithImage(
-      context,
-      title: context.tr('joinUs'),
-      supTitle: context.tr("guest_login_first"),
-      icon: Icons.lock_person_outlined,
-      iconColor: AppColors.kprimaryColor,
-      bottonText: context.tr("login"),
-      showCancelButton: true,
-      cancelText: context.tr('skip'),
-      onPressed: () {
-        CachNetwork.removeData(key: ktoken);
-        context.pushNamedAndRemoveUntil(
-          AppRouter.kRegisrationView,
-          predicate: (_) => false,
-        );
-      },
-      onCancel: () {},
-    );
   }
 }
 

@@ -1,6 +1,7 @@
+import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_cubit.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile_state.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_state.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
@@ -31,7 +32,7 @@ class UserPublicProfileBio extends StatelessWidget {
             case CubitStates.success:
               if (state.profile != null) {
                 return SliverToBoxAdapter(
-                  child: _buildBioContent(context, state.profile!),
+                  child: _buildBioContent(context, state.profile!, state),
                 );
               }
               return _buildEmptyBio();
@@ -88,36 +89,26 @@ class UserPublicProfileBio extends StatelessWidget {
           isAnonymous: false,
           availableForMarry: false,
         ),
+        UserPublicProfileState(),
       ),
     );
   }
 
   Widget _buildErrorBio(BuildContext context, String? errorMessage) {
     return SliverToBoxAdapter(
-      child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: AppColors.kRedColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: AppColors.kRedColor.withOpacity(0.3)),
-        ),
-        child: Column(
-          children: [
-            Icon(Icons.info_outline, color: AppColors.kRedColor, size: 32.w),
-            Gap(10.h),
-            Text(
-              errorMessage ?? context.tr('error_loading_data'),
-              style: Styles.textStyle14.copyWith(color: AppColors.kRedColor),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+      child: CustomErrorView(
+        message: errorMessage,
+        onRetry: () => context.read<UserPublicProfileCubit>().fetchProfile(),
       ),
     );
   }
 
-  Widget _buildBioContent(BuildContext context, UserProfileModel profile) {
+  Widget _buildBioContent(
+    BuildContext context,
+    UserProfileModel profile,
+    UserPublicProfileState state,
+  ) {
+    final isBlocked = state.profile?.isBlockedByMe ?? false;
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w),
       child: Column(
@@ -162,34 +153,29 @@ class UserPublicProfileBio extends StatelessWidget {
                       height: 40.h,
                       backGroundcolor: AppColors.primary400,
                       title: context.tr('view_marriage_profile'),
-                      onPressed: () {
-                        if (isGuest) {
-                          CustomshowDialogWithImage(
-                            context,
-                            title: context.tr('joinUs'),
-                            supTitle: context.tr("guest_login_first"),
-                            icon: Icons.lock_person_outlined,
-                            iconColor: AppColors.kprimaryColor,
-                            bottonText: context.tr("login"),
-                            showCancelButton: true,
-                            cancelText: context.tr('skip'),
-                            onPressed: () {
-                              CachNetwork.removeData(key: ktoken);
-                              context.pushNamedAndRemoveUntil(
-                                AppRouter.kRegisrationView,
-                                predicate: (_) => false,
+                      onPressed: isBlocked
+                          ? null
+                          : () {
+                              context.pushNamed(
+                                AppRouter.kMarriageView,
+                                arguments: {
+                                  'personId': profile.id,
+                                  'fromInteractions': false,
+                                  'isFavorite': false,
+                                  'interactionUser': InteractionUserModel(
+                                    userId: profile.id,
+                                    name: profile.name,
+                                    age: profile.age,
+                                    country: profile.location ?? '',
+                                    day: '',
+                                    job: '',
+                                    image: profile.image ?? '',
+                                    isverified: profile.isVerified ?? false,
+                                    isImageBlurred: profile.imageBlur ?? false,
+                                  ),
+                                },
                               );
                             },
-                            onCancel: () {},
-                          );
-                          return;
-                        }
-
-                        context.pushNamed(
-                          AppRouter.kMarriageView,
-                          arguments: {'personId': profile.id},
-                        );
-                      },
                     ),
                   )
                 : Container(

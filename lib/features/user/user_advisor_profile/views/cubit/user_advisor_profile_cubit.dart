@@ -3,12 +3,14 @@ import 'dart:developer';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/features/shared/profile/widgets/profile_posts_tab.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/models/user_advisor_profile_model.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/repositories/user_advisor_profile_repository.dart';
 import 'package:tayseer/my_import.dart';
 import 'user_advisor_profile_state.dart';
 
-class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
+class UserAdvisorProfileCubit
+    extends ProfilePostsCubitContract<UserAdvisorProfileState> {
   final UserAdvisorProfileRepository _repository;
   final String advisorId;
   final int _pageSize = 10;
@@ -18,44 +20,48 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
   UserAdvisorProfileCubit(this._repository, this.advisorId)
     : super(const UserAdvisorProfileState()) {
     _initializeProfile();
-    _setupSocketListeners();
   }
+
+  // ── ProfilePostsCubitContract implementation ──
+  @override
+  List<PostModel> get posts => state.posts;
+  @override
+  CubitStates get postsState => state.postsState;
+  @override
+  String? get postsErrorMessage => state.postsErrorMessage;
+  @override
+  bool get hasMore => state.hasMore;
+  @override
+  bool get isLoadingMore => state.isLoadingMore;
+  @override
+  CubitStates get shareActionState => state.shareActionState;
+  @override
+  String? get shareMessage => state.shareMessage;
+  @override
+  bool? get isShareAdded => state.isShareAdded;
+  @override
+  CubitStates get saveActionState => state.saveActionState;
+  @override
+  String? get saveMessage => state.saveMessage;
+  @override
+  CubitStates get deletePostActionState => state.deletePostActionState;
+  @override
+  String? get deletePostMessage => state.deletePostMessage;
+  @override
+  CubitStates get archivePostActionState => state.archivePostActionState;
+  @override
+  String? get archivePostMessage => state.archivePostMessage;
+  @override
+  CubitStates get blockUserActionState => state.blockUserActionState;
+  @override
+  String? get blockUserMessage => state.blockUserMessage;
 
   @override
   Future<void> close() {
     _chatTimeoutTimer?.cancel();
-    socketHelper.off('room_created');
+    socketHelper.off('chatRoomJoined');
     socketHelper.off('fail');
     return super.close();
-  }
-
-  void _setupSocketListeners() {
-    // ⭐ الاستماع لإنشاء الروم من السوكيت
-    socketHelper.listen('room_created', (data) {
-      final String chatRoomId =
-          data['chatRoomId']?.toString() ?? ''; //chatRoomId
-
-      if (chatRoomId.isNotEmpty) {
-        log('Socket room created: $chatRoomId');
-
-        // ⭐ تحديث الـ profile بالـ room الجديد
-        final updatedProfile = state.profile?.copyWith(
-          room: RoomInfoModel(
-            chatRoomId: chatRoomId,
-            isBlocked: false,
-            isHaveSession: false,
-          ),
-        );
-
-        emit(
-          state.copyWith(
-            profile: updatedProfile,
-            chatRoomId: chatRoomId,
-            shouldNavigateToChat: true,
-          ),
-        );
-      }
-    });
   }
 
   Future<void> _initializeProfile() async {
@@ -95,6 +101,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     );
   }
 
+  @override
   Future<void> fetchPosts({
     bool loadMore = false,
     bool isSilent = false,
@@ -207,7 +214,10 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
   }
 
   Future<void> refresh() async {
-    await Future.wait([fetchProfile(), fetchPosts(loadMore: false)]);
+    await Future.wait([
+      fetchProfile(),
+      fetchPosts(loadMore: false, forceRefresh: true),
+    ]);
   }
 
   Future<void> toggleFollow() async {
@@ -226,7 +236,10 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     );
 
     // ⭐ استدعاء الـ API
-    final result = await _repository.toggleFollowUser(advisorId);
+    final result = await _repository.toggleFollowUser(
+      advisorId,
+      isCurrentlyFollowing: state.profile?.isFollowing ?? false,
+    );
 
     if (isClosed) return;
 
@@ -369,25 +382,45 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
       return;
     }
 
-    socketHelper.send('create_room', {'reciverId': receiverId}, (ack) {
-      log("send room create for user: $receiverId");
-    });
+    socketHelper.send('joinChatRoom', {'targetId': receiverId}, null);
+
+    // socketHelper.send('create_room', {'reciverId': receiverId}, (ack) {
+    //   log("send room create for user: $receiverId");
+    // });
   }
 
   Future<void> startChat() async {
     // ⭐ إلغاء أي timer سابق
     _chatTimeoutTimer?.cancel();
 
-    // ⭐ إذا كان هناك room بالفعل
-    if (state.profile?.hasRoom == true &&
-        state.profile!.chatRoomId != null &&
-        state.profile!.chatRoomId!.isNotEmpty) {
-      // ⭐ تحديث حالة التحميل والتنقل
-      emit(state.copyWith(isChatLoading: true, shouldNavigateToChat: true));
-      return;
+    // ⭐ 2. التأكد من اتصال السوكيت
+    bool connected = socketHelper.isConnected;
+    if (!connected) {
+      log('📡 Socket not connected, attempting to connect...');
+      emit(
+        state.copyWith(
+          isChatLoading: true,
+          chatActionState: CubitStates.loading,
+        ),
+      );
+      connected = await socketHelper.connect();
+
+      if (!connected) {
+        log('❌ Failed to connect to socket');
+        emit(
+          state.copyWith(
+            isChatLoading: false,
+            chatActionState: CubitStates.failure,
+            chatErrorMessage:
+                'فشل الاتصال بخدمة المحادثة، يرجى المحاولة لاحقاً',
+          ),
+        );
+        return;
+      }
+      log('✅ Socket connected successfully');
     }
 
-    // ⭐ إذا لم يكن هناك room، ننشئ واحد
+    // ⭐ 2. البدء في عملية إنشاء الـ Room عبر السوكيت
     emit(
       state.copyWith(
         isChatLoading: true,
@@ -396,31 +429,36 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
       ),
     );
 
-    // ⭐ تنظيف أي listeners سابقين
-    socketHelper.off('room_created');
+    // تنظيف وتهيئة الـ listeners (نستخدم listen بدلاً من legacy لتفادي التكرار)
+    socketHelper.off('chatRoomJoined');
     socketHelper.off('fail');
 
-    // ⭐ الاستماع لإنشاء الروم بنجاح
-    socketHelper.listen('room_created', (data) {
-      _handleRoomCreated(data);
+    socketHelper.listen('chatRoomJoined', (data) {
+      if (!isClosed) _handleRoomCreated(data);
     });
 
-    // ⭐ الاستماع لفشل إنشاء الروم
     socketHelper.listen('fail', (data) {
-      _handleRoomCreationFailed(data);
+      if (!isClosed) _handleRoomCreationFailed(data);
     });
 
-    // ⭐ إرسال طلب إنشاء room
-    socketHelper.send('create_room', {'receiverId': advisorId}, (ack) {
-      log("send room create for user: $advisorId");
-    });
+    // إرسال طلب إنشاء room
+    log("🚀 Sending create_room event for: $advisorId");
+    socketHelper.send('joinChatRoom', {'targetId': advisorId}, (ack) {});
 
-    // ⭐ إضافة timeout في حالة عدم الرد
-    _chatTimeoutTimer = Timer(const Duration(seconds: 10), () {
+    // إضافة timeout
+    _chatTimeoutTimer = Timer(const Duration(seconds: 15), () {
       if (!isClosed && state.isChatLoading) {
-        emit(state.copyWith(isChatLoading: false));
-        // ⭐ يمكن إضافة toast خطأ هنا
-        log("Chat room creation timeout");
+        log("⏱️ Chat room creation timeout reached");
+        if (state.chatActionState == CubitStates.loading) {
+          emit(
+            state.copyWith(
+              isChatLoading: false,
+              chatActionState: CubitStates.failure,
+              chatErrorMessage:
+                  'انتهت مهلة إنشاء المحادثة، يرجى المحاولة مرة أخرى',
+            ),
+          );
+        }
       }
     });
   }
@@ -500,6 +538,62 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
     updatedPosts[currentIndex] = updatedPost;
 
     emit(state.copyWith(posts: updatedPosts));
+  }
+
+  @override
+  void updatePostLocally(PostModel updatedPost) {
+    _updatePostInList(updatedPost.postId, updatedPost);
+  }
+
+  @override
+  void markPostAsCommented({
+    required String postId,
+    required bool isAnonymous,
+  }) {
+    final index = state.posts.indexWhere((p) => p.postId == postId);
+    if (index != -1) {
+      _updatePostInList(
+        postId,
+        state.posts[index].copyWith(
+          isCommented: true,
+          isAnonymous: isAnonymous,
+        ),
+      );
+    }
+  }
+
+  @override
+  void updateCommentCountByDelta({
+    required String postId,
+    required int countDelta,
+    bool? isCommented,
+    bool? isAnonymous,
+  }) {
+    final index = state.posts.indexWhere((p) => p.postId == postId);
+    if (index != -1) {
+      final post = state.posts[index];
+      final newCount = post.commentsCount + countDelta;
+      _updatePostInList(
+        postId,
+        post.copyWith(
+          commentsCount: newCount < 0 ? 0 : newCount,
+          isCommented: isCommented ?? post.isCommented,
+          isAnonymous: isAnonymous ?? post.isAnonymous,
+        ),
+      );
+    }
+  }
+
+  @override
+  void syncCommentCountFromBackend({
+    required String postId,
+    required int totalCount,
+  }) {
+    final index = state.posts.indexWhere((p) => p.postId == postId);
+    if (index != -1) {
+      final post = state.posts[index];
+      _updatePostInList(postId, post.copyWith(commentsCount: totalCount));
+    }
   }
 
   PostModel? _findPost(String postId) {
@@ -645,6 +739,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
         blockUserActionState: visiblePostId != null
             ? CubitStates.loading
             : null,
+        lastBlockedUserId: null, // ✅ Clear old data
       ),
     );
 
@@ -680,11 +775,27 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
               updatedPosts.add(post);
             }
           }
+          // If the blocked user is the same as the profile owner, update the profile state too
+          UserAdvisorProfileModel? updatedProfile = state.profile;
+          if (advisorId == this.advisorId) {
+            updatedProfile = state.profile?.copyWith(
+              room:
+                  state.profile?.room?.copyWith(isBlocked: true) ??
+                  const RoomInfoModel(
+                    chatRoomId: '',
+                    isBlocked: true,
+                    isHaveSession: false,
+                  ),
+            );
+          }
+
           emit(
             state.copyWith(
               posts: updatedPosts,
+              profile: updatedProfile,
               blockUserActionState: CubitStates.success,
               blockUserMessage: message,
+              lastBlockedUserId: advisorId,
             ),
           );
         } else {
@@ -703,6 +814,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
               profile: updatedProfile,
               blockActionState: CubitStates.success,
               blockMessage: message,
+              lastBlockedUserId: advisorId, // ✅ Consistent tracking
             ),
           );
         }
@@ -728,7 +840,7 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
           ),
         );
       },
-      (message) {
+      (message) async {
         final updatedProfile = state.profile?.copyWith(
           room: state.profile?.room?.copyWith(isBlocked: false),
         );
@@ -739,6 +851,9 @@ class UserAdvisorProfileCubit extends Cubit<UserAdvisorProfileState> {
             blockMessage: message,
           ),
         );
+
+        // ✅ Automatically refresh everything after unblocking
+        await refresh();
       },
     );
   }

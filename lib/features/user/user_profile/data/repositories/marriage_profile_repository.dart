@@ -25,9 +25,7 @@ class MarriageProfileRepository {
 
       if (response['success'] == true) {
         final data = response['data'] as Map<String, dynamic>;
-
         final profile = MarriageUserProfileModel.fromJson(data);
-
         await _saveProfileLocally(profile);
         return Right(profile);
       }
@@ -46,11 +44,12 @@ class MarriageProfileRepository {
 
   // ════════════════════════════════════════════════════════════════
   // ⭐ UPDATE MARRIAGE PROFILE
+  // ✅ FIX: لا يعمل getMarriageProfile تلقائياً - الـ cubit هو المسؤول
   // ════════════════════════════════════════════════════════════════
-  Future<Either<Failure, MarriageUserProfileModel>> updateMarriageProfile(
+  Future<Either<Failure, bool>> updateMarriageProfile(
     MarriageUserProfileModel profile,
   ) async {
-    try {
+    try {  
       final requestData = _convertToServerFormat(profile);
       final response = await _apiService.patch(
         endPoint: '/user/update-marry-profile',
@@ -58,12 +57,7 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        // ⭐⭐⭐ جيب البروفايل المحدث من السيرفر
-        final fetchResult = await getMarriageProfile();
-
-        return fetchResult.fold((failure) => Left(failure), (updatedProfile) {
-          return Right(updatedProfile);
-        });
+        return const Right(true);
       }
 
       return Left(ServerFailure(response['message'] ?? 'فشل التحديث'));
@@ -73,147 +67,77 @@ class MarriageProfileRepository {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ CONVERT TO SERVER FORMAT - FIXED (SEND KEYS ONLY)
+  // ⭐ CONVERT TO SERVER FORMAT
   // ════════════════════════════════════════════════════════════════
   Map<String, dynamic> _convertToServerFormat(
     MarriageUserProfileModel profile,
   ) {
     final List<Map<String, dynamic>> answers = [];
 
-    String? _cleanValue(String? value) {
+    String? cleanValue(String? value) {
       if (value == null) return null;
       final cleaned = value.trim();
       return cleaned.isEmpty ? null : cleaned;
     }
 
-    // ⭐ About Me
+    // About Me
     if (profile.aboutMe != null) {
       final aboutMe = profile.aboutMe!;
-
-      if (aboutMe.weight != null) {
-        final cleaned = _cleanValue(aboutMe.weight);
+      final fields = {
+        'weight': aboutMe.weight,
+        'height': aboutMe.height,
+        'age': aboutMe.age,
+        'socialStatus': aboutMe.socialStatus,
+        'nationality': aboutMe.nationality,
+        'country': aboutMe.country,
+        'skinColor': aboutMe.skinColor,
+        'healthStatus': aboutMe.healthStatus,
+        'smoker': aboutMe.smoker,
+        'drinkAlcohol': aboutMe.drinkAlcohol,
+        'eatHalalOnly': aboutMe.eatHalalOnly,
+        'religiousCommitment': aboutMe.religiousCommitment,
+      };
+      for (final entry in fields.entries) {
+        final cleaned = cleanValue(entry.value);
         if (cleaned != null) {
-          answers.add({'category': 'weight', 'answer': cleaned});
-        }
-      }
-      if (aboutMe.height != null) {
-        final cleaned = _cleanValue(aboutMe.height);
-        if (cleaned != null) {
-          answers.add({'category': 'height', 'answer': cleaned});
-        }
-      }
-      if (aboutMe.age != null) {
-        final cleaned = _cleanValue(aboutMe.age);
-        if (cleaned != null) {
-          answers.add({'category': 'age', 'answer': cleaned});
-        }
-      }
-      if (aboutMe.socialStatus != null) {
-        final cleaned = _cleanValue(aboutMe.socialStatus);
-        if (cleaned != null) {
-          answers.add({'category': 'socialStatus', 'answer': cleaned});
-        }
-      }
-      if (aboutMe.nationality != null) {
-        final cleaned = _cleanValue(aboutMe.nationality);
-        if (cleaned != null) {
-          answers.add({'category': 'nationality', 'answer': cleaned});
-        }
-      }
-      if (aboutMe.country != null) {
-        final cleaned = _cleanValue(aboutMe.country);
-        if (cleaned != null) {
-          answers.add({'category': 'country', 'answer': cleaned});
-        }
-      }
-      if (aboutMe.skinColor != null) {
-        final cleaned = _cleanValue(aboutMe.skinColor);
-        if (cleaned != null) {
-          answers.add({'category': 'skinColor', 'answer': cleaned});
-        }
-      }
-      if (aboutMe.healthStatus != null) {
-        final cleaned = _cleanValue(aboutMe.healthStatus);
-        if (cleaned != null) {
-          answers.add({'category': 'healthStatus', 'answer': cleaned});
-        }
-      }
-      if (aboutMe.smoker != null) {
-        final cleaned = _cleanValue(aboutMe.smoker);
-        if (cleaned != null) {
-          answers.add({'category': 'smoker', 'answer': cleaned});
-        }
-      }
-      if (aboutMe.drinkAlcohol != null) {
-        final cleaned = _cleanValue(aboutMe.drinkAlcohol);
-        if (cleaned != null) {
-          answers.add({'category': 'drinkAlcohol', 'answer': cleaned});
-        }
-      }
-
-      if (aboutMe.eatHalalOnly != null) {
-        final cleaned = _cleanValue(aboutMe.eatHalalOnly);
-        if (cleaned != null) {
-          answers.add({'category': 'eatHalalOnly', 'answer': cleaned});
-        }
-      }
-      if (aboutMe.religiousCommitment != null) {
-        final cleaned = _cleanValue(aboutMe.religiousCommitment);
-        if (cleaned != null) {
-          answers.add({'category': 'religiousCommitment', 'answer': cleaned});
+          answers.add({'category': entry.key, 'answer': cleaned});
         }
       }
     }
 
-    // ⭐ Professional Life
+    // Professional Life
     if (profile.professionalLife != null) {
       final pro = profile.professionalLife!;
-
-      if (pro.job != null) {
-        final cleaned = _cleanValue(pro.job);
+      final fields = {
+        'job': pro.job,
+        'educationLevel': pro.educationLevel,
+        'chooseEmployer': pro.chooseEmployer,
+      };
+      for (final entry in fields.entries) {
+        final cleaned = cleanValue(entry.value);
         if (cleaned != null) {
-          answers.add({'category': 'job', 'answer': cleaned});
-        }
-      }
-      if (pro.educationLevel != null) {
-        final cleaned = _cleanValue(pro.educationLevel);
-        if (cleaned != null) {
-          answers.add({'category': 'educationLevel', 'answer': cleaned});
-        }
-      }
-      if (pro.chooseEmployer != null) {
-        final cleaned = _cleanValue(pro.chooseEmployer);
-        if (cleaned != null) {
-          answers.add({'category': 'chooseEmployer', 'answer': cleaned});
+          answers.add({'category': entry.key, 'answer': cleaned});
         }
       }
     }
 
-    // ⭐ Family
+    // Family
     if (profile.family != null) {
       final family = profile.family!;
-
-      if (family.hasChildren != null) {
-        final cleaned = _cleanValue(family.hasChildren);
+      final fields = {
+        'hasChildren': family.hasChildren,
+        'childrenNumber': family.childrenNumber,
+        'childrenLivingStatus': family.childrenLivingStatus,
+      };
+      for (final entry in fields.entries) {
+        final cleaned = cleanValue(entry.value);
         if (cleaned != null) {
-          answers.add({'category': 'hasChildren', 'answer': cleaned});
-        }
-      }
-      if (family.childrenNumber != null) {
-        final cleaned = _cleanValue(family.childrenNumber);
-        if (cleaned != null) {
-          answers.add({'category': 'childrenNumber', 'answer': cleaned});
-        }
-      }
-      if (family.childrenLivingStatus != null) {
-        final cleaned = _cleanValue(family.childrenLivingStatus);
-        if (cleaned != null) {
-          answers.add({'category': 'childrenLivingStatus', 'answer': cleaned});
+          answers.add({'category': entry.key, 'answer': cleaned});
         }
       }
     }
 
-    // ⭐⭐⭐ HOBBIES (interests only)
+    // Hobbies
     if (profile.hobbies.isNotEmpty) {
       final interestHobbies = profile.hobbies
           .where((h) => h.startsWith('interest_'))
@@ -222,67 +146,47 @@ class MarriageProfileRepository {
           .toList();
 
       if (interestHobbies.isNotEmpty) {
-        final cleanedInterests = interestHobbies.join(', ');
-        answers.add({'category': 'hobbies', 'answer': cleanedInterests});
+        answers.add({
+          'category': 'hobbies',
+          'answer': interestHobbies.join(', '),
+        });
       }
     }
 
-    // ⭐⭐⭐ FAITH - ADD TO ANSWERS ARRAY
+    // Faith
     if (profile.faith.isNotEmpty) {
-      answers.add({
-        'category': 'faith',
-        'answer': profile.faith, // ✅ List مباشرة مش String
-      });
+      answers.add({'category': 'faith', 'answer': profile.faith});
     }
 
-    // ⭐⭐⭐ GOALS - حطها هنا قبل requestBody!
+    // Goals
     if (profile.yourGoals != null) {
-      if (profile.yourGoals!.intendTravelAbroad != null) {
-        final cleaned = _cleanValue(profile.yourGoals!.intendTravelAbroad);
+      final goals = {
+        'intendTravelAbroad': profile.yourGoals!.intendTravelAbroad,
+        'familyAcceptance': profile.yourGoals!.familyAcceptance,
+        'marriageIntentions': profile.yourGoals!.marry,
+        'engagment': profile.yourGoals!.engagement,
+      };
+      for (final entry in goals.entries) {
+        final cleaned = cleanValue(entry.value);
         if (cleaned != null) {
-          answers.add({'category': 'intendTravelAbroad', 'answer': cleaned});
-        }
-      }
-
-      if (profile.yourGoals!.familyAcceptance != null) {
-        final cleaned = _cleanValue(profile.yourGoals!.familyAcceptance);
-        if (cleaned != null) {
-          answers.add({'category': 'familyAcceptance', 'answer': cleaned});
-        }
-      }
-
-      if (profile.yourGoals!.marry != null) {
-        final cleaned = _cleanValue(profile.yourGoals!.marry);
-        if (cleaned != null) {
-          answers.add({'category': 'marriageIntentions', 'answer': cleaned});
-        }
-      }
-
-      if (profile.yourGoals!.engagement != null) {
-        final cleaned = _cleanValue(profile.yourGoals!.engagement);
-        if (cleaned != null) {
-          answers.add({'category': 'engagment', 'answer': cleaned});
+          answers.add({'category': entry.key, 'answer': cleaned});
         }
       }
     }
 
-    // ⭐ Build Request Body
     final Map<String, dynamic> requestBody = {'answers': answers};
 
-    // ⭐ My Description
     if (profile.myDescription != null) {
-      final cleanedBio = _cleanValue(profile.myDescription);
+      final cleanedBio = cleanValue(profile.myDescription);
       if (cleanedBio != null) {
         requestBody['mydescription'] = cleanedBio;
       }
     }
 
-    // ⭐ Age
     if (profile.aboutMe?.age != null) {
       requestBody['age'] = int.tryParse(profile.aboutMe!.age!.trim()) ?? 25;
     }
 
-    // ⭐ Progress percentage
     if (profile.answerCompletedPercentage != null) {
       requestBody['answerCompletedPercentage'] =
           profile.answerCompletedPercentage;
@@ -292,7 +196,8 @@ class MarriageProfileRepository {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ UPLOAD IMAGE - WITH RELOAD
+  // ⭐ UPLOAD IMAGE
+  // ✅ FIX: لا يعمل getMarriageProfile تلقائياً
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, String>> uploadMarriageImage(File imageFile) async {
     try {
@@ -309,18 +214,8 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        // ⭐⭐⭐ نعمل reload عشان نجيب النسبة المحدثة
-
-        final profileResult = await getMarriageProfile();
-
-        return profileResult.fold(
-          (failure) {
-            return const Right('uploaded');
-          },
-          (profile) {
-            return const Right('uploaded');
-          },
-        );
+        // ✅ FIX: مش بنعمل getMarriageProfile هنا - الـ cubit هو المسؤول
+        return const Right('uploaded');
       }
 
       return Left(ServerFailure(response['message'] ?? 'فشل رفع الصورة'));
@@ -330,9 +225,15 @@ class MarriageProfileRepository {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ DELETE IMAGE - WITH RELOAD
+  // ⭐ DELETE IMAGE
+  // ✅ FIX: لا يعمل getMarriageProfile تلقائياً
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, bool>> deleteMarriageImage(String imageUrl) async {
+    if (imageUrl.isEmpty || !imageUrl.startsWith('http')) {
+      debugPrint('⚠️ [DELETE_IMAGE] Invalid URL, skipping: $imageUrl');
+      return const Right(false);
+    }
+
     try {
       final response = await _apiService.delete(
         endPoint: '/user/delete-media',
@@ -340,15 +241,15 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        // ⭐⭐⭐ نعمل reload عشان نجيب النسبة المحدثة
-
-        await getMarriageProfile();
-
         return const Right(true);
       }
 
       return Left(ServerFailure(response['message'] ?? 'فشل حذف الصورة'));
     } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        debugPrint('⚠️ [DELETE_IMAGE] 404 - Already deleted: $imageUrl');
+        return const Right(true);
+      }
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
       return Left(ServerFailure('خطأ: $e'));
@@ -356,7 +257,8 @@ class MarriageProfileRepository {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ UPLOAD VIDEO/AUDIO - WITH RELOAD
+  // ⭐ UPLOAD VIDEO/AUDIO
+  // ✅ FIX: لا يعمل getMarriageProfile تلقائياً
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, Map<String, String>>> uploadVideoAndAudio({
     File? videoFile,
@@ -388,10 +290,6 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        // ⭐⭐⭐ نعمل reload عشان نجيب النسبة المحدثة
-
-        await getMarriageProfile();
-
         return Right({
           'video': response['data']['video'] ?? '',
           'audio': response['data']['audio'] ?? '',
@@ -405,9 +303,15 @@ class MarriageProfileRepository {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ DELETE VIDEO - WITH RELOAD
+  // ⭐ DELETE VIDEO
+  // ✅ FIX: لا يعمل getMarriageProfile تلقائياً
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, bool>> deleteVideo(String videoUrl) async {
+    if (videoUrl.isEmpty || !videoUrl.startsWith('http')) {
+      debugPrint('⚠️ [DELETE_VIDEO] Invalid URL, skipping: $videoUrl');
+      return const Right(false);
+    }
+
     try {
       final response = await _apiService.delete(
         endPoint: '/user/delete-media',
@@ -415,13 +319,15 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        await getMarriageProfile();
-
         return const Right(true);
       }
 
       return Left(ServerFailure(response['message'] ?? 'فشل حذف الفيديو'));
     } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        debugPrint('⚠️ [DELETE_VIDEO] 404 - Already deleted: $videoUrl');
+        return const Right(true);
+      }
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
       return Left(ServerFailure('خطأ: $e'));
@@ -429,9 +335,15 @@ class MarriageProfileRepository {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ DELETE AUDIO - WITH RELOAD
+  // ⭐ DELETE AUDIO
+  // ✅ FIX: لا يعمل getMarriageProfile تلقائياً
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, bool>> deleteAudio(String audioUrl) async {
+    if (audioUrl.isEmpty || !audioUrl.startsWith('http')) {
+      debugPrint('⚠️ [DELETE_AUDIO] Invalid URL, skipping: $audioUrl');
+      return const Right(false);
+    }
+
     try {
       final response = await _apiService.delete(
         endPoint: '/user/delete-media',
@@ -439,10 +351,6 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        // ⭐⭐⭐ نعمل reload عشان نجيب النسبة المحدثة
-
-        await getMarriageProfile();
-
         return const Right(true);
       }
 
@@ -450,6 +358,10 @@ class MarriageProfileRepository {
         ServerFailure(response['message'] ?? 'فشل حذف التسجيل الصوتي'),
       );
     } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        debugPrint('⚠️ [DELETE_AUDIO] 404 - Already deleted: $audioUrl');
+        return const Right(true);
+      }
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
       return Left(ServerFailure('خطأ: $e'));
@@ -457,7 +369,8 @@ class MarriageProfileRepository {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ⭐ UPLOAD SINGLE IMAGE - WITH RELOAD
+  // ⭐ UPLOAD SINGLE IMAGE
+  // ✅ FIX: لا يعمل getMarriageProfile تلقائياً
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, String>> uploadSingleImage(File imageFile) async {
     try {
@@ -474,18 +387,7 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        // ⭐ Reload profile to get updated progress
-
-        final profileResult = await getMarriageProfile();
-
-        return profileResult.fold(
-          (failure) {
-            return const Right('uploaded');
-          },
-          (profile) {
-            return const Right('uploaded');
-          },
-        );
+        return const Right('uploaded');
       }
 
       return Left(ServerFailure(response['message'] ?? 'فشل رفع الصورة'));
@@ -495,9 +397,21 @@ class MarriageProfileRepository {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ⭐ DELETE SINGLE IMAGE - WITH RELOAD
+  // ⭐ DELETE SINGLE IMAGE
+  // ✅ FIX: لا يعمل getMarriageProfile تلقائياً
   // ════════════════════════════════════════════════════════════════
   Future<Either<Failure, bool>> deleteSingleImage(String imageUrl) async {
+    if (imageUrl.isEmpty || !imageUrl.startsWith('http')) {
+      debugPrint('⚠️ [DELETE_SINGLE] Invalid URL, skipping: $imageUrl');
+      return const Right(false);
+    }
+
+    if (imageUrl.contains('cdn-icons-png.flaticon.com') ||
+        imageUrl.contains('149071.png')) {
+      debugPrint('⚠️ [DELETE_SINGLE] Default placeholder, skipping: $imageUrl');
+      return const Right(false);
+    }
+
     try {
       final response = await _apiService.delete(
         endPoint: '/user/delete-media',
@@ -505,22 +419,56 @@ class MarriageProfileRepository {
       );
 
       if (response['success'] == true) {
-        // ⭐ Reload profile to get updated progress
-
-        final reloadResult = await getMarriageProfile();
-
-        reloadResult.fold((failure) {}, (profile) {
-          final newSingleImage = profile.userMedia?.singleImage;
-
-          if (newSingleImage != null) {}
-        });
-
         return const Right(true);
       }
 
       return Left(ServerFailure(response['message'] ?? 'فشل حذف الصورة'));
     } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        debugPrint('⚠️ [DELETE_SINGLE] 404 - Already deleted: $imageUrl');
+        return const Right(true);
+      }
       return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('خطأ: $e'));
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ⭐ REORDER IMAGES
+  // ✅ FIX: يقبل فقط server URLs - لا يقبل local paths
+  // ════════════════════════════════════════════════════════════════
+  Future<Either<Failure, bool>> reorderImages(
+    Map<String, String> imagesIndex,
+  ) async {
+    // ✅ FIX: تأكد إن كل القيم URLs حقيقية مش local paths
+    final validIndex = <String, String>{};
+    int idx = 0;
+    for (final entry in imagesIndex.entries) {
+      if (entry.value.startsWith('http')) {
+        validIndex[idx.toString()] = entry.value;
+        idx++;
+      } else {
+        debugPrint('⚠️ [REORDER] Skipping local path: ${entry.value}');
+      }
+    }
+
+    if (validIndex.isEmpty) {
+      debugPrint('⚠️ [REORDER] No valid URLs to reorder, skipping');
+      return const Right(true);
+    }
+
+    try {
+      final response = await _apiService.patch(
+        endPoint: '/user/update-marry-profile',
+        data: {'answers': [], 'imagesIndex': validIndex},
+      );
+
+      if (response['success'] == true) {
+        return const Right(true);
+      }
+
+      return Left(ServerFailure(response['message'] ?? 'فشل إعادة الترتيب'));
     } catch (e) {
       return Left(ServerFailure('خطأ: $e'));
     }
@@ -533,9 +481,8 @@ class MarriageProfileRepository {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_storageKey, jsonEncode(profile.toJson()));
-    
     } catch (e) {
-      
+      debugPrint('⚠️ [STORAGE] Save failed: $e');
     }
   }
 
@@ -544,7 +491,6 @@ class MarriageProfileRepository {
       final prefs = await SharedPreferences.getInstance();
       final data = prefs.getString(_storageKey);
       if (data != null) {
-      
         return MarriageUserProfileModel.fromJson(jsonDecode(data));
       }
     } catch (e) {
@@ -557,7 +503,6 @@ class MarriageProfileRepository {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_storageKey);
-    
     } catch (e) {
       debugPrint('⚠️ [STORAGE] Clear failed: $e');
     }

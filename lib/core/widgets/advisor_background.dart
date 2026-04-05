@@ -6,9 +6,12 @@ class AdvisorBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ لا تستخدم context.width / context.height — دول بيستدعوا
+    // MediaQuery.of(context) وبيربطوا الويدجت كلها بأي تغيير في MediaQuery
+    // double.infinity بيعمل نفس الحاجة بدون الاعتماد على MediaQuery
     return Container(
-      width: context.width,
-      height: context.height,
+      width: double.infinity,
+      height: double.infinity,
       decoration: BoxDecoration(
         image: DecorationImage(
           image: AssetImage(AssetsData.homeBackgroundImage),
@@ -19,3 +22,4 @@ class AdvisorBackground extends StatelessWidget {
     );
   }
 }
+

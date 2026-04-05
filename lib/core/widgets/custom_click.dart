@@ -1,4 +1,4 @@
-import 'package:tayseer/core/widgets/custom_show_dialog.dart';
+import 'package:tayseer/core/enum/advisor_status.dart';
 import 'package:tayseer/my_import.dart';
 
 class CustomClick extends StatelessWidget {
@@ -21,6 +21,28 @@ class CustomClick extends StatelessWidget {
 
         child: child,
       );
+    } else if (isAdvisor && advisorStatus != AdvisorStatus.approved) {
+      if (advisorStatus == AdvisorStatus.pending) {
+        return GestureDetector(
+          onTap: () {
+            _showAdvisorPendingDialog(context);
+          },
+          child: child,
+        );
+      } else if (advisorStatus == AdvisorStatus.disapproved) {
+        return GestureDetector(
+          onTap: () {
+            _showAdvisorDisapprovedDialog(context);
+          },
+          child: child,
+        );
+      } else {
+        return GestureDetector(
+          onTap: onTap,
+          onLongPress: onLongPress,
+          child: child,
+        );
+      }
     } else {
       return GestureDetector(
         onTap: onTap,
@@ -47,6 +69,38 @@ class CustomClick extends StatelessWidget {
           AppRouter.kRegisrationView,
           (route) => false,
         );
+      },
+      onCancel: () {
+        // Dialog closes automatically
+      },
+    );
+  }
+
+  void _showAdvisorPendingDialog(BuildContext context) {
+    CustomshowDialogWithImage(
+      context,
+      title: context.tr(AppStrings.cannotDoThisAction),
+      supTitle: context.tr(AppStrings.accountUnderReviewMessage),
+      imageUrl: AssetsData.pendingIcon,
+      bottonText: context.tr(AppStrings.gotIt),
+      showCancelButton: false,
+      onPressed: () {
+        // Dialog closes automatically
+      },
+    );
+  }
+
+  void _showAdvisorDisapprovedDialog(BuildContext context) {
+    CustomshowDialogWithImage(
+      context,
+      title: context.tr(AppStrings.cannotDoThisAction),
+      supTitle: context.tr(AppStrings.accountDisApprovedMessage),
+      imageUrl: AssetsData.appErrorIcon,
+      bottonText: context.tr(AppStrings.contactSupport),
+      showCancelButton: true,
+      cancelText: context.tr(AppStrings.gotIt),
+      onPressed: () {
+        context.pushNamed(AppRouter.kHelpSupportView);
       },
       onCancel: () {
         // Dialog closes automatically

@@ -1,3 +1,5 @@
+import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class MySpaceMarriageContent extends StatelessWidget {
@@ -5,6 +7,18 @@ class MySpaceMarriageContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ نقرأ من الـ cubit لو موجود
+    bool isDataCompleted = false;
+    try {
+      final userState = context.watch<UserProfileCubit>().state;
+      if (userState is SettingsLoaded) {
+        isDataCompleted = userState.userProfile?.dataCompleted ?? false;
+      }
+    } catch (_) {}
+
+    // ✅ لو البيانات مكتملة، ما نعرضش شاشة الاستكمال
+    if (isDataCompleted) return const SizedBox.shrink();
+
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -47,12 +61,13 @@ class MySpaceMarriageContent extends StatelessWidget {
 
                   SizedBox(height: 40.h),
 
+                  // ✅ روح لصفحة الزواج عشان يستكمل بياناته
                   CustomBotton(
                     radius: 16.r,
                     useGradient: true,
                     title: context.tr('complete_your_profile_bott'),
-                    onPressed: () {
-                      context.pushNamed(AppRouter.kChooseGenderView);
+                    onPressed: () async {
+                      context.read<LayoutCubit>().changeIndex(1);
                     },
                   ),
                 ],

@@ -99,7 +99,7 @@ class _ProfessionalInformationAsConsultantBodyState
                         items: specializationKeys.map((key) {
                           final translated = context.tr(key);
                           return DropdownMenuItem(
-                            value: translated, // 👈 النص المترجم
+                            value: key,
                             child: Text(translated, style: Styles.textStyle14),
                           );
                         }).toList(),
@@ -117,7 +117,7 @@ class _ProfessionalInformationAsConsultantBodyState
                         items: jobLevelKeys.map((key) {
                           final translated = context.tr(key);
                           return DropdownMenuItem(
-                            value: translated, // 👈 النص المترجم
+                            value: key,
                             child: Text(translated, style: Styles.textStyle14),
                           );
                         }).toList(),
@@ -135,7 +135,7 @@ class _ProfessionalInformationAsConsultantBodyState
                         items: experienceYearsKeys.map((key) {
                           final translated = context.tr(key);
                           return DropdownMenuItem(
-                            value: translated, // 👈 النص المترجم
+                            value: key,
                             child: Text(translated, style: Styles.textStyle14),
                           );
                         }).toList(),

@@ -30,7 +30,8 @@ mixin _$ChatMessagesState {
             TypingModel? typingInfo,
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
-            CubitStates sendMediaState)
+            CubitStates sendMediaState,
+            int? freeChatMinsLeft)
         loaded,
     required TResult Function(
             List<ChatMessage> messages,
@@ -40,7 +41,8 @@ mixin _$ChatMessagesState {
             bool isBlocked,
             bool isUserTyping,
             TypingModel? typingInfo,
-            ChatMessage? replyingToMessage)
+            ChatMessage? replyingToMessage,
+            int? freeChatMinsLeft)
         loadingMore,
     required TResult Function(String message, List<ChatMessage>? cachedMessages)
         failure,
@@ -60,7 +62,8 @@ mixin _$ChatMessagesState {
             TypingModel? typingInfo,
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
-            CubitStates sendMediaState)?
+            CubitStates sendMediaState,
+            int? freeChatMinsLeft)?
         loaded,
     TResult? Function(
             List<ChatMessage> messages,
@@ -70,7 +73,8 @@ mixin _$ChatMessagesState {
             bool isBlocked,
             bool isUserTyping,
             TypingModel? typingInfo,
-            ChatMessage? replyingToMessage)?
+            ChatMessage? replyingToMessage,
+            int? freeChatMinsLeft)?
         loadingMore,
     TResult? Function(String message, List<ChatMessage>? cachedMessages)?
         failure,
@@ -90,7 +94,8 @@ mixin _$ChatMessagesState {
             TypingModel? typingInfo,
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
-            CubitStates sendMediaState)?
+            CubitStates sendMediaState,
+            int? freeChatMinsLeft)?
         loaded,
     TResult Function(
             List<ChatMessage> messages,
@@ -100,7 +105,8 @@ mixin _$ChatMessagesState {
             bool isBlocked,
             bool isUserTyping,
             TypingModel? typingInfo,
-            ChatMessage? replyingToMessage)?
+            ChatMessage? replyingToMessage,
+            int? freeChatMinsLeft)?
         loadingMore,
     TResult Function(String message, List<ChatMessage>? cachedMessages)?
         failure,
@@ -206,7 +212,8 @@ class _$ChatMessagesInitialImpl extends ChatMessagesInitial {
             TypingModel? typingInfo,
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
-            CubitStates sendMediaState)
+            CubitStates sendMediaState,
+            int? freeChatMinsLeft)
         loaded,
     required TResult Function(
             List<ChatMessage> messages,
@@ -216,7 +223,8 @@ class _$ChatMessagesInitialImpl extends ChatMessagesInitial {
             bool isBlocked,
             bool isUserTyping,
             TypingModel? typingInfo,
-            ChatMessage? replyingToMessage)
+            ChatMessage? replyingToMessage,
+            int? freeChatMinsLeft)
         loadingMore,
     required TResult Function(String message, List<ChatMessage>? cachedMessages)
         failure,
@@ -239,7 +247,8 @@ class _$ChatMessagesInitialImpl extends ChatMessagesInitial {
             TypingModel? typingInfo,
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
-            CubitStates sendMediaState)?
+            CubitStates sendMediaState,
+            int? freeChatMinsLeft)?
         loaded,
     TResult? Function(
             List<ChatMessage> messages,
@@ -249,7 +258,8 @@ class _$ChatMessagesInitialImpl extends ChatMessagesInitial {
             bool isBlocked,
             bool isUserTyping,
             TypingModel? typingInfo,
-            ChatMessage? replyingToMessage)?
+            ChatMessage? replyingToMessage,
+            int? freeChatMinsLeft)?
         loadingMore,
     TResult? Function(String message, List<ChatMessage>? cachedMessages)?
         failure,
@@ -272,7 +282,8 @@ class _$ChatMessagesInitialImpl extends ChatMessagesInitial {
             TypingModel? typingInfo,
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
-            CubitStates sendMediaState)?
+            CubitStates sendMediaState,
+            int? freeChatMinsLeft)?
         loaded,
     TResult Function(
             List<ChatMessage> messages,
@@ -282,7 +293,8 @@ class _$ChatMessagesInitialImpl extends ChatMessagesInitial {
             bool isBlocked,
             bool isUserTyping,
             TypingModel? typingInfo,
-            ChatMessage? replyingToMessage)?
+            ChatMessage? replyingToMessage,
+            int? freeChatMinsLeft)?
         loadingMore,
     TResult Function(String message, List<ChatMessage>? cachedMessages)?
         failure,
@@ -391,7 +403,8 @@ class _$ChatMessagesLoadingImpl extends ChatMessagesLoading {
             TypingModel? typingInfo,
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
-            CubitStates sendMediaState)
+            CubitStates sendMediaState,
+            int? freeChatMinsLeft)
         loaded,
     required TResult Function(
             List<ChatMessage> messages,
@@ -401,7 +414,8 @@ class _$ChatMessagesLoadingImpl extends ChatMessagesLoading {
             bool isBlocked,
             bool isUserTyping,
             TypingModel? typingInfo,
-            ChatMessage? replyingToMessage)
+            ChatMessage? replyingToMessage,
+            int? freeChatMinsLeft)
         loadingMore,
     required TResult Function(String message, List<ChatMessage>? cachedMessages)
         failure,
@@ -424,7 +438,8 @@ class _$ChatMessagesLoadingImpl extends ChatMessagesLoading {
             TypingModel? typingInfo,
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
-            CubitStates sendMediaState)?
+            CubitStates sendMediaState,
+            int? freeChatMinsLeft)?
         loaded,
     TResult? Function(
             List<ChatMessage> messages,
@@ -434,7 +449,8 @@ class _$ChatMessagesLoadingImpl extends ChatMessagesLoading {
             bool isBlocked,
             bool isUserTyping,
             TypingModel? typingInfo,
-            ChatMessage? replyingToMessage)?
+            ChatMessage? replyingToMessage,
+            int? freeChatMinsLeft)?
         loadingMore,
     TResult? Function(String message, List<ChatMessage>? cachedMessages)?
         failure,
@@ -457,7 +473,8 @@ class _$ChatMessagesLoadingImpl extends ChatMessagesLoading {
             TypingModel? typingInfo,
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
-            CubitStates sendMediaState)?
+            CubitStates sendMediaState,
+            int? freeChatMinsLeft)?
         loaded,
     TResult Function(
             List<ChatMessage> messages,
@@ -467,7 +484,8 @@ class _$ChatMessagesLoadingImpl extends ChatMessagesLoading {
             bool isBlocked,
             bool isUserTyping,
             TypingModel? typingInfo,
-            ChatMessage? replyingToMessage)?
+            ChatMessage? replyingToMessage,
+            int? freeChatMinsLeft)?
         loadingMore,
     TResult Function(String message, List<ChatMessage>? cachedMessages)?
         failure,
@@ -541,7 +559,8 @@ abstract class _$$ChatMessagesLoadedImplCopyWith<$Res> {
       TypingModel? typingInfo,
       ChatMessage? replyingToMessage,
       CubitStates paginationState,
-      CubitStates sendMediaState});
+      CubitStates sendMediaState,
+      int? freeChatMinsLeft});
 }
 
 /// @nodoc
@@ -565,6 +584,7 @@ class __$$ChatMessagesLoadedImplCopyWithImpl<$Res>
     Object? replyingToMessage = freezed,
     Object? paginationState = null,
     Object? sendMediaState = null,
+    Object? freeChatMinsLeft = freezed,
   }) {
     return _then(_$ChatMessagesLoadedImpl(
       messages: null == messages
@@ -607,6 +627,10 @@ class __$$ChatMessagesLoadedImplCopyWithImpl<$Res>
           ? _value.sendMediaState
           : sendMediaState // ignore: cast_nullable_to_non_nullable
               as CubitStates,
+      freeChatMinsLeft: freezed == freeChatMinsLeft
+          ? _value.freeChatMinsLeft
+          : freeChatMinsLeft // ignore: cast_nullable_to_non_nullable
+              as int?,
     ));
   }
 }
@@ -624,7 +648,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
       this.typingInfo,
       this.replyingToMessage,
       this.paginationState = CubitStates.initial,
-      this.sendMediaState = CubitStates.initial})
+      this.sendMediaState = CubitStates.initial,
+      this.freeChatMinsLeft})
       : _messages = messages,
         super._();
 
@@ -682,9 +707,13 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
   @JsonKey()
   final CubitStates sendMediaState;
 
+  /// Free chat minutes left (for user side)
+  @override
+  final int? freeChatMinsLeft;
+
   @override
   String toString() {
-    return 'ChatMessagesState.loaded(messages: $messages, hasMoreMessages: $hasMoreMessages, isOnline: $isOnline, pendingCount: $pendingCount, isBlocked: $isBlocked, isUserTyping: $isUserTyping, typingInfo: $typingInfo, replyingToMessage: $replyingToMessage, paginationState: $paginationState, sendMediaState: $sendMediaState)';
+    return 'ChatMessagesState.loaded(messages: $messages, hasMoreMessages: $hasMoreMessages, isOnline: $isOnline, pendingCount: $pendingCount, isBlocked: $isBlocked, isUserTyping: $isUserTyping, typingInfo: $typingInfo, replyingToMessage: $replyingToMessage, paginationState: $paginationState, sendMediaState: $sendMediaState, freeChatMinsLeft: $freeChatMinsLeft)';
   }
 
   @override
@@ -710,7 +739,9 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
             (identical(other.paginationState, paginationState) ||
                 other.paginationState == paginationState) &&
             (identical(other.sendMediaState, sendMediaState) ||
-                other.sendMediaState == sendMediaState));
+                other.sendMediaState == sendMediaState) &&
+            (identical(other.freeChatMinsLeft, freeChatMinsLeft) ||
+                other.freeChatMinsLeft == freeChatMinsLeft));
   }
 
   @override
@@ -725,7 +756,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
       typingInfo,
       replyingToMessage,
       paginationState,
-      sendMediaState);
+      sendMediaState,
+      freeChatMinsLeft);
 
   @JsonKey(ignore: true)
   @override
@@ -749,7 +781,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
             TypingModel? typingInfo,
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
-            CubitStates sendMediaState)
+            CubitStates sendMediaState,
+            int? freeChatMinsLeft)
         loaded,
     required TResult Function(
             List<ChatMessage> messages,
@@ -759,7 +792,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
             bool isBlocked,
             bool isUserTyping,
             TypingModel? typingInfo,
-            ChatMessage? replyingToMessage)
+            ChatMessage? replyingToMessage,
+            int? freeChatMinsLeft)
         loadingMore,
     required TResult Function(String message, List<ChatMessage>? cachedMessages)
         failure,
@@ -774,7 +808,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
         typingInfo,
         replyingToMessage,
         paginationState,
-        sendMediaState);
+        sendMediaState,
+        freeChatMinsLeft);
   }
 
   @override
@@ -792,7 +827,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
             TypingModel? typingInfo,
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
-            CubitStates sendMediaState)?
+            CubitStates sendMediaState,
+            int? freeChatMinsLeft)?
         loaded,
     TResult? Function(
             List<ChatMessage> messages,
@@ -802,7 +838,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
             bool isBlocked,
             bool isUserTyping,
             TypingModel? typingInfo,
-            ChatMessage? replyingToMessage)?
+            ChatMessage? replyingToMessage,
+            int? freeChatMinsLeft)?
         loadingMore,
     TResult? Function(String message, List<ChatMessage>? cachedMessages)?
         failure,
@@ -817,7 +854,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
         typingInfo,
         replyingToMessage,
         paginationState,
-        sendMediaState);
+        sendMediaState,
+        freeChatMinsLeft);
   }
 
   @override
@@ -835,7 +873,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
             TypingModel? typingInfo,
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
-            CubitStates sendMediaState)?
+            CubitStates sendMediaState,
+            int? freeChatMinsLeft)?
         loaded,
     TResult Function(
             List<ChatMessage> messages,
@@ -845,7 +884,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
             bool isBlocked,
             bool isUserTyping,
             TypingModel? typingInfo,
-            ChatMessage? replyingToMessage)?
+            ChatMessage? replyingToMessage,
+            int? freeChatMinsLeft)?
         loadingMore,
     TResult Function(String message, List<ChatMessage>? cachedMessages)?
         failure,
@@ -862,7 +902,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
           typingInfo,
           replyingToMessage,
           paginationState,
-          sendMediaState);
+          sendMediaState,
+          freeChatMinsLeft);
     }
     return orElse();
   }
@@ -919,7 +960,8 @@ abstract class ChatMessagesLoaded extends ChatMessagesState {
       final TypingModel? typingInfo,
       final ChatMessage? replyingToMessage,
       final CubitStates paginationState,
-      final CubitStates sendMediaState}) = _$ChatMessagesLoadedImpl;
+      final CubitStates sendMediaState,
+      final int? freeChatMinsLeft}) = _$ChatMessagesLoadedImpl;
   const ChatMessagesLoaded._() : super._();
 
   /// All messages in the current chat (from local DB)
@@ -951,6 +993,9 @@ abstract class ChatMessagesLoaded extends ChatMessagesState {
 
   /// Media sending statew
   CubitStates get sendMediaState;
+
+  /// Free chat minutes left (for user side)
+  int? get freeChatMinsLeft;
   @JsonKey(ignore: true)
   _$$ChatMessagesLoadedImplCopyWith<_$ChatMessagesLoadedImpl> get copyWith =>
       throw _privateConstructorUsedError;
@@ -971,7 +1016,8 @@ abstract class _$$ChatMessagesLoadingMoreImplCopyWith<$Res> {
       bool isBlocked,
       bool isUserTyping,
       TypingModel? typingInfo,
-      ChatMessage? replyingToMessage});
+      ChatMessage? replyingToMessage,
+      int? freeChatMinsLeft});
 }
 
 /// @nodoc
@@ -994,6 +1040,7 @@ class __$$ChatMessagesLoadingMoreImplCopyWithImpl<$Res>
     Object? isUserTyping = null,
     Object? typingInfo = freezed,
     Object? replyingToMessage = freezed,
+    Object? freeChatMinsLeft = freezed,
   }) {
     return _then(_$ChatMessagesLoadingMoreImpl(
       messages: null == messages
@@ -1028,6 +1075,10 @@ class __$$ChatMessagesLoadingMoreImplCopyWithImpl<$Res>
           ? _value.replyingToMessage
           : replyingToMessage // ignore: cast_nullable_to_non_nullable
               as ChatMessage?,
+      freeChatMinsLeft: freezed == freeChatMinsLeft
+          ? _value.freeChatMinsLeft
+          : freeChatMinsLeft // ignore: cast_nullable_to_non_nullable
+              as int?,
     ));
   }
 }
@@ -1043,7 +1094,8 @@ class _$ChatMessagesLoadingMoreImpl extends ChatMessagesLoadingMore {
       this.isBlocked = false,
       this.isUserTyping = false,
       this.typingInfo,
-      this.replyingToMessage})
+      this.replyingToMessage,
+      this.freeChatMinsLeft})
       : _messages = messages,
         super._();
 
@@ -1074,10 +1126,12 @@ class _$ChatMessagesLoadingMoreImpl extends ChatMessagesLoadingMore {
   final TypingModel? typingInfo;
   @override
   final ChatMessage? replyingToMessage;
+  @override
+  final int? freeChatMinsLeft;
 
   @override
   String toString() {
-    return 'ChatMessagesState.loadingMore(messages: $messages, hasMoreMessages: $hasMoreMessages, isOnline: $isOnline, pendingCount: $pendingCount, isBlocked: $isBlocked, isUserTyping: $isUserTyping, typingInfo: $typingInfo, replyingToMessage: $replyingToMessage)';
+    return 'ChatMessagesState.loadingMore(messages: $messages, hasMoreMessages: $hasMoreMessages, isOnline: $isOnline, pendingCount: $pendingCount, isBlocked: $isBlocked, isUserTyping: $isUserTyping, typingInfo: $typingInfo, replyingToMessage: $replyingToMessage, freeChatMinsLeft: $freeChatMinsLeft)';
   }
 
   @override
@@ -1099,7 +1153,9 @@ class _$ChatMessagesLoadingMoreImpl extends ChatMessagesLoadingMore {
             (identical(other.typingInfo, typingInfo) ||
                 other.typingInfo == typingInfo) &&
             (identical(other.replyingToMessage, replyingToMessage) ||
-                other.replyingToMessage == replyingToMessage));
+                other.replyingToMessage == replyingToMessage) &&
+            (identical(other.freeChatMinsLeft, freeChatMinsLeft) ||
+                other.freeChatMinsLeft == freeChatMinsLeft));
   }
 
   @override
@@ -1112,7 +1168,8 @@ class _$ChatMessagesLoadingMoreImpl extends ChatMessagesLoadingMore {
       isBlocked,
       isUserTyping,
       typingInfo,
-      replyingToMessage);
+      replyingToMessage,
+      freeChatMinsLeft);
 
   @JsonKey(ignore: true)
   @override
@@ -1136,7 +1193,8 @@ class _$ChatMessagesLoadingMoreImpl extends ChatMessagesLoadingMore {
             TypingModel? typingInfo,
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
-            CubitStates sendMediaState)
+            CubitStates sendMediaState,
+            int? freeChatMinsLeft)
         loaded,
     required TResult Function(
             List<ChatMessage> messages,
@@ -1146,13 +1204,22 @@ class _$ChatMessagesLoadingMoreImpl extends ChatMessagesLoadingMore {
             bool isBlocked,
             bool isUserTyping,
             TypingModel? typingInfo,
-            ChatMessage? replyingToMessage)
+            ChatMessage? replyingToMessage,
+            int? freeChatMinsLeft)
         loadingMore,
     required TResult Function(String message, List<ChatMessage>? cachedMessages)
         failure,
   }) {
-    return loadingMore(messages, hasMoreMessages, isOnline, pendingCount,
-        isBlocked, isUserTyping, typingInfo, replyingToMessage);
+    return loadingMore(
+        messages,
+        hasMoreMessages,
+        isOnline,
+        pendingCount,
+        isBlocked,
+        isUserTyping,
+        typingInfo,
+        replyingToMessage,
+        freeChatMinsLeft);
   }
 
   @override
@@ -1170,7 +1237,8 @@ class _$ChatMessagesLoadingMoreImpl extends ChatMessagesLoadingMore {
             TypingModel? typingInfo,
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
-            CubitStates sendMediaState)?
+            CubitStates sendMediaState,
+            int? freeChatMinsLeft)?
         loaded,
     TResult? Function(
             List<ChatMessage> messages,
@@ -1180,13 +1248,22 @@ class _$ChatMessagesLoadingMoreImpl extends ChatMessagesLoadingMore {
             bool isBlocked,
             bool isUserTyping,
             TypingModel? typingInfo,
-            ChatMessage? replyingToMessage)?
+            ChatMessage? replyingToMessage,
+            int? freeChatMinsLeft)?
         loadingMore,
     TResult? Function(String message, List<ChatMessage>? cachedMessages)?
         failure,
   }) {
-    return loadingMore?.call(messages, hasMoreMessages, isOnline, pendingCount,
-        isBlocked, isUserTyping, typingInfo, replyingToMessage);
+    return loadingMore?.call(
+        messages,
+        hasMoreMessages,
+        isOnline,
+        pendingCount,
+        isBlocked,
+        isUserTyping,
+        typingInfo,
+        replyingToMessage,
+        freeChatMinsLeft);
   }
 
   @override
@@ -1204,7 +1281,8 @@ class _$ChatMessagesLoadingMoreImpl extends ChatMessagesLoadingMore {
             TypingModel? typingInfo,
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
-            CubitStates sendMediaState)?
+            CubitStates sendMediaState,
+            int? freeChatMinsLeft)?
         loaded,
     TResult Function(
             List<ChatMessage> messages,
@@ -1214,15 +1292,24 @@ class _$ChatMessagesLoadingMoreImpl extends ChatMessagesLoadingMore {
             bool isBlocked,
             bool isUserTyping,
             TypingModel? typingInfo,
-            ChatMessage? replyingToMessage)?
+            ChatMessage? replyingToMessage,
+            int? freeChatMinsLeft)?
         loadingMore,
     TResult Function(String message, List<ChatMessage>? cachedMessages)?
         failure,
     required TResult orElse(),
   }) {
     if (loadingMore != null) {
-      return loadingMore(messages, hasMoreMessages, isOnline, pendingCount,
-          isBlocked, isUserTyping, typingInfo, replyingToMessage);
+      return loadingMore(
+          messages,
+          hasMoreMessages,
+          isOnline,
+          pendingCount,
+          isBlocked,
+          isUserTyping,
+          typingInfo,
+          replyingToMessage,
+          freeChatMinsLeft);
     }
     return orElse();
   }
@@ -1277,7 +1364,8 @@ abstract class ChatMessagesLoadingMore extends ChatMessagesState {
       final bool isBlocked,
       final bool isUserTyping,
       final TypingModel? typingInfo,
-      final ChatMessage? replyingToMessage}) = _$ChatMessagesLoadingMoreImpl;
+      final ChatMessage? replyingToMessage,
+      final int? freeChatMinsLeft}) = _$ChatMessagesLoadingMoreImpl;
   const ChatMessagesLoadingMore._() : super._();
 
   List<ChatMessage> get messages;
@@ -1288,6 +1376,7 @@ abstract class ChatMessagesLoadingMore extends ChatMessagesState {
   bool get isUserTyping;
   TypingModel? get typingInfo;
   ChatMessage? get replyingToMessage;
+  int? get freeChatMinsLeft;
   @JsonKey(ignore: true)
   _$$ChatMessagesLoadingMoreImplCopyWith<_$ChatMessagesLoadingMoreImpl>
       get copyWith => throw _privateConstructorUsedError;
@@ -1394,7 +1483,8 @@ class _$ChatMessagesFailureImpl extends ChatMessagesFailure {
             TypingModel? typingInfo,
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
-            CubitStates sendMediaState)
+            CubitStates sendMediaState,
+            int? freeChatMinsLeft)
         loaded,
     required TResult Function(
             List<ChatMessage> messages,
@@ -1404,7 +1494,8 @@ class _$ChatMessagesFailureImpl extends ChatMessagesFailure {
             bool isBlocked,
             bool isUserTyping,
             TypingModel? typingInfo,
-            ChatMessage? replyingToMessage)
+            ChatMessage? replyingToMessage,
+            int? freeChatMinsLeft)
         loadingMore,
     required TResult Function(String message, List<ChatMessage>? cachedMessages)
         failure,
@@ -1427,7 +1518,8 @@ class _$ChatMessagesFailureImpl extends ChatMessagesFailure {
             TypingModel? typingInfo,
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
-            CubitStates sendMediaState)?
+            CubitStates sendMediaState,
+            int? freeChatMinsLeft)?
         loaded,
     TResult? Function(
             List<ChatMessage> messages,
@@ -1437,7 +1529,8 @@ class _$ChatMessagesFailureImpl extends ChatMessagesFailure {
             bool isBlocked,
             bool isUserTyping,
             TypingModel? typingInfo,
-            ChatMessage? replyingToMessage)?
+            ChatMessage? replyingToMessage,
+            int? freeChatMinsLeft)?
         loadingMore,
     TResult? Function(String message, List<ChatMessage>? cachedMessages)?
         failure,
@@ -1460,7 +1553,8 @@ class _$ChatMessagesFailureImpl extends ChatMessagesFailure {
             TypingModel? typingInfo,
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
-            CubitStates sendMediaState)?
+            CubitStates sendMediaState,
+            int? freeChatMinsLeft)?
         loaded,
     TResult Function(
             List<ChatMessage> messages,
@@ -1470,7 +1564,8 @@ class _$ChatMessagesFailureImpl extends ChatMessagesFailure {
             bool isBlocked,
             bool isUserTyping,
             TypingModel? typingInfo,
-            ChatMessage? replyingToMessage)?
+            ChatMessage? replyingToMessage,
+            int? freeChatMinsLeft)?
         loadingMore,
     TResult Function(String message, List<ChatMessage>? cachedMessages)?
         failure,

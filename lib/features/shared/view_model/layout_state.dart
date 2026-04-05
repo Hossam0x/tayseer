@@ -1,17 +1,18 @@
 // features/advisor/layout/view_model/a_layout_state.dart
+import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 
-class LayoutState {
+class LayoutState extends Equatable {
   final int currentIndex;
   final bool isNavVisible;
   final UserTypeEnum userType;
-   final bool isMarriageVisible;
-  final int
-  scrollToTopTrigger; // يزيد كل ما المستخدم يضغط على الهوم وهو بالفعل في الهوم
-  final bool isHomeAtTop; // هل الهوم فوق خالص
-  final int refreshHomeTrigger; // يزيد لما نعايز نعمل ريفريش للهوم
-final int marriageToggleTrigger; 
-  LayoutState({
+  final bool isMarriageVisible;
+  final int scrollToTopTrigger;
+  final bool isHomeAtTop;
+  final int refreshHomeTrigger;
+  final int marriageToggleTrigger;
+
+  const LayoutState({
     this.currentIndex = 0,
     this.isNavVisible = true,
     this.userType = UserTypeEnum.asConsultant,
@@ -29,9 +30,8 @@ final int marriageToggleTrigger;
     int? scrollToTopTrigger,
     bool? isHomeAtTop,
     int? refreshHomeTrigger,
-     bool? isMarriageVisible, 
-      int? marriageToggleTrigger,
-     
+    bool? isMarriageVisible,
+    int? marriageToggleTrigger,
   }) {
     return LayoutState(
       currentIndex: currentIndex ?? this.currentIndex,
@@ -40,8 +40,20 @@ final int marriageToggleTrigger;
       scrollToTopTrigger: scrollToTopTrigger ?? this.scrollToTopTrigger,
       isHomeAtTop: isHomeAtTop ?? this.isHomeAtTop,
       refreshHomeTrigger: refreshHomeTrigger ?? this.refreshHomeTrigger,
-     isMarriageVisible: isMarriageVisible ?? this.isMarriageVisible,
+      isMarriageVisible: isMarriageVisible ?? this.isMarriageVisible,
       marriageToggleTrigger: marriageToggleTrigger ?? this.marriageToggleTrigger,
     );
   }
+
+  @override
+  List<Object?> get props => [
+    currentIndex,
+    isNavVisible,
+    userType,
+    isMarriageVisible,
+    scrollToTopTrigger,
+    isHomeAtTop,
+    refreshHomeTrigger,
+    marriageToggleTrigger,
+  ];
 }

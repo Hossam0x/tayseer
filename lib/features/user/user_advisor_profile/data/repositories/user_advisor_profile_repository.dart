@@ -11,7 +11,10 @@ abstract class UserAdvisorProfileRepository {
     required String advisorId,
     required int page,
   });
-  Future<Either<Failure, String>> toggleFollowUser(String advisorId);
+  Future<Either<Failure, String>> toggleFollowUser(
+    String advisorId, {
+    required bool isCurrentlyFollowing,
+  });
   Future<void> reactToPost({
     required String postId,
     required ReactionType? reactionType,
@@ -133,10 +136,14 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
   }
 
   @override
-  Future<Either<Failure, String>> toggleFollowUser(String advisorId) async {
+  Future<Either<Failure, String>> toggleFollowUser(
+    String advisorId, {
+    required bool isCurrentlyFollowing,
+  }) async {
     try {
       final response = await _apiService.post(
         endPoint: '/advisor/toggle-follow/$advisorId',
+        query: {'action': isCurrentlyFollowing ? 'remove' : 'add'},
       );
       return Right(response['message'] ?? 'operation_success');
     } on DioException catch (e) {
@@ -207,7 +214,8 @@ class UserAdvisorProfileRepositoryImpl implements UserAdvisorProfileRepository {
     try {
       final response = await _apiService.post(
         endPoint: ApiEndPoint.savePost,
-        data: {"postId": postId, "action": isRemove ? "remove" : "add"},
+        query: {'action': isRemove ? 'remove' : 'add'},
+        data: {"postId": postId},
       );
       return Right(response['message'] ?? 'operation_success');
     } on DioException catch (e) {

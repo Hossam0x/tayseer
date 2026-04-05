@@ -1,3 +1,5 @@
+import 'dart:ui';
+import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -5,27 +7,61 @@ class AdditionalImageSection extends StatelessWidget {
   final String imageUrl;
   final String? personId;
   final bool? isHastar;
+  final bool shouldBlur;
+
   const AdditionalImageSection({
     super.key,
     required this.imageUrl,
     this.personId,
     this.isHastar,
+    this.shouldBlur = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16.r),
-      child: Stack(
-        children: [
-          AppImage(
-            imageUrl,
-            width: context.width,
-            height: context.height * 0.4,
-            fit: BoxFit.cover,
-          ),
-          isHastar == true
-              ? Positioned(
+    // ✅ heroTag فريد لكل صورة
+    final String heroTag = 'additional_image_$imageUrl';
+
+    return GestureDetector(
+      onTap: shouldBlur
+          ? null // ✅ لو الصورة مبلورة متفتحش
+          : () => FullScreenImageView.show(
+              context,
+              imageUrl: imageUrl,
+              heroTag: heroTag,
+            ),
+      child: Hero(
+        tag: heroTag,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16.r),
+          child: Stack(
+            children: [
+              // ✅ الصورة مع دعم الـ blur
+              if (shouldBlur)
+                ImageFiltered(
+                  imageFilter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: context.height * 0.4,
+                    child: AppImage(imageUrl, fit: BoxFit.cover),
+                  ),
+                )
+              else
+                SizedBox(
+                  width: double.infinity,
+                  height: context.height * 0.4,
+                  child: AppImage(imageUrl, fit: BoxFit.cover),
+                ),
+
+              // ✅ طبقة تعتيم فوق الـ blur
+              if (shouldBlur)
+                Positioned.fill(
+                  child: Container(color: Colors.black.withOpacity(0.2)),
+                ),
+
+              // ✅ زر النجمة
+              if (isHastar == true)
+                Positioned(
                   bottom: 15.h,
                   left: 15.w,
                   child: CircleAvatar(
@@ -46,8 +82,11 @@ class AdditionalImageSection extends StatelessWidget {
                     ),
                   ),
                 )
-              : SizedBox.shrink(),
-        ],
+              else
+                const SizedBox.shrink(),
+            ],
+          ),
+        ),
       ),
     );
   }

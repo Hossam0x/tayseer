@@ -143,13 +143,18 @@ class PostImagesGrid extends StatelessWidget {
                   placeholder: (_, __) => _buildShimmerPlaceholder(),
                 ),
                 if (moreCount > 0)
-                  Container(
-                    color: Colors.black.withOpacity(0.5),
-                    child: Center(
-                      child: Text(
-                        "+$moreCount",
-                        style: Styles.textStyle20Bold.copyWith(
-                          color: Colors.white,
+                  Material(
+                    // ✅ Hero widgets يحتاجوا Material ancestor أثناء الـ animation
+                    // بدونه الـ Text بيوقع تحت DefaultTextStyle اللي بيعمل خط أصفر
+                    type: MaterialType.transparency,
+                    child: Container(
+                      color: Colors.black.withOpacity(0.5),
+                      child: Center(
+                        child: Text(
+                          "+$moreCount",
+                          style: Styles.textStyle20Bold.copyWith(
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),

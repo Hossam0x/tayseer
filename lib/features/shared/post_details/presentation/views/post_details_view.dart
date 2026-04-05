@@ -1,31 +1,37 @@
 import 'dart:async';
 import 'package:equatable/equatable.dart';
+import 'package:tayseer/core/enum/report_type.dart';
+import 'package:tayseer/core/models/comment_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_details_card/post_details_card.dart';
-import 'package:tayseer/core/models/comment_model.dart';
-import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/post_details/presentation/manager/post_details_cubit/post_details_cubit.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/widgets/comment_input_area.dart';
+import 'package:tayseer/features/shared/post_details/presentation/views/widgets/post_shimmer_loader.dart';
+import 'package:tayseer/main.dart';
 import 'package:tayseer/my_import.dart';
 
 class PostDetailsView extends StatefulWidget {
-  final PostModel post;
+  final PostModel? post;
   final VideoPlayerController? cachedController;
   final PostCallbacks callbacks;
   final bool isFromProfile;
   final String? heroPrefix;
   final bool isArchived;
+  final String? postId_fromNotifc;
 
   const PostDetailsView({
     super.key,
-    required this.post,
+    this.post,
     this.cachedController,
     this.callbacks = const PostCallbacks(),
     required this.isFromProfile,
     this.heroPrefix,
     this.isArchived = false,
+    this.postId_fromNotifc,
   });
 
   @override
@@ -34,8 +40,11 @@ class PostDetailsView extends StatefulWidget {
 
 class _PostDetailsViewState extends State<PostDetailsView> {
   late final ScrollController _scrollController;
-  late PostModel _currentPost;
+  PostModel? _currentPost;
   StreamSubscription<PostModel?>? _postSubscription;
+  late PostDetailsCubit _postDetailsCubit;
+  late PostCallbacks _effectiveCallbacks;
+  bool _isNotificationMode = false;
 
   @override
   void initState() {
@@ -43,8 +52,26 @@ class _PostDetailsViewState extends State<PostDetailsView> {
     _scrollController = ScrollController();
     _currentPost = widget.post;
 
-    // ✅ الاشتراك في الـ Stream
-    _postSubscription = widget.callbacks.postUpdatesStream?.listen(
+    _postDetailsCubit = PostDetailsCubit(
+      homeRepository: getIt<HomeRepository>(),
+      postId: widget.post?.postId ?? widget.postId_fromNotifc ?? '',
+      isCommented: widget.post?.isCommented ?? false,
+      isAnonymous: widget.post?.isAnonymous,
+    );
+
+    if (widget.post == null && widget.postId_fromNotifc != null) {
+      _postDetailsCubit.loadPostFromAPI(widget.postId_fromNotifc!);
+    }
+
+    _effectiveCallbacks = _buildEffectiveCallbacks();
+
+    if (_isNotificationMode && _currentPost != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) getIt<HomeCubit>().injectPost(_currentPost!);
+      });
+    }
+
+    _postSubscription = _effectiveCallbacks.postUpdatesStream?.listen(
       _onPostUpdated,
     );
   }
@@ -52,13 +79,12 @@ class _PostDetailsViewState extends State<PostDetailsView> {
   void _onPostUpdated(PostModel? updatedPost) {
     if (!mounted) return;
 
-    // ✅ لو البوست اتحذف -> اخرج
     if (updatedPost == null) {
       Navigator.of(context).pop();
       return;
     }
 
-    if (updatedPost.postId == _currentPost.postId) {
+    if (_currentPost != null && updatedPost.postId == _currentPost!.postId) {
       setState(() => _currentPost = updatedPost);
     }
   }
@@ -67,98 +93,139 @@ class _PostDetailsViewState extends State<PostDetailsView> {
   void dispose() {
     _scrollController.dispose();
     _postSubscription?.cancel();
+    if (_currentPost != null) {
+      widget.callbacks.onEdit?.call(_currentPost!);
+    }
+    _postDetailsCubit.close();
     super.dispose();
   }
 
-  void _scrollToTop() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        0.0,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeOutQuart,
-      );
+  PostCallbacks _buildEffectiveCallbacks() {
+    if (widget.callbacks.hasCallbacks ||
+        widget.callbacks.postUpdatesStream != null) {
+      return widget.callbacks;
     }
+
+    _isNotificationMode = true;
+    final homeCubit = getIt<HomeCubit>();
+    final String postId = widget.post?.postId ?? widget.postId_fromNotifc ?? '';
+
+    final postStream = homeCubit.stream
+        .map(
+          (state) => state.posts.where((p) => p.postId == postId).firstOrNull,
+        )
+        .distinct();
+
+    return PostCallbacks(
+      postUpdatesStream: postStream,
+      onReactionChanged: (pId, type) =>
+          homeCubit.reactToPost(postId: pId, reactionType: type),
+      onShareTap: (pId) => homeCubit.toggleSharePost(postId: pId),
+      onHashtagTap: (hashtag) {
+        final clean = hashtag.startsWith('#') ? hashtag.substring(1) : hashtag;
+        navigatorKey.currentContext?.pushNamed(
+          AppRouter.kAdvisorSearchView,
+          arguments: {'query': clean, 'tab': 'posts'},
+        );
+      },
+      onEdit: (post) => homeCubit.updateEditedPost(post),
+      onReport: (pId) {
+        navigatorKey.currentContext?.pushNamed(
+          AppRouter.kReportsView,
+          arguments: {'type': ReportType.post, 'id': pId},
+        );
+      },
+      onSave: (pId) => homeCubit.toggleSavePost(postId: pId),
+      onDelete: (pId) => homeCubit.deletePost(postId: pId),
+      onHide: (pId) => homeCubit.toggleHidePost(postId: pId),
+      onBlock: (pId, userId) =>
+          homeCubit.blockUser(visiblePostId: pId, advisorId: userId),
+      onArchive: (pId) => homeCubit.archivePost(postId: pId),
+      onPollVote: (pId, choice) =>
+          homeCubit.voteInPoll(postId: pId, choiceText: choice),
+      onCommented: (pId, isAnon) =>
+          homeCubit.markPostAsCommented(postId: pId, isAnonymous: isAnon),
+      onCommentCountDelta:
+          ({required postId, required countDelta, isCommented, isAnonymous}) =>
+              homeCubit.updateCommentCountByDelta(
+                postId: postId,
+                countDelta: countDelta,
+                isCommented: isCommented,
+                isAnonymous: isAnonymous,
+              ),
+      onCommentCountSync: ({required postId, required totalCount}) => homeCubit
+          .syncCommentCountFromBackend(postId: postId, totalCount: totalCount),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => PostDetailsCubit(
-        homeRepository: getIt<HomeRepository>(),
-        postId: widget.post.postId,
-        isCommented: widget.post.isCommented,
-        isAnonymous: widget.post.isAnonymous,
-      ),
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: _buildAppBar(context),
-        body: MultiBlocListener(
-          listeners: [
-            // ✅ Comment success
-            BlocListener<PostDetailsCubit, PostDetailsState>(
-              listenWhen: (prev, curr) =>
-                  prev.addingCommentState != curr.addingCommentState,
-              listener: (_, state) {
-                if (state.addingCommentState == CubitStates.success) {
-                  _scrollToTop();
-                  _notifyCommented(state.selectedAnonymous);
-                }
-              },
-            ),
-            // ✅ Reply success
-            BlocListener<PostDetailsCubit, PostDetailsState>(
-              listenWhen: (prev, curr) =>
-                  prev.addingReplyState != curr.addingReplyState,
-              listener: (_, state) {
-                if (state.addingReplyState == CubitStates.success) {
-                  _notifyCommented(state.selectedAnonymous);
-                }
-              },
-            ),
-          ],
-          child: Column(
-            children: [
-              Expanded(
-                child: _PostDetailsBody(
-                  isFromProfile: widget.isFromProfile,
-                  currentPost: _currentPost,
-                  cachedController: widget.cachedController,
-                  scrollController: _scrollController,
-                  callbacks: widget.callbacks,
-                  heroPrefix: widget.heroPrefix,
-                  isArchived: widget.isArchived,
+    return BlocProvider.value(
+      value: _postDetailsCubit,
+      child: BlocBuilder<PostDetailsCubit, PostDetailsState>(
+        builder: (context, state) {
+          if (state.loadedPost != null && _currentPost == null) {
+            _currentPost = state.loadedPost;
+          }
+
+          if (state.postLoadingState == CubitStates.loading) {
+            return const Scaffold(body: PostShimmerLoader());
+          }
+
+          if (state.postLoadingState == CubitStates.failure) {
+            return Scaffold(
+              body: CustomErrorView(
+                message: state.postLoadingError ?? 'Error',
+                onRetry: () => _postDetailsCubit.loadPostFromAPI(
+                  widget.postId_fromNotifc!,
                 ),
               ),
-              const CommentInputArea(),
-            ],
-          ),
-        ),
+            );
+          }
+
+          if (_currentPost == null) {
+            return Scaffold(
+              body: CustomErrorView(
+                message: 'No post data',
+                onRetry: () => _postDetailsCubit.loadPostFromAPI(
+                  widget.postId_fromNotifc!,
+                ),
+              ),
+            );
+          }
+
+          return Scaffold(
+            backgroundColor: Colors.white,
+            appBar: _buildAppBar(),
+            body: Column(
+              children: [
+                Expanded(
+                  child: _PostDetailsBody(
+                    currentPost: _currentPost!,
+                    cachedController: widget.cachedController,
+                    scrollController: _scrollController,
+                    callbacks: _effectiveCallbacks,
+                    isFromProfile: widget.isFromProfile,
+                    heroPrefix: widget.heroPrefix,
+                    isArchived: widget.isArchived,
+                  ),
+                ),
+                const CommentInputArea(),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
-  /// Notify HomeCubit about the comment/reply + update local post
-  void _notifyCommented(bool isAnonymous) {
-    setState(() {
-      _currentPost = _currentPost.copyWith(
-        isCommented: true,
-        isAnonymous: isAnonymous,
-        commentsCount: _currentPost.commentsCount + 1,
-      );
-    });
-    widget.callbacks.onCommented?.call(_currentPost.postId, isAnonymous);
-  }
-
-  AppBar _buildAppBar(BuildContext context) {
+  AppBar _buildAppBar() {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-        onPressed: () => Navigator.pop(context),
-      ),
+      leading: const BackButton(color: Colors.black),
       title: Text(
-        _currentPost.name,
+        _currentPost?.name ?? '',
         style: Styles.textStyle16.copyWith(
           color: Colors.black,
           fontWeight: FontWeight.bold,
@@ -170,7 +237,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Body Widget
+// Body Widget ✅ MODIFIED
 // ══════════════════════════════════════════════════════════════════════════════
 class _PostDetailsBody extends StatefulWidget {
   final PostModel currentPost;
@@ -198,15 +265,34 @@ class _PostDetailsBody extends StatefulWidget {
 class _PostDetailsBodyState extends State<_PostDetailsBody> {
   final Map<String, GlobalKey> _commentKeys = {};
 
-  void _scrollToComment(String commentId, {bool isForReply = false}) {
+  void _scrollToComment(String commentId, {bool isForReply = false}) async {
     final key = _commentKeys[commentId];
     if (key?.currentContext == null) return;
+
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    if (!mounted || key!.currentContext == null) return;
+
     Scrollable.ensureVisible(
-      key!.currentContext!,
-      duration: const Duration(milliseconds: 400),
+      key.currentContext!,
+      duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutCubic,
-      alignment: isForReply ? 0.2 : 0.3,
+      alignment: 1.0,
     );
+
+    await Future.delayed(const Duration(milliseconds: 350));
+    if (mounted && widget.scrollController.hasClients) {
+      final currentOffset = widget.scrollController.offset;
+      final maxScroll = widget.scrollController.position.maxScrollExtent;
+
+      final targetOffset = (currentOffset + 60).clamp(0.0, maxScroll);
+
+      widget.scrollController.animateTo(
+        targetOffset,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   GlobalKey _getKeyForComment(String commentId) =>
@@ -218,26 +304,109 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
       color: AppColors.kprimaryColor,
       onRefresh: () async =>
           context.read<PostDetailsCubit>().loadComments(isRefresh: true),
-      child: BlocListener<PostDetailsCubit, PostDetailsState>(
-        listenWhen: (prev, curr) =>
-            prev.scrollTrigger != curr.scrollTrigger &&
-            curr.scrollToCommentId != null,
-        listener: (context, state) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _scrollToComment(
-              state.scrollToCommentId!,
-              isForReply: state.activeReplyId == state.scrollToCommentId,
-            );
-            context.read<PostDetailsCubit>().clearScrollTarget();
-          });
-        },
+      child: MultiBlocListener(
+        listeners: [
+          // 1️⃣ ليسنر السكرول
+          BlocListener<PostDetailsCubit, PostDetailsState>(
+            listenWhen: (prev, curr) =>
+                prev.scrollTrigger != curr.scrollTrigger &&
+                curr.scrollToCommentId != null,
+            listener: (context, state) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _scrollToComment(
+                  state.scrollToCommentId!,
+                  isForReply: state.activeReplyId == state.scrollToCommentId,
+                );
+                context.read<PostDetailsCubit>().clearScrollTarget();
+              });
+            },
+          ),
+
+          // 2️⃣ ليسنر حذف الكومنت ✅ NEW
+          BlocListener<PostDetailsCubit, PostDetailsState>(
+            listenWhen: (prev, curr) =>
+                prev.deleteCommentActionState != curr.deleteCommentActionState,
+            listener: (context, state) {
+              switch (state.deleteCommentActionState) {
+                case CubitStates.loading:
+                  CustomloadingApp.show(context);
+                  break;
+                case CubitStates.success:
+                  CustomloadingApp.hide(context);
+                  AppToast.success(context, state.deleteCommentMessage);
+                  break;
+                case CubitStates.failure:
+                  CustomloadingApp.hide(context);
+                  AppToast.error(context, state.deleteCommentMessage);
+                  break;
+                default:
+                  break;
+              }
+            },
+          ),
+
+          // 3️⃣ ليسنر حذف الرد ✅ NEW
+          BlocListener<PostDetailsCubit, PostDetailsState>(
+            listenWhen: (prev, curr) =>
+                prev.deleteReplyActionState != curr.deleteReplyActionState,
+            listener: (context, state) {
+              switch (state.deleteReplyActionState) {
+                case CubitStates.loading:
+                  CustomloadingApp.show(context);
+                  break;
+                case CubitStates.success:
+                  CustomloadingApp.hide(context);
+                  AppToast.success(context, state.deleteReplyMessage);
+                  break;
+                case CubitStates.failure:
+                  CustomloadingApp.hide(context);
+                  AppToast.error(context, state.deleteReplyMessage);
+                  break;
+                default:
+                  break;
+              }
+            },
+          ),
+
+          // 4️⃣ ✅ NEW: ليسنر مزامنة عدد الكومنتات مع الـ HomeCubit
+          BlocListener<PostDetailsCubit, PostDetailsState>(
+            listenWhen: (prev, curr) =>
+                prev.commentCountDeltaTrigger != curr.commentCountDeltaTrigger,
+            listener: (context, state) {
+              final postId = widget.currentPost.postId;
+              final delta = state.pendingCommentCountDelta;
+
+              widget.callbacks.onCommentCountDelta?.call(
+                postId: postId,
+                countDelta: delta,
+                // ✅ لو إضافة (delta > 0) → نحدث isCommented و isAnonymous
+                isCommented: delta > 0 ? true : null,
+                isAnonymous: delta > 0 ? state.selectedAnonymous : null,
+              );
+            },
+          ),
+
+          // 5️⃣ ✅ NEW: ليسنر تحديث عدد التعليقات من الباك اند
+          BlocListener<PostDetailsCubit, PostDetailsState>(
+            listenWhen: (prev, curr) =>
+                prev.syncCommentCountTrigger != curr.syncCommentCountTrigger,
+            listener: (context, state) {
+              final postId = widget.currentPost.postId;
+              final backendCount = state.syncCommentCountFromBackend;
+
+              widget.callbacks.onCommentCountSync?.call(
+                postId: postId,
+                totalCount: backendCount,
+              );
+            },
+          ),
+        ],
         child:
             BlocSelector<PostDetailsCubit, PostDetailsState, _CommentsUIState>(
               selector: _selectCommentsState,
               builder: (context, uiState) {
                 final cubit = context.read<PostDetailsCubit>();
 
-                // ✅ تجميع كل الـ Callbacks في الـ Bundle
                 final commentCallbacks = CommentCallbacks(
                   onLike: (comment, isReply) =>
                       cubit.toggleLike(isReply, comment.id),
@@ -257,12 +426,8 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
                   onSendReply: (parentId, text) =>
                       cubit.addReply(parentId, text),
                   onLoadReplies: cubit.loadReplies,
-                  onDeleteReply: (id) => cubit.deleteReply(
-                    replyId: id,
-                  ), // مثال لإضافة وظائف جديدة بسهولة
-                  onDeleteComment: (id) => cubit.deleteComment(
-                    commentId: id,
-                  ), // مثال لإضافة وظائف جديدة بسهولة
+                  onDeleteReply: (id) => cubit.deleteReply(replyId: id),
+                  onDeleteComment: (id) => cubit.deleteComment(commentId: id),
                 );
 
                 return PostDetailsCard(
@@ -273,7 +438,7 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
                   callbacks: widget.callbacks,
                   heroPrefix: widget.heroPrefix,
                   isArchived: widget.isArchived,
-                  commentCallbacks: commentCallbacks, // ✅ تمرير الـ Bundle
+                  commentCallbacks: commentCallbacks,
                   onCommentTap: () => cubit.requestInputFocus(),
                   comments: uiState.comments,
                   isLoadingComments: uiState.isLoading,
@@ -309,10 +474,10 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
         isReplyLoading: state.addingReplyState == CubitStates.loading,
       );
 }
+
 // ══════════════════════════════════════════════════════════════════════════════
 // State Model
 // ══════════════════════════════════════════════════════════════════════════════
-
 class _CommentsUIState extends Equatable {
   final List<CommentModel> comments;
   final bool isLoading;

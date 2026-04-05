@@ -1,6 +1,11 @@
 part of 'post_details_cubit.dart';
 
 class PostDetailsState extends Equatable {
+  // Post Loading State (from Notification)
+  final CubitStates postLoadingState;
+  final String? postLoadingError;
+  final PostModel? loadedPost;
+
   // Comments List State
   final CubitStates commentsState;
   final List<CommentModel> comments;
@@ -21,10 +26,10 @@ class PostDetailsState extends Equatable {
   final CubitStates addingReplyState;
   final CubitStates editingState;
 
-  // ✅ Optimistic Update
+  // Optimistic Update
   final String? pendingCommentTempId;
 
-  // ✅ Auto-Scroll
+  // Auto-Scroll
   final String? scrollToCommentId;
   final int scrollTrigger;
 
@@ -36,11 +41,25 @@ class PostDetailsState extends Equatable {
   final String deleteReplyMessage;
   final CubitStates deleteReplyActionState;
 
-  // ✅ Anonymous state
+  // Anonymous state
   final bool isAnonymousLocked;
   final bool selectedAnonymous;
 
+  // ✅ NEW: Comment Count Delta Sync
+  final int pendingCommentCountDelta;
+  final int commentCountDeltaTrigger;
+
+  // ✅ NEW: Sync Comment Count from Backend
+  final int syncCommentCountFromBackend;
+  final int syncCommentCountTrigger;
+
+  // ✅ NEW: Total Comments and Replies Count from Backend
+  final int totalCommentsAndRepliesCount;
+
   const PostDetailsState({
+    this.postLoadingState = CubitStates.initial,
+    this.postLoadingError,
+    this.loadedPost,
     this.commentsState = CubitStates.initial,
     this.comments = const [],
     this.errorMessage,
@@ -62,11 +81,22 @@ class PostDetailsState extends Equatable {
     this.deleteReplyActionState = CubitStates.initial,
     this.isAnonymousLocked = false,
     this.selectedAnonymous = false,
+    // ✅ NEW
+    this.pendingCommentCountDelta = 0,
+    this.commentCountDeltaTrigger = 0,
+    // ✅ NEW: Sync from Backend
+    this.syncCommentCountFromBackend = 0,
+    this.syncCommentCountTrigger = 0,
+    this.totalCommentsAndRepliesCount = 0,
   });
 
   bool get hasMoreComments => currentPage < totalPages;
 
   PostDetailsState copyWith({
+    CubitStates? postLoadingState,
+    String? postLoadingError,
+    bool? clearPostLoadingError,
+    PostModel? loadedPost,
     CubitStates? commentsState,
     List<CommentModel>? comments,
     String? errorMessage,
@@ -88,19 +118,29 @@ class PostDetailsState extends Equatable {
     String? scrollToCommentId,
     bool? clearScrollToCommentId,
     int? scrollTrigger,
-
-    //
+    // Delete Comment
     String? deleteCommentMessage,
     CubitStates? deleteCommentActionState,
-
-    // DELETE REPLY
+    // Delete Reply
     String? deleteReplyMessage,
     CubitStates? deleteReplyActionState,
     // Anonymous state
     bool? isAnonymousLocked,
     bool? selectedAnonymous,
+    // ✅ NEW: Delta
+    int? pendingCommentCountDelta,
+    int? commentCountDeltaTrigger,
+    // ✅ NEW: Sync from Backend
+    int? syncCommentCountFromBackend,
+    int? syncCommentCountTrigger,
+    int? totalCommentsAndRepliesCount,
   }) {
     return PostDetailsState(
+      postLoadingState: postLoadingState ?? this.postLoadingState,
+      postLoadingError: (clearPostLoadingError == true)
+          ? null
+          : (postLoadingError ?? this.postLoadingError),
+      loadedPost: loadedPost ?? this.loadedPost,
       commentsState: commentsState ?? this.commentsState,
       comments: comments ?? this.comments,
       errorMessage: errorMessage ?? this.errorMessage,
@@ -117,11 +157,9 @@ class PostDetailsState extends Equatable {
       addingCommentState: addingCommentState ?? this.addingCommentState,
       addingReplyState: addingReplyState ?? this.addingReplyState,
       editingState: editingState ?? this.editingState,
-      // Optimistic Update
       pendingCommentTempId: (clearPendingCommentTempId == true)
           ? null
           : (pendingCommentTempId ?? this.pendingCommentTempId),
-      // Auto-Scroll
       scrollToCommentId: (clearScrollToCommentId == true)
           ? null
           : (scrollToCommentId ?? this.scrollToCommentId),
@@ -134,11 +172,26 @@ class PostDetailsState extends Equatable {
           deleteReplyActionState ?? this.deleteReplyActionState,
       isAnonymousLocked: isAnonymousLocked ?? this.isAnonymousLocked,
       selectedAnonymous: selectedAnonymous ?? this.selectedAnonymous,
+      // ✅ NEW
+      pendingCommentCountDelta:
+          pendingCommentCountDelta ?? this.pendingCommentCountDelta,
+      commentCountDeltaTrigger:
+          commentCountDeltaTrigger ?? this.commentCountDeltaTrigger,
+      // ✅ NEW: Sync from Backend
+      syncCommentCountFromBackend:
+          syncCommentCountFromBackend ?? this.syncCommentCountFromBackend,
+      syncCommentCountTrigger:
+          syncCommentCountTrigger ?? this.syncCommentCountTrigger,
+      totalCommentsAndRepliesCount:
+          totalCommentsAndRepliesCount ?? this.totalCommentsAndRepliesCount,
     );
   }
 
   @override
   List<Object?> get props => [
+    postLoadingState,
+    postLoadingError,
+    loadedPost,
     commentsState,
     comments,
     errorMessage,
@@ -160,5 +213,12 @@ class PostDetailsState extends Equatable {
     deleteReplyActionState,
     isAnonymousLocked,
     selectedAnonymous,
+    // ✅ NEW
+    pendingCommentCountDelta,
+    commentCountDeltaTrigger,
+    // ✅ NEW: Sync from Backend
+    syncCommentCountFromBackend,
+    syncCommentCountTrigger,
+    totalCommentsAndRepliesCount,
   ];
 }

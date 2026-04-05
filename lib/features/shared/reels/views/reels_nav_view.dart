@@ -195,20 +195,69 @@ class _ReelsNavContentState extends State<_ReelsNavContent> {
     }
   }
 
+  Widget _buildStaticHeader(BuildContext context) {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: ClipRRect(
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(20.r)),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.4),
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(20.r)),
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.white.withOpacity(0.3),
+                width: 1.5,
+              ),
+            ),
+          ),
+          child: SafeArea(
+            bottom: false,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    final layoutCubit = context.read<LayoutCubit>();
+                    layoutCubit.changeIndex(0);
+                    layoutCubit.setNavVisibility(true);
+                  },
+                  child: Icon(Icons.close, color: Colors.white, size: 28.sp),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildContent(BuildContext context, ReelsState state) {
     // ✅ Loading state — شيمر
     if (state.reels.isEmpty && state.reelsState == CubitStates.loading) {
-      return const ReelsShimmer();
+      return Stack(
+        children: [const ReelsShimmer(), _buildStaticHeader(context)],
+      );
     }
 
     // ✅ Error state
     if (state.reels.isEmpty && state.reelsState == CubitStates.failure) {
-      return _buildError(context, state.errorMessage);
+      return Stack(
+        children: [
+          _buildError(context, state.errorMessage),
+          _buildStaticHeader(context),
+        ],
+      );
     }
 
     // ✅ Empty state
     if (state.reels.isEmpty && state.reelsState == CubitStates.success) {
-      return _buildEmpty(context);
+      return Stack(
+        children: [_buildEmpty(context), _buildStaticHeader(context)],
+      );
     }
 
     // ✅ Content
@@ -271,11 +320,13 @@ class _ReelsNavContentState extends State<_ReelsNavContent> {
     }
 
     final reel = state.reels[index];
+    final shouldInit = (index == _currentIndex || index == _currentIndex + 1);
 
     return ReelsItem(
       key: ValueKey('reel_nav_${reel.postId}'),
       post: reel,
       isCurrentPage: index == _currentIndex && _isTabActive,
+      shouldInitialize: shouldInit && _isTabActive,
       onClose: () {
         final layoutCubit = context.read<LayoutCubit>();
         layoutCubit.changeIndex(0);

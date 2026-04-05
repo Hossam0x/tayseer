@@ -76,15 +76,6 @@ class _UploadingBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const SizedBox(
-            width: 22,
-            height: 22,
-            child: CircularProgressIndicator(
-              strokeWidth: 2.5,
-              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1877F2)),
-            ),
-          ),
-          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,8 +93,8 @@ class _UploadingBanner extends StatelessWidget {
                   child: LinearProgressIndicator(
                     minHeight: 4,
                     backgroundColor: Colors.grey.shade200,
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      Color(0xFF1877F2),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.primary200,
                     ),
                   ),
                 ),
@@ -178,8 +169,8 @@ class _FailureBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(14),
+      margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
       decoration: BoxDecoration(
         color: const Color(0xFFFFEBEE),
         borderRadius: BorderRadius.circular(12),
@@ -194,17 +185,13 @@ class _FailureBanner extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 28,
-            height: 28,
+            width: 28.w,
+            height: 28.h,
             decoration: const BoxDecoration(
               color: Color(0xFFF44336),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.error_outline,
-              color: Colors.white,
-              size: 18,
-            ),
+            child: Icon(Icons.error_outline, color: Colors.white, size: 18.sp),
           ),
           const SizedBox(width: 12),
           Expanded(

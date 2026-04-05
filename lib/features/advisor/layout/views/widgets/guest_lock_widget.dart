@@ -4,13 +4,16 @@ class GuestLockWidget extends StatelessWidget {
   const GuestLockWidget({
     super.key,
     required this.message,
-    required this.description, this.onTap,  this.titleBott='إنشاء حساب',
-
+    required this.description,
+    this.onTap,
+    this.titleBott = 'إنشاء حساب',
+    this.showBackgroundImage = true,
   });
   final String message;
   final String description;
   final VoidCallback? onTap;
   final String titleBott;
+  final bool showBackgroundImage;
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +21,7 @@ class GuestLockWidget extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      height: double.infinity,
+      height: MediaQuery.of(context).size.height, // ✅ always finite
       decoration: BoxDecoration(
         image: DecorationImage(
           image: AssetImage(AssetsData.homeBackgroundImage),
@@ -27,12 +30,13 @@ class GuestLockWidget extends StatelessWidget {
       ),
       child: Column(
         children: [
-          AppImage(
-            AssetsData.homeBarBackgroundImage,
-            width: double.infinity,
-            height: context.height*0.05,
-            fit: BoxFit.cover,
-          ),
+          if (showBackgroundImage)
+            AppImage(
+              AssetsData.homeBarBackgroundImage,
+              width: MediaQuery.sizeOf(context).width,
+              height: MediaQuery.sizeOf(context).height * 0.05,
+              fit: BoxFit.cover,
+            ),
 
           Expanded(
             child: Padding(
@@ -41,9 +45,7 @@ class GuestLockWidget extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   AppImage(AssetsData.guestLockImage, width: 228),
-
                   const SizedBox(height: 24),
-
                   Text(
                     message,
                     textAlign: TextAlign.center,
@@ -51,9 +53,7 @@ class GuestLockWidget extends StatelessWidget {
                       color: AppColors.kTextGrey,
                     ),
                   ),
-
                   const SizedBox(height: 12),
-
                   Text(
                     description,
                     textAlign: TextAlign.center,
@@ -62,27 +62,12 @@ class GuestLockWidget extends StatelessWidget {
                       height: 1.5,
                     ),
                   ),
-
                   const SizedBox(height: 40),
-
                   CustomBotton(
                     radius: 16,
                     useGradient: true,
                     title: titleBott,
-                    onPressed: onTap
-
-                    //     () {
-                    //
-                    //
-                    //   // showDialog(
-                    //   //   context: context,
-                    //   //   builder: (context) {
-                    //   //     return Dialog(child: const LockPopUp());
-                    //   //   },
-                    //   // );
-                    //
-                    //   // context.pushNamed(AppRouter.kChooseGenderView);
-                    // },
+                    onPressed: onTap,
                   ),
                 ],
               ),

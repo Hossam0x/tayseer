@@ -1,16 +1,17 @@
-import 'dart:io';
-
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tayseer/core/functions/get_language_code_name.dart';
-import 'package:tayseer/features/advisor/settings/data/models/setting_item_model.dart';
+import 'package:tayseer/features/shared/settings/models/setting_item_model.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_state.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
+import 'package:tayseer/main.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
 
 class SettingsCubit extends Cubit<SettingsState> {
-  final LocalNotification _notificationService = LocalNotification();
+  final LocalNotification _notificationService = LocalNotification(
+    navigatorKey: navigatorKey,
+  );
   final UserProfileRepository _userProfileRepository;
 
   SettingsCubit(this._userProfileRepository) : super(SettingsInitial()) {
@@ -87,6 +88,12 @@ class SettingsCubit extends Cubit<SettingsState> {
           title: 'archive_general',
           iconAsset: AssetsData.icArchiveSettings,
           routeName: AppRouter.kArchiveView,
+        ),
+        SettingItemModel(
+          id: 'membership_management',
+          title: 'membership_management',
+          iconAsset: AssetsData.icMembershipManagement,
+          routeName: AppRouter.kMembershipManagementView,
         ),
         SettingItemModel(
           id: 'hide_story',

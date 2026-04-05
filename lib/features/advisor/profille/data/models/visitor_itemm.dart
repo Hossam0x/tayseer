@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:tayseer/core/enum/verification_type.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_visitors_model.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
@@ -61,8 +62,19 @@ class VisitorItem extends StatelessWidget {
                           color: Colors.white,
                           child: const Icon(Icons.person, color: Colors.grey),
                         ),
-                        placeholder: (context, url) => const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                        placeholder: (context, url) => Shimmer.fromColors(
+                          baseColor: Colors.grey.shade300,
+                          highlightColor: Colors.grey.shade100,
+                          child: Container(
+                            color: Colors.white,
+                            child: const Center(
+                              child: Icon(
+                                Icons.person,
+                                size: 28,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
                         ),
                       )
                     : ImageFiltered(
@@ -85,11 +97,26 @@ class VisitorItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    visitor.name,
-                    style: Styles.textStyle16SemiBold,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          visitor.name,
+                          style: Styles.textStyle16SemiBold,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (visitor.verificationType ==
+                          VerificationType.full) ...[
+                        Gap(4.w),
+                        Icon(Icons.verified, color: Colors.blue, size: 16.w),
+                      ] else if (visitor.verificationType ==
+                          VerificationType.basic) ...[
+                        Gap(4.w),
+                        Icon(Icons.verified, color: Colors.grey, size: 16.w),
+                      ],
+                    ],
                   ),
                   // if (dateStr.isNotEmpty) ...[
                   //   Gap(4.h),

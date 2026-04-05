@@ -1,65 +1,34 @@
-// features/user/advisor_profile/data/models/user_profile_model.dart
 import 'package:equatable/equatable.dart';
+import 'package:tayseer/core/enum/verification_type.dart';
+import 'package:tayseer/features/shared/profile/extensions/profile_extensions.dart';
+import 'package:tayseer/features/shared/profile/data/models/room_info_model.dart';
 
-class RoomInfoModel extends Equatable {
-  final String chatRoomId;
-  final bool isBlocked;
-  final bool isHaveSession;
+export 'package:tayseer/features/shared/profile/data/models/room_info_model.dart';
 
-  const RoomInfoModel({
-    required this.chatRoomId,
-    required this.isBlocked,
-    required this.isHaveSession,
-  });
-
-  factory RoomInfoModel.fromJson(Map<String, dynamic> json) {
-    return RoomInfoModel(
-      chatRoomId: json['chatRoomId']?.toString() ?? '',
-      isBlocked: json['isBlocked'] ?? false,
-      isHaveSession: json['isHaveSession'] ?? false,
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-    'chatRoomId': chatRoomId,
-    'isBlocked': isBlocked,
-    'isHaveSession': isHaveSession,
-  };
-
-  RoomInfoModel copyWith({
-    String? chatRoomId,
-    bool? isBlocked,
-    bool? isHaveSession,
-  }) {
-    return RoomInfoModel(
-      chatRoomId: chatRoomId ?? this.chatRoomId,
-      isBlocked: isBlocked ?? this.isBlocked,
-      isHaveSession: isHaveSession ?? this.isHaveSession,
-    );
-  }
-
-  @override
-  List<Object?> get props => [chatRoomId, isBlocked, isHaveSession];
-}
-
-class UserAdvisorProfileModel extends Equatable {
+class UserAdvisorProfileModel extends Equatable
+    with ProfileProfessionalInfoMixin {
   final String id;
   final String name;
   final String image;
   final String username;
   final String aboutYou;
+  @override
   final String? yearsOfExperience;
   final int followers;
   final int following;
   final bool isVerified;
+  final VerificationType verificationType;
   final bool isApproved;
   final String? location;
   final String? videoLink;
   final bool isMe;
   final bool isFollowing;
+  @override
   final String? professionalSpecialization;
+  @override
   final String? jobGrade;
-  final RoomInfoModel? room; // ⭐ إضافة Room
+  final RoomInfoModel? room;
+  final bool? imageBlur;
 
   const UserAdvisorProfileModel({
     required this.id,
@@ -71,6 +40,7 @@ class UserAdvisorProfileModel extends Equatable {
     required this.followers,
     required this.following,
     required this.isVerified,
+    this.verificationType = VerificationType.none,
     this.isApproved = true,
     this.location,
     this.videoLink,
@@ -78,20 +48,18 @@ class UserAdvisorProfileModel extends Equatable {
     this.isFollowing = false,
     this.professionalSpecialization,
     this.jobGrade,
-    this.room, // ⭐ إضافة Room
+    this.room,
+    this.imageBlur,
   });
 
   factory UserAdvisorProfileModel.fromJson(Map<String, dynamic> json) {
-    // Check if isBlocked array exists and is not empty
     final isBlockedArray = json['isBlocked'] as List?;
     final hasBlockedData = isBlockedArray != null && isBlockedArray.isNotEmpty;
 
-    // Parse room data or create from isBlocked array
     RoomInfoModel? roomData;
     if (json['room'] != null && json['room'] is Map) {
       roomData = RoomInfoModel.fromJson(json['room']);
     } else if (hasBlockedData) {
-      // If no room but isBlocked array exists, create room with blocked status
       roomData = const RoomInfoModel(
         chatRoomId: '',
         isBlocked: true,
@@ -113,6 +81,7 @@ class UserAdvisorProfileModel extends Equatable {
       followers: json['followers'] ?? 0,
       following: json['following'] ?? 0,
       isVerified: json['isVerified'] ?? false,
+      verificationType: VerificationType.fromString(json['verificationType']),
       isApproved: json['isApproved'] ?? true,
       location: json['location'],
       videoLink: json['videoLink'],
@@ -123,6 +92,7 @@ class UserAdvisorProfileModel extends Equatable {
           json['ProfessionalSpecialization']?.toString(),
       jobGrade: json['jobGrade']?.toString() ?? json['JobGrade']?.toString(),
       room: roomData,
+      imageBlur: json['imageBlur'],
     );
   }
 
@@ -136,6 +106,7 @@ class UserAdvisorProfileModel extends Equatable {
     'followers': followers,
     'following': following,
     'isVerified': isVerified,
+    'verificationType': verificationType.name,
     'isApproved': isApproved,
     'location': location,
     'videoLink': videoLink,
@@ -143,7 +114,8 @@ class UserAdvisorProfileModel extends Equatable {
     'isFollowing': isFollowing,
     'professionalSpecialization': professionalSpecialization,
     'jobGrade': jobGrade,
-    'room': room?.toJson(), // ⭐ إضافة Room
+    'room': room?.toJson(),
+    'imageBlur': imageBlur,
   };
 
   UserAdvisorProfileModel copyWith({
@@ -156,6 +128,7 @@ class UserAdvisorProfileModel extends Equatable {
     int? followers,
     int? following,
     bool? isVerified,
+    VerificationType? verificationType,
     bool? isApproved,
     String? location,
     String? videoLink,
@@ -163,7 +136,8 @@ class UserAdvisorProfileModel extends Equatable {
     bool? isFollowing,
     String? professionalSpecialization,
     String? jobGrade,
-    RoomInfoModel? room, // ⭐ إضافة Room
+    RoomInfoModel? room,
+    bool? imageBlur,
   }) {
     return UserAdvisorProfileModel(
       id: id ?? this.id,
@@ -175,6 +149,7 @@ class UserAdvisorProfileModel extends Equatable {
       followers: followers ?? this.followers,
       following: following ?? this.following,
       isVerified: isVerified ?? this.isVerified,
+      verificationType: verificationType ?? this.verificationType,
       isApproved: isApproved ?? this.isApproved,
       location: location ?? this.location,
       videoLink: videoLink ?? this.videoLink,
@@ -183,14 +158,12 @@ class UserAdvisorProfileModel extends Equatable {
       professionalSpecialization:
           professionalSpecialization ?? this.professionalSpecialization,
       jobGrade: jobGrade ?? this.jobGrade,
-      room: room ?? this.room, // ⭐ إضافة Room
+      room: room ?? this.room,
+      imageBlur: imageBlur ?? this.imageBlur,
     );
   }
 
-  // ⭐ دالة مساعدة للحصول على chatRoomId مباشرة
   String? get chatRoomId => room?.chatRoomId;
-
-  // ⭐ دالة مساعدة للتحقق مما إذا كان هناك room
   bool get hasRoom => room != null && room!.chatRoomId.isNotEmpty;
 
   @override
@@ -204,6 +177,7 @@ class UserAdvisorProfileModel extends Equatable {
     followers,
     following,
     isVerified,
+    verificationType,
     isApproved,
     location,
     videoLink,
@@ -211,54 +185,7 @@ class UserAdvisorProfileModel extends Equatable {
     isFollowing,
     professionalSpecialization,
     jobGrade,
-    room, // ⭐ إضافة Room
+    room,
+    imageBlur,
   ];
-}
-
-// ⭐ إضافة Extension للتحويل
-extension UserProfileModelExtension on UserAdvisorProfileModel {
-  String _mapExperienceKey(String? value) {
-    if (value == null || value.isEmpty) return '';
-    if (value.startsWith('experience_')) return value;
-
-    // Map numeric or bound-based values to keys
-    if (value == '2' || value == '0' || value == '0-2') return 'experience_0_2';
-    if (value == '5' || value == '3' || value == '2-5') return 'experience_2_5';
-    if (value == '10' || value == '5-10') return 'experience_5_10';
-    if (value == '11' || value == '10+') return 'experience_10_plus';
-
-    return value;
-  }
-
-  // الحصول على التخصص للعرض (يرجع المفتاح للترجمة)
-  String? get displaySpecialization {
-    if (professionalSpecialization == null ||
-        professionalSpecialization!.isEmpty) {
-      return null;
-    }
-    return professionalSpecialization;
-  }
-
-  // الحصول على المنصب للعرض (يرجع المفتاح للترجمة)
-  String? get displayJobGrade {
-    if (jobGrade == null || jobGrade!.isEmpty) {
-      return null;
-    }
-    return jobGrade;
-  }
-
-  // الحصول على سنوات الخبرة للعرض (يرجع المفتاح للترجمة)
-  String? get displayYearsExperience {
-    if (yearsOfExperience == null || yearsOfExperience!.isEmpty) {
-      return null;
-    }
-    return _mapExperienceKey(yearsOfExperience);
-  }
-
-  // التحقق مما إذا كان هناك بيانات للعرض
-  bool get hasProfessionalInfo {
-    return (displaySpecialization != null &&
-            displaySpecialization!.isNotEmpty) ||
-        (displayYearsExperience != null && displayYearsExperience!.isNotEmpty);
-  }
 }

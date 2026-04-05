@@ -43,22 +43,32 @@ class UsersData {
 class UserItem {
   User? user;
   Answers? answers;
-
-  UserItem({this.user, this.answers});
+  bool? allowInteractions;
+  final bool isPartialData;
+  UserItem({
+    this.user,
+    this.answers,
+    this.allowInteractions,
+    this.isPartialData = false,
+  });
 
   factory UserItem.fromJson(Map<String, dynamic> json) => UserItem(
     user: json["user"] != null ? User.fromJson(json["user"]) : null,
     answers: json["answers"] != null ? Answers.fromJson(json["answers"]) : null,
+    allowInteractions: json["allowInteractions"],
+    isPartialData: json["isPartialData"] ?? false,
   );
 
   Map<String, dynamic> toJson() => {
     "user": user?.toJson(),
     "answers": answers?.toJson(),
+    "allowInteractions": allowInteractions,
+    "isPartialData": isPartialData,
   };
 }
-
 class User {
   String? id;
+  bool? imageBlur;
   String? name;
   bool? isLiked;
   bool? isVerified;
@@ -67,11 +77,16 @@ class User {
   int? similarity;
   List<MatchingTag>? matchingTags;
   bool? isNew;
-  int? age; // ✅ تمت الإضافة
-  UserAbout? about; // ✅ تمت الإضافة
+  int? age;
+  UserAbout? about;
+  bool? isFavorite;
+  bool? isBlocked;
+  String? city;
+  double? distanceKm;
 
   User({
     this.id,
+    this.imageBlur,
     this.name,
     this.isLiked,
     this.isVerified,
@@ -82,41 +97,56 @@ class User {
     this.isNew,
     this.age,
     this.about,
+    this.isFavorite,
+    this.isBlocked,
+    this.city,
+    this.distanceKm,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
-    id: json["id"],
-    name: json["name"],
-    isLiked: json["isLiked"],
-    isVerified: json["isVerified"],
-    country: json["country"],
-    image: json["image"],
-    similarity: json["similarity"],
-    matchingTags: json["matchingTags"] != null
-        ? List<MatchingTag>.from(
-            json["matchingTags"].map((x) => MatchingTag.fromJson(x)),
-          )
-        : null,
-    isNew: json["isNew"],
-    age: json["age"],
-    about: json["about"] != null ? UserAbout.fromJson(json["about"]) : null,
-  );
+        id: json["id"],
+        imageBlur: json["imageBlur"],
+        name: json["name"],
+        isLiked: json["isLiked"],
+        isVerified: json["isVerified"],
+        country: json["country"],
+        image: json["image"],
+        similarity: json["similarity"],
+        matchingTags: json["matchingTags"] != null
+            ? List<MatchingTag>.from(
+                json["matchingTags"].map((x) => MatchingTag.fromJson(x)),
+              )
+            : null,
+        isNew: json["isNew"],
+        age: json["age"],
+        about: json["about"] != null ? UserAbout.fromJson(json["about"]) : null,
+        isFavorite: json["isFavorite"],
+        isBlocked: json["isBlocked"],
+        city: json["city"] as String?,
+        distanceKm: json["distanceKm"] != null
+            ? (json["distanceKm"] as num).toDouble()
+            : null,
+      );
 
   Map<String, dynamic> toJson() => {
-    "id": id,
-    "name": name,
-    "isLiked": isLiked,
-    "isVerified": isVerified,
-    "country": country,
-    "image": image,
-    "similarity": similarity,
-    "matchingTags": matchingTags?.map((x) => x.toJson()).toList(),
-    "isNew": isNew,
-    "age": age,
-    "about": about?.toJson(),
-  };
+        "id": id,
+        "imageBlur": imageBlur,
+        "name": name,
+        "isLiked": isLiked,
+        "isVerified": isVerified,
+        "country": country,
+        "image": image,
+        "similarity": similarity,
+        "matchingTags": matchingTags?.map((x) => x.toJson()).toList(),
+        "isNew": isNew,
+        "age": age,
+        "about": about?.toJson(),
+        "isFavorite": isFavorite,
+        "isBlocked": isBlocked,
+        "city": city,
+        "distanceKm": distanceKm,
+      };
 }
-
 class UserAbout {
   String? job;
   String? educationLevel;
@@ -166,6 +196,8 @@ class Answers {
   ProfessionalLife? professionalLife;
   Family? family;
   List<String>? hobbies;
+  // ✅ FIXED: faith بيجي كـ field منفصل من الـ API — مش جوه hobbies
+  String? faith;
   UserMedia? userMedia;
   YourGoals? yourGoals;
   String? myDescription;
@@ -176,6 +208,7 @@ class Answers {
     this.professionalLife,
     this.family,
     this.hobbies,
+    this.faith,
     this.userMedia,
     this.yourGoals,
     this.myDescription,
@@ -191,6 +224,8 @@ class Answers {
     hobbies: json["hobbies"] != null
         ? List<String>.from(json["hobbies"])
         : null,
+    // ✅ FIXED: اقرأ faith من الـ JSON مباشرة
+    faith: json["faith"],
     userMedia: json["userMedia"] != null
         ? UserMedia.fromJson(json["userMedia"])
         : null,
@@ -206,6 +241,7 @@ class Answers {
     "professionalLife": professionalLife?.toJson(),
     "family": family?.toJson(),
     "hobbies": hobbies,
+    "faith": faith,
     "userMedia": userMedia?.toJson(),
     "yourGoals": yourGoals?.toJson(),
     "myDescription": myDescription,
@@ -224,6 +260,9 @@ class AboutMe {
   String? healthStatus;
   String? smoker;
   String? religiousCommitment;
+  String? drinkAlcohol;
+  String? wearHijab;
+  String? eatHalalOnly;
 
   AboutMe({
     this.weight,
@@ -236,6 +275,9 @@ class AboutMe {
     this.healthStatus,
     this.smoker,
     this.religiousCommitment,
+    this.drinkAlcohol,
+    this.wearHijab,
+    this.eatHalalOnly,
   });
 
   factory AboutMe.fromJson(Map<String, dynamic> json) => AboutMe(
@@ -249,6 +291,9 @@ class AboutMe {
     healthStatus: json["healthStatus"],
     smoker: json["smoker"],
     religiousCommitment: json["religiousCommitment"],
+    drinkAlcohol: json["drinkAlcohol"],
+    wearHijab: json["wearHijab"],
+    eatHalalOnly: json["eatHalalOnly"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -262,6 +307,9 @@ class AboutMe {
     "healthStatus": healthStatus,
     "smoker": smoker,
     "religiousCommitment": religiousCommitment,
+    "drinkAlcohol": drinkAlcohol,
+    "wearHijab": wearHijab,
+    "eatHalalOnly": eatHalalOnly,
   };
 }
 
@@ -313,11 +361,27 @@ class UserMedia {
 
   UserMedia({this.image, this.video, this.audio});
 
-  factory UserMedia.fromJson(Map<String, dynamic> json) => UserMedia(
-    image: json["image"] != null ? List<String>.from(json["image"]) : null,
-    video: json["video"],
-    audio: json["audio"],
-  );
+  factory UserMedia.fromJson(Map<String, dynamic> json) {
+    List<String>? parsedImages;
+
+    final rawImage = json["image"];
+    if (rawImage is List) {
+      // لو جه list عادية
+      parsedImages = List<String>.from(rawImage);
+    } else if (rawImage is Map) {
+      // لو جه map زي {"0": "url1", "1": "url2"}
+      parsedImages = rawImage.values
+          .whereType<String>()
+          .where((v) => v.isNotEmpty)
+          .toList();
+    }
+
+    return UserMedia(
+      image: (parsedImages?.isEmpty ?? true) ? null : parsedImages,
+      video: json["video"],
+      audio: json["audio"],
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     "image": image,
@@ -326,19 +390,31 @@ class UserMedia {
   };
 }
 
+// ✅ UPDATED: يدعم كل الـ fields الجاية من الـ API
 class YourGoals {
   dynamic travel;
   dynamic children;
   dynamic marry;
   dynamic engagment;
+  dynamic marriageIntentions;
+  dynamic familyAcceptance;
 
-  YourGoals({this.travel, this.children, this.marry, this.engagment});
+  YourGoals({
+    this.travel,
+    this.children,
+    this.marry,
+    this.engagment,
+    this.marriageIntentions,
+    this.familyAcceptance,
+  });
 
   factory YourGoals.fromJson(Map<String, dynamic> json) => YourGoals(
     travel: json["travel"],
     children: json["children"],
     marry: json["marry"],
     engagment: json["engagment"],
+    marriageIntentions: json["marriageIntentions"],
+    familyAcceptance: json["familyAcceptance"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -346,6 +422,8 @@ class YourGoals {
     "children": children,
     "marry": marry,
     "engagment": engagment,
+    "marriageIntentions": marriageIntentions,
+    "familyAcceptance": familyAcceptance,
   };
 }
 

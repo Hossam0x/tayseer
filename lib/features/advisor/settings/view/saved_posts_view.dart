@@ -1,8 +1,8 @@
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/saved_posts_cubit.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/saved_posts_state.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/saved_posts/saved_posts_cubit.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/saved_posts/saved_posts_state.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart'
     as home_feed;
@@ -192,34 +192,10 @@ class _SavedPostsBody extends StatelessWidget {
         }
 
         if (state.status == CubitStates.failure && state.posts.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  context.tr('error_loading_posts'),
-                  style: Styles.textStyle16.copyWith(color: AppColors.kGreyB3),
-                ),
-                Gap(12.h),
-                ElevatedButton(
-                  onPressed: () => cubit.refresh(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.kprimaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 24.w,
-                      vertical: 12.h,
-                    ),
-                  ),
-                  child: Text(
-                    context.tr('retry'),
-                    style: Styles.textStyle14.copyWith(color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
+          return CustomErrorView(
+            verticalPadding: 100,
+            message: state.errorMessage,
+            onRetry: () => cubit.refresh(),
           );
         }
 
@@ -330,6 +306,22 @@ class _PostItemState extends State<_PostItem> {
       onHide: (postId) => widget.cubit.toggleHidePost(postId: postId),
       onBlock: (postId, userId) =>
           widget.cubit.blockUser(visiblePostId: postId, advisorId: userId),
+      onEdit: (updatedPost) => widget.cubit.updatePostLocally(updatedPost),
+      onCommented: (postId, isAnonymous) => widget.cubit.markPostAsCommented(
+        postId: postId,
+        isAnonymous: isAnonymous,
+      ),
+      onCommentCountDelta:
+          ({required postId, required countDelta, isCommented, isAnonymous}) =>
+              widget.cubit.updateCommentCountByDelta(
+                postId: postId,
+                countDelta: countDelta,
+                isCommented: isCommented,
+                isAnonymous: isAnonymous,
+              ),
+      onCommentCountSync: ({required postId, required totalCount}) => widget
+          .cubit
+          .syncCommentCountFromBackend(postId: postId, totalCount: totalCount),
     );
   }
 

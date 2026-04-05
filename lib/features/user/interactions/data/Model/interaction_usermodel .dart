@@ -81,36 +81,36 @@ class InteractionUserModel extends Equatable {
     // Within the hour (منذ دقائق / minutes ago)
     if (difference.inMinutes < 60) {
       if (difference.inMinutes < 1) {
-        return isArabic ? 'الآن' : 'Just now';
+        return isArabic ? 'الآن' : ' now';
       } else if (difference.inMinutes == 1) {
-        return isArabic ? 'منذ دقيقة' : '1 minute ago';
+        return isArabic ? 'منذ د' : '1 min ago';
       } else if (difference.inMinutes == 2) {
-        return isArabic ? 'منذ دقيقتين' : '2 minutes ago';
+        return isArabic ? 'منذ د' : '2 min ago';
       } else if (difference.inMinutes <= 10) {
         return isArabic 
-            ? 'منذ ${difference.inMinutes} دقائق' 
-            : '${difference.inMinutes} minutes ago';
+            ? 'منذ ${difference.inMinutes} د' 
+            : '${difference.inMinutes} min ago';
       } else {
         return isArabic 
             ? 'منذ ${difference.inMinutes} دقيقة' 
-            : '${difference.inMinutes} minutes ago';
+            : '${difference.inMinutes} min ago';
       }
     }
 
     // Within 24 hours (منذ ساعات / hours ago)
     if (difference.inHours < 24) {
       if (difference.inHours == 1) {
-        return isArabic ? 'منذ ساعة' : '1 hour ago';
+        return isArabic ? 'منذ ساعة' : '1 h ago';
       } else if (difference.inHours == 2) {
-        return isArabic ? 'منذ ساعتين' : '2 hours ago';
+        return isArabic ? 'منذ ساعتين' : '2 h ago';
       } else if (difference.inHours <= 10) {
         return isArabic 
             ? 'منذ ${difference.inHours} ساعات' 
-            : '${difference.inHours} hours ago';
+            : '${difference.inHours} h ago';
       } else {
         return isArabic 
             ? 'منذ ${difference.inHours} ساعة' 
-            : '${difference.inHours} hours ago';
+            : '${difference.inHours} h ago';
       }
     }
 

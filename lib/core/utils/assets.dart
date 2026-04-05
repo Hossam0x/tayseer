@@ -19,6 +19,7 @@ abstract class AssetsData {
   static const String kGoogleImage = "assets/images/google_image.png";
   static const String kFemaleImage = "assets/images/female_image.png";
   static const String kMaleImage = "assets/images/male_image.png";
+
   static const String kAccountReviewImage =
       "assets/images/account_review_image.png";
   static const String kAccountActivationPendingImage =
@@ -106,7 +107,10 @@ abstract class AssetsData {
   static const String reelsIcon = "assets/icons/reels_icon.svg";
   static const String selectedReelsIcon = "assets/icons/selected_reels.svg";
   static const String joinedIcon = "assets/icons/Joined.svg";
-
+  static const String kSinventoryOutlinedIcon =
+      "assets/images/inventory_2_outlined.png";
+  static const String kpersonOutlineIcon =
+      "assets/images/person_outline.png";
   static const String notificationIcon = "assets/icons/notification.svg";
   static const String emptynotification = "assets/icons/empty_notification.png";
 
@@ -165,6 +169,7 @@ abstract class AssetsData {
   static const String kbulbIcon = "assets/icons/bulb_icon.svg";
   static const String kfaceIdIcon = "assets/icons/Face_id_icon.svg";
   static const String archiveIcon = "assets/icons/archive.svg";
+  static const String goldIcon = "assets/icons/goldicon.png";
   static const String verified2Icon = "assets/icons/verified2.svg";
   static const String underreviewIcon = "assets/icons/underreview.svg";
   static const String verifiedIcon = "assets/icons/verified.svg";
@@ -186,6 +191,8 @@ abstract class AssetsData {
       "assets/animations/success_marriage.json";
   static const String kLoadingAiAnimationLottie =
       "assets/animations/Loading_ai_animation.json";
+  static const String loading =
+      "assets/animations/loading.gif";
 
   /////////////// Profile assests/////////////////////
   static const String certificatePlaceholder =
@@ -205,6 +212,7 @@ abstract class AssetsData {
   static const String logoIcon = "assets/icons/logoIcon.svg";
   static const String boostFinish = "assets/icons/boostFinish.svg";
   static const String uplaodCertificate = "assets/icons/uplaodCertificate.svg";
+  static const String emptyFilter = "assets/icons/empty_filtter.svg";
 
   // Settings assets
   static const String icNotificationSettings =
@@ -232,6 +240,8 @@ abstract class AssetsData {
   static const String icHelpSettings = "assets/icons/icHelpSettings.svg";
   static const String backArrow = "assets/icons/backArrow.svg";
   static const String icOrderManagment = "assets/icons/icOrderManagment.svg";
+  static const String icMembershipManagement =
+      "assets/icons/icMembershipManagement.svg";
 
   // Wallet Icons
   static const String icWallet = "assets/icons/icWallet.svg";
@@ -297,7 +307,29 @@ abstract class AssetsData {
 
   static const String kingIcon = "assets/icons/kingIcon.svg";
 
+  static const String kGifOverlayLoading =
+      "assets/images/gif_overlay_loading.gif";
+
   static const String defaultProfileImage =
       "assets/images/default_profile_image.png";
   static const String noInternet = "assets/images/no_internet_image.png";
+  static const String appErrorIcon = "assets/images/appErrorIcon.png";
+
+  static const String pendingIcon = "assets/icons/pending.svg";
+
+  // User pckages icons
+  // For Basic
+  static const String youNotSeeWhoLiked = "assets/icons/youNotSeeWhoLiked.svg";
+  static const String thereAreNoFreeBoosts =
+      "assets/icons/thereAreNoFreeBoosts.svg";
+  static const String limitedNumberOfLikes =
+      "assets/icons/limitedNumberOfLikes.svg";
+  // For Pro and Elite
+  static const String youCanSeeWhoLiked = "assets/icons/youCanSeeWhoLiked.svg";
+  static const String twoFreeCondolencesEveryWeek =
+      "assets/icons/twoFreeCondolencesEveryWeek.svg";
+  static const String unlimitedNumberOfLikes =
+      "assets/icons/unlimitedNumberOfLikes.svg";
+
+  static const String checkPackageItems = "assets/icons/checkPackageItems.svg";
 }

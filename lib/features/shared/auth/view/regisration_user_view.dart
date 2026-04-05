@@ -9,6 +9,7 @@ import 'package:tayseer/features/shared/auth/view/widget/build_login_button.dart
 import 'package:tayseer/features/shared/auth/view/widget/last_login_bubble.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
+import 'package:tayseer/main.dart'; // ✅ consumePendingDeepLink
 import '../../../../my_import.dart';
 
 class RegisrationView extends StatefulWidget {
@@ -73,7 +74,7 @@ class _RegisrationViewState extends State<RegisrationView> {
                     );
                   }
 
-                  // فشل التسجيل أو الدخول
+                  // ─── Failure ───
                   if (state.signInWithGoogleState == CubitStates.failure ||
                       state.signInWithAppleState == CubitStates.failure ||
                       state.registerState == CubitStates.failure ||
@@ -110,12 +111,23 @@ class _RegisrationViewState extends State<RegisrationView> {
                         isSuccess: true,
                       ),
                     );
+
                     if (selectedUserType == UserTypeEnum.user) {
-                      context.pushReplacementNamed(AppRouter.kUserLayoutView);
+                      if (state.isNew == false) {
+                        // ✅ مستخدم موجود — روح الـ layout وافتح الـ deep link
+                        context.pushReplacementNamed(AppRouter.kUserLayoutView);
+                        consumePendingDeepLink();
+                      } else {
+                        // ✅ مستخدم جديد — روح اختيار الجنس
+                        context.pushNamed(AppRouter.kChooseGenderView);
+                        // لا نفتح الـ deep link هنا — ننتظر ما يكمل الـ onboarding
+                      }
                     }
+
                     context.read<AuthCubit>().resetAuthStates();
                   }
 
+                  // ─── Apple Success ───
                   if (state.signInWithAppleState == CubitStates.success &&
                       state.authAppleState == CubitStates.success) {
                     if (Navigator.canPop(context)) {
@@ -131,8 +143,16 @@ class _RegisrationViewState extends State<RegisrationView> {
                     );
 
                     if (selectedUserType == UserTypeEnum.user) {
-                      context.pushReplacementNamed(AppRouter.kUserLayoutView);
+                      if (state.isNew == false) {
+                        // ✅ مستخدم موجود — روح الـ layout وافتح الـ deep link
+                        context.pushReplacementNamed(AppRouter.kUserLayoutView);
+                        consumePendingDeepLink();
+                      } else {
+                        // ✅ مستخدم جديد — روح اختيار الجنس
+                        context.pushNamed(AppRouter.kChooseGenderView);
+                      }
                     }
+
                     context.read<AuthCubit>().resetAuthStates();
                   }
                 },
@@ -362,6 +382,8 @@ class _RegisrationViewState extends State<RegisrationView> {
                                 InkWell(
                                   onTap: () {
                                     context.read<AuthCubit>().guestLogin();
+                                    // ✅ الـ guest مش بيوصله deep link للـ marriage
+                                    // لأن الـ marriage يتطلب حساب مسجل
                                   },
                                   child: Text(
                                     context.tr('user_guest'),
@@ -370,6 +392,7 @@ class _RegisrationViewState extends State<RegisrationView> {
                                     ),
                                   ),
                                 ),
+
                                 SizedBox(height: context.height * 0.03),
                                 AgreementText(),
                               ],

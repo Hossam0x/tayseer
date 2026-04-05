@@ -36,8 +36,14 @@ class _TimeSlotItemState extends State<TimeSlotItem>
   @override
   void initState() {
     super.initState();
-    fromController = TextEditingController(text: widget.initialFrom);
-    toController = TextEditingController(text: widget.initialTo);
+    _from24h = widget.initialFrom;
+    _to24h = widget.initialTo;
+    fromController = TextEditingController(
+      text: _formatTo12Hour(widget.initialFrom),
+    );
+    toController = TextEditingController(
+      text: _formatTo12Hour(widget.initialTo),
+    );
 
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -63,10 +69,12 @@ class _TimeSlotItemState extends State<TimeSlotItem>
   void didUpdateWidget(covariant TimeSlotItem oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialFrom != widget.initialFrom) {
-      fromController.text = widget.initialFrom;
+      _from24h = widget.initialFrom;
+      fromController.text = _formatTo12Hour(widget.initialFrom);
     }
     if (oldWidget.initialTo != widget.initialTo) {
-      toController.text = widget.initialTo;
+      _to24h = widget.initialTo;
+      toController.text = _formatTo12Hour(widget.initialTo);
     }
     if (oldWidget.initialStatus != widget.initialStatus) {
       if (widget.initialStatus) {
@@ -82,26 +90,49 @@ class _TimeSlotItemState extends State<TimeSlotItem>
       context: context,
       initialTime: _parseTime(isFrom ? fromController.text : toController.text),
       initialEntryMode: TimePickerEntryMode.dial,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+          child: child!,
+        );
+      },
     );
 
     if (picked != null) {
+      // Store as 24h internally for API, display as 12h
       final formattedTime =
           '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
 
       if (isFrom) {
-        fromController.text = formattedTime;
+        fromController.text = _formatTo12Hour(formattedTime);
+        _from24h = formattedTime;
       } else {
-        toController.text = formattedTime;
+        toController.text = _formatTo12Hour(formattedTime);
+        _to24h = formattedTime;
       }
 
-      // إرسال القيم المحدثة
-      widget.onTimeChanged?.call(fromController.text, toController.text);
+      widget.onTimeChanged?.call(_from24h, _to24h);
     }
   }
 
+  // 24h internal values for API
+  late String _from24h;
+  late String _to24h;
+
   TimeOfDay _parseTime(String time) {
-    final parts = time.split(':');
+    // Handle both 12h display (e.g. "09:00") and 24h (e.g. "09:00")
+    final cleaned = time.replaceAll(RegExp(r'[APM\s]'), '');
+    final parts = cleaned.split(':');
     return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+  }
+
+  String _formatTo12Hour(String time24) {
+    final parts = time24.split(':');
+    int hour = int.parse(parts[0]);
+    final minute = int.parse(parts[1]);
+    if (hour > 12) hour -= 12;
+    if (hour == 0) hour = 12;
+    return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
   }
 
   @override

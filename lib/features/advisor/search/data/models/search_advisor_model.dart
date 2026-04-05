@@ -1,5 +1,6 @@
 // features/shared/search/data/models/search_advisor_model.dart
 import 'package:equatable/equatable.dart';
+import 'package:tayseer/core/enum/verification_type.dart';
 
 class SearchAdvisor extends Equatable {
   final String id;
@@ -10,6 +11,9 @@ class SearchAdvisor extends Equatable {
   final int? followersCount;
   final bool isFollowing;
   final bool isVerified;
+  final VerificationType verificationType;
+  final bool isMe;
+  final bool imageBlur;
 
   const SearchAdvisor({
     required this.id,
@@ -20,6 +24,9 @@ class SearchAdvisor extends Equatable {
     this.followersCount,
     required this.isFollowing,
     this.isVerified = false,
+    this.verificationType = VerificationType.none,
+    required this.isMe,
+    this.imageBlur = false,
   });
 
   factory SearchAdvisor.fromJson(Map<String, dynamic> json) {
@@ -32,6 +39,9 @@ class SearchAdvisor extends Equatable {
       followersCount: json['followersCount'],
       isFollowing: json['isFollowing'] ?? false,
       isVerified: json['isVerified'] ?? false,
+      verificationType: VerificationType.fromString(json['verificationType']),
+      isMe: json['isMe'],
+      imageBlur: json['imageBlur'] ?? false,
     );
   }
 
@@ -44,6 +54,9 @@ class SearchAdvisor extends Equatable {
     int? followersCount,
     bool? isFollowing,
     bool? isVerified,
+    VerificationType? verificationType,
+    bool? isMe,
+    bool? imageBlur,
   }) {
     return SearchAdvisor(
       id: id ?? this.id,
@@ -54,6 +67,9 @@ class SearchAdvisor extends Equatable {
       followersCount: followersCount ?? this.followersCount,
       isFollowing: isFollowing ?? this.isFollowing,
       isVerified: isVerified ?? this.isVerified,
+      verificationType: verificationType ?? this.verificationType,
+      isMe: isMe ?? this.isMe,
+      imageBlur: imageBlur ?? this.imageBlur,
     );
   }
 
@@ -67,5 +83,8 @@ class SearchAdvisor extends Equatable {
     followersCount,
     isFollowing,
     isVerified,
+    verificationType,
+    isMe,
+    imageBlur,
   ];
 }

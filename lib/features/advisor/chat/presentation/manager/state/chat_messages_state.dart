@@ -48,6 +48,9 @@ class ChatMessagesState with _$ChatMessagesState {
 
     /// Media sending statew
     @Default(CubitStates.initial) CubitStates sendMediaState,
+
+    /// Free chat minutes left (for user side)
+    int? freeChatMinsLeft,
   }) = ChatMessagesLoaded;
 
   /// Loading more messages (pagination)
@@ -60,6 +63,7 @@ class ChatMessagesState with _$ChatMessagesState {
     @Default(false) bool isUserTyping,
     TypingModel? typingInfo,
     ChatMessage? replyingToMessage,
+    int? freeChatMinsLeft,
   }) = ChatMessagesLoadingMore;
 
   /// Failure state
@@ -149,6 +153,13 @@ class ChatMessagesState with _$ChatMessagesState {
     loaded: (state) => state.pendingCount,
     loadingMore: (state) => state.pendingCount,
     orElse: () => 0,
+  );
+
+  /// Get free chat minutes left
+  int? get freeChatMinutes => maybeMap(
+    loaded: (state) => state.freeChatMinsLeft,
+    loadingMore: (state) => state.freeChatMinsLeft,
+    orElse: () => null,
   );
 
   /// Get messages directly (alias for messagesOrEmpty for easier migration)

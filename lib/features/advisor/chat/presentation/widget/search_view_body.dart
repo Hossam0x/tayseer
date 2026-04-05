@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:tayseer/core/constant/constans.dart';
+import 'package:tayseer/core/enum/chat_room_type.dart';
+import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/utils/assets.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_search_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/custom_search_bar.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/search/search_result_list.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
@@ -12,29 +18,38 @@ class ChatSearchViewBody extends StatefulWidget {
 }
 
 class _ChatSearchViewBodyState extends State<ChatSearchViewBody> {
-  bool hasResults = true;
   late TextEditingController _searchController;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    final searchKey = _searchController.text.trim();
+    
+    // Determine chatRoomType based on user type
+    final chatRoomType = selectedUserType == UserTypeEnum.asConsultant
+        ? ChatRoomType.userAdvisor
+        : ChatRoomType.userUser;
+    
+    context.read<ChatSearchCubit>().searchChatRooms(
+          searchKey: searchKey,
+          chatRoomType: chatRoomType,
+        );
   }
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 600;
-    final paddingH = isMobile ? 12.0 : 16.0;
-    final paddingV = isMobile ? 8.0 : 10.0;
-    final iconButtonSize = isMobile ? 40.0 : 48.0;
-
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -48,65 +63,59 @@ class _ChatSearchViewBodyState extends State<ChatSearchViewBody> {
         child: Column(
           children: [
             Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: paddingH,
-                vertical: paddingV,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
               child: Row(
                 children: [
-                  // زرار الرجوع
                   SizedBox(
-                    width: iconButtonSize,
-                    height: iconButtonSize,
+                    width: 40.w,
+                    height: 40.h,
                     child: IconButton(
-                      icon: const Icon(
-                        Icons.arrow_back_ios,
-                        color: Colors.black,
-                      ),
-                      iconSize: isMobile ? 18 : 20,
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
+                      icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+                      iconSize: 18.sp,
+                      onPressed: () => Navigator.of(context).pop(),
                     ),
                   ),
-                  SizedBox(width: isMobile ? 4.0 : 8.0),
+                  SizedBox(width: 4.w),
                   Expanded(
                     child: CustomSearchBar(
                       isReadOnly: false,
                       controller: _searchController,
-                      onTap: () {},
                     ),
                   ),
                 ],
               ),
             ),
-
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  hasResults = !hasResults;
-                });
-              },
-              child: Text(
-                hasResults
-                    ? "اضغط لتجربة الحالة الفارغة"
-                    : "اضغط لتجربة القائمة",
-                style: TextStyle(
-                  color: Colors.blue,
-                  fontWeight: FontWeight.bold,
-                  fontSize: isMobile ? 12 : 14,
-                ),
-              ),
-            ),
-
             Expanded(
               child: Directionality(
                 textDirection: TextDirection.rtl,
-                child: hasResults
-                    ? const SearchResultsList()
-                    : const SharedEmptyState(
-                        title: ". لا يوجد محادثة لهذا الشخص",
-                      ),
+                child: BlocBuilder<ChatSearchCubit, ChatSearchState>(
+                  builder: (context, state) {
+                    if (state is ChatSearchInitial) {
+                      return const Center(
+                        child: Text(
+                          'ابحث عن محادثة',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      );
+                    } else if (state is ChatSearchLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (state is ChatSearchSuccess) {
+                      return SearchResultsList(rooms: state.rooms);
+                    } else if (state is ChatSearchEmpty) {
+                      return const SharedEmptyState(
+                        title: "لا يوجد محادثة لهذا الشخص",
+                      );
+                    } else if (state is ChatSearchError) {
+                      return Center(
+                        child: Text(
+                          state.message,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
               ),
             ),
           ],

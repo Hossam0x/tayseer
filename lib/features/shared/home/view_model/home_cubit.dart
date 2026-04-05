@@ -1,14 +1,16 @@
 import 'dart:async';
 import 'dart:developer';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
+import 'package:tayseer/core/functions/set_advisor_status.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
-import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
+import 'package:tayseer/features/shared/home/model/image_and_name_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/view_model/home_event_bus.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
+import 'package:tayseer/core/utils/profile_event_bus.dart';
 import '../../../../my_import.dart';
 import '../reposiotry/home_repository.dart';
 
@@ -21,6 +23,7 @@ class HomeCubit extends Cubit<HomeState> {
   // تتبع حالة الاتصال للتحكم في التصفح
   bool _isPaginationEnabled = true;
   StreamSubscription? _connectivitySubscription;
+  late StreamSubscription<ProfileUpdateEvent> _profileSubscription;
 
   HomeCubit(
     this.homeRepository, {
@@ -29,6 +32,70 @@ class HomeCubit extends Cubit<HomeState> {
   }) : super(const HomeState()) {
     _loadCachedUserData();
     _listenToConnectivity();
+    _listenToProfileUpdates();
+  }
+
+  void _listenToProfileUpdates() {
+    _profileSubscription = ProfileEventBus.instance.onProfileUpdated.listen((
+      event,
+    ) {
+      if (isClosed) return;
+
+      debugPrint('🏠 HomeCubit: profile update received → ${event.image}');
+
+      // 1. تحديث الكاش المحلي
+      CachNetwork.setData(key: kMyProfileImage, value: event.image);
+      CachNetwork.setData(key: kMyProfileName, value: event.name);
+
+      // 2. تحديث بيانات اليوزر في الهيدر
+      final newData = ImageAndNameModel(
+        image: event.image,
+        name: event.name,
+        notifications: state.homeInfo?.notifications ?? 0,
+        approvalKey: state.homeInfo?.approvalKey ?? '',
+      );
+
+      var newState = state.copyWith(
+        homeInfo: newData,
+        fetchNameAndImageState: CubitStates.success,
+      );
+
+      // 3. تحديث صور اليوزر في البوستات الخاصة به (لو كان مستشار)
+      final myId = kCurrentUserData?.id;
+      if (myId != null) {
+        final updatedMap = Map<String?, CategoryPostsData>.from(
+          state.categoryPostsMap,
+        );
+        bool anyChanged = false;
+
+        updatedMap.forEach((catId, data) {
+          final postIndex = data.posts.indexWhere((p) => p.advisorId == myId);
+          if (postIndex != -1) {
+            final updatedPosts = data.posts.map((p) {
+              if (p.advisorId == myId) {
+                return p.copyWith(name: event.name, avatar: event.image);
+              }
+              return p;
+            }).toList();
+            updatedMap[catId] = data.copyWith(posts: updatedPosts);
+            anyChanged = true;
+          }
+        });
+
+        if (anyChanged) {
+          newState = newState.copyWith(categoryPostsMap: updatedMap);
+        }
+      }
+
+      emit(newState);
+    });
+  }
+
+  @override
+  Future<void> close() {
+    _connectivitySubscription?.cancel();
+    _profileSubscription.cancel();
+    return super.close();
   }
 
   /// الاستماع لتغييرات الاتصال
@@ -121,7 +188,7 @@ class HomeCubit extends Cubit<HomeState> {
             homeInfo: ImageAndNameModel(
               image: cachedImage,
               name: cachedName,
-              notifications: 0,
+              notifications: state.homeInfo?.notifications ?? 0,
             ),
             fetchNameAndImageState: CubitStates.success,
           ),
@@ -139,7 +206,9 @@ class HomeCubit extends Cubit<HomeState> {
           homeInfo: ImageAndNameModel(
             image: cachedImage,
             name: cachedName,
-            notifications: 0,
+            notifications: state.homeInfo?.notifications ?? 0,
+
+            approvalKey: state.homeInfo?.approvalKey ?? '',
           ),
           fetchNameAndImageState: CubitStates.success,
         ),
@@ -220,14 +289,20 @@ class HomeCubit extends Cubit<HomeState> {
           CachNetwork.setData(key: kMyProfileName, value: data.name);
         }
 
+        if (isAdvisor) {
+          setAdvisorStatus(data.approvalKey);
+        }
         // تحديث الـ State فقط لو البيانات اتغيرت
         if (_isUserInfoChanged(data)) {
           emit(
             state.copyWith(
               fetchNameAndImageState: CubitStates.success,
               homeInfo: data,
+              currentAdvisorStatus: advisorStatus,
             ),
           );
+        } else if (isAdvisor && state.currentAdvisorStatus != advisorStatus) {
+          emit(state.copyWith(currentAdvisorStatus: advisorStatus));
         }
       },
     );
@@ -930,6 +1005,15 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // ✏️ UPDATE EDITED POST (بعد تعديل بوست من صفحة التعديل)
+  // ═══════════════════════════════════════════════════════════════════════════
+  void updateEditedPost(PostModel updatedPost) {
+    emit(
+      state.updatePostInAllCategories(updatedPost.postId, (_) => updatedPost),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // 👁️ TOGGLE HIDE POST
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -1229,9 +1313,19 @@ class HomeCubit extends Cubit<HomeState> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   PostModel? _findPost(String postId) {
-    final posts = state.posts;
-    final index = posts.indexWhere((p) => p.postId == postId);
-    return index != -1 ? posts[index] : null;
+    return state.postsMap[postId];
+  }
+
+  /// حقن بوست في الكاتيجوري الحالية إذا لم يكن موجودًا
+  /// (يُستخدم عند الدخول للبوست من الإشعارات)
+  void injectPost(PostModel post) {
+    if (_findPost(post.postId) != null) return;
+    emit(
+      state.updateCategoryPosts(
+        state.selectedCategoryId,
+        (data) => data.copyWith(posts: [post, ...data.posts]),
+      ),
+    );
   }
 
   /// إزالة البوستات المكررة بالـ postId
@@ -1249,7 +1343,7 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // 📌 MARK POST AS COMMENTED
+  // 📌 MARK POST AS COMMENTED ✅ MODIFIED — شلنا زيادة العدد
   // ═══════════════════════════════════════════════════════════
   void markPostAsCommented({
     required String postId,
@@ -1261,10 +1355,52 @@ class HomeCubit extends Cubit<HomeState> {
         (p) => p.copyWith(
           isCommented: true,
           isAnonymous: isAnonymous,
-          commentsCount: p.commentsCount + 1,
+          // ❌ شلنا: commentsCount: p.commentsCount + 1,
+          // ✅ الـ Delta في BlocListener بيتكفل بالعدد
         ),
       ),
     );
+    _syncPostToCacheById(postId);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 💬 UPDATE COMMENT COUNT BY DELTA ✅ NEW
+  // ═══════════════════════════════════════════════════════════════════════════
+  void updateCommentCountByDelta({
+    required String postId,
+    required int countDelta,
+    bool? isCommented,
+    bool? isAnonymous,
+  }) {
+    if (countDelta == 0 && isCommented == null && isAnonymous == null) return;
+
+    emit(
+      state.updatePostInAllCategories(postId, (p) {
+        final newCount = (p.commentsCount + countDelta).clamp(0, 999999);
+        return p.copyWith(
+          commentsCount: newCount,
+          isCommented: isCommented ?? p.isCommented,
+          isAnonymous: isAnonymous ?? p.isAnonymous,
+        );
+      }),
+    );
+
+    _syncPostToCacheById(postId);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🔄 SYNC COMMENT COUNT FROM BACKEND ✅ NEW
+  // ═══════════════════════════════════════════════════════════════════════════
+  void syncCommentCountFromBackend({
+    required String postId,
+    required int totalCount,
+  }) {
+    emit(
+      state.updatePostInAllCategories(postId, (p) {
+        return p.copyWith(commentsCount: totalCount);
+      }),
+    );
+
     _syncPostToCacheById(postId);
   }
 
@@ -1284,11 +1420,5 @@ class HomeCubit extends Cubit<HomeState> {
         emit(state.copyWith(sessionStartModel: null));
       });
     });
-  }
-
-  @override
-  Future<void> close() {
-    _connectivitySubscription?.cancel();
-    return super.close();
   }
 }

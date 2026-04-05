@@ -121,6 +121,8 @@ class _PostCardState extends State<PostCard> {
                 widget.post.postId,
                 widget.post.advisorId,
               ),
+              onEdit: (updatedPost) =>
+                  widget.callbacks.onEdit?.call(updatedPost),
               isArchived: widget.isArchived,
             ),
           ),

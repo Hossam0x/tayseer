@@ -15,7 +15,7 @@ class MySpaceRepo {
   Future<Either<Failure, AdvisorChatModel>> getadvisorchat() async {
     try {
       final response = await apiService.get(
-        endPoint: ApiEndPoint.advisorUserChat,
+        endPoint: ApiEndPoint.getAllchatRooms,
       );
       return Right(AdvisorChatModel.fromJson(response));
     } catch (e) {
@@ -247,7 +247,8 @@ class MySpaceRepo {
   Future<Either<Failure, bool>> deleteChatRoom(String chatRoomId) async {
     try {
       final response = await apiService.delete(
-        endPoint: ApiEndPoint.deleteChatRoom(chatRoomId),
+        endPoint: ApiEndPoint.deleteChatRoom,
+        data: {'chatRoomId': chatRoomId},
       );
       if (response['success'] == true) {
         return const Right(true);
@@ -270,8 +271,9 @@ class MySpaceRepo {
 
   Future<Either<Failure, bool>> archiveChatRoom(String chatRoomId) async {
     try {
-      final response = await apiService.patch(
-        endPoint: ApiEndPoint.archiveChatRoom(chatRoomId),
+      final response = await apiService.post(
+        endPoint: ApiEndPoint.archiveChatRoom,
+        data: {'chatRoomId': chatRoomId},
       );
       if (response['success'] == true) {
         return const Right(true);
@@ -291,4 +293,5 @@ class MySpaceRepo {
       return Left(ServerFailure(e.toString()));
     }
   }
+
 }

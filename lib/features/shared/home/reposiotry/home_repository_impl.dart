@@ -1,8 +1,10 @@
+// ignore_for_file: unnecessary_null_comparison
+
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/services/connectivity_service.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_remote_datasource.dart';
-import 'package:tayseer/features/shared/home/model/Image_and_name_model.dart';
+import 'package:tayseer/features/shared/home/model/image_and_name_model.dart';
 import 'package:tayseer/features/shared/home/model/categories_response_model.dart';
 import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
@@ -279,7 +281,7 @@ class HomeRepositoryImpl implements HomeRepository {
   }
 
   @override
-  Future<Either<Failure, String>> editComment({
+  Future<Either<Failure, CommentModel>> editComment({
     required String commentId,
     required String comment,
   }) async {
@@ -288,14 +290,14 @@ class HomeRepositoryImpl implements HomeRepository {
         endPoint: ApiEndPoint.comments,
         data: {"commentId": commentId, "comment": comment},
       );
-      return Right(response['message'] ?? 'تم تعديل التعليق بنجاح');
+      return Right(CommentModel.fromJson(response['data']));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }
   }
 
   @override
-  Future<Either<Failure, String>> editReply({
+  Future<Either<Failure, CommentModel>> editReply({
     required String replyId,
     required String reply,
   }) async {
@@ -304,7 +306,7 @@ class HomeRepositoryImpl implements HomeRepository {
         endPoint: '${ApiEndPoint.updateReply}$replyId',
         data: {"reply": reply},
       );
-      return Right(response['message'] ?? 'تم تعديل الرد بنجاح');
+      return Right(CommentModel.fromJson(response['data']));
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }
@@ -399,22 +401,55 @@ class HomeRepositoryImpl implements HomeRepository {
         );
       }
 
-      final endPoint = isAdvisor ? ApiEndPoint.nameAndImage : '/user/profile';
-      final response = await apiService.get(endPoint: endPoint);
+      // إرسال الطلب لنفس الـ Endpoint لجميع المستخدمين (مستخدمين ومستشارين)
+      final response = await apiService.get(endPoint: ApiEndPoint.nameAndImage);
+      final data = (response['data'] as Map<String, dynamic>?) ?? {};
 
-      if (isAdvisor) {
-        return Right(ImageAndNameModel.fromJson(response['data']));
-      } else {
-        final data = response['data'] as Map<String, dynamic>;
+      // قراءة الإشعارات سواء من notifications أو notifyCount
+      int notifications = 0;
+      if (data['notifications'] != null) {
+        notifications = data['notifications'] is int
+            ? data['notifications']
+            : int.tryParse(data['notifications'].toString()) ?? 0;
+      } else if (data['notifyCount'] != null) {
+        notifications = data['notifyCount'] is int
+            ? data['notifyCount']
+            : int.tryParse(data['notifyCount'].toString()) ?? 0;
+      }
+
+      final name = data['name'] as String? ?? '';
+      final image = data['image'] as String? ?? '';
+      final approvalKey = data['approvalKey'] as String? ?? '';
+
+      // حفظ الاسم والصورة في الكاش عند النجاح لضمان العرض في وضع عدم الاتصال (أوفلاين)
+      await CachNetwork.setData(key: kMyProfileName, value: name);
+      await CachNetwork.setData(key: kMyProfileImage, value: image);
+
+      return Right(
+        ImageAndNameModel(
+          image: image,
+          name: name,
+          notifications: notifications,
+          approvalKey: approvalKey,
+        ),
+      );
+    } on DioException catch (e) {
+      // في حالة وجود خطأ في الاتصال، نعرض أحدث بيانات محفوظة في الكاش
+      final cachedName =
+          (await CachNetwork.getData(key: kMyProfileName)) as String? ?? '';
+      final cachedImage =
+          (await CachNetwork.getData(key: kMyProfileImage)) as String? ?? '';
+
+      if (cachedName.isNotEmpty || cachedImage.isNotEmpty) {
         return Right(
           ImageAndNameModel(
-            image: data['image'] as String? ?? '',
-            name: data['name'] as String? ?? '',
-            notifications: data['notifyCount'] as int? ?? 0,
+            image: cachedImage,
+            name: cachedName,
+            notifications: 0,
+            approvalKey: '',
           ),
         );
       }
-    } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }
   }
@@ -561,6 +596,29 @@ class HomeRepositoryImpl implements HomeRepository {
       return Right(response['message'] ?? 'تمت العملية بنجاح');
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, PostModel>> fetchPostById({
+    required String postId,
+  }) async {
+    try {
+      final response = await apiService.get(endPoint: '/posts/get/$postId');
+
+      // ✅ Handle null or missing data
+      if (response == null || response['data'] == null) {
+        // ignore: invalid_null_aware_operator
+        return Left(ServerFailure(response?['message'] ?? 'فشل تحميل المنشور'));
+      }
+
+      final postData = response['data'] as Map<String, dynamic>;
+      final post = PostModel.fromJson(postData);
+      return Right(post);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
     }
   }
 }

@@ -1,51 +1,35 @@
-import 'package:tayseer/features/advisor/wallet/data/models/transaction_model.dart';
-
 class WalletModel {
-  final num? balance;
-  final num? availableBalance;
-  final String? currency;
-  final List<TransactionModel>? transactions;
-  final WalletPagination? pagination;
+  final String id;
+  final String advisorId;
+  final num balance;
+  final String currency;
+  final int points;
 
-  WalletModel({
-    this.balance,
-    this.availableBalance,
-    this.currency,
-    this.transactions,
-    this.pagination,
+  const WalletModel({
+    required this.id,
+    required this.advisorId,
+    required this.balance,
+    required this.currency,
+    this.points = 0,
   });
 
   factory WalletModel.fromJson(Map<String, dynamic> json) {
     return WalletModel(
-      balance: json['balance'],
-      availableBalance: json['availableBalance'],
-      currency: json['currency'],
-      transactions: json['transactions'] != null
-          ? List<TransactionModel>.from(
-              json['transactions'].map((x) => TransactionModel.fromJson(x)),
-            )
-          : null,
-      pagination: json['pagination'] != null
-          ? WalletPagination.fromJson(json['pagination'])
-          : null,
+      id: json['id'] ?? '',
+      advisorId: json['advisorId'] ?? '',
+      balance: json['balance'] ?? 0,
+      currency: json['currency'] ?? 'USD',
+      points: (json['points'] as num?)?.toInt() ?? 0,
     );
   }
-}
 
-class WalletPagination {
-  final int? page;
-  final int? limit;
-  final int? total;
-  final int? totalPages;
-
-  WalletPagination({this.page, this.limit, this.total, this.totalPages});
-
-  factory WalletPagination.fromJson(Map<String, dynamic> json) {
-    return WalletPagination(
-      page: json['page'],
-      limit: json['limit'],
-      total: json['total'],
-      totalPages: json['totalPages'],
+  WalletModel copyWith({num? balance, int? points}) {
+    return WalletModel(
+      id: id,
+      advisorId: advisorId,
+      balance: balance ?? this.balance,
+      currency: currency,
+      points: points ?? this.points,
     );
   }
 }

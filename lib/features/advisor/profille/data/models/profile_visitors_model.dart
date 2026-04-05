@@ -1,3 +1,5 @@
+import 'package:tayseer/core/enum/verification_type.dart';
+
 class ProfileVisitorsResponse {
   final bool success;
   final String message;
@@ -23,8 +25,13 @@ class ProfileVisitorsResponse {
 class ProfileVisitorsData {
   final List<ProfileVisitorModel> visitors;
   final bool isSubscribed;
+  final String subscriptionType; // 'free', 'gold', 'ultra'
 
-  ProfileVisitorsData({required this.visitors, required this.isSubscribed});
+  ProfileVisitorsData({
+    required this.visitors,
+    required this.isSubscribed,
+    this.subscriptionType = 'free',
+  });
 
   factory ProfileVisitorsData.fromJson(Map<String, dynamic> json) {
     return ProfileVisitorsData(
@@ -34,6 +41,7 @@ class ProfileVisitorsData {
               .toList() ??
           [],
       isSubscribed: json['isSubscribed'] ?? false,
+      subscriptionType: json['subscriptionType'] ?? 'free',
     );
   }
 }
@@ -46,6 +54,7 @@ class ProfileVisitorModel {
   final String? username;
   final String? image;
   final String lastVisitedAt;
+  final VerificationType verificationType;
 
   ProfileVisitorModel({
     required this.id,
@@ -55,6 +64,7 @@ class ProfileVisitorModel {
     this.username,
     this.image,
     required this.lastVisitedAt,
+    this.verificationType = VerificationType.none,
   });
 
   factory ProfileVisitorModel.fromJson(Map<String, dynamic> json) {
@@ -66,6 +76,7 @@ class ProfileVisitorModel {
       username: json['username'],
       image: json['image'],
       lastVisitedAt: json['lastVisitedAt'] ?? '',
+      verificationType: VerificationType.fromString(json['verificationType']),
     );
   }
 }

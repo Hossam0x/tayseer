@@ -1,3 +1,4 @@
+import 'package:tayseer/features/filter/presentation/cubit/advisor_filter_state.dart';
 import '../../../../my_import.dart';
 import '../cubit/advisor_filter_cubit.dart';
 import '../widgets/price_range_slider.dart';
@@ -10,16 +11,53 @@ import '../widgets/filter_section_title.dart';
 class AdvisorFilterView extends StatelessWidget {
   const AdvisorFilterView({super.key});
 
+Future<void> _onBackPressed(BuildContext context) async {
+  final cubit = context.read<AdvisorFilterCubit>();
+
+  if (!cubit.state.isFilterComplete) {
+    Navigator.pop(context);
+    return;
+  }
+
+  // ✅ شيل الـ await — الدالة void مش Future
+  CustomshowDialogWithImage(
+    context,
+    title: context.tr("filter_profiles"),
+    supTitle: context.tr("apply_filters"),
+    imageUrl: AssetsData.kWoriningImage,
+    bottonText: context.tr("no"),
+    cancelText: context.tr("yes"),
+    showCancelButton: true,
+    onPressed: () {
+    
+      Navigator.pop(context); // ارجع من صفحة الفلتر
+    },
+    onCancel: () {
+     // أغلق الـ dialog
+      cubit.applyFilters(context);
+    },
+  );
+}
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => AdvisorFilterCubit(),
-      child: AdvisorBackground(
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          appBar: _buildAppBar(context),
-          body: const AdvisorFilterBody(),
-        ),
+      child: Builder(
+        builder: (context) {
+          return WillPopScope(
+            onWillPop: () async {
+              await _onBackPressed(context);
+              return false; // ✅ نمنع الـ pop التلقائي ونتحكم فيه يدوياً
+            },
+            child: AdvisorBackground(
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                appBar: _buildAppBar(context),
+                body: const AdvisorFilterBody(),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -37,7 +75,7 @@ class AdvisorFilterView extends StatelessWidget {
       centerTitle: true,
       leading: IconButton(
         icon: Icon(Icons.close, color: AppColors.secondary800),
-        onPressed: () => Navigator.pop(context),
+        onPressed: () => _onBackPressed(context),
       ),
       actions: [const ClearFiltersButton()],
     );
@@ -49,7 +87,13 @@ class AdvisorFilterBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> languages = ['arabic', 'english', 'french', 'german'];
+    final List<_LangOption> languages = [
+      _LangOption(apiCode: 'ar', labelKey: 'arabic'),
+      _LangOption(apiCode: 'en', labelKey: 'english'),
+      _LangOption(apiCode: 'fr', labelKey: 'french'),
+      _LangOption(apiCode: 'de', labelKey: 'german'),
+    ];
+
     final List<String> badges = [
       'influencer',
       'expert',
@@ -72,13 +116,17 @@ class AdvisorFilterBody extends StatelessWidget {
           FilterSectionTitle(title: context.tr("experience")),
           const ExperienceDropdown(),
           Gap(30.h),
-          FilterSectionTitle(title: context.tr("rating")),
+          FilterSectionTitle(title: context.tr("rate")),
           const RatingSelection(),
           Gap(30.h),
           FilterSectionTitle(title: context.tr("language")),
-          FilterChipsSection(items: languages, isLanguages: true),
+          FilterChipsSection(
+            items: languages.map((l) => l.apiCode).toList(),
+            labelKeys: languages.map((l) => l.labelKey).toList(),
+            isLanguages: true,
+          ),
           Gap(30.h),
-          FilterSectionTitle(title: context.tr("badges")),
+          FilterSectionTitle(title: context.tr("Medals")),
           FilterChipsSection(items: badges, isLanguages: false),
           Gap(30.h),
           FilterSectionTitle(title: context.tr("appointments")),
@@ -92,6 +140,12 @@ class AdvisorFilterBody extends StatelessWidget {
   }
 }
 
+class _LangOption {
+  final String apiCode;
+  final String labelKey;
+  const _LangOption({required this.apiCode, required this.labelKey});
+}
+
 class ClearFiltersButton extends StatelessWidget {
   const ClearFiltersButton({super.key});
 
@@ -100,9 +154,7 @@ class ClearFiltersButton extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 8.w),
       child: TextButton(
-        onPressed: () {
-          context.read<AdvisorFilterCubit>().clearFilters();
-        },
+        onPressed: () => context.read<AdvisorFilterCubit>().clearFilters(),
         child: Text(
           context.tr("clear_filters"),
           style: Styles.textStyle14.copyWith(
@@ -120,14 +172,19 @@ class ApplyFiltersButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomBotton(
-      title: context.tr("apply_filters"),
-      onPressed: () {
-        context.read<AdvisorFilterCubit>().applyFilters();
-        Navigator.pop(context);
+    return BlocBuilder<AdvisorFilterCubit, AdvisorFilterState>(
+      buildWhen: (prev, curr) =>
+          prev.isLoading != curr.isLoading ||
+          prev.isFilterComplete != curr.isFilterComplete,
+      builder: (context, state) {
+        return CustomBotton(
+          title: state.isLoading ? '...' : context.tr("apply_filters"),
+          onPressed: state.isLoading
+              ? null
+              : () => context.read<AdvisorFilterCubit>().applyFilters(context),
+          width: double.infinity,
+        );
       },
-      backGroundcolor: const Color(0xff9E9E9E),
-      width: double.infinity,
     );
   }
 }

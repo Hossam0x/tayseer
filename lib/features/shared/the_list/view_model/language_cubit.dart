@@ -1,19 +1,24 @@
+import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/features/advisor/layout/views/a_layout_view.dart';
+import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/nav_animation_service.dart';
 import 'package:tayseer/my_import.dart';
+
+import '../../splash_screen&&on_boarding/view/splash_screen.dart';
 
 part 'language_state.dart';
 
 class LanguageCubit extends Cubit<Locale> {
   static const String _key = kAppLanguage;
 
-  /// Route to navigate to after language change (consumed by MaterialApp)
-  String? _pendingRoute;
+  /// Widget to navigate to after language change (consumed by MaterialApp)
+  Widget? _pendingWidget;
 
-  /// Consume the pending route (returns it once, then clears it)
-  String? consumePendingRoute() {
-    final route = _pendingRoute;
-    _pendingRoute = null;
-    return route;
+  /// Consume the pending widget (returns it once, then clears it)
+  Widget? consumePendingWidget() {
+    final widget = _pendingWidget;
+    _pendingWidget = null;
+    return widget;
   }
 
   LanguageCubit() : super(Locale(selectedLanguage ?? 'ar'));
@@ -33,10 +38,17 @@ class LanguageCubit extends Cubit<Locale> {
     NavAnimationService.instance.resetKey();
 
     if (navigate) {
-      // Store the target route – MaterialApp will use it as initialRoute
-      _pendingRoute = isAdvisor
-          ? AppRouter.kAdvisorLayoutView
-          : AppRouter.kUserLayoutView;
+
+      String? token = CachNetwork.getStringData(key: ktoken);
+     if(token!=null){
+       _pendingWidget = isAdvisor
+           ? ALayoutView(currentUserType: UserTypeEnum.asConsultant)
+           : UserLayoutView();
+     }else
+       {
+         _pendingWidget = SplashScreen();
+       }
+
     }
 
     // Emit triggers MaterialApp rebuild with new key (ValueKey(locale))

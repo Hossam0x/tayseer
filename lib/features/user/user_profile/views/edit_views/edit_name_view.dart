@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/models/login_data.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
@@ -66,7 +65,7 @@ class _EditNameViewState extends State<EditNameView> {
       // تحقق من الاسم الأول
       if (firstName.isEmpty) {
         _firstNameError = context.tr('first_name_required');
-      } else if (firstName.length < 4 || firstName.length > 12) {
+      } else if (firstName.length < 3 || firstName.length > 12) {
         _firstNameError = context.tr('first_name_length_error');
       } else if (!RegExp(r'^[a-zA-Zء-ي\s]+$').hasMatch(firstName)) {
         _firstNameError = context.tr('first_name_letters_only');
@@ -74,7 +73,7 @@ class _EditNameViewState extends State<EditNameView> {
 
       // تحقق من الاسم الثاني
       if (lastName.isNotEmpty) {
-        if (lastName.length < 4 || lastName.length > 12) {
+        if (lastName.length < 3 || lastName.length > 12) {
           _lastNameError = context.tr('second_name_length_error');
         } else if (!RegExp(r'^[a-zA-Zء-ي\s]+$').hasMatch(lastName)) {
           _lastNameError = context.tr('second_name_letters_only');

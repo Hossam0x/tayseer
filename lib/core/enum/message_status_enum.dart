@@ -5,18 +5,23 @@ extension MessageStatusExtension on MessageStatusEnum {
   static MessageStatusEnum fromString(String? status) {
     if (status == null) return MessageStatusEnum.sent;
 
-    switch (status.toLowerCase()) {
+    final lowerStatus = status.toLowerCase();
+    
+    switch (lowerStatus) {
       case 'pending':
         return MessageStatusEnum.pending;
       case 'sent':
         return MessageStatusEnum.sent;
       case 'delivered':
+      case 'received': // RECEIVED = DELIVERED
         return MessageStatusEnum.delivered;
       case 'read':
         return MessageStatusEnum.read;
       case 'failed':
         return MessageStatusEnum.failed;
       default:
+        // Log unknown status for debugging
+        print('⚠️ Unknown message status: $status, defaulting to sent');
         return MessageStatusEnum.sent;
     }
   }

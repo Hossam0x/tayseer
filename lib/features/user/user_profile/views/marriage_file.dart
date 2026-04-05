@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
+import 'package:tayseer/core/widgets/gif_overlay.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
@@ -11,18 +12,16 @@ import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecu
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_state.dart';
 import 'package:tayseer/features/user/user_profile/views/marriage_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/complete_marriage_file.dart';
-import 'package:tayseer/features/user/user_profile/views/widgets/dash_border.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/marriage_life_events_section.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/marriage_reward_card.dart';
 import 'package:tayseer/my_import.dart';
-// ⭐⭐⭐ Import sections
 import 'package:tayseer/features/user/marriage/view/widget/about_me.dart';
 import 'package:tayseer/features/user/marriage/view/widget/bio_voice_section.dart';
 import 'package:tayseer/features/user/marriage/view/widget/education.dart';
 import 'package:tayseer/features/user/marriage/view/widget/interests_section.dart';
 import 'package:tayseer/features/user/marriage/view/widget/religious.dart';
-import 'widgets/MarriageProfileSkeleton .dart';
 import 'widgets/profile_statistics_cards.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class MarriagefilePage extends StatefulWidget {
   final UserProfileModel? userProfile;
@@ -38,12 +37,17 @@ class MarriagefilePage extends StatefulWidget {
   State<MarriagefilePage> createState() => _MarriagefilePageState();
 }
 
-class _MarriagefilePageState extends State<MarriagefilePage> {
+class _MarriagefilePageState extends State<MarriagefilePage>
+    with TickerProviderStateMixin {
+  late AnimationController _floatController;
+  late Animation<double> _floatAnimation;
   late int _selectedTabIndex;
   final int _maxImages = 5;
   String? _scrollToSection;
 
-  // ⭐⭐⭐ DEFAULT IMAGE URL
+  bool _hasShownLoadGif = false;
+  bool _hasStartedLoadingGif = false;
+
   static const String _defaultImageUrl =
       "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
@@ -51,33 +55,35 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   void initState() {
     super.initState();
     _selectedTabIndex = widget.initialTabIndex;
+
+    _floatController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    )..repeat(reverse: true);
+
+    _floatAnimation = Tween<double>(begin: 0, end: 8).animate(
+      CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
+    );
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ NEW: دالة ترجمة عامة
-  // ════════════════════════════════════════════════════════════════
+  @override
+  void dispose() {
+    _floatController.dispose();
+    super.dispose();
+  }
+
   String _translateValue(String? value) {
     if (value == null || value.isEmpty) return '';
-
     final translated = context.tr(value);
-
-    if (translated == value && !value.contains(' ')) {
-      return value;
-    }
-
+    if (translated == value && !value.contains(' ')) return value;
     return translated;
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ CALCULATE TOTAL PROGRESS (Server + Media)
-  // ════════════════════════════════════════════════════════════════
   double _calculateTotalProgress(MarriageUserProfileModel profile) {
-    // Questions: max 25%
-    double questionProgress = (profile.answerCompletedPercentage ?? 0)
-        .toDouble();
+    double questionProgress =
+        (profile.answerCompletedPercentage ?? 0).toDouble();
     questionProgress = questionProgress.clamp(0, 25);
 
-    // Images: كل صورة 5%, max 20% (4 صور)
     int imageBonus = 0;
     final images = profile.userMedia?.images ?? [];
     if (images.isNotEmpty) {
@@ -85,22 +91,18 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       imageBonus = imageCount * 5;
     }
 
-    // Video: 25%
     int videoBonus = 0;
     bool hasVideo =
         profile.userMedia?.video != null &&
         profile.userMedia!.video!.isNotEmpty;
     if (hasVideo) videoBonus = 25;
 
-    // Audio: 25%
     int audioBonus = 0;
     bool hasAudio =
         profile.userMedia?.audio != null &&
         profile.userMedia!.audio!.isNotEmpty;
     if (hasAudio) audioBonus = 25;
 
-    // Verification: 5%
-    // int verificationBonus = (profile.isVerified == true) ? 5 : 0;
     int verificationBonus = true ? 5 : 0;
 
     double totalProgress =
@@ -110,36 +112,16 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
         audioBonus +
         verificationBonus;
 
-    // لا تتعدى 100
     return totalProgress.clamp(0, 100);
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ NEW: Get Main Display Image
-  // ════════════════════════════════════════════════════════════════
   String _getMainDisplayImage(MarriageUserProfileModel profile) {
-    // Priority 1: singleImage
     if (profile.userMedia?.singleImage != null &&
         profile.userMedia!.singleImage!.isNotEmpty) {
-      debugPrint('📸 [MAIN_IMAGE] Using singleImage');
       return profile.userMedia!.singleImage!;
     }
-
-    // // Priority 2: First image from images list
-    // final images = profile.userMedia?.images ?? [];
-    // if (images.isNotEmpty) {
-    //   debugPrint('📸 [MAIN_IMAGE] Using first image from list');
-    //   return images[0];
-    // }
-
-    // Priority 3: Default placeholder
-    debugPrint('📸 [MAIN_IMAGE] Using default placeholder');
     return _defaultImageUrl;
   }
-
-  // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ NEW: Get Secondary Display Image
-  // ════════════════════════════════════════════════════════════════
 
   @override
   Widget build(BuildContext context) {
@@ -148,12 +130,9 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
         getIt<MarriageProfileRepository>(),
         initialUserProfile: widget.userProfile,
       )..loadProfile(),
-      // ✅ استخدم builder عشان تاخد context جديد يشوف الـ provider
       child: Builder(
-        // ✅ Builder عادي بدل builder parameter
         builder: (context) => WillPopScope(
           onWillPop: () async {
-            // ✅ اشتغل لو المستخدم زار Edit tab في أي وقت (مش لازم يكون فيه دلوقتي)
             final cubit = context.read<MarriageProfileCubit>();
             final state = cubit.state;
 
@@ -182,7 +161,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               return false;
             }
 
-            // ✅ مفيش مشاكل - اخرج عادي مع الـ progress
             final progress = _calculateTotalProgress(state.profile!);
             Navigator.pop(context, progress);
             return false;
@@ -190,92 +168,126 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
           child: Scaffold(
             body: Stack(
               children: [
-                // ⭐⭐⭐ Background Image
                 Positioned.fill(
                   child: Image.asset(AssetsData.userBGImage, fit: BoxFit.cover),
                 ),
                 SafeArea(
-                  child:
-                      BlocConsumer<MarriageProfileCubit, MarriageProfileState>(
-                        listener: (context, state) {
-                          if (state.state == CubitStates.success &&
-                              state.successMessage != null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              CustomSnackBar(
-                                context,
-                                text: state.successMessage!,
-                                isSuccess: true,
-                              ),
-                            );
-                          }
-                          if (state.state == CubitStates.failure &&
-                              state.errorMessage != null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              CustomSnackBar(
-                                context,
-                                text: state.errorMessage!,
-                                isError: true,
-                              ),
-                            );
-                          }
-                        },
-                        builder: (context, state) {
-                          final cubit = context.read<MarriageProfileCubit>();
+                  child: BlocConsumer<MarriageProfileCubit, MarriageProfileState>(
+                    listener: (context, state) {
+                      if (state.isLoading &&
+                          state.profile == null &&
+                          !_hasStartedLoadingGif) {
+                        _hasStartedLoadingGif = true;
+                        showGifOverlay(
+                          context,
+                          repeatCount: 99,
+                          gifDuration: const Duration(milliseconds: 900),
+                        );
+                      }
 
-                          if (state.isLoading && state.profile == null) {
-                            return Column(
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 24.h,
-                                    vertical: 10.h,
+                      if (state.state == CubitStates.success &&
+                          state.profile != null &&
+                          !state.isLoading &&
+                          !_hasShownLoadGif) {
+                        _hasShownLoadGif = true;
+                        showGifOverlay(
+                          context,
+                          repeatCount: 1,
+                          gifDuration: const Duration(milliseconds: 900),
+                        );
+                      }
+
+                      if (state.state == CubitStates.success &&
+                          state.successMessage != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          CustomSnackBar(
+                            context,
+                            text: state.successMessage!,
+                            isSuccess: true,
+                          ),
+                        );
+                      }
+                      if (state.state == CubitStates.failure &&
+                          state.errorMessage != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          CustomSnackBar(
+                            context,
+                            text: state.errorMessage!,
+                            isError: true,
+                          ),
+                        );
+                      }
+                    },
+                    builder: (context, state) {
+                      final cubit = context.read<MarriageProfileCubit>();
+
+                      if (state.isLoading && state.profile == null) {
+                        return const SizedBox.expand();
+                      }
+
+                      if (state.state == CubitStates.failure &&
+                          state.profile == null) {
+                        return _buildError(context, state.errorMessage);
+                      }
+
+                      final profile = state.profile;
+                      if (profile == null) {
+                        return Center(
+                          child: Text(context.tr("data_load_error")),
+                        );
+                      }
+
+                      return Column(
+                        children: [
+                          // ✅ الـ header ثابت فوق
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 24.h,
+                              vertical: 10.h,
+                            ),
+                            child: _buildFixedHeader(context),
+                          ),
+                          // ✅ الـ content يملأ الباقي
+                          Expanded(
+                            child: _selectedTabIndex == 1
+                                ? _buildViewContent(profile)
+                                // ✅ الإصلاح الرئيسي: MediaQuery.removePadding
+                                // يمنع الـ CustomScrollView من إضافة padding
+                                // زيادة بيسبب مشكلة الـ scroll
+                                : MediaQuery.removePadding(
+                                    context: context,
+                                    removeTop: true,
+                                    removeBottom: false,
+                                    child: MarriageProfileEditView(
+                                      profile: profile,
+                                      state: state,
+                                      cubit: cubit,
+                                      maxImages: _maxImages,
+                                      selectedTabIndex: _selectedTabIndex,
+                                      scrollToSection: _scrollToSection,
+                                      onTabChanged: (index) {
+                                        setState(() {
+                                          _selectedTabIndex = index;
+                                        });
+                                      },
+                                      onSaveSuccess: () {
+                                        if (mounted) {
+                                          showGifOverlay(
+                                            context,
+                                            repeatCount: 1,
+                                            gifDuration: const Duration(
+                                              milliseconds: 900,
+                                            ),
+                                          );
+                                        }
+                                      },
+                                    ),
                                   ),
-                                  child: _buildFixedHeader(context),
-                                ),
-                                const Expanded(
-                                  child: MarriageProfileSkeleton(),
-                                ),
-                              ],
-                            );
-                          }
-
-                          if (state.state == CubitStates.failure &&
-                              state.profile == null) {
-                            return _buildError(context, state.errorMessage);
-                          }
-
-                          final profile = state.profile;
-                          if (profile == null) {
-                            return Center(
-                              child: Text(context.tr("data_load_error")),
-                            );
-                          }
-
-                          return Column(
-                            children: [
-                              Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 24.h,
-                                  vertical: 10.h,
-                                ),
-                                child: _buildFixedHeader(context),
-                              ),
-                              Expanded(
-                                child: _selectedTabIndex == 1
-                                    ? _buildViewContent(profile)
-                                    : MarriageProfileEditView(
-                                        profile: profile,
-                                        state: state,
-                                        cubit: cubit,
-                                        maxImages: _maxImages,
-                                        selectedTabIndex: _selectedTabIndex,
-                                        scrollToSection: _scrollToSection,
-                                      ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
@@ -285,7 +297,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     );
   }
 
-  // في MarriagefilePage
   void _showMustAddImageDialog(
     BuildContext context,
     MarriageProfileCubit cubit,
@@ -301,13 +312,10 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       bottonText: context.tr('add_image'),
       showCancelButton: false,
       onPressed: () async {
-        // ✅ روح لـ edit tab مع scroll للـ images section
         setState(() {
           _selectedTabIndex = 0;
-          _scrollToSection = 'images'; // ✅ زي ما بيحصل في complete page
+          _scrollToSection = 'images';
         });
-
-        // ✅ clear الـ scroll section بعد شوية
         Future.delayed(const Duration(milliseconds: 600), () {
           if (mounted) {
             setState(() {
@@ -365,7 +373,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               ),
             ),
             Gap(12.h),
-            // _buildPendingChangesSummary(context),
           ],
         ),
         actionsAlignment: MainAxisAlignment.center,
@@ -378,14 +385,12 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 Navigator.pop(dialogContext);
                 cubit.discardAllPending();
 
-                // ✅ تحقق من الصورة بعد الـ discard
                 final updatedState = cubit.state;
                 final hasSingleAfterDiscard =
                     updatedState.profile?.userMedia?.singleImage != null &&
                     updatedState.profile!.userMedia!.singleImage!.isNotEmpty;
 
                 if (!hasSingleAfterDiscard) {
-                  // ✅ لازم يضيف صورة قبل الخروج
                   _showMustAddImageDialog(
                     context,
                     cubit,
@@ -427,7 +432,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                       ? null
                       : () async {
                           await cubit.saveProfile();
-                          Navigator.pop(dialogContext); // أغلق الـ dialog
+                          Navigator.pop(dialogContext);
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: currentState.isUpdating
@@ -508,8 +513,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
   Widget _buildViewContent(MarriageUserProfileModel profile) {
     final totalProgress = _calculateTotalProgress(profile);
     final progressFraction = totalProgress / 100;
-
-    // ⭐ Extract images list once
     final images = profile.userMedia?.images ?? [];
 
     return Padding(
@@ -517,7 +520,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       child: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          // Completion card at the very top
           if (totalProgress < 100)
             SliverToBoxAdapter(
               child: _buildCompletionCard(progressFraction, profile: profile),
@@ -550,7 +552,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 : SizedBox.shrink(),
           ),
 
-          // Statistics Cards
           _buildSliverPadding(
             child: ProfileStatisticsCards(
               upgradesCount: profile.interactionCount ?? 0,
@@ -562,21 +563,17 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
             ),
           ),
 
-          // About Me
           _buildSliverPadding(
             child: AboutMeSection(items: _buildAboutMeItems(profile)),
           ),
 
-          // ⭐ IMAGE 0 — بعد نبذة عني
           if (images.isNotEmpty)
             _buildImageSection(images[0], 'profile_image_0'),
 
-          // Education
           _buildSliverPadding(
             child: EducationSection(items: _buildEducationItems(profile)),
           ),
 
-          // Goals
           if (profile.yourGoals != null)
             _buildSliverPadding(
               child: MarriageLifeEventsSection(
@@ -585,16 +582,13 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               ),
             ),
 
-          // ⭐ IMAGE 1 — بعد الأهداف (مكان الصورة الثانوية القديمة)
           if (images.length > 1)
             _buildImageSection(images[1], 'profile_image_1'),
 
-          // Religious
           _buildSliverPadding(
             child: ReligiousSection(tags: _buildReligiousTags(profile)),
           ),
 
-          // Video
           if (profile.userMedia?.video != null &&
               profile.userMedia!.video!.isNotEmpty)
             SliverPadding(
@@ -604,7 +598,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               ),
             ),
 
-          // Hobbies / Interests
           if (profile.hobbies.isNotEmpty)
             _buildSliverPadding(
               child: InterestsSection(
@@ -613,7 +606,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               ),
             ),
 
-          // Faith
           if (profile.faith.isNotEmpty)
             _buildSliverPadding(
               child: InterestsSection(
@@ -622,11 +614,9 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               ),
             ),
 
-          // ⭐ IMAGE 2 — بعد الإيمان
           if (images.length > 2)
             _buildImageSection(images[2], 'profile_image_2'),
 
-          // Bio + Voice
           if (profile.myDescription != null &&
               profile.myDescription!.isNotEmpty)
             _buildSliverPadding(
@@ -636,7 +626,6 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
               ),
             ),
 
-          // ⭐ IMAGE 3 — بعد البايو والتسجيل الصوتي
           if (images.length > 3)
             _buildImageSection(images[3], 'profile_image_3'),
 
@@ -648,108 +637,27 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     );
   }
 
-  Widget _buildVerifiedCard() {
-    return CustomPaint(
-      painter: DashedBorderPainter(
-        color: Color(0xFFE91E63).withOpacity(0.4),
-        strokeWidth: 1.5,
-        dashWidth: 6,
-        dashSpace: 4,
-        borderRadius: 12.r,
-      ),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 14.h),
-        decoration: BoxDecoration(
-          color: Color(0xFFFFF0F3),
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            SvgPicture.asset(AssetsData.verIcon, height: 80.h),
-            // SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.tr('verified_profile_title'), // "هذا الملف موثق"
-                    style: Styles.textStyle16Bold.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary400,
-                    ),
-                  ),
-                  SizedBox(height: 6.h),
-                  Text(
-                    context.tr(
-                      'verified_profile_desc',
-                    ), // "تم التأكد من صحة جميع البيانات الشخصية من قبل التطبيق"
-                    textAlign: TextAlign.right,
-                    style: Styles.textStyle16Bold.copyWith(
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.secondary400,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-  // ════════════════════════════════════════════════════════════════
-  // ⭐⭐⭐ NEW: Secondary Image Section with proper logic
-  // ════════════════════════════════════════════════════════════════
-
   Widget _buildImageSection(String imageUrl, String heroTag) {
     return SliverPadding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
       sliver: SliverToBoxAdapter(
         child: GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => FullScreenImageView(
-                  imageUrl: imageUrl,
-                  heroTag: heroTag,
-                  userName: context.tr("my_profile"),
-                ),
-              ),
-            );
-          },
+          onTap: () => FullScreenImageView.show(
+            context,
+            imageUrl: imageUrl,
+            heroTag: heroTag,
+            userName: context.tr("my_profile"),
+          ),
           child: Hero(
             tag: heroTag,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16.r),
-              child: Container(
+              child: AppImage(
+                imageUrl,
                 height: 400.h,
                 width: double.infinity,
-                color: Colors.grey.shade200, // background while loading
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primary300,
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                            : null,
-                      ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) => Center(
-                    child: Icon(
-                      Icons.broken_image_outlined,
-                      color: Colors.grey,
-                      size: 48.w,
-                    ),
-                  ),
-                ),
+                fit: BoxFit.cover,
+                radius: 16.r,
               ),
             ),
           ),
@@ -766,18 +674,12 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
         children: [
           GestureDetector(
             onTap: mainImage != _defaultImageUrl
-                ? () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => FullScreenImageView(
-                          imageUrl: mainImage,
-                          heroTag: 'profile_main_image',
-                          userName: context.tr("my_profile"),
-                        ),
-                      ),
-                    );
-                  }
+                ? () => FullScreenImageView.show(
+                    context,
+                    imageUrl: mainImage,
+                    heroTag: 'profile_main_image',
+                    userName: context.tr("my_profile"),
+                  )
                 : null,
             child: Hero(
               tag: 'profile_main_image',
@@ -785,7 +687,7 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                 height: 650.h,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200, // background while loading
+                  color: Colors.grey.shade200,
                   borderRadius: BorderRadius.vertical(
                     top: Radius.circular(33.r),
                   ),
@@ -794,28 +696,11 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
                   borderRadius: BorderRadius.vertical(
                     top: Radius.circular(33.r),
                   ),
-                  child: Image.network(
+                  child: AppImage(
                     mainImage,
+                    height: 650.h,
+                    width: double.infinity,
                     fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primary300,
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                              : null,
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) => Center(
-                      child: Icon(
-                        Icons.person_outline,
-                        color: Colors.grey,
-                        size: 80.w,
-                      ),
-                    ),
                   ),
                 ),
               ),
@@ -830,80 +715,87 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
     double progress, {
     required MarriageUserProfileModel profile,
   }) {
-    // ⭐ Real percentage as integer (e.g. 65%)
     final int realPercent = (progress * 100).toInt();
 
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 5.w, vertical: 12.h),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24.r),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            padding: EdgeInsets.all(5.r),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withOpacity(0.9),
-                  Colors.white.withOpacity(0.7),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(24.r),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.5),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.4),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(height: 20.h),
-                Row(
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8.w),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // ⭐ Show real percentage dynamically
-                          Text(
-                            "${context.tr('complete_profile_100_percent')}$realPercent%",
-                            textAlign: TextAlign.start,
-                            style: TextStyle(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.primary600,
-                            ),
-                          ),
-                          SizedBox(height: 8.h),
-                          Text(
-                            context.tr('complete_profile_description'),
-                            textAlign: TextAlign.start,
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              color: AppColors.secondary700,
-                              height: 1.6,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Spacer(),
-                    _buildGradientButton(profile, progress: progress),
+    return AnimatedBuilder(
+      animation: _floatAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, -_floatAnimation.value),
+          child: child,
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 5.w, vertical: 12.h),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24.r),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              padding: EdgeInsets.all(5.r),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withOpacity(0.9),
+                    Colors.white.withOpacity(0.7),
                   ],
                 ),
-                SizedBox(height: 20.h),
-              ],
+                borderRadius: BorderRadius.circular(24.r),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.5),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.4),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(height: 20.h),
+                  Row(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8.w),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "${context.tr('complete_profile_100_percent')}$realPercent%",
+                              textAlign: TextAlign.start,
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.primary600,
+                              ),
+                            ),
+                            SizedBox(height: 8.h),
+                            Text(
+                              context.tr('complete_profile_description'),
+                              textAlign: TextAlign.start,
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: AppColors.secondary700,
+                                height: 1.6,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      _buildGradientButton(profile, progress: progress),
+                    ],
+                  ),
+                  SizedBox(height: 20.h),
+                ],
+              ),
             ),
           ),
         ),
@@ -1003,23 +895,23 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       if (profile.aboutMe?.socialStatus != null)
         {
           'icon': AssetsData.kdrawingIcon,
-          'label': _translateValue(profile.aboutMe!.socialStatus),
+          'label': "💍 ${_translateValue(profile.aboutMe!.socialStatus)}",
         },
       if (profile.aboutMe?.age != null)
         {
           'icon': AssetsData.kdrawingIcon,
-          'label': "${context.tr('age')} ${profile.aboutMe?.age}",
+          'label': "🎂\u200F ${profile.aboutMe?.age} ${context.tr('age')}",
         },
       if (profile.aboutMe?.skinColor != null)
         {
           'icon': AssetsData.kdrawingIcon,
           'label':
-              "${context.tr('Skin')} ${_translateValue(profile.aboutMe!.skinColor)}",
+              "🎨 ${context.tr('Skin')} ${_translateValue(profile.aboutMe!.skinColor)}",
         },
       if (profile.aboutMe?.healthStatus != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': _translateValue(profile.aboutMe!.healthStatus),
+          'label': "🩺 ${_translateValue(profile.aboutMe!.healthStatus)}",
         },
     ];
   }
@@ -1031,12 +923,13 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       if (profile.professionalLife?.educationLevel != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': _translateValue(profile.professionalLife!.educationLevel),
+          'label':
+              "🎓 ${_translateValue(profile.professionalLife!.educationLevel)}",
         },
       if (profile.professionalLife?.job != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': _translateValue(profile.professionalLife!.job),
+          'label': "💼 ${_translateValue(profile.professionalLife!.job)}",
         },
     ];
   }
@@ -1057,14 +950,12 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
         'goalType': 'familyAcceptance',
       });
     }
-
     if (goals.engagement != null && goals.engagement!.isNotEmpty) {
       events.add({
         'timeLabel': _translateValue(goals.engagement),
         'goalType': 'engagement',
       });
     }
-
     if (goals.marry != null && goals.marry!.isNotEmpty) {
       events.add({
         'timeLabel': _translateValue(goals.marry),
@@ -1082,12 +973,13 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       if (profile.aboutMe?.religiousCommitment != null)
         {
           'icon': AssetsData.kdrawingIcon,
-          'label': _translateValue(profile.aboutMe!.religiousCommitment),
+          'label':
+              "🕌 ${_translateValue(profile.aboutMe!.religiousCommitment)}",
         },
       if (profile.aboutMe?.smoker != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': _translateValue(profile.aboutMe!.smoker),
+          'label': "🚬 ${_translateValue(profile.aboutMe!.smoker)}",
         },
     ];
   }
@@ -1109,7 +1001,35 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       };
     }).toList();
   }
-  // ⭐⭐⭐ FIX: دالة _buildInterestsItems مع الترجمة الكاملة
+
+  Widget buildCachedImage({
+    required String url,
+    double? height,
+    BorderRadius? radius,
+    BoxFit fit = BoxFit.cover,
+    Widget? errorWidget,
+  }) {
+    return ClipRRect(
+      borderRadius: radius ?? BorderRadius.circular(16.r),
+      child: CachedNetworkImage(
+        imageUrl: url,
+        fit: fit,
+        width: double.infinity,
+        height: height,
+        placeholder: (context, _) =>
+            shimmerImagePlaceholder(height: height, radius: radius),
+        errorWidget: (context, _, __) =>
+            errorWidget ??
+            Center(
+              child: Icon(
+                Icons.broken_image_outlined,
+                color: Colors.grey,
+                size: 48.w,
+              ),
+            ),
+      ),
+    );
+  }
 
   List<Map<String, dynamic>> _buildInterestsItems(
     MarriageUserProfileModel profile,
@@ -1149,4 +1069,15 @@ class _MarriagefilePageState extends State<MarriagefilePage> {
       ),
     );
   }
+}
+
+Widget shimmerImagePlaceholder({double? height, BorderRadius? radius}) {
+  return Container(
+    height: height ?? double.infinity,
+    width: double.infinity,
+    decoration: BoxDecoration(
+      color: Colors.grey.shade200,
+      borderRadius: radius ?? BorderRadius.circular(16.r),
+    ),
+  );
 }

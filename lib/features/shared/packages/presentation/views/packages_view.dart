@@ -18,7 +18,8 @@ import 'package:tayseer/features/shared/packages/presentation/widgets/package_ki
 import 'package:tayseer/features/shared/packages/presentation/widgets/package_tab_selector.dart';
 
 class PackagesView extends StatelessWidget {
-  const PackagesView({super.key});
+  final int? initialPage;
+  const PackagesView({super.key, this.initialPage});
 
   @override
   Widget build(BuildContext context) {
@@ -29,13 +30,14 @@ class PackagesView extends StatelessWidget {
         ),
         BlocProvider(create: (context) => PackageSelectionCubit()),
       ],
-      child: const _PackagesViewContent(),
+      child: _PackagesViewContent(initialPage: initialPage),
     );
   }
 }
 
 class _PackagesViewContent extends StatefulWidget {
-  const _PackagesViewContent();
+  final int? initialPage;
+  const _PackagesViewContent({this.initialPage});
 
   @override
   State<_PackagesViewContent> createState() => _PackagesViewContentState();
@@ -44,14 +46,13 @@ class _PackagesViewContent extends StatefulWidget {
 class _PackagesViewContentState extends State<_PackagesViewContent> {
   late PageController _pageController;
   final _getPackageData = GetPackageDisplayData();
+  bool _initialPageSet = false;
 
   @override
   void initState() {
     super.initState();
-    // Always start with Basic package (index 0)
-    // Use viewportFraction: 1.0 and keepPage: true for better performance
     _pageController = PageController(
-      initialPage: 0,
+      initialPage: widget.initialPage ?? 0,
       viewportFraction: 1.0,
       keepPage: true,
     );
@@ -77,6 +78,42 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
           listenWhen: (previous, current) =>
               previous.selectedPackage != current.selectedPackage,
           listener: _onPackageSelectionChanged,
+        ),
+        BlocListener<PackagesCubit, PackagesState>(
+          listenWhen: (prev, curr) =>
+              prev.isLoading && !curr.isLoading && !_initialPageSet,
+          listener: (context, state) {
+            _initialPageSet = true;
+            // If an explicit initialPage was passed, use it
+            if (widget.initialPage != null) {
+              const packages = [
+                PackageType.basic,
+                PackageType.pro,
+                PackageType.elite,
+              ];
+              context.read<PackageSelectionCubit>().selectPackage(
+                packages[widget.initialPage!],
+              );
+              if (_pageController.hasClients) {
+                _pageController.jumpToPage(widget.initialPage!);
+              }
+              return;
+            }
+            final cubit = context.read<PackagesCubit>();
+            final currentPkg = cubit.currentSubscribedPackage;
+            if (currentPkg != null) {
+              const packages = [
+                PackageType.basic,
+                PackageType.pro,
+                PackageType.elite,
+              ];
+              final index = packages.indexOf(currentPkg);
+              context.read<PackageSelectionCubit>().selectPackage(currentPkg);
+              if (_pageController.hasClients) {
+                _pageController.jumpToPage(index);
+              }
+            }
+          },
         ),
       ],
       child: Scaffold(
@@ -162,12 +199,12 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
 
   Widget _buildPage(PackageType packageType) {
     return BlocBuilder<PackagesCubit, PackagesState>(
-      buildWhen: (prev, curr) => prev.packages != curr.packages,
+      buildWhen: (prev, curr) => prev.subscriptions != curr.subscriptions,
       builder: (context, state) {
         final packageData = _getPackageData(
           context: context,
           packageType: packageType,
-          apiPackages: state.packages,
+          apiPackages: state.subscriptions,
         );
         return PackageDetailContent(
           package: packageData,
@@ -195,16 +232,36 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
   }
 
   Widget _buildActionButton() {
-    return BlocSelector<
-      PackageSelectionCubit,
-      PackageSelectionState,
-      PackageType
-    >(
-      selector: (state) => state.selectedPackage,
-      builder: (context, selectedPackage) {
-        return PackageActionButton(
-          packageType: selectedPackage,
-          onPressed: () => _onActionButtonPressed(context, selectedPackage),
+    return BlocBuilder<PackagesCubit, PackagesState>(
+      buildWhen: (prev, curr) =>
+          prev.isLoading != curr.isLoading ||
+          prev.subscriptions != curr.subscriptions,
+      builder: (context, packagesState) {
+        final isLoading = packagesState.isLoading;
+        final currentPkg = context
+            .read<PackagesCubit>()
+            .currentSubscribedPackage;
+
+        return BlocBuilder<PackageSelectionCubit, PackageSelectionState>(
+          builder: (context, selectionState) {
+            final selectedPackage = selectionState.selectedPackage;
+
+            // زرار "استمرار بحساب محدود" — مخفي لحد ما يتأكد من الـ subscription
+            if (selectedPackage == PackageType.basic) {
+              if (isLoading) return const SizedBox.shrink();
+              if (currentPkg != null) return const SizedBox.shrink();
+            }
+
+            final isCurrentSub =
+                selectedPackage != PackageType.basic &&
+                currentPkg == selectedPackage;
+
+            return PackageActionButton(
+              packageType: selectedPackage,
+              isCurrentSub: isCurrentSub,
+              onPressed: () => _onActionButtonPressed(context, selectedPackage),
+            );
+          },
         );
       },
     );

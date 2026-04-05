@@ -2,6 +2,7 @@ import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/widgets/custom_otp_timer.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
+import 'package:tayseer/main.dart'; // ✅ consumePendingDeepLink
 import '../../../../../my_import.dart';
 
 class OtpViewBody extends StatefulWidget {
@@ -18,18 +19,22 @@ class _OtpViewBodyState extends State<OtpViewBody> {
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
       listenWhen: (previous, current) =>
-          previous.verifyOtpState != current.verifyOtpState ||
+      previous.verifyOtpState != current.verifyOtpState ||
           previous.resendCodeState != current.resendCodeState,
 
       listener: (context, state) {
+        // ─── OTP Loading ───
         if (state.verifyOtpState == CubitStates.loading) {
           showDialog(
             context: context,
             barrierDismissible: false,
             builder: (_) => const Center(child: CustomloadingApp()),
           );
+
+          // ─── OTP Success ───
         } else if (state.verifyOtpState == CubitStates.success) {
-          context.pop();
+          context.pop(); // إغلاق الـ loading
+
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
@@ -39,8 +44,10 @@ class _OtpViewBodyState extends State<OtpViewBody> {
           );
 
           if (selectedUserType == UserTypeEnum.asConsultant) {
+            // ─── Consultant ───
             if (kCurrentUserData?.compeletedData == true) {
               context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
+              // ✅ المستشار مش بيستخدم deep link للزواج
             } else if (kCurrentUserData?.compeletedData == false &&
                 kCurrentUserData?.lastQuestionNumber == 1) {
               context.pushReplacementNamed(
@@ -68,12 +75,23 @@ class _OtpViewBodyState extends State<OtpViewBody> {
                 AppRouter.kPersonalInfoAsConsultantView,
               );
             }
-          } else {
-            context.pushNamedAndRemoveUntil(
-              AppRouter.kUserLayoutView,
-              predicate: (route) => false,
-            );
+          } else if (selectedUserType == UserTypeEnum.user) {
+            // ─── User ───
+            if (state.isNew == true) {
+              // ✅ مستخدم جديد — يكمل الـ onboarding الأول
+              // لا نفتح الـ deep link هنا
+              context.pushReplacementNamed(AppRouter.kChooseGenderView);
+            } else {
+              // ✅ مستخدم موجود — روح الـ layout وافتح الـ deep link
+              context.pushNamedAndRemoveUntil(
+                AppRouter.kUserLayoutView,
+                predicate: (route) => false,
+              );
+              consumePendingDeepLink();
+            }
           }
+
+          // ─── OTP Failure ───
         } else if (state.verifyOtpState == CubitStates.failure) {
           context.pop();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -85,12 +103,14 @@ class _OtpViewBodyState extends State<OtpViewBody> {
           );
         }
 
+        // ─── Resend Loading ───
         if (state.resendCodeState == CubitStates.loading) {
           showDialog(
             context: context,
             barrierDismissible: false,
             builder: (_) => const Center(child: CustomloadingApp()),
           );
+          // ─── Resend Success ───
         } else if (state.resendCodeState == CubitStates.success) {
           context.pop();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -100,6 +120,7 @@ class _OtpViewBodyState extends State<OtpViewBody> {
               isSuccess: true,
             ),
           );
+          // ─── Resend Failure ───
         } else if (state.resendCodeState == CubitStates.failure) {
           context.pop();
           ScaffoldMessenger.of(context).showSnackBar(

@@ -1,79 +1,110 @@
+import 'package:intl/intl.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/advisor/wallet/data/models/transaction_model.dart';
 
 class TransactionItem extends StatelessWidget {
   final TransactionModel transaction;
-  final bool showTime;
 
-  const TransactionItem({
-    super.key,
-    required this.transaction,
-    this.showTime = true,
-  });
+  const TransactionItem({super.key, required this.transaction});
 
-  // الحصول على الأيقونة المناسبة حسب نوع المعاملة
+  static const Color _amber = Color(0xFFF6B551);
+
   String _getIconPath() {
     switch (transaction.type) {
-      case 'session':
+      case 'session_reservation':
         return AssetsData.icBookSession;
-      case 'event':
+      case 'event_reservation':
         return AssetsData.eventIcon;
+      case 'withdraw_request':
+        return AssetsData.icBank;
+      case 'deposit':
+      case 'withdraw':
       default:
         return AssetsData.icWallet;
     }
   }
 
-  // الحصول على لون الخلفية للأيقونة
-  Color _getIconBackgroundColor() {
+  Color _getIconBg() {
     switch (transaction.type) {
-      case 'session':
+      case 'session_reservation':
         return AppColors.pendingColor.withOpacity(0.2);
-      case 'event':
+      case 'event_reservation':
         return AppColors.primary300.withOpacity(0.2);
+      case 'withdraw_request':
+        return _amber.withOpacity(0.2);
       default:
         return AppColors.mainColor.withOpacity(0.2);
     }
   }
 
-  // الحصول على لون الأيقونة
   Color _getIconColor() {
     switch (transaction.type) {
-      case 'session':
+      case 'session_reservation':
         return AppColors.pendingColor;
-      case 'event':
+      case 'event_reservation':
         return AppColors.primary300;
+      case 'withdraw_request':
+        return _amber;
       default:
         return AppColors.mainColor;
     }
   }
 
+  Color _getAmountColor() {
+    if (transaction.type == 'withdraw_request') return _amber;
+    return transaction.isPositive ? AppColors.mainColor : Colors.red;
+  }
+
   String _getTitle(BuildContext context) {
-    if (transaction.type == 'session') {
-      return context.tr('consultancy_session');
-    } else if (transaction.type == 'event') {
-      return context.tr('event_booking');
+    switch (transaction.type) {
+      case 'session_reservation':
+        return context.tr('consultancy_session');
+      case 'event_reservation':
+        return context.tr('event_booking');
+      case 'deposit':
+        return context.tr('deposit');
+      case 'withdraw':
+        return context.tr('withdraw');
+      case 'withdraw_request':
+        return context.tr('withdraw_request');
+      default:
+        return context.tr('transaction');
     }
-    return context.tr('transaction');
+  }
+
+  /// Format: "24 ديسمبر 2025 11:16 م" or "Dec 24, 2025 11:16 PM"
+  String _formatDate(BuildContext context) {
+    final dt = transaction.createdAt;
+    if (dt == null) return '';
+    final isAr = context.isArabicLang;
+    final locale = isAr ? 'ar' : 'en';
+    // date part: "24 ديسمبر 2025" or "Dec 24, 2025"
+    final datePart = isAr
+        ? DateFormat('d MMMM yyyy', locale).format(dt)
+        : DateFormat('MMM d, yyyy', locale).format(dt);
+    // time part with am/pm
+    final timePart = DateFormat('hh:mm a', locale).format(dt);
+    return '$datePart  $timePart';
   }
 
   @override
   Widget build(BuildContext context) {
+    final dateStr = _formatDate(context);
+
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 20.w),
       child: Row(
         children: [
-          // الأيقونة
           CircleAvatar(
             radius: 25.r,
-            backgroundColor: _getIconBackgroundColor(),
+            backgroundColor: _getIconBg(),
             child: SvgPicture.asset(
               _getIconPath(),
               width: 23.w,
-              color: _getIconColor(),
+              colorFilter: ColorFilter.mode(_getIconColor(), BlendMode.srcIn),
             ),
           ),
           SizedBox(width: 15.w),
-          // تفاصيل المعاملة
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,21 +115,23 @@ class TransactionItem extends StatelessWidget {
                     color: AppColors.primaryText,
                   ),
                 ),
-                SizedBox(height: 4.h),
-                Text(
-                  transaction.formattedDate,
-                  style: Styles.textStyle14.copyWith(
-                    color: AppColors.secondaryText,
+                if (dateStr.isNotEmpty) ...[
+                  SizedBox(height: 3.h),
+                  Text(
+                    dateStr,
+                    style: Styles.textStyle12.copyWith(
+                      color: AppColors.secondaryText,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
           Text(
-            '${transaction.displayAmount} ${transaction.type == 'event' ? '' : context.tr('egp')}',
-            style: Styles.textStyle16Bold.copyWith(
-              color: transaction.isPositive ? AppColors.mainColor : Colors.red,
-            ),
+            transaction.isPoints
+                ? transaction.displayAmount
+                : '${transaction.displayAmount} ${transaction.currency ?? ''}',
+            style: Styles.textStyle16Bold.copyWith(color: _getAmountColor()),
           ),
         ],
       ),

@@ -1,53 +1,39 @@
-// import 'dart:developer';
-
-// import 'package:tayseer/core/utils/helper/socket_helper.dart';
-
 import 'dart:developer';
-
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/core/notifications/notificationHelper.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
-
+import 'package:tayseer/main.dart';
 import '../../../../my_import.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _SplashScreenState createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  // double _opacity = 0.0;
-  // late AnimationController _controller;
-
   @override
   void initState() {
-    _initializeSocket();
     super.initState();
-    // _controller = AnimationController(
-    //   duration: const Duration(seconds: 2),
-    //   vsync: this,
-    // )..repeat();
-    // Future.delayed(const Duration(seconds: 1), () {
-    //   // if (mounted) {
-    //   //   setState(() {
-    //   //     _opacity = 1.0;
-    //   //   });
-    //   // }
-    // });
+    _initializeSocket();
     _navigateBasedOnToken();
   }
 
   Future<void> _initializeSocket() async {
     try {
+      final userType = CachNetwork.getStringData(key: kUserType);
+      final token = CachNetwork.getStringData(key: ktoken);
+
+      if (userType == UserTypeEnum.guest.name || token.isEmpty) return;
+
       final socketHelper = getIt<tayseerSocketHelper>();
-
       final connected = await socketHelper.connect();
-
       if (connected) {
         log('✅ Socket connected successfully');
+      } else {
+        log('⚠️ Socket connection failed, but continuing...');
       }
     } catch (e) {
       log('❌ Socket initialization error: $e');
@@ -55,30 +41,114 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _navigateBasedOnToken() async {
-    await Future.delayed(const Duration(seconds: 5));
+    await Future.delayed(const Duration(milliseconds: 4800));
     if (!mounted) return;
-    String? token = CachNetwork.getStringData(key: ktoken);
-    if (mounted) {
-      if (token.isNotEmpty) {
-        if (selectedUserType == UserTypeEnum.asConsultant) {
-          if (kCurrentUserData?.compeletedData == true) {
-            context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
-          } else {
-            context.pushReplacementNamed(AppRouter.kRegisrationView);
+
+    final String token = CachNetwork.getStringData(key: ktoken);
+    final String? userType = CachNetwork.getStringData(key: kUserType);
+
+    log(
+      '🔍 Navigation check - Token: ${token.isNotEmpty}, '
+      'UserType: $userType, selectedUserType: $selectedUserType',
+    );
+
+    // ✅ نسحب الـ cold start URI ونمسحه فوراً
+    final coldUri = pendingDeepLinkUri;
+    pendingDeepLinkUri = null;
+
+    if (!mounted) return;
+
+    if (token.isNotEmpty) {
+      // ─── مسجل دخول ───
+      _navigateLoggedInUser();
+
+      // ✅ handle pending notification
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (pendingNotificationMessage != null) {
+            debugPrint('✅ Handling pending notification from terminated state');
+            NotificationHelper.handleNotificationClick(
+              message: pendingNotificationMessage,
+            );
+            pendingNotificationMessage = null;
           }
-        } else {
-          context.pushReplacementNamed(AppRouter.kUserLayoutView);
+        });
+      });
+
+      // ✅ handle cold start deep link
+
+      if (coldUri != null) {
+        Future.delayed(const Duration(milliseconds: 2000), () {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            consumePendingDeepLink();
+          });
+        });
+      }
+    } else {
+      // ─── مش مسجل ───
+      log('⚠️ No token found, navigating to registration');
+
+      // ✅ حفظ الـ cold start deep link لما يسجل دخول
+      // في _navigateBasedOnToken — قبل _navigateLoggedInUser()
+      if (coldUri != null) {
+        final personId = _extractPersonId(coldUri);
+        if (personId != null) {
+          pendingDeepLinkPersonId = personId; // ✅ حطه هنا الأول
         }
+      }
+
+      _navigateLoggedInUser();
+
+      // ✅ بعدين استهلكه
+      if (coldUri != null) {
+        Future.delayed(const Duration(milliseconds: 2000), () {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            consumePendingDeepLink();
+          });
+        });
+      }
+
+      if (!mounted) return;
+      context.pushReplacementNamed(AppRouter.kRegisrationView);
+    }
+  }
+
+  void _navigateLoggedInUser() {
+    if (!mounted) return;
+
+    if (selectedUserType == UserTypeEnum.asConsultant) {
+      if (kCurrentUserData?.compeletedData == true) {
+        context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
       } else {
         context.pushReplacementNamed(AppRouter.kRegisrationView);
       }
+    } else if (selectedUserType == UserTypeEnum.user) {
+      kCurrentUserData?.isNew == false
+          ? context.pushReplacementNamed(AppRouter.kUserLayoutView)
+          : context.pushReplacementNamed(AppRouter.kRegisrationView);
+    } else {
+      // fallback لو selectedUserType مش محدد
+      navigatorKey.currentState?.pushReplacementNamed(
+        AppRouter.kRegisrationView,
+      );
     }
   }
-  // @override
-  // void dispose() {
-  //   _controller.dispose();
-  //   super.dispose();
-  // }
+
+  String? _extractPersonId(Uri uri) {
+    final segments = uri.pathSegments;
+
+    if (segments.length >= 3 &&
+        segments[0] == 'marriage' &&
+        segments[1] == 'profile') {
+      return segments[2];
+    }
+
+    if (uri.scheme == 'tayseer' && uri.host == 'marriage') {
+      return uri.queryParameters['profileId'];
+    }
+
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {

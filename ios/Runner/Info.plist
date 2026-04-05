@@ -129,7 +129,7 @@
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
 
-    <!-- Google Sign-In -->
+    <!-- ✅ URL Schemes: Google Sign-In + Custom Scheme (Deep Links) -->
     <key>CFBundleURLTypes</key>
     <array>
         <dict>
@@ -140,7 +140,26 @@
                 <string>com.googleusercontent.apps.267720438243-bl25r1jul2309brv15kl7hr19oar6q5f</string>
             </array>
         </dict>
+
+        <!-- ✅ Custom Scheme fallback (tayseer://marriage/...) -->
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>tayseer-deep-link</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>tayseer</string>
+            </array>
+        </dict>
+
     </array>
+
+    <!-- ✅ Universal Links (Associated Domains — يُكمَّل في Xcode) -->
+    <!-- لتفعيل Universal Links أضف في Xcode:
+         Signing & Capabilities > Associated Domains:
+         applinks:tayseer.app
+         ثم ارفع ملف apple-app-site-association على:
+         https://tayseer.app/.well-known/apple-app-site-association
+    -->
 
 </dict>
 </plist>

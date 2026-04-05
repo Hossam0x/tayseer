@@ -1,9 +1,10 @@
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
-import 'package:tayseer/features/advisor/settings/view/cubit/account_management_state.dart';
+import 'package:tayseer/features/shared/settings/cubit/account_management_cubit.dart';
+import 'package:tayseer/features/shared/settings/cubit/account_management_state.dart';
+import 'package:tayseer/features/shared/settings/repositories/account_management_repository.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
-import 'package:tayseer/features/user/user_profile/data/repositories/user_account_management_repository.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/user_account_management_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserAccountManagementView extends StatefulWidget {
@@ -16,13 +17,18 @@ class UserAccountManagementView extends StatefulWidget {
 
 class _UserAccountManagementViewState extends State<UserAccountManagementView> {
   AccountAction? selectedAction;
-  late UserAccountManagementCubit _cubit;
+  late AccountManagementCubit _cubit;
 
   @override
   void initState() {
     super.initState();
-    _cubit = UserAccountManagementCubit(
-      getIt<UserAccountManagementRepository>(),
+    _cubit = AccountManagementCubit(
+      AccountManagementRepositoryImpl(
+        apiService: getIt<ApiService>(),
+        suspendEndpoint: '/user/suspend-user',
+        deleteEndpoint: '/user/delete-user',
+        deleteMethod: 'patch',
+      ),
     );
   }
 
@@ -36,7 +42,7 @@ class _UserAccountManagementViewState extends State<UserAccountManagementView> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _cubit,
-      child: BlocConsumer<UserAccountManagementCubit, AccountManagementState>(
+      child: BlocConsumer<AccountManagementCubit, AccountManagementState>(
         listener: (context, state) {
           _handleStateChanges(context, state);
         },
@@ -219,7 +225,7 @@ class _UserAccountManagementViewState extends State<UserAccountManagementView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppImage(AssetsData.kWoriningImage),
+            AppImage(AssetsData.kWoriningImage, width: 100.w),
             Gap(20.h),
             Text(
               title,
@@ -266,62 +272,56 @@ class _UserAccountManagementViewState extends State<UserAccountManagementView> {
     BuildContext context,
     AccountManagementState state,
   ) async {
-    // معالجة النجاح
     if (state.state == CubitStates.success) {
-      // إعادة تعيين الخيار المحدد
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
         setState(() => selectedAction = null);
       });
 
-      // تنفيذ التسجيل الخروج ومسح البيانات
-      await _logoutAndClearData(
-        context,
-        message: state.operation == AccountOperation.suspend
-            ? context.tr('account_suspended_successfully')
-            : context.tr('account_deleted_successfully'),
-      );
+      final message = state.operation == AccountOperation.suspend
+          ? context.tr('account_suspended_successfully')
+          : context.tr('account_deleted_successfully');
+
+      await _logoutAndClearData(message: message);
     }
 
-    // معالجة الأخطاء
     if (state.state == CubitStates.failure && state.errorMessage != null) {
+      final errorMsg = state.errorMessage!;
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(context, text: state.errorMessage!, isSuccess: false),
+          CustomSnackBar(context, text: errorMsg, isSuccess: false),
         );
       });
     }
   }
 
-  Future<void> _logoutAndClearData(
-    BuildContext context, {
-    required String message,
-  }) async {
+  Future<void> _logoutAndClearData({required String message}) async {
     try {
-      // الانتظار قليلاً لعرض الحالة النهائية
       await Future.delayed(const Duration(milliseconds: 500));
 
-      // 1. مسح جميع البيانات من SharedPreferences
       await CachNetwork.clearCache();
       await getIt<CacheCleanupService>().clearAllUserCache();
 
-      // ✅ ريسيت الـ HomeCubit Singleton عشان يتعمل instance جديد بعد اللوجن الجديد
       if (getIt.isRegistered<HomeCubit>()) {
         getIt.resetLazySingleton<HomeCubit>();
       }
+      if (getIt.isRegistered<ProfileCubit>()) {
+        getIt.resetLazySingleton<ProfileCubit>();
+      }
 
-      // 2. إعادة التوجيه إلى شاشة التسجيل/تسجيل الدخول
+      if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(
         context,
         AppRouter.kRegisrationView,
         (route) => false,
       );
 
-      // 3. عرض رسالة نجاح
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(CustomSnackBar(context, text: message, isSuccess: true));
     } catch (e) {
-      print('❌ Error during logout: $e');
+      debugPrint('❌ Error during logout: $e');
     }
   }
 }

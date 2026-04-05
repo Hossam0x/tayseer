@@ -44,7 +44,7 @@ class _EventBodyState extends State<EventBody> {
           top: 0,
           left: 0,
           right: 0,
-          height: 130.h,
+          height: 105.h,
           child: Container(
             decoration: BoxDecoration(
               image: DecorationImage(
@@ -114,7 +114,6 @@ class _EventBodyState extends State<EventBody> {
                           : const AllEventsContent(key: ValueKey('all')),
                     ),
             ),
-          
           ],
         ),
       ],

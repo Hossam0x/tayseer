@@ -3,6 +3,7 @@ import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/features/shared/auth/model/guest_response_model.dart';
 import 'package:tayseer/features/shared/auth/model/day_time_range_model.dart';
 import 'package:tayseer/features/shared/auth/model/last_login_model.dart';
+import 'package:tayseer/features/shared/auth/model/summar_session_model.dart'; // ★ import جديد
 
 class AuthState {
   final CubitStates registerState;
@@ -16,11 +17,13 @@ class AuthState {
   final CubitStates resendCodeState;
   final CubitStates getLastLoginState;
   final CubitStates personalDataState;
-  final CubitStates addServiceProviderState;
+  final CubitStates addDayProviderState;
   final CubitStates addCertificateState;
   final CubitStates addNationalImageState;
   final CubitStates addLanguageState;
   final CubitStates isAiState;
+  final CubitStates setGenderState;
+  final CubitStates setOfferingsState;
 
   final LastLoginResponse? lastLoginResponse;
   final GuestData? guestData;
@@ -48,8 +51,22 @@ class AuthState {
   final String price30Min;
   final String price60Min;
 
-  // ✅ الحقل الجديد لتحديد نوع المستخدم الحالي أثناء عملية التسجيل
   final UserTypeEnum? currentAuthUserType;
+  final bool? isNew;
+
+  // ★★★ الحقول الجديدة ★★★
+
+  /// الدولة المختارة حالياً (من شاشة اختيار الدولة)
+  final String? selectedCountryKey;
+
+  /// علم الدولة المختارة
+  final String? selectedCountryFlag;
+
+  /// الجلسات المؤقتة (اللي بيضيفها اليوزر قبل الحفظ للملخص)
+  final List<SessionItemModel> currentSessionsList;
+
+  /// الملخص النهائي (كل الدول + جلساتها)
+  final List<SummaryCountryModel> summaryList;
 
   const AuthState({
     this.registerState = CubitStates.initial,
@@ -63,11 +80,14 @@ class AuthState {
     this.resendCodeState = CubitStates.initial,
     this.getLastLoginState = CubitStates.initial,
     this.personalDataState = CubitStates.initial,
-    this.addServiceProviderState = CubitStates.initial,
+    this.addDayProviderState = CubitStates.initial,
     this.addCertificateState = CubitStates.initial,
     this.addNationalImageState = CubitStates.initial,
     this.addLanguageState = CubitStates.initial,
     this.isAiState = CubitStates.initial,
+    this.setGenderState = CubitStates.initial,
+    this.setOfferingsState = CubitStates.initial,
+
     this.lastLoginResponse,
     this.guestData,
     this.answerCompleted,
@@ -87,7 +107,14 @@ class AuthState {
     this.message,
     this.price30Min = '',
     this.price60Min = '',
-    this.currentAuthUserType, // ✅ جديد
+    this.currentAuthUserType,
+    this.isNew,
+
+    // ★★★ الجديد ★★★
+    this.selectedCountryKey,
+    this.selectedCountryFlag,
+    this.currentSessionsList = const [],
+    this.summaryList = const [],
   });
 
   AuthState copyWith({
@@ -103,11 +130,13 @@ class AuthState {
     CubitStates? getLastLoginState,
     CubitStates? answerQuestionsState,
     CubitStates? personalDataState,
-    CubitStates? addServiceProviderState,
+    CubitStates? addDayProviderState,
     CubitStates? addCertificateState,
     CubitStates? addNationalImageState,
     CubitStates? addLanguageState,
     CubitStates? isAiState,
+    CubitStates? setGenderState,
+    CubitStates? setOfferingsState,
     LastLoginResponse? lastLoginResponse,
     bool? verify,
     bool? answerCompleted,
@@ -128,7 +157,15 @@ class AuthState {
     String? message,
     String? price30Min,
     String? price60Min,
-    UserTypeEnum? currentAuthUserType, // ✅ جديد
+    UserTypeEnum? currentAuthUserType,
+    bool? isNew,
+
+    // ★★★ الجديد ★★★
+    String? selectedCountryKey,
+    String? selectedCountryFlag,
+    List<SessionItemModel>? currentSessionsList,
+    List<SummaryCountryModel>? summaryList,
+    bool clearSelectedCountry = false, // ★ علشان نقدر نعمل null
   }) {
     return AuthState(
       registerState: registerState ?? this.registerState,
@@ -143,13 +180,14 @@ class AuthState {
       resendCodeState: resendCodeState ?? this.resendCodeState,
       getLastLoginState: getLastLoginState ?? this.getLastLoginState,
       personalDataState: personalDataState ?? this.personalDataState,
-      addServiceProviderState:
-          addServiceProviderState ?? this.addServiceProviderState,
+      addDayProviderState: addDayProviderState ?? this.addDayProviderState,
       addCertificateState: addCertificateState ?? this.addCertificateState,
       addNationalImageState:
           addNationalImageState ?? this.addNationalImageState,
       addLanguageState: addLanguageState ?? this.addLanguageState,
+      setOfferingsState: setOfferingsState ?? this.setOfferingsState,
       isAiState: isAiState ?? this.isAiState,
+      setGenderState: setGenderState ?? this.setGenderState,
       lastLoginResponse: lastLoginResponse ?? this.lastLoginResponse,
       errorMessage: errorMessage ?? this.errorMessage,
       lastLoginBy: lastLoginBy ?? this.lastLoginBy,
@@ -157,7 +195,6 @@ class AuthState {
       verify: verify ?? this.verify,
       fromScreen: fromScreen ?? this.fromScreen,
       draftText: draftText ?? this.draftText,
-
       answerCompleted: answerCompleted ?? this.answerCompleted,
       lastQuestionNumber: lastQuestionNumber ?? this.lastQuestionNumber,
       days: days ?? this.days,
@@ -172,12 +209,22 @@ class AuthState {
       message: message ?? this.message,
       price30Min: price30Min ?? this.price30Min,
       price60Min: price60Min ?? this.price60Min,
-      currentAuthUserType:
-          currentAuthUserType ?? this.currentAuthUserType, // ✅ جديد
+      currentAuthUserType: currentAuthUserType ?? this.currentAuthUserType,
+      isNew: isNew ?? this.isNew,
+
+      // ★★★ الجديد ★★★
+      selectedCountryKey: clearSelectedCountry
+          ? null
+          : (selectedCountryKey ?? this.selectedCountryKey),
+      selectedCountryFlag: clearSelectedCountry
+          ? null
+          : (selectedCountryFlag ?? this.selectedCountryFlag),
+      currentSessionsList: currentSessionsList ?? this.currentSessionsList,
+      summaryList: summaryList ?? this.summaryList,
     );
   }
 
-  /// 🧠 Helpers
+  /// 🧠 Helpers القديمة
   bool isDayEnabled(String day) {
     return availableDays.containsKey(day);
   }
@@ -186,11 +233,28 @@ class AuthState {
     return availableDays[day];
   }
 
-  // ✅ Helper جديد للتحقق من نوع المستخدم
   bool isUserType(UserTypeEnum type) {
     return currentAuthUserType == type;
   }
 
   bool get isRegularUser => currentAuthUserType == UserTypeEnum.user;
   bool get isConsultant => currentAuthUserType == UserTypeEnum.asConsultant;
+
+  // ★★★ Helpers الجديدة ★★★
+
+  /// هل فيه دولة مختارة حالياً؟
+  bool get hasSelectedCountry => selectedCountryKey != null;
+
+  /// هل فيه جلسات مؤقتة مضافة؟
+  bool get hasCurrentSessions => currentSessionsList.isNotEmpty;
+
+  /// هل الملخص فيه بيانات؟
+  bool get hasSummaryData => summaryList.isNotEmpty;
+
+  /// إجمالي عدد الجلسات في الملخص
+  int get totalSummarySessionsCount =>
+      summaryList.fold(0, (sum, country) => sum + country.sessions.length);
+
+  /// إجمالي عدد الدول في الملخص
+  int get totalSummaryCountriesCount => summaryList.length;
 }

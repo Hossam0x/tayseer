@@ -3,7 +3,13 @@ import 'package:tayseer/core/utils/api_service.dart';
 
 abstract class WalletRemoteDataSource {
   Future<Map<String, dynamic>> getWallet();
-  Future<Map<String, dynamic>> getTransactions({required int page, int? limit});
+  Future<Map<String, dynamic>> getTransactions({int page = 1, int limit = 20});
+  Future<Map<String, dynamic>> getEarnings({int page = 1, int limit = 20});
+  Future<Map<String, dynamic>> getBalancePackages();
+  Future<Map<String, dynamic>> initiatePurchase({
+    required String productId,
+    required String platform,
+  });
 }
 
 class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
@@ -18,12 +24,39 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
 
   @override
   Future<Map<String, dynamic>> getTransactions({
-    required int page,
-    int? limit,
+    int page = 1,
+    int limit = 20,
   }) async {
     return await _apiService.get(
       endPoint: ApiEndPoint.walletTransactions,
-      query: {'page': page, if (limit != null) 'limit': limit},
+      query: {'page': page, 'limit': limit},
+    );
+  }
+
+  @override
+  Future<Map<String, dynamic>> getEarnings({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    return await _apiService.get(
+      endPoint: ApiEndPoint.walletEarnings,
+      query: {'page': page, 'limit': limit},
+    );
+  }
+
+  @override
+  Future<Map<String, dynamic>> getBalancePackages() async {
+    return await _apiService.get(endPoint: ApiEndPoint.balancePackages);
+  }
+
+  @override
+  Future<Map<String, dynamic>> initiatePurchase({
+    required String productId,
+    required String platform,
+  }) async {
+    return await _apiService.post(
+      endPoint: ApiEndPoint.initiatePurchase,
+      data: {'productId': productId, 'platform': platform},
     );
   }
 }

@@ -131,4 +131,39 @@ class AppStrings {
   // Upload Post
   static const String postPublishFailed = "post_publish_failed";
   static const String retryButton = "retry_button";
+
+  // Post Details
+  static const String failedToLoadPost = "failed_to_load_post";
+  static const String noPostData = "no_post_data";
+
+  // Notifications
+  static const String notifications = "notifications";
+  static const String noNotificationsYet = "no_notifications_yet";
+  static const String notificationsAppearHere = "notifications_appear_here";
+  static const String accept = "accept";
+  static const String reject = "reject";
+  static const String errorAddingComment = "error_adding_comment";
+  static const String agoPrefix = "ago_prefix";
+  static const String agoMinutes = "ago_minutes";
+  static const String agoHours = "ago_hours";
+  static const String agoDays = "ago_days";
+
+  static const String accountUnderReview = "account_under_review";
+  static const String accountUnderReviewMessage =
+      "account_under_review_message";
+  static const String gotIt = "got_it";
+  static const String cannotDoThisAction = "cannot_do_this_action";
+  static const String accountDisApprovedMessage = "account_disapproved_message";
+  static const String contactSupport = "contact_support";
+  static const String contentNotAvailable = "content_not_available";
+
+  static const String yourAccountUnderReview = "your_account_under_review";
+  static const String yourAccountDisapproved = "your_account_disapproved";
+  static const String accountUnderReviewDescription =
+      "account_under_review_description";
+  static const String accountDisapprovedDescription =
+      "account_disapproved_description";
+
+  static const String comments = "comments";
+  static const String loadMore = "load_more";
 }

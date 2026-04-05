@@ -255,11 +255,13 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
 
     final reel = state.reels[index];
     final controllerToPass = index == 0 ? widget.initialController : null;
+    final shouldInit = (index == _currentIndex || index == _currentIndex + 1);
 
     return ReelsItem(
       key: ValueKey('reel_item_${reel.postId}'),
       post: reel,
       isCurrentPage: index == _currentIndex,
+      shouldInitialize: shouldInit,
       sharedController: controllerToPass,
     );
   }

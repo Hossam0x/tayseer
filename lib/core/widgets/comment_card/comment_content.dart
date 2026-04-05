@@ -1,4 +1,5 @@
 import 'package:tayseer/core/models/comment_model.dart';
+import 'package:tayseer/core/widgets/social_text_parser.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_actions_menu.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_avatar.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_callbacks.dart';
@@ -58,7 +59,7 @@ class CommentContent extends StatelessWidget {
                 ),
 
                 Gap(6.h),
-                _CommentText(text: comment.comment),
+                _CommentText(text: comment.comment, mentions: comment.mentions),
                 Gap(8.h),
                 _CommentActions(
                   comment: comment,
@@ -187,8 +188,9 @@ class _CommentHeader extends StatelessWidget {
 
 class _CommentText extends StatelessWidget {
   final String text;
+  final Map<String, MentionModel?>? mentions;
 
-  const _CommentText({required this.text});
+  const _CommentText({required this.text, this.mentions});
 
   bool _isEmojiOnly(String text) {
     final emojiRegex = RegExp(
@@ -224,9 +226,10 @@ class _CommentText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      textAlign: TextAlign.start,
+    return SocialTextParser(
+      mentions: mentions,
+      text: text,
+      removeDirectionality: true,
       style: Styles.textStyle14.copyWith(
         fontSize: _fontSize(),
         color: Colors.black,

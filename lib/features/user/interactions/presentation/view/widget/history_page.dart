@@ -37,7 +37,13 @@ class HistorypageState extends State<Historypage> {
           final filterKey = widget.selectedFilter.isEmpty
               ? "liked_you"
               : widget.selectedFilter;
-          context.read<InteractionsCubit>().fetchHistory(filter: filterKey);
+          final cubit = context.read<InteractionsCubit>();
+          final hasData =
+              cubit.state.historyData[filterKey]?.isNotEmpty ?? false;
+          cubit.fetchHistory(filter: filterKey, forceRefresh: !hasData);
+
+          // ✅ أضف هذا السطر
+          cubit.fetchInteractionNotificationCount();
         }
       });
     }
@@ -52,7 +58,11 @@ class HistorypageState extends State<Historypage> {
           final filterKey = widget.selectedFilter.isEmpty
               ? "liked_you"
               : widget.selectedFilter;
-          context.read<InteractionsCubit>().fetchHistory(filter: filterKey);
+          final cubit = context.read<InteractionsCubit>();
+          final hasData =
+              cubit.state.historyData[filterKey]?.isNotEmpty ?? false;
+          // ✅ فقط fetch لو مفيش data للـ filter ده
+          cubit.fetchHistory(filter: filterKey, forceRefresh: !hasData);
           scrollToTop();
         }
       });
@@ -98,13 +108,17 @@ class HistorypageState extends State<Historypage> {
     if (widget.selectedFilter == "favorites") {
       await cubit.refreshFavorites();
     } else {
-      await cubit.fetchHistory(filter: widget.selectedFilter);
+      // ✅ forceRefresh: true عشان الـ pull-to-refresh يجيب data جديدة دايماً
+      await cubit.fetchHistory(
+        filter: widget.selectedFilter,
+        forceRefresh: true,
+      );
     }
   }
 
   int _getCrossAxisCount(BuildContext context) =>
       MediaQuery.of(context).size.width >= 600 ? 3 : 2;
-  double _getChildAspectRatio(int count) => count == 3 ? 0.65 : 0.7;
+  double _getChildAspectRatio(int count) => count == 3 ? 0.6 : 0.62;
 
   bool _shouldShowSubscriptionOverlay(InteractionsState state) {
     if (state.isSubscribed) return false;
@@ -138,9 +152,11 @@ class HistorypageState extends State<Historypage> {
                 SizedBox(height: 16.h),
                 CustomBotton(
                   title: context.tr("retry"),
-                  onPressed: () => context
-                      .read<InteractionsCubit>()
-                      .fetchHistory(filter: widget.selectedFilter),
+                  onPressed: () =>
+                      context.read<InteractionsCubit>().fetchHistory(
+                        filter: widget.selectedFilter,
+                        forceRefresh: true,
+                      ),
                 ),
               ],
             ),
@@ -193,11 +209,11 @@ class HistorypageState extends State<Historypage> {
                             SliverGrid(
                               gridDelegate:
                                   SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: crossAxisCount,
-                                crossAxisSpacing: 12.w,
-                                mainAxisSpacing: 12.h,
-                                childAspectRatio: childAspectRatio,
-                              ),
+                                    crossAxisCount: crossAxisCount,
+                                    crossAxisSpacing: 12.w,
+                                    mainAxisSpacing: 12.h,
+                                    childAspectRatio: childAspectRatio,
+                                  ),
                               delegate: SliverChildBuilderDelegate(
                                 (context, index) {
                                   if (index >= data.length) {
@@ -209,7 +225,11 @@ class HistorypageState extends State<Historypage> {
                                         widget.selectedFilter == "favorites",
                                     forceBlur: !state.isSubscribed,
                                     showRibbon:
-                                        widget.selectedFilter != "met_them",
+                                        widget.selectedFilter != "met_them" &&
+                                        widget.selectedFilter !=
+                                            "favorites", // ✅ عدّل هذا
+                                    selectedFilter:
+                                        widget.selectedFilter, // ✅ أضف هذا
                                   );
                                 },
                                 childCount:
@@ -217,7 +237,9 @@ class HistorypageState extends State<Historypage> {
                               ),
                             ),
                             SliverPadding(
-                              padding: EdgeInsets.only(bottom: 20.h),
+                              padding: EdgeInsets.only(
+                                bottom: showOverlay ? 70.h : 110.h,
+                              ),
                               sliver: SliverToBoxAdapter(
                                 child: SizedBox.shrink(),
                               ),

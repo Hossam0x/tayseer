@@ -31,6 +31,9 @@ class PostsLocalDatasource {
   // أقصى عمر للكاش (7 أيام)
   static const Duration _maxCacheAge = Duration(days: 7);
 
+  // أقصى عدد بوستات في الكاش
+  static const int _maxCachedPosts = 50;
+
   PostsLocalDatasource(this._hiveService);
 
   /// اسم البوكس مبني على userId — كل مستخدم له كاش منفصل
@@ -53,6 +56,11 @@ class PostsLocalDatasource {
     required int page,
   }) async {
     try {
+      // تقليم البوستات — نحتفظ بأحدث 50 فقط
+      final trimmedPosts = posts.length > _maxCachedPosts
+          ? posts.sublist(posts.length - _maxCachedPosts)
+          : posts;
+
       final box = await _hiveService.openBox(_boxName);
 
       // علامة بداية الكتابة (لكشف الانقطاع)
@@ -65,7 +73,7 @@ class PostsLocalDatasource {
       await box.put(_writeCompleteKey, false);
 
       // تحويل البوستات لـ JSON
-      final postsJson = posts.map((p) => p.toJson()).toList();
+      final postsJson = trimmedPosts.map((p) => p.toJson()).toList();
       await box.put(_postsKey, jsonEncode(postsJson));
 
       // كتابة البيانات الوصفية
@@ -74,7 +82,7 @@ class PostsLocalDatasource {
         'nextCursor': nextCursor,
         'lastPage': page,
         'userId': kCurrentUserData?.id ?? 'guest',
-        'postsCount': posts.length,
+        'postsCount': trimmedPosts.length,
       };
       await box.put(_metadataKey, jsonEncode(metadata));
 
@@ -82,7 +90,7 @@ class PostsLocalDatasource {
       await box.put(_writeCompleteKey, true);
 
       debugPrint(
-        '✅ PostsLocalDatasource: Cached ${posts.length} posts (page $page)',
+        '✅ PostsLocalDatasource: Cached ${trimmedPosts.length} posts (page $page, limit $_maxCachedPosts)',
       );
     } catch (e) {
       debugPrint('❌ PostsLocalDatasource: Error caching posts: $e');

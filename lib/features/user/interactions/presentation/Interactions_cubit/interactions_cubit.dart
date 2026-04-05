@@ -23,39 +23,34 @@ class InteractionsCubit extends Cubit<InteractionsState> {
   }
 
   Future<void> fetchHistorySilently() async {
-    if (state.isSubscribed) return; // مش محتاج لو already subscribed
+    if (state.isSubscribed) return;
 
     final result = await repository.fetchHistoryUsers(
       filter: "liked_you",
       page: 1,
     );
 
-    result.fold(
-      (failure) => null, // ✅ silent - مش بنعمل حاجة عند الفشل
-      (response) {
-        // ✅ update الـ subscription فقط بدون تغيير باقي الـ state
-        if (response.userSubscription != state.isSubscribed) {
-          emit(state.copyWith(isSubscribed: response.userSubscription));
-        }
-      },
-    );
+    result.fold((failure) => null, (response) {
+      if (response.userSubscription != state.isSubscribed) {
+        emit(state.copyWith(isSubscribed: response.userSubscription));
+      }
+    });
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  // EXPLORATION - ✅ UPDATED WITH REFRESH SUPPORT
+  // EXPLORATION
   // ═══════════════════════════════════════════════════════════════════
+
   Future<void> fetchExploration({
     required String category,
-    bool forceRefresh = false, // ✅ NEW: Add parameter to force refresh
+    bool forceRefresh = false,
   }) async {
-    // ✅ If NOT forcing refresh and we already have data, skip
     if (!forceRefresh &&
         state.explorationData.isNotEmpty &&
         state.explorationState == CubitStates.success) {
       return;
     }
 
-    // ✅ Only show loading state if we don't have data yet
     if (state.explorationData.isEmpty) {
       emit(state.copyWith(explorationState: CubitStates.loading));
     }
@@ -73,7 +68,6 @@ class InteractionsCubit extends Cubit<InteractionsState> {
         ),
       ),
       (response) {
-        // ✅ Convert CategoryData to List<InteractionUserModel>
         final Map<String, List<InteractionUserModel>> explorationData = {};
 
         response.categories.forEach((displayName, categoryData) {
@@ -93,11 +87,7 @@ class InteractionsCubit extends Cubit<InteractionsState> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════
-  // REFRESH EXPLORATION - ✅ NEW METHOD
-  // ═══════════════════════════════════════════════════════════════════
   Future<void> refreshExploration() async {
-    log('🔄 Refreshing exploration data...');
     await fetchExploration(category: "all", forceRefresh: true);
   }
 
@@ -105,7 +95,16 @@ class InteractionsCubit extends Cubit<InteractionsState> {
   // HISTORY - INITIAL FETCH
   // ═══════════════════════════════════════════════════════════════════
 
-  Future<void> fetchHistory({required String filter}) async {
+  Future<void> fetchHistory({
+    required String filter,
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh &&
+        (state.historyData[filter]?.isNotEmpty ?? false) &&
+        state.historyState == CubitStates.success) {
+      return;
+    }
+
     emit(state.copyWith(historyState: CubitStates.loading));
 
     final result = await repository.fetchHistoryUsers(filter: filter, page: 1);
@@ -118,8 +117,7 @@ class InteractionsCubit extends Cubit<InteractionsState> {
         ),
       ),
       (response) {
-        // updateSubscriptionStatus(response.userSubscription);
-  final bool isSubscribed = response.userSubscription;
+        final bool isSubscribed = response.userSubscription;
         final section = response.sections[filter];
 
         if (section == null) {
@@ -147,7 +145,7 @@ class InteractionsCubit extends Cubit<InteractionsState> {
           state.historyPagination,
         );
 
-        List<InteractionUserModel> filteredUsers = section.users.map((user) {
+        newData[filter] = section.users.map((user) {
           if (_pendingRemovalFavorites.contains(user.userId)) {
             return user.copyWith(isFavorite: false);
           }
@@ -157,22 +155,16 @@ class InteractionsCubit extends Cubit<InteractionsState> {
           return user;
         }).toList();
 
-        newData[filter] = filteredUsers;
         newCurrentPage[filter] = section.pagination?.currentPage ?? 1;
-
-        if (section.pagination != null) {
-          newHasMore[filter] =
-              section.pagination!.currentPage < section.pagination!.totalPages;
-        } else {
-          newHasMore[filter] = false;
-        }
-
+        newHasMore[filter] = section.pagination != null
+            ? section.pagination!.currentPage < section.pagination!.totalPages
+            : false;
         newPagination[filter] = section.pagination;
 
         emit(
           state.copyWith(
             historyState: CubitStates.success,
-             isSubscribed: isSubscribed,
+            isSubscribed: isSubscribed,
             historyData: newData,
             historyCurrentPage: newCurrentPage,
             historyHasMore: newHasMore,
@@ -194,9 +186,8 @@ class InteractionsCubit extends Cubit<InteractionsState> {
       return;
     }
 
-    if (state.historyState == CubitStates.loading) {
-      return;
-    }
+    final hasExistingData = state.historyData[filter]?.isNotEmpty ?? false;
+    if (!hasExistingData) return;
 
     final currentPage = state.historyCurrentPage[filter] ?? 1;
     final nextPage = currentPage + 1;
@@ -226,7 +217,7 @@ class InteractionsCubit extends Cubit<InteractionsState> {
         if (section != null) {
           final existingUsers = currentData[filter] ?? [];
 
-          List<InteractionUserModel> newUsers = section.users.map((user) {
+          final newUsers = section.users.map((user) {
             if (_pendingRemovalFavorites.contains(user.userId)) {
               return user.copyWith(isFavorite: false);
             }
@@ -236,18 +227,16 @@ class InteractionsCubit extends Cubit<InteractionsState> {
             return user;
           }).toList();
 
-          currentData[filter] = [...existingUsers, ...newUsers];
+          final existingIds = existingUsers.map((u) => u.userId).toSet();
+          final uniqueNew = newUsers
+              .where((u) => !existingIds.contains(u.userId))
+              .toList();
 
+          currentData[filter] = [...existingUsers, ...uniqueNew];
           currentPageMap[filter] = section.pagination?.currentPage ?? nextPage;
-
-          if (section.pagination != null) {
-            currentHasMoreMap[filter] =
-                section.pagination!.currentPage <
-                section.pagination!.totalPages;
-          } else {
-            currentHasMoreMap[filter] = false;
-          }
-
+          currentHasMoreMap[filter] = section.pagination != null
+              ? section.pagination!.currentPage < section.pagination!.totalPages
+              : false;
           currentPaginationMap[filter] = section.pagination;
         }
 
@@ -273,15 +262,13 @@ class InteractionsCubit extends Cubit<InteractionsState> {
     for (String userId in _pendingRemovalFavorites) {
       await repository.toggleFavorite(userId: userId, isAdd: false);
     }
-
     for (String userId in _pendingAddFavorites) {
       await repository.toggleFavorite(userId: userId, isAdd: true);
     }
-
     _pendingRemovalFavorites.clear();
     _pendingAddFavorites.clear();
 
-    await fetchHistory(filter: "favorites");
+    await fetchHistory(filter: "favorites", forceRefresh: true);
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -292,10 +279,8 @@ class InteractionsCubit extends Cubit<InteractionsState> {
     required String userId,
     required bool isAdd,
   }) async {
-    // ✅ Update UI فوراً (Optimistic Update)
     _updateUserFavoriteStatusInUI(userId, isAdd);
 
-    // ✅ بعت للـ API فوراً
     final result = await repository.toggleFavorite(
       userId: userId,
       isAdd: isAdd,
@@ -303,9 +288,8 @@ class InteractionsCubit extends Cubit<InteractionsState> {
 
     result.fold(
       (failure) {
-        // ❌ لو فشل، ارجع التغيير
         log('Toggle favorite failed: ${failure.message}');
-        _updateUserFavoriteStatusInUI(userId, !isAdd); // Revert
+        _updateUserFavoriteStatusInUI(userId, !isAdd); // revert
       },
       (message) {
         log('Toggle favorite success: $message');
@@ -320,9 +304,7 @@ class InteractionsCubit extends Cubit<InteractionsState> {
 
     updatedHistory.forEach((filter, users) {
       updatedHistory[filter] = users.map((user) {
-        if (user.userId == userId) {
-          return user.copyWith(isFavorite: isFavorite);
-        }
+        if (user.userId == userId) return user.copyWith(isFavorite: isFavorite);
         return user;
       }).toList();
     });
@@ -330,26 +312,29 @@ class InteractionsCubit extends Cubit<InteractionsState> {
     emit(state.copyWith(historyData: updatedHistory));
   }
 
+  // ═══════════════════════════════════════════════════════════════════
+  // SEND COMPLIMENT
+  // ═══════════════════════════════════════════════════════════════════
+
   Future<void> sendCompliment({required String userId}) async {
     emit(state.copyWith(actionState: CubitStates.loading));
 
     final result = await repository.sendCompliment(personId: userId);
 
-    result.fold(
-      (failure) {
-        log('Send Compliment Failed: ${failure.message}');
-        emit(
-          state.copyWith(
-            actionState: CubitStates.failure,
-            actionMessage: failure.message,
-          ),
-        );
-      },
-      (message) {
-        emit(state.copyWith(actionState: CubitStates.success));
-      },
-    );
+    result.fold((failure) {
+      log('Send Compliment Failed: ${failure.message}');
+      emit(
+        state.copyWith(
+          actionState: CubitStates.failure,
+          actionMessage: failure.message,
+        ),
+      );
+    }, (_) => emit(state.copyWith(actionState: CubitStates.success)));
   }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // LIKE USER
+  // ═══════════════════════════════════════════════════════════════════
 
   Future<void> likeUser({required String userId}) async {
     emit(state.copyWith(actionState: CubitStates.loading));
@@ -377,6 +362,94 @@ class InteractionsCubit extends Cubit<InteractionsState> {
       },
     );
   }
+  // ═══════════════════════════════════════════════════════════════════
+  // NOTIFICATION COUNTS
+  // ═══════════════════════════════════════════════════════════════════
+
+  Future<void> fetchInteractionNotificationCount() async {
+    final result = await repository.fetchInteractionNotificationCount();
+    result.fold(
+      (failure) => log('Fetch notification count failed: ${failure.message}'),
+      (model) {
+        emit(
+          state.copyWith(
+            likesNotificationCount: model.likes,
+            favoritesNotificationCount: model.favorites,
+            regardsNotificationCount: model.regards,
+            totalNotificationCount: model.total,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> resetNotificationCountForFilter(String filter) async {
+    switch (filter) {
+      case 'liked_you':
+        final toSubtract = state.likesNotificationCount; // ✅ احفظ القيمة الأول
+        final result = await repository.resetLikesNotificationCount();
+        result.fold(
+          (failure) => log('Reset likes count failed: ${failure.message}'),
+          (_) => emit(
+            state.copyWith(
+              likesNotificationCount: 0,
+              totalNotificationCount: // ✅ اطرح من الـ total
+              (state.totalNotificationCount - toSubtract).clamp(
+                0,
+                999,
+              ),
+            ),
+          ),
+        );
+        break;
+
+      case 'favorites':
+        final toSubtract = state.favoritesNotificationCount;
+        final result = await repository.resetFavoritesNotificationCount();
+        result.fold(
+          (failure) => log('Reset favorites count failed: ${failure.message}'),
+          (_) => emit(
+            state.copyWith(
+              favoritesNotificationCount: 0,
+              totalNotificationCount:
+                  (state.totalNotificationCount - toSubtract).clamp(0, 999),
+            ),
+          ),
+        );
+        break;
+
+      case 'sent_compliment':
+        final toSubtract = state.regardsNotificationCount;
+        final result = await repository.resetRegardsNotificationCount();
+        result.fold(
+          (failure) => log('Reset regards count failed: ${failure.message}'),
+          (_) => emit(
+            state.copyWith(
+              regardsNotificationCount: 0,
+              totalNotificationCount:
+                  (state.totalNotificationCount - toSubtract).clamp(0, 999),
+            ),
+          ),
+        );
+        break;
+    }
+  }
+
+  // ✅ بعد الإصلاح
+Future<void> fetchAndSyncNotificationCount() async {
+  final result = await repository.fetchInteractionNotificationCount();
+  result.fold((_) {}, (model) {
+    if (isClosed) return;
+    emit(
+      state.copyWith(
+        likesNotificationCount: model.likes,
+        favoritesNotificationCount: model.favorites,
+        regardsNotificationCount: model.regards,
+        totalNotificationCount: model.total, // ✅ ده اللي كان ناقص
+      ),
+    );
+  });
+}
 
   void resetActionState() {
     emit(state.copyWith(actionState: CubitStates.initial, actionMessage: null));
