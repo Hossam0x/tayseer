@@ -435,19 +435,21 @@ class InteractionsCubit extends Cubit<InteractionsState> {
     }
   }
 
-  Future<void> fetchAndSyncNotificationCount() async {
-    final result = await repository.fetchInteractionNotificationCount();
-    result.fold((_) {}, (model) {
-      if (isClosed) return;
-      emit(
-        state.copyWith(
-          likesNotificationCount: model.likes,
-          favoritesNotificationCount: model.favorites,
-          regardsNotificationCount: model.regards,
-        ),
-      );
-    });
-  }
+  // ✅ بعد الإصلاح
+Future<void> fetchAndSyncNotificationCount() async {
+  final result = await repository.fetchInteractionNotificationCount();
+  result.fold((_) {}, (model) {
+    if (isClosed) return;
+    emit(
+      state.copyWith(
+        likesNotificationCount: model.likes,
+        favoritesNotificationCount: model.favorites,
+        regardsNotificationCount: model.regards,
+        totalNotificationCount: model.total, // ✅ ده اللي كان ناقص
+      ),
+    );
+  });
+}
 
   void resetActionState() {
     emit(state.copyWith(actionState: CubitStates.initial, actionMessage: null));
