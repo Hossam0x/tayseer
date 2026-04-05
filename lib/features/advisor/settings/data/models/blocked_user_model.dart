@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:tayseer/core/enum/verification_type.dart';
 
 class BlockedUserModel extends Equatable {
   final String id;
@@ -36,12 +37,14 @@ class BlockedUserInfo extends Equatable {
   final String name;
   final String userName;
   final String? image;
+  final VerificationType verificationType;
 
   const BlockedUserInfo({
     required this.id,
     required this.name,
     required this.userName,
     this.image,
+    this.verificationType = VerificationType.none,
   });
 
   factory BlockedUserInfo.fromJson(Map<String, dynamic> json) {
@@ -50,6 +53,7 @@ class BlockedUserInfo extends Equatable {
       name: json['name'] ?? '',
       userName: json['username'] ?? '',
       image: json['image'],
+      verificationType: VerificationType.fromString(json['verificationType']),
     );
   }
 
@@ -58,8 +62,9 @@ class BlockedUserInfo extends Equatable {
     'name': name,
     'username': userName,
     'image': image,
+    'verificationType': verificationType.name,
   };
 
   @override
-  List<Object?> get props => [id, name, userName, image];
+  List<Object?> get props => [id, name, userName, image, verificationType];
 }

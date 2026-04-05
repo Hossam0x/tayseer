@@ -24,7 +24,8 @@ class UserAdvisorProfileHeader extends StatelessWidget {
           return oldImage != newImage ||
               previous.profile!.followers != current.profile!.followers ||
               previous.profile!.following != current.profile!.following ||
-              previous.profile!.isVerified != current.profile!.isVerified ||
+              previous.profile!.verificationType !=
+                  current.profile!.verificationType ||
               previous.profile!.room?.isBlocked !=
                   current.profile!.room?.isBlocked;
         }
@@ -63,7 +64,6 @@ class UserAdvisorProfileHeader extends StatelessWidget {
         imageUrl: '',
         following: '0',
         followers: '0',
-        isVerified: false,
         context: context,
         profileId: '',
       ),
@@ -79,7 +79,6 @@ class UserAdvisorProfileHeader extends StatelessWidget {
       imageUrl: profile.image,
       following: profile.following.toString(),
       followers: profile.followers.toString(),
-      isVerified: profile.isVerified,
       context: context,
       profileId: profile.id,
       profileName: profile.name,
@@ -91,7 +90,6 @@ class UserAdvisorProfileHeader extends StatelessWidget {
     required String imageUrl,
     required String following,
     required String followers,
-    required bool isVerified,
     required BuildContext context,
     required String profileId,
     String? profileName,

@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:tayseer/core/enum/verification_type.dart';
 import 'package:tayseer/features/shared/profile/extensions/profile_extensions.dart';
 
 class ProfileModel extends Equatable with ProfileProfessionalInfoMixin {
@@ -9,6 +10,7 @@ class ProfileModel extends Equatable with ProfileProfessionalInfoMixin {
   final int followers;
   final int following;
   final bool isVerified;
+  final VerificationType verificationType;
   final String approvalKey;
   final String? location;
   @override
@@ -26,6 +28,7 @@ class ProfileModel extends Equatable with ProfileProfessionalInfoMixin {
     required this.followers,
     required this.following,
     required this.isVerified,
+    this.verificationType = VerificationType.none,
     required this.approvalKey,
     required this.location,
     this.yearsOfExperience,
@@ -46,6 +49,7 @@ class ProfileModel extends Equatable with ProfileProfessionalInfoMixin {
       followers: json['followers'] ?? 0,
       following: json['following'] ?? 0,
       isVerified: json['isVerified'] ?? false,
+      verificationType: VerificationType.fromString(json['verificationType']),
       approvalKey: json['approvalKey'] ?? '',
       location: json['location'],
     );
@@ -62,6 +66,7 @@ class ProfileModel extends Equatable with ProfileProfessionalInfoMixin {
     'followers': followers,
     'following': following,
     'isVerified': isVerified,
+    'verificationType': verificationType.name,
     'approvalKey': approvalKey,
     'location': location,
   };
@@ -77,6 +82,7 @@ class ProfileModel extends Equatable with ProfileProfessionalInfoMixin {
     int? followers,
     int? following,
     bool? isVerified,
+    VerificationType? verificationType,
     String? approvalKey,
     String? location,
   }) {
@@ -92,6 +98,7 @@ class ProfileModel extends Equatable with ProfileProfessionalInfoMixin {
       followers: followers ?? this.followers,
       following: following ?? this.following,
       isVerified: isVerified ?? this.isVerified,
+      verificationType: verificationType ?? this.verificationType,
       approvalKey: approvalKey ?? this.approvalKey,
       location: location ?? this.location,
     );
@@ -109,6 +116,7 @@ class ProfileModel extends Equatable with ProfileProfessionalInfoMixin {
     followers,
     following,
     isVerified,
+    verificationType,
     approvalKey,
     location,
   ];

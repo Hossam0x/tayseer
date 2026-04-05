@@ -176,7 +176,7 @@ class UserAdvisorBioInformation extends StatelessWidget {
         children: [
           SharedBioNameSection(
             name: profile.name,
-            isVerified: profile.isVerified,
+            verificationType: profile.verificationType,
           ),
           if (profile.username.isNotEmpty) ...[
             Text(

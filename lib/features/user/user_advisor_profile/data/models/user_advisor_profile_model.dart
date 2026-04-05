@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:tayseer/core/enum/verification_type.dart';
 import 'package:tayseer/features/shared/profile/extensions/profile_extensions.dart';
 import 'package:tayseer/features/shared/profile/data/models/room_info_model.dart';
 
@@ -16,6 +17,7 @@ class UserAdvisorProfileModel extends Equatable
   final int followers;
   final int following;
   final bool isVerified;
+  final VerificationType verificationType;
   final bool isApproved;
   final String? location;
   final String? videoLink;
@@ -38,6 +40,7 @@ class UserAdvisorProfileModel extends Equatable
     required this.followers,
     required this.following,
     required this.isVerified,
+    this.verificationType = VerificationType.none,
     this.isApproved = true,
     this.location,
     this.videoLink,
@@ -78,6 +81,7 @@ class UserAdvisorProfileModel extends Equatable
       followers: json['followers'] ?? 0,
       following: json['following'] ?? 0,
       isVerified: json['isVerified'] ?? false,
+      verificationType: VerificationType.fromString(json['verificationType']),
       isApproved: json['isApproved'] ?? true,
       location: json['location'],
       videoLink: json['videoLink'],
@@ -102,6 +106,7 @@ class UserAdvisorProfileModel extends Equatable
     'followers': followers,
     'following': following,
     'isVerified': isVerified,
+    'verificationType': verificationType.name,
     'isApproved': isApproved,
     'location': location,
     'videoLink': videoLink,
@@ -123,6 +128,7 @@ class UserAdvisorProfileModel extends Equatable
     int? followers,
     int? following,
     bool? isVerified,
+    VerificationType? verificationType,
     bool? isApproved,
     String? location,
     String? videoLink,
@@ -143,6 +149,7 @@ class UserAdvisorProfileModel extends Equatable
       followers: followers ?? this.followers,
       following: following ?? this.following,
       isVerified: isVerified ?? this.isVerified,
+      verificationType: verificationType ?? this.verificationType,
       isApproved: isApproved ?? this.isApproved,
       location: location ?? this.location,
       videoLink: videoLink ?? this.videoLink,
@@ -170,6 +177,7 @@ class UserAdvisorProfileModel extends Equatable
     followers,
     following,
     isVerified,
+    verificationType,
     isApproved,
     location,
     videoLink,
