@@ -32,13 +32,16 @@ class SliverProfileHeader extends StatelessWidget {
   final String? nextNationality;
   final String? nextHeight;
   final bool? nextIsVerified;
-  final String? city; // ✅
-  final double? distanceKm; // ✅
+  final String? city;
+  final double? distanceKm;
   final double swipeDirection;
   final double swipeProgress;
 
   final VoidCallback? onFavoriteTap;
   final bool isFavorited;
+
+  // ✅ الجديد — widget مخصص يتعرض في الـ left بدل AnimatedBeFirstButton
+  final Widget? leftWidget;
 
   const SliverProfileHeader({
     super.key,
@@ -69,8 +72,9 @@ class SliverProfileHeader extends StatelessWidget {
     this.swipeProgress = 0,
     this.onFavoriteTap,
     this.isFavorited = false,
-    this.city, // ✅
-    this.distanceKm, // ✅
+    this.city,
+    this.distanceKm,
+    this.leftWidget, // ✅
   });
 
   bool get _isAnimating => swipeProgress > 0.01;
@@ -117,13 +121,16 @@ class SliverProfileHeader extends StatelessWidget {
                 ),
               ),
             ),
+            // ✅ لو مرروا leftWidget استخدمه، لو لأ استخدم AnimatedBeFirstButton الافتراضي
             Positioned(
               left: 0,
-              child: AnimatedBeFirstButton(
-                onTap: () {
-                  context.pushNamed(AppRouter.kBoostAccountView);
-                },
-              ),
+              child:
+                  leftWidget ??
+                  AnimatedBeFirstButton(
+                    onTap: () {
+                      context.pushNamed(AppRouter.kBoostAccountView);
+                    },
+                  ),
             ),
           ],
         ),
@@ -244,7 +251,6 @@ class _FrontProfileCard extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // ========= الصورة أو الـ Placeholder =========
         GestureDetector(
           onTap: () {
             if (images.isNotEmpty && !shouldBlur) {
@@ -268,7 +274,6 @@ class _FrontProfileCard extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // ✅ Placeholder لما مفيش صورة
                 if (!_hasImage)
                   _buildPlaceholder()
                 else if (shouldBlur)
@@ -289,7 +294,6 @@ class _FrontProfileCard extends StatelessWidget {
                           child: AppImage(coverImage, fit: BoxFit.cover),
                         ),
 
-                // ✅ Gradient دايماً فوق الصورة — يمنع الـ info card يبان على خلفية فاضية
                 Positioned.fill(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
@@ -314,7 +318,6 @@ class _FrontProfileCard extends StatelessWidget {
           ),
         ),
 
-        // ========= Info Card =========
         Positioned(
           bottom: 60.h,
           right: 16.w,
@@ -333,7 +336,7 @@ class _FrontProfileCard extends StatelessWidget {
             onFavoriteTap: onFavoriteTap,
             isFavorited: isFavorited,
             isVerified: isVerified,
-            city: city, // ✅ أضف
+            city: city,
             distanceKm: distanceKm,
           ),
         ),
@@ -341,7 +344,6 @@ class _FrontProfileCard extends StatelessWidget {
     );
   }
 
-  /// ✅ Placeholder جميل لما الصورة فاضية
   Widget _buildPlaceholder() {
     return Container(
       decoration: BoxDecoration(
@@ -421,7 +423,6 @@ class _BackProfileCard extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // ✅ Placeholder للكارت الخلفي لو مفيش صورة
         if (!hasBackImage)
           Container(
             decoration: BoxDecoration(
@@ -438,7 +439,6 @@ class _BackProfileCard extends StatelessWidget {
         else
           AppImage(backCover, fit: BoxFit.cover),
 
-        // ✅ Gradient فوق الكارت الخلفي
         Positioned.fill(
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -519,7 +519,6 @@ class _InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // double distance = 10;
     return _glassCard(
       borderRadius: 24,
       blur: useBlur ? 18 : 0,
@@ -581,8 +580,9 @@ class _InfoCard extends StatelessWidget {
                 ),
               ],
               SizedBox(width: 12.w),
-
-              isVerified ? AppImage(AssetsData.goldIcon) : SizedBox.shrink(),
+              isVerified
+                  ? AppImage(AssetsData.goldIcon)
+                  : const SizedBox.shrink(),
             ],
           ),
           Gap(5.h),
@@ -604,7 +604,6 @@ class _InfoCard extends StatelessWidget {
                   ),
                 ),
               ] else if (city != null && city!.isNotEmpty) ...[
-                // ✅ لو مفيش country، اعرض الـ city لوحده
                 Flexible(
                   child: Text(
                     city!,

@@ -53,7 +53,6 @@ class _AnimatedHistoryButtonState extends State<AnimatedHistoryButton> {
           vertical: _isExpanded ? 15.h : 0.h,
         ),
         decoration: BoxDecoration(
-          // ✅ gradient بس لما expanded | شفاف خالص لما collapsed
           gradient: _isExpanded
               ? LinearGradient(
                   colors: [AppColors.primary300, AppColors.primary200],
@@ -67,8 +66,6 @@ class _AnimatedHistoryButtonState extends State<AnimatedHistoryButton> {
           clipBehavior: Clip.none,
           alignment: Alignment.center,
           children: [
-            // ── لما expanded: النص بس ──
-            // ── لما collapsed: الأيكون بس ──
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 400),
               transitionBuilder: (child, animation) =>

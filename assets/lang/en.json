@@ -1793,5 +1793,6 @@
   "location_retry": "Retry",
   "location_permission_title": "Location permission required",
   "location_permission_desc": "We need your location to provide the best results and nearby partners.",
-  "location_fetch_error": "An error occurred while trying to fetch the location: "
+  "location_fetch_error": "An error occurred while trying to fetch the location: ",
+  "has_no_children": "No children"
 }

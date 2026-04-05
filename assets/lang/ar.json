@@ -1790,5 +1790,6 @@
   "location_retry": "إعادة المحاولة",
   "location_permission_title": "مطلوب إذن الوصول للموقع",
   "location_permission_desc": "نحتاج موقعك لتقديم أفضل النتائج وشركاء قريبين منك.",
-  "location_fetch_error": "حدث خطأ أثناء محاولة جلب الموقع: "
+  "location_fetch_error": "حدث خطأ أثناء محاولة جلب الموقع: ",
+  "has_no_children": "لا يوجد أطفال"
 }
