@@ -1321,6 +1321,42 @@ class AuthCubit extends Cubit<AuthState> {
     emit(state.copyWith(setOfferingsState: CubitStates.initial));
   }
 
+  /// ★★★ Reset شامل لكل بيانات الكيوبت ★★★
+  /// بتتنادي بعد نجاح submitOfferings
+  void resetEntireCubit() {
+    // 1. مسح كل الـ Controllers
+    emailController.clear();
+    nameAsConsultantController.clear();
+    bioController.clear();
+    certificateNameController.clear();
+    institutionNameController.clear();
+
+    // 2. مسح الصور والملفات
+    pickedCertificate = null;
+    pickedImage = null;
+    pickedVideo = null;
+    pickedNationalIds.clear();
+
+    // 3. مسح التواريخ
+    obtainDate = null;
+    birthDate = null;
+
+    // 4. مسح البيانات الشخصية
+    selectedGender = null;
+    specialization = null;
+    jobLevel = null;
+    experienceYears = null;
+
+    // 5. مسح الشهادات
+    certificates.clear();
+
+    // 6. مسح الفيديو لودنج
+    _isVideoLoading = false;
+
+    // 7. إعادة الـ State بالكامل للحالة الابتدائية
+    emit(AuthState());
+  }
+
   @override
   Future<void> close() {
     clearControllers();

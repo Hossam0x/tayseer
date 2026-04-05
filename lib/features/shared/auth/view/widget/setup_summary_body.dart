@@ -20,6 +20,7 @@ class SetupSummaryBody extends StatelessWidget {
             if (state.setOfferingsState == CubitStates.success) {
               // ★★★ Reset أولاً ★★★
               authCubit.resetSetOfferingsState();
+              authCubit.resetEntireCubit();
               context.pushNamed(AppRouter.kAccountReviewScreen);
             } else if (state.setOfferingsState == CubitStates.failure) {
               authCubit.resetSetOfferingsState();
