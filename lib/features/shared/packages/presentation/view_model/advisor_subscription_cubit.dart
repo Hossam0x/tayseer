@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/services/iap_service.dart';
 import 'package:tayseer/core/utils/api_endpoint.dart';
 import 'package:tayseer/core/utils/api_service.dart';
+import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/shared/packages/data/models/new_advisor_sub_model.dart';
 import 'packages_cubit.dart';
 
@@ -170,6 +171,11 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
 
       final pendingId = response['data']?['pendingId'] as String? ?? '';
       await _iapService.buyProduct(productId, uniqueNumber: pendingId);
+      // Notify all listeners that subscription changed
+      final newType = targetSub.subscriptionType; // 'gold' or 'ultra'
+      SubscriptionEventBus.instance.fire(
+        SubscriptionChangedEvent(subscriptionType: newType),
+      );
       emit(state.copyWith(status: AdvisorSubStatus.success));
     } catch (e) {
       final err = IAPErrorHandler.handle(e);

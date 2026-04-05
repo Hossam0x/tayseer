@@ -1,13 +1,27 @@
+import 'dart:async';
 import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
 import 'package:tayseer/features/advisor/membership/presentation/cubit/membership_state.dart';
+import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MembershipCubit extends Cubit<MembershipState> {
   final MembershipRepository _repository;
+  late final StreamSubscription<SubscriptionChangedEvent> _subSubscription;
 
   MembershipCubit(this._repository) : super(MembershipInitial()) {
     loadMembership();
+    _subSubscription = SubscriptionEventBus.instance.onSubscriptionChanged
+        .listen((_) {
+          if (isClosed) return;
+          loadMembership();
+        });
+  }
+
+  @override
+  Future<void> close() {
+    _subSubscription.cancel();
+    return super.close();
   }
 
   Future<void> loadMembership() async {
@@ -47,6 +61,10 @@ class MembershipCubit extends Cubit<MembershipState> {
           ),
         ),
         (_) async {
+          // Notify all listeners that subscription was cancelled → free
+          SubscriptionEventBus.instance.fire(
+            const SubscriptionChangedEvent(subscriptionType: 'free'),
+          );
           emit(
             current.copyWith(
               isCancelLoading: false,
