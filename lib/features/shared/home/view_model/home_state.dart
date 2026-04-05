@@ -50,6 +50,9 @@ class HomeState extends Equatable {
   bool get isLoadingMore => currentCategoryPosts.isLoadingMore;
   bool get loadMoreServerFailed => currentCategoryPosts.loadMoreServerFailed;
 
+  // ✅ NEW: O(1) lookup بدل O(n)
+  Map<String, PostModel> get postsMap => currentCategoryPosts.postsMap;
+
   // ─────────────────────────────────────────────────────────────────────────
   // 📦 Save Action State
   // ─────────────────────────────────────────────────────────────────────────
@@ -80,12 +83,14 @@ class HomeState extends Equatable {
   final String? blockUserMessage;
   final CubitStates blockUserActionState;
 
-  // ─────────────────────────────────────────────────────────────────────────  // 📡 Connectivity
-  // ───────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // 📡 Connectivity
+  // ─────────────────────────────────────────────────────────────────────────
   final bool isOffline;
   final bool isShowingCachedData;
 
-  // ───────────────────────────────────────────────────────────────────────  // 🗳️ Poll Vote
+  // ─────────────────────────────────────────────────────────────────────────
+  // 🗳️ Poll Vote
   // ─────────────────────────────────────────────────────────────────────────
   final String? pollVoteMessage;
   final CubitStates pollVoteActionState;
@@ -113,32 +118,25 @@ class HomeState extends Equatable {
     this.homeInfo,
     this.fetchNameAndImageState = CubitStates.initial,
     this.currentAdvisorStatus,
-
     // Save
     this.saveActionState = CubitStates.initial,
     this.saveMessage,
-
     // delete post
     this.deletePostMessage,
     this.deletePostActionState = CubitStates.initial,
-
     // hide post
     this.hidePostMessage,
     this.hidePostActionState = CubitStates.initial,
-
     // block user
     this.blockUserMessage,
     this.blockUserActionState = CubitStates.initial,
-
     // archive post
     this.archivePostMessage,
     this.archivePostActionState = CubitStates.initial,
     this.sessionStartModel,
-
     // poll vote
     this.pollVoteMessage,
     this.pollVoteActionState = CubitStates.initial,
-
     // connectivity
     this.isOffline = false,
     this.isShowingCachedData = false,
@@ -168,32 +166,25 @@ class HomeState extends Equatable {
     ImageAndNameModel? homeInfo,
     CubitStates? fetchNameAndImageState,
     AdvisorStatus? currentAdvisorStatus,
-
     // Save
     CubitStates? saveActionState,
     String? saveMessage,
-
     // delete post
     String? deletePostMessage,
     CubitStates? deletePostActionState,
-
     // hide post
     String? hidePostMessage,
     CubitStates? hidePostActionState,
-
     // block user
     String? blockUserMessage,
     CubitStates? blockUserActionState,
-
     // archive post
     String? archivePostMessage,
     CubitStates? archivePostActionState,
     SessionStartModel? sessionStartModel,
-
     // poll vote
     String? pollVoteMessage,
     CubitStates? pollVoteActionState,
-
     // connectivity
     bool? isOffline,
     bool? isShowingCachedData,
@@ -224,34 +215,27 @@ class HomeState extends Equatable {
       fetchNameAndImageState:
           fetchNameAndImageState ?? this.fetchNameAndImageState,
       currentAdvisorStatus: currentAdvisorStatus ?? this.currentAdvisorStatus,
-
       // Save
       saveActionState: saveActionState ?? this.saveActionState,
       saveMessage: saveMessage ?? this.saveMessage,
-
       // delete post
       deletePostMessage: deletePostMessage ?? this.deletePostMessage,
       deletePostActionState:
           deletePostActionState ?? this.deletePostActionState,
-
       // hide post
       hidePostMessage: hidePostMessage ?? this.hidePostMessage,
       hidePostActionState: hidePostActionState ?? this.hidePostActionState,
-
       // block user
       blockUserMessage: blockUserMessage ?? this.blockUserMessage,
       blockUserActionState: blockUserActionState ?? this.blockUserActionState,
-
       // archive post
       archivePostMessage: archivePostMessage ?? this.archivePostMessage,
       archivePostActionState:
           archivePostActionState ?? this.archivePostActionState,
       sessionStartModel: sessionStartModel ?? this.sessionStartModel,
-
       // poll vote
       pollVoteMessage: pollVoteMessage ?? this.pollVoteMessage,
       pollVoteActionState: pollVoteActionState ?? this.pollVoteActionState,
-
       // connectivity
       isOffline: isOffline ?? this.isOffline,
       isShowingCachedData: isShowingCachedData ?? this.isShowingCachedData,
@@ -262,7 +246,6 @@ class HomeState extends Equatable {
   // 🔧 Helper Methods
   // ─────────────────────────────────────────────────────────────────────────
 
-  /// إدراج بوست في مكان معين في كاتيجوري معينة (للـ Rollback)
   HomeState insertPostInCategory({
     required String? categoryId,
     required PostModel post,
@@ -270,19 +253,15 @@ class HomeState extends Equatable {
   }) {
     return updateCategoryPosts(categoryId, (data) {
       final posts = List<PostModel>.from(data.posts);
-
-      // إدراج البوست في مكانه الأصلي
       if (index >= 0 && index <= posts.length) {
         posts.insert(index, post);
       } else {
         posts.insert(0, post);
       }
-
       return data.copyWith(posts: posts);
     });
   }
 
-  /// تحديث بيانات كاتيجوري معينة
   HomeState updateCategoryPosts(
     String? categoryId,
     CategoryPostsData Function(CategoryPostsData) update,
@@ -295,7 +274,6 @@ class HomeState extends Equatable {
     return copyWith(categoryPostsMap: newMap);
   }
 
-  /// تحديث بوست معين في الكاتيجوري الحالية
   HomeState updatePostInCurrentCategory(
     String postId,
     PostModel Function(PostModel) update,
@@ -313,7 +291,6 @@ class HomeState extends Equatable {
     );
   }
 
-  /// تحديث بوست معين في كل الكاتيجوريز اللي موجود فيها
   HomeState updatePostInAllCategories(
     String postId,
     PostModel Function(PostModel) update,
@@ -337,13 +314,10 @@ class HomeState extends Equatable {
     return copyWith(categoryPostsMap: newMap);
   }
 
-  /// إعادة تعيين كل شيء للقيم الأولية (للريفريش الكامل)
   HomeState reset() {
     return HomeState(
-      // الحفاظ على بيانات اليوزر المخزنة
       homeInfo: homeInfo,
       fetchNameAndImageState: fetchNameAndImageState,
-      // الحفاظ على حالة الاتصال
       isOffline: isOffline,
     );
   }
@@ -353,56 +327,41 @@ class HomeState extends Equatable {
   // ─────────────────────────────────────────────────────────────────────────
   @override
   List<Object?> get props => [
-    // Posts
     categoryPostsMap,
     selectedCategoryId,
-    // Categories
     categoriesState,
     categories,
     categoriesErrorMessage,
     categoriesCurrentPage,
     categoriesHasMore,
     categoriesIsLoadingMore,
-    // Share
     shareActionState,
     shareMessage,
     isShareAdded,
     sharePostId,
-    // User Info
     homeInfo,
     fetchNameAndImageState,
     currentAdvisorStatus,
-    // Save
     saveActionState,
     saveMessage,
-
-    // delete post
     deletePostMessage,
     deletePostActionState,
-    // hide post
     hidePostMessage,
     hidePostActionState,
-    // block user
     blockUserMessage,
     blockUserActionState,
-
-    // archive post
     archivePostMessage,
     archivePostActionState,
     sessionStartModel,
-
-    // poll vote
     pollVoteMessage,
     pollVoteActionState,
-
-    // connectivity
     isOffline,
     isShowingCachedData,
   ];
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 📌 CATEGORY POSTS DATA - بيانات البوستات لكل كاتيجوري
+// 📌 CATEGORY POSTS DATA - ✅ معدّل بإضافة postsMap
 // ═══════════════════════════════════════════════════════════════════════════
 class CategoryPostsData extends Equatable {
   final CubitStates state;
@@ -416,9 +375,13 @@ class CategoryPostsData extends Equatable {
   final double? nextCursor;
   final bool loadMoreServerFailed;
 
+  // ✅ NEW: ماب للبحث السريع O(1) بدل O(n)
+  final Map<String, PostModel> postsMap;
+
   const CategoryPostsData({
     this.state = CubitStates.initial,
     this.posts = const [],
+    this.postsMap = const {}, // ✅ NEW
     this.errorMessage,
     this.currentLocalPage = 0,
     this.currentServerPage = 0,
@@ -429,16 +392,9 @@ class CategoryPostsData extends Equatable {
     this.loadMoreServerFailed = false,
   });
 
-  /// هل البيانات محملة وجاهزة للعرض
   bool get isLoaded => state == CubitStates.success && posts.isNotEmpty;
-
-  /// هل في حالة تحميل
   bool get isLoading => state == CubitStates.loading;
-
-  /// هل فشل التحميل
   bool get isError => state == CubitStates.failure;
-
-  /// هل فيه صفحات تانية ممكن نحملها (حسب المصدر الحالي)
   bool get hasMore => hasMoreLocal || hasMoreServer;
 
   CategoryPostsData copyWith({
@@ -453,9 +409,14 @@ class CategoryPostsData extends Equatable {
     double? nextCursor,
     bool? loadMoreServerFailed,
   }) {
+    final updatedPosts = posts ?? this.posts;
     return CategoryPostsData(
       state: state ?? this.state,
-      posts: posts ?? this.posts,
+      posts: updatedPosts,
+      // ✅ الماب يتبني تلقائي بس لما الـ posts تتغير
+      postsMap: posts != null
+          ? {for (final p in updatedPosts) p.postId: p}
+          : this.postsMap,
       errorMessage: errorMessage ?? this.errorMessage,
       currentLocalPage: currentLocalPage ?? this.currentLocalPage,
       currentServerPage: currentServerPage ?? this.currentServerPage,
@@ -471,6 +432,7 @@ class CategoryPostsData extends Equatable {
   List<Object?> get props => [
     state,
     posts,
+    // ⚠️ لا تضيف postsMap هنا — هو مشتق من posts
     errorMessage,
     currentLocalPage,
     currentServerPage,

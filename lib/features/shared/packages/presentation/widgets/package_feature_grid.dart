@@ -132,13 +132,29 @@ class _FeatureItem extends StatelessWidget {
 
   Widget _buildTitle() {
     return SizedBox(
-      width: 75.w,
-      child: Text(
-        feature.title,
-        textAlign: TextAlign.center,
-        style: Styles.textStyle12SemiBold.copyWith(color: textColor),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
+      width: 90.w,
+      child: Column(
+        children: [
+          Text(
+            feature.title,
+            textAlign: TextAlign.center,
+            style: Styles.textStyle12.copyWith(color: textColor),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (feature.subtitle != null) ...[
+            Text(
+              feature.subtitle!,
+              textAlign: TextAlign.center,
+              style: Styles.textStyle12SemiBold.copyWith(
+                color: textColor.withValues(alpha: 0.7),
+                fontSize: 9.sp,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
       ),
     );
   }

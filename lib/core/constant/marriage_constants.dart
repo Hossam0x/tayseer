@@ -332,55 +332,103 @@ class MarriageConstants {
 }
 
 class CountryFlagUtils {
-  static const Map<String, String> _flagMap = {
-    // Keys
-    'nationality_saudi': '🇸🇦',
-    'nationality_egyptian': '🇪🇬',
-    'nationality_emirati': '🇦🇪',
-    'nationality_kuwaiti': '🇰🇼',
-    'nationality_qatari': '🇶🇦',
-    'nationality_bahraini': '🇧🇭',
-    'nationality_jordanian': '🇯🇴',
-    'nationality_palestinian': '🇵🇸',
-    'nationality_moroccan': '🇲🇦',
-    'nationality_tunisian': '🇹🇳',
-    'country_saudi': '🇸🇦',
-    'country_egypt': '🇪🇬',
-    'country_emirati': '🇦🇪',
-    'country_kuwait': '🇰🇼',
-    'country_qatar': '🇶🇦',
-    'country_bahrain': '🇧🇭',
-    'country_jordan': '🇯🇴',
-    'country_palestine': '🇵🇸',
-    'country_morocco': '🇲🇦',
-    'country_tunisia': '🇹🇳',
+static const Map<String, String> _flagMap = {
+  // Keys
+  'nationality_saudi': '🇸🇦',
+  'nationality_egyptian': '🇪🇬',
+  'nationality_emirati': '🇦🇪',
+  'nationality_kuwaiti': '🇰🇼',
+  'nationality_qatari': '🇶🇦',
+  'nationality_bahraini': '🇧🇭',
+  'nationality_jordanian': '🇯🇴',
+  'nationality_palestinian': '🇵🇸',
+  'nationality_moroccan': '🇲🇦',
+  'nationality_tunisian': '🇹🇳',
+  'country_saudi': '🇸🇦',
+  'country_egypt': '🇪🇬',
+  'country_emirati': '🇦🇪',
+  'country_kuwait': '🇰🇼',
+  'country_qatar': '🇶🇦',
+  'country_bahrain': '🇧🇭',
+  'country_jordan': '🇯🇴',
+  'country_palestine': '🇵🇸',
+  'country_morocco': '🇲🇦',
+  'country_tunisia': '🇹🇳',
 
-    // ✅ النصوص العربية المترجمة كما تجي من الـ API
-    'السعودية': '🇸🇦',
-    'مصر': '🇪🇬',
-    'الإمارات': '🇦🇪',
-    'الكويت': '🇰🇼',
-    'قطر': '🇶🇦',
-    'البحرين': '🇧🇭',
-    'الأردن': '🇯🇴',
-    'فلسطين': '🇵🇸',
-    'المغرب': '🇲🇦',
-    'تونس': '🇹🇳',
+  // ✅ العربية
+  'السعودية': '🇸🇦',
+  'مصر': '🇪🇬',
+  'الإمارات': '🇦🇪',
+  'الكويت': '🇰🇼',
+  'قطر': '🇶🇦',
+  'البحرين': '🇧🇭',
+  'الأردن': '🇯🇴',
+  'فلسطين': '🇵🇸',
+  'المغرب': '🇲🇦',
+  'تونس': '🇹🇳',
+  'سعودي': '🇸🇦',
+  'مصري': '🇪🇬',
+  'إماراتي': '🇦🇪',
+  'كويتي': '🇰🇼',
+  'قطري': '🇶🇦',
+  'بحريني': '🇧🇭',
+  'أردني': '🇯🇴',
+  'فلسطيني': '🇵🇸',
+  'مغربي': '🇲🇦',
+  'تونسي': '🇹🇳',
 
-    // ✅ الجنسيات بالعربي
-    'سعودي': '🇸🇦',
-    'مصري': '🇪🇬',
-    'إماراتي': '🇦🇪',
-    'كويتي': '🇰🇼',
-    'قطري': '🇶🇦',
-    'بحريني': '🇧🇭',
-    'أردني': '🇯🇴',
-    'فلسطيني': '🇵🇸',
-    'مغربي': '🇲🇦',
-    'تونسي': '🇹🇳',
-  };
+  // ✅ الإنجليزية — الناقصة هي السبب في المشكلة
+  'Saudi Arabia': '🇸🇦',
+  'Egypt': '🇪🇬',
+  'UAE': '🇦🇪',
+  'United Arab Emirates': '🇦🇪',
+  'Kuwait': '🇰🇼',
+  'Qatar': '🇶🇦',
+  'Bahrain': '🇧🇭',
+  'Jordan': '🇯🇴',
+  'Palestine': '🇵🇸',
+  'Morocco': '🇲🇦',
+  'Tunisia': '🇹🇳',
+  'Libya': '🇱🇾',
+  'Algeria': '🇩🇿',
+  'Iraq': '🇮🇶',
+  'Syria': '🇸🇾',
+  'Lebanon': '🇱🇧',
+  'Yemen': '🇾🇪',
+  'Oman': '🇴🇲',
+  'Sudan': '🇸🇩',
 
-  static String getFlag(String countryKey) {
-    return _flagMap[countryKey.trim()] ?? '🌍';
+  // ✅ الجنسيات بالإنجليزي
+  'Saudi': '🇸🇦',
+  'Egyptian': '🇪🇬',
+  'Emirati': '🇦🇪',
+  'Kuwaiti': '🇰🇼',
+  'Qatari': '🇶🇦',
+  'Bahraini': '🇧🇭',
+  'Jordanian': '🇯🇴',
+  'Palestinian': '🇵🇸',
+  'Moroccan': '🇲🇦',
+  'Tunisian': '🇹🇳',
+  'Libyan': '🇱🇾',
+  'Algerian': '🇩🇿',
+  'Iraqi': '🇮🇶',
+  'Syrian': '🇸🇾',
+  'Lebanese': '🇱🇧',
+  'Yemeni': '🇾🇪',
+  'Omani': '🇴🇲',
+  'Sudanese': '🇸🇩',
+};
+static String getFlag(String countryKey) {
+  final trimmed = countryKey.trim();
+  // ✅ جرب مباشرة
+  if (_flagMap.containsKey(trimmed)) return _flagMap[trimmed]!;
+  
+  // ✅ جرب lowercase كـ fallback
+  final lower = trimmed.toLowerCase();
+  for (final entry in _flagMap.entries) {
+    if (entry.key.toLowerCase() == lower) return entry.value;
   }
+  
+  return '🌍';
+}
 }

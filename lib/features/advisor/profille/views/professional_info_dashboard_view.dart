@@ -2,7 +2,7 @@ import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_state.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/dashboard/analytics_chart.dart';
-import 'package:tayseer/features/advisor/profille/views/widgets/boost/boost_button_sliver.dart';
+import 'package:tayseer/features/advisor/profille/views/widgets/boost/upgrade_button.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/dashboard/dashboard_analysis_loading.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/dashboard/dashboard_analysis_section.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/dashboard/dashboard_chart_loading.dart';
@@ -59,6 +59,11 @@ class _ProfessionalInfoDashboardViewState
                   builder: (context, state) {
                     final isLoading =
                         state.analyticsState == CubitStates.loading;
+                    final subscriptionType =
+                        state.analytics?.subscriptionType ?? 'free';
+                    final isUltra = subscriptionType == 'ultra';
+                    final isGold = subscriptionType == 'gold';
+
                     return SingleChildScrollView(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,16 +85,20 @@ class _ProfessionalInfoDashboardViewState
                                   overview: state.analytics?.overview,
                                 ),
                           Gap(32.h),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 30.w),
-                            child: BoostButton(
-                              onPressed: () => Navigator.pushNamed(
-                                context,
-                                AppRouter.kPackagesView,
+                          if (!isUltra)
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 30.w),
+                              child: UpgradeButton(
+                                onPressed: () => Navigator.pushNamed(
+                                  context,
+                                  AppRouter.kPackagesView,
+                                  arguments: isGold ? {'initialPage': 2} : null,
+                                ),
+                                text: isGold
+                                    ? context.tr('upgrade_to_elite_button')
+                                    : context.tr('upgrade_button'),
                               ),
-                              text: context.tr('boost_button'),
                             ),
-                          ),
                         ],
                       ),
                     );

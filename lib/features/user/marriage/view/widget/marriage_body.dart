@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
+import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_state.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/animated_history_button.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/history_page.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/interaction_FilterChips.dart';
@@ -65,6 +67,9 @@ class MarriageBodyState extends State<MarriageBody>
   Timer? _scrollIdleTimer;
   static const Duration _scrollIdleDelay = Duration(milliseconds: 800);
 
+  bool get _isConsultantViewingProfile =>
+      widget.personId != null && selectedUserType == UserTypeEnum.asConsultant;
+
   InteractionsCubit get interactionsCubit {
     if (_interactionsCubit == null) {
       _interactionsCubit = getIt<InteractionsCubit>();
@@ -93,20 +98,29 @@ class MarriageBodyState extends State<MarriageBody>
 
     final cubit = context.read<MarriageCubit>();
 
-    // ✅ دايماً fetch البيانات بغض النظر عن الـ userType
-    cubit.fetchMarriageProfile(
-      seedFavoriteId: (cubit.seedPersonId != null && cubit.seedIsFavorite)
-          ? cubit.seedPersonId
-          : null,
-    );
+    if (widget.personId != null) {
+      cubit.fetchOnlySpecificProfile(widget.personId!);
+    } else {
+      cubit.fetchMarriageProfile(
+        seedFavoriteId: (cubit.seedPersonId != null && cubit.seedIsFavorite)
+            ? cubit.seedPersonId
+            : null,
+      );
+    }
+
     cubit.initAnimation(this);
 
-    // ✅ لو مستشار، بس اعرض الـ dialog من غير ما توقف الـ fetch
-    if (widget.personId != null &&
-        selectedUserType == UserTypeEnum.asConsultant) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<MarriageCubit>().fetchNotificationCount();
+    });
+
+    if (_isConsultantViewingProfile) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _showConsultantBlockedDialog();
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (!mounted) return;
+          _showConsultantBlockedDialog();
+        });
       });
     }
   }
@@ -168,6 +182,18 @@ class MarriageBodyState extends State<MarriageBody>
         cubit.setScrollingDown(false);
         widget.onScroll?.call(false);
       }
+    });
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // ✅ الإصلاح الرئيسي — sync الـ notification للـ InteractionsCubit
+  // بعد أي تفاعل من صفحة الـ interactions
+  // ════════════════════════════════════════════════════════════════
+  void _syncNotificationAfterInteraction() {
+    // ✅ اشتغل دايماً — مش بس لما fromInteractions
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      interactionsCubit.fetchAndSyncNotificationCount();
     });
   }
 
@@ -291,255 +317,43 @@ class MarriageBodyState extends State<MarriageBody>
     return users[idx].isPartialData;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return BlocConsumer<MarriageCubit, MarriageState>(
-      listenWhen: (previous, current) =>
-          previous.marriageProfileState != current.marriageProfileState ||
-          (previous.sendRegardState != current.sendRegardState &&
-              current.showActionSnackbar) ||
-          (previous.blockActionState != current.blockActionState &&
-              current.showActionSnackbar) ||
-          (previous.sendRegardTextState != current.sendRegardTextState &&
-              current.showActionSnackbar),
+  bool _hasActiveFilters(Map<String, dynamic> filters) {
+    if (filters.isEmpty) return false;
 
-      buildWhen: (previous, current) =>
-          previous.marriageProfileState != current.marriageProfileState ||
-          previous.allUsers != current.allUsers ||
-          previous.currentIndex != current.currentIndex ||
-          previous.isMarriageTab != current.isMarriageTab ||
-          previous.isScrollingDown != current.isScrollingDown ||
-          previous.swipeDirection != current.swipeDirection ||
-          previous.swipeProgress != current.swipeProgress ||
-          previous.isAnimating != current.isAnimating ||
-          previous.showHistory != current.showHistory ||
-          previous.selectedHistoryFilter != current.selectedHistoryFilter ||
-          previous.favoritedIds != current.favoritedIds ||
-          previous.isLoadingMore != current.isLoadingMore ||
-          previous.userHistory != current.userHistory,
-
-      listener: (context, state) {
-        if ((state.sendRegardState == CubitStates.failure ||
-                state.sendRegardTextState == CubitStates.failure) &&
-            state.showActionSnackbar) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: state.errorMessage ?? 'حدث خطأ ما',
-              isError: true,
-            ),
-          );
-          context.read<MarriageCubit>().resetState();
-        }
-
-        if (state.sendRegardState == CubitStates.success &&
-            state.showActionSnackbar) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (_) {
-              return AppImage(AssetsData.kSuccessMarriageAnimationsLottie);
-            },
-          );
-          Future.delayed(const Duration(seconds: 4), () {
-            if (context.mounted) context.pop();
-          });
-          context.read<MarriageCubit>().resetState();
-        }
-
-        if (state.blockActionState == CubitStates.success &&
-            state.showActionSnackbar) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('user_blocked_successfully'),
-              isError: false,
-            ),
-          );
-          context.read<MarriageCubit>().resetState();
-        }
-
-        if (state.blockActionState == CubitStates.failure &&
-            state.showActionSnackbar) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: state.blockMessage ?? context.tr('error_occurred'),
-              isError: true,
-            ),
-          );
-          context.read<MarriageCubit>().resetState();
-        }
-      },
-
-      builder: (context, state) {
-        if (state.marriageProfileState == CubitStates.loading) {
-          return _buildShimmerScreen();
-        }
-
-        if (state.marriageProfileState == CubitStates.failure) {
-          return _buildWithAppBar(
-            child: Center(
-              child: Text(
-                state.errorMessage ?? 'حدث خطأ ما',
-                style: const TextStyle(color: Colors.red, fontSize: 16),
-              ),
-            ),
-          );
-        }
-
-        final List<UserItem> allUsers = state.allUsers;
-
-        if (_isCurrentProfilePartial(state, allUsers)) {
-          return _buildShimmerScreen();
-        }
-
-        final List<UserItem> users = widget.personId != null
-            ? () {
-                final filtered = allUsers
-                    .where((p) => p.user?.id == widget.personId)
-                    .toList();
-
-                if (filtered.isNotEmpty && filtered.first.isPartialData) {
-                  return <UserItem>[];
-                }
-
-                if (filtered.isEmpty &&
-                    state.marriageProfileState == CubitStates.success) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    context.read<MarriageCubit>().fetchSpecificProfile(
-                      widget.personId!,
-                    );
-                  });
-                }
-                return filtered.isNotEmpty ? filtered : allUsers;
-              }()
-            : allUsers;
-
-        if (widget.personId != null) {
-          final targetUser = allUsers
-              .where((u) => u.user?.id == widget.personId)
-              .firstOrNull;
-          if (targetUser != null && targetUser.isPartialData) {
-            return _buildShimmerScreen();
-          }
-        }
-
-        if (users.isEmpty) {
-          return AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: state.isMarriageTab
-                ? _buildWithAppBar(
-                    key: const ValueKey('empty_marriage'),
-                    child: _buildEmptyMarriage(context.read<MarriageCubit>()),
-                  )
-                : _buildInteractionsContent(
-                    key: const ValueKey('interactions'),
-                    state: state,
-                  ),
-          );
-        }
-
-        int profileIndex = state.currentIndex;
-        if (profileIndex >= users.length) {
-          profileIndex = users.length - 1;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            context.read<MarriageCubit>().clampCurrentIndex(
-              usersLength: users.length,
-            );
-          });
-        }
-
-        // ✅ GUARD 5: final safety check — if profile at index is partial, shimmer
-        if (users[profileIndex].isPartialData) {
-          return _buildShimmerScreen();
-        }
-
-        return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: state.isMarriageTab
-              ? _buildMarriageContent(
-                  personId: widget.personId ?? "",
-                  key: const ValueKey('marriage'),
-                  state: state,
-                  profileIndex: profileIndex,
-                  users: users,
-                )
-              : _buildInteractionsContent(
-                  key: const ValueKey('interactions'),
-                  state: state,
-                ),
-        );
-      },
+    final hasNonAgeFilter = filters.entries.any(
+      (e) =>
+          e.key != 'minAge' &&
+          e.key != 'maxAge' &&
+          e.value != null &&
+          e.value.toString().isNotEmpty &&
+          e.value != 'no_preference' &&
+          e.value != false,
     );
+
+    if (hasNonAgeFilter) return true;
+
+    final minAge = filters['minAge'];
+    final maxAge = filters['maxAge'];
+    if (minAge != null || maxAge != null) {
+      final min = (minAge is num) ? minAge.toInt() : 22;
+      final max = (maxAge is num) ? maxAge.toInt() : 35;
+      return min != 22 || max != 35;
+    }
+
+    return false;
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // APP BAR WRAPPER
-  // ═══════════════════════════════════════════════════════════════
-  Widget _buildWithAppBar({Key? key, required Widget child}) {
-    return Directionality(
-      key: key,
-      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
-      child: CustomBackground(
-        child: Column(
-          children: [
-            SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Center(child: _buildToggle()),
-                    Positioned(
-                      right: 0,
-                      child: GestureDetector(
-                        onTap: () {
-                          context.pushNamed(AppRouter.kMarriageFilterView);
-                        },
-                        child: CircleAvatar(
-                          backgroundColor: Colors.black12,
-                          child: AppImage(
-                            AssetsData.kfilterIcon,
-                            width: 20,
-                            height: 20,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 0,
-                      child: AnimatedBeFirstButton(
-                        onTap: () {
-                          context.pushNamed(AppRouter.kBoostAccountView);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Expanded(child: child),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ═══════════════════════════════════════════════════════════════
-  // EMPTY STATE
-  // ═══════════════════════════════════════════════════════════════
-  Widget _buildEmptyMarriage(MarriageCubit cubit) {
-    final filters = cubit.state.activeFilters;
-
-    // ✅ فلتر حقيقي = أي حاجة غير minAge/maxAge
-    final hasActiveFilters =
-        filters.isNotEmpty &&
-        filters.keys.any((key) => key != 'minAge' && key != 'maxAge');
+  Widget _buildEmptyMarriage(MarriageCubit cubit, MarriageState state) {
+    final hasActiveFilters = state.activeFilters.isNotEmpty;
 
     return RefreshIndicator.adaptive(
-      onRefresh: () => cubit.refreshProfile(),
+      onRefresh: () async {
+        if (hasActiveFilters) {
+          await cubit.clearFiltersAndRefresh();
+        } else {
+          await cubit.refreshProfile();
+        }
+      },
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
@@ -601,6 +415,260 @@ class MarriageBodyState extends State<MarriageBody>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocConsumer<MarriageCubit, MarriageState>(
+      listenWhen: (previous, current) =>
+          previous.marriageProfileState != current.marriageProfileState ||
+          (previous.sendRegardState != current.sendRegardState &&
+              current.showActionSnackbar) ||
+          (previous.blockActionState != current.blockActionState &&
+              current.showActionSnackbar) ||
+          (previous.sendRegardTextState != current.sendRegardTextState &&
+              current.showActionSnackbar),
+
+      buildWhen: (previous, current) =>
+          previous.marriageProfileState != current.marriageProfileState ||
+          previous.allUsers != current.allUsers ||
+          previous.currentIndex != current.currentIndex ||
+          previous.isMarriageTab != current.isMarriageTab ||
+          previous.isScrollingDown != current.isScrollingDown ||
+          previous.swipeDirection != current.swipeDirection ||
+          previous.swipeProgress != current.swipeProgress ||
+          previous.isAnimating != current.isAnimating ||
+          previous.showHistory != current.showHistory ||
+          previous.selectedHistoryFilter != current.selectedHistoryFilter ||
+          previous.favoritedIds != current.favoritedIds ||
+          previous.isLoadingMore != current.isLoadingMore ||
+          previous.userHistory != current.userHistory ||
+          previous.activeFilters != current.activeFilters ||
+          previous.interactionsNotificationCount !=
+              current.interactionsNotificationCount ||
+          previous.likesNotificationCount != current.likesNotificationCount,
+
+      listener: (context, state) {
+        if ((state.sendRegardState == CubitStates.failure ||
+                state.sendRegardTextState == CubitStates.failure) &&
+            state.showActionSnackbar) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: state.errorMessage ?? context.tr('error_occurred'),
+              isError: true,
+            ),
+          );
+          context.read<MarriageCubit>().resetState();
+        }
+
+        if (state.sendRegardState == CubitStates.success &&
+            state.showActionSnackbar) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) {
+              return AppImage(AssetsData.kSuccessMarriageAnimationsLottie);
+            },
+          );
+          Future.delayed(const Duration(seconds: 4), () {
+            if (context.mounted) context.pop();
+          });
+          context.read<MarriageCubit>().resetState();
+        }
+
+        if (state.blockActionState == CubitStates.success &&
+            state.showActionSnackbar) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('user_blocked_successfully'),
+              isError: false,
+            ),
+          );
+          context.read<MarriageCubit>().resetState();
+        }
+
+        if (state.blockActionState == CubitStates.failure &&
+            state.showActionSnackbar) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: state.blockMessage ?? context.tr('error_occurred'),
+              isError: true,
+            ),
+          );
+          context.read<MarriageCubit>().resetState();
+        }
+      },
+
+      builder: (context, state) {
+        if (state.marriageProfileState == CubitStates.loading) {
+          return _buildShimmerScreen();
+        } else if (state.marriageProfileState == CubitStates.failure) {
+          return _isConsultantViewingProfile
+              ? _buildConsultantErrorScreen(state.errorMessage)
+              : _buildWithAppBar(
+                  child: CustomErrorView(
+                    message: state.errorMessage ?? context.tr('error_occurred'),
+                    onRetry: () =>
+                        context.read<MarriageCubit>().refreshProfile(),
+                  ),
+                );
+        }
+
+        final List<UserItem> allUsers = state.allUsers;
+
+        if (_isCurrentProfilePartial(state, allUsers)) {
+          return _buildShimmerScreen();
+        }
+
+        final List<UserItem> users = widget.personId != null
+            ? () {
+                final filtered = allUsers
+                    .where((p) => p.user?.id == widget.personId)
+                    .toList();
+
+                if (filtered.isNotEmpty && filtered.first.isPartialData) {
+                  return <UserItem>[];
+                }
+
+                if (filtered.isEmpty &&
+                    state.marriageProfileState == CubitStates.success) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    context.read<MarriageCubit>().fetchSpecificProfile(
+                      widget.personId!,
+                    );
+                  });
+                }
+                return filtered.isNotEmpty ? filtered : allUsers;
+              }()
+            : allUsers;
+
+        if (widget.personId != null) {
+          final targetUser = allUsers
+              .where((u) => u.user?.id == widget.personId)
+              .firstOrNull;
+          if (targetUser != null && targetUser.isPartialData) {
+            return _buildShimmerScreen();
+          }
+        }
+
+        if (users.isEmpty) {
+          return AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: state.isMarriageTab
+                ? _buildWithAppBar(
+                    key: const ValueKey('empty_marriage'),
+                    child: _buildEmptyMarriage(
+                      context.read<MarriageCubit>(),
+                      state,
+                    ),
+                  )
+                : _buildInteractionsContent(
+                    key: const ValueKey('interactions'),
+                    state: state,
+                  ),
+          );
+        }
+
+        int profileIndex = state.currentIndex;
+        if (profileIndex >= users.length) {
+          profileIndex = users.length - 1;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            context.read<MarriageCubit>().clampCurrentIndex(
+              usersLength: users.length,
+            );
+          });
+        }
+
+        if (users[profileIndex].isPartialData) {
+          return _buildShimmerScreen();
+        }
+
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: state.isMarriageTab
+              ? _buildMarriageContent(
+                  personId: widget.personId ?? "",
+                  key: const ValueKey('marriage'),
+                  state: state,
+                  profileIndex: profileIndex,
+                  users: users,
+                )
+              : _buildInteractionsContent(
+                  key: const ValueKey('interactions'),
+                  state: state,
+                ),
+        );
+      },
+    );
+  }
+
+  Widget _buildConsultantErrorScreen(String? errorMessage) {
+    return Directionality(
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+      child: CustomBackground(
+        child: SafeArea(
+          child: Center(
+            child: Text(
+              errorMessage ?? context.tr('error_occurred'),
+              style: const TextStyle(color: Colors.red, fontSize: 16),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWithAppBar({Key? key, required Widget child}) {
+    return Directionality(
+      key: key,
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+      child: CustomBackground(
+        child: Column(
+          children: [
+            SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Center(child: _buildToggle()),
+                    Positioned(
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: () {
+                          context.pushNamed(AppRouter.kMarriageFilterView);
+                        },
+                        child: CircleAvatar(
+                          backgroundColor: Colors.black12,
+                          child: AppImage(
+                            AssetsData.kfilterIcon,
+                            width: 20,
+                            height: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 0,
+                      child: AnimatedBeFirstButton(
+                        onTap: () {
+                          context.pushNamed(AppRouter.kBoostAccountView);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(child: child),
+          ],
+        ),
       ),
     );
   }
@@ -733,20 +801,25 @@ class MarriageBodyState extends State<MarriageBody>
     required List<UserItem> users,
   }) {
     final profile = users[profileIndex];
-
     if (profile.isPartialData) return _buildShimmerScreen();
 
     final user = profile.user;
     final answers = profile.answers;
-    final images = answers?.userMedia?.image ?? [];
 
-    final List<String> validImages = images
+    // ✅ الإصلاح — user.image كأول صورة لو مش موجودة في userMedia
+    final List<String> validImages = (answers?.userMedia?.image ?? [])
         .where((img) => img.isNotEmpty)
         .toList();
 
+    final String? mainImage = user?.image;
+    final bool mainImageAlreadyIncluded =
+        mainImage != null && validImages.any((img) => img == mainImage);
+
     final List<String> displayImages = validImages.isNotEmpty
-        ? validImages
-        : (user?.image != null && user!.image!.isNotEmpty ? [user.image!] : []);
+        ? (mainImageAlreadyIncluded
+              ? validImages
+              : [if (mainImage != null) mainImage, ...validImages])
+        : (mainImage != null ? [mainImage] : []);
 
     final cubit = context.read<MarriageCubit>();
 
@@ -760,8 +833,24 @@ class MarriageBodyState extends State<MarriageBody>
     final nextProfile = hasNext ? users[profileIndex + 1] : null;
     final nextUser = nextProfile?.user;
     final nextAnswers = nextProfile?.answers;
-    final List<String> nextImages = nextAnswers?.userMedia?.image ?? [];
 
+    // ✅ الإصلاح للـ next profile كمان
+    final List<String> nextValidImages = (nextAnswers?.userMedia?.image ?? [])
+        .where((img) => img.isNotEmpty)
+        .toList();
+
+    final String? nextMainImage = nextUser?.image;
+    final bool nextMainIncluded =
+        nextMainImage != null &&
+        nextValidImages.any((img) => img == nextMainImage);
+
+    final List<String> nextImages = nextValidImages.isNotEmpty
+        ? (nextMainIncluded
+              ? nextValidImages
+              : [if (nextMainImage != null) nextMainImage, ...nextValidImages])
+        : (nextMainImage != null ? [nextMainImage] : []);
+
+    // ── باقي الكود زي ما هو بدون أي تغيير ──
     final bool isSubscribed = _interactionsCubit?.state.isSubscribed ?? false;
 
     final bool shouldBlurImages;
@@ -777,9 +866,32 @@ class MarriageBodyState extends State<MarriageBody>
         ? _buildTimelineEventsFromAnswers(answers!.yourGoals!)
         : <Map<String, dynamic>>[];
 
-    final bool canInteract = widget.fromInteractions
-        ? true
-        : (profile.allowInteractions ?? true);
+    final bool isViewingSharedProfile = widget.personId != null;
+    final bool isSameGender;
+
+    if (selectedGender == Gender.male) {
+      final hasHijab =
+          answers?.aboutMe?.wearHijab != null &&
+          answers!.aboutMe!.wearHijab!.isNotEmpty;
+      isSameGender = !hasHijab;
+    } else {
+      final hasHijab =
+          answers?.aboutMe?.wearHijab != null &&
+          answers!.aboutMe!.wearHijab!.isNotEmpty;
+      isSameGender = hasHijab;
+    }
+
+    final bool canInteract;
+    if (_isConsultantViewingProfile) {
+      canInteract = false;
+    } else if (isSameGender && !isViewingSharedProfile) {
+      canInteract = false;
+    } else {
+      canInteract = widget.fromInteractions
+          ? true
+          : (profile.allowInteractions ?? true);
+    }
+
     final faithItems = _buildFaithItems(answers);
 
     return Directionality(
@@ -796,6 +908,8 @@ class MarriageBodyState extends State<MarriageBody>
                 controller: _mainScrollController,
                 slivers: [
                   SliverProfileHeader(
+                    city: user?.city,
+                    distanceKm: user?.distanceKm,
                     isVerified: isVerifiedUser,
                     nextIsVerified: hasNext
                         ? (nextUser?.isVerified ?? false)
@@ -809,9 +923,12 @@ class MarriageBodyState extends State<MarriageBody>
                     educationLevel: "🎓 ${_tr(user?.about?.educationLevel)}",
                     religiousCommitment:
                         "🕌 ${_tr(user?.about?.religiousCommitment)}",
-                    nationality: "🌍 ${_tr(user?.about?.nationality)}",
+                    nationality:
+                        "${CountryFlagUtils.getFlag(_tr(user?.about?.nationality))} ${_tr(user?.about?.nationality)}",
                     height: "📏 ${user?.about?.height ?? ''}",
-                    toggleWidget: _buildToggle(),
+                    toggleWidget: _isConsultantViewingProfile
+                        ? null
+                        : _buildToggle(),
                     swipeDirection: state.swipeDirection,
                     swipeProgress: state.swipeProgress,
                     shouldBlur: shouldBlurImages,
@@ -835,7 +952,7 @@ class MarriageBodyState extends State<MarriageBody>
                         ? "🕌 ${_tr(nextUser?.about?.religiousCommitment)}"
                         : null,
                     nextNationality: hasNext
-                        ? "🌍 ${_tr(nextUser?.about?.nationality)}"
+                        ? "${CountryFlagUtils.getFlag(_tr(nextUser?.about?.nationality))} ${_tr(nextUser?.about?.nationality)}"
                         : null,
                     nextHeight: hasNext
                         ? "📏 ${nextUser?.about?.height ?? ''}"
@@ -853,9 +970,9 @@ class MarriageBodyState extends State<MarriageBody>
                                   widget.personId == null &&
                                   !widget.fromInteractions,
                             );
-                            if (widget.fromInteractions && mounted) {
+                            _syncNotificationAfterInteraction();
+                            if (widget.fromInteractions && mounted)
                               context.pop();
-                            }
                           }
                         : null,
                   ),
@@ -1105,18 +1222,19 @@ class MarriageBodyState extends State<MarriageBody>
                     ),
                   ),
 
-                  SliverPadding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 10.h,
-                    ),
-                    sliver: SliverToBoxAdapter(
-                      child: MessageInputSection(
-                        name: user?.name ?? '',
-                        personId: user?.id ?? '',
+                  if (!_isConsultantViewingProfile)
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 10.h,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: MessageInputSection(
+                          name: user?.name ?? '',
+                          personId: user?.id ?? '',
+                        ),
                       ),
                     ),
-                  ),
 
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
@@ -1179,115 +1297,123 @@ class MarriageBodyState extends State<MarriageBody>
               ),
             ),
 
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutCubic,
-              bottom: state.isScrollingDown ? 30.h : 130.h,
-              left: 0,
-              right: 0,
-              child: canInteract
-                  ? IgnorePointer(
-                      ignoring: state.isAnimating,
-                      child: Row(
-                        mainAxisAlignment: state.userHistory.isEmpty
-                            ? MainAxisAlignment.spaceAround
-                            : MainAxisAlignment.spaceEvenly,
-                        children: [
-                          buildCircleButton(
-                            onTap: () async {
-                              await _showSwipePopup(
-                                context,
-                                SwipeActionType.like,
-                              );
-                              if (widget.fromInteractions) {
-                                cubit.userInteraction(
-                                  personId: profile.user?.id ?? '',
-                                  interactionType: 'like',
-                                );
-                              } else {
-                                await cubit.swipeLike(
-                                  personId: profile.user?.id ?? '',
-                                  usersLength: users.length,
-                                  hasSinglePerson: widget.personId != null,
-                                );
-                                if (widget.personId == null && mounted) {
-                                  _resetScrollTracking();
-                                  scrollToTop();
-                                }
-                              }
-                              if (widget.fromInteractions && mounted) {
-                                context.pop();
-                              }
-                            },
-                            Icons.check,
-                            AppColors.kprimaryTextColor,
-                            HexColor('f8d3da'),
-                          ),
+            if (!_isConsultantViewingProfile)
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                bottom: state.isScrollingDown ? 30.h : 130.h,
+                left: 0,
+                right: 0,
+                child: canInteract
+                    ? IgnorePointer(
+                        ignoring: state.isAnimating,
+                        child: Row(
+                          mainAxisAlignment: state.userHistory.isEmpty
+                              ? MainAxisAlignment.spaceAround
+                              : MainAxisAlignment.spaceEvenly,
+                          children: [
+                            const SizedBox.shrink(),
 
-                          buildCircleButton(
-                            onTap: () async {
-                              cubit.sendRegard(
-                                personId: profile.user?.id ?? '',
-                              );
-                            },
-                            Icons.star,
-                            Colors.white,
-                            HexColor('cccab3'),
-                          ),
-
-                          buildCircleButton(
-                            onTap: () async {
-                              await _showSwipePopup(
-                                context,
-                                SwipeActionType.dislike,
-                              );
-                              if (widget.fromInteractions) {
-                                cubit.userInteraction(
-                                  personId: profile.user?.id ?? '',
-                                  interactionType: 'dislike',
-                                );
-                              } else {
-                                await cubit.swipeDislike(
-                                  personId: profile.user?.id ?? '',
-                                  usersLength: users.length,
-                                  hasSinglePerson: widget.personId != null,
-                                );
-                                if (widget.personId == null && mounted) {
-                                  _resetScrollTracking();
-                                  scrollToTop();
-                                }
-                              }
-                              if (widget.fromInteractions && mounted) {
-                                context.pop();
-                              }
-                            },
-                            Icons.close,
-                            Colors.white,
-                            HexColor('e44e6c'),
-                          ),
-
-                          if (state.userHistory.isNotEmpty)
                             buildCircleButton(
                               onTap: () async {
-                                final cubit = context.read<MarriageCubit>();
-                                cubit.goBackToPreviousUser();
-                                _resetScrollTracking();
-                                scrollToTop();
+                                await _showSwipePopup(
+                                  context,
+                                  SwipeActionType.like,
+                                );
+                                if (widget.fromInteractions) {
+                                  cubit.userInteraction(
+                                    personId: profile.user?.id ?? '',
+                                    interactionType: 'like',
+                                  );
+                                  _syncNotificationAfterInteraction();
+                                  if (mounted) context.pop();
+                                } else {
+                                  await cubit.swipeLike(
+                                    personId: profile.user?.id ?? '',
+                                    usersLength: users.length,
+                                    hasSinglePerson: widget.personId != null,
+                                  );
+                                  if (widget.personId == null && mounted) {
+                                    _resetScrollTracking();
+                                    scrollToTop();
+                                  }
+                                }
                               },
-                              isArabic
-                                  ? Icons.subdirectory_arrow_left_outlined
-                                  : Icons.subdirectory_arrow_right_outlined,
+                              Icons.check,
+                              AppColors.kprimaryTextColor,
+                              HexColor('f8d3da'),
+                            ),
+
+                            buildCircleButton(
+                              onTap: () async {
+                                cubit.sendRegard(
+                                  personId: profile.user?.id ?? '',
+                                );
+                                _syncNotificationAfterInteraction();
+                              },
+                              Icons.star,
                               Colors.white,
-                              flipVertical: true,
-                              AppColors.primary200,
-                            )
-                          else
-                            const SizedBox.shrink(),
-                        ],
-                      ),
-                    )
-                  : const SizedBox.shrink(),
-            ),
+                              HexColor('cccab3'),
+                            ),
+
+                            buildCircleButton(
+                              onTap: () async {
+                                await _showSwipePopup(
+                                  context,
+                                  SwipeActionType.dislike,
+                                );
+                                if (widget.fromInteractions) {
+                                  cubit.userInteraction(
+                                    personId: profile.user?.id ?? '',
+                                    interactionType: 'dislike',
+                                  );
+                                  _syncNotificationAfterInteraction();
+                                  if (mounted) context.pop();
+                                } else {
+                                  await cubit.swipeDislike(
+                                    personId: profile.user?.id ?? '',
+                                    usersLength: users.length,
+                                    hasSinglePerson: widget.personId != null,
+                                  );
+                                  if (widget.personId == null && mounted) {
+                                    _resetScrollTracking();
+                                    scrollToTop();
+                                  }
+                                }
+                              },
+                              Icons.close,
+                              Colors.white,
+                              HexColor('e44e6c'),
+                            ),
+
+                            if (state.userHistory.isNotEmpty)
+                              buildCircleButton(
+                                onTap: () async {
+                                  final cubit = context.read<MarriageCubit>();
+                                  cubit.emitSwipeLikeDislikeAnimation(
+                                    direction: -1,
+                                  );
+                                  await Future.delayed(
+                                    const Duration(milliseconds: 250),
+                                  );
+                                  cubit.goBackToPreviousUser();
+                                  _resetScrollTracking();
+                                  scrollToTop();
+                                },
+                                isArabic
+                                    ? Icons.subdirectory_arrow_left_outlined
+                                    : Icons.subdirectory_arrow_right_outlined,
+                                Colors.white,
+                                flipVertical: true,
+                                AppColors.primary200,
+                              )
+                            else
+                              const SizedBox.shrink(),
+                          ],
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
           ],
         ),
       ),
@@ -1337,20 +1463,36 @@ class MarriageBodyState extends State<MarriageBody>
                           ),
                           Positioned(
                             left: 0,
-                            child: AnimatedHistoryButton(
-                              onTap: () {
-                                cubit.showHistoryView();
-                                WidgetsBinding.instance.addPostFrameCallback((
-                                  _,
-                                ) {
-                                  Future.delayed(
-                                    const Duration(milliseconds: 150),
-                                    () =>
-                                        _historyKey.currentState?.scrollToTop(),
-                                  );
-                                });
-                              },
-                            ),
+                            // ✅ الإصلاح: اقرأ الـ count من InteractionsCubit مباشرة
+                            child:
+                                BlocBuilder<
+                                  InteractionsCubit,
+                                  InteractionsState
+                                >(
+                                  bloc: interactionsCubit,
+                                  buildWhen: (prev, curr) =>
+                                      prev.totalNotificationCount !=
+                                      curr.totalNotificationCount,
+                                  builder: (context, interactionsState) {
+                                    return AnimatedHistoryButton(
+                                      notificationCount: interactionsState
+                                          .totalNotificationCount,
+                                      onTap: () {
+                                        cubit.showHistoryView();
+                                        WidgetsBinding.instance
+                                            .addPostFrameCallback((_) {
+                                              Future.delayed(
+                                                const Duration(
+                                                  milliseconds: 150,
+                                                ),
+                                                () => _historyKey.currentState
+                                                    ?.scrollToTop(),
+                                              );
+                                            });
+                                      },
+                                    );
+                                  },
+                                ),
                           ),
                         ],
                       ),
@@ -1387,6 +1529,7 @@ class MarriageBodyState extends State<MarriageBody>
             FilterChips(
               onFilterChanged: (filterKey) {
                 cubit.setHistoryFilter(filterKey);
+                cubit.resetNotificationForFilter(filterKey);
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   Future.delayed(
                     const Duration(milliseconds: 100),
@@ -1431,9 +1574,6 @@ class MarriageBodyState extends State<MarriageBody>
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // SHIMMER
-  // ═══════════════════════════════════════════════════════════════
   Widget _buildShimmerScreen() {
     return Directionality(
       textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,

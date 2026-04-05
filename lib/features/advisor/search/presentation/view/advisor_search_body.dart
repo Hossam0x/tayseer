@@ -218,22 +218,22 @@ class _AllResultsTab extends StatelessWidget {
     if (index >= 0) onTabSelected(index);
   }
 
-  // في الـ all tab نعرض بيانات من كل الـ tabs
-  List get _advisors => state.tabData('advisors').advisors.isNotEmpty
-      ? state.tabData('advisors').advisors
-      : state.tabData('all').advisors;
+  // في الـ all tab نعرض بيانات من الـ all tab أولاً، ولو الـ tab المخصص اتفتح نعرض بياناته
+  List get _advisors => state.tabData('all').advisors.isNotEmpty
+      ? state.tabData('all').advisors
+      : state.tabData('advisors').advisors;
 
-  List get _users => state.tabData('users').users.isNotEmpty
-      ? state.tabData('users').users
-      : state.tabData('all').users;
+  List get _users => state.tabData('all').users.isNotEmpty
+      ? state.tabData('all').users
+      : state.tabData('users').users;
 
-  List get _posts => state.tabData('posts').posts.isNotEmpty
-      ? state.tabData('posts').posts
-      : state.tabData('all').posts;
+  List get _posts => state.tabData('all').posts.isNotEmpty
+      ? state.tabData('all').posts
+      : state.tabData('posts').posts;
 
-  List get _events => state.tabData('events').events.isNotEmpty
-      ? state.tabData('events').events
-      : state.tabData('all').events;
+  List get _events => state.tabData('all').events.isNotEmpty
+      ? state.tabData('all').events
+      : state.tabData('events').events;
 
   @override
   Widget build(BuildContext context) {

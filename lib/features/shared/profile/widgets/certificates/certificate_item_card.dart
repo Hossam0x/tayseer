@@ -1,9 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/features/shared/profile/data/models/certificate_model.dart';
-import 'package:tayseer/features/advisor/profille/views/add_certificate_view.dart';
 import 'package:tayseer/features/shared/profile/cubit/certificates/certificates_cubit.dart';
-import 'package:tayseer/features/advisor/profille/views/edit_certificate_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class CertificateItemCard extends StatelessWidget {
@@ -22,12 +20,10 @@ class CertificateItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     if (certificate.nameCertificate.isEmpty) return const SizedBox.shrink();
 
-    // Unique hero tag per certificate so animations don't clash
     final heroTag = 'certificate_image_${certificate.id}';
 
     return GestureDetector(
-      onTap: () =>
-          isMe ? _navigateToEditCertificate(context, certificate) : null,
+      onTap: () => isMe ? _navigateToEdit(context) : null,
       child: Container(
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
@@ -48,51 +44,22 @@ class CertificateItemCard extends StatelessWidget {
     );
   }
 
-  void _navigateToEditCertificate(
-    BuildContext context,
-    CertificateModel selectedCertificate,
-  ) {
-    final certificatesCubit = context.read<CertificatesCubit>();
-
-    Navigator.push(
+  void _navigateToEdit(BuildContext context) {
+    final cubit = context.read<CertificatesCubit>();
+    Navigator.pushNamed(
       context,
-      PageRouteBuilder(
-        settings: const RouteSettings(name: AppRouter.kEditCertificateView),
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return BlocProvider.value(
-            value: certificatesCubit,
-            child: EditCertificateView(
-              certificates: certificatesCubit.state.certificates,
-              selectedCertificate: selectedCertificate,
-            ),
-          );
-        },
-        transitionsBuilder: _slideTransition,
-      ),
+      AppRouter.kEditCertificateView,
+      arguments: {
+        'certificatesCubit': cubit,
+        'certificates': cubit.state.certificates,
+        'selectedCertificate': certificate,
+      },
     ).then((result) {
-      if (result != null && result is CertificateModel) {
-        certificatesCubit.updateCertificateLocally(result);
-        // Removed refresh call to avoid full refetch
-      } else if (result != null && result is Map && result['updated'] == true) {
-        if (result['certificate'] != null) {
-          certificatesCubit.updateCertificateLocally(result['certificate']);
-        }
-        // certificatesCubit.refresh(advisorId: advisorId); // Avoid refreshing if possible
+      if (!context.mounted) return;
+      if (result is CertificateModel) {
+        cubit.updateCertificateLocally(result);
       }
     });
-  }
-
-  Widget _slideTransition(
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-    Widget child,
-  ) {
-    const begin = Offset(1.0, 0.0);
-    const end = Offset.zero;
-    const curve = Curves.easeInOutCubic;
-    final tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-    return SlideTransition(position: animation.drive(tween), child: child);
   }
 }
 
@@ -129,7 +96,7 @@ class _CertificateImage extends StatelessWidget {
                   child: Image.network(
                     imageUrl!,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Icon(
+                    errorBuilder: (_, __, ___) => Icon(
                       Icons.school,
                       color: Colors.grey.shade400,
                       size: 22.w,
@@ -178,31 +145,4 @@ class _CertificateDetails extends StatelessWidget {
       ],
     );
   }
-}
-
-/// Navigate to add certificate view with slide transition.
-void navigateToAddCertificate(BuildContext context, String advisorId) {
-  Navigator.push(
-    context,
-    PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) =>
-          const AddCertificateView(),
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(1.0, 0.0);
-        const end = Offset.zero;
-        const curve = Curves.easeInOutCubic;
-        final tween = Tween(
-          begin: begin,
-          end: end,
-        ).chain(CurveTween(curve: curve));
-        return SlideTransition(position: animation.drive(tween), child: child);
-      },
-    ),
-  ).then((result) {
-    if (result != null && result is CertificateModel && context.mounted) {
-      context.read<CertificatesCubit>().addCertificate(result);
-    } else if (result == true && context.mounted) {
-      context.read<CertificatesCubit>().refresh(advisorId: advisorId);
-    }
-  });
 }

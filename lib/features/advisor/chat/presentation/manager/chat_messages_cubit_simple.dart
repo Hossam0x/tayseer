@@ -22,6 +22,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   String? _currentChatRoomId;
   String? _currentReceiverId;
   bool _isBlocked = false;
+  bool _amIBlocker = false; // true = أنا الحاظر, false = أنا محظور
   bool _isUserTyping = false;
   TypingModel? _typingInfo;
   int? _freeChatMinsLeft;
@@ -332,9 +333,9 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     if (index == -1) return;
 
     final updatedMessages = List<ChatMessage>.from(currentMessages);
-    updatedMessages[index] = serverMessage.copyWith(
-      status: MessageStatusEnum.sent,
-    );
+    // Use the status from the server message instead of hardcoding 'sent'
+    updatedMessages[index] = serverMessage;
+    log('✅ Replaced optimistic message with server message - status: ${serverMessage.status}');
 
     emit(
       ChatMessagesState.loaded(
@@ -395,17 +396,19 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     });
 
     // SERVER → CLIENT: blockerStatus  { userId, newBlockStatus }
+    // أنا اللي حاظر - يظهر لي حذف المحادثة أو إلغاء الحظر
     _socketHelper.listenWithId('blockerStatus', listenerId, (data) {
       if (data is! Map) return;
       final newBlockStatus = data['newBlockStatus'] as bool? ?? false;
-      _handleBlockStatusChanged(newBlockStatus);
+      _handleBlockerStatusChanged(newBlockStatus);
     });
 
     // SERVER → CLIENT: blockedStatus  { userId, newBlockStatus }
+    // أنا محظور - مقدرش أبعت رسائل
     _socketHelper.listenWithId('blockedStatus', listenerId, (data) {
       if (data is! Map) return;
       final newBlockStatus = data['newBlockStatus'] as bool? ?? false;
-      _handleBlockStatusChanged(newBlockStatus);
+      _handleBlockedStatusChanged(newBlockStatus);
     });
 
     // SERVER → CLIENT: chatRoomJoined  { chatRoomId, blockExists, isMe, ... }
@@ -450,9 +453,9 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       );
       if (tempIndex != -1) {
         final updatedMessages = List<ChatMessage>.from(currentMessages);
-        updatedMessages[tempIndex] = message.copyWith(
-          status: MessageStatusEnum.sent,
-        );
+        // Use the status from the server message instead of hardcoding 'sent'
+        updatedMessages[tempIndex] = message;
+        log('✅ Replaced temp message with server message - status: ${message.status}');
         emit(
           ChatMessagesState.loaded(
             messages: updatedMessages,
@@ -592,15 +595,21 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     final currentMessages = state.messagesOrEmpty;
     final messageIdSet = messageIds.toSet();
 
-    final updatedMessages = currentMessages.map((m) {
-      if (messageIdSet.contains(m.id)) {
-        return m.copyWith(
-          status: parsedStatus,
-          isRead: parsedStatus == MessageStatusEnum.read,
-        );
-      }
-      return m;
-    }).toList();
+    log('📊 Updating message status: $status → $parsedStatus for ${messageIds.length} messages');
+
+    // Create a completely new list with updated messages
+    final updatedMessages = List<ChatMessage>.from(
+      currentMessages.map((m) {
+        if (messageIdSet.contains(m.id)) {
+          log('✅ Updating message ${m.id} status: ${m.status} → $parsedStatus');
+          return m.copyWith(
+            status: parsedStatus,
+            isRead: parsedStatus == MessageStatusEnum.read,
+          );
+        }
+        return m;
+      }),
+    );
 
     emit(
       ChatMessagesState.loaded(
@@ -611,10 +620,17 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         typingInfo: _typingInfo,
       ),
     );
+
+    // تحديث الكاش
+    _updateCache(updatedMessages);
   }
 
-  void _handleBlockStatusChanged(bool isBlocked) {
+  /// معالجة blockerStatus - أنا اللي حاظر
+  /// يظهر لي حذف المحادثة أو إلغاء الحظر
+  void _handleBlockerStatusChanged(bool isBlocked) {
+    log('🔒 blockerStatus changed: isBlocked=$isBlocked (أنا الحاظر)');
     _isBlocked = isBlocked;
+    _amIBlocker = isBlocked; // أنا الحاظر
     emit(
       ChatMessagesState.loaded(
         messages: state.messagesOrEmpty,
@@ -625,6 +641,26 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       ),
     );
   }
+
+  /// معالجة blockedStatus - أنا محظور
+  /// مقدرش أبعت رسائل
+  void _handleBlockedStatusChanged(bool isBlocked) {
+    log('🚫 blockedStatus changed: isBlocked=$isBlocked (أنا محظور)');
+    _isBlocked = isBlocked;
+    _amIBlocker = false; // أنا محظور
+    emit(
+      ChatMessagesState.loaded(
+        messages: state.messagesOrEmpty,
+        hasMoreMessages: false,
+        isBlocked: _isBlocked,
+        isUserTyping: _isUserTyping,
+        typingInfo: _typingInfo,
+      ),
+    );
+  }
+
+  /// getter للتحقق من نوع الحظر
+  bool get amIBlocker => _amIBlocker;
 
   void _emitCurrentState() {
     emit(
@@ -746,6 +782,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     final now = DateTime.now().toIso8601String();
 
     _isBlocked = true;
+    _amIBlocker = true; // أنا الحاظر
 
     final optimisticMessage = ChatMessage(
       id: localId,
@@ -808,6 +845,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     final now = DateTime.now().toIso8601String();
 
     _isBlocked = false;
+    _amIBlocker = false; // مش حاظر دلوقتي
 
     final optimisticMessage = ChatMessage(
       id: localId,

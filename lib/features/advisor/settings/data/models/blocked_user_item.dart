@@ -1,3 +1,4 @@
+import 'package:tayseer/core/enum/verification_type.dart';
 import 'package:tayseer/features/advisor/settings/data/models/blocked_user_model.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/image_placeholder.dart';
 import 'package:tayseer/my_import.dart';
@@ -28,14 +29,29 @@ class BlockedUserItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  blockedUser.blockedUser.name,
-                  style: Styles.textStyle16.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.secondary700,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        blockedUser.blockedUser.name,
+                        style: Styles.textStyle16.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.secondary700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (blockedUser.blockedUser.verificationType ==
+                        VerificationType.full) ...[
+                      SizedBox(width: 4.w),
+                      Icon(Icons.verified, color: Colors.blue, size: 16.w),
+                    ] else if (blockedUser.blockedUser.verificationType ==
+                        VerificationType.basic) ...[
+                      SizedBox(width: 4.w),
+                      Icon(Icons.verified, color: Colors.grey, size: 16.w),
+                    ],
+                  ],
                 ),
                 SizedBox(height: 2.h),
                 Text(

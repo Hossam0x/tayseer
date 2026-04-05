@@ -66,6 +66,12 @@ void main() async {
 
   Bloc.observer = SimpleBlocObserver();
 
+  // ✅ زود حجم الـ ImageCache — الـ default (100 صورة / 100MB) قليل جداً
+  // للـ social media feed. بدونها الصور بتتطرد من الـ memory cache
+  // ولما ترجع بـ pop بتتحمل من الـ disk cache → flicker
+  PaintingBinding.instance.imageCache.maximumSize = 500;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 300 << 20; // 300 MB
+
   // ✅ أولاً runApp عشان الـ Navigator يكون جاهز
   runApp(const TayseerApp());
 
@@ -100,7 +106,6 @@ void _listenToWarmStartLinks() {
   final appLinks = AppLinks();
   appLinks.uriLinkStream.listen((uri) {
     debugPrint('🔗 Warm start DeepLink received: $uri');
-
     // ✅ تجاهل لو نفس الـ cold start URI
     if (pendingDeepLinkUri != null &&
         uri.toString() == pendingDeepLinkUri.toString()) {
@@ -108,12 +113,7 @@ void _listenToWarmStartLinks() {
       return;
     }
 
-    // ✅ delay + postFrameCallback عشان Navigator يكون جاهز
-    Future.delayed(const Duration(milliseconds: 300), () {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _navigateFromUri(uri);
-      });
-    });
+    _navigateFromUri(uri);
   }, onError: (e) => debugPrint('DeepLink stream error: $e'));
 }
 
@@ -171,12 +171,23 @@ void consumePendingDeepLink() {
   pendingDeepLinkPersonId = null;
   debugPrint('🔗 Consuming pending deep link: $personId');
 
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    navigatorKey.currentState?.pushNamed(
-      AppRouter.kMarriageView,
-      arguments: {'personId': personId},
-    );
-  });
+  // ✅ retry لو الـ Navigator لسه مش جاهز
+  void tryNavigate([int retries = 5]) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (navigatorKey.currentState != null) {
+        navigatorKey.currentState!.pushNamed(
+          AppRouter.kMarriageView,
+          arguments: {'personId': personId},
+        );
+      } else if (retries > 0) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          tryNavigate(retries - 1);
+        });
+      }
+    });
+  }
+
+  tryNavigate();
 }
 
 // ─────────────────────────────────────────────

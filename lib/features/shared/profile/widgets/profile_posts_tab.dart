@@ -48,6 +48,18 @@ abstract class ProfilePostsCubitContract<S> extends Cubit<S> {
   Future<void> blockUser({String? visiblePostId, required String advisorId});
   Future<void> fetchPosts({bool loadMore = false});
   void updatePostLocally(PostModel updatedPost);
+
+  void markPostAsCommented({required String postId, required bool isAnonymous});
+  void updateCommentCountByDelta({
+    required String postId,
+    required int countDelta,
+    bool? isCommented,
+    bool? isAnonymous,
+  });
+  void syncCommentCountFromBackend({
+    required String postId,
+    required int totalCount,
+  });
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -327,6 +339,21 @@ class _ProfilePostItemState<C extends ProfilePostsCubitContract>
           widget.cubit.blockUser(visiblePostId: postId, advisorId: userId),
       onArchive: (id) => widget.cubit.archivePost(postId: id),
       onEdit: _onEdit,
+      onCommented: (id, isAnonymous) => widget.cubit.markPostAsCommented(
+        postId: id,
+        isAnonymous: isAnonymous,
+      ),
+      onCommentCountDelta:
+          ({required postId, required countDelta, isCommented, isAnonymous}) =>
+              widget.cubit.updateCommentCountByDelta(
+                postId: postId,
+                countDelta: countDelta,
+                isCommented: isCommented,
+                isAnonymous: isAnonymous,
+              ),
+      onCommentCountSync: ({required postId, required totalCount}) => widget
+          .cubit
+          .syncCommentCountFromBackend(postId: postId, totalCount: totalCount),
     );
   }
 

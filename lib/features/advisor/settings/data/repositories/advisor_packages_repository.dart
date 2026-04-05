@@ -1,9 +1,9 @@
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/my_import.dart';
-import '../models/package_model.dart';
+import 'package:tayseer/features/shared/packages/data/models/new_advisor_sub_model.dart';
 
 abstract class AdvisorPackagesRepository {
-  Future<Either<Failure, List<AdvisorPackageModel>>> getPackages();
+  Future<Either<Failure, List<NewAdvisorSubModel>>> getPackages();
 }
 
 class AdvisorPackagesRepositoryImpl implements AdvisorPackagesRepository {
@@ -12,21 +12,20 @@ class AdvisorPackagesRepositoryImpl implements AdvisorPackagesRepository {
   AdvisorPackagesRepositoryImpl(this._apiService);
 
   @override
-  Future<Either<Failure, List<AdvisorPackageModel>>> getPackages() async {
+  Future<Either<Failure, List<NewAdvisorSubModel>>> getPackages() async {
     try {
-      final response = await _apiService.get(endPoint: '/package');
+      final response = await _apiService.get(endPoint: '/new-advisor-sub');
 
       if (response['success'] == true) {
-        final List<dynamic> packagesJson =
-            response['data']?['packagesDto'] ?? [];
-        final packages = packagesJson
-            .map((json) => AdvisorPackageModel.fromJson(json))
+        final List<dynamic> subsJson = response['data'] ?? [];
+        final subs = subsJson
+            .map((json) => NewAdvisorSubModel.fromJson(json))
             .toList();
-        return Right(packages);
+        return Right(subs);
       } else {
         return Left(
           ServerFailure(
-            response['message']?.toString() ?? 'فشل استرجاع الباقات',
+            response['message']?.toString() ?? 'فشل استرجاع الاشتراكات',
           ),
         );
       }

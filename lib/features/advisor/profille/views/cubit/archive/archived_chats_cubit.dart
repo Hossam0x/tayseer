@@ -1,6 +1,7 @@
 import 'package:tayseer/features/advisor/profille/data/models/archive_models.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/archive_repository.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive/archived_chats_state.dart';
+import 'package:tayseer/features/advisor/chat/data/event_bus/chat_event_bus.dart';
 import 'package:tayseer/my_import.dart';
 
 class ArchivedChatsCubit extends Cubit<ArchivedChatsState> {
@@ -96,12 +97,17 @@ class ArchivedChatsCubit extends Cubit<ArchivedChatsState> {
           unarchiveMessage: failure.message,
         ),
       ),
-      (_) => emit(
-        state.copyWith(
-          unarchiveActionState: CubitStates.success,
-          unarchiveMessage: 'chat_unarchived_success',
-        ),
-      ),
+      (_) {
+        //علشان يسمع ف ليست الشات علطول
+        ChatEventBus.instance.notifyChatUnarchived(chatId);
+        
+        emit(
+          state.copyWith(
+            unarchiveActionState: CubitStates.success,
+            unarchiveMessage: 'chat_unarchived_success',
+          ),
+        );
+      },
     );
   }
 

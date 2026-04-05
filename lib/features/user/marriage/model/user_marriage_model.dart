@@ -66,7 +66,6 @@ class UserItem {
     "isPartialData": isPartialData,
   };
 }
-
 class User {
   String? id;
   bool? imageBlur;
@@ -82,6 +81,8 @@ class User {
   UserAbout? about;
   bool? isFavorite;
   bool? isBlocked;
+  String? city;
+  double? distanceKm;
 
   User({
     this.id,
@@ -98,47 +99,54 @@ class User {
     this.about,
     this.isFavorite,
     this.isBlocked,
+    this.city,
+    this.distanceKm,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
-    id: json["id"],
-    imageBlur: json["imageBlur"],
-    name: json["name"],
-    isLiked: json["isLiked"],
-    isVerified: json["isVerified"],
-    country: json["country"],
-    image: json["image"],
-    similarity: json["similarity"],
-    matchingTags: json["matchingTags"] != null
-        ? List<MatchingTag>.from(
-            json["matchingTags"].map((x) => MatchingTag.fromJson(x)),
-          )
-        : null,
-    isNew: json["isNew"],
-    age: json["age"],
-    about: json["about"] != null ? UserAbout.fromJson(json["about"]) : null,
-    isFavorite: json["isFavorite"],
-    isBlocked: json["isBlocked"],
-  );
+        id: json["id"],
+        imageBlur: json["imageBlur"],
+        name: json["name"],
+        isLiked: json["isLiked"],
+        isVerified: json["isVerified"],
+        country: json["country"],
+        image: json["image"],
+        similarity: json["similarity"],
+        matchingTags: json["matchingTags"] != null
+            ? List<MatchingTag>.from(
+                json["matchingTags"].map((x) => MatchingTag.fromJson(x)),
+              )
+            : null,
+        isNew: json["isNew"],
+        age: json["age"],
+        about: json["about"] != null ? UserAbout.fromJson(json["about"]) : null,
+        isFavorite: json["isFavorite"],
+        isBlocked: json["isBlocked"],
+        city: json["city"] as String?,
+        distanceKm: json["distanceKm"] != null
+            ? (json["distanceKm"] as num).toDouble()
+            : null,
+      );
 
   Map<String, dynamic> toJson() => {
-    "id": id,
-    "name": name,
-    "isLiked": isLiked,
-    "isVerified": isVerified,
-    "country": country,
-    "image": image,
-    "similarity": similarity,
-    "matchingTags": matchingTags?.map((x) => x.toJson()).toList(),
-    "isNew": isNew,
-    "age": age,
-    "about": about?.toJson(),
-    "isFavorite": isFavorite,
-    "isBlocked": isBlocked,
-    "imageBlur": imageBlur,
-  };
+        "id": id,
+        "imageBlur": imageBlur,
+        "name": name,
+        "isLiked": isLiked,
+        "isVerified": isVerified,
+        "country": country,
+        "image": image,
+        "similarity": similarity,
+        "matchingTags": matchingTags?.map((x) => x.toJson()).toList(),
+        "isNew": isNew,
+        "age": age,
+        "about": about?.toJson(),
+        "isFavorite": isFavorite,
+        "isBlocked": isBlocked,
+        "city": city,
+        "distanceKm": distanceKm,
+      };
 }
-
 class UserAbout {
   String? job;
   String? educationLevel;

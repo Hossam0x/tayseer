@@ -20,7 +20,9 @@ mixin _$ChatListState {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<ChatRoom> chatRooms) loaded,
+    required TResult Function(
+            List<ChatRoom> chatRooms, int pendingRequestsCount)
+        loaded,
     required TResult Function(String message) failure,
   }) =>
       throw _privateConstructorUsedError;
@@ -28,7 +30,8 @@ mixin _$ChatListState {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<ChatRoom> chatRooms)? loaded,
+    TResult? Function(List<ChatRoom> chatRooms, int pendingRequestsCount)?
+        loaded,
     TResult? Function(String message)? failure,
   }) =>
       throw _privateConstructorUsedError;
@@ -36,7 +39,8 @@ mixin _$ChatListState {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<ChatRoom> chatRooms)? loaded,
+    TResult Function(List<ChatRoom> chatRooms, int pendingRequestsCount)?
+        loaded,
     TResult Function(String message)? failure,
     required TResult orElse(),
   }) =>
@@ -126,7 +130,9 @@ class _$InitialImpl implements _Initial {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<ChatRoom> chatRooms) loaded,
+    required TResult Function(
+            List<ChatRoom> chatRooms, int pendingRequestsCount)
+        loaded,
     required TResult Function(String message) failure,
   }) {
     return initial();
@@ -137,7 +143,8 @@ class _$InitialImpl implements _Initial {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<ChatRoom> chatRooms)? loaded,
+    TResult? Function(List<ChatRoom> chatRooms, int pendingRequestsCount)?
+        loaded,
     TResult? Function(String message)? failure,
   }) {
     return initial?.call();
@@ -148,7 +155,8 @@ class _$InitialImpl implements _Initial {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<ChatRoom> chatRooms)? loaded,
+    TResult Function(List<ChatRoom> chatRooms, int pendingRequestsCount)?
+        loaded,
     TResult Function(String message)? failure,
     required TResult orElse(),
   }) {
@@ -240,7 +248,9 @@ class _$LoadingImpl implements _Loading {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<ChatRoom> chatRooms) loaded,
+    required TResult Function(
+            List<ChatRoom> chatRooms, int pendingRequestsCount)
+        loaded,
     required TResult Function(String message) failure,
   }) {
     return loading();
@@ -251,7 +261,8 @@ class _$LoadingImpl implements _Loading {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<ChatRoom> chatRooms)? loaded,
+    TResult? Function(List<ChatRoom> chatRooms, int pendingRequestsCount)?
+        loaded,
     TResult? Function(String message)? failure,
   }) {
     return loading?.call();
@@ -262,7 +273,8 @@ class _$LoadingImpl implements _Loading {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<ChatRoom> chatRooms)? loaded,
+    TResult Function(List<ChatRoom> chatRooms, int pendingRequestsCount)?
+        loaded,
     TResult Function(String message)? failure,
     required TResult orElse(),
   }) {
@@ -320,7 +332,7 @@ abstract class _$$LoadedImplCopyWith<$Res> {
           _$LoadedImpl value, $Res Function(_$LoadedImpl) then) =
       __$$LoadedImplCopyWithImpl<$Res>;
   @useResult
-  $Res call({List<ChatRoom> chatRooms});
+  $Res call({List<ChatRoom> chatRooms, int pendingRequestsCount});
 }
 
 /// @nodoc
@@ -335,12 +347,17 @@ class __$$LoadedImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? chatRooms = null,
+    Object? pendingRequestsCount = null,
   }) {
     return _then(_$LoadedImpl(
       chatRooms: null == chatRooms
           ? _value._chatRooms
           : chatRooms // ignore: cast_nullable_to_non_nullable
               as List<ChatRoom>,
+      pendingRequestsCount: null == pendingRequestsCount
+          ? _value.pendingRequestsCount
+          : pendingRequestsCount // ignore: cast_nullable_to_non_nullable
+              as int,
     ));
   }
 }
@@ -348,7 +365,8 @@ class __$$LoadedImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$LoadedImpl implements _Loaded {
-  const _$LoadedImpl({required final List<ChatRoom> chatRooms})
+  const _$LoadedImpl(
+      {required final List<ChatRoom> chatRooms, this.pendingRequestsCount = 0})
       : _chatRooms = chatRooms;
 
   final List<ChatRoom> _chatRooms;
@@ -360,8 +378,12 @@ class _$LoadedImpl implements _Loaded {
   }
 
   @override
+  @JsonKey()
+  final int pendingRequestsCount;
+
+  @override
   String toString() {
-    return 'ChatListState.loaded(chatRooms: $chatRooms)';
+    return 'ChatListState.loaded(chatRooms: $chatRooms, pendingRequestsCount: $pendingRequestsCount)';
   }
 
   @override
@@ -370,12 +392,14 @@ class _$LoadedImpl implements _Loaded {
         (other.runtimeType == runtimeType &&
             other is _$LoadedImpl &&
             const DeepCollectionEquality()
-                .equals(other._chatRooms, _chatRooms));
+                .equals(other._chatRooms, _chatRooms) &&
+            (identical(other.pendingRequestsCount, pendingRequestsCount) ||
+                other.pendingRequestsCount == pendingRequestsCount));
   }
 
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, const DeepCollectionEquality().hash(_chatRooms));
+  int get hashCode => Object.hash(runtimeType,
+      const DeepCollectionEquality().hash(_chatRooms), pendingRequestsCount);
 
   @JsonKey(ignore: true)
   @override
@@ -388,10 +412,12 @@ class _$LoadedImpl implements _Loaded {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<ChatRoom> chatRooms) loaded,
+    required TResult Function(
+            List<ChatRoom> chatRooms, int pendingRequestsCount)
+        loaded,
     required TResult Function(String message) failure,
   }) {
-    return loaded(chatRooms);
+    return loaded(chatRooms, pendingRequestsCount);
   }
 
   @override
@@ -399,10 +425,11 @@ class _$LoadedImpl implements _Loaded {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<ChatRoom> chatRooms)? loaded,
+    TResult? Function(List<ChatRoom> chatRooms, int pendingRequestsCount)?
+        loaded,
     TResult? Function(String message)? failure,
   }) {
-    return loaded?.call(chatRooms);
+    return loaded?.call(chatRooms, pendingRequestsCount);
   }
 
   @override
@@ -410,12 +437,13 @@ class _$LoadedImpl implements _Loaded {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<ChatRoom> chatRooms)? loaded,
+    TResult Function(List<ChatRoom> chatRooms, int pendingRequestsCount)?
+        loaded,
     TResult Function(String message)? failure,
     required TResult orElse(),
   }) {
     if (loaded != null) {
-      return loaded(chatRooms);
+      return loaded(chatRooms, pendingRequestsCount);
     }
     return orElse();
   }
@@ -459,10 +487,12 @@ class _$LoadedImpl implements _Loaded {
 }
 
 abstract class _Loaded implements ChatListState {
-  const factory _Loaded({required final List<ChatRoom> chatRooms}) =
-      _$LoadedImpl;
+  const factory _Loaded(
+      {required final List<ChatRoom> chatRooms,
+      final int pendingRequestsCount}) = _$LoadedImpl;
 
   List<ChatRoom> get chatRooms;
+  int get pendingRequestsCount;
   @JsonKey(ignore: true)
   _$$LoadedImplCopyWith<_$LoadedImpl> get copyWith =>
       throw _privateConstructorUsedError;
@@ -534,7 +564,9 @@ class _$FailureImpl implements _Failure {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function(List<ChatRoom> chatRooms) loaded,
+    required TResult Function(
+            List<ChatRoom> chatRooms, int pendingRequestsCount)
+        loaded,
     required TResult Function(String message) failure,
   }) {
     return failure(message);
@@ -545,7 +577,8 @@ class _$FailureImpl implements _Failure {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function(List<ChatRoom> chatRooms)? loaded,
+    TResult? Function(List<ChatRoom> chatRooms, int pendingRequestsCount)?
+        loaded,
     TResult? Function(String message)? failure,
   }) {
     return failure?.call(message);
@@ -556,7 +589,8 @@ class _$FailureImpl implements _Failure {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function(List<ChatRoom> chatRooms)? loaded,
+    TResult Function(List<ChatRoom> chatRooms, int pendingRequestsCount)?
+        loaded,
     TResult Function(String message)? failure,
     required TResult orElse(),
   }) {

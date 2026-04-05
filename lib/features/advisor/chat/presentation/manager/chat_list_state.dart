@@ -7,7 +7,9 @@ part 'chat_list_state.freezed.dart';
 class ChatListState with _$ChatListState {
   const factory ChatListState.initial() = _Initial;
   const factory ChatListState.loading() = _Loading;
-  const factory ChatListState.loaded({required List<ChatRoom> chatRooms}) =
-      _Loaded;
+  const factory ChatListState.loaded({
+    required List<ChatRoom> chatRooms,
+    @Default(0) int pendingRequestsCount,
+  }) = _Loaded;
   const factory ChatListState.failure(String message) = _Failure;
 }

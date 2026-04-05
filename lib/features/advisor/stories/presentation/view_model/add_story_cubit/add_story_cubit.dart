@@ -28,31 +28,36 @@ class AddStoryCubit extends Cubit<AddStoryState> {
         camMicResults[Permission.microphone]?.isGranted ?? false;
 
     final cameraGranted = isCamGranted && isMicGranted;
-    emit(state.copyWith(isCameraGranted: cameraGranted));
+    if (!isClosed) emit(state.copyWith(isCameraGranted: cameraGranted));
     return cameraGranted;
   }
 
   Future<void> requestGalleryPermission() async {
+    if (isClosed) return;
     emit(state.copyWith(isLoadingAssets: true));
     try {
       final PermissionState ps = await PhotoManager.requestPermissionExtend();
+      if (isClosed) return;
       final bool isGalleryGranted = ps.isAuth || ps.hasAccess;
       emit(state.copyWith(isGalleryGranted: isGalleryGranted));
-      
+
       if (isGalleryGranted) {
         await loadGalleryAssets(refresh: true);
       } else {
-        emit(state.copyWith(isLoadingAssets: false));
+        if (!isClosed) emit(state.copyWith(isLoadingAssets: false));
       }
     } catch (e) {
       debugPrint("Error in gallery permission request: $e");
-      emit(state.copyWith(isLoadingAssets: false, isGalleryGranted: false));
+      if (!isClosed) {
+        emit(state.copyWith(isLoadingAssets: false, isGalleryGranted: false));
+      }
     }
   }
 
   final int _pageSize = 60;
 
   Future<void> loadGalleryAssets({bool refresh = false}) async {
+    if (isClosed) return;
     if (state.isLoadingAssets && !refresh) return;
     if (!refresh && !state.hasMoreAssets) return;
 
@@ -72,6 +77,7 @@ class AddStoryCubit extends Cubit<AddStoryState> {
     try {
       // Request permissions using PhotoManager natively (fallback check)
       final PermissionState ps = await PhotoManager.requestPermissionExtend();
+      if (isClosed) return;
       if (!ps.isAuth && !ps.hasAccess) {
         emit(state.copyWith(isLoadingAssets: false, hasMoreAssets: false));
         return;
@@ -91,12 +97,16 @@ class AddStoryCubit extends Cubit<AddStoryState> {
           filterOption: filterOption,
         );
 
+        if (isClosed) return;
+
         if (albums.isEmpty) {
           albums = await PhotoManager.getAssetPathList(
             type: RequestType.image,
             filterOption: filterOption,
           );
         }
+
+        if (isClosed) return;
 
         if (albums.isNotEmpty) {
           emit(state.copyWith(albums: albums, selectedAlbum: albums[0]));
@@ -113,6 +123,8 @@ class AddStoryCubit extends Cubit<AddStoryState> {
           page: state.currentAssetsPage,
           size: _pageSize,
         );
+
+        if (isClosed) return;
 
         if (newItems.isEmpty) {
           emit(state.copyWith(isLoadingAssets: false, hasMoreAssets: false));
@@ -132,7 +144,7 @@ class AddStoryCubit extends Cubit<AddStoryState> {
       }
     } catch (e) {
       debugPrint("Error loading gallery: $e");
-      emit(state.copyWith(isLoadingAssets: false));
+      if (!isClosed) emit(state.copyWith(isLoadingAssets: false));
     }
   }
 
@@ -371,7 +383,7 @@ class AddStoryCubit extends Cubit<AddStoryState> {
     final currentText = contentController.text;
     if (currentText.trim().isEmpty) return;
 
-    emit(state.copyWith(isAiLoading: true));
+    if (!isClosed) emit(state.copyWith(isAiLoading: true));
     const apiKey =
         'AIzaSyAzkpmYLG58vfNtxPGvfh8Ynix02VNWnUg'; // Keep it for now as per AddPostCubit
 
@@ -387,12 +399,14 @@ Input text: "$currentText"
       final content = [Content.text(prompt)];
       final response = await model.generateContent(content);
 
+      if (isClosed) return;
+
       if (response.text != null) {
         contentController.text = response.text!;
         emit(state.copyWith(draftText: response.text!, isAiLoading: false));
       }
     } catch (e) {
-      emit(state.copyWith(isAiLoading: false));
+      if (!isClosed) emit(state.copyWith(isAiLoading: false));
     }
   }
 }

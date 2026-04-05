@@ -186,12 +186,8 @@ class InteractionsCubit extends Cubit<InteractionsState> {
       return;
     }
 
-    // ✅ FIX: was blocking loadMore because historyState stays "loading"
-    // after the initial fetch in some edge cases. Use a dedicated isLoadingMore
-    // flag on state instead — but since we don't have that field on
-    // InteractionsState, we guard only against a *fresh* loading (no data yet).
     final hasExistingData = state.historyData[filter]?.isNotEmpty ?? false;
-    if (!hasExistingData) return; // still on initial load — don't paginate yet
+    if (!hasExistingData) return;
 
     final currentPage = state.historyCurrentPage[filter] ?? 1;
     final nextPage = currentPage + 1;
@@ -231,7 +227,6 @@ class InteractionsCubit extends Cubit<InteractionsState> {
             return user;
           }).toList();
 
-          // ✅ FIX: deduplicate by userId to avoid duplicate cards on re-fetch
           final existingIds = existingUsers.map((u) => u.userId).toSet();
           final uniqueNew = newUsers
               .where((u) => !existingIds.contains(u.userId))
@@ -367,6 +362,94 @@ class InteractionsCubit extends Cubit<InteractionsState> {
       },
     );
   }
+  // ═══════════════════════════════════════════════════════════════════
+  // NOTIFICATION COUNTS
+  // ═══════════════════════════════════════════════════════════════════
+
+  Future<void> fetchInteractionNotificationCount() async {
+    final result = await repository.fetchInteractionNotificationCount();
+    result.fold(
+      (failure) => log('Fetch notification count failed: ${failure.message}'),
+      (model) {
+        emit(
+          state.copyWith(
+            likesNotificationCount: model.likes,
+            favoritesNotificationCount: model.favorites,
+            regardsNotificationCount: model.regards,
+            totalNotificationCount: model.total,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> resetNotificationCountForFilter(String filter) async {
+    switch (filter) {
+      case 'liked_you':
+        final toSubtract = state.likesNotificationCount; // ✅ احفظ القيمة الأول
+        final result = await repository.resetLikesNotificationCount();
+        result.fold(
+          (failure) => log('Reset likes count failed: ${failure.message}'),
+          (_) => emit(
+            state.copyWith(
+              likesNotificationCount: 0,
+              totalNotificationCount: // ✅ اطرح من الـ total
+              (state.totalNotificationCount - toSubtract).clamp(
+                0,
+                999,
+              ),
+            ),
+          ),
+        );
+        break;
+
+      case 'favorites':
+        final toSubtract = state.favoritesNotificationCount;
+        final result = await repository.resetFavoritesNotificationCount();
+        result.fold(
+          (failure) => log('Reset favorites count failed: ${failure.message}'),
+          (_) => emit(
+            state.copyWith(
+              favoritesNotificationCount: 0,
+              totalNotificationCount:
+                  (state.totalNotificationCount - toSubtract).clamp(0, 999),
+            ),
+          ),
+        );
+        break;
+
+      case 'sent_compliment':
+        final toSubtract = state.regardsNotificationCount;
+        final result = await repository.resetRegardsNotificationCount();
+        result.fold(
+          (failure) => log('Reset regards count failed: ${failure.message}'),
+          (_) => emit(
+            state.copyWith(
+              regardsNotificationCount: 0,
+              totalNotificationCount:
+                  (state.totalNotificationCount - toSubtract).clamp(0, 999),
+            ),
+          ),
+        );
+        break;
+    }
+  }
+
+  // ✅ بعد الإصلاح
+Future<void> fetchAndSyncNotificationCount() async {
+  final result = await repository.fetchInteractionNotificationCount();
+  result.fold((_) {}, (model) {
+    if (isClosed) return;
+    emit(
+      state.copyWith(
+        likesNotificationCount: model.likes,
+        favoritesNotificationCount: model.favorites,
+        regardsNotificationCount: model.regards,
+        totalNotificationCount: model.total, // ✅ ده اللي كان ناقص
+      ),
+    );
+  });
+}
 
   void resetActionState() {
     emit(state.copyWith(actionState: CubitStates.initial, actionMessage: null));

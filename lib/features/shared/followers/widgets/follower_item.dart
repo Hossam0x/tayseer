@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:tayseer/core/enum/verification_type.dart';
 import 'package:tayseer/features/shared/followers/data/models/follower_model.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
@@ -92,11 +93,19 @@ class FollowerItem extends StatelessWidget {
                                       ),
                                     ),
                                     SizedBox(width: 4.w),
-                                    if (follower.isVerified)
+                                    if (follower.verificationType ==
+                                        VerificationType.full)
                                       Icon(
                                         Icons.verified,
                                         size: 16.w,
                                         color: Colors.blue,
+                                      )
+                                    else if (follower.verificationType ==
+                                        VerificationType.basic)
+                                      Icon(
+                                        Icons.verified,
+                                        size: 16.w,
+                                        color: Colors.grey,
                                       ),
                                   ],
                                 ),
@@ -225,8 +234,6 @@ class FollowerItem extends StatelessWidget {
       );
     }
   }
-
-
 }
 
 // Skeleton item for loading state

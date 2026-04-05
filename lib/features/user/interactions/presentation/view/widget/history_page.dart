@@ -40,8 +40,10 @@ class HistorypageState extends State<Historypage> {
           final cubit = context.read<InteractionsCubit>();
           final hasData =
               cubit.state.historyData[filterKey]?.isNotEmpty ?? false;
-          // ✅ فقط fetch لو مفيش data
           cubit.fetchHistory(filter: filterKey, forceRefresh: !hasData);
+
+          // ✅ أضف هذا السطر
+          cubit.fetchInteractionNotificationCount();
         }
       });
     }
@@ -66,8 +68,6 @@ class HistorypageState extends State<Historypage> {
       });
     }
   }
-
-
 
   @override
   void dispose() {
@@ -103,7 +103,7 @@ class HistorypageState extends State<Historypage> {
     if (mounted) setState(() => _isLoadingMore = false);
   }
 
-    Future<void> _onRefresh() async {
+  Future<void> _onRefresh() async {
     final cubit = context.read<InteractionsCubit>();
     if (widget.selectedFilter == "favorites") {
       await cubit.refreshFavorites();

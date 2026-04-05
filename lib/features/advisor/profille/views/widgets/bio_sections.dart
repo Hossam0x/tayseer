@@ -17,8 +17,10 @@ class _BioNameSectionWrapper extends StatelessWidget {
   const _BioNameSectionWrapper({required this.profile});
 
   @override
-  Widget build(BuildContext context) =>
-      SharedBioNameSection(name: profile.name, isVerified: profile.isVerified);
+  Widget build(BuildContext context) => SharedBioNameSection(
+    name: profile.name,
+    verificationType: profile.verificationType,
+  );
 }
 
 class _BioLocationSectionWrapper extends StatelessWidget {
@@ -52,12 +54,20 @@ class BioConsultationCard extends StatelessWidget {
       builder: (context, state) {
         final isLoading = state.analyticsState == CubitStates.loading;
         final totalViews = state.analytics?.overview.views ?? 0;
+        final subscriptionType = state.analytics?.subscriptionType ?? 'free';
+        final isFree = subscriptionType == 'free';
 
         return CustomClick(
-          onTap: () => Navigator.pushNamed(
-            context,
-            AppRouter.kProfessionalInfoDashboardView,
-          ),
+          onTap: () {
+            if (isFree) {
+              Navigator.pushNamed(context, AppRouter.kSubscriptionRequiredView);
+            } else {
+              Navigator.pushNamed(
+                context,
+                AppRouter.kProfessionalInfoDashboardView,
+              );
+            }
+          },
           child: Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
@@ -90,12 +100,22 @@ class BioConsultationCard extends StatelessWidget {
                       child: isLoading
                           ? _LoadingViewsShimmer()
                           : Text(
-                              '$totalViews ${context.tr('views_last_30_days')}',
+                              isFree
+                                  ? context.tr('subscribe_to_view_stats')
+                                  : '$totalViews ${context.tr('views_last_30_days')}',
                               style: Styles.textStyle14.copyWith(
-                                color: AppColors.secondary700,
+                                color: isFree
+                                    ? AppColors.kprimaryColor
+                                    : AppColors.secondary700,
                               ),
                             ),
                     ),
+                    if (isFree)
+                      Icon(
+                        Icons.lock_outline,
+                        color: AppColors.kprimaryColor,
+                        size: 18.w,
+                      ),
                   ],
                 ),
               ],

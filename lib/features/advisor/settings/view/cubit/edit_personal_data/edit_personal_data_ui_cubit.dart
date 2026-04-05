@@ -69,7 +69,7 @@ class EditPersonalDataUiCubit extends Cubit<EditPersonalDataUiState> {
   EditPersonalDataUiCubit() : super(const EditPersonalDataUiState());
 
   void validateName(String value, String errorMessage) {
-    if (value.trim().length < 4 || value.trim().length > 24) {
+    if (value.trim().length < 3 || value.trim().length > 24) {
       emit(state.copyWith(nameError: errorMessage));
     } else {
       emit(state.copyWith(clearNameError: true));

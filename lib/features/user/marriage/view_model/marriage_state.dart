@@ -2,7 +2,6 @@ import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
 
-// ✅ Sentinel so copyWith can explicitly clear nullable String fields to null
 const _clearString = Object();
 
 class MarriageState extends Equatable {
@@ -30,6 +29,10 @@ class MarriageState extends Equatable {
   final Map<String, dynamic> activeFilters;
   final Set<String> favoritedIds;
   final bool showActionSnackbar;
+  final int interactionsNotificationCount;
+  final int likesNotificationCount;
+  final int favoritesNotificationCount;
+  final int regardsNotificationCount;
 
   const MarriageState({
     this.marriageProfileState = CubitStates.initial,
@@ -56,6 +59,10 @@ class MarriageState extends Equatable {
     this.activeFilters = const {},
     this.favoritedIds = const {},
     this.showActionSnackbar = false,
+    this.interactionsNotificationCount = 0,
+    this.likesNotificationCount = 0,       // ✅
+    this.favoritesNotificationCount = 0,   // ✅
+    this.regardsNotificationCount = 0,     // ✅
   });
 
   MarriageState copyWith({
@@ -68,7 +75,6 @@ class MarriageState extends Equatable {
     int? currentIndex,
     bool? isScrollingDown,
     bool? isMarriageTab,
-    // ✅ FIX: use Object? sentinel so callers can pass null explicitly to clear
     Object? errorMessage = _clearString,
     Object? blockMessage = _clearString,
     double? swipeDirection,
@@ -84,6 +90,10 @@ class MarriageState extends Equatable {
     Map<String, dynamic>? activeFilters,
     Set<String>? favoritedIds,
     bool? showActionSnackbar,
+    int? interactionsNotificationCount,
+    int? likesNotificationCount,       // ✅ FIX: was missing from copyWith
+    int? favoritesNotificationCount,   // ✅ FIX: was missing from copyWith
+    int? regardsNotificationCount,     // ✅ FIX: was missing from copyWith
   }) {
     return MarriageState(
       marriageProfileState: marriageProfileState ?? this.marriageProfileState,
@@ -95,7 +105,6 @@ class MarriageState extends Equatable {
       currentIndex: currentIndex ?? this.currentIndex,
       isScrollingDown: isScrollingDown ?? this.isScrollingDown,
       isMarriageTab: isMarriageTab ?? this.isMarriageTab,
-      // ✅ FIX: if sentinel → keep existing value; if null passed → clear to null; if value → use it
       errorMessage: identical(errorMessage, _clearString)
           ? this.errorMessage
           : errorMessage as String?,
@@ -116,6 +125,16 @@ class MarriageState extends Equatable {
       activeFilters: activeFilters ?? this.activeFilters,
       favoritedIds: favoritedIds ?? this.favoritedIds,
       showActionSnackbar: showActionSnackbar ?? this.showActionSnackbar,
+      interactionsNotificationCount:
+          interactionsNotificationCount ?? this.interactionsNotificationCount,
+      // ✅ FIX: these three were absent from the return statement,
+      //    so every copyWith() call silently reset them to 0.
+      likesNotificationCount:
+          likesNotificationCount ?? this.likesNotificationCount,
+      favoritesNotificationCount:
+          favoritesNotificationCount ?? this.favoritesNotificationCount,
+      regardsNotificationCount:
+          regardsNotificationCount ?? this.regardsNotificationCount,
     );
   }
 
@@ -145,5 +164,9 @@ class MarriageState extends Equatable {
     activeFilters,
     favoritedIds,
     showActionSnackbar,
+    interactionsNotificationCount,
+    likesNotificationCount,       // ✅
+    favoritesNotificationCount,   // ✅
+    regardsNotificationCount,     // ✅
   ];
 }

@@ -7,6 +7,10 @@ class InteractionsState extends Equatable {
   // Subscription
   final bool isSubscribed;
   final bool answerCompleted; // ✅ NEW
+  final int likesNotificationCount;
+  final int favoritesNotificationCount;
+  final int regardsNotificationCount;
+  final int totalNotificationCount;
 
   // Exploration
   final CubitStates explorationState;
@@ -43,6 +47,10 @@ class InteractionsState extends Equatable {
     this.historyErrorMessage,
     this.actionState = CubitStates.initial,
     this.actionMessage,
+    this.likesNotificationCount = 0,
+    this.favoritesNotificationCount = 0,
+    this.regardsNotificationCount = 0,
+    this.totalNotificationCount = 0,
   });
 
   InteractionsState copyWith({
@@ -61,13 +69,18 @@ class InteractionsState extends Equatable {
     String? historyErrorMessage,
     CubitStates? actionState,
     String? actionMessage,
+    int? likesNotificationCount,
+    int? favoritesNotificationCount,
+    int? regardsNotificationCount,
+    int? totalNotificationCount,
   }) {
     return InteractionsState(
       isSubscribed: isSubscribed ?? this.isSubscribed,
       answerCompleted: answerCompleted ?? this.answerCompleted, // ✅ NEW
       explorationState: explorationState ?? this.explorationState,
       explorationData: explorationData ?? this.explorationData,
-      explorationCurrentPage: explorationCurrentPage ?? this.explorationCurrentPage,
+      explorationCurrentPage:
+          explorationCurrentPage ?? this.explorationCurrentPage,
       explorationHasMore: explorationHasMore ?? this.explorationHasMore,
       explorationErrorMessage: explorationErrorMessage,
       historyState: historyState ?? this.historyState,
@@ -78,25 +91,38 @@ class InteractionsState extends Equatable {
       historyErrorMessage: historyErrorMessage,
       actionState: actionState ?? this.actionState,
       actionMessage: actionMessage,
+      likesNotificationCount:
+          likesNotificationCount ?? this.likesNotificationCount,
+      favoritesNotificationCount:
+          favoritesNotificationCount ?? this.favoritesNotificationCount,
+      regardsNotificationCount:
+          regardsNotificationCount ?? this.regardsNotificationCount,
+      totalNotificationCount:
+          totalNotificationCount ?? this.totalNotificationCount,
     );
   }
 
   @override
   List<Object?> get props => [
-        isSubscribed,
-        answerCompleted, // ✅ NEW
-        explorationState,
-        explorationData,
-        explorationCurrentPage,
-        explorationHasMore,
-        explorationErrorMessage,
-        historyState,
-        historyData,
-        historyCurrentPage,
-        historyHasMore,
-        historyPagination,
-        historyErrorMessage,
-        actionState,
-        actionMessage,
-      ];
+    isSubscribed,
+    answerCompleted,
+    explorationState,
+    explorationData,
+    explorationCurrentPage,
+    explorationHasMore,
+    explorationErrorMessage,
+    historyState,
+    historyData,
+    historyCurrentPage,
+    historyHasMore,
+    historyPagination,
+    historyErrorMessage,
+    actionState,
+    actionMessage,
+    // ✅ أضف دول
+    likesNotificationCount,
+    favoritesNotificationCount,
+    regardsNotificationCount,
+    totalNotificationCount,
+  ];
 }

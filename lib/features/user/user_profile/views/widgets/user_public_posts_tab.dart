@@ -339,6 +339,21 @@ class _PostItemState extends State<_PostItem> {
       onArchive: _archivePost,
       onEdit: _editPost,
       onPollVote: _onPollVote,
+      onCommented: (postId, isAnonymous) => widget.cubit.markPostAsCommented(
+        postId: postId,
+        isAnonymous: isAnonymous,
+      ),
+      onCommentCountDelta:
+          ({required postId, required countDelta, isCommented, isAnonymous}) =>
+              widget.cubit.updateCommentCountByDelta(
+                postId: postId,
+                countDelta: countDelta,
+                isCommented: isCommented,
+                isAnonymous: isAnonymous,
+              ),
+      onCommentCountSync: ({required postId, required totalCount}) => widget
+          .cubit
+          .syncCommentCountFromBackend(postId: postId, totalCount: totalCount),
     );
   }
 

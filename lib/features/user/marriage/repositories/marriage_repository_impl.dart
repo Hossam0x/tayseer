@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:tayseer/features/user/interactions/data/Model/history_response_model.dart';
 import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
 import 'package:tayseer/features/user/marriage/repositories/marriage_repository.dart';
 import 'package:tayseer/my_import.dart';
@@ -11,12 +12,12 @@ class MarriageRepositoryImpl implements MarriageRepository {
   @override
   Future<Either<Failure, UsersMarriageResponse>> getMarriageProfile(
     String? page, {
-    Map<String, dynamic>? filters, // ✅
+    Map<String, dynamic>? filters,
   }) async {
     try {
       final query = <String, dynamic>{
         'page': page,
-        if (filters != null && filters.isNotEmpty) ...filters, // ✅
+        if (filters != null && filters.isNotEmpty) ...filters,
       };
 
       final response = await _apiService.get(
@@ -51,7 +52,7 @@ class MarriageRepositoryImpl implements MarriageRepository {
       );
 
       if (response['success'] == true) {
-        return Right(null);
+        return const Right(null);
       } else {
         return Left(
           ServerFailure(response['message'] ?? 'فشل التفاعل مع المستخدم'),
@@ -79,7 +80,7 @@ class MarriageRepositoryImpl implements MarriageRepository {
       );
 
       if (response['success'] == true) {
-        return Right(null);
+        return const Right(null);
       } else {
         return Left(ServerFailure(response['message'] ?? 'فشل ارسال التحيه'));
       }
@@ -98,12 +99,12 @@ class MarriageRepositoryImpl implements MarriageRepository {
     try {
       final response = await _apiService.post(
         endPoint: '/user/user-interaction',
-        query: isAdd ? null : {'action': 'remove'}, // ✅ query منفصل
+        query: isAdd ? null : {'action': 'remove'},
         data: {'personInteractedWith': userId, 'interactionType': 'favorite'},
       );
 
       if (response['success'] == true) {
-        return Right(null);
+        return const Right(null);
       } else {
         return Left(ServerFailure(response['message'] ?? 'فشل تعديل المفضلة'));
       }
@@ -113,71 +114,171 @@ class MarriageRepositoryImpl implements MarriageRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
   @override
-Future<Either<Failure, List<String>>> getFavoriteIds() async {
-  try {
-    final response = await _apiService.get(
-      endPoint: '/user/user-interaction',
-      query: {'interactionType': 'favorite'},
-    );
-    if (response['success'] == true) {
-      final List data = response['data'] ?? [];
-      final ids = data
-          .map((item) => item['personInteractedWith']?.toString() ?? '')
-          .where((id) => id.isNotEmpty)
-          .toList();
-      return Right(ids);
-    } else {
-      return Left(ServerFailure(response['message'] ?? ''));
+  Future<Either<Failure, List<String>>> getFavoriteIds() async {
+    try {
+      final response = await _apiService.get(
+        endPoint: '/user/user-interaction',
+        query: {'interactionType': 'favorite'},
+      );
+      if (response['success'] == true) {
+        final List data = response['data'] ?? [];
+        final ids = data
+            .map((item) => item['personInteractedWith']?.toString() ?? '')
+            .where((id) => id.isNotEmpty)
+            .toList();
+        return Right(ids);
+      } else {
+        return Left(ServerFailure(response['message'] ?? ''));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
-  } on DioException catch (e) {
-    return Left(ServerFailure.fromDioError(e));
-  } catch (e) {
-    return Left(ServerFailure(e.toString()));
   }
-}
-@override
-Future<Either<Failure, String>> blockUser({required String personId}) async {
-  try {
-    final response = await _apiService.post(
-      endPoint: ApiEndPoint.blockuser,
-      data: {'blockedId': personId},
-    );
-    if (response['success'] == true) {
-      return Right(response['message'] ?? 'تم الحظر بنجاح');
-    } else {
-      return Left(ServerFailure(response['message'] ?? 'فشل الحظر'));
-    }
-  } on DioException catch (e) {
-    return Left(ServerFailure.fromDioError(e));
-  } catch (e) {
-    return Left(ServerFailure(e.toString()));
-  }
-}
 
-@override
-Future<Either<Failure, UserItem>> getProfileById(String userId) async {
-  try {
-    final response = await _apiService.get(
-      endPoint: '/user/one-user-for-marry/$userId',
-    );
-    if (response['success'] == true) {
-      final data = response['data'];
-      final userData = data['userData'];
-      final allowInteractions = data['allowInteractions'] as bool? ?? true; // ✅
-
-      final userItem = UserItem.fromJson({
-        ...userData,
-        'allowInteractions': allowInteractions, // ✅ حطه في الـ UserItem
-      });
-      return Right(userItem);
-    } else {
-      return Left(ServerFailure(response['message'] ?? ''));
+  @override
+  Future<Either<Failure, String>> blockUser({required String personId}) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.blockuser,
+        data: {'blockedId': personId},
+      );
+      if (response['success'] == true) {
+        return Right(response['message'] ?? 'تم الحظر بنجاح');
+      } else {
+        return Left(ServerFailure(response['message'] ?? 'فشل الحظر'));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
-  } on DioException catch (e) {
-    return Left(ServerFailure.fromDioError(e));
-  } catch (e) {
-    return Left(ServerFailure(e.toString()));
   }
-}
+
+  @override
+  Future<Either<Failure, UserItem>> getProfileById(String userId) async {
+    try {
+      final response = await _apiService.get(
+        endPoint: '/user/one-user-for-marry/$userId',
+      );
+      if (response['success'] == true) {
+        final data = response['data'];
+        final userData = data['userData'];
+        final allowInteractions = data['allowInteractions'] as bool? ?? true;
+
+        final userItem = UserItem.fromJson({
+          ...userData,
+          'allowInteractions': allowInteractions,
+        });
+        return Right(userItem);
+      } else {
+        return Left(ServerFailure(response['message'] ?? ''));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, NotificationCountModel>>
+  getInteractionNotificationCount() async {
+    try {
+      final response = await _apiService.get(
+        endPoint: '/user/interactions-notification-count',
+      );
+      if (response['success'] == true) {
+        return Right(NotificationCountModel.fromJson(response));
+      } else {
+        return Left(ServerFailure(response['message'] ?? ''));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> setUserLocation({
+    required double lat,
+    required double lng,
+  }) async {
+    try {
+      final response = await _apiService.patch(
+        endPoint: '/user/set-location',
+        data: {'lat': lat, 'lng': lng},
+      );
+
+      if (response['success'] == true) {
+        return const Right(null);
+      } else {
+        return Left(ServerFailure(response['message'] ?? 'فشل تحديث الموقع'));
+      }
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> resetAllNotificationCounts() async {
+    try {
+      await Future.wait([
+        _apiService.patch(endPoint: '/user/reset-likes-notification-count'),
+        _apiService.patch(endPoint: '/user/reset-favorites-notification-count'),
+        _apiService.patch(endPoint: '/user/reset-regards-notification-count'),
+      ]);
+      return const Right(null);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> resetLikesNotificationCount() async {
+    try {
+      await _apiService.patch(endPoint: '/user/reset-likes-notification-count');
+      return const Right(null);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> resetFavoritesNotificationCount() async {
+    try {
+      await _apiService.patch(
+        endPoint: '/user/reset-favorites-notification-count',
+      );
+      return const Right(null);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> resetRegardsNotificationCount() async {
+    try {
+      await _apiService.patch(
+        endPoint: '/user/reset-regards-notification-count',
+      );
+      return const Right(null);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
+    }
+  }
 }

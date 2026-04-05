@@ -41,11 +41,24 @@ class _MySpaceConsultationContentState
           return true;
         }
         
-        // If any room's unreadCount or lastMessage changed, rebuild
-        for (int i = 0; i < prevRooms.length; i++) {
-          if (prevRooms[i].id != currRooms[i].id ||
-              prevRooms[i].unreadCount != currRooms[i].unreadCount ||
-              prevRooms[i].lastMessage?.content != currRooms[i].lastMessage?.content) {
+        // Create maps for easier comparison by ID
+        final prevRoomsMap = {for (var room in prevRooms) room.id: room};
+        final currRoomsMap = {for (var room in currRooms) room.id: room};
+        
+        // Check if any room changed
+        for (final roomId in currRoomsMap.keys) {
+          final prevRoom = prevRoomsMap[roomId];
+          final currRoom = currRoomsMap[roomId];
+          
+          if (prevRoom == null || currRoom == null) {
+            // New room added or removed
+            return true;
+          }
+          
+          // Check if unreadCount or lastMessage content changed
+          if (prevRoom.unreadCount != currRoom.unreadCount ||
+              prevRoom.lastMessage?.content != currRoom.lastMessage?.content ||
+              prevRoom.lastMessage?.id != currRoom.lastMessage?.id) {
             return true;
           }
         }
@@ -114,7 +127,6 @@ class _MySpaceConsultationContentState
                       'isSystemChat': chatRoom.isSystemChat,
                     };
 
-                    // في حالة System Chat نرسل system: true بدلاً من receiverid
                     if (chatRoom.isSystemChat) {
                       arguments['system'] = true;
                     } else {

@@ -11,6 +11,8 @@ class ConnectivityCachedImage extends StatefulWidget {
   final Widget Function(BuildContext, String)? placeholder;
   final double? width;
   final double? height;
+  final int? memCacheWidth;
+  final int? memCacheHeight;
 
   const ConnectivityCachedImage({
     super.key,
@@ -20,6 +22,8 @@ class ConnectivityCachedImage extends StatefulWidget {
     this.placeholder,
     this.width,
     this.height,
+    this.memCacheWidth,
+    this.memCacheHeight,
   });
 
   @override
@@ -52,6 +56,8 @@ class _ConnectivityCachedImageState extends State<ConnectivityCachedImage> {
         alignment: widget.alignment,
         width: widget.width,
         height: widget.height,
+        memCacheWidth: widget.memCacheWidth,
+        memCacheHeight: widget.memCacheHeight,
         fadeInDuration: Duration.zero,
         fadeOutDuration: Duration.zero,
         placeholderFadeInDuration: Duration.zero,

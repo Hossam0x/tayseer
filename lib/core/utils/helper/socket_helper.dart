@@ -31,7 +31,7 @@ class tayseerSocketHelper {
 
     final String? token = CachNetwork.getStringData(key: 'token');
     log(
-      'Token: ${token?.substring(0, 20)}...',
+      'Token: $token',
     ); // Log only first 20 chars for security
 
     if (token == null || token.isEmpty) {

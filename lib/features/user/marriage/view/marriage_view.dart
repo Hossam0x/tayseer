@@ -1,6 +1,7 @@
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
 import 'package:tayseer/features/user/marriage/view/widget/marriage_body.dart';
+import 'package:tayseer/features/user/marriage/view/widget/marriage_location_guard.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
 import 'package:tayseer/features/user/questions/presentation/manager/questions_cubit.dart';
 import 'package:tayseer/features/user/questions/presentation/manager/questions_state.dart';
@@ -27,18 +28,20 @@ class MarriageView extends StatelessWidget {
     final completed = kCurrentUserData?.compeletedData == true;
     return Scaffold(
       body: completed
-          ? BlocProvider(
-              create: (context) => MarriageCubit(
-                // ✅ نمرر الـ seed للـ cubit مباشرة عند الإنشاء
-                seedPersonId: personId,
-                seedIsFavorite: initialIsFavorite,
-                interactionUser: interactionUser,
-              ),
-              child: MarriageBody(
-                personId: personId,
-                fromInteractions: fromInteractions,
-                initialIsFavorite: initialIsFavorite,
-                onScroll: onScroll,
+          ? MarriageLocationGuard(
+              child: BlocProvider(
+                create: (context) => MarriageCubit(
+                  // ✅ نمرر الـ seed للـ cubit مباشرة عند الإنشاء
+                  seedPersonId: personId,
+                  seedIsFavorite: initialIsFavorite,
+                  interactionUser: interactionUser,
+                ),
+                child: MarriageBody(
+                  personId: personId,
+                  fromInteractions: fromInteractions,
+                  initialIsFavorite: initialIsFavorite,
+                  onScroll: onScroll,
+                ),
               ),
             )
           : BlocProvider.value(

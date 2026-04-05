@@ -89,4 +89,28 @@ class WalletRepo {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  /// Initiates an IAP purchase on the backend and returns the [pendingId]
+  /// to be passed as [applicationUserName] to Apple/Google.
+  Future<Either<Failure, String>> initiatePurchase({
+    required String productId,
+    required String platform,
+  }) async {
+    try {
+      final response = await _remoteDataSource.initiatePurchase(
+        productId: productId,
+        platform: platform,
+      );
+      if (response['success'] == true) {
+        final pendingId = response['data']['pendingId'] as String?;
+        if (pendingId == null || pendingId.isEmpty) {
+          return Left(ServerFailure('pendingId غير موجود في الاستجابة'));
+        }
+        return Right(pendingId);
+      }
+      return Left(ServerFailure(response['message'] ?? 'فشل بدء عملية الشراء'));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }

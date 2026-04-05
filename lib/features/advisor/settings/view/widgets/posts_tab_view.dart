@@ -228,6 +228,18 @@ class _PostItemState extends State<_PostItem>
       onBlock: (postId, advisorId) =>
           _cubit.blockUser(visiblePostId: postId, advisorId: advisorId),
       onEdit: (updatedPost) => _cubit.updatePostLocally(updatedPost),
+      onCommented: (postId, isAnonymous) =>
+          _cubit.markPostAsCommented(postId: postId, isAnonymous: isAnonymous),
+      onCommentCountDelta:
+          ({required postId, required countDelta, isCommented, isAnonymous}) =>
+              _cubit.updateCommentCountByDelta(
+                postId: postId,
+                countDelta: countDelta,
+                isCommented: isCommented,
+                isAnonymous: isAnonymous,
+              ),
+      onCommentCountSync: ({required postId, required totalCount}) => _cubit
+          .syncCommentCountFromBackend(postId: postId, totalCount: totalCount),
     );
   }
 

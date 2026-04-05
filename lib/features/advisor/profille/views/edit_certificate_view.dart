@@ -2,7 +2,6 @@ import 'package:tayseer/core/widgets/profile_text_field.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/shared/profile/data/models/certificate_model.dart';
 import 'package:tayseer/features/shared/profile/data/repositories/certificates_repository.dart';
-import 'package:tayseer/features/shared/profile/cubit/certificates/certificates_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates/edit_certificate_cubit.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/certificates/edit_certificate_state.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/edit_certificate/edit_certificate_action_button.dart';
@@ -21,34 +20,10 @@ class EditCertificateView extends StatelessWidget {
     this.selectedCertificate,
   });
 
-  void _syncCertificatesLocally(
-    BuildContext context,
-    EditCertificateState state,
-  ) {
-    try {
-      final certificatesCubit = context.read<CertificatesCubit>();
-      if (state.updatedCertificate != null) {
-        certificatesCubit.updateCertificateLocally(state.updatedCertificate!);
-      } else if (state.selectedCertificateId != null) {
-        certificatesCubit.updateCertificateLocally(
-          CertificateModel(
-            id: state.selectedCertificateId!,
-            nameCertificate: state.nameCertificate,
-            fromWhere: state.fromWhere,
-            date: state.date!,
-            image: state.certificateImageUrl,
-          ),
-        );
-      }
-    } catch (_) {
-      // CertificatesCubit not in context — ignore
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => EditCertificateCubit(
+      create: (_) => EditCertificateCubit(
         getIt<CertificatesRepository>(),
         initialCertificate: selectedCertificate,
       ),
@@ -75,10 +50,9 @@ class EditCertificateView extends StatelessWidget {
               );
 
               if (state.isNavigationSuccess) {
-                _syncCertificatesLocally(context, state);
                 Future.delayed(const Duration(milliseconds: 500), () {
                   if (context.mounted) {
-                    Navigator.pop(context, state.updatedCertificate ?? true);
+                    Navigator.pop(context, state.updatedCertificate);
                   }
                 });
               }
@@ -109,12 +83,8 @@ class _EditCertificateBodyState extends State<_EditCertificateBody> {
   void initState() {
     super.initState();
     final initialState = context.read<EditCertificateCubit>().state;
-    _nameController = TextEditingController(
-      text: initialState.nameCertificate,
-    );
-    _fromWhereController = TextEditingController(
-      text: initialState.fromWhere,
-    );
+    _nameController = TextEditingController(text: initialState.nameCertificate);
+    _fromWhereController = TextEditingController(text: initialState.fromWhere);
   }
 
   @override
@@ -158,10 +128,7 @@ class _EditCertificateBodyState extends State<_EditCertificateBody> {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 20.w,
-                  vertical: 16.h,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
                 child: SafeArea(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -174,19 +141,17 @@ class _EditCertificateBodyState extends State<_EditCertificateBody> {
                       Gap(32.h),
                       ProfileTextField(
                         controller: _nameController,
-                        onChanged:
-                            context
-                                .read<EditCertificateCubit>()
-                                .updateNameCertificate,
+                        onChanged: context
+                            .read<EditCertificateCubit>()
+                            .updateNameCertificate,
                         hint: context.tr('certificate_name_hint'),
                       ),
                       Gap(20.h),
                       ProfileTextField(
                         controller: _fromWhereController,
-                        onChanged:
-                            context
-                                .read<EditCertificateCubit>()
-                                .updateFromWhere,
+                        onChanged: context
+                            .read<EditCertificateCubit>()
+                            .updateFromWhere,
                         hint: context.tr('institution_name_hint'),
                       ),
                       Gap(20.h),

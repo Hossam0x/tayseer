@@ -1,13 +1,10 @@
-// ════════════════════════════════════════════════════════════════
-// ✅ ImageSlotCard - يدعم local files و network images
-// ════════════════════════════════════════════════════════════════
-import 'dart:ui' as ui;
 
+import 'dart:ui' as ui;
 import 'package:tayseer/my_import.dart';
 
 class ImageSlotCard extends StatelessWidget {
   final String? imageUrl;
-  final File? localFile; // ✅ للصور المحلية pending
+  final File? localFile;
   final bool isMain;
   final VoidCallback? onTap;
   final VoidCallback? onRemove;
@@ -49,21 +46,36 @@ class ImageSlotCard extends StatelessWidget {
               ),
             )
           else
-            Container(
-              decoration: BoxDecoration(
+            // ✅ RepaintBoundary يعزل الصورة عن باقي الـ widget tree
+            RepaintBoundary(
+              child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300),
-                image: DecorationImage(
-                  // ✅ FileImage للصور المحلية، NetworkImage للسيرفر
-                  image: localFile != null
-                      ? FileImage(localFile!) as ImageProvider
-                      : NetworkImage(imageUrl!),
-                  fit: BoxFit.cover,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  width: double.infinity,
+                  height: double.infinity,
+                  child: localFile != null
+                      ? Image.file(
+                          localFile!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          gaplessPlayback: true, // ✅ منع الوميض عند rebuild
+                          cacheWidth: 300,        // ✅ منع إعادة decode
+                        )
+                      : AppImage(
+                          imageUrl!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
                 ),
               ),
             ),
 
-          // ✅ أيقونة صغيرة للصور الـ pending
           if (localFile != null)
             Positioned(
               bottom: 2,
@@ -107,6 +119,7 @@ class ImageSlotCard extends StatelessWidget {
                 ),
               ),
             ),
+
           if (hasImage && onRemove != null)
             Positioned(
               top: 4,
@@ -129,9 +142,6 @@ class ImageSlotCard extends StatelessWidget {
   }
 }
 
-// ════════════════════════════════════════════════════════════════
-// DashedRectPainter
-// ════════════════════════════════════════════════════════════════
 class DashedRectPainter extends CustomPainter {
   final double strokeWidth;
   final Color color;
@@ -177,5 +187,5 @@ class DashedRectPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
+  bool shouldRepaint(CustomPainter oldDelegate) => false; // ✅ كان true — غلط
 }

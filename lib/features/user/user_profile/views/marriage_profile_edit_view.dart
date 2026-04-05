@@ -3,6 +3,7 @@ import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/core/widgets/custom_video_and_edit/custom_uploaded_video_preview.dart';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
+import 'package:tayseer/core/widgets/gif_overlay.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 import 'package:tayseer/features/user/questions/presentation/widgets/image_guidelines_bottom_sheet.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
@@ -26,6 +27,7 @@ class MarriageProfileEditView extends StatefulWidget {
     required this.maxImages,
     this.onTabChanged,
     this.scrollToSection,
+    this.onSaveSuccess,
   });
 
   final int maxImages;
@@ -35,15 +37,21 @@ class MarriageProfileEditView extends StatefulWidget {
   late int selectedTabIndex;
   final Function(int)? onTabChanged;
   final String? scrollToSection;
+  final VoidCallback? onSaveSuccess;
 
   @override
   State<MarriageProfileEditView> createState() =>
       _MarriageProfileEditViewState();
 }
 
-class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
+class _MarriageProfileEditViewState extends State<MarriageProfileEditView>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   bool _isRecordingInPlace = false;
   bool _isDragMode = false;
+  bool _wasUpdating = false;
 
   final GlobalKey _imagesKey = GlobalKey();
   final GlobalKey _videoKey = GlobalKey();
@@ -100,7 +108,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             alignment: 0.1,
           );
         } else {
-          debugPrint('⚠️ Retrying scroll for $section...');
           Future.delayed(const Duration(milliseconds: 200), () {
             if (targetKey?.currentContext != null) {
               Scrollable.ensureVisible(
@@ -133,9 +140,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     return translated;
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // ✅ Open image in FullScreen
-  // ════════════════════════════════════════════════════════════════
   void _openFullScreen(BuildContext context, String imageUrl, String heroTag) {
     FullScreenImageView.show(
       context,
@@ -147,50 +151,86 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
+    final isUpdatingNow = widget.state.isUpdating;
+    if (isUpdatingNow && !_wasUpdating) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          showGifOverlay(
+            context,
+            repeatCount: 10,
+            gifDuration: const Duration(milliseconds: 900),
+          );
+        }
+      });
+    }
+    _wasUpdating = isUpdatingNow;
+
+    return _buildScrollContent(context);
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // SCROLL CONTENT
+  // ✅ ClampingScrollPhysics = scroll يشتغل فوراً بدون ما ينتظر
+  //    الصور تتحمل — ده الفرق الجوهري عن BouncingScrollPhysics
+  // ════════════════════════════════════════════════════════════════
+  Widget _buildScrollContent(BuildContext context) {
     return CustomScrollView(
       controller: _scrollController,
-      cacheExtent: 3000,
-      physics: const BouncingScrollPhysics(),
+      cacheExtent: 5000,
+      physics: const ClampingScrollPhysics(),
       slivers: [
         SliverPadding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
           sliver: SliverList(
-            delegate: SliverChildListDelegate([
-              Gap(24.h),
-              _buildPersonalInfoSection(context, widget.cubit, widget.profile),
-              Gap(20.h),
-              Container(
-                key: _imagesKey,
-                child: _buildImagesSection(
+            delegate: SliverChildListDelegate(
+              addRepaintBoundaries: false,
+              [
+                Gap(24.h),
+                _buildPersonalInfoSection(
                   context,
                   widget.cubit,
                   widget.profile,
                 ),
-              ),
-              Gap(24.h),
-              _buildProfessionalInfoSection(
-                context,
-                widget.cubit,
-                widget.profile,
-              ),
-              Gap(24.h),
-              Container(key: _videoKey, child: _buildVideoSection(context)),
-              Gap(24.h),
-              Container(key: _audioKey, child: _buildAudioSection(context)),
-              Gap(24.h),
-              _buildFamilyAndPreferencesSection(
-                context,
-                widget.cubit,
-                widget.profile,
-              ),
-              Gap(24.h),
-              _buildGoalsSection(context, widget.cubit, widget.profile),
-              Gap(24.h),
-              _buildKnowMeMoreSection(context, widget.cubit, widget.profile),
-              Gap(32.h),
-              _buildSaveButton(context, widget.cubit, widget.state),
-              Gap(100.h),
-            ]),
+                Gap(20.h),
+                Container(
+                  key: _imagesKey,
+                  child: _buildImagesSection(
+                    context,
+                    widget.cubit,
+                    widget.profile,
+                  ),
+                ),
+                Gap(24.h),
+                _buildProfessionalInfoSection(
+                  context,
+                  widget.cubit,
+                  widget.profile,
+                ),
+                Gap(24.h),
+                Container(key: _videoKey, child: _buildVideoSection(context)),
+                Gap(24.h),
+                Container(key: _audioKey, child: _buildAudioSection(context)),
+                Gap(24.h),
+                _buildFamilyAndPreferencesSection(
+                  context,
+                  widget.cubit,
+                  widget.profile,
+                ),
+                Gap(24.h),
+                _buildGoalsSection(context, widget.cubit, widget.profile),
+                Gap(24.h),
+                _buildKnowMeMoreSection(
+                  context,
+                  widget.cubit,
+                  widget.profile,
+                ),
+                Gap(32.h),
+                _buildSaveButton(context, widget.cubit, widget.state),
+                Gap(100.h),
+              ],
+            ),
           ),
         ),
       ],
@@ -198,7 +238,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ✅ IMAGES SECTION
+  // IMAGES SECTION
   // ════════════════════════════════════════════════════════════════
   Widget _buildImagesSection(
     BuildContext context,
@@ -206,28 +246,44 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     MarriageUserProfileModel profile,
   ) {
     final serverImages = profile.userMedia?.images ?? [];
-    final serverSingleImage = profile.userMedia?.singleImage;
     final pendingSingle = widget.state.pendingSingleImage;
     final pendingImgs = widget.state.pendingImages;
-    final deletedSingleUrl = widget.state.deletedSingleImageUrl;
-
-    final displaySingleUrl = deletedSingleUrl != null
+    final displaySingleUrl = widget.state.pendingDeleteSingleImage
         ? null
-        : serverSingleImage;
+        : profile.userMedia?.singleImage;
     final hasSingleToShow = pendingSingle != null || displaySingleUrl != null;
 
     final filteredServerImages = serverImages
         .where((url) => !widget.state.deletedImageUrls.contains(url))
         .toList();
-    final allDisplayImages = [
-      ...filteredServerImages,
-      ...pendingImgs.map((f) => f.path),
-    ];
+
+    final allDisplayImages = filteredServerImages;
+
     final secondaryImages = allDisplayImages.length > 4
         ? allDisplayImages.sublist(0, 4)
         : allDisplayImages;
-    final totalCount = (hasSingleToShow ? 1 : 0) + allDisplayImages.length;
-    final canDrag = secondaryImages.length > 1;
+
+    final totalCount =
+        (hasSingleToShow ? 1 : 0) +
+        allDisplayImages.length +
+        pendingImgs.length;
+
+    final hasPendingChanges =
+        widget.state.pendingImages.isNotEmpty ||
+        widget.state.deletedImageUrls.isNotEmpty ||
+        widget.state.pendingDeleteSingleImage;
+
+    final canDrag = secondaryImages.length > 1 && !hasPendingChanges;
+
+    final sharedArgs = (
+      displaySingleUrl: displaySingleUrl,
+      pendingSingle: pendingSingle,
+      hasSingleToShow: hasSingleToShow,
+      secondaryImages: secondaryImages,
+      filteredServerImages: filteredServerImages,
+      allDisplayImages: allDisplayImages,
+      pendingImgs: pendingImgs,
+    );
 
     return Container(
       padding: EdgeInsets.all(10.w),
@@ -254,7 +310,8 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                   ),
                   if (canDrag)
                     GestureDetector(
-                      onTap: () => setState(() => _isDragMode = !_isDragMode),
+                      onTap: () =>
+                          setState(() => _isDragMode = !_isDragMode),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         padding: EdgeInsets.symmetric(
@@ -303,9 +360,15 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                     ),
                 ],
               ),
-              if (pendingSingle != null || pendingImgs.isNotEmpty) ...[
+              if (pendingSingle != null ||
+                  pendingImgs.isNotEmpty ||
+                  widget.state.pendingDeleteSingleImage ||
+                  widget.state.deletedImageUrls.isNotEmpty) ...[
                 Gap(6.h),
-                _buildPendingBadge(context, context.tr('images_pending_save')),
+                _buildPendingBadge(
+                  context,
+                  context.tr('images_pending_save'),
+                ),
               ],
             ],
           ),
@@ -337,36 +400,49 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             ),
           ],
           Gap(12.h),
-          _isDragMode
-              ? _buildDragGrid(
+
+          // ✅ Offstage: الاتنين في الـ tree دايمًا → الصور محملة دايمًا
+          Stack(
+            children: [
+              Offstage(
+                offstage: _isDragMode,
+                child: _buildNormalGrid(
                   context,
                   cubit,
                   profile,
-                  displaySingleUrl: displaySingleUrl,
-                  pendingSingle: pendingSingle,
-                  hasSingleToShow: hasSingleToShow,
-                  secondaryImages: secondaryImages,
-                  filteredServerImages: filteredServerImages,
-                  allDisplayImages: allDisplayImages,
-                )
-              : _buildNormalGrid(
-                  context,
-                  cubit,
-                  profile,
-                  displaySingleUrl: displaySingleUrl,
-                  pendingSingle: pendingSingle,
-                  hasSingleToShow: hasSingleToShow,
-                  secondaryImages: secondaryImages,
-                  filteredServerImages: filteredServerImages,
-                  allDisplayImages: allDisplayImages,
+                  displaySingleUrl: sharedArgs.displaySingleUrl,
+                  pendingSingle: sharedArgs.pendingSingle,
+                  hasSingleToShow: sharedArgs.hasSingleToShow,
+                  secondaryImages: sharedArgs.secondaryImages,
+                  filteredServerImages: sharedArgs.filteredServerImages,
+                  allDisplayImages: sharedArgs.allDisplayImages,
+                  pendingImgs: sharedArgs.pendingImgs,
                 ),
+              ),
+              Offstage(
+                offstage: !_isDragMode,
+                child: _buildDragGrid(
+                  context,
+                  cubit,
+                  profile,
+                  displaySingleUrl: sharedArgs.displaySingleUrl,
+                  pendingSingle: sharedArgs.pendingSingle,
+                  hasSingleToShow: sharedArgs.hasSingleToShow,
+                  secondaryImages: sharedArgs.secondaryImages,
+                  filteredServerImages: sharedArgs.filteredServerImages,
+                  allDisplayImages: sharedArgs.allDisplayImages,
+                  pendingImgs: sharedArgs.pendingImgs,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ✅ NORMAL GRID
+  // NORMAL GRID
   // ════════════════════════════════════════════════════════════════
   Widget _buildNormalGrid(
     BuildContext context,
@@ -378,7 +454,12 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     required List<String> secondaryImages,
     required List<String> filteredServerImages,
     required List<String> allDisplayImages,
+    required List<File> pendingImgs,
   }) {
+    final totalServerCount = secondaryImages.length;
+    final totalPendingCount = pendingImgs.length;
+    final totalSlots = totalServerCount + totalPendingCount;
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: GridView.builder(
@@ -392,16 +473,26 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           mainAxisSpacing: 12,
         ),
         itemCount: 6,
+        addRepaintBoundaries: true,
+        addAutomaticKeepAlives: true,
         itemBuilder: (context, index) {
           if (index == 0) {
             return GestureDetector(
               onTap: hasSingleToShow && displaySingleUrl != null
-                  ? () =>
-                        _openFullScreen(context, displaySingleUrl, 'main_image')
+                  ? () => _openFullScreen(
+                      context,
+                      displaySingleUrl,
+                      'main_image',
+                    )
                   : !hasSingleToShow
                   ? () => _pickSingleImage(context, cubit, profile)
                   : null,
               child: ImageSlotCard(
+                key: ValueKey(
+                  displaySingleUrl ??
+                      pendingSingle?.path ??
+                      'main_empty',
+                ),
                 imageUrl: displaySingleUrl,
                 localFile: pendingSingle,
                 isMain: true,
@@ -428,7 +519,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                       size: 28,
                       color: AppColors.kscandryTextColor,
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
                       context.tr('photo_guidelines'),
                       textAlign: TextAlign.center,
@@ -443,43 +534,45 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           }
 
           final listIndex = index - 1;
-          if (listIndex < secondaryImages.length) {
-            final isLocal = listIndex >= filteredServerImages.length;
-            final pendingIndex = listIndex - filteredServerImages.length;
-            final imageUrl = isLocal ? null : secondaryImages[listIndex];
-            final heroTag = 'secondary_image_$listIndex';
 
+          if (listIndex < totalServerCount) {
+            final imageUrl = secondaryImages[listIndex];
+            final heroTag = 'secondary_image_$listIndex';
             return GestureDetector(
-              onTap: !isLocal && imageUrl != null
-                  ? () => _openFullScreen(context, imageUrl, heroTag)
-                  : null,
+              key: ValueKey(imageUrl),
+              onTap: () => _openFullScreen(context, imageUrl, heroTag),
               child: ImageSlotCard(
+                key: ValueKey('slot_$imageUrl'),
                 imageUrl: imageUrl,
-                localFile: isLocal
-                    ? widget.state.pendingImages[pendingIndex]
-                    : null,
+                localFile: null,
                 isMain: false,
                 onTap: null,
-                onRemove: () {
-                  if (isLocal) {
-                    cubit.removePendingImage(pendingIndex);
-                  } else {
-                    _removeImage(
-                      context,
-                      cubit,
-                      listIndex,
-                      filteredServerImages,
-                    );
-                  }
-                },
+                onRemove: () => _removeImage(
+                  context,
+                  cubit,
+                  listIndex,
+                  filteredServerImages,
+                ),
               ),
+            );
+          } else if (listIndex < totalSlots) {
+            final pendingIndex = listIndex - totalServerCount;
+            return ImageSlotCard(
+              key: ValueKey('pending_${pendingImgs[pendingIndex].path}'),
+              imageUrl: null,
+              localFile: pendingImgs[pendingIndex],
+              isMain: false,
+              onTap: null,
+              onRemove: () => cubit.removePendingImage(pendingIndex),
             );
           }
 
+          final currentTotal = totalServerCount + totalPendingCount;
           return ImageSlotCard(
+            key: ValueKey('empty_$listIndex'),
             imageUrl: null,
             isMain: false,
-            onTap: allDisplayImages.length < 4
+            onTap: currentTotal < 4
                 ? () => _pickImage(context, cubit, profile, isMain: false)
                 : null,
             onRemove: null,
@@ -490,7 +583,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // ✅ DRAG GRID
+  // DRAG GRID
   // ════════════════════════════════════════════════════════════════
   Widget _buildDragGrid(
     BuildContext context,
@@ -502,6 +595,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     required List<String> secondaryImages,
     required List<String> filteredServerImages,
     required List<String> allDisplayImages,
+    required List<File> pendingImgs,
   }) {
     final screenWidth = MediaQuery.of(context).size.width - 40.w - 20.w;
     final cellWidth = (screenWidth - 24) / 3;
@@ -511,6 +605,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       width: cellWidth,
       height: cellHeight,
       child: ImageSlotCard(
+        key: ValueKey(
+          displaySingleUrl ?? pendingSingle?.path ?? 'drag_main_empty',
+        ),
         imageUrl: displaySingleUrl,
         localFile: pendingSingle,
         isMain: true,
@@ -520,55 +617,101 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
 
     Widget secSlot(int listIndex) {
-      if (listIndex >= secondaryImages.length) {
-        return Container(
-          key: ValueKey('empty_$listIndex'),
-          child: ImageSlotCard(
-            imageUrl: null,
-            isMain: false,
-            onTap: null,
-            onRemove: null,
+      if (listIndex < secondaryImages.length) {
+        final imageUrl = secondaryImages[listIndex];
+        return AnimatedContainer(
+          key: ValueKey('sec_$imageUrl'),
+          duration: const Duration(milliseconds: 200),
+          child: Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12.r),
+                child: ImageSlotCard(
+                  key: ValueKey('drag_slot_$imageUrl'),
+                  imageUrl: imageUrl,
+                  localFile: null,
+                  isMain: false,
+                  onTap: null,
+                  onRemove: null,
+                ),
+              ),
+              Positioned(
+                top: 6.h,
+                right: 6.w,
+                child: Container(
+                  padding: EdgeInsets.all(3.w),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(5.r),
+                  ),
+                  child: Icon(
+                    Icons.drag_indicator_rounded,
+                    color: Colors.white,
+                    size: 13.w,
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       }
-      final isLocal = listIndex >= filteredServerImages.length;
-      final pendingIndex = listIndex - filteredServerImages.length;
-      final imageUrl = isLocal ? null : secondaryImages[listIndex];
 
-      return AnimatedContainer(
-        key: ValueKey('sec_${secondaryImages[listIndex]}'),
-        duration: const Duration(milliseconds: 200),
-        child: Stack(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12.r),
-              child: ImageSlotCard(
-                imageUrl: imageUrl,
-                localFile: isLocal
-                    ? widget.state.pendingImages[pendingIndex]
-                    : null,
-                isMain: false,
-                onTap: null,
-                onRemove: null,
-              ),
-            ),
-            Positioned(
-              top: 6.h,
-              right: 6.w,
-              child: Container(
-                padding: EdgeInsets.all(3.w),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(5.r),
-                ),
-                child: Icon(
-                  Icons.drag_indicator_rounded,
-                  color: Colors.white,
-                  size: 13.w,
+      final pendingIndex = listIndex - secondaryImages.length;
+      if (pendingIndex < pendingImgs.length) {
+        return Container(
+          key: ValueKey('pending_$pendingIndex'),
+          child: Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12.r),
+                child: ImageSlotCard(
+                  key: ValueKey(
+                    'drag_pending_${pendingImgs[pendingIndex].path}',
+                  ),
+                  imageUrl: null,
+                  localFile: pendingImgs[pendingIndex],
+                  isMain: false,
+                  onTap: null,
+                  onRemove: null,
                 ),
               ),
-            ),
-          ],
+              Positioned(
+                bottom: 6.h,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 6.w,
+                      vertical: 2.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.85),
+                      borderRadius: BorderRadius.circular(6.r),
+                    ),
+                    child: Text(
+                      context.tr('pending'),
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      return Container(
+        key: ValueKey('empty_$listIndex'),
+        child: ImageSlotCard(
+          key: ValueKey('drag_empty_$listIndex'),
+          imageUrl: null,
+          isMain: false,
+          onTap: null,
+          onRemove: null,
         ),
       );
     }
@@ -596,22 +739,28 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                   if (newIdx >= updatedImages.length) return;
                   final item = updatedImages.removeAt(oldIdx);
                   updatedImages.insert(newIdx, item);
+
                   cubit.reorderSecondaryImages(
                     updatedImages,
                     filteredServerImages,
                   );
                   setState(() {});
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      CustomSnackBar(
-                        context,
-                        text: context.tr('image_reordered_successfully'),
-                        isSuccess: true,
-                      ),
-                    );
-                  }
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    CustomSnackBar(
+                      context,
+                      text: context.tr('image_reordered_successfully'),
+                      isSuccess: true,
+                    ),
+                  );
                 },
-                children: List.generate(4, (i) => secSlot(i)),
+                children: List.generate(
+                  (secondaryImages.length + pendingImgs.length).clamp(
+                    0,
+                    4,
+                  ),
+                  (i) => secSlot(i),
+                ),
               ),
             ),
           ),
@@ -627,11 +776,11 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     final serverVideoUrl = widget.profile.userMedia?.video;
     final pendingVideo = widget.state.pendingVideo;
     final pendingDeleteVideo = widget.state.pendingDeleteVideo;
+
+    final displayVideoUrl = pendingDeleteVideo ? null : serverVideoUrl;
     final hasVideo =
         pendingVideo != null ||
-        (!pendingDeleteVideo &&
-            serverVideoUrl != null &&
-            serverVideoUrl.isNotEmpty);
+        (displayVideoUrl != null && displayVideoUrl.isNotEmpty);
 
     return Container(
       padding: EdgeInsets.all(12.w),
@@ -660,12 +809,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             ),
           ] else
             VideoSection(
-              videoUrl:
-                  (!pendingDeleteVideo &&
-                      serverVideoUrl != null &&
-                      serverVideoUrl.isNotEmpty)
-                  ? serverVideoUrl
-                  : null,
+              videoUrl: displayVideoUrl,
               onDelete: hasVideo ? () => _deleteVideo(context) : null,
               onUpload: !hasVideo ? () => _showVideoOptions(context) : null,
               showControls: true,
@@ -682,11 +826,11 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     final serverAudioUrl = widget.profile.userMedia?.audio;
     final pendingAudio = widget.state.pendingAudio;
     final pendingDeleteAudio = widget.state.pendingDeleteAudio;
+
+    final displayAudioUrl = pendingDeleteAudio ? null : serverAudioUrl;
     final hasAudio =
         pendingAudio != null ||
-        (!pendingDeleteAudio &&
-            serverAudioUrl != null &&
-            serverAudioUrl.isNotEmpty);
+        (displayAudioUrl != null && displayAudioUrl.isNotEmpty);
 
     return Container(
       padding: EdgeInsets.all(12.w),
@@ -734,9 +878,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // PICK / REMOVE
-  // ════════════════════════════════════════════════════════════════
   Future<void> _pickSingleImage(
     BuildContext context,
     MarriageProfileCubit cubit,
@@ -779,7 +920,10 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     final serverCount =
         (profile.userMedia?.images.length ?? 0) -
         widget.state.deletedImageUrls.length;
-    if (serverCount + widget.state.pendingImages.length >= 4) {
+    final pendingCount = widget.state.pendingImages.length;
+    final total = serverCount + pendingCount;
+
+    if (total >= 4) {
       ScaffoldMessenger.of(context).showSnackBar(
         CustomSnackBar(
           context,
@@ -822,9 +966,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // VIDEO HANDLERS
-  // ════════════════════════════════════════════════════════════════
   void _showVideoOptions(BuildContext context) {
     showDialog(
       context: context,
@@ -920,7 +1061,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       );
       if (v != null) await _processVideoFile(context, v);
     } catch (e) {
-      debugPrint('❌ $e');
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           CustomSnackBar(
@@ -970,7 +1110,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       );
       if (v != null) await _processVideoFile(context, v);
     } catch (e) {
-      debugPrint('❌ $e');
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           CustomSnackBar(
@@ -999,7 +1138,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       widget.cubit.addPendingVideo(file);
       if (mounted) setState(() {});
     } catch (e) {
-      debugPrint('❌ $e');
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           CustomSnackBar(
@@ -1030,9 +1168,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // AUDIO HANDLERS
-  // ════════════════════════════════════════════════════════════════
   void _showAudioOptions(BuildContext context) {
     showDialog(
       context: context,
@@ -1049,8 +1184,15 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: Icon(Icons.mic, color: AppColors.primary200, size: 30.w),
-              title: Text(context.tr('record_now'), style: Styles.textStyle16),
+              leading: Icon(
+                Icons.mic,
+                color: AppColors.primary200,
+                size: 30.w,
+              ),
+              title: Text(
+                context.tr('record_now'),
+                style: Styles.textStyle16,
+              ),
               subtitle: Text(
                 context.tr('record_voice_now'),
                 style: Styles.textStyle12.copyWith(color: Colors.grey),
@@ -1067,7 +1209,10 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                 color: AppColors.primary200,
                 size: 30.w,
               ),
-              title: Text(context.tr('upload_file'), style: Styles.textStyle16),
+              title: Text(
+                context.tr('upload_file'),
+                style: Styles.textStyle16,
+              ),
               subtitle: Text(
                 context.tr('choose_audio_file'),
                 style: Styles.textStyle12.copyWith(color: Colors.grey),
@@ -1083,7 +1228,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
-  void _startRecordingInPlace(BuildContext context) async {
+  void _startRecordingInPlace(BuildContext context) {
     if (mounted) setState(() => _isRecordingInPlace = true);
   }
 
@@ -1121,7 +1266,15 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       }
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['mp3', 'aac', 'wav', 'm4a', 'ogg', 'opus', 'flac'],
+        allowedExtensions: [
+          'mp3',
+          'aac',
+          'wav',
+          'm4a',
+          'ogg',
+          'opus',
+          'flac',
+        ],
         allowCompression: false,
       );
       if (!mounted) return;
@@ -1130,14 +1283,22 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         if (!await file.exists()) {
           if (!mounted) return;
           messenger.showSnackBar(
-            CustomSnackBar(context, text: tr('file_not_found'), isError: true),
+            CustomSnackBar(
+              context,
+              text: tr('file_not_found'),
+              isError: true,
+            ),
           );
           return;
         }
         if (await file.length() > 10 * 1024 * 1024) {
           if (!mounted) return;
           messenger.showSnackBar(
-            CustomSnackBar(context, text: tr('file_too_large'), isError: true),
+            CustomSnackBar(
+              context,
+              text: tr('file_too_large'),
+              isError: true,
+            ),
           );
           return;
         }
@@ -1175,9 +1336,15 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
-  Widget _buildAudioPreviewFull(BuildContext context, {File? pendingAudio}) {
-    final audioPath =
-        pendingAudio?.path ?? widget.profile.userMedia?.audio ?? '';
+  Widget _buildAudioPreviewFull(
+    BuildContext context, {
+    File? pendingAudio,
+  }) {
+    final pendingDeleteAudio = widget.state.pendingDeleteAudio;
+    final serverAudioUrl = widget.profile.userMedia?.audio;
+    final displayAudioUrl = pendingDeleteAudio ? null : serverAudioUrl;
+    final audioPath = pendingAudio?.path ?? displayAudioUrl ?? '';
+
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -1200,7 +1367,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             children: [
               Text(
                 context.tr('audio_clip'),
-                style: Styles.textStyle16.copyWith(fontWeight: FontWeight.w600),
+                style: Styles.textStyle16.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               IconButton(
                 onPressed: () => _deleteAudio(context),
@@ -1244,7 +1413,10 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(context.tr('attach_audio'), style: Styles.textStyle16),
+                Text(
+                  context.tr('attach_audio'),
+                  style: Styles.textStyle16,
+                ),
                 Gap(4.h),
                 Text(
                   context.tr('record_or_upload'),
@@ -1277,11 +1449,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
-  // ════════════════════════════════════════════════════════════════
-  // INFO SECTIONS
-  // ════════════════════════════════════════════════════════════════
-
-  // ✅ FIX 2: حذف سكشن "هل تأكل الحلال" من هنا
   Widget _buildPersonalInfoSection(
     BuildContext context,
     MarriageProfileCubit cubit,
@@ -1303,72 +1470,49 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             context.tr('country'),
             _translateValue(profile.aboutMe?.country ?? '', context),
             () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'country',
-              profile.aboutMe?.country,
+              context, cubit, 'country', profile.aboutMe?.country,
             ),
           ),
           _buildInfoRow(
             context.tr('nationality'),
             _translateValue(profile.aboutMe?.nationality ?? '', context),
             () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'nationality',
-              profile.aboutMe?.nationality,
+              context, cubit, 'nationality', profile.aboutMe?.nationality,
             ),
           ),
           _buildInfoRow(
             context.tr('height'),
             profile.aboutMe?.height ?? context.tr('select'),
             () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'height',
-              profile.aboutMe?.height,
+              context, cubit, 'height', profile.aboutMe?.height,
             ),
           ),
           _buildInfoRow(
             context.tr('weight'),
             profile.aboutMe?.weight ?? context.tr('select'),
             () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'weight',
-              profile.aboutMe?.weight,
+              context, cubit, 'weight', profile.aboutMe?.weight,
             ),
           ),
           _buildInfoRow(
             context.tr('skin_color'),
             _translateValue(profile.aboutMe?.skinColor ?? '', context),
             () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'skinColor',
-              profile.aboutMe?.skinColor,
+              context, cubit, 'skinColor', profile.aboutMe?.skinColor,
             ),
           ),
           _buildInfoRow(
             context.tr('select_health_status_title'),
             _translateValue(profile.aboutMe?.healthStatus ?? '', context),
             () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'healthStatus',
-              profile.aboutMe?.healthStatus,
+              context, cubit, 'healthStatus', profile.aboutMe?.healthStatus,
             ),
           ),
           _buildInfoRow(
             context.tr('commitment_to_religion'),
-            _translateValue(
-              profile.aboutMe?.religiousCommitment ?? '',
-              context,
-            ),
+            _translateValue(profile.aboutMe?.religiousCommitment ?? '', context),
             () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'religiousCommitment',
+              context, cubit, 'religiousCommitment',
               profile.aboutMe?.religiousCommitment,
             ),
           ),
@@ -1376,23 +1520,16 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             context.tr('smoking'),
             _translateValue(profile.aboutMe?.smoker ?? '', context),
             () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'smoker',
-              profile.aboutMe?.smoker,
+              context, cubit, 'smoker', profile.aboutMe?.smoker,
             ),
           ),
           _buildInfoRow(
             context.tr('drink_alcohol'),
             _translateValue(profile.aboutMe?.drinkAlcohol ?? '', context),
             () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'drinkAlcohol',
-              profile.aboutMe?.drinkAlcohol,
+              context, cubit, 'drinkAlcohol', profile.aboutMe?.drinkAlcohol,
             ),
           ),
-          // ✅ تم حذف سكشن "هل تأكل الحلال" (eatHalalOnly) من هنا
         ],
       ),
     );
@@ -1413,21 +1550,13 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            context.tr('professional_info'),
-            style: Styles.textStyle18Meduim,
-          ),
+          Text(context.tr('professional_info'), style: Styles.textStyle18Meduim),
           Gap(12.h),
           _buildInfoRow(
             context.tr('qualification'),
-            _translateValue(
-              profile.professionalLife?.educationLevel ?? '',
-              context,
-            ),
+            _translateValue(profile.professionalLife?.educationLevel ?? '', context),
             () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'education_level',
+              context, cubit, 'education_level',
               profile.professionalLife?.educationLevel,
             ),
           ),
@@ -1436,23 +1565,15 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             context.tr('job'),
             _translateValue(profile.professionalLife?.job ?? '', context),
             () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'choose_job',
-              profile.professionalLife?.job,
+              context, cubit, 'choose_job', profile.professionalLife?.job,
             ),
           ),
           Gap(12.h),
           _buildInfoRow(
             context.tr('employer'),
-            _translateValue(
-              profile.professionalLife?.chooseEmployer ?? '',
-              context,
-            ),
+            _translateValue(profile.professionalLife?.chooseEmployer ?? '', context),
             () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'choose_employer',
+              context, cubit, 'choose_employer',
               profile.professionalLife?.chooseEmployer,
             ),
           ),
@@ -1461,7 +1582,6 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
     );
   }
 
-  // ✅ FIX 1: إخفاء سكشن الأطفال للأعزب/الأنسة
   Widget _buildFamilyAndPreferencesSection(
     BuildContext context,
     MarriageProfileCubit cubit,
@@ -1469,12 +1589,9 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
   ) {
     final hasChildren = profile.family?.hasChildren ?? '';
     final socialStatus = profile.aboutMe?.socialStatus ?? '';
-
-    // ✅ إذا كان أعزب أو آنسة، يُخفى سكشن الأطفال كاملاً
     final isSingle =
         socialStatus == 'social_single' || socialStatus == 'F_social_single';
     final showChildrenSection = !isSingle;
-
     final showChildrenDetails =
         showChildrenSection &&
         hasChildren.isNotEmpty &&
@@ -1497,22 +1614,15 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             context.tr('marital_status'),
             _translateValue(profile.aboutMe?.socialStatus ?? '', context),
             () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'maritalStatus',
-              profile.aboutMe?.socialStatus,
+              context, cubit, 'maritalStatus', profile.aboutMe?.socialStatus,
             ),
           ),
-          // ✅ إظهار سكشن الأطفال فقط لغير الأعزب/الأنسة
           if (showChildrenSection) ...[
             _buildInfoRow(
               context.tr('has_childrens'),
               _translateValue(profile.family?.hasChildren ?? '', context),
               () => _navigateToFieldSelection(
-                context,
-                cubit,
-                'hasChildren',
-                profile.family?.hasChildren,
+                context, cubit, 'hasChildren', profile.family?.hasChildren,
               ),
             ),
             if (showChildrenDetails) ...[
@@ -1520,22 +1630,15 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                 context.tr('children_count'),
                 _translateValue(profile.family?.childrenNumber ?? '', context),
                 () => _navigateToFieldSelection(
-                  context,
-                  cubit,
-                  'childrenNumber',
+                  context, cubit, 'childrenNumber',
                   profile.family?.childrenNumber,
                 ),
               ),
               _buildInfoRow(
                 context.tr('children_live_with_you'),
-                _translateValue(
-                  profile.family?.childrenLivingStatus ?? '',
-                  context,
-                ),
+                _translateValue(profile.family?.childrenLivingStatus ?? '', context),
                 () => _navigateToFieldSelection(
-                  context,
-                  cubit,
-                  'childrenLiveWithYou',
+                  context, cubit, 'childrenLiveWithYou',
                   profile.family?.childrenLivingStatus,
                 ),
               ),
@@ -1567,42 +1670,29 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
             context.tr('engagement'),
             _translateValue(profile.yourGoals?.engagement ?? '', context),
             () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'engagement',
-              profile.yourGoals?.engagement,
+              context, cubit, 'engagement', profile.yourGoals?.engagement,
             ),
           ),
           _buildInfoRow(
             context.tr('marriage'),
             _translateValue(profile.yourGoals?.marry ?? '', context),
             () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'marriage_intentions',
-              profile.yourGoals?.marry,
+              context, cubit, 'marriage_intentions', profile.yourGoals?.marry,
             ),
           ),
           _buildInfoRow(
             context.tr('family'),
             _translateValue(profile.yourGoals?.familyAcceptance ?? '', context),
             () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'familyAcceptance',
+              context, cubit, 'familyAcceptance',
               profile.yourGoals?.familyAcceptance,
             ),
           ),
           _buildInfoRow(
             context.tr('travel'),
-            _translateValue(
-              profile.yourGoals?.intendTravelAbroad ?? '',
-              context,
-            ),
+            _translateValue(profile.yourGoals?.intendTravelAbroad ?? '', context),
             () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'intendTravelAbroad',
+              context, cubit, 'intendTravelAbroad',
               profile.yourGoals?.intendTravelAbroad,
             ),
           ),
@@ -1641,9 +1731,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                 ? _formatHobbiesForDisplay(interestHobbies, context)
                 : context.tr('select'),
             () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'interests',
+              context, cubit, 'interests',
               interestHobbies.isNotEmpty ? interestHobbies.join(', ') : null,
             ),
           ),
@@ -1653,9 +1741,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
                 ? _formatHobbiesForDisplay(faithHobbies, context)
                 : context.tr('select'),
             () => _navigateToFieldSelection(
-              context,
-              cubit,
-              'faith',
+              context, cubit, 'faith',
               faithHobbies.isNotEmpty ? faithHobbies.join(', ') : null,
             ),
           ),
@@ -1674,6 +1760,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         if (state.state == CubitStates.success &&
             !state.isUpdating &&
             state.savedFromButton) {
+          widget.onSaveSuccess?.call();
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
@@ -1683,10 +1770,13 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
           );
           widget.onTabChanged?.call(1);
         } else if (state.state == CubitStates.failure) {
-          debugPrint('❌ [SAVE] Error: ${state.errorMessage}');
           if (state.errorMessage != null)
             ScaffoldMessenger.of(context).showSnackBar(
-              CustomSnackBar(context, text: state.errorMessage!, isError: true),
+              CustomSnackBar(
+                context,
+                text: state.errorMessage!,
+                isError: true,
+              ),
             );
         }
       },
@@ -1800,19 +1890,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView> {
         builder: (context) => MarriageFieldSelectionView(
           fieldName: fieldKey,
           currentValue: currentValue,
-          onValueSelected: (value) {
-            if (fieldKey == 'interests' || fieldKey == 'hobbies') {
-              for (var part in value.split(', ')) {
-                final isKey =
-                    part.startsWith('interest_') || part.startsWith('faith_');
-                debugPrint(
-                  '  ${isKey ? "✅" : "❌"} $part ${isKey ? "(KEY)" : "(VALUE - WRONG!)"}',
-                );
-              }
-            }
-            debugPrint('═══════════════════════════════════════════');
-            cubit.updateField(fieldKey, value);
-          },
+          onValueSelected: (value) => cubit.updateField(fieldKey, value),
         ),
       ),
     );

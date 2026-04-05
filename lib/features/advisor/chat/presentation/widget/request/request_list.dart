@@ -1,33 +1,22 @@
 import 'dart:ui';
-
-import 'package:tayseer/features/advisor/chat/data/model/chatView/request_item_model.dart';
+import 'package:tayseer/features/advisor/chat/data/model/chat_requests/chat_request_model.dart';
 import 'package:tayseer/my_import.dart';
 
 class RequestListTile extends StatelessWidget {
-  final RequestItemModel item;
+  final ChatRequestModel item;
 
   const RequestListTile({super.key, required this.item});
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 600;
-    final avatarSize = isMobile ? 48.0 : 55.0;
-    final spacing1 = isMobile ? 10.0 : 12.0;
-    final spacing2 = isMobile ? 6.0 : 8.0;
-    final nameFontSize = isMobile ? 12.0 : 14.0;
-    final buttonPaddingH = isMobile ? 10.0 : 12.0;
-    final buttonPaddingV = isMobile ? 4.0 : 6.0;
-    final buttonFontSize = isMobile ? 10.0 : 12.0;
-
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: isMobile ? 6.0 : 8.0),
+      padding: EdgeInsets.symmetric(vertical: 8.h),
       child: Row(
         children: [
-          // الصورة المشوشة
+          // الصورة المشوشة أو العادية
           Container(
-            width: avatarSize,
-            height: avatarSize,
+            width: 56.w,
+            height: 56.w,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 2),
@@ -40,36 +29,40 @@ class RequestListTile extends StatelessWidget {
               ],
             ),
             child: ClipOval(
-              child: ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-                child: Image.network(
-                  item.imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      Container(color: Colors.grey), // في حالة فشل التحميل
-                ),
-              ),
+              child: item.imageBlur
+                  ? ImageFiltered(
+                      imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                      child: Image.network(
+                        item.image,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            _buildFallbackImage(),
+                      ),
+                    )
+                  : Image.network(
+                      item.image,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          _buildFallbackImage(),
+                    ),
             ),
           ),
 
-          SizedBox(width: spacing1),
+          SizedBox(width: 12.w),
 
-          // الاسم والرسالة
+          // الاسم
           Expanded(
             child: Text(
               item.name,
-              style: TextStyle(
-                fontSize: nameFontSize,
-                fontWeight: FontWeight.bold,
+              style: Styles.textStyle16Bold.copyWith(
                 color: Colors.black87,
-                fontFamily: 'Cairo',
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           ),
 
-          SizedBox(width: spacing2),
+          SizedBox(width: 8.w),
 
           // زر العرض
           GestureDetector(
@@ -79,8 +72,8 @@ class RequestListTile extends StatelessWidget {
             },
             child: Container(
               padding: EdgeInsets.symmetric(
-                horizontal: buttonPaddingH,
-                vertical: buttonPaddingV,
+                horizontal: 12.w,
+                vertical: 6.h,
               ),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFF0F5),
@@ -91,23 +84,32 @@ class RequestListTile extends StatelessWidget {
                 children: [
                   Text(
                     "عرض",
-                    style: TextStyle(
+                    style: Styles.textStyle12Bold.copyWith(
                       color: const Color(0xFFFF80AB),
-                      fontWeight: FontWeight.bold,
-                      fontSize: buttonFontSize,
                     ),
                   ),
-                  SizedBox(width: isMobile ? 2.0 : 4.0),
+                  SizedBox(width: 4.w),
                   Icon(
                     Icons.diamond,
                     color: Colors.amber,
-                    size: isMobile ? 14 : 16,
+                    size: 16.sp,
                   ),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFallbackImage() {
+    return Image.network(
+      item.socialImage,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => Container(
+        color: Colors.grey,
+        child: const Icon(Icons.person, color: Colors.white),
       ),
     );
   }

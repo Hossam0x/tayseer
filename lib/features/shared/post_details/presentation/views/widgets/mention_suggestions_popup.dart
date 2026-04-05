@@ -151,14 +151,15 @@ class _MentionTile extends StatelessWidget {
       dense: true,
       contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
       leading: RepaintBoundary(
-        child: AppImage(
-          user.image ?? '',
-          width: 36.w,
-          height: 36.w,
-          radius: 18.r,
-          isAvatar: true,
-          blur: user.imageBlur ? 1.5 : 0.0,
-          fit: BoxFit.cover,
+        child: ClipOval(
+          child: AppImage(
+            user.image ?? '',
+            width: 36.w,
+            height: 36.w,
+            isAvatar: true,
+            blur: user.imageBlur ? 1.5 : 0.0,
+            fit: BoxFit.cover,
+          ),
         ),
       ),
       title: Row(
