@@ -36,18 +36,6 @@ class AuthRepoImpl implements AuthRepo {
     return '';
   }
 
-  // String getDeviceTimeZoneGMT() {
-  //   final now = DateTime.now();
-  //   final offset = now.timeZoneOffset;
-
-  //   final hours = offset.inHours;
-  //   final minutes = offset.inMinutes.remainder(60).abs();
-
-  //   final sign = hours >= 0 ? '+' : '-';
-
-  //   return 'GMT $sign${hours.abs()}:${minutes.toString().padLeft(2, '0')}';
-  // }
-
   String? token;
   @override
   Future<Either<Failure, RegisterResponse>> logInUser({
@@ -626,12 +614,28 @@ class AuthRepoImpl implements AuthRepo {
   }
 
   @override
-  Future<Either<Failure, void>> setCountryOfferings({
+  Future<Either<Failure, RegisterResponse>> setCountryOfferings({
     required Map<String, dynamic> body,
   }) async {
     try {
-      await apiService.post(endPoint: '/advisor/offerings', data: body);
-      return const Right(null);
+      final response = await apiService.post(
+        endPoint: '/advisor/offerings',
+        data: body,
+      );
+      final registerResponse = RegisterResponse.fromJson(response);
+      await CachNetwork.setData(
+        key: kuserData,
+        value: jsonEncode(registerResponse.data?.user?.toJson()),
+      );
+      kCurrentUserData = registerResponse.data?.user;
+      await CachNetwork.setData(
+        key: ktoken,
+        value: registerResponse.data?.token ?? '',
+      );
+      debugPrint(
+        'setCountryOfferings response: ${registerResponse.data?.token}',
+      );
+      return right(registerResponse);
     } catch (e) {
       if (e is DioException) {
         return Left(ServerFailure.fromDioError(e));
