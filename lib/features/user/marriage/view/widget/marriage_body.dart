@@ -605,10 +605,7 @@ class MarriageBodyState extends State<MarriageBody>
           if (state.isMarriageTab) {
             return _buildWithAppBar(
               key: const ValueKey('empty_marriage'),
-              child: _buildEmptyMarriage(
-                context.read<MarriageCubit>(),
-                state,
-              ),
+              child: _buildEmptyMarriage(context.read<MarriageCubit>(), state),
             );
           }
 
@@ -1064,7 +1061,8 @@ class MarriageBodyState extends State<MarriageBody>
                             },
                           if (answers?.family?.hasChildren != null)
                             {
-                            'label': "👶 ${_translateYesNo(answers!.family!.hasChildren!, yesKey: 'has_childrens', noKey: 'has_no_children')}",
+                              'label':
+                                  "👶 ${_translateYesNo(answers!.family!.hasChildren!, yesKey: 'has_childrens', noKey: 'has_no_children')}",
                             },
                           if (answers?.aboutMe?.weight != null)
                             {
@@ -1305,9 +1303,15 @@ class MarriageBodyState extends State<MarriageBody>
                             icon: Icons.block,
                             bottonText: context.tr(AppStrings.yes),
                             onPressed: () async {
+                        
+
                               cubit.blockUser(personId: user?.id ?? '');
                               if (!mounted) return;
-                              if (widget.personId == null) {
+
+                              if (widget.fromInteractions) {
+                                // ✅ ارجع للتفاعلات زي ما بيحصل مع like/dislike
+                                context.pop();
+                              } else if (widget.personId == null) {
                                 _resetScrollTracking();
                                 scrollToTop();
                               }
