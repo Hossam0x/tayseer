@@ -13,7 +13,9 @@ class RealVideoPlayer extends StatefulWidget {
   final VideoModel? videoData;
   final VideoPlayerController? videoController;
   final Function(VideoPlayerController)? onControllerCreated;
-  final Function(VideoPlayerController controller)? onReelTap;
+
+  // ✅ تعديل: controller بقى nullable عشان يشتغل حتى لو الفيديو لسه بيحمّل
+  final Function(VideoPlayerController? controller)? onReelTap;
 
   const RealVideoPlayer({
     super.key,
@@ -40,22 +42,23 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
   bool _isBuffering = false;
   bool _isEnded = false;
   bool _isDisposed = false;
-
-  // ✅ الإضافة الجديدة: منع الـ ping-pong بين فيديوهات بنفس اللينك
   bool _isInPlayZone = false;
 
-  // Completer لمنع التهيئة المتكررة
+  // ✅ جديد: يتتبع هل الصفحة اللي فيها الفيديو لسه ظاهرة ولا لأ
+  bool _isPageActive = true;
+
   Completer<void>? _initCompleter;
 
   int _retryCount = 0;
   int _lastSavedSecond = -1;
   static const int _maxRetries = 5;
 
-  // Auto-retry timer للفشل الصامت
   Timer? _autoRetryTimer;
-
-  // Delayed disposal timer — ينتظر 2 ثانية قبل dispose عند الخروج من الشاشة
   Timer? _disposeDelayTimer;
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Lifecycle
+  // ═══════════════════════════════════════════════════════════════════
 
   @override
   void initState() {
@@ -65,6 +68,111 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     );
     _muteManager.isMuted.addListener(_onGlobalMuteChanged);
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      videoRouteObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didUpdateWidget(RealVideoPlayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.videoController != oldWidget.videoController &&
+        widget.videoController != null) {
+      try {
+        final _ = widget.videoController!.value;
+        _disposeLocalController();
+        _controller = widget.videoController;
+        _setupController();
+      } catch (e) {
+        debugPrint('⚠️ Received disposed controller, ignoring');
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _isPageActive = false; // ✅
+    _autoRetryTimer?.cancel();
+    _disposeDelayTimer?.cancel();
+    _savePosition();
+
+    // ✅ أكمل أي Completer معلّق عشان مفيش future يفضل hanging
+    if (_initCompleter != null && !_initCompleter!.isCompleted) {
+      _initCompleter!.complete();
+    }
+
+    VideoManager.instance.currentlyPlayingPostId.removeListener(
+      _videoManagerListener,
+    );
+    _muteManager.isMuted.removeListener(_onGlobalMuteChanged);
+    videoRouteObserver.unsubscribe(this);
+    _disposeLocalController();
+    super.dispose();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Route Awareness — ✅ محدّث
+  // ═══════════════════════════════════════════════════════════════════
+
+  @override
+  void didPushNext() {
+    _isPageActive = false;
+    _pauseAndSave();
+
+    // ✅ FIX: فصل الـ listeners عشان ما نتدخلش في الـ shared controller
+    // لما ReelsVideoBackground تشغّل الفيديو، مش عايزين _videoListener يوقّفه
+    _controller?.removeListener(_videoListener);
+    VideoManager.instance.currentlyPlayingPostId.removeListener(
+      _videoManagerListener,
+    );
+  }
+
+  @override
+  void didPopNext() {
+    _isPageActive = true;
+
+    if (_isDisposed || !mounted) return;
+
+    // ✅ FIX: أعد توصيل الـ listeners
+    VideoManager.instance.currentlyPlayingPostId.addListener(
+      _videoManagerListener,
+    );
+    if (_controller != null) {
+      // remove أولاً عشان نمنع double-attach
+      _controller!.removeListener(_videoListener);
+      _controller!.addListener(_videoListener);
+    }
+
+    final controller = _controller;
+
+    if (controller != null && _isInitialized && !_hasError && _isInPlayZone) {
+      VideoManager.instance.playVideo(widget.postId);
+
+      _restorePosition().then((_) {
+        if (mounted && !_isDisposed && _isPageActive) {
+          try {
+            if (!controller.value.isPlaying) {
+              controller.play();
+            }
+          } catch (e) {
+            debugPrint('⚠️ Cannot resume on pop: $e');
+          }
+        }
+      });
+    } else if (_isInPlayZone && _controller == null && !_hasError) {
+      VideoManager.instance.playVideo(widget.postId);
+      _initializeVideo();
+    }
+  }
+  // ═══════════════════════════════════════════════════════════════════
+  // Listeners
+  // ═══════════════════════════════════════════════════════════════════
 
   void _onGlobalMuteChanged() {
     final controller = _controller;
@@ -95,71 +203,9 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     }
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final route = ModalRoute.of(context);
-    if (route != null) {
-      videoRouteObserver.subscribe(this, route);
-    }
-  }
-
-  @override
-  void didUpdateWidget(RealVideoPlayer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.videoController != oldWidget.videoController &&
-        widget.videoController != null) {
-      try {
-        // Access .value to verify the controller isn't disposed
-        final _ = widget.videoController!.value;
-        _disposeLocalController();
-        _controller = widget.videoController;
-        _setupController();
-      } catch (e) {
-        debugPrint('⚠️ Received disposed controller, ignoring');
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _isDisposed = true;
-    _autoRetryTimer?.cancel();
-    _disposeDelayTimer?.cancel();
-    _savePosition();
-    VideoManager.instance.currentlyPlayingPostId.removeListener(
-      _videoManagerListener,
-    );
-    _muteManager.isMuted.removeListener(_onGlobalMuteChanged);
-    videoRouteObserver.unsubscribe(this);
-    _disposeLocalController();
-    super.dispose();
-  }
-
-  @override
-  void didPushNext() => _pauseAndSave();
-
-  @override
-  void didPopNext() {
-    // ✅ عند pop — رجّع الفيديو بشكل هادي بدل ما كل الـ VisibilityDetector
-    // يشتغلوا مرة واحدة ويسببوا jank
-    if (_isDisposed || !mounted) return;
-    final controller = _controller;
-    if (controller != null &&
-        _isInitialized &&
-        !_hasError &&
-        VideoManager.instance.currentlyPlayingPostId.value == widget.postId) {
-      try {
-        if (!controller.value.isPlaying) {
-          controller.play();
-        }
-      } catch (e) {
-        debugPrint('⚠️ Cannot resume on pop: $e');
-      }
-    }
-  }
-
-  // ─── Helpers ─────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════
+  // Helpers
+  // ═══════════════════════════════════════════════════════════════════
 
   void _pauseAndSave() {
     final controller = _controller;
@@ -174,7 +220,19 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     }
   }
 
-  // ─── Position Management ─────────────────────────────────────────────
+  void _scheduleSetState(VoidCallback fn) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_isDisposed) setState(fn);
+    });
+  }
+
+  // ✅ Helper جديد: تحقق شامل هل مسموح نشغّل الفيديو
+  bool get _canPlay =>
+      _isPageActive && _isInPlayZone && !_isDisposed && mounted && !_hasError;
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Position Management
+  // ═══════════════════════════════════════════════════════════════════
 
   void _savePosition() {
     final controller = _controller;
@@ -204,7 +262,9 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     }
   }
 
-  // ─── Controller Lifecycle ────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════
+  // Controller Lifecycle
+  // ═══════════════════════════════════════════════════════════════════
 
   void _disposeLocalController() {
     final controller = _controller;
@@ -224,7 +284,6 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
   Future<void> _initializeVideo() async {
     if (_isDisposed) return;
 
-    // Completer guard — لو التهيئة شغالة بالفعل، استنى عليها
     if (_initCompleter != null && !_initCompleter!.isCompleted) {
       return _initCompleter!.future;
     }
@@ -264,7 +323,6 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
               ),
             );
 
-      // ابدأ تحميل الكاش في الخلفية بالتوازي
       if (cachedFile == null) {
         _videoCacheManager.preloadVideoInBackground(widget.videoUrl);
       }
@@ -287,7 +345,8 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
       _retryCount = 0;
       _autoRetryTimer?.cancel();
 
-      if (VideoManager.instance.currentlyPlayingPostId.value == widget.postId) {
+      if (_canPlay) {
+        VideoManager.instance.playVideo(widget.postId);
         _controller!.play();
       }
 
@@ -299,7 +358,6 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
         return;
       }
 
-      // التخلص من الـ controller الفاشل
       try {
         _controller?.dispose();
       } catch (_) {}
@@ -311,16 +369,15 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
         _stateManager.recordError(widget.postId);
         _initCompleter?.complete();
 
-        // Auto-retry صامت — بدون إظهار خطأ للمستخدم
         final delay = Duration(milliseconds: 800 * _retryCount);
         _autoRetryTimer?.cancel();
         _autoRetryTimer = Timer(delay, () {
-          if (mounted && !_isDisposed) {
+          // ✅ retry بس لو الصفحة لسه ظاهرة
+          if (mounted && !_isDisposed && _isPageActive) {
             _initializeVideo();
           }
         });
       } else {
-        // بعد استنفاد كل المحاولات فقط، أظهر الخطأ
         _scheduleSetState(() => _hasError = true);
         _initCompleter?.complete();
       }
@@ -344,8 +401,9 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     }
   }
 
-  // ─── Video Listener ──────────────────────────────────────────────────
-
+  // ═══════════════════════════════════════════════════════════════════
+  // Video Listener
+  // ═══════════════════════════════════════════════════════════════════
   void _videoListener() {
     final controller = _controller;
     if (!mounted || controller == null || _isDisposed) return;
@@ -353,12 +411,19 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     try {
       final value = controller.value;
 
-      // كشف خطأ أثناء التشغيل — auto-retry صامت
       if (value.hasError && !_hasError) {
         debugPrint('⚠️ Video error during playback: ${value.errorDescription}');
         _handleSilentRetry();
         return;
       }
+
+      // ✅ FIX: شيلنا الـ !_isPageActive check
+      // مش محتاجينه لأن الـ listener بيتفصل في didPushNext أصلاً
+      // الكود القديم كان بيسبب conflict مع الـ shared controller:
+      // ❌ if (!_isPageActive && value.isPlaying) {
+      // ❌   controller.pause();
+      // ❌   return;
+      // ❌ }
 
       if (value.isBuffering != _isBuffering) {
         _scheduleSetState(() => _isBuffering = value.isBuffering);
@@ -374,7 +439,6 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
         _scheduleSetState(() => _isEnded = isAtEnd);
       }
 
-      // Debounced position save — only once per 5-second mark
       final currentSecond = value.position.inSeconds;
       if (_isInitialized &&
           currentSecond > 0 &&
@@ -388,7 +452,6 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     }
   }
 
-  /// Auto-retry صامت بدون إظهار خطأ للمستخدم
   void _handleSilentRetry() {
     if (_isDisposed || !mounted) return;
 
@@ -396,7 +459,6 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
       _retryCount++;
       debugPrint('🔄 Silent auto-retry #$_retryCount for ${widget.postId}');
 
-      // تخلص من الـ controller الحالي وأعد التهيئة
       try {
         _controller?.removeListener(_videoListener);
         if (widget.videoController == null) {
@@ -410,7 +472,8 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
       final delay = Duration(milliseconds: 800 * _retryCount);
       _autoRetryTimer?.cancel();
       _autoRetryTimer = Timer(delay, () {
-        if (mounted && !_isDisposed) {
+        // ✅ retry بس لو الصفحة ظاهرة
+        if (mounted && !_isDisposed && _isPageActive) {
           _initializeVideo();
         }
       });
@@ -419,15 +482,10 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     }
   }
 
-  void _scheduleSetState(VoidCallback fn) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !_isDisposed) setState(fn);
-    });
-  }
+  // ═══════════════════════════════════════════════════════════════════
+  // Visibility & Interaction — ✅ محدّث
+  // ═══════════════════════════════════════════════════════════════════
 
-  // ─── Visibility & Interaction ────────────────────────────────────────
-
-  // ✅ التعديل الرئيسي هنا — حل مشكلة الفيديو اللي بيفضل شغال في الخلفية
   void _handleVisibility(VisibilityInfo info) {
     if (!mounted || _isDisposed) return;
 
@@ -437,19 +495,19 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     final visibleFraction = info.visibleFraction;
 
     if (visibleFraction > 0.7) {
-      // ألغِ أي timer dispose — الفيديو لسه في الشاشة
       _disposeDelayTimer?.cancel();
       _disposeDelayTimer = null;
 
-      // ✅ فقط لما يدخل منطقة التشغيل لأول مرة
-      // لو كان فيها أصلاً (_isInPlayZone == true) → ما نعملش حاجة
-      // ده بيمنع الـ ping-pong بين بوستين بنفس لينك الفيديو
       if (!_isInPlayZone) {
         _isInPlayZone = true;
 
+        // ✅ لو الصفحة مش active → سجّل إنه في play zone بس ما تشغّلش
+        if (!_isPageActive) return;
+
         if (_controller == null && !_hasError) {
           _initializeVideo().then((_) {
-            if (mounted && !_isDisposed && _isInitialized) {
+            // ✅ تحقق شامل بعد الـ async
+            if (_canPlay && _isInitialized) {
               VideoManager.instance.playVideo(widget.postId);
               _controller?.play();
             }
@@ -459,26 +517,24 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
             !_isEnded &&
             !_hasError) {
           try {
-            VideoManager.instance.playVideo(widget.postId);
-            if (!_controller!.value.isPlaying) {
-              _controller!.play();
+            if (_isPageActive) {
+              VideoManager.instance.playVideo(widget.postId);
+              if (!_controller!.value.isPlaying) {
+                _controller!.play();
+              }
             }
           } catch (e) {
             debugPrint('⚠️ Cannot play, controller disposed');
           }
         }
       }
-      // ✅ لو _isInPlayZone == true بالفعل → SKIP تماماً
-      // ده بيمنع الفيديو الأول من إعادة تشغيل نفسه لما التاني يوقفه
     } else if (visibleFraction > 0.0) {
-      // ظاهر جزئياً — إيقاف مؤقت فقط بدون dispose
-      _isInPlayZone = false; // ✅ خرج من منطقة التشغيل
+      _isInPlayZone = false;
       _disposeDelayTimer?.cancel();
       _disposeDelayTimer = null;
       _pauseAndSave();
     } else {
-      // خرج من الشاشة تماماً — إيقاف مؤقت + dispose بعد 2 ثانية
-      _isInPlayZone = false; // ✅ خرج من منطقة التشغيل
+      _isInPlayZone = false;
       _pauseAndSave();
       _disposeDelayTimer?.cancel();
       _disposeDelayTimer = Timer(const Duration(seconds: 2), () {
@@ -511,13 +567,27 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     _initializeVideo();
   }
 
+  // ✅ محدّث: يوقّف الفيديو قبل الانتقال + يشتغل حتى لو الفيديو لسه بيحمّل
   void _handleTap() {
+    // وقّف الفيديو الحالي لو شغال
     if (_isInitialized && _controller != null) {
-      widget.onReelTap?.call(_controller!);
+      try {
+        if (_controller!.value.isPlaying) {
+          _savePosition();
+          _controller!.pause();
+        }
+      } catch (_) {}
     }
+
+    // ابعت الـ controller (أو null لو لسه مش جاهز)
+    widget.onReelTap?.call(
+      (_isInitialized && _controller != null) ? _controller : null,
+    );
   }
 
-  // ─── Build ───────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════
+  // Build — ✅ محدّث
+  // ═══════════════════════════════════════════════════════════════════
 
   @override
   Widget build(BuildContext context) {
@@ -531,6 +601,9 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
 
     final thumbnail = videoData?.thumbnail;
     final maxAllowedHeight = context.responsiveHeight(500);
+
+    // ✅ هل الفيديو في مرحلة التحميل الأولي (بنعرض loading)
+    final isLoading = !_isInitialized && !_hasError && _controller != null;
 
     return VisibilityDetector(
       key: Key('${widget.postId}_${widget.videoUrl}'),
@@ -548,10 +621,11 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12.r),
               child: GestureDetector(
-                onTap: _handleTap,
+                onTap: _handleTap, // ✅ يشتغل دايماً
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
+                    // Thumbnail — ظاهر دايماً كـ placeholder
                     if (thumbnail != null && thumbnail.isNotEmpty)
                       Positioned.fill(
                         child: CachedNetworkImage(
@@ -564,6 +638,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
                         ),
                       ),
 
+                    // Video Player
                     if (_isInitialized && _controller != null)
                       Positioned.fill(
                         child: FittedBox(
@@ -576,20 +651,24 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
                         ),
                       ),
 
+                    // Error State
                     if (_hasError) _buildErrorState(),
 
-                    // لا نظهر loading indicator — الـ thumbnail يكفي (زي فيسبوك)
+                    // Buffering أثناء التشغيل
                     if (_isInitialized && _isBuffering)
                       _buildBufferingIndicator(),
 
-                    if (_isInitialized && _controller != null)
-                      Positioned(
-                        bottom: 12.h,
-                        right: 12.w,
-                        child: _MuteButton(
-                          onTap: () => _muteManager.toggleMute(),
-                        ),
+                    // ✅ Loading أثناء التحميل الأولي
+                    if (isLoading) _buildBufferingIndicator(),
+
+                    // ✅ زر الـ Mute — ظاهر دايماً (حتى قبل التحميل)
+                    Positioned(
+                      bottom: 12.h,
+                      right: 12.w,
+                      child: _MuteButton(
+                        onTap: () => _muteManager.toggleMute(),
                       ),
+                    ),
                   ],
                 ),
               ),
@@ -656,8 +735,6 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════════════════════════
 
 class _MuteButton extends StatelessWidget {
   final VoidCallback onTap;

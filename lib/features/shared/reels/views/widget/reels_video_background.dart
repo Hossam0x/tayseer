@@ -53,14 +53,12 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
   bool _isSpeedUp = false;
   bool _showSpeedIndicator = false;
 
-  // Completer لمنع التهيئة المتكررة
   Completer<void>? _initCompleter;
 
   int _retryCount = 0;
   int _lastSavedSecond = -1;
   static const int _maxRetries = 5;
 
-  // Auto-retry timer
   Timer? _autoRetryTimer;
 
   String get _videoId => widget.videoId ?? widget.videoUrl.hashCode.toString();
@@ -103,7 +101,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
   Future<void> _initializeVideo() async {
     if (_isDisposed) return;
 
-    // Completer guard — لو التهيئة شغالة بالفعل، استنى عليها
     if (_initCompleter != null && !_initCompleter!.isCompleted) {
       return _initCompleter!.future;
     }
@@ -161,12 +158,10 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
               videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
             );
 
-      // ابدأ تحميل الكاش بالتوازي
       if (cachedFile == null) {
         _videoCacheManager.preloadVideoInBackground(widget.videoUrl);
       }
 
-      // Initialize أولاً ثم أضف الـ listener بعد النجاح
       await _controller!.initialize();
 
       if (!mounted || _isDisposed) {
@@ -176,7 +171,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
         return;
       }
 
-      // أضف الـ listener بعد النجاح فقط — لتجنب false errors
       _attachListener();
 
       await _controller!.setLooping(true);
@@ -204,7 +198,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
         return;
       }
 
-      // تخلص من الـ controller الفاشل
       try {
         _detachListener();
         _controller?.dispose();
@@ -217,7 +210,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
         _stateManager.recordError(_videoId);
         _initCompleter?.complete();
 
-        // Auto-retry صامت — بدون إظهار خط أ للمستخدم
         final delay = Duration(milliseconds: 800 * _retryCount);
         _autoRetryTimer?.cancel();
         _autoRetryTimer = Timer(delay, () {
@@ -238,13 +230,13 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
 
   Future<void> _restorePosition() async {
     // Reels should always start from the beginning (position 0:00)
-    // Position restoration is disabled for reels feed to ensure
-    // videos restart from the beginning when users scroll back to them
     return;
   }
 
+  // ✅ التعديل الأساسي: شيلنا شرط sharedController عشان نحفظ الـ position دايماً
+  // لأن البوست في الـ Home محتاج يقرأ الـ position دي لما اليوزر يرجع
   void _savePosition() {
-    if (_controller == null || widget.sharedController != null) return;
+    if (_controller == null) return; // ✅ بدون شرط sharedController
 
     try {
       if (_controller!.value.isInitialized) {
@@ -265,7 +257,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
     try {
       final value = controller.value;
 
-      // كشف خطأ أثناء التشغيل — auto-retry صامت
       if (value.hasError && !_hasError) {
         debugPrint('⚠️ Reel video error: ${value.errorDescription}');
         _handleSilentRetry();
@@ -276,12 +267,12 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
         _scheduleSetState(() => _isBuffering = value.isBuffering);
       }
 
-      // Debounced position save
+      // ✅ تعديل: بنحفظ كل ثانية بدل كل 5 ثواني
+      // عشان لما اليوزر يرجع للـ Home يلاقي الـ position محدّثة
       final currentSecond = value.position.inSeconds;
       if (_isInitialized &&
           !_isDragging &&
           currentSecond > 0 &&
-          currentSecond % 5 == 0 &&
           currentSecond != _lastSavedSecond) {
         _lastSavedSecond = currentSecond;
         _savePosition();
@@ -291,7 +282,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
     }
   }
 
-  /// Auto-retry صامت بدون إظهار خطأ للمستخدم
   void _handleSilentRetry() {
     if (_isDisposed || !mounted) return;
 
@@ -299,7 +289,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
       _retryCount++;
       debugPrint('🔄 Silent reel auto-retry #$_retryCount for $_videoId');
 
-      // تخلص من الـ controller الحالي وأعد التهيئة
       try {
         _detachListener();
         if (widget.sharedController == null) {
@@ -335,7 +324,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
   void didUpdateWidget(covariant ReelsVideoBackground oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // تهيئة الفيديو لو shouldInitialize اتفعلت لأول مرة
     if (widget.shouldInitialize &&
         !oldWidget.shouldInitialize &&
         !_isInitialized &&
@@ -344,7 +332,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
       return;
     }
 
-    // تحرير الـ controller لو الصفحة بعدت (shouldInitialize = false)
     if (!widget.shouldInitialize &&
         oldWidget.shouldInitialize &&
         !widget.shouldPlay) {
@@ -355,13 +342,11 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
     if (_isInitialized && _controller != null && !_isDisposed) {
       try {
         if (widget.shouldPlay && !oldWidget.shouldPlay) {
-          // إعادة ربط الـ listener عند التشغيل
           _attachListener();
           _controller!.play();
         } else if (!widget.shouldPlay && oldWidget.shouldPlay) {
           _savePosition();
           _controller!.pause();
-          // فصل الـ listener عند الإيقاف لتقليل callbacks
           _detachListener();
         }
       } catch (e) {
@@ -409,7 +394,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
         _savePosition();
       }
     } else if (state == AppLifecycleState.resumed) {
-      // عند العودة للتطبيق — أعد تعيين كل حالات الفشل
       _videoCacheManager.resetAllFailedStatuses();
       if (widget.shouldPlay && _controller?.value.isInitialized == true) {
         _controller?.play();
@@ -432,11 +416,25 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
     }
   }
 
+  // ✅ جديد: حفظ الـ position في deactivate (بيتنادى قبل dispose)
+  // ده بيضمن إن الـ position تتحفظ في أقرب وقت لما الـ widget يتشال من الشجرة
+  @override
+  void deactivate() {
+    _savePosition();
+    super.deactivate();
+  }
+
   @override
   void dispose() {
     _isDisposed = true;
     _autoRetryTimer?.cancel();
     _savePosition();
+
+    // ✅ أكمل أي Completer معلّق عشان مفيش future يفضل hanging
+    if (_initCompleter != null && !_initCompleter!.isCompleted) {
+      _initCompleter!.complete();
+    }
+
     _muteManager.isMuted.removeListener(_onGlobalMuteChanged);
     videoRouteObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
@@ -455,7 +453,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
   void _retryInitialization() {
     if (_isDisposed) return;
 
-    // إعادة تعيين حالة الخطأ
     _stateManager.resetErrorCount(_videoId);
     _videoCacheManager.resetFailedStatus(widget.videoUrl);
     _retryCount = 0;
@@ -484,7 +481,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
     final screenWidth = MediaQuery.of(context).size.width;
     final tapPosition = details.localPosition.dx;
 
-    // Check if tap is on left or right third of the screen
     final isOnSide =
         tapPosition < screenWidth / 3 || tapPosition > screenWidth * 2 / 3;
 
@@ -540,7 +536,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Thumbnail (instant display before video loads)
               if (!_isInitialized &&
                   widget.thumbnailUrl != null &&
                   widget.thumbnailUrl!.isNotEmpty)
@@ -555,13 +550,9 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
                   ),
                 ),
 
-              // Video
               if (_isInitialized && _controller != null)
                 Positioned.fill(child: _buildVideoPlayer()),
 
-              // لا نظهر loading أو buffering indicator — الـ thumbnail يكفي (زي فيسبوك)
-
-              // Speed Indicator (2x)
               if (_showSpeedIndicator)
                 Positioned(
                   top: MediaQuery.of(context).padding.top + 75.h,
@@ -602,7 +593,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
                   ),
                 ),
 
-              // Error – opaque overlay absorbs taps so they reach the retry button
               if (_hasError)
                 Positioned.fill(
                   child: GestureDetector(
@@ -638,7 +628,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
                   ),
                 ),
 
-              // Progress Bar
               if (widget.showProgressBar &&
                   _isInitialized &&
                   _controller != null)
@@ -665,7 +654,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
   }
 }
 
-// ✅ Corrected _VideoSeekBar Class
 class _VideoSeekBar extends StatefulWidget {
   final VideoPlayerController controller;
   final VoidCallback onDragStart;
@@ -761,7 +749,6 @@ class _VideoSeekBarState extends State<_VideoSeekBar> {
           child: Stack(
             alignment: Alignment.centerLeft,
             children: [
-              // Gray background + white progress inside it
               ClipRRect(
                 borderRadius: BorderRadius.circular(3.r),
                 child: Container(
@@ -783,7 +770,6 @@ class _VideoSeekBarState extends State<_VideoSeekBar> {
                   ),
                 ),
               ),
-              // Drag circle
               if (_isDragging)
                 Positioned(
                   left:
