@@ -1,6 +1,7 @@
 import 'package:tayseer/core/widgets/custom_outline_button.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/verification_page.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/verification_webview_screen.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -140,6 +141,33 @@ class CompleteMarriageFile extends StatelessWidget {
     );
   }
 
+  Future<void> _retryVerification(BuildContext context) async {
+    final url = await VerificationService.getVerificationUrl();
+
+    if (!context.mounted) return;
+
+    if (url == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: context.tr('error_occurred'),
+          isError: true,
+        ),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VerificationWebViewScreen(
+          webviewUrl: url,
+          onVerificationComplete: (_) {},
+        ),
+      ),
+    );
+  }
+
   Widget _buildVerificationCard(
     BuildContext context,
     int percentage,
@@ -221,7 +249,6 @@ class CompleteMarriageFile extends StatelessWidget {
           // Arrow icon
           IconButton(
             onPressed: () async {
-              // Show loading
               showDialog(
                 context: context,
                 barrierDismissible: false,
@@ -232,7 +259,7 @@ class CompleteMarriageFile extends StatelessWidget {
               final url = await VerificationService.getVerificationUrl();
 
               if (!context.mounted) return;
-              Navigator.pop(context); // Close loading
+              Navigator.pop(context);
 
               if (url == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -245,35 +272,46 @@ class CompleteMarriageFile extends StatelessWidget {
                 return;
               }
 
-              final isValid = await Navigator.push<bool>(
+              final result = await Navigator.push<VerificationStatus>(
                 context,
                 MaterialPageRoute(
                   builder: (_) => VerificationWebViewScreen(
                     webviewUrl: url,
-                    onVerificationComplete: (valid) {
-                      // Handle result
-                      if (valid) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          CustomSnackBar(
-                            context,
-                            text: context.tr('verification_done'),
-                            isSuccess: true,
-                          ),
-                        );
-                      }
-                    },
+                    onVerificationComplete: (_) {},
                   ),
                 ),
               );
 
-              if (isValid == true && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  CustomSnackBar(
+              if (!context.mounted) return;
+
+              switch (result) {
+                case VerificationStatus.approved:
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    CustomSnackBar(
+                      context,
+                      text: context.tr('verification_done'),
+                      isSuccess: true,
+                    ),
+                  );
+                  break;
+
+                case VerificationStatus.inReview:
+                  Navigator.push(
                     context,
-                    text: context.tr('verification_done'),
-                    isSuccess: true,
-                  ),
-                );
+                    MaterialPageRoute(
+                      builder: (_) => VerificationScreen(
+                        verificationItems: items, // ✅ FIX هنا
+                      ),
+                    ),
+                  );
+                  break;
+
+                case VerificationStatus.rejected:
+                  _retryVerification(context);
+                  break;
+
+                default:
+                  break;
               }
             },
             icon: Icon(

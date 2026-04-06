@@ -1,4 +1,6 @@
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/verification_page.dart';
 import 'package:tayseer/my_import.dart';
 
 class VerificationWebViewScreen extends StatefulWidget {
@@ -16,10 +18,31 @@ class VerificationWebViewScreen extends StatefulWidget {
       _VerificationWebViewScreenState();
 }
 
-class _VerificationWebViewScreenState
-    extends State<VerificationWebViewScreen> {
+class _VerificationWebViewScreenState extends State<VerificationWebViewScreen> {
   bool _isLoading = true;
   InAppWebViewController? _webViewController;
+
+  @override
+  void initState() {
+    super.initState();
+    _requestPermissions();
+  }
+
+  Future<void> _requestPermissions() async {
+    await [Permission.camera, Permission.microphone].request();
+  }
+
+  void _handleVerificationStatus(String status) {
+    if (!mounted) return;
+
+    if (status == 'Approved') {
+      Navigator.pop(context, VerificationStatus.approved);
+    } else if (status == 'In Review') {
+      Navigator.pop(context, VerificationStatus.inReview);
+    } else {
+      Navigator.pop(context, VerificationStatus.rejected);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,16 +63,52 @@ class _VerificationWebViewScreenState
       body: Stack(
         children: [
           InAppWebView(
-            initialUrlRequest: URLRequest(
-              url: WebUri(widget.webviewUrl),
-            ),
+            initialUrlRequest: URLRequest(url: WebUri(widget.webviewUrl)),
             initialSettings: InAppWebViewSettings(
               javaScriptEnabled: true,
               domStorageEnabled: true,
               mediaPlaybackRequiresUserGesture: false,
               allowsInlineMediaPlayback: true,
               useOnLoadResource: true,
+              allowFileAccessFromFileURLs: true,
+              allowUniversalAccessFromFileURLs: true,
+              useHybridComposition: true,
+              cacheEnabled: true,
+              allowsPictureInPictureMediaPlayback: true,
             ),
+
+            // ✅ اعتراض الـ URL قبل فتحه
+            shouldOverrideUrlLoading: (controller, navigationAction) async {
+              final url = navigationAction.request.url?.toString() ?? '';
+
+              if (url.contains('tayser-app.net/didit/callback')) {
+                final uri = Uri.parse(url);
+                final status = uri.queryParameters['status'] ?? '';
+
+                _handleVerificationStatus(status);
+
+                return NavigationActionPolicy.CANCEL;
+              }
+
+              return NavigationActionPolicy.ALLOW;
+            },
+
+            onPermissionRequest: (controller, request) async {
+              return PermissionResponse(
+                resources: request.resources,
+                action: PermissionResponseAction.GRANT,
+              );
+            },
+
+            androidOnGeolocationPermissionsShowPrompt:
+                (controller, origin) async {
+                  return GeolocationPermissionShowPromptResponse(
+                    origin: origin,
+                    allow: true,
+                    retain: true,
+                  );
+                },
+
             onWebViewCreated: (controller) {
               _webViewController = controller;
 
@@ -58,34 +117,29 @@ class _VerificationWebViewScreenState
                 callback: (args) {
                   try {
                     final data = args.isNotEmpty ? args[0] : null;
-                    bool isValid = false;
 
-                    if (data is Map) {
-                      isValid = data['valid'] == true;
-                    } else if (data is String) {
-                      isValid = data.contains('"valid":true') ||
-                          data.contains('"valid": true');
+                    if (data is Map && data['valid'] == true) {
+                      Navigator.pop(context, VerificationStatus.approved);
+                    } else {
+                      Navigator.pop(context, VerificationStatus.rejected);
                     }
-
-                    widget.onVerificationComplete(isValid);
-                    if (mounted) Navigator.pop(context, isValid);
                   } catch (_) {
-                    widget.onVerificationComplete(false);
-                    if (mounted) Navigator.pop(context, false);
+                    Navigator.pop(context, VerificationStatus.rejected);
                   }
                 },
               );
             },
+
             onLoadStart: (controller, url) {
               if (mounted) setState(() => _isLoading = true);
             },
+
             onLoadStop: (controller, url) async {
               if (mounted) setState(() => _isLoading = false);
 
-              // Inject JS to catch all possible event types from Didit
-              await controller.evaluateJavascript(source: '''
+              await controller.evaluateJavascript(
+                source: '''
                 (function() {
-                  // Listen for postMessage
                   window.addEventListener('message', function(event) {
                     try {
                       var data = event.data;
@@ -100,7 +154,6 @@ class _VerificationWebViewScreenState
                     } catch(e) {}
                   });
 
-                  // Override direct assignment
                   var _verStatus;
                   Object.defineProperty(window, 'userVerificationStatus', {
                     get: function() { return _verStatus; },
@@ -114,39 +167,59 @@ class _VerificationWebViewScreenState
                     },
                     configurable: true
                   });
+
+                  window.addEventListener('didit:session:complete', function(event) {
+                    try {
+                      var detail = event.detail || {};
+                      window.flutter_inappwebview.callHandler(
+                        'userVerificationStatus',
+                        { valid: detail.status === 'Approved' || detail.valid === true }
+                      );
+                    } catch(e) {}
+                  });
                 })();
-              ''');
+              ''',
+              );
             },
+
             onReceivedError: (controller, request, error) {
               if (mounted) setState(() => _isLoading = false);
             },
+
+            onReceivedHttpError: (controller, request, errorResponse) {
+              debugPrint(
+                '⚠️ HTTP error: ${errorResponse.statusCode} for ${request.url}',
+              );
+            },
           ),
-          if (_isLoading)
-            const Center(child: CircularProgressIndicator()),
+
+          if (_isLoading) const Center(child: CircularProgressIndicator()),
         ],
       ),
     );
   }
 }
 
+// ─────────────────────────────────────────────
+// VerificationService
+// ─────────────────────────────────────────────
+
 class VerificationService {
   static Future<String?> getVerificationUrl() async {
     try {
       final apiService = getIt<ApiService>();
 
-      final response = await apiService.get(
-        endPoint: '/user/verify-id-didit',
-      );
+      final response = await apiService.get(endPoint: '/user/verify-id-didit');
 
       if (response['success'] == true) {
         return response['data']['webview'] as String?;
       }
       return null;
     } on DioException catch (e) {
-      print('❌ Error: ${e.message}');
+      debugPrint('❌ DioException: ${e.message}');
       return null;
     } catch (e) {
-      print('❌ Error: $e');
+      debugPrint('❌ Error: $e');
       return null;
     }
   }
