@@ -47,7 +47,7 @@ abstract class AuthRepo {
   });
   Future<Either<Failure, void>> addLanguage({required List<String> languages});
   Future<Either<Failure, RegisterResponse>> setGender({required String gender});
-  Future<Either<Failure, void>> setCountryOfferings({
+  Future<Either<Failure, RegisterResponse>> setCountryOfferings({
     required Map<String, dynamic> body,
   });
 }

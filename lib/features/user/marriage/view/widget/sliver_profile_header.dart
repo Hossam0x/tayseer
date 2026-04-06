@@ -91,7 +91,8 @@ class SliverProfileHeader extends StatelessWidget {
         swipeDirection * swipeProgress * maxTranslateX;
 
     return SliverAppBar(
-      expandedHeight: context.height * 0.85,
+      expandedHeight: context.height * 0.9,
+      toolbarHeight: 72.h,
       pinned: true,
       floating: false,
       snap: false,
@@ -99,40 +100,44 @@ class SliverProfileHeader extends StatelessWidget {
       elevation: 0,
       automaticallyImplyLeading: false,
       titleSpacing: 0,
-      title: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            if (toggleWidget != null) Center(child: toggleWidget!),
-            Positioned(
-              right: 0,
-              child: GestureDetector(
-                onTap: () {
-                  context.pushNamed(AppRouter.kMarriageFilterView);
-                },
-                child: CircleAvatar(
-                  backgroundColor: Colors.black26,
-                  child: AppImage(
-                    AssetsData.kfilterIcon,
-                    width: 20,
-                    height: 20,
+      title: SizedBox(
+        height: 72.h,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          child: Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
+            children: [
+              if (toggleWidget != null) Center(child: toggleWidget!),
+              Positioned(
+                right: 0,
+                child: GestureDetector(
+                  onTap: () {
+                    context.pushNamed(AppRouter.kMarriageFilterView);
+                  },
+                  child: CircleAvatar(
+                    backgroundColor: Colors.black26,
+                    child: AppImage(
+                      AssetsData.kfilterIcon,
+                      width: 20,
+                      height: 20,
+                    ),
                   ),
                 ),
               ),
-            ),
-            // ✅ لو مرروا leftWidget استخدمه، لو لأ استخدم AnimatedBeFirstButton الافتراضي
-            Positioned(
-              left: 0,
-              child:
-                  leftWidget ??
-                  AnimatedBeFirstButton(
-                    onTap: () {
-                      context.pushNamed(AppRouter.kBoostAccountView);
-                    },
-                  ),
-            ),
-          ],
+              // ✅ لو مرروا leftWidget استخدمه، لو لأ استخدم AnimatedBeFirstButton الافتراضي
+              Positioned(
+                left: 0,
+                child:
+                    leftWidget ??
+                    AnimatedBeFirstButton(
+                      onTap: () {
+                        context.pushNamed(AppRouter.kBoostAccountView);
+                      },
+                    ),
+              ),
+            ],
+          ),
         ),
       ),
       flexibleSpace: FlexibleSpaceBar(

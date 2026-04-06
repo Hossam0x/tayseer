@@ -146,7 +146,7 @@ class _ReelsItemState extends State<ReelsItem>
               ),
             ),
 
-            // 2. Gradient Overlay
+            // 2. Gradient Overlay (bottom only)
             const RepaintBoundary(
               child: IgnorePointer(
                 child: DecoratedBox(

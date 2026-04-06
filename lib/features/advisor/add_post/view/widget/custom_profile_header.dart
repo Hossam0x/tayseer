@@ -38,6 +38,7 @@ class _CustomProfileHeaderState extends State<CustomProfileHeader> {
 
   @override
   Widget build(BuildContext context) {
+   final bool isSelected = selectedSubtitle !=  context.tr('select_group');
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Row(
@@ -120,14 +121,14 @@ class _CustomProfileHeaderState extends State<CustomProfileHeader> {
                         Text(
                           selectedSubtitle,
                           style: Styles.textStyle12.copyWith(
-                            color: AppColors.kGreyColor,
+                            color: isSelected ? AppColors.kprimaryColor : AppColors.kGreyColor,
                           ),
                         ),
                         const SizedBox(width: 4),
                         Icon(
                           Icons.keyboard_arrow_down,
                           size: 18,
-                          color: AppColors.kGreyColor,
+                          color: isSelected ? AppColors.kprimaryColor : AppColors.kGreyColor,
                         ),
                       ],
                     ),

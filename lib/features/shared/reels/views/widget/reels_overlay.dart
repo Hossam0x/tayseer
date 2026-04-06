@@ -1,13 +1,13 @@
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/functions/count_formate.dart';
+import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/utils/video_download_service.dart';
 import 'package:tayseer/core/widgets/follow_button.dart';
 import 'package:tayseer/core/widgets/post_card/circular_icon_button.dart';
-import 'package:tayseer/core/widgets/post_card/post_contect_text.dart';
 import 'package:tayseer/core/widgets/post_card/post_options_bottom_sheet.dart';
-import 'package:tayseer/core/utils/video_download_service.dart';
 import 'package:tayseer/core/widgets/post_card/reaction_like_button.dart';
 import 'package:tayseer/core/widgets/post_card/share_button.dart';
-import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/widgets/social_text_parser.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/features/shared/reels/views/widget/reels_comments_bottom_sheet.dart';
@@ -35,36 +35,30 @@ class ReelsOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return SafeArea(
       top: false,
+      bottom: false,
       child: Column(
         children: [
           _buildHeader(context),
           const Spacer(),
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.black.withOpacity(0.0),
-                  Colors.black.withOpacity(0.3),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
+          Padding(
+            padding: EdgeInsets.only(
+              left: 16.w,
+              right: 16.w,
+              bottom: 24.h + 10.h + bottomPadding,
             ),
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  _buildSideActions(context),
-                  Gap(10.w),
-                  Expanded(child: _buildUserInfo(context)),
-                ],
-              ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _buildSideActions(context),
+                Gap(10.w),
+                Expanded(child: _buildUserInfo(context)),
+              ],
             ),
           ),
-          Gap(24.h),
         ],
       ),
     );
@@ -124,6 +118,8 @@ class ReelsOverlay extends StatelessWidget {
 
   Widget _buildUserInfo(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
@@ -247,15 +243,8 @@ class ReelsOverlay extends StatelessWidget {
             ),
           ],
         ),
-        PostContentText(
-          maxLines: 1,
-          text: post.content,
-          style: Styles.textStyle14.copyWith(color: Colors.white, height: 1.5),
-          hashtagStyle: Styles.textStyle14Bold.copyWith(color: Colors.blue),
-          onHashtagTap: (hashtag) {
-            context.pushNamed(AppRouter.kAdvisorSearchView);
-          },
-        ),
+        Gap(8.h),
+        _ReelsExpandableContent(content: post.content),
       ],
     );
   }
@@ -277,8 +266,6 @@ class ReelsOverlay extends StatelessWidget {
           ),
           count: post.likesCount,
         ),
-
-        // ✅ التعديل: فتح Bottom Sheet بدل Navigation
         _buildCircleActionBtn(
           child: CircularIconButton(
             height: 50,
@@ -289,7 +276,6 @@ class ReelsOverlay extends StatelessWidget {
           ),
           count: post.commentsCount,
         ),
-
         _buildCircleActionBtn(
           child: ShareButton(
             height: 50,
@@ -299,7 +285,6 @@ class ReelsOverlay extends StatelessWidget {
           ),
           count: post.sharesCount,
         ),
-
         CircularIconButton(
           height: 50,
           width: 50,
@@ -331,9 +316,7 @@ class ReelsOverlay extends StatelessWidget {
     );
   }
 
-  // ✅ فصل لوجيك فتح الـ Bottom Sheet في method منفصلة
   void _openCommentsSheet(BuildContext context) {
-    // ✅ احفظ reference للـ ReelsCubit قبل فتح الـ sheet
     final reelsCubit = context.read<ReelsCubit>();
 
     showModalBottomSheet(
@@ -343,7 +326,6 @@ class ReelsOverlay extends StatelessWidget {
       builder: (_) => ReelsCommentsBottomSheet(
         post: post,
         onCommentCountChanged: (newCount, isCommented, isAnonymous) {
-          // ✅ مزامنة عدد الكومنتات مع ReelsCubit
           reelsCubit.updateReelCommentCount(
             postId: post.postId,
             newCount: newCount,
@@ -365,8 +347,8 @@ class ReelsOverlay extends StatelessWidget {
           style: Styles.textStyle12.copyWith(
             color: Colors.white,
             fontWeight: FontWeight.bold,
-            shadows: [
-              const Shadow(
+            shadows: const [
+              Shadow(
                 offset: Offset(0, 1),
                 blurRadius: 2,
                 color: Colors.black54,
@@ -375,6 +357,177 @@ class ReelsOverlay extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ✅ Widget منفصل — يستخدم SocialTextParser مباشرة
+//    1. الضغط على النص نفسه يعمل expand/collapse
+//    2. "عرض المزيد" inline في نهاية السطر — زي فيسبوك
+//    3. scroll لو النص طويل جداً
+// ═══════════════════════════════════════════════════════════════
+class _ReelsExpandableContent extends StatefulWidget {
+  final String content;
+
+  const _ReelsExpandableContent({required this.content});
+
+  @override
+  State<_ReelsExpandableContent> createState() =>
+      _ReelsExpandableContentState();
+}
+
+class _ReelsExpandableContentState extends State<_ReelsExpandableContent> {
+  bool _isExpanded = false;
+
+  void _toggle() => setState(() => _isExpanded = !_isExpanded);
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.content.trim().isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final textStyle = Styles.textStyle14.copyWith(
+      color: Colors.white,
+      height: 1.5,
+    );
+    final hashtagStyle = Styles.textStyle14Bold.copyWith(color: Colors.blue);
+    final seeMoreStyle = Styles.textStyle14.copyWith(
+      color: Colors.white70,
+      fontWeight: FontWeight.w600,
+    );
+
+    final maxExpandedHeight = MediaQuery.of(context).size.height * 0.35;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // نحسب هل النص يتجاوز سطر واحد ولا لأ
+        final textPainter = TextPainter(
+          text: TextSpan(text: widget.content, style: textStyle),
+          maxLines: 1,
+          textDirection: TextDirection.rtl,
+        )..layout(maxWidth: constraints.maxWidth);
+
+        final exceedsOneLine = textPainter.didExceedMaxLines;
+
+        // ════════════════════════════
+        // الحالة 1: collapsed (سطر واحد + "عرض المزيد" inline)
+        // ════════════════════════════
+        if (!_isExpanded) {
+          // لو النص قصير ومش محتاج "عرض المزيد"
+          if (!exceedsOneLine) {
+            return GestureDetector(
+              onTap: _toggle,
+              child: SocialTextParser(
+                text: widget.content,
+                style: textStyle,
+                hashtagStyle: hashtagStyle,
+                parseMentions: false,
+              ),
+            );
+          }
+
+          // لو النص طويل — نعرض سطر واحد مقطوع + "عرض المزيد" inline
+          // نحسب كام حرف يقدر يتسع في السطر مع مراعاة مساحة "عرض المزيد"
+          final seeMoreText = " ...${context.tr("see_more")}";
+          final seeMorePainter = TextPainter(
+            text: TextSpan(text: seeMoreText, style: seeMoreStyle),
+            textDirection: TextDirection.rtl,
+          )..layout();
+
+          final availableWidth =
+              constraints.maxWidth - seeMorePainter.width - 4;
+
+          // نقطع النص بحيث يتسع مع "عرض المزيد" في نفس السطر
+          String truncatedText = widget.content;
+          final truncPainter = TextPainter(
+            text: TextSpan(text: truncatedText, style: textStyle),
+            maxLines: 1,
+            textDirection: TextDirection.rtl,
+          )..layout(maxWidth: availableWidth);
+
+          if (truncPainter.didExceedMaxLines) {
+            // Binary search للحصول على أطول نص يتسع
+            int low = 0;
+            int high = widget.content.length;
+            int bestFit = 0;
+
+            while (low <= high) {
+              final mid = (low + high) ~/ 2;
+              final testPainter = TextPainter(
+                text: TextSpan(
+                  text: widget.content.substring(0, mid),
+                  style: textStyle,
+                ),
+                maxLines: 1,
+                textDirection: TextDirection.rtl,
+              )..layout(maxWidth: availableWidth);
+
+              if (testPainter.didExceedMaxLines) {
+                high = mid - 1;
+              } else {
+                bestFit = mid;
+                low = mid + 1;
+              }
+            }
+
+            truncatedText = widget.content.substring(0, bestFit);
+          }
+
+          return GestureDetector(
+            onTap: _toggle,
+            child: RichText(
+              maxLines: 1,
+              overflow: TextOverflow.clip,
+              textDirection: TextDirection.rtl,
+              text: TextSpan(
+                children: [
+                  TextSpan(text: truncatedText, style: textStyle),
+                  TextSpan(text: " ...", style: textStyle),
+                  TextSpan(text: context.tr("see_more"), style: seeMoreStyle),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // ════════════════════════════
+        // الحالة 2: expanded (نص كامل + scroll لو طويل)
+        // ════════════════════════════
+        return GestureDetector(
+          onTap: _toggle,
+          child: Container(
+            width: double.infinity,
+            constraints: BoxConstraints(maxHeight: maxExpandedHeight),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // النص — scrollable لو أطول من maxHeight
+                Flexible(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: SocialTextParser(
+                      text: widget.content,
+                      style: textStyle,
+                      hashtagStyle: hashtagStyle,
+                      parseMentions: false,
+                    ),
+                  ),
+                ),
+                Gap(6.h),
+                // "عرض أقل"
+                Text(
+                  context.tr("see_less"),
+                  style: seeMoreStyle,
+                  textAlign: TextAlign.end,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
