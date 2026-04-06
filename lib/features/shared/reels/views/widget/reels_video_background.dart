@@ -676,34 +676,36 @@ class _VideoSeekBarState extends State<_VideoSeekBar> {
   bool _isDragging = false;
   double _progress = 0.0;
   Duration _duration = Duration.zero;
-  Timer? _updateTimer;
 
+  // ✅ بدل Timer — استخدم الـ controller listener نفسه
   @override
   void initState() {
     super.initState();
-    _startProgressTimer();
+    widget.controller.addListener(_onVideoProgress);
   }
 
   @override
   void dispose() {
-    _updateTimer?.cancel();
+    widget.controller.removeListener(_onVideoProgress);
     super.dispose();
   }
 
-  void _startProgressTimer() {
-    _updateTimer = Timer.periodic(const Duration(milliseconds: 33), (_) {
-      if (!mounted || _isDragging) return;
-      final value = widget.controller.value;
-      if (value.duration.inMilliseconds == 0) return;
-      final newProgress =
-          value.position.inMilliseconds / value.duration.inMilliseconds;
-      if ((newProgress - _progress).abs() > 0.005) {
-        setState(() {
-          _progress = newProgress;
-          _duration = value.duration;
-        });
-      }
-    });
+  void _onVideoProgress() {
+    if (!mounted || _isDragging) return;
+
+    final value = widget.controller.value;
+    if (value.duration.inMilliseconds == 0) return;
+
+    final newProgress =
+        value.position.inMilliseconds / value.duration.inMilliseconds;
+
+    // ✅ بيعمل rebuild بس لو فيه تغيير فعلي
+    if ((newProgress - _progress).abs() > 0.005) {
+      setState(() {
+        _progress = newProgress;
+        _duration = value.duration;
+      });
+    }
   }
 
   @override
