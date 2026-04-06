@@ -1,7 +1,7 @@
 import 'package:tayseer/core/widgets/custom_outline_button.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
-import 'package:tayseer/features/user/user_profile/views/widgets/verification_page.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/verification_webview_screen.dart';
 import 'package:tayseer/my_import.dart';
 
 class CompleteMarriageFile extends StatelessWidget {
@@ -178,7 +178,10 @@ class CompleteMarriageFile extends StatelessWidget {
                 ),
                 SizedBox(height: 3.h),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 4.h,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20.r),
@@ -217,14 +220,61 @@ class CompleteMarriageFile extends StatelessWidget {
           SizedBox(width: 8.w),
           // Arrow icon
           IconButton(
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              // Show loading
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) =>
+                    const Center(child: CircularProgressIndicator()),
+              );
+
+              final url = await VerificationService.getVerificationUrl();
+
+              if (!context.mounted) return;
+              Navigator.pop(context); // Close loading
+
+              if (url == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  CustomSnackBar(
+                    context,
+                    text: context.tr('error_occurred'),
+                    isError: true,
+                  ),
+                );
+                return;
+              }
+
+              final isValid = await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      VerificationScreen(verificationItems: items),
+                  builder: (_) => VerificationWebViewScreen(
+                    webviewUrl: url,
+                    onVerificationComplete: (valid) {
+                      // Handle result
+                      if (valid) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          CustomSnackBar(
+                            context,
+                            text: context.tr('verification_done'),
+                            isSuccess: true,
+                          ),
+                        );
+                      }
+                    },
+                  ),
                 ),
               );
+
+              if (isValid == true && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  CustomSnackBar(
+                    context,
+                    text: context.tr('verification_done'),
+                    isSuccess: true,
+                  ),
+                );
+              }
             },
             icon: Icon(
               Icons.arrow_forward_ios,
