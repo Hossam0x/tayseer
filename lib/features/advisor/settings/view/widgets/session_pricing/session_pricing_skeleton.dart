@@ -9,9 +9,9 @@ class SessionPricingSkeleton extends StatelessWidget {
     return skeletonizer.Skeletonizer(
       enabled: true,
       effect: skeletonizer.ShimmerEffect(
-        baseColor: AppColors.secondary100,
-        highlightColor: AppColors.kWhiteColor.withOpacity(0.8),
-        duration: const Duration(milliseconds: 1200),
+        baseColor: AppColors.secondary200,
+        highlightColor: AppColors.kWhiteColor,
+        duration: const Duration(milliseconds: 1000),
       ),
       child: ListView.separated(
         padding: EdgeInsets.symmetric(vertical: 10.h),

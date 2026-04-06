@@ -9,9 +9,9 @@ class BlockedUsersSkeleton extends StatelessWidget {
     return skeletonizer.Skeletonizer(
       enabled: true,
       effect: skeletonizer.ShimmerEffect(
-        baseColor: AppColors.secondary100,
-        highlightColor: AppColors.kWhiteColor.withOpacity(0.8),
-        duration: const Duration(milliseconds: 1200),
+        baseColor: AppColors.secondary200,
+        highlightColor: AppColors.kWhiteColor,
+        duration: const Duration(milliseconds: 1000),
       ),
       child: ListView.builder(
         padding: EdgeInsets.symmetric(horizontal: 20.w),
