@@ -40,13 +40,7 @@ class GreetingProfileCard extends StatelessWidget {
             context.read<InteractionsCubit>().resetActionState();
           });
         } else if (state.actionState == CubitStates.failure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: state.actionMessage ?? context.tr('error_occurred'),
-              isSuccess: false,
-            ),
-          );
+          // ❌ شيل الـ snackbar من هنا خالص
           context.read<InteractionsCubit>().resetActionState();
         }
       },

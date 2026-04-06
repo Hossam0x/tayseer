@@ -15,7 +15,18 @@ class MarriageCubit extends Cubit<MarriageState> {
     this.seedIsFavorite = false,
     this.interactionUser,
   }) : _repo = repository ?? getIt<MarriageRepository>(),
-       super(const MarriageState()) {
+       super(
+         MarriageState(
+           // ✅ ابدأ بالـ favoritedIds محتوية على الـ seed من أول لحظة
+           // عشان القلب يبقى أحمر فوراً قبل ما أي API call يرجع
+           favoritedIds: {
+             if ((seedPersonId?.isNotEmpty ?? false) && seedIsFavorite)
+               seedPersonId!,
+             if (interactionUser != null && interactionUser.isFavorite)
+               interactionUser.userId,
+           },
+         ),
+       ) {
     _filterSubscription = MarriageEventBus.instance.onFilterApplied.listen(
       (filters) => fetchMarriageProfile(filters: filters),
     );
@@ -121,7 +132,7 @@ class MarriageCubit extends Cubit<MarriageState> {
               allUsers: [placeholder],
               currentPage: 1,
               totalPages: 1,
-              favoritedIds: fetchedFavoriteIds,
+              favoritedIds: {...state.favoritedIds, ...fetchedFavoriteIds},
             ),
           );
           fetchSpecificProfile(seedPersonId!);
@@ -153,6 +164,8 @@ class MarriageCubit extends Cubit<MarriageState> {
               seedIsFavorite &&
               seedPersonId!.isNotEmpty)
             seedPersonId!,
+          if (interactionUser != null && interactionUser!.isFavorite)
+            interactionUser!.userId,
         };
 
         final serverUsers = profile.data?.users ?? [];
@@ -560,7 +573,7 @@ class MarriageCubit extends Cubit<MarriageState> {
     final mergedFavorites = {
       ...state.favoritedIds,
       ...fetchedFavoriteIds,
-      if (item.isFavorite) item.userId,
+      if (item.isFavorite || seedIsFavorite) item.userId,
       if (seedFavoriteId != null && seedFavoriteId.isNotEmpty) seedFavoriteId,
     };
 

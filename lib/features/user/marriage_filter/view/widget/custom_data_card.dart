@@ -106,7 +106,7 @@ class CustomDataCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Icon(
                         isArabic
-                            ? Icons.arrow_back_ios
+                            ? Icons.arrow_forward_ios
                             : Icons.arrow_forward_ios,
                         size: 14,
                         color: Colors.grey[300],
