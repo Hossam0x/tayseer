@@ -1,11 +1,11 @@
-import 'package:flutter/services.dart';
 import 'package:tayseer/core/utils/helper/currency_helper.dart';
 import 'package:tayseer/features/advisor/settings/data/models/offerings_model.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/offerings/update_offerings_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/offerings/update_offerings_state.dart';
-import 'package:tayseer/features/advisor/settings/view/widgets/update_offerings/shared/offerings_duration_radio.dart';
-import 'package:tayseer/features/advisor/settings/view/widgets/update_offerings/shared/offerings_item_chip.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/update_offerings/shared/offerings_session_type_card.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/update_offerings/steps/widgets/add_sessions_added_card.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/update_offerings/steps/widgets/add_sessions_empty_state.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/update_offerings/steps/widgets/add_sessions_form.dart';
 import 'package:tayseer/my_import.dart';
 
 class UpdateAddSessionsBody extends StatefulWidget {
@@ -90,7 +90,7 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
 
         return Column(
           children: [
-            // كارد الدولة المختارة
+            // Selected country card
             Container(
               padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
               decoration: BoxDecoration(
@@ -141,11 +141,9 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
 
             Gap(16.h),
 
-            // المحتوى القابل للتمرير
             Expanded(
               child: ListView(
                 children: [
-                  // عنوان
                   Center(
                     child: Text(
                       context.tr('select_session_package'),
@@ -167,7 +165,6 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
                   ),
                   Gap(16.h),
 
-                  // كروت النوع
                   Row(
                     children: [
                       Expanded(
@@ -200,24 +197,28 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
 
                   Gap(16.h),
 
-                  // الفورم أو الحالة الفارغة
                   AnimatedCrossFade(
                     crossFadeState: showForm
                         ? CrossFadeState.showSecond
                         : CrossFadeState.showFirst,
                     duration: const Duration(milliseconds: 300),
-                    firstChild: _buildEmptyState(context),
-                    secondChild: _buildForm(
-                      context,
-                      currencySymbol,
-                      cubit,
-                      countryKey,
+                    firstChild: const AddSessionsEmptyState(),
+                    secondChild: AddSessionsForm(
+                      isPackage: _isPackageSelected,
+                      selectedDuration: _selectedDuration,
+                      currencySymbol: currencySymbol,
+                      nameController: _nameController,
+                      priceController: _priceController,
+                      cubit: cubit,
+                      countryKey: countryKey,
+                      onDurationSelected: (d) =>
+                          setState(() => _selectedDuration = d),
+                      onAddPressed: () => _addToList(cubit, countryKey),
                     ),
                   ),
 
                   Gap(16.h),
 
-                  // قائمة المضافة
                   if (addedList.isNotEmpty) ...[
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -239,14 +240,17 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
                     Gap(8.h),
                     ...List.generate(
                       addedList.length,
-                      (i) => _buildAddedCard(addedList[i], i, cubit),
+                      (i) => AddSessionsAddedCard(
+                        item: addedList[i],
+                        index: i,
+                        cubit: cubit,
+                      ),
                     ),
                   ],
                 ],
               ),
             ),
 
-            // زر الحفظ
             Gap(12.h),
             CustomBotton(
               width: double.infinity,
@@ -262,196 +266,6 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
           ],
         );
       },
-    );
-  }
-
-  Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 24.h),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.pink.shade100, width: 2),
-              ),
-              child: Icon(
-                Icons.check_box_outlined,
-                color: Colors.pink.shade200,
-                size: 36,
-              ),
-            ),
-            Gap(10.h),
-            Text(
-              context.tr('choose_session_type_first'),
-              style: Styles.textStyle14.copyWith(
-                color: AppColors.kprimaryColor,
-              ),
-            ),
-            Text(
-              context.tr('can_choose_one_or_both'),
-              style: Styles.textStyle10.copyWith(color: Colors.grey),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildForm(
-    BuildContext context,
-    String currencySymbol,
-    UpdateOfferingsCubit cubit,
-    String countryKey,
-  ) {
-    final isPackage = _isPackageSelected;
-    return Column(
-      crossAxisAlignment: isArabic
-          ? CrossAxisAlignment.end
-          : CrossAxisAlignment.start,
-      children: [
-        CustomTextFormField(
-          controller: _nameController,
-          hintText: isPackage
-              ? context.tr('enter_package_name')
-              : context.tr('enter_session_name'),
-        ),
-        Gap(14.h),
-        Row(
-          mainAxisAlignment: !isArabic
-              ? MainAxisAlignment.end
-              : MainAxisAlignment.start,
-          children: [
-            Text(
-              isPackage
-                  ? context.tr('package_duration')
-                  : context.tr('session_duration'),
-              style: Styles.textStyle12,
-            ),
-          ],
-        ),
-        Gap(10.h),
-        OfferingsDurationRadio(
-          title: '45 ${context.tr('minutes_word')}',
-          subtitle: context.tr('medium_session'),
-          isSelected: _selectedDuration == '45',
-          onTap: () => setState(() => _selectedDuration = '45'),
-        ),
-        Gap(8.h),
-        OfferingsDurationRadio(
-          title: '90 ${context.tr('minutes_word')}',
-          subtitle: context.tr('long_session'),
-          isSelected: _selectedDuration == '90',
-          onTap: () => setState(() => _selectedDuration = '90'),
-        ),
-        Gap(14.h),
-        Row(
-          children: [
-            Text(
-              isPackage
-                  ? context.tr('package_price')
-                  : context.tr('session_price'),
-              style: Styles.textStyle14,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: CustomTextFormField(
-                controller: _priceController,
-                hintText: '0',
-                isNumber: true,
-                maxLength: 5,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                prefixIcon: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Text(
-                    currencySymbol,
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                ),
-                suffixIcon: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: AppImage(
-                    AssetsData.kWalletIcon,
-                    width: 24,
-                    height: 24,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        Gap(14.h),
-        Center(
-          child: CustomBotton(
-            useGradient: true,
-            width: double.infinity,
-            title: isPackage
-                ? context.tr('add_package_to_list')
-                : context.tr('add_session_to_list'),
-            onPressed: () => _addToList(cubit, countryKey),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAddedCard(
-    OfferingItemModel item,
-    int index,
-    UpdateOfferingsCubit cubit,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          InkWell(
-            onTap: () => cubit.removeOffering(index),
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.close, size: 14, color: Colors.red.shade400),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              item.name,
-              style: Styles.textStyle14.copyWith(fontWeight: FontWeight.w600),
-            ),
-          ),
-          Wrap(
-            spacing: 4,
-            children: [
-              OfferingsItemChip(
-                text: '${item.price} ${item.currency}',
-                isGreen: true,
-              ),
-              OfferingsItemChip(
-                text: '${item.duration}${context.tr('minute_shortcut')}',
-              ),
-              OfferingsItemChip(
-                text: item.type == 'package'
-                    ? context.tr('package_type')
-                    : context.tr('individual_type'),
-                isPink: true,
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }

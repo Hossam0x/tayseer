@@ -1,5 +1,6 @@
 import 'package:tayseer/features/advisor/settings/view/cubit/offerings/update_offerings_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/offerings/update_offerings_state.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/update_offerings/steps/widgets/select_country_card.dart';
 import 'package:tayseer/features/shared/auth/model/localc_country_model.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -81,7 +82,7 @@ class _UpdateSelectCountryBodyState extends State<UpdateSelectCountryBody> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // شريط البحث
+            // Search bar
             Container(
               height: 48.h,
               decoration: BoxDecoration(
@@ -115,7 +116,6 @@ class _UpdateSelectCountryBodyState extends State<UpdateSelectCountryBody> {
 
             Gap(16.h),
 
-            // إحصائية
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -136,7 +136,6 @@ class _UpdateSelectCountryBodyState extends State<UpdateSelectCountryBody> {
 
             Gap(12.h),
 
-            // القائمة
             Expanded(
               child: ListView(
                 children: [
@@ -154,10 +153,14 @@ class _UpdateSelectCountryBodyState extends State<UpdateSelectCountryBody> {
                     ),
                     Gap(12.h),
                     ...mostRequested.map(
-                      (c) => _buildCountryCard(
-                        c,
-                        context,
+                      (c) => SelectCountryCard(
+                        country: c,
+                        isSelected: _selectedCountryKey == c.translationKey,
                         isDisabled: addedKeys.contains(c.translationKey),
+                        onTap: () => setState(() {
+                          _selectedCountryKey = c.translationKey;
+                          _selectedCountryFlag = c.flagEmoji;
+                        }),
                       ),
                     ),
                     Gap(16.h),
@@ -176,10 +179,14 @@ class _UpdateSelectCountryBodyState extends State<UpdateSelectCountryBody> {
                     ),
                     Gap(12.h),
                     ...others.map(
-                      (c) => _buildCountryCard(
-                        c,
-                        context,
+                      (c) => SelectCountryCard(
+                        country: c,
+                        isSelected: _selectedCountryKey == c.translationKey,
                         isDisabled: addedKeys.contains(c.translationKey),
+                        onTap: () => setState(() {
+                          _selectedCountryKey = c.translationKey;
+                          _selectedCountryFlag = c.flagEmoji;
+                        }),
                       ),
                     ),
                   ],
@@ -187,7 +194,6 @@ class _UpdateSelectCountryBodyState extends State<UpdateSelectCountryBody> {
               ),
             ),
 
-            // زر التالي
             Gap(12.h),
             CustomBotton(
               width: double.infinity,
@@ -205,107 +211,6 @@ class _UpdateSelectCountryBodyState extends State<UpdateSelectCountryBody> {
           ],
         );
       },
-    );
-  }
-
-  Widget _buildCountryCard(
-    LocalCountryModel country,
-    BuildContext context, {
-    bool isDisabled = false,
-  }) {
-    final isSelected = _selectedCountryKey == country.translationKey;
-
-    return GestureDetector(
-      onTap: isDisabled
-          ? null
-          : () => setState(() {
-              _selectedCountryKey = country.translationKey;
-              _selectedCountryFlag = country.flagEmoji;
-            }),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isDisabled
-              ? Colors.grey.shade100
-              : isSelected
-              ? AppColors.kprimaryColor.withOpacity(0.05)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(14.r),
-          border: Border.all(
-            color: isDisabled
-                ? Colors.grey.shade200
-                : isSelected
-                ? AppColors.kprimaryColor
-                : Colors.grey.shade200,
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            // Radio
-            Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isDisabled ? Colors.grey.shade300 : Colors.transparent,
-                border: Border.all(
-                  color: isDisabled
-                      ? Colors.grey.shade300
-                      : isSelected
-                      ? AppColors.kprimaryColor
-                      : Colors.grey.shade300,
-                  width: isDisabled
-                      ? 0
-                      : isSelected
-                      ? 6
-                      : 1.5,
-                ),
-              ),
-              child: isDisabled
-                  ? const Icon(Icons.check, size: 14, color: Colors.white)
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: isArabic
-                    ? CrossAxisAlignment.end
-                    : CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.tr(country.translationKey),
-                    style: Styles.textStyle14.copyWith(
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                      color: isDisabled ? Colors.grey.shade400 : Colors.black87,
-                    ),
-                  ),
-                  if (isDisabled)
-                    Text(
-                      context.tr('already_added'),
-                      style: Styles.textStyle10.copyWith(
-                        color: Colors.green.shade500,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Opacity(
-              opacity: isDisabled ? 0.4 : 1.0,
-              child: Text(
-                country.flagEmoji,
-                style: const TextStyle(fontSize: 22),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
