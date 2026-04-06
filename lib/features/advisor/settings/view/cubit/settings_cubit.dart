@@ -112,7 +112,7 @@ class SettingsCubit extends Cubit<SettingsState> {
           id: 'session_settings',
           title: 'session_settings_title',
           iconAsset: AssetsData.icDurationSettings,
-          routeName: AppRouter.kSessionPricingView,
+          routeName: AppRouter.kUpdateSessionPricingView,
         ),
         SettingItemModel(
           id: 'workshops',
