@@ -51,6 +51,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
   bool _isDragging = false;
   bool _isDisposed = false;
   bool _isSpeedUp = false;
+  // ignore: unused_field
   bool _showSpeedIndicator = false;
 
   Completer<void>? _initCompleter;
@@ -552,46 +553,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
 
               if (_isInitialized && _controller != null)
                 Positioned.fill(child: _buildVideoPlayer()),
-
-              if (_showSpeedIndicator)
-                Positioned(
-                  top: MediaQuery.of(context).padding.top + 75.h,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.fast_forward,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                            SizedBox(width: 6),
-                            Text(
-                              '2x',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
 
               if (_hasError)
                 Positioned.fill(
