@@ -1,4 +1,4 @@
-import 'package:skeletonizer/skeletonizer.dart';
+import 'package:skeletonizer/skeletonizer.dart' as skeletonizer;
 import 'package:tayseer/my_import.dart';
 
 class AppointmentsSkeleton extends StatelessWidget {
@@ -6,8 +6,13 @@ class AppointmentsSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Skeletonizer(
+    return skeletonizer.Skeletonizer(
       enabled: true,
+      effect: skeletonizer.ShimmerEffect(
+        baseColor: AppColors.secondary100,
+        highlightColor: AppColors.kWhiteColor.withOpacity(0.8),
+        duration: const Duration(milliseconds: 1200),
+      ),
       child: ListView.separated(
         padding: EdgeInsets.symmetric(vertical: 10.h),
         itemCount: 7,

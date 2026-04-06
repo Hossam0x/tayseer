@@ -81,82 +81,64 @@ class _UpdateSelectCountryBodyState extends State<UpdateSelectCountryBody> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // زر الرجوع
-            Align(
-              alignment: isArabic
-                  ? Alignment.centerRight
-                  : Alignment.centerLeft,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 8.0,
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => context.pop(),
-                ),
-              ),
-            ),
-
-            // العنوان
-            Text(
-              '🌍 ${context.tr('choose_country_title')}',
-              textAlign: TextAlign.center,
-              style: Styles.textStyle24.copyWith(
-                color: AppColors.kscandryTextColor,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            Gap(context.responsiveHeight(6)),
-            Text(
-              context.tr('choose_country_subtitle'),
-              textAlign: TextAlign.center,
-              style: Styles.textStyle12.copyWith(color: Colors.grey.shade600),
-            ),
-
-            Gap(context.responsiveHeight(24)),
-
             // شريط البحث
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Container(
-                height: 50,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: Colors.grey.shade300, width: 1),
+            Container(
+              height: 48.h,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30.r),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: TextField(
+                onChanged: (v) => setState(() => _searchQuery = v),
+                textAlign: isArabic ? TextAlign.right : TextAlign.left,
+                decoration: InputDecoration(
+                  hintText: context.tr('search_country_hint'),
+                  hintStyle: TextStyle(
+                    color: Colors.grey.shade400,
+                    fontSize: 14,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 14,
+                    horizontal: 16,
+                  ),
+                  prefixIcon: isArabic
+                      ? null
+                      : Icon(Icons.search, color: Colors.grey.shade400),
+                  suffixIcon: isArabic
+                      ? Icon(Icons.search, color: Colors.grey.shade400)
+                      : null,
                 ),
-                child: TextField(
-                  onChanged: (v) => setState(() => _searchQuery = v),
-                  textAlign: isArabic ? TextAlign.right : TextAlign.left,
-                  decoration: InputDecoration(
-                    hintText: context.tr('search_country_hint'),
-                    hintStyle: TextStyle(
-                      color: Colors.grey.shade400,
-                      fontSize: 14,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                      horizontal: 16,
-                    ),
-                    prefixIcon: isArabic
-                        ? null
-                        : Icon(Icons.search, color: Colors.grey.shade400),
-                    suffixIcon: isArabic
-                        ? Icon(Icons.search, color: Colors.grey.shade400)
-                        : null,
+              ),
+            ),
+
+            Gap(16.h),
+
+            // إحصائية
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  context.tr('available_countries'),
+                  style: Styles.textStyle12Bold.copyWith(
+                    color: Colors.grey.shade500,
                   ),
                 ),
-              ),
+                Text(
+                  '${mostRequested.length + others.length} ${context.tr('country_word')}',
+                  style: Styles.textStyle12Bold.copyWith(
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+              ],
             ),
 
-            Gap(context.responsiveHeight(16)),
+            Gap(12.h),
 
             // القائمة
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: [
                   if (mostRequested.isNotEmpty) ...[
                     Align(
@@ -170,7 +152,7 @@ class _UpdateSelectCountryBodyState extends State<UpdateSelectCountryBody> {
                         ),
                       ),
                     ),
-                    Gap(context.responsiveHeight(12)),
+                    Gap(12.h),
                     ...mostRequested.map(
                       (c) => _buildCountryCard(
                         c,
@@ -178,7 +160,7 @@ class _UpdateSelectCountryBodyState extends State<UpdateSelectCountryBody> {
                         isDisabled: addedKeys.contains(c.translationKey),
                       ),
                     ),
-                    Gap(context.responsiveHeight(16)),
+                    Gap(16.h),
                   ],
                   if (others.isNotEmpty) ...[
                     Align(
@@ -192,7 +174,7 @@ class _UpdateSelectCountryBodyState extends State<UpdateSelectCountryBody> {
                         ),
                       ),
                     ),
-                    Gap(context.responsiveHeight(12)),
+                    Gap(12.h),
                     ...others.map(
                       (c) => _buildCountryCard(
                         c,
@@ -206,24 +188,20 @@ class _UpdateSelectCountryBodyState extends State<UpdateSelectCountryBody> {
             ),
 
             // زر التالي
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20.0,
-                vertical: 16.0,
-              ),
-              child: CustomBotton(
-                width: double.infinity,
-                title: context.tr('next'),
-                useGradient: _selectedCountryKey != null,
-                backGroundcolor: AppColors.kgreyColor,
-                onPressed: _selectedCountryKey != null
-                    ? () => cubit.selectCountry(
-                        countryKey: _selectedCountryKey!,
-                        flagEmoji: _selectedCountryFlag!,
-                      )
-                    : null,
-              ),
+            Gap(12.h),
+            CustomBotton(
+              width: double.infinity,
+              title: context.tr('next'),
+              useGradient: _selectedCountryKey != null,
+              backGroundcolor: AppColors.kgreyColor,
+              onPressed: _selectedCountryKey != null
+                  ? () => cubit.selectCountry(
+                      countryKey: _selectedCountryKey!,
+                      flagEmoji: _selectedCountryFlag!,
+                    )
+                  : null,
             ),
+            Gap(20.h),
           ],
         );
       },
@@ -236,7 +214,6 @@ class _UpdateSelectCountryBodyState extends State<UpdateSelectCountryBody> {
     bool isDisabled = false,
   }) {
     final isSelected = _selectedCountryKey == country.translationKey;
-    final countryName = context.tr(country.translationKey);
 
     return GestureDetector(
       onTap: isDisabled
@@ -247,28 +224,23 @@ class _UpdateSelectCountryBodyState extends State<UpdateSelectCountryBody> {
             }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isDisabled ? Colors.grey.shade100 : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          color: isDisabled
+              ? Colors.grey.shade100
+              : isSelected
+              ? AppColors.kprimaryColor.withOpacity(0.05)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(14.r),
           border: Border.all(
             color: isDisabled
                 ? Colors.grey.shade200
                 : isSelected
                 ? AppColors.kprimaryColor
-                : Colors.white,
-            width: 1.5,
+                : Colors.grey.shade200,
+            width: isSelected ? 1.5 : 1,
           ),
-          boxShadow: isDisabled
-              ? []
-              : [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
         ),
         child: Row(
           children: [
@@ -304,7 +276,7 @@ class _UpdateSelectCountryBodyState extends State<UpdateSelectCountryBody> {
                     : CrossAxisAlignment.start,
                 children: [
                   Text(
-                    countryName,
+                    context.tr(country.translationKey),
                     style: Styles.textStyle14.copyWith(
                       fontWeight: isSelected
                           ? FontWeight.bold
@@ -316,7 +288,7 @@ class _UpdateSelectCountryBodyState extends State<UpdateSelectCountryBody> {
                     Text(
                       context.tr('already_added'),
                       style: Styles.textStyle10.copyWith(
-                        color: Colors.green.shade400,
+                        color: Colors.green.shade500,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -326,16 +298,9 @@ class _UpdateSelectCountryBodyState extends State<UpdateSelectCountryBody> {
             const SizedBox(width: 12),
             Opacity(
               opacity: isDisabled ? 0.4 : 1.0,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  country.flagEmoji,
-                  style: const TextStyle(fontSize: 22),
-                ),
+              child: Text(
+                country.flagEmoji,
+                style: const TextStyle(fontSize: 22),
               ),
             ),
           ],

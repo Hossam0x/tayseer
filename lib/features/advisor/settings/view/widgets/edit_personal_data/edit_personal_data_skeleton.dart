@@ -1,3 +1,4 @@
+import 'package:skeletonizer/skeletonizer.dart' as skeletonizer;
 import 'package:tayseer/my_import.dart';
 
 class EditPersonalDataSkeleton extends StatelessWidget {
@@ -5,40 +6,48 @@ class EditPersonalDataSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Center(
-          child: Container(
-            height: 150.h,
-            width: 155.w,
-            decoration: BoxDecoration(
-              color: AppColors.secondary100,
-              borderRadius: BorderRadius.circular(32.r),
-            ),
-            child: Center(
-              child: Icon(
-                Icons.person,
-                size: 50.w,
-                color: AppColors.secondary300,
+    return skeletonizer.Skeletonizer(
+      enabled: true,
+      effect: skeletonizer.ShimmerEffect(
+        baseColor: AppColors.secondary100,
+        highlightColor: AppColors.kWhiteColor.withOpacity(0.8),
+        duration: const Duration(milliseconds: 1200),
+      ),
+      child: Column(
+        children: [
+          Center(
+            child: Container(
+              height: 150.h,
+              width: 155.w,
+              decoration: BoxDecoration(
+                color: AppColors.secondary100,
+                borderRadius: BorderRadius.circular(32.r),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.person,
+                  size: 50.w,
+                  color: AppColors.secondary300,
+                ),
               ),
             ),
           ),
-        ),
-        Gap(20.h),
-        _skeletonBox(height: 48.h),
-        Gap(11.h),
-        _skeletonBox(height: 48.h),
-        Gap(11.h),
-        _skeletonBox(height: 48.h),
-        Gap(11.h),
-        _skeletonBox(height: 48.h),
-        Gap(11.h),
-        _skeletonBox(height: 150.h),
-        Gap(25.h),
-        _skeletonBox(height: 250.h),
-        Gap(35.h),
-        _skeletonBox(height: 48.h),
-      ],
+          Gap(20.h),
+          _skeletonBox(height: 48.h),
+          Gap(11.h),
+          _skeletonBox(height: 48.h),
+          Gap(11.h),
+          _skeletonBox(height: 48.h),
+          Gap(11.h),
+          _skeletonBox(height: 48.h),
+          Gap(11.h),
+          _skeletonBox(height: 150.h),
+          Gap(25.h),
+          _skeletonBox(height: 250.h),
+          Gap(35.h),
+          _skeletonBox(height: 48.h),
+        ],
+      ),
     );
   }
 

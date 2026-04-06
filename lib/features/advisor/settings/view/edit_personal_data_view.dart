@@ -370,12 +370,7 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
                                   children: [
                                     Gap(32.h),
                                     if (state.state == CubitStates.loading)
-                                      Shimmer.fromColors(
-                                        baseColor: AppColors.secondary100,
-                                        highlightColor: AppColors.kWhiteColor
-                                            .withOpacity(0.5),
-                                        child: const EditPersonalDataSkeleton(),
-                                      )
+                                      const EditPersonalDataSkeleton()
                                     else if (state.state == CubitStates.failure)
                                       CustomErrorView(
                                         verticalPadding: 100,

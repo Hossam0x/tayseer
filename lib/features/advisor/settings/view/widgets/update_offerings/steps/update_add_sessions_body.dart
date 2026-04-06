@@ -38,7 +38,6 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
 
   void _addToList(UpdateOfferingsCubit cubit, String countryKey) {
     final isPackage = _isPackageSelected;
-
     if (_nameController.text.isEmpty) {
       _showError(
         isPackage
@@ -91,120 +90,83 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
 
         return Column(
           children: [
-            // AppBar
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 8.0,
+            // كارد الدولة المختارة
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14.r),
+                border: Border.all(color: Colors.grey.shade200),
               ),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () => cubit.goBackToCountrySelection(),
-                  ),
-                  const Spacer(),
-                  Text(
-                    context.tr('add_sessions_title'),
-                    style: Styles.textStyle16.copyWith(
-                      fontWeight: FontWeight.bold,
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.kprimaryColor.withOpacity(0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.language,
+                      color: AppColors.kprimaryColor,
+                      size: 18,
                     ),
                   ),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: isArabic
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.tr('adding_sessions_for'),
+                        style: Styles.textStyle10.copyWith(
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                      Text(
+                        context.tr(countryKey),
+                        style: Styles.textStyle12.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
                   const Spacer(),
+                  Text(countryFlag, style: const TextStyle(fontSize: 24)),
                 ],
               ),
             ),
 
-            // كارد الدولة
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 12.0,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: Colors.grey.shade200, width: 2),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.kprimaryColor.withOpacity(0.08),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.language,
-                        color: AppColors.kprimaryColor,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: isArabic
-                          ? CrossAxisAlignment.end
-                          : CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          context.tr('adding_sessions_for'),
-                          style: Styles.textStyle10.copyWith(
-                            color: Colors.grey.shade500,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          context.tr(countryKey),
-                          style: Styles.textStyle12.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    Text(countryFlag, style: const TextStyle(fontSize: 26)),
-                  ],
-                ),
-              ),
-            ),
+            Gap(16.h),
 
-            Gap(context.responsiveHeight(24)),
-
-            // العناوين
-            Text(
-              context.tr('select_session_package'),
-              style: Styles.textStyle22Bold.copyWith(
-                color: AppColors.kscandryTextColor,
-              ),
-            ),
-            Gap(context.responsiveHeight(6)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                context.tr('share_availability_hint'),
-                textAlign: TextAlign.center,
-                style: Styles.textStyle12Bold.copyWith(color: Colors.grey),
-              ),
-            ),
-            Gap(context.responsiveHeight(6)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                context.tr('share_availability_hint2'),
-                textAlign: TextAlign.center,
-                style: Styles.textStyle12Bold.copyWith(color: Colors.red),
-              ),
-            ),
-            Gap(context.responsiveHeight(20)),
-
-            // المحتوى
+            // المحتوى القابل للتمرير
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
+                  // عنوان
+                  Center(
+                    child: Text(
+                      context.tr('select_session_package'),
+                      style: Styles.textStyle18.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.kscandryTextColor,
+                      ),
+                    ),
+                  ),
+                  Gap(4.h),
+                  Center(
+                    child: Text(
+                      context.tr('share_availability_hint'),
+                      textAlign: TextAlign.center,
+                      style: Styles.textStyle12.copyWith(
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ),
+                  Gap(16.h),
+
                   // كروت النوع
                   Row(
                     children: [
@@ -236,26 +198,24 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
                     ],
                   ),
 
-                  Gap(context.responsiveHeight(20)),
+                  Gap(16.h),
 
                   // الفورم أو الحالة الفارغة
-                  Center(
-                    child: AnimatedCrossFade(
-                      crossFadeState: showForm
-                          ? CrossFadeState.showSecond
-                          : CrossFadeState.showFirst,
-                      duration: const Duration(milliseconds: 300),
-                      firstChild: _buildEmptyState(context),
-                      secondChild: _buildForm(
-                        context,
-                        currencySymbol,
-                        cubit,
-                        countryKey,
-                      ),
+                  AnimatedCrossFade(
+                    crossFadeState: showForm
+                        ? CrossFadeState.showSecond
+                        : CrossFadeState.showFirst,
+                    duration: const Duration(milliseconds: 300),
+                    firstChild: _buildEmptyState(context),
+                    secondChild: _buildForm(
+                      context,
+                      currencySymbol,
+                      cubit,
+                      countryKey,
                     ),
                   ),
 
-                  Gap(context.responsiveHeight(16)),
+                  Gap(16.h),
 
                   // قائمة المضافة
                   if (addedList.isNotEmpty) ...[
@@ -265,7 +225,7 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
                         Text(
                           '${addedList.length} ${context.tr('added_items_count')}',
                           style: Styles.textStyle10.copyWith(
-                            color: Colors.grey,
+                            color: Colors.grey.shade500,
                           ),
                         ),
                         Text(
@@ -276,19 +236,20 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    Gap(8.h),
                     ...List.generate(
                       addedList.length,
-                      (i) => _buildAddedCard(addedList[i], i, context, cubit),
+                      (i) => _buildAddedCard(addedList[i], i, cubit),
                     ),
                   ],
                 ],
               ),
             ),
 
-            // زر الحفظ والانتقال للملخص
+            // زر الحفظ
+            Gap(12.h),
             CustomBotton(
-              width: context.width * .9,
+              width: double.infinity,
               title:
                   '${context.tr('done_save')} ${addedList.length} ${context.tr('added_items_count')} ${context.tr('for_country')} $countryFlag',
               useGradient: addedList.isNotEmpty,
@@ -297,8 +258,7 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
                   ? () => cubit.saveCurrentOfferingsToSummary()
                   : null,
             ),
-
-            Gap(context.responsiveHeight(20)),
+            Gap(20.h),
           ],
         );
       },
@@ -306,32 +266,33 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    return Column(
-      children: [
-        Gap(context.responsiveHeight(40)),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.pink.shade100, width: 2),
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 24.h),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.pink.shade100, width: 2),
+            ),
+            child: Icon(
+              Icons.check_box_outlined,
+              color: Colors.pink.shade200,
+              size: 36,
+            ),
           ),
-          child: Icon(
-            Icons.check_box_outlined,
-            color: Colors.pink.shade200,
-            size: 40,
+          Gap(10.h),
+          Text(
+            context.tr('choose_session_type_first'),
+            style: Styles.textStyle14.copyWith(color: AppColors.kprimaryColor),
           ),
-        ),
-        Gap(context.responsiveHeight(12)),
-        Text(
-          context.tr('choose_session_type_first'),
-          style: Styles.textStyle14.copyWith(color: AppColors.kprimaryColor),
-        ),
-        Text(
-          context.tr('can_choose_one_or_both'),
-          style: Styles.textStyle10.copyWith(color: Colors.grey),
-        ),
-        Gap(context.responsiveHeight(40)),
-      ],
+          Text(
+            context.tr('can_choose_one_or_both'),
+            style: Styles.textStyle10.copyWith(color: Colors.grey),
+          ),
+        ],
+      ),
     );
   }
 
@@ -353,7 +314,7 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
               ? context.tr('enter_package_name')
               : context.tr('enter_session_name'),
         ),
-        Gap(context.responsiveHeight(16)),
+        Gap(14.h),
         Row(
           mainAxisAlignment: !isArabic
               ? MainAxisAlignment.end
@@ -367,21 +328,21 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        Gap(10.h),
         OfferingsDurationRadio(
           title: '45 ${context.tr('minutes_word')}',
           subtitle: context.tr('medium_session'),
           isSelected: _selectedDuration == '45',
           onTap: () => setState(() => _selectedDuration = '45'),
         ),
-        const SizedBox(height: 12),
+        Gap(8.h),
         OfferingsDurationRadio(
           title: '90 ${context.tr('minutes_word')}',
           subtitle: context.tr('long_session'),
           isSelected: _selectedDuration == '90',
           onTap: () => setState(() => _selectedDuration = '90'),
         ),
-        Gap(context.responsiveHeight(16)),
+        Gap(14.h),
         Row(
           children: [
             Text(
@@ -418,11 +379,11 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
             ),
           ],
         ),
-        Gap(context.responsiveHeight(16)),
+        Gap(14.h),
         Center(
           child: CustomBotton(
             useGradient: true,
-            width: context.width * .9,
+            width: double.infinity,
             title: isPackage
                 ? context.tr('add_package_to_list')
                 : context.tr('add_session_to_list'),
@@ -436,19 +397,17 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
   Widget _buildAddedCard(
     OfferingItemModel item,
     int index,
-    BuildContext context,
     UpdateOfferingsCubit cubit,
   ) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(15),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           InkWell(
             onTap: () => cubit.removeOffering(index),
@@ -458,37 +417,33 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
                 color: Colors.red.shade50,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.close, size: 16, color: Colors.red.shade400),
+              child: Icon(Icons.close, size: 14, color: Colors.red.shade400),
             ),
           ),
+          const SizedBox(width: 10),
           Expanded(
-            child: Row(
-              mainAxisAlignment: isArabic
-                  ? MainAxisAlignment.end
-                  : MainAxisAlignment.start,
-              children: [
-                OfferingsItemChip(
-                  text: '${item.price} ${item.currency}',
-                  isGreen: true,
-                ),
-                const SizedBox(width: 4),
-                OfferingsItemChip(
-                  text: '${item.duration}${context.tr('minute_shortcut')}',
-                ),
-                const SizedBox(width: 4),
-                OfferingsItemChip(
-                  text: item.type == 'package'
-                      ? context.tr('package_type')
-                      : context.tr('individual_type'),
-                  isPink: true,
-                ),
-              ],
+            child: Text(
+              item.name,
+              style: Styles.textStyle14.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
-          const SizedBox(width: 12),
-          Text(
-            item.name,
-            style: Styles.textStyle14.copyWith(fontWeight: FontWeight.bold),
+          Wrap(
+            spacing: 4,
+            children: [
+              OfferingsItemChip(
+                text: '${item.price} ${item.currency}',
+                isGreen: true,
+              ),
+              OfferingsItemChip(
+                text: '${item.duration}${context.tr('minute_shortcut')}',
+              ),
+              OfferingsItemChip(
+                text: item.type == 'package'
+                    ? context.tr('package_type')
+                    : context.tr('individual_type'),
+                isPink: true,
+              ),
+            ],
           ),
         ],
       ),

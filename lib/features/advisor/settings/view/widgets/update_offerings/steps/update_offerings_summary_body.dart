@@ -16,44 +16,14 @@ class UpdateOfferingsSummaryBody extends StatelessWidget {
 
         return Column(
           children: [
-            // AppBar
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 8.0,
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () => context.pop(),
-                  ),
-                  const Spacer(),
-                  Text(
-                    context.tr('session_settings_title'),
-                    style: Styles.textStyle16.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  // placeholder للتوازن
-                  const SizedBox(width: 48),
-                ],
-              ),
-            ),
-
             // المحتوى
             Expanded(
               child: summaryData.isEmpty
                   ? _buildEmptyState(context, cubit)
                   : ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       children: [
-                        Gap(context.responsiveHeight(8)),
-                        // إحصائية سريعة
                         _buildStatsBanner(summaryData, context),
-                        Gap(context.responsiveHeight(16)),
-                        // كارد لكل دولة
+                        Gap(16.h),
                         ...List.generate(
                           summaryData.length,
                           (i) => _buildCountryCard(
@@ -63,64 +33,60 @@ class UpdateOfferingsSummaryBody extends StatelessWidget {
                             cubit,
                           ),
                         ),
-                        Gap(context.responsiveHeight(8)),
                       ],
                     ),
             ),
 
             // الأزرار السفلية
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-              child: Column(
-                children: [
-                  // إضافة دولة جديدة
-                  GestureDetector(
-                    onTap: () => cubit.goToAddAnotherCountry(),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.kprimaryColor,
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '+ ${context.tr('add_another_country')}',
-                          style: Styles.textStyle14.copyWith(
-                            color: AppColors.kprimaryColor,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+            Gap(12.h),
+            // إضافة دولة جديدة
+            GestureDetector(
+              onTap: () => cubit.goToAddAnotherCountry(),
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 14.h),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(
+                    color: AppColors.kprimaryColor,
+                    width: 1.5,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    '+ ${context.tr('add_another_country')}',
+                    style: Styles.textStyle14.copyWith(
+                      color: AppColors.kprimaryColor,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Gap(context.responsiveHeight(12)),
-                  // حفظ
-                  CustomBotton(
-                    width: double.infinity,
-                    title: state.isSaving
-                        ? context.tr('sending')
-                        : '${context.tr('finish_and_save')} ✓',
-                    useGradient: summaryData.isNotEmpty,
-                    backGroundcolor: AppColors.kgreyColor,
-                    onPressed: summaryData.isNotEmpty && !state.isSaving
-                        ? () => cubit.submitOfferings()
-                        : null,
-                  ),
-                ],
+                ),
               ),
             ),
+            Gap(12.h),
+            // حفظ
+            CustomBotton(
+              height: 54.h,
+              width: double.infinity,
+              useGradient: summaryData.isNotEmpty,
+              title: state.isSaving
+                  ? context.tr('sending')
+                  : '${context.tr('finish_and_save')} ✓',
+              backGroundcolor: summaryData.isNotEmpty
+                  ? null
+                  : AppColors.inactiveColor,
+              onPressed: summaryData.isNotEmpty && !state.isSaving
+                  ? () => cubit.submitOfferings()
+                  : null,
+            ),
+            Gap(20.h),
           ],
         );
       },
     );
   }
 
-  // ─── حالة فارغة ───
   Widget _buildEmptyState(BuildContext context, UpdateOfferingsCubit cubit) {
     return Center(
       child: Column(
@@ -135,10 +101,10 @@ class UpdateOfferingsSummaryBody extends StatelessWidget {
             child: Icon(
               Icons.assignment_outlined,
               color: Colors.pink.shade200,
-              size: 50,
+              size: 48,
             ),
           ),
-          Gap(context.responsiveHeight(16)),
+          Gap(16.h),
           Text(
             context.tr('no_sessions_added_yet'),
             style: Styles.textStyle16.copyWith(
@@ -146,9 +112,9 @@ class UpdateOfferingsSummaryBody extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          Gap(context.responsiveHeight(24)),
+          Gap(24.h),
           CustomBotton(
-            width: context.width * .7,
+            width: context.width * .65,
             title: '+ ${context.tr('add_another_country')}',
             useGradient: true,
             onPressed: () => cubit.goToAddAnotherCountry(),
@@ -158,17 +124,16 @@ class UpdateOfferingsSummaryBody extends StatelessWidget {
     );
   }
 
-  // ─── بانر الإحصائية ───
   Widget _buildStatsBanner(
     List<CountryOfferingsModel> data,
     BuildContext context,
   ) {
-    final totalOfferings = data.fold(0, (sum, c) => sum + c.offerings.length);
+    final total = data.fold(0, (sum, c) => sum + c.offerings.length);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
       decoration: BoxDecoration(
         color: Colors.pink.shade50.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -191,7 +156,7 @@ class UpdateOfferingsSummaryBody extends StatelessWidget {
                 ),
               ),
               Text(
-                '${data.length} ${context.tr('countries_word')} · $totalOfferings ${context.tr('session_word')}',
+                '${data.length} ${context.tr('countries_word')} · $total ${context.tr('session_word')}',
                 style: Styles.textStyle10.copyWith(color: Colors.pink.shade300),
               ),
             ],
@@ -206,7 +171,6 @@ class UpdateOfferingsSummaryBody extends StatelessWidget {
     );
   }
 
-  // ─── كارد الدولة ───
   Widget _buildCountryCard(
     CountryOfferingsModel country,
     int index,
@@ -214,15 +178,15 @@ class UpdateOfferingsSummaryBody extends StatelessWidget {
     UpdateOfferingsCubit cubit,
   ) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 14.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -230,10 +194,9 @@ class UpdateOfferingsSummaryBody extends StatelessWidget {
         children: [
           // هيدر الدولة
           Padding(
-            padding: const EdgeInsets.all(14.0),
+            padding: EdgeInsets.all(14.w),
             child: Row(
               children: [
-                // حذف الدولة كلها
                 GestureDetector(
                   onTap: () => cubit.removeCountryFromSummary(index),
                   child: Container(
@@ -279,12 +242,9 @@ class UpdateOfferingsSummaryBody extends StatelessWidget {
 
           Divider(color: Colors.grey.shade100, height: 1, thickness: 1),
 
-          // قائمة الـ offerings
+          // الـ offerings
           Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14.0,
-              vertical: 10.0,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
             child: Column(
               children: [
                 ...List.generate(
@@ -298,9 +258,8 @@ class UpdateOfferingsSummaryBody extends StatelessWidget {
                     ),
                   ),
                 ),
-
-                // زر إضافة offering لهذه الدولة
-                const SizedBox(height: 8),
+                Gap(6.h),
+                // زر إضافة لهذه الدولة
                 GestureDetector(
                   onTap: () => cubit.addToExistingCountry(
                     countryKey: country.countryKey,
@@ -308,13 +267,12 @@ class UpdateOfferingsSummaryBody extends StatelessWidget {
                   ),
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    padding: EdgeInsets.symmetric(vertical: 10.h),
                     decoration: BoxDecoration(
-                      color: AppColors.kprimaryColor.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(10),
+                      color: AppColors.kprimaryColor.withOpacity(0.04),
+                      borderRadius: BorderRadius.circular(10.r),
                       border: Border.all(
-                        color: AppColors.kprimaryColor.withOpacity(0.3),
-                        width: 1,
+                        color: AppColors.kprimaryColor.withOpacity(0.25),
                       ),
                     ),
                     child: Row(
@@ -345,17 +303,15 @@ class UpdateOfferingsSummaryBody extends StatelessWidget {
     );
   }
 
-  // ─── صف الـ offering الواحد ───
   Widget _buildOfferingRow(
     OfferingItemModel offering,
     BuildContext context, {
     VoidCallback? onDelete,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         children: [
-          // زر الحذف
           if (onDelete != null)
             GestureDetector(
               onTap: onDelete,
@@ -365,11 +321,10 @@ class UpdateOfferingsSummaryBody extends StatelessWidget {
                   color: Colors.red.shade50,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.close, size: 14, color: Colors.red.shade400),
+                child: Icon(Icons.close, size: 13, color: Colors.red.shade400),
               ),
             ),
-          const SizedBox(width: 10),
-          // الاسم
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               offering.name,
@@ -378,7 +333,6 @@ class UpdateOfferingsSummaryBody extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          // الـ chips
           Wrap(
             spacing: 4,
             children: [
