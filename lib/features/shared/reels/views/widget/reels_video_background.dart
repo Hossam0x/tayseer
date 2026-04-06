@@ -510,6 +510,38 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
     _controller?.setPlaybackSpeed(1.0);
   }
 
+  Widget _buildVideoPlayer() {
+    if (_controller == null) return const SizedBox.shrink();
+
+    final videoSize = _controller!.value.size;
+    final videoAspectRatio = videoSize.width / videoSize.height;
+
+    // Check if video is portrait (height > width) or square-ish
+    // Portrait videos (like typical reels) should fill the screen
+    // Landscape videos should be contained to show full content
+    final isPortraitVideo = videoAspectRatio <= 1.0;
+
+    if (isPortraitVideo) {
+      // Portrait video - fill screen like thumbnail
+      return FittedBox(
+        fit: BoxFit.cover,
+        child: SizedBox(
+          width: videoSize.width,
+          height: videoSize.height,
+          child: VideoPlayer(_controller!),
+        ),
+      );
+    } else {
+      // Landscape video - contain to show full video
+      return Center(
+        child: AspectRatio(
+          aspectRatio: videoAspectRatio,
+          child: VideoPlayer(_controller!),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -542,17 +574,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
 
               // Video
               if (_isInitialized && _controller != null)
-                Center(
-                  child: FittedBox(
-                    fit: BoxFit.cover,
-                    clipBehavior: Clip.hardEdge,
-                    child: SizedBox(
-                      width: _controller!.value.size.width,
-                      height: _controller!.value.size.height,
-                      child: VideoPlayer(_controller!),
-                    ),
-                  ),
-                ),
+                Positioned.fill(child: _buildVideoPlayer()),
 
               // لا نظهر loading أو buffering indicator — الـ thumbnail يكفي (زي فيسبوك)
 
