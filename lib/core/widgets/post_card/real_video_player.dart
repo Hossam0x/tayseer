@@ -524,69 +524,74 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     final videoData = widget.videoData;
     final double aspectRatio;
     if (videoData != null && videoData.width > 0 && videoData.height > 0) {
-      aspectRatio = videoData.aspectRatio.clamp(0.4, 2.5);
+      aspectRatio = videoData.aspectRatio.clamp(0.5, 2.5);
     } else {
       aspectRatio = 4 / 5;
     }
 
     final thumbnail = videoData?.thumbnail;
+    final maxAllowedHeight = context.responsiveHeight(500);
 
     return VisibilityDetector(
       key: Key('${widget.postId}_${widget.videoUrl}'),
       onVisibilityChanged: _handleVisibility,
-      child: AspectRatio(
-        aspectRatio: aspectRatio,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12.r),
-            child: GestureDetector(
-              onTap: _handleTap,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  if (thumbnail != null && thumbnail.isNotEmpty)
-                    Positioned.fill(
-                      child: CachedNetworkImage(
-                        imageUrl: thumbnail,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) =>
-                            const ColoredBox(color: Colors.black),
-                        errorWidget: (_, __, ___) =>
-                            const ColoredBox(color: Colors.black),
-                      ),
-                    ),
-
-                  if (_isInitialized && _controller != null)
-                    Positioned.fill(
-                      child: FittedBox(
-                        fit: BoxFit.cover,
-                        child: SizedBox(
-                          width: _controller!.value.size.width,
-                          height: _controller!.value.size.height,
-                          child: VideoPlayer(_controller!),
+      child: Container(
+        width: double.infinity,
+        constraints: BoxConstraints(maxHeight: maxAllowedHeight),
+        child: AspectRatio(
+          aspectRatio: aspectRatio,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12.r),
+              child: GestureDetector(
+                onTap: _handleTap,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    if (thumbnail != null && thumbnail.isNotEmpty)
+                      Positioned.fill(
+                        child: CachedNetworkImage(
+                          imageUrl: thumbnail,
+                          fit: BoxFit.cover,
+                          placeholder: (_, __) =>
+                              const ColoredBox(color: Colors.black),
+                          errorWidget: (_, __, ___) =>
+                              const ColoredBox(color: Colors.black),
                         ),
                       ),
-                    ),
 
-                  if (_hasError) _buildErrorState(),
-
-                  // لا نظهر loading indicator — الـ thumbnail يكفي (زي فيسبوك)
-                  if (_isInitialized && _isBuffering)
-                    _buildBufferingIndicator(),
-
-                  if (_isInitialized && _controller != null)
-                    Positioned(
-                      bottom: 12.h,
-                      right: 12.w,
-                      child: _MuteButton(
-                        onTap: () => _muteManager.toggleMute(),
+                    if (_isInitialized && _controller != null)
+                      Positioned.fill(
+                        child: FittedBox(
+                          fit: BoxFit.cover,
+                          child: SizedBox(
+                            width: _controller!.value.size.width,
+                            height: _controller!.value.size.height,
+                            child: VideoPlayer(_controller!),
+                          ),
+                        ),
                       ),
-                    ),
-                ],
+
+                    if (_hasError) _buildErrorState(),
+
+                    // لا نظهر loading indicator — الـ thumbnail يكفي (زي فيسبوك)
+                    if (_isInitialized && _isBuffering)
+                      _buildBufferingIndicator(),
+
+                    if (_isInitialized && _controller != null)
+                      Positioned(
+                        bottom: 12.h,
+                        right: 12.w,
+                        child: _MuteButton(
+                          onTap: () => _muteManager.toggleMute(),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
