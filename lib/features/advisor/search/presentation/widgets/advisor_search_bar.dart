@@ -91,7 +91,7 @@ class AdvisorSearchBar extends StatelessWidget {
                                 ),
                                 border: InputBorder.none,
                                 contentPadding: EdgeInsetsDirectional.symmetric(
-                                  vertical: 15.h,
+                                  vertical: 10.h,
                                 ),
                               ),
                             ),

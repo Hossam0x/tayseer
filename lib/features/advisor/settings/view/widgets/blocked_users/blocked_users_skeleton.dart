@@ -1,4 +1,4 @@
-import 'package:skeletonizer/skeletonizer.dart';
+import 'package:skeletonizer/skeletonizer.dart' as skeletonizer;
 import 'package:tayseer/my_import.dart';
 
 class BlockedUsersSkeleton extends StatelessWidget {
@@ -6,8 +6,13 @@ class BlockedUsersSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Skeletonizer(
+    return skeletonizer.Skeletonizer(
       enabled: true,
+      effect: skeletonizer.ShimmerEffect(
+        baseColor: AppColors.secondary200,
+        highlightColor: AppColors.kWhiteColor,
+        duration: const Duration(milliseconds: 1000),
+      ),
       child: ListView.builder(
         padding: EdgeInsets.symmetric(horizontal: 20.w),
         itemCount: 8,

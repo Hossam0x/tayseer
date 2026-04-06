@@ -52,6 +52,8 @@ import 'package:tayseer/features/advisor/stories/data/repository/stories_reposit
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/advisor/chat/data/repo/chat_repo_simple.dart';
 import 'package:tayseer/features/advisor/settings/data/models/service_provider_repository.dart';
+import 'package:tayseer/features/advisor/settings/data/repository/offerings_repository.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/offerings/update_offerings_cubit.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/contact_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/story_visibility_repository.dart';
@@ -315,6 +317,14 @@ Future<void> setupGetIt() async {
 
   getIt.registerFactory<SessionPricingCubit>(
     () => SessionPricingCubit(getIt<ServiceProviderRepository>()),
+  );
+
+  getIt.registerLazySingleton<OfferingsRepository>(
+    () => OfferingsRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerFactory<UpdateOfferingsCubit>(
+    () => UpdateOfferingsCubit(getIt<OfferingsRepository>()),
   );
 
   getIt.registerFactory<AppointmentsCubit>(
