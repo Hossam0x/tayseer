@@ -514,32 +514,15 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
     if (_controller == null) return const SizedBox.shrink();
 
     final videoSize = _controller!.value.size;
-    final videoAspectRatio = videoSize.width / videoSize.height;
 
-    // Check if video is portrait (height > width) or square-ish
-    // Portrait videos (like typical reels) should fill the screen
-    // Landscape videos should be contained to show full content
-    final isPortraitVideo = videoAspectRatio <= 1.0;
-
-    if (isPortraitVideo) {
-      // Portrait video - fill screen like thumbnail
-      return FittedBox(
-        fit: BoxFit.cover,
-        child: SizedBox(
-          width: videoSize.width,
-          height: videoSize.height,
-          child: VideoPlayer(_controller!),
-        ),
-      );
-    } else {
-      // Landscape video - contain to show full video
-      return Center(
-        child: AspectRatio(
-          aspectRatio: videoAspectRatio,
-          child: VideoPlayer(_controller!),
-        ),
-      );
-    }
+    return FittedBox(
+      fit: BoxFit.contain,
+      child: SizedBox(
+        width: videoSize.width,
+        height: videoSize.height,
+        child: VideoPlayer(_controller!),
+      ),
+    );
   }
 
   @override
@@ -564,7 +547,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
                 Positioned.fill(
                   child: CachedNetworkImage(
                     imageUrl: widget.thumbnailUrl!,
-                    fit: BoxFit.cover,
+                    fit: BoxFit.contain,
                     placeholder: (_, __) =>
                         const ColoredBox(color: Colors.black),
                     errorWidget: (_, __, ___) =>
