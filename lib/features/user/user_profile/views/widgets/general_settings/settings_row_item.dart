@@ -19,7 +19,9 @@ class SettingsRowItem extends StatelessWidget {
         Padding(
           padding: EdgeInsets.symmetric(
             horizontal: 16.w,
-            vertical: label == 'stop_marriage' || label == 'anonymous'
+            vertical:
+                label == context.tr('stop_marriage') ||
+                    label == context.tr('anonymous')
                 ? 1.h
                 : 14.h,
           ),
