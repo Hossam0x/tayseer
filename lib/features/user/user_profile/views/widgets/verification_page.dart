@@ -4,21 +4,33 @@ import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/my_import.dart';
 
 class VerificationScreen extends StatelessWidget {
-  const VerificationScreen({
-    super.key,
-    required this.verificationItems,
-  });
+  const VerificationScreen({super.key, required this.verificationItems});
 
   final List<Map<String, dynamic>> verificationItems;
 
   @override
   Widget build(BuildContext context) {
-    int totalItems = verificationItems.length;
-    int completedItems =
-        verificationItems.where((item) => item['isVerified'] as bool).length;
+    debugPrint('🛡️ [VerificationScreen] build() called');
+    debugPrint(
+      '🛡️ [VerificationScreen] verificationItems count: ${verificationItems.length}',
+    );
+    debugPrint(
+      '🛡️ [VerificationScreen] verificationItems: $verificationItems',
+    );
 
-    int verificationPercentage =
-        totalItems > 0 ? ((completedItems / totalItems) * 100).round() : 0;
+    int totalItems = verificationItems.length;
+    int completedItems = verificationItems
+        .where((item) => item['isVerified'] as bool)
+        .length;
+    int verificationPercentage = totalItems > 0
+        ? ((completedItems / totalItems) * 100).round()
+        : 0;
+
+    debugPrint('🛡️ [VerificationScreen] totalItems: $totalItems');
+    debugPrint('🛡️ [VerificationScreen] completedItems: $completedItems');
+    debugPrint(
+      '🛡️ [VerificationScreen] verificationPercentage: $verificationPercentage%',
+    );
 
     return Scaffold(
       body: Stack(
@@ -33,9 +45,7 @@ class VerificationScreen extends StatelessWidget {
                   padding: EdgeInsets.symmetric(horizontal: 24.w),
                   child: SimpleAppBar(title: ""),
                 ),
-
                 SizedBox(height: 20.h),
-
                 Text(
                   "⏳ ${context.tr('verifying')}",
                   style: Styles.textStyle18.copyWith(
@@ -43,12 +53,8 @@ class VerificationScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 SizedBox(height: 10.h),
-                
-
                 SizedBox(height: 30.h),
-
                 Container(
                   margin: EdgeInsets.symmetric(horizontal: 24.w),
                   padding: EdgeInsets.all(20.w),
@@ -58,6 +64,9 @@ class VerificationScreen extends StatelessWidget {
                   ),
                   child: Column(
                     children: verificationItems.map((item) {
+                      debugPrint(
+                        '🛡️ [VerificationScreen] Rendering item: title="${item['title']}" isVerified=${item['isVerified']}',
+                      );
                       return Padding(
                         padding: EdgeInsets.only(bottom: 16.h),
                         child: Row(
@@ -91,14 +100,17 @@ class VerificationScreen extends StatelessWidget {
                     }).toList(),
                   ),
                 ),
-
                 const Spacer(),
-
                 Padding(
                   padding: EdgeInsets.all(20.w),
                   child: CustomBotton(
                     title: context.tr('okay_understood'),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      debugPrint(
+                        '🛡️ [VerificationScreen] Okay button tapped → popping',
+                      );
+                      Navigator.pop(context);
+                    },
                   ),
                 ),
               ],
@@ -109,8 +121,5 @@ class VerificationScreen extends StatelessWidget {
     );
   }
 }
-enum VerificationStatus {
-  approved,
-  inReview,
-  rejected,
-}
+
+enum VerificationStatus { approved, inReview, rejected }
