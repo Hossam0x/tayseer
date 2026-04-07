@@ -21,7 +21,7 @@ class SettingsSwitchRow extends StatelessWidget {
       children: [
         Gap(10.h),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
           child: Row(
             children: [
               Text(
@@ -32,8 +32,8 @@ class SettingsSwitchRow extends StatelessWidget {
               IgnorePointer(
                 ignoring: false,
                 child: Transform.scale(
-                  scaleX: -0.8.r,
-                  scaleY: 0.8.r,
+                  scaleX: -0.9.w,
+                  scaleY: 0.9.w,
                   child: CupertinoSwitch(
                     value: value,
                     activeColor: const Color(0xFFF06C88),
@@ -52,7 +52,6 @@ class SettingsSwitchRow extends StatelessWidget {
             indent: 15,
             endIndent: 15,
           ),
-        Gap(10.h),
       ],
     );
   }
