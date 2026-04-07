@@ -149,8 +149,8 @@ class _TimeSlotItemState extends State<TimeSlotItem>
               style: Styles.textStyle20.copyWith(color: AppColors.primaryText),
             ),
             Transform.scale(
-              scaleX: 0.9,
-              scaleY: -0.9,
+              scaleX: 0.9.w,
+              scaleY: -0.9.w,
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final screenWidth = MediaQuery.of(context).size.width;
