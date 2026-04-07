@@ -150,8 +150,8 @@ class UserProfileSettingItem extends StatelessWidget {
     return IgnorePointer(
       ignoring: false,
       child: Transform.scale(
-        scaleX: -0.9,
-        scaleY: 0.9,
+        scaleX: -0.9.w,
+        scaleY: 0.9.w,
         child: CupertinoSwitch(
           value: value,
           activeColor: const Color(0xFFF06C88),

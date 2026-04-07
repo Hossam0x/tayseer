@@ -106,7 +106,7 @@ class _StoriesGalleryGridState extends State<StoriesGalleryGrid> {
                   ),
                 ),
               )
-            : Icon(Icons.camera_alt, size: 30, color: AppColors.kprimaryColor),
+            : Icon(Icons.camera_alt, size: 30.w, color: AppColors.kprimaryColor),
       ),
     );
   }
