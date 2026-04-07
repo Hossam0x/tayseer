@@ -1852,5 +1852,12 @@
   "already_added_en": "Already added ✓",
   "add_country_and_sessions_hint": "Add your country and sessions to start receiving requests",
   "no_sessions_added_yet": "No sessions added yet",
-  "has_no_children": "No children"
+  "has_no_children": "No children",
+  "offerings_saved_successfully": "Offerings saved successfully",
+  "active": "Active",
+  "inactive": "Inactive",
+  "already_added": "Already added ✓",
+  "likes": "Likes",
+  "no_advisors_found": "No advisors available",
+  "share_availability_hint2": "Try to set a price lower than the regular session price"
 }

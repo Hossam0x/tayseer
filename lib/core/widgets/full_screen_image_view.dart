@@ -260,10 +260,10 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
                     child: child,
                   ),
                   child: Container(
-                    height: 80,
+                    height: 80.h,
                     alignment: Alignment.center,
                     child: Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(12.h),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.15),
                         shape: BoxShape.circle,

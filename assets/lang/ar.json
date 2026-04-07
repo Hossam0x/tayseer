@@ -1845,5 +1845,19 @@
   "location_permission_title": "مطلوب إذن الوصول للموقع",
   "location_permission_desc": "نحتاج موقعك لتقديم أفضل النتائج وشركاء قريبين منك.",
   "location_fetch_error": "حدث خطأ أثناء محاولة جلب الموقع: ",
-  "has_no_children": "لا يوجد أطفال"
+  "has_no_children": "لا يوجد أطفال",
+  "offerings_saved_successfully": "تم حفظ العروض بنجاح",
+  "active": "نشط",
+  "inactive": "غير نشط",
+  "already_added_en": "تم إضافتها ✓",
+  "contactSupport": "تواصل مع الدعم",
+  "explore_other_categories": "جرب تصفح فئات أخرى",
+  "no_posts_in_category": "لا توجد منشورات في هذه الفئة",
+  "show_all_posts": "عرض جميع المنشورات",
+  "subscribe_to_view_stats": "اشترك لعرض الإحصائيات",
+  "subscription_required_desc": "اشترك في باقة ذهبية أو نخبة للوصول إلى إحصائيات ملفك الشخصي ومعرفة من زارك.",
+  "subscription_required_title": "اشترك لعرض الإحصائيات",
+  "success_process": "تمت العملية بنجاح",
+  "upgrade_button": "الترقية إلى ذهبي",
+  "upgrade_to_elite_button": "الترقية إلى نخبة"
 }

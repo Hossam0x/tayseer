@@ -544,10 +544,10 @@ class _PostMediaState extends State<_PostMedia> {
                 heroPrefix: widget.heroPrefix,
               )
             : const SizedBox.shrink();
+
       case PostContentType.event:
         return EventCardItem(
-          key: ValueKey('event_${widget.post.postId}'), // 👈 أضف ده
-
+          key: ValueKey('event_${widget.post.postId}'),
           imageUrl: widget.post.event?.images.first ?? '',
           sessionTitle: widget.post.event?.title ?? '',
           location: widget.post.event?.location ?? '',
@@ -575,21 +575,31 @@ class _PostMediaState extends State<_PostMedia> {
           postId: widget.post.postId,
           videoUrl: widget.post.videoUrl ?? '',
           videoData: widget.post.videoData,
-
           videoController: widget.sharedController ?? _activeController,
           onControllerCreated: (controller) {
             _activeController = controller;
             widget.onControllerCreated(controller);
           },
-          onReelTap: _handleReelTap,
+          onReelTap: _handleReelTap, // ✅ بتقبل nullable دلوقتي
         );
     }
   }
 
-  void _handleReelTap(VideoPlayerController controller) {
+  void _handleReelTap(VideoPlayerController? controller) {
     if (widget.isDetailsView) {
-      controller.value.isPlaying ? controller.pause() : _playVideo(controller);
+      if (controller != null && controller.value.isInitialized) {
+        controller.value.isPlaying
+            ? controller.pause()
+            : _playVideo(controller);
+      }
       return;
+    }
+
+    // وقّف الفيديو لو شغال
+    if (controller != null && controller.value.isInitialized) {
+      try {
+        controller.pause();
+      } catch (_) {}
     }
 
     Navigator.push(
@@ -598,11 +608,9 @@ class _PostMediaState extends State<_PostMedia> {
         builder: (_) =>
             ReelsFeedView(post: widget.post, initialController: controller),
       ),
-    ).then((_) {
-      if (mounted && controller.value.isInitialized) {
-        _playVideo(controller);
-      }
-    });
+    );
+    // ✅ شلنا .then() خالص — didPopNext في RealVideoPlayer هو اللي
+    // هيعمل restore position + play لما اليوزر يرجع
   }
 
   void _playVideo(VideoPlayerController controller) {

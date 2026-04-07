@@ -102,6 +102,7 @@ class _CertificatesBody extends StatelessWidget {
             Gap(24.h),
           ],
           if (isMe) CertificatesHeader(advisorId: advisorId),
+          if (isMe) Gap(24.h),
           CertificatesList(
             certificates: state.certificates,
             isMe: isMe,
