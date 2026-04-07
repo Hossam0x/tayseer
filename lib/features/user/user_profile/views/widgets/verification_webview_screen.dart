@@ -1,5 +1,4 @@
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/verification_page.dart';
 import 'package:tayseer/my_import.dart';
 

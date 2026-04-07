@@ -205,11 +205,8 @@ class MarriageBodyState extends State<MarriageBody>
     });
   }
 
-  void _syncNotificationAfterInteraction() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      interactionsCubit.fetchAndSyncNotificationCount();
-    });
+  Future<void> _syncNotificationAfterInteraction() async {
+    await interactionsCubit.fetchAndSyncNotificationCount();
   }
 
   // ✅ بيبني الـ AnimatedHistoryButton المتصل بالـ InteractionsCubit
@@ -1002,15 +999,16 @@ class MarriageBodyState extends State<MarriageBody>
                               context,
                               SwipeActionType.favorite,
                             );
-                            cubit.toggleLocalFavorite(
+                            await cubit.toggleLocalFavorite(
                               user?.id ?? '',
                               removeFromList:
                                   widget.personId == null &&
                                   !widget.fromInteractions,
                             );
-                            _syncNotificationAfterInteraction();
-                            if (widget.fromInteractions && mounted)
+                            await _syncNotificationAfterInteraction();
+                            if (widget.fromInteractions && mounted) {
                               context.pop();
+                            }
                           }
                         : null,
                   ),
@@ -1303,8 +1301,6 @@ class MarriageBodyState extends State<MarriageBody>
                             icon: Icons.block,
                             bottonText: context.tr(AppStrings.yes),
                             onPressed: () async {
-                        
-
                               cubit.blockUser(personId: user?.id ?? '');
                               if (!mounted) return;
 
@@ -1371,11 +1367,11 @@ class MarriageBodyState extends State<MarriageBody>
                                   SwipeActionType.like,
                                 );
                                 if (widget.fromInteractions) {
-                                  cubit.userInteraction(
+                                  await cubit.userInteraction(
                                     personId: profile.user?.id ?? '',
                                     interactionType: 'like',
                                   );
-                                  _syncNotificationAfterInteraction();
+                                  await _syncNotificationAfterInteraction();
                                   if (mounted) context.pop();
                                 } else {
                                   await cubit.swipeLike(
@@ -1387,7 +1383,7 @@ class MarriageBodyState extends State<MarriageBody>
                                     _resetScrollTracking();
                                     scrollToTop();
                                   }
-                                  _syncNotificationAfterInteraction();
+                                  await _syncNotificationAfterInteraction();
                                 }
                               },
                               Icons.check,
@@ -1397,10 +1393,10 @@ class MarriageBodyState extends State<MarriageBody>
 
                             buildCircleButton(
                               onTap: () async {
-                                cubit.sendRegard(
+                                await cubit.sendRegard(
                                   personId: profile.user?.id ?? '',
                                 );
-                                _syncNotificationAfterInteraction();
+                                await _syncNotificationAfterInteraction();
                               },
                               Icons.star,
                               Colors.white,
@@ -1414,11 +1410,11 @@ class MarriageBodyState extends State<MarriageBody>
                                   SwipeActionType.dislike,
                                 );
                                 if (widget.fromInteractions) {
-                                  cubit.userInteraction(
+                                  await cubit.userInteraction(
                                     personId: profile.user?.id ?? '',
                                     interactionType: 'dislike',
                                   );
-
+                                  await _syncNotificationAfterInteraction();
                                   if (mounted) context.pop();
                                 } else {
                                   await cubit.swipeDislike(
