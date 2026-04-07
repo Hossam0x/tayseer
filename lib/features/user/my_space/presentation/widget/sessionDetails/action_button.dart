@@ -96,7 +96,7 @@ class ActionButtons extends StatelessWidget {
 
     Navigator.pushNamed(
       context,
-      AppRouter.kUserRescheduleView,
+      AppRouter.kChooseSessionView,
       arguments: {
         "oldBookingData": oldBookingData,
         "title": "اعاده جدوله",

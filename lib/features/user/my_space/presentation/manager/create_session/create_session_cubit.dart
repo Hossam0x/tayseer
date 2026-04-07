@@ -100,9 +100,10 @@ class AvailableSlotsCubit extends Cubit<AvailableSlotsState> {
       orElse: () => CalendarDay(
         date: '',
         dayOfWeek: 0,
+        dayNameFromApi: '',
         isAvailable: false,
-        timeSlots30: [],
-        timeSlots60: [],
+        timeSlots45: [],
+        timeSlots90: [],
       ),
     );
 

@@ -1,11 +1,4 @@
 import 'dart:developer';
-
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:tayseer/core/enum/cubit_states.dart';
-import 'package:tayseer/core/utils/extensions/extensions.dart';
-import 'package:tayseer/core/utils/router/app_router.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/show_confirmation_dialog.dart';
 import 'package:tayseer/features/user/my_space/data/helper/session_detailes_helper.dart';
 import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/session_detailes_model.dart';
@@ -214,7 +207,7 @@ class _SuccessContent extends StatelessWidget {
                 sessionData: data,
                 onReschedule: () {
                   context.pushNamed(
-                    AppRouter.kUserRescheduleView,
+                    AppRouter.kChooseSessionView,
                     arguments: {
                       "oldBookingData": data,
                       "advisorId": data.advisor.id,

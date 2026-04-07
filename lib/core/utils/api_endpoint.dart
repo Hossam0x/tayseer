@@ -36,6 +36,8 @@ class ApiEndPoint {
   static const String advisorUserChat = '/chat/advisor-user';
   static String advisorChatProfile(String userId) =>
       '/session/user-sessions/$userId';
+  static String getOfferingsBooking(String advisorId) =>
+      '/advisor/offerings/$advisorId';
   static String sessionDetails(String sessionId) =>
       '/session/session-details/$sessionId';
   static String cancelSession(String sessionId) => "/session/cancel/$sessionId";

@@ -1,7 +1,4 @@
-// lib/features/user/my_space/presentation/widget/reschedule/reschedule_header.dart
-
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:tayseer/my_import.dart';
 
 class RescheduleHeader extends StatelessWidget {
   final String title;
@@ -10,40 +7,30 @@ class RescheduleHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            padding: EdgeInsets.all(8.r),
-            child: Icon(
-              Icons.arrow_back_ios,
-              size: 20.sp,
-              color: const Color(0xFF2D2D2D),
-            ),
-          ),
+    return SliverAppBar(
+      pinned: true,
+      floating: false,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor: Colors.transparent,
+      centerTitle: true,
+      automaticallyImplyLeading: false,
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 20.sp,
+          fontWeight: FontWeight.bold,
+          color: const Color(0xFF2D2D2D),
         ),
-        Expanded(
-          child: Center(
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 20.sp,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF2D2D2D),
-              ),
-            ),
-          ),
+      ),
+      leading: IconButton(
+        icon: Icon(
+          isArabic ? Icons.arrow_back : Icons.arrow_forward,
+          size: 20.sp,
+          color: const Color(0xFF2D2D2D),
         ),
-        // Balance the back button to ensure perfect centering
-        Opacity(
-          opacity: 0.0,
-          child: Container(
-            padding: EdgeInsets.all(8.r),
-            child: Icon(Icons.arrow_back_ios, size: 20.sp),
-          ),
-        ),
-      ],
+        onPressed: () => Navigator.pop(context),
+      ),
     );
   }
 }

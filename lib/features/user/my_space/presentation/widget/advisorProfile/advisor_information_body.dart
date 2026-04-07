@@ -438,7 +438,7 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
           title: 'حجز إستشارة',
           onPressed: () {
             context.pushNamed(
-              AppRouter.kUserRescheduleView,
+              AppRouter.kChooseSessionView,
               arguments: {"title": "حجز جلسه", "advisorId": widget.userid},
             );
           },
