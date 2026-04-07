@@ -16,6 +16,9 @@ class AdditionalImageSection extends StatelessWidget {
     this.isHastar,
     this.shouldBlur = false,
   });
+  Future<void> _syncNotificationAfterInteraction(context) async {
+    await context.read<MarriageCubit>().fetchAndSyncNotificationCount();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,11 +75,12 @@ class AdditionalImageSection extends StatelessWidget {
                         color: AppColors.kWhiteColor,
                         size: 20.sp,
                       ),
-                      onPressed: () {
+                      onPressed: () async {
                         if (personId != null) {
                           context.read<MarriageCubit>().sendRegard(
                             personId: personId!,
                           );
+                          await _syncNotificationAfterInteraction(context);
                         }
                       },
                     ),

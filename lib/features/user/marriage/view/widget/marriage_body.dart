@@ -158,7 +158,27 @@ class MarriageBodyState extends State<MarriageBody>
       },
     );
   }
+String _translateCompatibilityValue(String value, String? category) {
+  final v = value.trim().toLowerCase();
 
+  // تحويل yes/no/true/false/1/0
+  if (v == 'yes' || v == 'true' || v == '1') {
+    return switch (category?.toLowerCase()) {
+      'smoker' => context.tr('smoking_yes'),
+      'children' || 'has_children' => context.tr('has_childrens'),
+      _ => context.tr('yes'),
+    };
+  }
+  if (v == 'no' || v == 'false' || v == '0') {
+    return switch (category?.toLowerCase()) {
+      'smoker' => context.tr('smoking_no'),
+      'children' || 'has_children' => context.tr('has_no_children'),
+      _ => context.tr('no'),
+    };
+  }
+
+  return _tr(value);
+}
   @override
   void dispose() {
     _scrollIdleTimer?.cancel();
@@ -805,32 +825,33 @@ class MarriageBodyState extends State<MarriageBody>
   }
 
   List<String> _buildCompatibilityTags(List<MatchingTag>? matchingTags) {
-    if (matchingTags == null) return [];
+  if (matchingTags == null) return [];
 
-    final List<String> result = [];
+  final List<String> result = [];
 
-    for (final tag in matchingTags) {
-      if (tag.value == null || tag.value!.trim().isEmpty) continue;
+  for (final tag in matchingTags) {
+    if (tag.value == null || tag.value!.trim().isEmpty) continue;
 
-      final values = tag.value!
-          .split(',')
-          .map((v) => v.trim())
-          .where((v) => v.isNotEmpty)
-          .toList();
+    final values = tag.value!
+        .split(',')
+        .map((v) => v.trim())
+        .where((v) => v.isNotEmpty)
+        .toList();
 
-      for (final value in values) {
-        if (value.startsWith('interest_') || value.startsWith('faith_')) {
-          final emoji = MarriageConstants.getEmoji(value);
-          result.add('$emoji ${_tr(value)}');
-        } else {
-          result.add('${_getTagEmoji(tag.category, value)} ${_tr(value)}');
-        }
+    for (final value in values) {
+      if (value.startsWith('interest_') || value.startsWith('faith_')) {
+        final emoji = MarriageConstants.getEmoji(value);
+        result.add('$emoji ${_tr(value)}');
+      } else {
+        // ← التغيير هنا: بدل _tr(value) استخدم الدالة الجديدة
+        final translated = _translateCompatibilityValue(value, tag.category);
+        result.add('${_getTagEmoji(tag.category, value)} $translated');
       }
     }
-
-    return result;
   }
 
+  return result;
+}
   Widget _buildMarriageContent({
     Key? key,
     required String personId,
