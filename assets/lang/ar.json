@@ -1880,8 +1880,7 @@
   "cannot_identify_session": "لا يمكن تحديد الجلسة",
   "reschedule_success": "تم إعادة جدولة الجلسة بنجاح",
   "reschedule_failed": "فشل في إعادة جدولة الجلسة",
-  "no_offerings_available": "لا توجد عروض متاحة في الوقت الحالي"
-  "has_no_children": "لا يوجد أطفال",
+  "no_offerings_available": "لا توجد عروض متاحة في الوقت الحالي",
   "offerings_saved_successfully": "تم حفظ العروض بنجاح",
   "active": "نشط",
   "inactive": "غير نشط",

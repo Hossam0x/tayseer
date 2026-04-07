@@ -1,5 +1,3 @@
-// lib/features/user/my_space/presentation/widget/booking/offering_card.dart
-
 import 'package:tayseer/features/user/my_space/data/model/advisor_offering_model.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -17,8 +15,9 @@ class OfferingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return Directionality(
-      textDirection: TextDirection.ltr,
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: GestureDetector(
         onTap: onSelect,
         child: AnimatedContainer(
@@ -43,9 +42,11 @@ class OfferingCard extends StatelessWidget {
           ),
           child: Column(
             children: [
-              // ─── 1. النوع ───
+              // ─── 1. Title ───
               Align(
-                alignment: Alignment.centerRight,
+                alignment: isArabic
+                    ? Alignment.centerRight
+                    : Alignment.centerLeft,
                 child: Text(
                   isArabic ? offering.typeAr : offering.typeEn,
                   style: Styles.textStyle16.copyWith(
@@ -57,60 +58,25 @@ class OfferingCard extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // ─── 2. الراديو + التفاصيل ───
+              // ─── 2. Row (Mirrored) ───
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ★ الراديو
-                  _OfferingRadio(isSelected: isSelected),
-
-                  const SizedBox(width: 12),
-
-                  // ★ التفاصيل
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: isArabic
-                          ? CrossAxisAlignment.end
-                          : CrossAxisAlignment.start,
-                      children: [
-                        // الاسم
-                        Text(
-                          offering.name,
-                          style: Styles.textStyle14,
-                          textAlign: isArabic
-                              ? TextAlign.right
-                              : TextAlign.left,
-                        ),
-
-                        const SizedBox(height: 4),
-
-                        // ★ السعر مع العملة من الباك
-                        RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                text: offering.priceWithCurrency,
-                                style: Styles.textStyle14.copyWith(
-                                  color: AppColors.kprimaryColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              TextSpan(
-                                text: ': ${context.tr('session_price_label')}',
-                                style: Styles.textStyle14.copyWith(),
-                              ),
-                            ],
-                          ),
-                        ),
+                children: isArabic
+                    ? [
+                        _OfferingRadio(isSelected: isSelected),
+                        const SizedBox(width: 12),
+                        Expanded(child: _buildDetails(isArabic, context)),
+                      ]
+                    : [
+                        Expanded(child: _buildDetails(isArabic, context)),
+                        const SizedBox(width: 12),
+                        _OfferingRadio(isSelected: isSelected),
                       ],
-                    ),
-                  ),
-                ],
               ),
 
               const SizedBox(height: 20),
 
-              // ─── 3. المدة ───
+              // ─── 3. Duration ───
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -123,7 +89,6 @@ class OfferingCard extends StatelessWidget {
                     color: isSelected
                         ? AppColors.kprimaryColor
                         : Colors.grey.shade300,
-                    width: isSelected ? 1.5 : 1,
                   ),
                 ),
                 child: Center(
@@ -145,11 +110,59 @@ class OfferingCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildDetails(bool isArabic, BuildContext context) {
+    return Column(
+      crossAxisAlignment: isArabic
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      children: [
+        Text(
+          offering.name,
+          style: Styles.textStyle14,
+          textAlign: isArabic ? TextAlign.right : TextAlign.left,
+        ),
+        const SizedBox(height: 4),
+
+        // السعر (Mirrored)
+        RichText(
+          textAlign: isArabic ? TextAlign.right : TextAlign.left,
+          text: TextSpan(
+            children: isArabic
+                ? [
+                    TextSpan(
+                      text: offering.priceWithCurrency,
+                      style: Styles.textStyle14.copyWith(
+                        color: AppColors.kprimaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextSpan(
+                      text: ' :${context.tr('session_price_label')}',
+                      style: Styles.textStyle14,
+                    ),
+                  ]
+                : [
+                    TextSpan(
+                      text: '${context.tr('session_price_label')}: ',
+                      style: Styles.textStyle14,
+                    ),
+                    TextSpan(
+                      text: offering.priceWithCurrency,
+                      style: Styles.textStyle14.copyWith(
+                        color: AppColors.kprimaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+          ),
+        ),
+      ],
+    );
+  }
 }
 
-// ════════════════════════════════════════
-// ★ Radio Button
-// ════════════════════════════════════════
+// Radio
 class _OfferingRadio extends StatelessWidget {
   final bool isSelected;
 

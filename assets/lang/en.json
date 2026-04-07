@@ -1887,8 +1887,7 @@
   "cannot_identify_session": "Cannot identify the session",
   "reschedule_success": "Session rescheduled successfully",
   "reschedule_failed": "Failed to reschedule session",
-  "no_offerings_available": "No offerings available"
-  "has_no_children": "No children",
+  "no_offerings_available": "No offerings available",
   "offerings_saved_successfully": "Offerings saved successfully",
   "active": "Active",
   "inactive": "Inactive",

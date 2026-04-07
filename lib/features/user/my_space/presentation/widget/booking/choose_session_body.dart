@@ -72,9 +72,7 @@ class _ChooseSessionBodyState extends State<ChooseSessionBody> {
                           ),
                         ],
                         leading: IconButton(
-                          icon: Icon(
-                            isArabic ? Icons.arrow_back : Icons.arrow_forward,
-                          ),
+                          icon: Icon(Icons.arrow_back),
                           onPressed: () => context.pop(),
                         ),
                       ),
