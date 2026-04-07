@@ -3,6 +3,7 @@
 // ===============================
 
 import 'package:flutter/material.dart';
+import 'package:tayseer/my_import.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:tayseer/features/user/verification/data/models/Verification_result_model.dart';
 
@@ -19,7 +20,14 @@ class VerificationWebViewScreen extends StatefulWidget {
 class _VerificationWebViewScreenState
     extends State<VerificationWebViewScreen> {
   bool _isLoading = true;
-
+  Future<void> _requestPermissions() async {
+    await [Permission.camera, Permission.microphone].request();
+  }
+  @override
+  void initState() {
+    super.initState();
+    _requestPermissions();
+  }
   // ─────────────────────────────────────────────
   // Handle callback URL from the identity provider
   // Pops with VerificationStatus so caller knows

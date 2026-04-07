@@ -1,8 +1,4 @@
-// ===============================
-// complete_marriage_file.dart
-// ===============================
-
-import 'package:flutter/material.dart';
+import 'package:tayseer/core/widgets/custom_outline_button.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
 import 'package:tayseer/features/user/verification/data/models/Verification_result_model.dart';
@@ -11,14 +7,12 @@ import 'package:tayseer/features/user/verification/presentation/view/verificatio
 import 'package:tayseer/features/user/verification/presentation/view/verification_webview_screen.dart';
 import 'package:tayseer/my_import.dart';
 
-class CompleteMarriageFile extends StatefulWidget {
+class CompleteMarriageFile extends StatelessWidget {
   const CompleteMarriageFile({
     super.key,
     required this.progress,
     required this.profile,
     required this.onNavigateToEdit,
-    /// Callback to reload the profile from the parent (cubit / bloc / provider).
-    /// Called after successful verification so the UI stays in sync.
     required this.onProfileRefresh,
   });
 
@@ -28,138 +22,47 @@ class CompleteMarriageFile extends StatefulWidget {
   final Future<MarriageUserProfileModel> Function() onProfileRefresh;
 
   @override
-  State<CompleteMarriageFile> createState() => _CompleteMarriageFileState();
-}
-
-class _CompleteMarriageFileState extends State<CompleteMarriageFile>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _floatController;
-  late Animation<double> _floatAnimation;
-
-  /// Local copy of the profile so we can update it without waiting for
-  /// the parent to rebuild.
-  late MarriageUserProfileModel _profile;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _profile = widget.profile;
-
-    _floatController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    )..repeat(reverse: true);
-
-    _floatAnimation = Tween<double>(begin: 0, end: 8).animate(
-      CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _floatController.dispose();
-    super.dispose();
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Full Verification Flow
-  // ─────────────────────────────────────────────────────────────────────────
-  Future<void> _startVerificationFlow() async {
-    // ── Step 1: Check current status from backend ────────────────────────
-    final currentStatus =
-        await VerificationService.getUserVerificationStatus();
-
-    if (!mounted) return;
-
-    // Already verified → show result screen directly
-    if (currentStatus?.isVerified == true) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => VerificationScreen(result: currentStatus!),
-        ),
-      );
-      return;
-    }
-
-    // ── Step 2: Fetch WebView URL ─────────────────────────────────────────
-    final url = await VerificationService.getVerificationUrl();
-
-    if (!mounted || url == null) return;
-
-    // ── Step 3: Open WebView ──────────────────────────────────────────────
-    await Navigator.push<VerificationStatus>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => VerificationWebViewScreen(webviewUrl: url),
-      ),
-    );
-
-    if (!mounted) return;
-
-    // ── Step 4: Re-fetch status after webview closes ──────────────────────
-    final result = await VerificationService.getUserVerificationStatus();
-
-    if (!mounted || result == null) return;
-
-    // ── Step 5: Handle result ─────────────────────────────────────────────
-    if (result.isVerified) {
-      // ✅ Approved — show snackbar and refresh profile
-      ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(
-          context,
-          text: context.tr('verification_done'),
-          isSuccess: true,
-        ),
-      );
-
-      final updatedProfile = await widget.onProfileRefresh();
-
-      if (!mounted) return;
-
-      setState(() => _profile = updatedProfile);
-    } else {
-      // ❌ Rejected — navigate to result screen
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => VerificationScreen(result: result),
-        ),
-      );
-    }
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Build
-  // ─────────────────────────────────────────────────────────────────────────
-  @override
   Widget build(BuildContext context) {
-    final isVerified = _profile.isVerified == true;
+    debugPrint('📋 [CompleteMarriageFile] build() called');
+    debugPrint('📋 [CompleteMarriageFile] progress: $progress');
+    debugPrint(
+      '📋 [CompleteMarriageFile] profile.isVerified: ${profile.isVerified}',
+    );
 
-    final verificationItems = [
+    final List<Map<String, dynamic>> verificationItems = [
       {
         'title': context.tr('photo_verification'),
         'description': context.tr('photo_verification_desc'),
-        'isVerified': isVerified,
+        'isVerified': profile.isVerified == true,
       },
       {
         'title': context.tr('age_verification'),
         'description': context.tr('age_verification_desc'),
-        'isVerified': isVerified,
+        'isVerified': profile.isVerified == true,
       },
       {
         'title': context.tr('identity_verification'),
         'description': context.tr('identity_verification_desc'),
-        'isVerified': isVerified,
+        'isVerified': profile.isVerified == true,
       },
     ];
 
-    final totalItems = verificationItems.length;
-    final completedItems =
-        verificationItems.where((e) => e['isVerified'] == true).length;
-    final percentage =
-        totalItems > 0 ? ((completedItems / totalItems) * 100).round() : 0;
+    int totalItems = verificationItems.length;
+    int completedItems = verificationItems
+        .where((item) => item['isVerified'] as bool)
+        .length;
+    int verificationPercentage = totalItems > 0
+        ? ((completedItems / totalItems) * 100).round()
+        : 0;
+
+    final imageCount = profile.userMedia?.images.length ?? 0;
+    final hasVideo =
+        profile.userMedia?.video != null &&
+        profile.userMedia!.video!.isNotEmpty;
+    final hasAudio =
+        profile.userMedia?.audio != null &&
+        profile.userMedia!.audio!.isNotEmpty;
+    final isVerified = profile.isVerified == true;
 
     return Scaffold(
       body: SafeArea(
@@ -168,26 +71,78 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 24.h, vertical: 10.h),
               child: SimpleAppBar(
-                title: context.tr('complete_data'),
+                title: context.tr("complete_data"),
                 isLargeTitle: true,
               ),
             ),
             Expanded(
               child: SingleChildScrollView(
-                padding: EdgeInsets.all(16.w),
+                padding: EdgeInsets.all(16.0.w),
                 child: Column(
                   children: [
                     SizedBox(height: 11.h),
-                    _buildEnhancedTimeline(progress: widget.progress),
+                    _buildEnhancedTimeline(progress: progress),
                     SizedBox(height: 20.h),
 
-                    // Only show the card when the user is not yet verified
-                    if (!isVerified)
-                      _buildVerificationCard(
+                    profile.isVerified == true
+                        ? const SizedBox.shrink()
+                        : _buildVerificationCard(
+                            context,
+                            verificationPercentage,
+                            verificationItems,
+                          ),
+
+                    if (!isVerified) SizedBox(height: 12.h),
+
+                    if (imageCount < 4)
+                      _buildTaskCard(
                         context,
-                        percentage,
-                        verificationItems,
+                        title: context.tr('add_minimum_images'),
+                        subtitle: context.tr('add_more_images_description'),
+                        buttonText: context.tr('add'),
+                        currentCount: imageCount,
+                        requiredCount: 4,
+                        onTap: () {
+                          debugPrint(
+                            '🖼️ [CompleteMarriageFile] Navigate to images section',
+                          );
+                          onNavigateToEdit('images');
+                        },
                       ),
+
+                    SizedBox(height: 12.h),
+
+                    if (!hasVideo)
+                      _buildTaskCard(
+                        context,
+                        title: context.tr('add_intro_video'),
+                        subtitle: context.tr('add_video_description'),
+                        buttonText: context.tr('add'),
+                        onTap: () {
+                          debugPrint(
+                            '🎥 [CompleteMarriageFile] Navigate to video section',
+                          );
+                          onNavigateToEdit('video');
+                        },
+                      ),
+
+                    SizedBox(height: 12.h),
+
+                    if (!hasAudio)
+                      _buildTaskCard(
+                        context,
+                        title: context.tr('add_audio_clip'),
+                        subtitle: context.tr('add_audio_description'),
+                        buttonText: context.tr('add'),
+                        onTap: () {
+                          debugPrint(
+                            '🎙️ [CompleteMarriageFile] Navigate to audio section',
+                          );
+                          onNavigateToEdit('audio');
+                        },
+                      ),
+
+                    SizedBox(height: 20.h),
                   ],
                 ),
               ),
@@ -199,71 +154,480 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Verification Card Widget
+  // Full Verification Flow
   // ─────────────────────────────────────────────────────────────────────────
+  Future<void> _startVerificationFlow(BuildContext context) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    debugPrint(
+      '🔍 [CompleteMarriageFile] Calling getUserVerificationStatus...',
+    );
+    final currentStatus = await VerificationService.getUserVerificationStatus();
+    debugPrint(
+      '🔍 [CompleteMarriageFile] getUserVerificationStatus result: $currentStatus',
+    );
+
+    if (!context.mounted) return;
+    Navigator.pop(context); // Close loading dialog
+
+    if (currentStatus?.isVerified == true) {
+      debugPrint(
+        '✅ [CompleteMarriageFile] Already verified → opening VerificationScreen',
+      );
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => VerificationScreen(result: currentStatus!),
+        ),
+      );
+      return;
+    }
+
+    debugPrint(
+      '🌐 [CompleteMarriageFile] User not verified → calling getVerificationUrl...',
+    );
+    final url = await VerificationService.getVerificationUrl();
+    debugPrint('🌐 [CompleteMarriageFile] getVerificationUrl result: $url');
+
+    if (!context.mounted) return;
+
+    if (url == null) {
+      debugPrint(
+        '❌ [CompleteMarriageFile] URL is null, showing error snackbar',
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: context.tr('error_occurred'),
+          isError: true,
+        ),
+      );
+      return;
+    }
+
+    debugPrint(
+      '🌐 [CompleteMarriageFile] Opening VerificationWebViewScreen with url: $url',
+    );
+    final result = await Navigator.push<VerificationStatus>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VerificationWebViewScreen(webviewUrl: url),
+      ),
+    );
+
+    debugPrint(
+      '🌐 [CompleteMarriageFile] VerificationWebViewScreen returned: $result',
+    );
+
+    if (!context.mounted) return;
+
+    switch (result) {
+      case VerificationStatus.approved:
+        debugPrint(
+          '✅ [CompleteMarriageFile] Status: approved → showing success snackbar',
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(
+            context,
+            text: context.tr('verification_done'),
+            isSuccess: true,
+          ),
+        );
+        await onProfileRefresh(); // ← refresh الـ profile بعد التحقق
+        break;
+
+      case VerificationStatus.rejected:
+        debugPrint(
+          '❌ [CompleteMarriageFile] Status: rejected → calling _retryVerification',
+        );
+        _retryVerification(context);
+        break;
+
+      default:
+        debugPrint(
+          '⚠️ [CompleteMarriageFile] Status: unknown/null → doing nothing',
+        );
+        break;
+    }
+  }
+
+  Future<void> _retryVerification(BuildContext context) async {
+    debugPrint('🔄 [CompleteMarriageFile] _retryVerification() called');
+
+    final url = await VerificationService.getVerificationUrl();
+    debugPrint('🔄 [CompleteMarriageFile] _retryVerification url: $url');
+
+    if (!context.mounted) return;
+
+    if (url == null) {
+      debugPrint(
+        '❌ [CompleteMarriageFile] _retryVerification: url is null, showing error',
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: context.tr('error_occurred'),
+          isError: true,
+        ),
+      );
+      return;
+    }
+
+    debugPrint(
+      '🔄 [CompleteMarriageFile] Opening VerificationWebViewScreen for retry',
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VerificationWebViewScreen(webviewUrl: url),
+      ),
+    );
+  }
+
   Widget _buildVerificationCard(
     BuildContext context,
     int percentage,
     List<Map<String, dynamic>> items,
   ) {
-    return AnimatedBuilder(
-      animation: _floatAnimation,
-      builder: (context, child) => Transform.translate(
-        offset: Offset(0, -_floatAnimation.value),
-        child: child,
+    debugPrint(
+      '🛡️ [CompleteMarriageFile] _buildVerificationCard() percentage: $percentage%',
+    );
+
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 6.h, horizontal: 6.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: AppColors.primary100, width: 1.w),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary100.withOpacity(0.1),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(6.h),
+            decoration: BoxDecoration(
+              color: AppColors.primary200.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(16.r),
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.verified_user, size: 40),
-            SizedBox(width: 12.w),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.tr('get_verified'),
-                    style: Styles.textStyle14,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.verified_user,
+                  color: AppColors.primary200,
+                  size: MediaQuery.of(context).size.width >= 600 ? 56 : 44,
+                ),
+                SizedBox(height: 3.h),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 4.h,
                   ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    '$percentage%',
-                    style: Styles.textStyle12.copyWith(color: Colors.grey),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20.r),
                   ),
-                ],
-              ),
+                  child: Text(
+                    "$percentage%",
+                    style: Styles.textStyle12.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary200,
+                    ),
+                  ),
+                ),
+              ],
             ),
-
-            IconButton(
-              icon: const Icon(Icons.arrow_forward_ios),
-              onPressed: _startVerificationFlow,
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.tr('get_verified'),
+                  style: Styles.textStyle16Bold.copyWith(),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  context.tr('verify_profile_description'),
+                  style: Styles.textStyle12.copyWith(
+                    color: Colors.black.withOpacity(0.7),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          SizedBox(width: 8.w),
+          IconButton(
+            onPressed: () => _startVerificationFlow(context),
+            icon: Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.black.withOpacity(0.5),
+              size: 20.sp,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Timeline (placeholder — fill with real implementation)
-  // ─────────────────────────────────────────────────────────────────────────
+  Widget _buildTaskCard(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required String buttonText,
+    required VoidCallback onTap,
+    int? currentCount,
+    int? requiredCount,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: AppColors.primary100, width: 1.w),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary100.withOpacity(0.1),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: Styles.textStyle16Bold.copyWith(
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    if (currentCount != null && requiredCount != null)
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 4.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary50,
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: Text(
+                          '$currentCount/$requiredCount',
+                          style: Styles.textStyle12.copyWith(
+                            color: AppColors.primary200,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                SizedBox(height: 6.h),
+                Text(
+                  subtitle,
+                  style: Styles.textStyle12.copyWith(
+                    color: Color.fromRGBO(60, 60, 67, 0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 12.w),
+          CustomOutlineButton(
+            height: 50.h,
+            text: buttonText,
+            textColor: AppColors.primary200,
+            onTap: onTap,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEnhancedTimeline({required double progress}) {
     return Container(
-      height: 100,
-      // TODO: replace with your real timeline widget
+      padding: EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.white,
+            Colors.white.withOpacity(0.8),
+            Colors.white.withOpacity(0.6),
+            Colors.white.withOpacity(0.5),
+            AppColors.primary200.withOpacity(0.5),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(24.r),
+        border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Color.fromRGBO(235, 122, 145, 0.46),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Directionality(
+            textDirection: TextDirection.rtl,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: List.generate(5, (index) {
+                int badgeNumber = index + 1;
+                int totalSteps = 5;
+                int reversedNumber = totalSteps - badgeNumber + 1;
+                final reversedIndex = 4 - index;
+                double pointProgress = reversedIndex / 4;
+                bool isReached = pointProgress <= progress;
+
+                return Align(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(height: 6.h),
+                      Center(
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 7.w,
+                            vertical: 4.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isReached
+                                ? const Color(0xFFFFC107)
+                                : Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(8.r),
+                            boxShadow: isReached
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 3,
+                                      offset: Offset(0, 1),
+                                    ),
+                                  ]
+                                : [],
+                          ),
+                          child: Text(
+                            reversedNumber.toString().padLeft(2, '0'),
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.bold,
+                              color: isReached
+                                  ? Colors.white
+                                  : Colors.grey.shade600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ),
+          ),
+          SizedBox(height: 16.h),
+          _buildTimeline(progress: progress),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimeline({required double progress}) {
+    final double safeProgress = progress.clamp(0.0, 1.0);
+    final String percentageText = "${(safeProgress * 100).toInt()}%";
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 30.h,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                height: 4.h,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+              ),
+              Directionality(
+                textDirection: TextDirection.ltr,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: FractionallySizedBox(
+                    widthFactor: safeProgress,
+                    child: Container(
+                      height: 4.h,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFD375F),
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Directionality(
+                textDirection: TextDirection.ltr,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    double position = safeProgress * constraints.maxWidth;
+                    return Stack(
+                      children: [
+                        Positioned(
+                          left: position - 20.w,
+                          top: 0,
+                          bottom: 0,
+                          child: Center(
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8.w,
+                                vertical: 2.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFD375F),
+                                borderRadius: BorderRadius.circular(20.r),
+                              ),
+                              child: Text(
+                                percentageText,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

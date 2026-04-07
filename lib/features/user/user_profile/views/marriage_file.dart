@@ -820,20 +820,20 @@ class _MarriagefilePageState extends State<MarriagefilePage>
               onNavigateToEdit: (section) {
                 selectedSection = section;
                 Navigator.pop(context);
-              }, 
-onProfileRefresh: () async {
-  final cubit = context.read<MarriageProfileCubit>();
+              },
+              onProfileRefresh: () async {
+                final cubit = context.read<MarriageProfileCubit>();
 
-  await cubit.loadProfile();
+                await cubit.loadProfile();
 
-  final profile = cubit.state.profile;
+                final profile = cubit.state.profile;
 
-  if (profile == null) {
-    throw Exception("Profile is null after refresh");
-  }
+                if (profile == null) {
+                  throw Exception("Profile is null after refresh");
+                }
 
-  return profile;
-},
+                return profile;
+              },
             ),
           ),
         );
