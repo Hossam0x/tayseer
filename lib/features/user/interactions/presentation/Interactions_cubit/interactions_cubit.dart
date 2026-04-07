@@ -452,6 +452,6 @@ Future<void> fetchAndSyncNotificationCount() async {
 }
 
   void resetActionState() {
-    emit(state.copyWith(actionState: CubitStates.initial, actionMessage: null));
+    emit(state.copyWith(actionState: CubitStates.initial, actionMessage: null,));
   }
 }

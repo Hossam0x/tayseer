@@ -74,7 +74,7 @@ class InteractionBodyState extends State<InteractionBody> {
   Widget build(BuildContext context) {
     return BlocListener<InteractionsCubit, InteractionsState>(
       listener: (context, state) {
-        if (state.actionState == CubitStates.success) {
+        if (state.actionState == CubitStates.success && state.actionMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,

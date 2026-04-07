@@ -393,7 +393,7 @@ class ExplorationState extends State<Exploration> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = screenWidth >= 600;
     final cardWidth = isTablet ? 220.w : 190.w;
-    final cardHeight = isTablet ? 260.0 : 245.0;
+    final cardHeight = isTablet ? 300.0 : 245.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -467,7 +467,7 @@ class ExplorationState extends State<Exploration> {
           ),
         SizedBox(height: 16.h),
         SizedBox(
-          height: cardHeight,
+          height:isTablet ? 320.0 : 260.0,
           child: Directionality(
             textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
             child: ListView.builder(

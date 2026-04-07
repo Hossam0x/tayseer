@@ -1888,4 +1888,12 @@
   "reschedule_success": "Session rescheduled successfully",
   "reschedule_failed": "Failed to reschedule session",
   "no_offerings_available": "No offerings available"
+  "has_no_children": "No children",
+  "offerings_saved_successfully": "Offerings saved successfully",
+  "active": "Active",
+  "inactive": "Inactive",
+  "already_added": "Already added ✓",
+  "likes": "Likes",
+  "no_advisors_found": "No advisors available",
+  "share_availability_hint2": "Try to set a price lower than the regular session price"
 }

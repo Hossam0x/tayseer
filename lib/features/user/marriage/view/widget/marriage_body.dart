@@ -347,6 +347,10 @@ class MarriageBodyState extends State<MarriageBody>
           context.pop();
           return;
         }
+        if (value && _mainScrollController.hasClients) {
+          _mainScrollController.jumpTo(0);
+          _resetScrollTracking();
+        }
         cubit.setMarriageTab(value);
       },
     );
@@ -598,20 +602,16 @@ class MarriageBodyState extends State<MarriageBody>
         }
 
         if (users.isEmpty) {
-          return AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: state.isMarriageTab
-                ? _buildWithAppBar(
-                    key: const ValueKey('empty_marriage'),
-                    child: _buildEmptyMarriage(
-                      context.read<MarriageCubit>(),
-                      state,
-                    ),
-                  )
-                : _buildInteractionsContent(
-                    key: const ValueKey('interactions'),
-                    state: state,
-                  ),
+          if (state.isMarriageTab) {
+            return _buildWithAppBar(
+              key: const ValueKey('empty_marriage'),
+              child: _buildEmptyMarriage(context.read<MarriageCubit>(), state),
+            );
+          }
+
+          return _buildInteractionsContent(
+            key: const ValueKey('interactions'),
+            state: state,
           );
         }
 
@@ -629,20 +629,19 @@ class MarriageBodyState extends State<MarriageBody>
           return _buildShimmerScreen();
         }
 
-        return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: state.isMarriageTab
-              ? _buildMarriageContent(
-                  personId: widget.personId ?? "",
-                  key: const ValueKey('marriage'),
-                  state: state,
-                  profileIndex: profileIndex,
-                  users: users,
-                )
-              : _buildInteractionsContent(
-                  key: const ValueKey('interactions'),
-                  state: state,
-                ),
+        if (state.isMarriageTab) {
+          return _buildMarriageContent(
+            personId: widget.personId ?? "",
+            key: const ValueKey('marriage'),
+            state: state,
+            profileIndex: profileIndex,
+            users: users,
+          );
+        }
+
+        return _buildInteractionsContent(
+          key: const ValueKey('interactions'),
+          state: state,
         );
       },
     );
@@ -1062,7 +1061,8 @@ class MarriageBodyState extends State<MarriageBody>
                             },
                           if (answers?.family?.hasChildren != null)
                             {
-                            'label': "👶 ${_translateYesNo(answers!.family!.hasChildren!, yesKey: 'has_childrens', noKey: 'has_no_children')}",
+                              'label':
+                                  "👶 ${_translateYesNo(answers!.family!.hasChildren!, yesKey: 'has_childrens', noKey: 'has_no_children')}",
                             },
                           if (answers?.aboutMe?.weight != null)
                             {
@@ -1303,9 +1303,15 @@ class MarriageBodyState extends State<MarriageBody>
                             icon: Icons.block,
                             bottonText: context.tr(AppStrings.yes),
                             onPressed: () async {
+                        
+
                               cubit.blockUser(personId: user?.id ?? '');
                               if (!mounted) return;
-                              if (widget.personId == null) {
+
+                              if (widget.fromInteractions) {
+                                // ✅ ارجع للتفاعلات زي ما بيحصل مع like/dislike
+                                context.pop();
+                              } else if (widget.personId == null) {
                                 _resetScrollTracking();
                                 scrollToTop();
                               }

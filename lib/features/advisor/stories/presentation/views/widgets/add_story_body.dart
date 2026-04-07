@@ -165,6 +165,7 @@ class _AddStoryBodyState extends State<AddStoryBody> {
         title: state.albums.isEmpty
             ? Text(context.tr('new_story'), style: Styles.textStyle18SemiBold)
             : Container(
+                height: 40.h,
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
                 decoration: BoxDecoration(
                   color: AppColors.kGreyB3.withOpacity(0.15),
@@ -205,7 +206,7 @@ class _AddStoryBodyState extends State<AddStoryBody> {
                 ),
               ),
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
+          icon: Icon(Icons.close, color: Colors.black, size: 25.h),
           onPressed: () => context.pop(),
         ),
       ),
@@ -213,7 +214,9 @@ class _AddStoryBodyState extends State<AddStoryBody> {
         controller: _cameraController,
         isInitialized: _isCameraInitialized,
         onCameraTap: () async {
-          final isGranted = await context.read<AddStoryCubit>().checkAndRequestCamera();
+          final isGranted = await context
+              .read<AddStoryCubit>()
+              .checkAndRequestCamera();
           if (isGranted) {
             setState(() {
               _isCameraActive = true;
@@ -223,5 +226,4 @@ class _AddStoryBodyState extends State<AddStoryBody> {
       ),
     );
   }
-
 }

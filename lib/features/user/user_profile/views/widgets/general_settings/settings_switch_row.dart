@@ -32,8 +32,8 @@ class SettingsSwitchRow extends StatelessWidget {
               IgnorePointer(
                 ignoring: false,
                 child: Transform.scale(
-                  scaleX: -0.8,
-                  scaleY: 0.8,
+                  scaleX: -0.8.r,
+                  scaleY: 0.8.r,
                   child: CupertinoSwitch(
                     value: value,
                     activeColor: const Color(0xFFF06C88),

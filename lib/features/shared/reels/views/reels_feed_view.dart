@@ -2,6 +2,7 @@ import 'package:preload_page_view/preload_page_view.dart';
 import 'package:tayseer/core/utils/global_mute_manager.dart';
 import 'package:tayseer/core/utils/video_cache_manager.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/video/video_state_manager.dart';
 import 'package:tayseer/features/shared/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/features/shared/reels/views/widget/reels_item.dart';
 import 'package:tayseer/my_import.dart';
@@ -16,15 +17,22 @@ class ReelsFeedView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider<ReelsCubit>(
       create: (context) => getIt<ReelsCubit>(param1: post)..fetchReels(),
-      child: _ReelsFeedContent(initialController: initialController),
+      child: _ReelsFeedContent(
+        initialController: initialController,
+        initialPostId: post.postId, // ✅ جديد: بنمرّر الـ postId
+      ),
     );
   }
 }
 
 class _ReelsFeedContent extends StatefulWidget {
   final VideoPlayerController? initialController;
+  final String initialPostId; // ✅ جديد
 
-  const _ReelsFeedContent({this.initialController});
+  const _ReelsFeedContent({
+    this.initialController,
+    required this.initialPostId,
+  });
 
   @override
   State<_ReelsFeedContent> createState() => _ReelsFeedContentState();
@@ -33,6 +41,7 @@ class _ReelsFeedContent extends StatefulWidget {
 class _ReelsFeedContentState extends State<_ReelsFeedContent> {
   PreloadPageController? _pageController;
   final _videoCacheManager = VideoCacheManager();
+  final _stateManager = VideoStateManager(); // ✅ جديد
 
   int _currentIndex = 0;
 
@@ -43,14 +52,11 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
   void initState() {
     super.initState();
     _pageController = PreloadPageController(initialPage: 0);
-
     _playInitialController();
   }
 
-  // ✅ فصل اللوجيك في دالة منفصلة
   void _playInitialController() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Unmute here (not in initState) to avoid setState-during-build
       GlobalMuteManager.instance.setMute(false);
 
       final controller = widget.initialController;
@@ -61,8 +67,6 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
   }
 
   void _preloadNextVideos(List<PostModel> reels, int currentIndex) {
-    // نحمل ملفات الكاش فقط — بدون إنشاء controllers
-    // لأن كل controller يحجز hardware decoder slot
     for (int i = 1; i <= _preloadCount; i++) {
       final nextIndex = currentIndex + i;
       if (nextIndex < reels.length) {
@@ -75,14 +79,30 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
   }
 
   void _onPageChanged(int index, List<PostModel> reels) {
-    if (_currentIndex == index) return; // ✅ Early return
+    if (_currentIndex == index) return;
+
+    // ✅ جديد: احفظ الـ position للريل الحالي قبل ما نسيبه
+    _saveCurrentReelPosition(reels);
 
     setState(() => _currentIndex = index);
     _preloadNextVideos(reels, index);
     _checkLoadMore(index, reels.length);
   }
 
-  // ✅ فصل اللوجيك
+  // ✅ جديد: حفظ position الريل الحالي
+  void _saveCurrentReelPosition(List<PostModel> reels) {
+    if (_currentIndex < reels.length) {
+      final currentReel = reels[_currentIndex];
+      final controller = (_currentIndex == 0) ? widget.initialController : null;
+      if (controller != null && controller.value.isInitialized) {
+        final position = controller.value.position;
+        if (position.inSeconds > 0) {
+          _stateManager.savePosition(currentReel.postId, position);
+        }
+      }
+    }
+  }
+
   void _checkLoadMore(int currentIndex, int totalReels) {
     final remainingItems = totalReels - currentIndex - 1;
     if (remainingItems <= _loadMoreThreshold) {
@@ -92,8 +112,24 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
 
   @override
   void dispose() {
+    // ✅ جديد: احفظ position الفيديو الحالي قبل dispose
+    _savePositionBeforeDispose();
     _pageController?.dispose();
     super.dispose();
+  }
+
+  // ✅ جديد: حفظ الـ position لما صفحة الريلز تتقفل
+  void _savePositionBeforeDispose() {
+    final controller = widget.initialController;
+    if (controller != null && controller.value.isInitialized) {
+      final position = controller.value.position;
+      if (position.inSeconds > 0) {
+        _stateManager.savePosition(widget.initialPostId, position);
+        debugPrint(
+          '💾 Saved position ${position.inSeconds}s for ${widget.initialPostId} before dispose',
+        );
+      }
+    }
   }
 
   @override
@@ -102,23 +138,18 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
       backgroundColor: Colors.black,
       body: MultiBlocListener(
         listeners: [
-          // Listener 1: Preload videos when reels list changes
           BlocListener<ReelsCubit, ReelsState>(
             listenWhen: (previous, current) =>
                 previous.reels.length != current.reels.length,
             listener: (context, state) =>
                 _preloadNextVideos(state.reels, _currentIndex),
           ),
-
-          // Listener 2: Share action toasts
           BlocListener<ReelsCubit, ReelsState>(
             listenWhen: (previous, current) =>
                 previous.shareActionState != current.shareActionState &&
                 current.shareActionState == CubitStates.initial,
             listener: _handleShareToast,
           ),
-
-          //  Listener 3: Follow action
           BlocListener<ReelsCubit, ReelsState>(
             listenWhen: (previous, current) =>
                 previous.followActionState != current.followActionState &&
@@ -129,8 +160,6 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
                 state.followMessage ?? context.tr(AppStrings.followError),
               );
             },
-
-            // Listener 4: save action toasts
             child: BlocListener<ReelsCubit, ReelsState>(
               listenWhen: (previous, current) =>
                   previous.saveActionState != current.saveActionState &&
@@ -196,17 +225,14 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
   }
 
   Widget _buildContent(BuildContext context, ReelsState state) {
-    // Loading state
     if (state.reels.isEmpty && state.reelsState == CubitStates.loading) {
       return _buildLoading();
     }
 
-    // Error state
     if (state.reels.isEmpty && state.reelsState == CubitStates.failure) {
       return _buildError(context, state.errorMessage);
     }
 
-    // Content
     return _buildReelsList(state);
   }
 
@@ -248,7 +274,6 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
   }
 
   Widget _buildReelItem(ReelsState state, int index) {
-    // Loading indicator at the end
     if (index >= state.reels.length) {
       return _buildLoadingMoreIndicator();
     }

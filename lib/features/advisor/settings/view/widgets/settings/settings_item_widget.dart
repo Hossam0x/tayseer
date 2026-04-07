@@ -116,8 +116,8 @@ class _NotificationSwitch extends StatelessWidget {
             ? state.isNotificationEnabled
             : false;
         return Transform.scale(
-          scaleX: -1,
-          scaleY: 1,
+          scaleX: -1.r,
+          scaleY: 1.r,
           child: LayoutBuilder(
             builder: (context, constraints) {
               final scaleFactor = MediaQuery.of(context).size.width > 600

@@ -144,6 +144,17 @@
             android:name="flutterEmbedding"
             android:value="2"/>
 
+        <!-- ✅ FileProvider - fixes camera upload inside WebView (Didit verification) -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.flutter_inappwebview_android.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider_paths"/>
+        </provider>
+
         <!-- flutter_local_notifications - Scheduled Receiver -->
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"

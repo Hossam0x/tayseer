@@ -139,6 +139,31 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
     );
   }
 
+  void addSessionToList({
+    required String key,
+    required SessionTypeModel session,
+  }) {
+    final updated = Map<String, SessionTypeModel>.from(state.sessionTypes);
+    updated[key] = session;
+    emit(
+      state.copyWith(
+        sessionTypes: updated,
+        hasChanges: _hasSessionTypesChanged(updated),
+      ),
+    );
+  }
+
+  void removeSessionFromList(String key) {
+    final updated = Map<String, SessionTypeModel>.from(state.sessionTypes);
+    updated.remove(key);
+    emit(
+      state.copyWith(
+        sessionTypes: updated,
+        hasChanges: _hasSessionTypesChanged(updated),
+      ),
+    );
+  }
+
   void clearError() => emit(state.copyWith(errorMessage: null));
   void clearSuccess() => emit(state.copyWith(successMessage: null));
 }

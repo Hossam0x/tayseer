@@ -24,14 +24,12 @@ class PostContentText extends StatefulWidget {
 class _PostContentTextState extends State<PostContentText> {
   bool _isExpanded = false;
 
-  late final int _maxLines =
-      widget.maxLines ?? 3; // عدد السطور قبل "عرض المزيد"
+  late final int _maxLines = widget.maxLines ?? 3;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // 1. حساب هل النص يتجاوز عدد السطور المسموح به أم لا
         final span = TextSpan(
           text: widget.text,
           style: widget.style ?? Styles.textStyle14,
@@ -40,22 +38,20 @@ class _PostContentTextState extends State<PostContentText> {
         final tp = TextPainter(
           text: span,
           maxLines: _maxLines,
-          textDirection: TextDirection.rtl, // أو حسب لغة التطبيق
+          textDirection: TextDirection.rtl,
         );
 
         tp.layout(maxWidth: constraints.maxWidth);
 
-        // 2. إذا كان النص لا يتجاوز الحد، اعرضه عادي
         if (!tp.didExceedMaxLines) {
           return SocialTextParser(
             text: widget.text,
             style: widget.style,
             hashtagStyle: widget.hashtagStyle,
-            parseMentions: false, // تعطيل المنشن في حالة عدم وجود "عرض المزيد"
+            parseMentions: false,
           );
         }
 
-        // 3. إذا كان النص طويل، اعرض النص (مقطوع أو كامل) + الزر
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -69,9 +65,7 @@ class _PostContentTextState extends State<PostContentText> {
                   ? TextOverflow.visible
                   : TextOverflow.ellipsis,
             ),
-
             Gap(context.responsiveHeight(4)),
-
             GestureDetector(
               onTap: () {
                 setState(() {
@@ -81,7 +75,7 @@ class _PostContentTextState extends State<PostContentText> {
               child: Text(
                 _isExpanded ? context.tr("see_less") : context.tr("see_more"),
                 style: Styles.textStyle14.copyWith(
-                  color: Colors.grey, // لون رمادي زي فيسبوك
+                  color: Colors.grey,
                   fontWeight: FontWeight.w600,
                 ),
               ),
