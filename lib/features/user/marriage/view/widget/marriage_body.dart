@@ -158,7 +158,27 @@ class MarriageBodyState extends State<MarriageBody>
       },
     );
   }
+String _translateCompatibilityValue(String value, String? category) {
+  final v = value.trim().toLowerCase();
 
+  // تحويل yes/no/true/false/1/0
+  if (v == 'yes' || v == 'true' || v == '1') {
+    return switch (category?.toLowerCase()) {
+      'smoker' => context.tr('smoking_yes'),
+      'children' || 'has_children' => context.tr('has_childrens'),
+      _ => context.tr('yes'),
+    };
+  }
+  if (v == 'no' || v == 'false' || v == '0') {
+    return switch (category?.toLowerCase()) {
+      'smoker' => context.tr('smoking_no'),
+      'children' || 'has_children' => context.tr('has_no_children'),
+      _ => context.tr('no'),
+    };
+  }
+
+  return _tr(value);
+}
   @override
   void dispose() {
     _scrollIdleTimer?.cancel();
@@ -205,11 +225,8 @@ class MarriageBodyState extends State<MarriageBody>
     });
   }
 
-  void _syncNotificationAfterInteraction() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      interactionsCubit.fetchAndSyncNotificationCount();
-    });
+  Future<void> _syncNotificationAfterInteraction() async {
+    await interactionsCubit.fetchAndSyncNotificationCount();
   }
 
   // ✅ بيبني الـ AnimatedHistoryButton المتصل بالـ InteractionsCubit
@@ -808,32 +825,33 @@ class MarriageBodyState extends State<MarriageBody>
   }
 
   List<String> _buildCompatibilityTags(List<MatchingTag>? matchingTags) {
-    if (matchingTags == null) return [];
+  if (matchingTags == null) return [];
 
-    final List<String> result = [];
+  final List<String> result = [];
 
-    for (final tag in matchingTags) {
-      if (tag.value == null || tag.value!.trim().isEmpty) continue;
+  for (final tag in matchingTags) {
+    if (tag.value == null || tag.value!.trim().isEmpty) continue;
 
-      final values = tag.value!
-          .split(',')
-          .map((v) => v.trim())
-          .where((v) => v.isNotEmpty)
-          .toList();
+    final values = tag.value!
+        .split(',')
+        .map((v) => v.trim())
+        .where((v) => v.isNotEmpty)
+        .toList();
 
-      for (final value in values) {
-        if (value.startsWith('interest_') || value.startsWith('faith_')) {
-          final emoji = MarriageConstants.getEmoji(value);
-          result.add('$emoji ${_tr(value)}');
-        } else {
-          result.add('${_getTagEmoji(tag.category, value)} ${_tr(value)}');
-        }
+    for (final value in values) {
+      if (value.startsWith('interest_') || value.startsWith('faith_')) {
+        final emoji = MarriageConstants.getEmoji(value);
+        result.add('$emoji ${_tr(value)}');
+      } else {
+        // ← التغيير هنا: بدل _tr(value) استخدم الدالة الجديدة
+        final translated = _translateCompatibilityValue(value, tag.category);
+        result.add('${_getTagEmoji(tag.category, value)} $translated');
       }
     }
-
-    return result;
   }
 
+  return result;
+}
   Widget _buildMarriageContent({
     Key? key,
     required String personId,
@@ -1002,15 +1020,16 @@ class MarriageBodyState extends State<MarriageBody>
                               context,
                               SwipeActionType.favorite,
                             );
-                            cubit.toggleLocalFavorite(
+                            await cubit.toggleLocalFavorite(
                               user?.id ?? '',
                               removeFromList:
                                   widget.personId == null &&
                                   !widget.fromInteractions,
                             );
-                            _syncNotificationAfterInteraction();
-                            if (widget.fromInteractions && mounted)
+                            await _syncNotificationAfterInteraction();
+                            if (widget.fromInteractions && mounted) {
                               context.pop();
+                            }
                           }
                         : null,
                   ),
@@ -1303,8 +1322,6 @@ class MarriageBodyState extends State<MarriageBody>
                             icon: Icons.block,
                             bottonText: context.tr(AppStrings.yes),
                             onPressed: () async {
-                        
-
                               cubit.blockUser(personId: user?.id ?? '');
                               if (!mounted) return;
 
@@ -1371,11 +1388,11 @@ class MarriageBodyState extends State<MarriageBody>
                                   SwipeActionType.like,
                                 );
                                 if (widget.fromInteractions) {
-                                  cubit.userInteraction(
+                                  await cubit.userInteraction(
                                     personId: profile.user?.id ?? '',
                                     interactionType: 'like',
                                   );
-                                  _syncNotificationAfterInteraction();
+                                  await _syncNotificationAfterInteraction();
                                   if (mounted) context.pop();
                                 } else {
                                   await cubit.swipeLike(
@@ -1387,7 +1404,7 @@ class MarriageBodyState extends State<MarriageBody>
                                     _resetScrollTracking();
                                     scrollToTop();
                                   }
-                                  _syncNotificationAfterInteraction();
+                                  await _syncNotificationAfterInteraction();
                                 }
                               },
                               Icons.check,
@@ -1397,10 +1414,10 @@ class MarriageBodyState extends State<MarriageBody>
 
                             buildCircleButton(
                               onTap: () async {
-                                cubit.sendRegard(
+                                await cubit.sendRegard(
                                   personId: profile.user?.id ?? '',
                                 );
-                                _syncNotificationAfterInteraction();
+                                await _syncNotificationAfterInteraction();
                               },
                               Icons.star,
                               Colors.white,
@@ -1414,11 +1431,11 @@ class MarriageBodyState extends State<MarriageBody>
                                   SwipeActionType.dislike,
                                 );
                                 if (widget.fromInteractions) {
-                                  cubit.userInteraction(
+                                  await cubit.userInteraction(
                                     personId: profile.user?.id ?? '',
                                     interactionType: 'dislike',
                                   );
-
+                                  await _syncNotificationAfterInteraction();
                                   if (mounted) context.pop();
                                 } else {
                                   await cubit.swipeDislike(

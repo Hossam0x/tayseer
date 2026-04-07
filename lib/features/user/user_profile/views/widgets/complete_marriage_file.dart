@@ -1,8 +1,10 @@
 import 'package:tayseer/core/widgets/custom_outline_button.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
-import 'package:tayseer/features/user/user_profile/views/widgets/verification_page.dart';
-import 'package:tayseer/features/user/user_profile/views/widgets/verification_webview_screen.dart';
+import 'package:tayseer/features/user/verification/data/models/Verification_result_model.dart';
+import 'package:tayseer/features/user/verification/data/verification_service.dart';
+import 'package:tayseer/features/user/verification/presentation/view/verification_screen.dart';
+import 'package:tayseer/features/user/verification/presentation/view/verification_webview_screen.dart';
 import 'package:tayseer/my_import.dart';
 
 class CompleteMarriageFile extends StatelessWidget {
@@ -11,11 +13,13 @@ class CompleteMarriageFile extends StatelessWidget {
     required this.progress,
     required this.profile,
     required this.onNavigateToEdit,
+    required this.onProfileRefresh,
   });
 
   final double progress;
   final MarriageUserProfileModel profile;
   final Function(String section) onNavigateToEdit;
+  final Future<MarriageUserProfileModel> Function() onProfileRefresh;
 
   @override
   Widget build(BuildContext context) {
@@ -43,10 +47,6 @@ class CompleteMarriageFile extends StatelessWidget {
       },
     ];
 
-    debugPrint(
-      '📋 [CompleteMarriageFile] verificationItems: $verificationItems',
-    );
-
     int totalItems = verificationItems.length;
     int completedItems = verificationItems
         .where((item) => item['isVerified'] as bool)
@@ -55,12 +55,6 @@ class CompleteMarriageFile extends StatelessWidget {
         ? ((completedItems / totalItems) * 100).round()
         : 0;
 
-    debugPrint('📋 [CompleteMarriageFile] totalItems: $totalItems');
-    debugPrint('📋 [CompleteMarriageFile] completedItems: $completedItems');
-    debugPrint(
-      '📋 [CompleteMarriageFile] verificationPercentage: $verificationPercentage%',
-    );
-
     final imageCount = profile.userMedia?.images.length ?? 0;
     final hasVideo =
         profile.userMedia?.video != null &&
@@ -68,13 +62,7 @@ class CompleteMarriageFile extends StatelessWidget {
     final hasAudio =
         profile.userMedia?.audio != null &&
         profile.userMedia!.audio!.isNotEmpty;
-
-    debugPrint('📋 [CompleteMarriageFile] imageCount: $imageCount');
-    debugPrint('📋 [CompleteMarriageFile] hasVideo: $hasVideo');
-    debugPrint('📋 [CompleteMarriageFile] hasAudio: $hasAudio');
-
     final isVerified = profile.isVerified == true;
-    debugPrint('📋 [CompleteMarriageFile] isVerified: $isVerified');
 
     return Scaffold(
       body: SafeArea(
@@ -96,7 +84,6 @@ class CompleteMarriageFile extends StatelessWidget {
                     _buildEnhancedTimeline(progress: progress),
                     SizedBox(height: 20.h),
 
-                    // Verification Section
                     profile.isVerified == true
                         ? const SizedBox.shrink()
                         : _buildVerificationCard(
@@ -166,6 +153,108 @@ class CompleteMarriageFile extends StatelessWidget {
     );
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Full Verification Flow
+  // ─────────────────────────────────────────────────────────────────────────
+  Future<void> _startVerificationFlow(BuildContext context) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    debugPrint(
+      '🔍 [CompleteMarriageFile] Calling getUserVerificationStatus...',
+    );
+    final currentStatus = await VerificationService.getUserVerificationStatus();
+    debugPrint(
+      '🔍 [CompleteMarriageFile] getUserVerificationStatus result: $currentStatus',
+    );
+
+    if (!context.mounted) return;
+    Navigator.pop(context); // Close loading dialog
+
+    if (currentStatus?.isVerified == true) {
+      debugPrint(
+        '✅ [CompleteMarriageFile] Already verified → opening VerificationScreen',
+      );
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => VerificationScreen(result: currentStatus!),
+        ),
+      );
+      return;
+    }
+
+    debugPrint(
+      '🌐 [CompleteMarriageFile] User not verified → calling getVerificationUrl...',
+    );
+    final url = await VerificationService.getVerificationUrl();
+    debugPrint('🌐 [CompleteMarriageFile] getVerificationUrl result: $url');
+
+    if (!context.mounted) return;
+
+    if (url == null) {
+      debugPrint(
+        '❌ [CompleteMarriageFile] URL is null, showing error snackbar',
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(
+          context,
+          text: context.tr('error_occurred'),
+          isError: true,
+        ),
+      );
+      return;
+    }
+
+    debugPrint(
+      '🌐 [CompleteMarriageFile] Opening VerificationWebViewScreen with url: $url',
+    );
+    final result = await Navigator.push<VerificationStatus>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VerificationWebViewScreen(webviewUrl: url),
+      ),
+    );
+
+    debugPrint(
+      '🌐 [CompleteMarriageFile] VerificationWebViewScreen returned: $result',
+    );
+
+    if (!context.mounted) return;
+
+    switch (result) {
+      case VerificationStatus.approved:
+        debugPrint(
+          '✅ [CompleteMarriageFile] Status: approved → showing success snackbar',
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(
+            context,
+            text: context.tr('verification_done'),
+            isSuccess: true,
+          ),
+        );
+        await onProfileRefresh(); // ← refresh الـ profile بعد التحقق
+        break;
+
+      case VerificationStatus.rejected:
+        debugPrint(
+          '❌ [CompleteMarriageFile] Status: rejected → calling _retryVerification',
+        );
+        _retryVerification(context);
+        break;
+
+      default:
+        debugPrint(
+          '⚠️ [CompleteMarriageFile] Status: unknown/null → doing nothing',
+        );
+        break;
+    }
+  }
+
   Future<void> _retryVerification(BuildContext context) async {
     debugPrint('🔄 [CompleteMarriageFile] _retryVerification() called');
 
@@ -194,10 +283,7 @@ class CompleteMarriageFile extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => VerificationWebViewScreen(
-          webviewUrl: url,
-          onVerificationComplete: (_) {},
-        ),
+        builder: (_) => VerificationWebViewScreen(webviewUrl: url),
       ),
     );
   }
@@ -283,139 +369,7 @@ class CompleteMarriageFile extends StatelessWidget {
           ),
           SizedBox(width: 8.w),
           IconButton(
-            onPressed: () async {
-              debugPrint(
-                '👆 [CompleteMarriageFile] Verification card arrow tapped',
-              );
-
-              // Show loading
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (_) =>
-                    const Center(child: CircularProgressIndicator()),
-              );
-
-              // Step 1: Check current verification status first
-              debugPrint(
-                '🔍 [CompleteMarriageFile] Calling getUserVerificationStatus...',
-              );
-              final isAlreadyVerified =
-                  await VerificationService.getUserVerificationStatus();
-              debugPrint(
-                '🔍 [CompleteMarriageFile] getUserVerificationStatus result: $isAlreadyVerified',
-              );
-
-              if (!context.mounted) return;
-              Navigator.pop(context); // close loading
-
-              if (isAlreadyVerified == true) {
-                // Already verified → open VerificationScreen with 100%, NO webview
-                debugPrint(
-                  '✅ [CompleteMarriageFile] User is already verified → opening VerificationScreen with 100%',
-                );
-                final allVerifiedItems = items
-                    .map((item) => {...item, 'isVerified': true})
-                    .toList();
-                debugPrint(
-                  '✅ [CompleteMarriageFile] allVerifiedItems: $allVerifiedItems',
-                );
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        VerificationScreen(verificationItems: allVerifiedItems),
-                  ),
-                );
-                return;
-              }
-
-              // Step 2: Not verified → get webview URL
-              debugPrint(
-                '🌐 [CompleteMarriageFile] User not verified → calling getVerificationUrl...',
-              );
-              final url = await VerificationService.getVerificationUrl();
-              debugPrint(
-                '🌐 [CompleteMarriageFile] getVerificationUrl result: $url',
-              );
-
-              if (!context.mounted) return;
-
-              if (url == null) {
-                debugPrint(
-                  '❌ [CompleteMarriageFile] URL is null, showing error snackbar',
-                );
-                ScaffoldMessenger.of(context).showSnackBar(
-                  CustomSnackBar(
-                    context,
-                    text: context.tr('error_occurred'),
-                    isError: true,
-                  ),
-                );
-                return;
-              }
-
-              debugPrint(
-                '🌐 [CompleteMarriageFile] Opening VerificationWebViewScreen with url: $url',
-              );
-              final result = await Navigator.push<VerificationStatus>(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => VerificationWebViewScreen(
-                    webviewUrl: url,
-                    onVerificationComplete: (_) {},
-                  ),
-                ),
-              );
-
-              debugPrint(
-                '🌐 [CompleteMarriageFile] VerificationWebViewScreen returned: $result',
-              );
-
-              if (!context.mounted) return;
-
-              switch (result) {
-                case VerificationStatus.approved:
-                  debugPrint(
-                    '✅ [CompleteMarriageFile] Status: approved → showing success snackbar',
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    CustomSnackBar(
-                      context,
-                      text: context.tr('verification_done'),
-                      isSuccess: true,
-                    ),
-                  );
-                  break;
-
-                case VerificationStatus.inReview:
-                  debugPrint(
-                    '⏳ [CompleteMarriageFile] Status: inReview → opening VerificationScreen',
-                  );
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          VerificationScreen(verificationItems: items),
-                    ),
-                  );
-                  break;
-
-                case VerificationStatus.rejected:
-                  debugPrint(
-                    '❌ [CompleteMarriageFile] Status: rejected → calling _retryVerification',
-                  );
-                  _retryVerification(context);
-                  break;
-
-                default:
-                  debugPrint(
-                    '⚠️ [CompleteMarriageFile] Status: unknown/null → doing nothing',
-                  );
-                  break;
-              }
-            },
+            onPressed: () => _startVerificationFlow(context),
             icon: Icon(
               Icons.arrow_forward_ios,
               color: Colors.black.withOpacity(0.5),
@@ -436,10 +390,6 @@ class CompleteMarriageFile extends StatelessWidget {
     int? currentCount,
     int? requiredCount,
   }) {
-    debugPrint(
-      '📦 [CompleteMarriageFile] _buildTaskCard() title: $title | currentCount: $currentCount | requiredCount: $requiredCount',
-    );
-
     return Container(
       padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
       decoration: BoxDecoration(
@@ -513,10 +463,6 @@ class CompleteMarriageFile extends StatelessWidget {
   }
 
   Widget _buildEnhancedTimeline({required double progress}) {
-    debugPrint(
-      '📊 [CompleteMarriageFile] _buildEnhancedTimeline() progress: $progress',
-    );
-
     return Container(
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -543,68 +489,64 @@ class CompleteMarriageFile extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Column(
-            children: [
-              Directionality(
-                textDirection: TextDirection.rtl,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(5, (index) {
-                    int badgeNumber = index + 1;
-                    int totalSteps = 5;
-                    int reversedNumber = totalSteps - badgeNumber + 1;
-                    final reversedIndex = 4 - index;
-                    double pointProgress = reversedIndex / 4;
-                    bool isReached = pointProgress <= progress;
+          Directionality(
+            textDirection: TextDirection.rtl,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: List.generate(5, (index) {
+                int badgeNumber = index + 1;
+                int totalSteps = 5;
+                int reversedNumber = totalSteps - badgeNumber + 1;
+                final reversedIndex = 4 - index;
+                double pointProgress = reversedIndex / 4;
+                bool isReached = pointProgress <= progress;
 
-                    return Align(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(height: 6.h),
-                          Center(
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 7.w,
-                                vertical: 4.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isReached
-                                    ? const Color(0xFFFFC107)
-                                    : Colors.grey.shade300,
-                                borderRadius: BorderRadius.circular(8.r),
-                                boxShadow: isReached
-                                    ? [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.1),
-                                          blurRadius: 3,
-                                          offset: Offset(0, 1),
-                                        ),
-                                      ]
-                                    : [],
-                              ),
-                              child: Text(
-                                reversedNumber.toString().padLeft(2, '0'),
-                                style: TextStyle(
-                                  fontSize: 11.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: isReached
-                                      ? Colors.white
-                                      : Colors.grey.shade600,
-                                ),
-                              ),
+                return Align(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(height: 6.h),
+                      Center(
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 7.w,
+                            vertical: 4.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isReached
+                                ? const Color(0xFFFFC107)
+                                : Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(8.r),
+                            boxShadow: isReached
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 3,
+                                      offset: Offset(0, 1),
+                                    ),
+                                  ]
+                                : [],
+                          ),
+                          child: Text(
+                            reversedNumber.toString().padLeft(2, '0'),
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.bold,
+                              color: isReached
+                                  ? Colors.white
+                                  : Colors.grey.shade600,
                             ),
                           ),
-                        ],
+                        ),
                       ),
-                    );
-                  }),
-                ),
-              ),
-              SizedBox(height: 16.h),
-              _buildTimeline(progress: progress),
-            ],
+                    ],
+                  ),
+                );
+              }),
+            ),
           ),
+          SizedBox(height: 16.h),
+          _buildTimeline(progress: progress),
         ],
       ),
     );
@@ -613,9 +555,6 @@ class CompleteMarriageFile extends StatelessWidget {
   Widget _buildTimeline({required double progress}) {
     final double safeProgress = progress.clamp(0.0, 1.0);
     final String percentageText = "${(safeProgress * 100).toInt()}%";
-    debugPrint(
-      '📊 [CompleteMarriageFile] _buildTimeline() safeProgress: $safeProgress | percentageText: $percentageText',
-    );
 
     return Column(
       children: [
