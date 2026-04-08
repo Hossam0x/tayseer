@@ -110,6 +110,8 @@ class UserModel {
     this.hasChildren,
   });
 
+  bool get isSingle => socialStatus?.toLowerCase().contains("single") ?? true;
+
   /// Helper method to build full image URL from filename
   static String? _buildImageUrl(String? imageValue, String? userId) {
     if (imageValue == null || imageValue.isEmpty) return null;
