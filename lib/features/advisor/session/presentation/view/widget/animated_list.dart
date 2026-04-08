@@ -1,6 +1,5 @@
 // lib/features/advisor/session/presentation/view/widget/animated_session_list.dart
 
-import 'package:flutter/material.dart';
 import 'package:tayseer/features/user/my_space/data/model/pending_session.dart';
 import 'package:tayseer/features/advisor/session/presentation/view/widget/order_session_card.dart';
 import 'package:tayseer/features/advisor/session/presentation/manager/pending_session_cubit/pending_session_cubit.dart';

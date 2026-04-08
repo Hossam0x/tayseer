@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:tayseer/features/user/my_space/data/model/advisor_offering_model.dart';
 import 'package:tayseer/features/user/my_space/data/model/advisorprofile/session_response_model.dart';
 
 import 'package:tayseer/features/user/my_space/data/model/advisor_chat_model.dart';
@@ -31,6 +32,19 @@ class MySpaceRepo {
         endPoint: ApiEndPoint.advisorChatProfile(userId),
       );
       return Right(SessionsResponseModel.fromJson(response));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  Future<Either<Failure, AdvisorOfferingResponseModel>> getOfferingsBooking(
+    String userId,
+  ) async {
+    try {
+      final response = await apiService.get(
+        endPoint: ApiEndPoint.getOfferingsBooking("69d4c6ed5392a0a9e733bf1f"),
+      );
+      return Right(AdvisorOfferingResponseModel.fromJson(response));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -293,5 +307,4 @@ class MySpaceRepo {
       return Left(ServerFailure(e.toString()));
     }
   }
-
 }

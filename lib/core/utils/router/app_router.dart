@@ -84,6 +84,7 @@ import 'package:tayseer/features/user/interactions/presentation/view/widget/inte
 import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
 import 'package:tayseer/features/user/marriage/view/marriage_view.dart';
 import 'package:tayseer/features/user/marriage_filter/view/marriage_filter_view.dart';
+import 'package:tayseer/features/user/my_space/presentation/view/booking/choose_session_view.dart';
 import 'package:tayseer/features/user/my_tickets_event/view/my_tickets_view.dart';
 import 'package:tayseer/features/user/my_tickets_event/view/ticket_details_view.dart';
 import 'package:tayseer/features/user/questions/presentation/views/account_review_view.dart';
@@ -264,6 +265,7 @@ abstract class AppRouter {
   static const kUserPackageDetailsView = '/user-package-details-view';
   static const kSelectCountryView = '/SelectCountryView';
   static const kSetupSummaryView = '/SetupSummaryView';
+  static const kChooseSessionView = '/ChooseSessionView';
   ///// report screens /////
   static const kReportsView = '/reportsView';
   static const kReportDetailsView = '/reportDetailsView';
@@ -864,6 +866,7 @@ abstract class AppRouter {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => UserReschedule(
+            duration: args?['duration'] ?? '45',
             advisorId: args?['advisorId'] ?? '',
             title: args?['title'] ?? 'اعاده جدوله',
             oldBookingData: data,
@@ -1025,6 +1028,15 @@ abstract class AppRouter {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => MarriageFilterView(),
+        );
+
+      case AppRouter.kChooseSessionView:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (_) => ChooseSessionView(
+            title: args['title'] ?? '',
+            advisorId: args['advisorId'] ?? '',
+          ),
         );
       case kAccountReviewUserView:
         return MaterialPageRoute(

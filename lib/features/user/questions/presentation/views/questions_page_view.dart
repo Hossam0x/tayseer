@@ -140,7 +140,7 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
         items: QuestionsData.religiousCommitments,
         type: QuestionType.selectableList,
       ),
-      if (kCurrentUserData?.socialStatus != 'single')
+      if (!kCurrentUserData!.isSingle )
         QuestionPageConfig(
           titleKey: 'has_children',
           questionNumber: 11,
@@ -148,7 +148,7 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
           items: QuestionsData.yesNo,
           type: QuestionType.selectableList,
         ),
-      if (kCurrentUserData?.socialStatus != 'single' &&
+      if (!kCurrentUserData!.isSingle &&
           kCurrentUserData?.hasChildren == true)
         QuestionPageConfig(
           titleKey: 'children_number',
@@ -159,7 +159,7 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
           dependsOnQuestion: 'hasChildren',
           requiredAnswer: 'yes',
         ),
-      if (kCurrentUserData?.socialStatus != 'single' &&
+      if (!kCurrentUserData!.isSingle&&
           kCurrentUserData?.hasChildren == true)
         QuestionPageConfig(
           titleKey: 'children_living_status',

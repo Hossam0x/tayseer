@@ -17,7 +17,10 @@ class PartnerFilterBody extends StatelessWidget {
             previous.partnerFilterState != current.partnerFilterState,
         listener: (context, state) {
           if (state.partnerFilterState == CubitStates.success) {
-            context.pushReplacementNamed(AppRouter.kSubscriptionView);
+            context.pushReplacementNamed(
+              AppRouter.kUserPackagesView,
+              arguments: {'fromPartnerFilter': true},
+            );
           } else if (state.partnerFilterState == CubitStates.failure) {
             ScaffoldMessenger.of(context).showSnackBar(
               CustomSnackBar(

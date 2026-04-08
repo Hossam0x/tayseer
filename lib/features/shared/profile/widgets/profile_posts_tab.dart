@@ -67,10 +67,23 @@ abstract class ProfilePostsCubitContract<S> extends Cubit<S> {
 // Reads data from cubit getters, NOT from the raw state cast.
 // ─────────────────────────────────────────────────────────────
 class ProfilePostsTab<C extends ProfilePostsCubitContract>
-    extends StatelessWidget {
+    extends StatefulWidget {
   final String heroPrefix;
 
   const ProfilePostsTab({super.key, required this.heroPrefix});
+
+  @override
+  State<ProfilePostsTab<C>> createState() => _ProfilePostsTabState<C>();
+}
+
+class _ProfilePostsTabState<C extends ProfilePostsCubitContract>
+    extends State<ProfilePostsTab<C>> {
+  // Track previous action states to detect real transitions
+  CubitStates _prevShareState = CubitStates.initial;
+  CubitStates _prevSaveState = CubitStates.initial;
+  CubitStates _prevDeleteState = CubitStates.initial;
+  CubitStates _prevArchiveState = CubitStates.initial;
+  CubitStates _prevBlockState = CubitStates.initial;
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +92,13 @@ class ProfilePostsTab<C extends ProfilePostsCubitContract>
     return MultiBlocListener(
       listeners: [
         BlocListener<C, dynamic>(
-          listenWhen: (_, __) => cubit.shareActionState != CubitStates.initial,
+          listenWhen: (_, __) {
+            final changed =
+                cubit.shareActionState != _prevShareState &&
+                cubit.shareActionState != CubitStates.initial;
+            _prevShareState = cubit.shareActionState;
+            return changed;
+          },
           listener: (context, _) {
             switch (cubit.shareActionState) {
               case CubitStates.success:
@@ -105,7 +124,13 @@ class ProfilePostsTab<C extends ProfilePostsCubitContract>
           },
         ),
         BlocListener<C, dynamic>(
-          listenWhen: (_, __) => cubit.saveActionState != CubitStates.initial,
+          listenWhen: (_, __) {
+            final changed =
+                cubit.saveActionState != _prevSaveState &&
+                cubit.saveActionState != CubitStates.initial;
+            _prevSaveState = cubit.saveActionState;
+            return changed;
+          },
           listener: (context, _) {
             if (cubit.saveActionState == CubitStates.success) {
               AppToast.success(
@@ -121,8 +146,13 @@ class ProfilePostsTab<C extends ProfilePostsCubitContract>
           },
         ),
         BlocListener<C, dynamic>(
-          listenWhen: (_, __) =>
-              cubit.deletePostActionState != CubitStates.initial,
+          listenWhen: (_, __) {
+            final changed =
+                cubit.deletePostActionState != _prevDeleteState &&
+                cubit.deletePostActionState != CubitStates.initial;
+            _prevDeleteState = cubit.deletePostActionState;
+            return changed;
+          },
           listener: (context, _) {
             if (cubit.deletePostActionState == CubitStates.success) {
               AppToast.success(
@@ -138,8 +168,13 @@ class ProfilePostsTab<C extends ProfilePostsCubitContract>
           },
         ),
         BlocListener<C, dynamic>(
-          listenWhen: (_, __) =>
-              cubit.archivePostActionState != CubitStates.initial,
+          listenWhen: (_, __) {
+            final changed =
+                cubit.archivePostActionState != _prevArchiveState &&
+                cubit.archivePostActionState != CubitStates.initial;
+            _prevArchiveState = cubit.archivePostActionState;
+            return changed;
+          },
           listener: (context, _) {
             if (cubit.archivePostActionState == CubitStates.success) {
               AppToast.success(
@@ -155,8 +190,13 @@ class ProfilePostsTab<C extends ProfilePostsCubitContract>
           },
         ),
         BlocListener<C, dynamic>(
-          listenWhen: (_, __) =>
-              cubit.blockUserActionState != CubitStates.initial,
+          listenWhen: (_, __) {
+            final changed =
+                cubit.blockUserActionState != _prevBlockState &&
+                cubit.blockUserActionState != CubitStates.initial;
+            _prevBlockState = cubit.blockUserActionState;
+            return changed;
+          },
           listener: (context, _) {
             switch (cubit.blockUserActionState) {
               case CubitStates.loading:
@@ -183,9 +223,8 @@ class ProfilePostsTab<C extends ProfilePostsCubitContract>
         ),
       ],
       child: BlocBuilder<C, dynamic>(
-        buildWhen: (_, __) => true, // cubit getters always reflect latest state
+        buildWhen: (_, __) => true,
         builder: (context, _) {
-          // Read from cubit getters — never cast the state object
           if (cubit.postsState == CubitStates.loading && cubit.posts.isEmpty) {
             return _buildShimmer();
           }
@@ -217,7 +256,7 @@ class ProfilePostsTab<C extends ProfilePostsCubitContract>
                       key: ValueKey(cubit.posts[index].postId),
                       postId: cubit.posts[index].postId,
                       cubit: cubit,
-                      heroPrefix: heroPrefix,
+                      heroPrefix: widget.heroPrefix,
                       showGap: index < cubit.posts.length - 1,
                     );
                   },

@@ -19,11 +19,12 @@ class _UserNavBarState extends State<UserNavBar>
   late Animation<double> _scaleAnim;
   late Animation<double> _rotateAnim;
   late Animation<double> _fadeAnim;
+  final GlobalKey _navItem1Key = GlobalKey();
 
   @override
   void initState() {
     super.initState();
-    NavAnimationService.instance.resetKey();
+    NavAnimationService.instance.navItem1Key = _navItem1Key;
     _toggleController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 450),
@@ -133,8 +134,7 @@ class _UserNavBarState extends State<UserNavBar>
                 // ⭐ index 1: يأخذ GlobalKey + toggle animation
                 if (originalIndex == 1) {
                   return _AnimatedNavItem(
-                    key:
-                        NavAnimationService.instance.navItem1Key, // ⭐ GlobalKey
+                    key: _navItem1Key, // ⭐ GlobalKey
                     icon: navItem.icon,
                     activeIcon: navItem.activeIcon,
                     label: context.tr(navItem.labelKey),

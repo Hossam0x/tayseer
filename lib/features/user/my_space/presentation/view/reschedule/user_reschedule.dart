@@ -12,11 +12,13 @@ class UserReschedule extends StatelessWidget {
     this.oldBookingData,
     required this.title,
     required this.advisorId,
+    required this.duration,
   });
 
   final SessionDetailsDataResponse? oldBookingData;
   final String title;
   final String advisorId;
+  final String duration;
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +29,7 @@ class UserReschedule extends StatelessWidget {
       child: Scaffold(
         body: AdvisorBackground(
           child: UserRescheduleViewBody(
+            duration: duration,
             oldBookingData: oldBookingData,
             title: title,
             advisorId: advisorId,
