@@ -47,48 +47,66 @@ class _AnimatedHistoryButtonState extends State<AnimatedHistoryButton> {
       onTap: widget.onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 600),
-        curve: Curves.easeInOutBack,
+        curve: Curves.easeInOut,
         padding: EdgeInsets.symmetric(
           horizontal: _isExpanded ? 12.w : 0.w,
-          vertical: _isExpanded ? 15.h : 0.h,
+          vertical: _isExpanded ? 12.w : 0.h,
         ),
         decoration: BoxDecoration(
-          gradient: _isExpanded
-              ? LinearGradient(
-                  colors: [AppColors.primary300, AppColors.primary200],
-                  begin: Alignment.centerRight,
-                  end: Alignment.centerLeft,
-                )
-              : null,
+          gradient: LinearGradient(
+            colors: [AppColors.primary300, AppColors.primary200],
+            begin: Alignment.centerRight,
+            end: Alignment.centerLeft,
+          ),
           borderRadius: BorderRadius.circular(30.r),
         ),
         child: Stack(
           clipBehavior: Clip.none,
           alignment: Alignment.center,
           children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 400),
-              transitionBuilder: (child, animation) =>
-                  FadeTransition(opacity: animation, child: child),
-              child: _isExpanded
-                  ? Text(
-                      key: const ValueKey('text'),
-                      context.tr('view_who_interacted'),
-                      style: Styles.textStyle12Bold.copyWith(
-                        color: Colors.white,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeInOut,
+                  child: SizedBox(
+                    width: _isExpanded ? 0 : null,
+                    child: AnimatedOpacity(
+                      opacity: _isExpanded ? 0.0 : 1.0,
+                      duration: const Duration(milliseconds: 400),
+                      child: SvgPicture.asset(
+                        AssetsData.archiveIcon,
+                        width: !_isExpanded? 45.w: 24.w,
+                        height:! _isExpanded? 45.h: 24.h
                       ),
-                      maxLines: 1,
-                      softWrap: false,
-                    )
-                  : SvgPicture.asset(
-                      key: const ValueKey('icon'),
-                      AssetsData.archiveIcon,
-                      width: 44.w,
-                      height: 44.h,
                     ),
+                  ),
+                ),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeInOut,
+                  child: SizedBox(
+                    width: _isExpanded ? null : 0,
+                    child: AnimatedOpacity(
+                      opacity: _isExpanded ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 400),
+                      child: Text(
+                        context.tr('view_who_interacted'),
+                        style: Styles.textStyle12Bold.copyWith(
+                          color: Colors.white,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.visible,
+                        softWrap: false,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
 
-            // ── Badge فوق الأيكون لما collapsed ──
+            // Badge فوق الأيكون لما collapsed
             if (widget.notificationCount > 0 && !_isExpanded)
               Positioned(
                 top: -3.w,
