@@ -49,7 +49,7 @@ class MarriageProfileRepository {
   Future<Either<Failure, bool>> updateMarriageProfile(
     MarriageUserProfileModel profile,
   ) async {
-    try {  
+    try {
       final requestData = _convertToServerFormat(profile);
       final response = await _apiService.patch(
         endPoint: '/user/update-marry-profile',
