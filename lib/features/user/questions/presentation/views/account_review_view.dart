@@ -36,7 +36,7 @@ class AccountReviewUserView extends StatelessWidget {
                   useGradient: true,
                   title: context.tr('continuation'),
                   onPressed: () {
-                    context.pushNamed(AppRouter.kPartnerFilterView);
+                    context.pushNamed(AppRouter.kSubscriptionView);
                   },
                 ),
               ],

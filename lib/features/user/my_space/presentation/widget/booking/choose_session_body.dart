@@ -53,9 +53,7 @@ class _ChooseSessionBodyState extends State<ChooseSessionBody> {
                         backgroundColor: Colors.transparent,
                         centerTitle: true,
                         title: Text(
-                          widget.title.isNotEmpty
-                              ? widget.title
-                              : context.tr('choose_what_suits_you'),
+                          context.tr('choose_what_suits_you'),
                           style: Styles.textStyle20Bold.copyWith(
                             color: Colors.black87,
                           ),
@@ -147,6 +145,9 @@ class _ChooseSessionBodyState extends State<ChooseSessionBody> {
                                 'advisorId': widget.advisorId,
                                 'selectedOffering': selected,
                                 'duration': selected.duration.toString(),
+                                'fromWallet': false,
+                                'offeringId': selected.id,
+                                'type': selected.type,
                               },
                             );
                           }

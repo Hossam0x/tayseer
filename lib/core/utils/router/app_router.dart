@@ -96,7 +96,6 @@ import 'package:tayseer/features/user/questions/presentation/views/add_phone_vie
 import 'package:tayseer/features/user/questions/presentation/views/added_images_view.dart';
 import 'package:tayseer/features/user/questions/presentation/views/face_verification_view.dart';
 import 'package:tayseer/features/user/questions/presentation/views/otp_phone_user_question.dart';
-import 'package:tayseer/features/user/questions/presentation/views/partner_filter_view.dart';
 import 'package:tayseer/features/user/questions/presentation/views/questions_page_view.dart';
 import 'package:tayseer/features/shared/auth/view/choose_gender_view.dart';
 import 'package:tayseer/features/user/questions/presentation/views/personal_info_view.dart';
@@ -201,7 +200,6 @@ abstract class AppRouter {
   static const kBlockedContactsSuccessScreen = '/BlockedContactsSuccessScreen';
   static const kMarriageFilterView = '/MarriageFilterView';
   static const kMarriageView = '/MarriageView';
-  static const kPartnerFilterView = '/PartnerFilterView';
   static const kCommitmentView = '/CommitmentView';
   static const kAccountReviewUserView = '/AccountReviewUserView';
   static const kSubscriptionView = '/SubscriptionView';
@@ -879,7 +877,10 @@ abstract class AppRouter {
             duration: args?['duration'] ?? '45',
             advisorId: args?['advisorId'] ?? '',
             title: args?['title'] ?? 'اعاده جدوله',
+            fromWallet: args?['fromWallet'] ?? false,
             oldBookingData: data,
+            offeringId: args?['offeringId'] ?? '0',
+            type: args?['type'] ?? 'session',
           ),
         );
       // في app_router.dart
@@ -1005,14 +1006,14 @@ abstract class AppRouter {
             child: OtpPhoneUserQuestion(),
           ),
         );
-      case kPartnerFilterView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: PartnerFilterView(),
-          ),
-        );
+      // case kPartnerFilterView:
+      //   return MaterialPageRoute(
+      //     settings: settings,
+      //     builder: (_) => BlocProvider.value(
+      //       value: getIt<QuestionsCubit>(),
+      //       child: PartnerFilterView(),
+      //     ),
+      //   );
       case kCommitmentView:
         return MaterialPageRoute(
           settings: settings,

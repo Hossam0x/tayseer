@@ -12,13 +12,18 @@ class UserRescheduleViewBody extends StatefulWidget {
   final String title;
   final String advisorId;
   final String duration;
-
+  final bool fromWallet;
+  final String offeringId;
+  final String type;
   const UserRescheduleViewBody({
     super.key,
     this.oldBookingData,
     required this.title,
     required this.advisorId,
     required this.duration,
+    required this.fromWallet,
+    required this.offeringId,
+    required this.type,
   });
 
   @override
@@ -270,10 +275,21 @@ class _UserRescheduleViewBodyState extends State<UserRescheduleViewBody> {
   // ════════════════════════════════════════
   void _blocListener(BuildContext context, AvailableSlotsState state) {
     if (state.createSessionState == CubitStates.success) {
-      context.pushNamed(
-        AppRouter.userticketSessionView,
-        arguments: state.createdSession,
-      );
+      widget.fromWallet == false
+          ? context.pushNamed(
+              AppRouter.userticketSessionView,
+              arguments: state.createdSession,
+            )
+          : CustomshowDialogWithImage(
+              context,
+              imageUrl: AssetsData.ksuccessTrueImage,
+              title: context.tr('booking_successful'),
+              supTitle: context.tr('your_session_has_been_booked_successfully'),
+              bottonText: context.tr('ok'),
+              onPressed: () {
+                context.popUntil(routeName: AppRouter.advisorchatprofile);
+              },
+            );
     }
     if (state.createSessionState == CubitStates.failure) {
       AppToast.error(
@@ -435,7 +451,10 @@ class _UserRescheduleViewBodyState extends State<UserRescheduleViewBody> {
       advisorId: widget.advisorId,
       duration: widget.duration,
       time: _selectedTime!,
-      paymentMethod: 'online',
+      fromWallet: widget.fromWallet,
+      isAnonymous: _isAnonymous,
+      type: widget.type,
+      offeringId: widget.offeringId,
     );
   }
 }

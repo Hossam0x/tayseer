@@ -13,12 +13,18 @@ class UserReschedule extends StatelessWidget {
     required this.title,
     required this.advisorId,
     required this.duration,
+    required this.fromWallet,
+    required this.offeringId,
+    required this.type,
   });
 
   final SessionDetailsDataResponse? oldBookingData;
   final String title;
   final String advisorId;
   final String duration;
+  final bool fromWallet;
+  final String offeringId;
+  final String type;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +39,9 @@ class UserReschedule extends StatelessWidget {
             oldBookingData: oldBookingData,
             title: title,
             advisorId: advisorId,
+            fromWallet: fromWallet,
+            offeringId: offeringId,
+            type: type,
           ),
         ),
       ),
