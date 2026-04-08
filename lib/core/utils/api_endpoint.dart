@@ -85,4 +85,8 @@ class ApiEndPoint {
       '/new-advisor-sub/my-subscription';
   static const String cancelAdvisorSubscription =
       '/new-advisor-sub/cancel-my-subscription';
+  static const String userSubscriptions = '/new-user-sub';
+  static const String myUserSubscription = '/new-user-sub/my-subscription';
+  static const String cancelUserSubscription =
+      '/new-user-sub/cancel-my-subscription';
 }

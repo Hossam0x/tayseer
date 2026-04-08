@@ -1894,5 +1894,12 @@
   "already_added": "Already added ✓",
   "likes": "Likes",
   "no_advisors_found": "No advisors available",
-  "share_availability_hint2": "Try to set a price lower than the regular session price"
+  "share_availability_hint2": "Try to set a price lower than the regular session price",
+  "three_months": "3 Months",
+  "user_membership_management": "Membership Management",
+  "chat_rooms": "Chat Rooms",
+  "minutes": "Minutes",
+  "daily_greetings": "Daily Greetings",
+  "free_weekly_reinforcements": "Free Weekly Boosts",
+  "free_matching_renables": "Free Matching Re-enables"
 }

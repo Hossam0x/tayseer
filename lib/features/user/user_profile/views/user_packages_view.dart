@@ -9,14 +9,15 @@ import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/utils/router/app_router.dart';
 import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/core/utils/styles.dart';
-import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
 import 'package:tayseer/features/shared/packages/domain/use_cases/get_package_display_data.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/package_selection_cubit.dart';
+import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/package_background.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/package_king_icon.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/package_tab_selector.dart';
 import 'package:tayseer/features/shared/packages/data/models/package_display_model.dart';
+import 'package:tayseer/features/user/user_profile/presentation/view_model/user_packages_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/user_package_action_button.dart';
 
 class UserPackagesView extends StatelessWidget {
@@ -30,7 +31,7 @@ class UserPackagesView extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (context) => getIt<PackagesCubit>()..getPackages(),
+          create: (context) => getIt<UserPackagesCubit>()..getPackages(),
         ),
         BlocProvider(create: (context) => PackageSelectionCubit()),
       ],
@@ -53,16 +54,30 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
   late PageController _pageController;
   final _getPackageData = GetPackageDisplayData();
 
+  bool _initialPageSet = false;
+
   @override
   void initState() {
     super.initState();
-    // Always start with Basic package (index 0)
-    // Use viewportFraction: 1.0 and keepPage: true for better performance
     _pageController = PageController(
       initialPage: 0,
       viewportFraction: 1.0,
       keepPage: true,
     );
+    // Jump to cached sub page immediately before API responds
+    _jumpToCachedPage();
+  }
+
+  Future<void> _jumpToCachedPage() async {
+    final cached = await UserPackagesCubit.getCachedSubType();
+    if (cached != null && mounted) {
+      const packages = [PackageType.basic, PackageType.pro, PackageType.elite];
+      final index = packages.indexOf(cached);
+      context.read<PackageSelectionCubit>().selectPackage(cached);
+      if (_pageController.hasClients) {
+        _pageController.jumpToPage(index);
+      }
+    }
   }
 
   @override
@@ -85,6 +100,27 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
           listenWhen: (previous, current) =>
               previous.selectedPackage != current.selectedPackage,
           listener: _onPackageSelectionChanged,
+        ),
+        BlocListener<UserPackagesCubit, UserPackagesState>(
+          listenWhen: (prev, curr) =>
+              prev.isLoading && !curr.isLoading && !_initialPageSet,
+          listener: (context, state) {
+            _initialPageSet = true;
+            final cubit = context.read<UserPackagesCubit>();
+            final currentPkg = cubit.currentSubscribedPackage;
+            if (currentPkg != null) {
+              const packages = [
+                PackageType.basic,
+                PackageType.pro,
+                PackageType.elite,
+              ];
+              final index = packages.indexOf(currentPkg);
+              context.read<PackageSelectionCubit>().selectPackage(currentPkg);
+              if (_pageController.hasClients) {
+                _pageController.jumpToPage(index);
+              }
+            }
+          },
         ),
       ],
       child: Scaffold(
@@ -308,13 +344,15 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
   }
 
   Widget _buildPage(PackageType packageType) {
-    return BlocBuilder<PackagesCubit, PackagesState>(
+    return BlocBuilder<UserPackagesCubit, UserPackagesState>(
       buildWhen: (prev, curr) => prev.subscriptions != curr.subscriptions,
       builder: (context, state) {
         final packageData = _getPackageData(
           context: context,
           packageType: packageType,
-          apiPackages: state.subscriptions,
+          apiPackages: state.subscriptions
+              .map((s) => s.toAdvisorSubModel())
+              .toList(),
         );
         // Show only the title without the feature grid
         return _buildSimplePackageContent(packageData, packageType);
@@ -460,16 +498,36 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
   }
 
   Widget _buildActionButton() {
-    return BlocSelector<
-      PackageSelectionCubit,
-      PackageSelectionState,
-      PackageType
-    >(
-      selector: (state) => state.selectedPackage,
-      builder: (context, selectedPackage) {
-        return UserPackageActionButton(
-          packageType: selectedPackage,
-          onPressed: () => _onActionButtonPressed(context, selectedPackage),
+    return BlocBuilder<UserPackagesCubit, UserPackagesState>(
+      buildWhen: (prev, curr) =>
+          prev.isLoading != curr.isLoading ||
+          prev.subscriptions != curr.subscriptions,
+      builder: (context, packagesState) {
+        final isLoading = packagesState.isLoading;
+        final currentPkg = context
+            .read<UserPackagesCubit>()
+            .currentSubscribedPackage;
+
+        return BlocBuilder<PackageSelectionCubit, PackageSelectionState>(
+          builder: (context, selectionState) {
+            final selectedPackage = selectionState.selectedPackage;
+
+            // Hide basic button if user has an active subscription
+            if (selectedPackage == PackageType.basic) {
+              if (isLoading) return const SizedBox.shrink();
+              if (currentPkg != null) return const SizedBox.shrink();
+            }
+
+            final isCurrentSub =
+                selectedPackage != PackageType.basic &&
+                currentPkg == selectedPackage;
+
+            return UserPackageActionButton(
+              packageType: selectedPackage,
+              isCurrentSub: isCurrentSub,
+              onPressed: () => _onActionButtonPressed(context, selectedPackage),
+            );
+          },
         );
       },
     );
@@ -519,7 +577,7 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
     } else {
       Navigator.pushNamed(
         context,
-        AppRouter.kAdvisorSubscriptionView,
+        AppRouter.kUserSubscriptionView,
         arguments: _mapToOldEnum(packageType),
       );
     }

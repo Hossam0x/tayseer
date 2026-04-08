@@ -45,6 +45,10 @@ import 'package:tayseer/features/shared/packages/presentation/view_model/advisor
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
 import 'package:tayseer/core/services/iap_service.dart';
+import 'package:tayseer/features/user/user_profile/presentation/view_model/user_packages_cubit.dart';
+import 'package:tayseer/features/user/user_profile/presentation/view_model/user_subscription_cubit.dart';
+import 'package:tayseer/features/user/user_profile/presentation/views/user_subscription_view.dart';
+import 'package:tayseer/features/user/user_profile/presentation/view_model/user_membership_cubit.dart';
 import 'package:tayseer/features/shared/event/view/event_view.dart';
 import 'package:tayseer/features/shared/event/view/creat_event_view.dart';
 import 'package:tayseer/features/shared/event_detail/view/event_detail_view.dart';
@@ -263,6 +267,9 @@ abstract class AppRouter {
   static const kEventView = '/event-view';
   static const kUserPackagesView = '/user-packages-view';
   static const kUserPackageDetailsView = '/user-package-details-view';
+  static const kUserSubscriptionView = '/user-subscription-view';
+  static const kUserMembershipManagementView =
+      '/user-membership-management-view';
   static const kSelectCountryView = '/SelectCountryView';
   static const kSetupSummaryView = '/SetupSummaryView';
   static const kChooseSessionView = '/ChooseSessionView';
@@ -551,7 +558,10 @@ abstract class AppRouter {
       case AppRouter.kUserPackageDetailsView:
         final packageType = settings.arguments as PackageType;
         return SlideLeftRoute(
-          page: UserPackageDetailsView(packageType: packageType),
+          page: BlocProvider(
+            create: (_) => getIt<UserPackagesCubit>()..getPackages(),
+            child: UserPackageDetailsView(packageType: packageType),
+          ),
           routeSettings: settings,
         );
 
@@ -1146,6 +1156,36 @@ abstract class AppRouter {
               selectedCertificate:
                   args['selectedCertificate'] as CertificateModel?,
             ),
+          ),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kUserSubscriptionView:
+        final packageType = settings.arguments as SelectedPackage;
+        return SlideLeftRoute(
+          page: MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (context) => UserSubscriptionCubit(
+                  packageType,
+                  getIt<IAPService>(),
+                  getIt<ApiService>(),
+                ),
+              ),
+              BlocProvider(
+                create: (context) => getIt<UserPackagesCubit>()..getPackages(),
+              ),
+            ],
+            child: const UserSubscriptionView(),
+          ),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kUserMembershipManagementView:
+        return SlideLeftRoute(
+          page: BlocProvider<MembershipCubit>(
+            create: (context) => getIt<UserMembershipCubit>(),
+            child: const MembershipManagementView(),
           ),
           routeSettings: settings,
         );

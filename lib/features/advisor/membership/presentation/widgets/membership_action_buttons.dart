@@ -1,5 +1,6 @@
 import 'package:tayseer/features/advisor/membership/data/models/my_subscription_model.dart';
 import 'package:tayseer/features/advisor/membership/presentation/cubit/membership_cubit.dart';
+import 'package:tayseer/features/user/user_profile/presentation/view_model/user_membership_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class MembershipActionButtons extends StatelessWidget {
@@ -14,11 +15,17 @@ class MembershipActionButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isUserMembership =
+        context.read<MembershipCubit>() is UserMembershipCubit;
+    final packagesRoute = isUserMembership
+        ? AppRouter.kUserPackagesView
+        : AppRouter.kPackagesView;
+
     // Cancelled or expired: restore only
     if (sub.isCancelled || sub.isExpired) {
       return _PrimaryButton(
         label: context.tr('restore_membership'),
-        onPressed: () => _pushAndRefetch(context, AppRouter.kPackagesView),
+        onPressed: () => _pushAndRefetch(context, packagesRoute),
       );
     }
 
@@ -27,7 +34,7 @@ class MembershipActionButtons extends StatelessWidget {
       children: [
         _PrimaryButton(
           label: context.tr('change_plan'),
-          onPressed: () => _pushAndRefetch(context, AppRouter.kPackagesView),
+          onPressed: () => _pushAndRefetch(context, packagesRoute),
         ),
         Gap(12.h),
         _CancelButton(onTap: onCancelTap),

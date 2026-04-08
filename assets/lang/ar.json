@@ -1894,5 +1894,12 @@
   "subscription_required_title": "اشترك لعرض الإحصائيات",
   "success_process": "تمت العملية بنجاح",
   "upgrade_button": "الترقية إلى ذهبي",
-  "upgrade_to_elite_button": "الترقية إلى نخبة"
+  "upgrade_to_elite_button": "الترقية إلى نخبة",
+  "three_months": "3 أشهر",
+  "user_membership_management": "إدارة العضوية",
+  "chat_rooms": "غرف دردشة",
+  "minutes": "دقيقة",
+  "daily_greetings": "تحية يومية",
+  "free_weekly_reinforcements": "تعزيز مجاني أسبوعياً",
+  "free_matching_renables": "إعادة تفعيل مجانية"
 }
