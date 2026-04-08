@@ -53,7 +53,9 @@ class MarriageView extends StatelessWidget {
                     if (state.lastQuestionNumberState == CubitStates.success) {
                       context.pop();
                       final lastQuestionNumber =
-                          state.lastQuestionNumberResponse?.lastQuestionNumber ??
+                          state
+                              .lastQuestionNumberResponse
+                              ?.lastQuestionNumber ??
                           0;
                       if (lastQuestionNumber >= 0 && lastQuestionNumber <= 25) {
                         context.pushNamed(
@@ -65,7 +67,7 @@ class MarriageView extends StatelessWidget {
                       } else if (lastQuestionNumber <= 27) {
                         context.pushNamed(AppRouter.kCommitmentView);
                       } else if (lastQuestionNumber >= 29) {
-                        context.pushNamed(AppRouter.kPartnerFilterView);
+                        context.pushNamed(AppRouter.kSubscriptionView);
                       }
                     } else if (state.lastQuestionNumberState ==
                         CubitStates.failure) {
