@@ -80,8 +80,8 @@ class _MarriagefilePageState extends State<MarriagefilePage>
   }
 
   double _calculateTotalProgress(MarriageUserProfileModel profile) {
-    double questionProgress =
-        (profile.answerCompletedPercentage ?? 0).toDouble();
+    double questionProgress = (profile.answerCompletedPercentage ?? 0)
+        .toDouble();
     questionProgress = questionProgress.clamp(0, 25);
 
     int imageBonus = 0;
@@ -820,6 +820,19 @@ class _MarriagefilePageState extends State<MarriagefilePage>
               onNavigateToEdit: (section) {
                 selectedSection = section;
                 Navigator.pop(context);
+              },
+              onProfileRefresh: () async {
+                final cubit = context.read<MarriageProfileCubit>();
+
+                await cubit.loadProfile();
+
+                final profile = cubit.state.profile;
+
+                if (profile == null) {
+                  throw Exception("Profile is null after refresh");
+                }
+
+                return profile;
               },
             ),
           ),

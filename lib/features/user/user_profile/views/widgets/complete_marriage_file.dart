@@ -1,80 +1,99 @@
 import 'package:tayseer/core/widgets/custom_outline_button.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
-import 'package:tayseer/features/user/user_profile/views/widgets/verification_page.dart';
-import 'package:tayseer/features/user/user_profile/views/widgets/verification_webview_screen.dart';
+import 'package:tayseer/features/user/verification/data/models/Verification_result_model.dart';
+import 'package:tayseer/features/user/verification/data/verification_service.dart';
+import 'package:tayseer/features/user/verification/presentation/view/verification_screen.dart';
+import 'package:tayseer/features/user/verification/presentation/view/verification_webview_screen.dart';
 import 'package:tayseer/my_import.dart';
 
-class CompleteMarriageFile extends StatelessWidget {
+class CompleteMarriageFile extends StatefulWidget {
   const CompleteMarriageFile({
     super.key,
     required this.progress,
     required this.profile,
     required this.onNavigateToEdit,
+    required this.onProfileRefresh,
   });
 
   final double progress;
   final MarriageUserProfileModel profile;
   final Function(String section) onNavigateToEdit;
+  final Future<MarriageUserProfileModel> Function() onProfileRefresh;
+
+  @override
+  State<CompleteMarriageFile> createState() => _CompleteMarriageFileState();
+}
+
+class _CompleteMarriageFileState extends State<CompleteMarriageFile>
+    with SingleTickerProviderStateMixin {
+
+  late AnimationController _floatController;
+  late Animation<double> _floatAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _floatController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    )..repeat(reverse: true);
+
+    _floatAnimation = Tween<double>(begin: 0, end: 8).animate(
+      CurvedAnimation(
+        parent: _floatController,
+        curve: Curves.easeInOut,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _floatController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     debugPrint('📋 [CompleteMarriageFile] build() called');
-    debugPrint('📋 [CompleteMarriageFile] progress: $progress');
+    debugPrint('📋 [CompleteMarriageFile] progress: ${widget.progress}');
     debugPrint(
-      '📋 [CompleteMarriageFile] profile.isVerified: ${profile.isVerified}',
+      '📋 [CompleteMarriageFile] profile.isVerified: ${widget.profile.isVerified}',
     );
 
     final List<Map<String, dynamic>> verificationItems = [
       {
         'title': context.tr('photo_verification'),
         'description': context.tr('photo_verification_desc'),
-        'isVerified': profile.isVerified == true,
+        'isVerified': widget.profile.isVerified == true,
       },
       {
         'title': context.tr('age_verification'),
         'description': context.tr('age_verification_desc'),
-        'isVerified': profile.isVerified == true,
+        'isVerified': widget.profile.isVerified == true,
       },
       {
         'title': context.tr('identity_verification'),
         'description': context.tr('identity_verification_desc'),
-        'isVerified': profile.isVerified == true,
+        'isVerified': widget.profile.isVerified == true,
       },
     ];
 
-    debugPrint(
-      '📋 [CompleteMarriageFile] verificationItems: $verificationItems',
-    );
-
     int totalItems = verificationItems.length;
-    int completedItems = verificationItems
-        .where((item) => item['isVerified'] as bool)
-        .length;
-    int verificationPercentage = totalItems > 0
-        ? ((completedItems / totalItems) * 100).round()
-        : 0;
+    int completedItems =
+        verificationItems.where((item) => item['isVerified'] as bool).length;
+    int verificationPercentage =
+        totalItems > 0 ? ((completedItems / totalItems) * 100).round() : 0;
 
-    debugPrint('📋 [CompleteMarriageFile] totalItems: $totalItems');
-    debugPrint('📋 [CompleteMarriageFile] completedItems: $completedItems');
-    debugPrint(
-      '📋 [CompleteMarriageFile] verificationPercentage: $verificationPercentage%',
-    );
-
-    final imageCount = profile.userMedia?.images.length ?? 0;
+    final imageCount = widget.profile.userMedia?.images.length ?? 0;
     final hasVideo =
-        profile.userMedia?.video != null &&
-        profile.userMedia!.video!.isNotEmpty;
+        widget.profile.userMedia?.video != null &&
+        widget.profile.userMedia!.video!.isNotEmpty;
     final hasAudio =
-        profile.userMedia?.audio != null &&
-        profile.userMedia!.audio!.isNotEmpty;
-
-    debugPrint('📋 [CompleteMarriageFile] imageCount: $imageCount');
-    debugPrint('📋 [CompleteMarriageFile] hasVideo: $hasVideo');
-    debugPrint('📋 [CompleteMarriageFile] hasAudio: $hasAudio');
-
-    final isVerified = profile.isVerified == true;
-    debugPrint('📋 [CompleteMarriageFile] isVerified: $isVerified');
+        widget.profile.userMedia?.audio != null &&
+        widget.profile.userMedia!.audio!.isNotEmpty;
+    final isVerified = widget.profile.isVerified == true;
 
     return Scaffold(
       body: SafeArea(
@@ -93,11 +112,10 @@ class CompleteMarriageFile extends StatelessWidget {
                 child: Column(
                   children: [
                     SizedBox(height: 11.h),
-                    _buildEnhancedTimeline(progress: progress),
+                    _buildEnhancedTimeline(progress: widget.progress),
                     SizedBox(height: 20.h),
 
-                    // Verification Section
-                    profile.isVerified == true
+                    widget.profile.isVerified == true
                         ? const SizedBox.shrink()
                         : _buildVerificationCard(
                             context,
@@ -115,12 +133,7 @@ class CompleteMarriageFile extends StatelessWidget {
                         buttonText: context.tr('add'),
                         currentCount: imageCount,
                         requiredCount: 4,
-                        onTap: () {
-                          debugPrint(
-                            '🖼️ [CompleteMarriageFile] Navigate to images section',
-                          );
-                          onNavigateToEdit('images');
-                        },
+                        onTap: () => widget.onNavigateToEdit('images'),
                       ),
 
                     SizedBox(height: 12.h),
@@ -131,12 +144,7 @@ class CompleteMarriageFile extends StatelessWidget {
                         title: context.tr('add_intro_video'),
                         subtitle: context.tr('add_video_description'),
                         buttonText: context.tr('add'),
-                        onTap: () {
-                          debugPrint(
-                            '🎥 [CompleteMarriageFile] Navigate to video section',
-                          );
-                          onNavigateToEdit('video');
-                        },
+                        onTap: () => widget.onNavigateToEdit('video'),
                       ),
 
                     SizedBox(height: 12.h),
@@ -147,12 +155,7 @@ class CompleteMarriageFile extends StatelessWidget {
                         title: context.tr('add_audio_clip'),
                         subtitle: context.tr('add_audio_description'),
                         buttonText: context.tr('add'),
-                        onTap: () {
-                          debugPrint(
-                            '🎙️ [CompleteMarriageFile] Navigate to audio section',
-                          );
-                          onNavigateToEdit('audio');
-                        },
+                        onTap: () => widget.onNavigateToEdit('audio'),
                       ),
 
                     SizedBox(height: 20.h),
@@ -166,267 +169,261 @@ class CompleteMarriageFile extends StatelessWidget {
     );
   }
 
-  Future<void> _retryVerification(BuildContext context) async {
-    debugPrint('🔄 [CompleteMarriageFile] _retryVerification() called');
+  // ─────────────────────────────────────────────────────────────────────────
+  // Full Verification Flow
+  // ─────────────────────────────────────────────────────────────────────────
+  Future<void> _startVerificationFlow(BuildContext context) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
 
-    final url = await VerificationService.getVerificationUrl();
-    debugPrint('🔄 [CompleteMarriageFile] _retryVerification url: $url');
+    final currentStatus = await VerificationService.getUserVerificationStatus();
 
     if (!context.mounted) return;
+    Navigator.pop(context);
 
-    if (url == null) {
-      debugPrint(
-        '❌ [CompleteMarriageFile] _retryVerification: url is null, showing error',
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(
-          context,
-          text: context.tr('error_occurred'),
-          isError: true,
+    if (currentStatus?.isVerified == true) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => VerificationScreen(result: currentStatus!),
         ),
       );
       return;
     }
 
-    debugPrint(
-      '🔄 [CompleteMarriageFile] Opening VerificationWebViewScreen for retry',
-    );
-    Navigator.push(
+    final url = await VerificationService.getVerificationUrl();
+
+    if (!context.mounted) return;
+
+    if (url == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        CustomSnackBar(context, text: context.tr('error_occurred'), isError: true),
+      );
+      return;
+    }
+
+    final result = await Navigator.push<VerificationStatus>(
       context,
       MaterialPageRoute(
-        builder: (_) => VerificationWebViewScreen(
-          webviewUrl: url,
-          onVerificationComplete: (_) {},
+        builder: (_) => VerificationWebViewScreen(webviewUrl: url),
+      ),
+    );
+
+    if (!context.mounted) return;
+
+    switch (result) {
+      case VerificationStatus.approved:
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => const Center(child: CircularProgressIndicator()),
+        );
+
+        final updatedStatus = await VerificationService.getUserVerificationStatus();
+
+        if (!context.mounted) return;
+        Navigator.pop(context);
+
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => VerificationScreen(
+              result: updatedStatus ?? VerificationResult(isVerified: true, rejectReasons: []),
+            ),
+          ),
+        );
+
+        await widget.onProfileRefresh();
+        break;
+
+      case VerificationStatus.rejected:
+        await _showRejectionScreen(context);
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Show VerificationScreen with rejection reasons + handle retry
+  // ─────────────────────────────────────────────────────────────────────────
+  Future<void> _showRejectionScreen(BuildContext context) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final currentStatus = await VerificationService.getUserVerificationStatus();
+
+    if (!context.mounted) return;
+    Navigator.pop(context);
+
+    final shouldRetry = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VerificationScreen(
+          result: currentStatus ?? VerificationResult(isVerified: false, rejectReasons: []),
         ),
       ),
     );
+
+    if (!context.mounted) return;
+
+    if (shouldRetry == true) {
+      final url = await VerificationService.getVerificationUrl();
+
+      if (!context.mounted) return;
+
+      if (url == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          CustomSnackBar(context, text: context.tr('error_occurred'), isError: true),
+        );
+        return;
+      }
+
+      final retryResult = await Navigator.push<VerificationStatus>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => VerificationWebViewScreen(webviewUrl: url),
+        ),
+      );
+
+      if (!context.mounted) return;
+
+      if (retryResult == VerificationStatus.approved) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => const Center(child: CircularProgressIndicator()),
+        );
+
+        final updatedStatus = await VerificationService.getUserVerificationStatus();
+
+        if (!context.mounted) return;
+        Navigator.pop(context);
+
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => VerificationScreen(
+              result: updatedStatus ?? VerificationResult(isVerified: true, rejectReasons: []),
+            ),
+          ),
+        );
+
+        await widget.onProfileRefresh();
+      } else if (retryResult == VerificationStatus.rejected) {
+        await _showRejectionScreen(context); // recursive retry
+      }
+    }
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Verification Card with Float Animation
+  // ─────────────────────────────────────────────────────────────────────────
   Widget _buildVerificationCard(
     BuildContext context,
     int percentage,
     List<Map<String, dynamic>> items,
   ) {
-    debugPrint(
-      '🛡️ [CompleteMarriageFile] _buildVerificationCard() percentage: $percentage%',
-    );
-
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 6.h, horizontal: 6.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: AppColors.primary100, width: 1.w),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary100.withOpacity(0.1),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(6.h),
-            decoration: BoxDecoration(
-              color: AppColors.primary200.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(16.r),
+    return AnimatedBuilder(
+      animation: _floatAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, -_floatAnimation.value),
+          child: child,
+        );
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 6.h, horizontal: 6.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(color: AppColors.primary100, width: 1.w),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary100.withOpacity(0.1),
+              blurRadius: 10,
+              offset: Offset(0, 4),
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.verified_user,
-                  color: AppColors.primary200,
-                  size: MediaQuery.of(context).size.width >= 600 ? 56 : 44,
-                ),
-                SizedBox(height: 3.h),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 10.w,
-                    vertical: 4.h,
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(6.h),
+              decoration: BoxDecoration(
+                color: AppColors.primary200.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(16.r),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.verified_user,
+                    color: AppColors.primary200,
+                    size: MediaQuery.of(context).size.width >= 600 ? 56 : 44,
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20.r),
+                  SizedBox(height: 3.h),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Text(
+                      "$percentage%",
+                      style: Styles.textStyle12.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary200,
+                      ),
+                    ),
                   ),
-                  child: Text(
-                    "$percentage%",
+                ],
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.tr('get_verified'),
+                    style: Styles.textStyle16Bold,
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    context.tr('verify_profile_description'),
                     style: Styles.textStyle12.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary200,
+                      color: Colors.black.withOpacity(0.7),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.tr('get_verified'),
-                  style: Styles.textStyle16Bold.copyWith(),
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  context.tr('verify_profile_description'),
-                  style: Styles.textStyle12.copyWith(
-                    color: Colors.black.withOpacity(0.7),
-                  ),
-                ),
-              ],
+            SizedBox(width: 8.w),
+            IconButton(
+              onPressed: () => _startVerificationFlow(context),
+              icon: Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.black.withOpacity(0.5),
+                size: 20.sp,
+              ),
             ),
-          ),
-          SizedBox(width: 8.w),
-          IconButton(
-            onPressed: () async {
-              debugPrint(
-                '👆 [CompleteMarriageFile] Verification card arrow tapped',
-              );
-
-              // Show loading
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (_) =>
-                    const Center(child: CircularProgressIndicator()),
-              );
-
-              // Step 1: Check current verification status first
-              debugPrint(
-                '🔍 [CompleteMarriageFile] Calling getUserVerificationStatus...',
-              );
-              final isAlreadyVerified =
-                  await VerificationService.getUserVerificationStatus();
-              debugPrint(
-                '🔍 [CompleteMarriageFile] getUserVerificationStatus result: $isAlreadyVerified',
-              );
-
-              if (!context.mounted) return;
-              Navigator.pop(context); // close loading
-
-              if (isAlreadyVerified == true) {
-                // Already verified → open VerificationScreen with 100%, NO webview
-                debugPrint(
-                  '✅ [CompleteMarriageFile] User is already verified → opening VerificationScreen with 100%',
-                );
-                final allVerifiedItems = items
-                    .map((item) => {...item, 'isVerified': true})
-                    .toList();
-                debugPrint(
-                  '✅ [CompleteMarriageFile] allVerifiedItems: $allVerifiedItems',
-                );
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        VerificationScreen(verificationItems: allVerifiedItems),
-                  ),
-                );
-                return;
-              }
-
-              // Step 2: Not verified → get webview URL
-              debugPrint(
-                '🌐 [CompleteMarriageFile] User not verified → calling getVerificationUrl...',
-              );
-              final url = await VerificationService.getVerificationUrl();
-              debugPrint(
-                '🌐 [CompleteMarriageFile] getVerificationUrl result: $url',
-              );
-
-              if (!context.mounted) return;
-
-              if (url == null) {
-                debugPrint(
-                  '❌ [CompleteMarriageFile] URL is null, showing error snackbar',
-                );
-                ScaffoldMessenger.of(context).showSnackBar(
-                  CustomSnackBar(
-                    context,
-                    text: context.tr('error_occurred'),
-                    isError: true,
-                  ),
-                );
-                return;
-              }
-
-              debugPrint(
-                '🌐 [CompleteMarriageFile] Opening VerificationWebViewScreen with url: $url',
-              );
-              final result = await Navigator.push<VerificationStatus>(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => VerificationWebViewScreen(
-                    webviewUrl: url,
-                    onVerificationComplete: (_) {},
-                  ),
-                ),
-              );
-
-              debugPrint(
-                '🌐 [CompleteMarriageFile] VerificationWebViewScreen returned: $result',
-              );
-
-              if (!context.mounted) return;
-
-              switch (result) {
-                case VerificationStatus.approved:
-                  debugPrint(
-                    '✅ [CompleteMarriageFile] Status: approved → showing success snackbar',
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    CustomSnackBar(
-                      context,
-                      text: context.tr('verification_done'),
-                      isSuccess: true,
-                    ),
-                  );
-                  break;
-
-                case VerificationStatus.inReview:
-                  debugPrint(
-                    '⏳ [CompleteMarriageFile] Status: inReview → opening VerificationScreen',
-                  );
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          VerificationScreen(verificationItems: items),
-                    ),
-                  );
-                  break;
-
-                case VerificationStatus.rejected:
-                  debugPrint(
-                    '❌ [CompleteMarriageFile] Status: rejected → calling _retryVerification',
-                  );
-                  _retryVerification(context);
-                  break;
-
-                default:
-                  debugPrint(
-                    '⚠️ [CompleteMarriageFile] Status: unknown/null → doing nothing',
-                  );
-                  break;
-              }
-            },
-            icon: Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.black.withOpacity(0.5),
-              size: 20.sp,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Task Card
+  // ─────────────────────────────────────────────────────────────────────────
   Widget _buildTaskCard(
     BuildContext context, {
     required String title,
@@ -436,10 +433,6 @@ class CompleteMarriageFile extends StatelessWidget {
     int? currentCount,
     int? requiredCount,
   }) {
-    debugPrint(
-      '📦 [CompleteMarriageFile] _buildTaskCard() title: $title | currentCount: $currentCount | requiredCount: $requiredCount',
-    );
-
     return Container(
       padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
       decoration: BoxDecoration(
@@ -465,17 +458,12 @@ class CompleteMarriageFile extends StatelessWidget {
                     Expanded(
                       child: Text(
                         title,
-                        style: Styles.textStyle16Bold.copyWith(
-                          color: Colors.black,
-                        ),
+                        style: Styles.textStyle16Bold.copyWith(color: Colors.black),
                       ),
                     ),
                     if (currentCount != null && requiredCount != null)
                       Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8.w,
-                          vertical: 4.h,
-                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                         decoration: BoxDecoration(
                           color: AppColors.primary50,
                           borderRadius: BorderRadius.circular(12.r),
@@ -512,11 +500,10 @@ class CompleteMarriageFile extends StatelessWidget {
     );
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Timeline
+  // ─────────────────────────────────────────────────────────────────────────
   Widget _buildEnhancedTimeline({required double progress}) {
-    debugPrint(
-      '📊 [CompleteMarriageFile] _buildEnhancedTimeline() progress: $progress',
-    );
-
     return Container(
       padding: EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -543,68 +530,57 @@ class CompleteMarriageFile extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Column(
-            children: [
-              Directionality(
-                textDirection: TextDirection.rtl,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(5, (index) {
-                    int badgeNumber = index + 1;
-                    int totalSteps = 5;
-                    int reversedNumber = totalSteps - badgeNumber + 1;
-                    final reversedIndex = 4 - index;
-                    double pointProgress = reversedIndex / 4;
-                    bool isReached = pointProgress <= progress;
+          Directionality(
+            textDirection: TextDirection.rtl,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: List.generate(5, (index) {
+                int badgeNumber = index + 1;
+                int totalSteps = 5;
+                int reversedNumber = totalSteps - badgeNumber + 1;
+                final reversedIndex = 4 - index;
+                double pointProgress = reversedIndex / 4;
+                bool isReached = pointProgress <= progress;
 
-                    return Align(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(height: 6.h),
-                          Center(
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 7.w,
-                                vertical: 4.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isReached
-                                    ? const Color(0xFFFFC107)
-                                    : Colors.grey.shade300,
-                                borderRadius: BorderRadius.circular(8.r),
-                                boxShadow: isReached
-                                    ? [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.1),
-                                          blurRadius: 3,
-                                          offset: Offset(0, 1),
-                                        ),
-                                      ]
-                                    : [],
-                              ),
-                              child: Text(
-                                reversedNumber.toString().padLeft(2, '0'),
-                                style: TextStyle(
-                                  fontSize: 11.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: isReached
-                                      ? Colors.white
-                                      : Colors.grey.shade600,
-                                ),
-                              ),
+                return Align(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(height: 6.h),
+                      Center(
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 4.h),
+                          decoration: BoxDecoration(
+                            color: isReached ? const Color(0xFFFFC107) : Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(8.r),
+                            boxShadow: isReached
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 3,
+                                      offset: Offset(0, 1),
+                                    ),
+                                  ]
+                                : [],
+                          ),
+                          child: Text(
+                            reversedNumber.toString().padLeft(2, '0'),
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.bold,
+                              color: isReached ? Colors.white : Colors.grey.shade600,
                             ),
                           ),
-                        ],
+                        ),
                       ),
-                    );
-                  }),
-                ),
-              ),
-              SizedBox(height: 16.h),
-              _buildTimeline(progress: progress),
-            ],
+                    ],
+                  ),
+                );
+              }),
+            ),
           ),
+          SizedBox(height: 16.h),
+          _buildTimeline(progress: progress),
         ],
       ),
     );
@@ -613,9 +589,6 @@ class CompleteMarriageFile extends StatelessWidget {
   Widget _buildTimeline({required double progress}) {
     final double safeProgress = progress.clamp(0.0, 1.0);
     final String percentageText = "${(safeProgress * 100).toInt()}%";
-    debugPrint(
-      '📊 [CompleteMarriageFile] _buildTimeline() safeProgress: $safeProgress | percentageText: $percentageText',
-    );
 
     return Column(
       children: [
@@ -661,10 +634,7 @@ class CompleteMarriageFile extends StatelessWidget {
                           bottom: 0,
                           child: Center(
                             child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8.w,
-                                vertical: 2.h,
-                              ),
+                              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFFD375F),
                                 borderRadius: BorderRadius.circular(20.r),
