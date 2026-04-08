@@ -24,6 +24,9 @@ class UserPackagesView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final fromPartnerFilter = args?['fromPartnerFilter'] == true;
     return MultiBlocProvider(
       providers: [
         BlocProvider(
@@ -31,13 +34,15 @@ class UserPackagesView extends StatelessWidget {
         ),
         BlocProvider(create: (context) => PackageSelectionCubit()),
       ],
-      child: const _UserPackagesViewContent(),
+      child: _UserPackagesViewContent(fromPartnerFilter: fromPartnerFilter),
     );
   }
 }
 
 class _UserPackagesViewContent extends StatefulWidget {
-  const _UserPackagesViewContent();
+  const _UserPackagesViewContent({this.fromPartnerFilter = false});
+
+  final bool fromPartnerFilter;
 
   @override
   State<_UserPackagesViewContent> createState() =>
@@ -120,7 +125,17 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
                     ),
                   ),
                 ),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  if (widget.fromPartnerFilter) {
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      AppRouter.kUserLayoutView,
+                      (route) => false,
+                    );
+                  } else {
+                    Navigator.pop(context);
+                  }
+                },
               );
             },
           ),
@@ -492,7 +507,15 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
 
   void _onActionButtonPressed(BuildContext context, PackageType packageType) {
     if (packageType == PackageType.basic) {
-      Navigator.pop(context);
+      if (widget.fromPartnerFilter) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRouter.kUserLayoutView,
+          (route) => false,
+        );
+      } else {
+        Navigator.pop(context);
+      }
     } else {
       Navigator.pushNamed(
         context,
