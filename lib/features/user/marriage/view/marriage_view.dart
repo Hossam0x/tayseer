@@ -63,7 +63,7 @@ class MarriageView extends StatelessWidget {
                     } else if (lastQuestionNumber <= 27) {
                       context.pushNamed(AppRouter.kCommitmentView);
                     } else if (lastQuestionNumber >= 29) {
-                      context.pushNamed(AppRouter.kPartnerFilterView);
+                      context.pushNamed(AppRouter.kSubscriptionView);
                     }
                   } else if (state.lastQuestionNumberState ==
                       CubitStates.failure) {

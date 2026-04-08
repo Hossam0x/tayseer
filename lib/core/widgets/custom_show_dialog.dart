@@ -207,7 +207,12 @@ class _DialogContent extends StatelessWidget {
 
     if (imageUrl != null) {
       // ✅ عرض الصورة
-      imageWidget = AppImage(imageUrl!, width: 90, height: 90);
+      imageWidget = AppImage(
+        imageUrl!,
+        width: 100,
+        height: 90,
+        fit: BoxFit.contain,
+      );
     } else if (icon != null) {
       // ✅ عرض الأيقونة داخل دائرة
       imageWidget = Container(
@@ -422,6 +427,7 @@ class _AnimatedDialogButtonState extends State<_AnimatedDialogButton> {
         );
   }
 }
+
 void CustomSHowDetailsDialog(
   BuildContext context, {
   String? title,
@@ -450,12 +456,19 @@ void CustomSHowDetailsDialog(
               padding: EdgeInsets.only(bottom: keyboardHeight),
               duration: const Duration(milliseconds: 150),
               curve: Curves.easeOut,
-              child: SingleChildScrollView( // ✅ حماية إضافية للشاشات الصغيرة
+              child: SingleChildScrollView(
+                // ✅ حماية إضافية للشاشات الصغيرة
                 child: Material(
                   color: Colors.transparent,
                   child: Container(
-                    margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
-                    padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
+                    margin: EdgeInsets.symmetric(
+                      horizontal: 20.w,
+                      vertical: 20.h,
+                    ),
+                    padding: EdgeInsets.symmetric(
+                      vertical: 20.h,
+                      horizontal: 16.w,
+                    ),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         begin: Alignment.topLeft,
@@ -483,13 +496,19 @@ void CustomSHowDetailsDialog(
                           children: [
                             IconButton(
                               onPressed: () => Navigator.of(context).pop(),
-                              icon: Icon(Icons.close, color: Colors.grey.shade600, size: 24.sp),
+                              icon: Icon(
+                                Icons.close,
+                                color: Colors.grey.shade600,
+                                size: 24.sp,
+                              ),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
                             ),
                             Text(
                               title ?? "تعديل البيانات",
-                              style: Styles.textStyle16Bold.copyWith(color: const Color(0xFF5D1028)),
+                              style: Styles.textStyle16Bold.copyWith(
+                                color: const Color(0xFF5D1028),
+                              ),
                             ),
                             SizedBox(width: 24.sp),
                           ],

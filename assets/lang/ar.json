@@ -1894,5 +1894,18 @@
   "subscription_required_title": "اشترك لعرض الإحصائيات",
   "success_process": "تمت العملية بنجاح",
   "upgrade_button": "الترقية إلى ذهبي",
-  "upgrade_to_elite_button": "الترقية إلى نخبة"
+  "upgrade_to_elite_button": "الترقية إلى نخبة",
+  "schedule_appointment": "تحديد موعد",
+  "person_info_label": "بيانات الشخص",
+  "booking_status_label": "حالة الحجز",
+  "package_details_label": "تفاصيل الباكدج",
+  "session_data_label": "بيانات الجلسة",
+  "price_info_label": "بيانات السعر",
+  "payment_method_label": "وسيلة الدفع",
+  "cancel_booking_title": "هل تريد إلغاء الحجز ؟",
+  "cancel_booking_subtitle": "هل انت متأكد انك تريد إلغاء حجز الجلسه مع المستشار لحل مشاكل علاقاتك التي تواجهها !",
+  "schedule_session": "تحديد موعد",
+  "minutes_label": "دقيقة",
+  "booking_successful": "تم الحجز بنجاح",
+  "your_session_has_been_booked_successfully": "تم حجز جلستك بنجاح! نتطلع إلى تقديم الدعم والمساعدة لك في رحلتك نحو تحسين علاقاتك. إذا كان لديك أي أسئلة أو تحتاج إلى مساعدة إضافية، لا تتردد في التواصل معنا. شكراً لاختيارك تيسير!"
 }
