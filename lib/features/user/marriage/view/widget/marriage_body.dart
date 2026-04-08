@@ -1522,58 +1522,69 @@ class MarriageBodyState extends State<MarriageBody>
 
   Widget _buildInteractionsContent({Key? key, required MarriageState state}) {
     final cubit = context.read<MarriageCubit>();
+    final double statusBarHeight = MediaQuery.of(context).padding.top;
+    final double topBarHeight = 72.h + statusBarHeight;
 
     return Directionality(
       key: key,
       textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: CustomBackground(
-        child: Column(
+        child: Stack(
           children: [
-            SizedBox(
-              height: 72.h + MediaQuery.of(context).padding.top,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).padding.top,
-                  left: 16.w,
-                  right: 16.w,
-                ),
-                child: state.showHistory
-                    ? SimpleAppBar(
-                        title: context.tr('history'),
-                        isLargeTitle: true,
-                        onBack: () => cubit.hideHistoryView(),
-                      )
-                    : Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Center(child: _buildToggle()),
-                          Positioned(
-                            right: 0,
-                            child: GestureDetector(
-                              onTap: () {
-                                context.pushNamed(
-                                  AppRouter.kMarriageFilterView,
-                                );
-                              },
-                              child: CircleAvatar(
-                                backgroundColor: Colors.black12,
-                                child: AppImage(
-                                  AssetsData.kfilterIcon,
-                                  width: 20,
-                                  height: 20,
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: SizedBox(
+                height: topBarHeight,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    top: statusBarHeight,
+                    left: 16.w,
+                    right: 16.w,
+                  ),
+                  child: state.showHistory
+                      ? SimpleAppBar(
+                          title: context.tr('history'),
+                          isLargeTitle: true,
+                          onBack: () => cubit.hideHistoryView(),
+                        )
+                      : Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Center(child: _buildToggle()),
+                            Positioned(
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: () {
+                                  context.pushNamed(
+                                    AppRouter.kMarriageFilterView,
+                                  );
+                                },
+                                child: CircleAvatar(
+                                  backgroundColor: Colors.black12,
+                                  child: AppImage(
+                                    AssetsData.kfilterIcon,
+                                    width: 20,
+                                    height: 20,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          Positioned(
-                            left: 0,
-                            child: _buildHistoryButton(forMarriageTab: false),
-                          ),
-                        ],
-                      ),
+                            Positioned(
+                              left: 0,
+                              child: _buildHistoryButton(forMarriageTab: false),
+                            ),
+                          ],
+                        ),
+                ),
               ),
             ),
-            Expanded(
+            Positioned(
+              top: topBarHeight,
+              left: 0,
+              right: 0,
+              bottom: 0,
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
                 child: state.showHistory
