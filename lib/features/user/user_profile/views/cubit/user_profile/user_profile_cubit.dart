@@ -217,6 +217,12 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         routeName: AppRouter.kUserPackagesView,
       ),
       SettingItemModel(
+        id: 'user_membership_management',
+        title: 'user_membership_management',
+        iconAsset: AssetsData.icMembershipManagement,
+        routeName: AppRouter.kUserMembershipManagementView,
+      ),
+      SettingItemModel(
         id: 'archive',
         title: 'archived_chats',
         iconAsset: AssetsData.icArchiveSettings,

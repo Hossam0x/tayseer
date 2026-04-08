@@ -15,7 +15,6 @@ class OfferingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Directionality(
       textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: GestureDetector(
@@ -24,19 +23,20 @@ class OfferingCard extends StatelessWidget {
           duration: const Duration(milliseconds: 250),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Color.fromRGBO(252, 233, 237, 0.42),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isSelected
                   ? AppColors.kprimaryColor
-                  : Colors.grey.shade200,
+                  : AppColors.primary100,
               width: isSelected ? 2 : 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.05),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
+                color: Colors.grey.withOpacity(0.04),
+                blurRadius: 6,
+                spreadRadius: 0,
+                offset: const Offset(0, 2),
               ),
             ],
           ),

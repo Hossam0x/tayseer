@@ -45,6 +45,10 @@ import 'package:tayseer/features/shared/packages/presentation/view_model/advisor
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
 import 'package:tayseer/core/services/iap_service.dart';
+import 'package:tayseer/features/user/user_profile/presentation/view_model/user_packages_cubit.dart';
+import 'package:tayseer/features/user/user_profile/presentation/view_model/user_subscription_cubit.dart';
+import 'package:tayseer/features/user/user_profile/presentation/views/user_subscription_view.dart';
+import 'package:tayseer/features/user/user_profile/presentation/view_model/user_membership_cubit.dart';
 import 'package:tayseer/features/shared/event/view/event_view.dart';
 import 'package:tayseer/features/shared/event/view/creat_event_view.dart';
 import 'package:tayseer/features/shared/event_detail/view/event_detail_view.dart';
@@ -92,7 +96,6 @@ import 'package:tayseer/features/user/questions/presentation/views/add_phone_vie
 import 'package:tayseer/features/user/questions/presentation/views/added_images_view.dart';
 import 'package:tayseer/features/user/questions/presentation/views/face_verification_view.dart';
 import 'package:tayseer/features/user/questions/presentation/views/otp_phone_user_question.dart';
-import 'package:tayseer/features/user/questions/presentation/views/partner_filter_view.dart';
 import 'package:tayseer/features/user/questions/presentation/views/questions_page_view.dart';
 import 'package:tayseer/features/shared/auth/view/choose_gender_view.dart';
 import 'package:tayseer/features/user/questions/presentation/views/personal_info_view.dart';
@@ -197,7 +200,6 @@ abstract class AppRouter {
   static const kBlockedContactsSuccessScreen = '/BlockedContactsSuccessScreen';
   static const kMarriageFilterView = '/MarriageFilterView';
   static const kMarriageView = '/MarriageView';
-  static const kPartnerFilterView = '/PartnerFilterView';
   static const kCommitmentView = '/CommitmentView';
   static const kAccountReviewUserView = '/AccountReviewUserView';
   static const kSubscriptionView = '/SubscriptionView';
@@ -263,6 +265,9 @@ abstract class AppRouter {
   static const kEventView = '/event-view';
   static const kUserPackagesView = '/user-packages-view';
   static const kUserPackageDetailsView = '/user-package-details-view';
+  static const kUserSubscriptionView = '/user-subscription-view';
+  static const kUserMembershipManagementView =
+      '/user-membership-management-view';
   static const kSelectCountryView = '/SelectCountryView';
   static const kSetupSummaryView = '/SetupSummaryView';
   static const kChooseSessionView = '/ChooseSessionView';
@@ -551,7 +556,10 @@ abstract class AppRouter {
       case AppRouter.kUserPackageDetailsView:
         final packageType = settings.arguments as PackageType;
         return SlideLeftRoute(
-          page: UserPackageDetailsView(packageType: packageType),
+          page: BlocProvider(
+            create: (_) => getIt<UserPackagesCubit>()..getPackages(),
+            child: UserPackageDetailsView(packageType: packageType),
+          ),
           routeSettings: settings,
         );
 
@@ -869,7 +877,10 @@ abstract class AppRouter {
             duration: args?['duration'] ?? '45',
             advisorId: args?['advisorId'] ?? '',
             title: args?['title'] ?? 'اعاده جدوله',
+            fromWallet: args?['fromWallet'] ?? false,
             oldBookingData: data,
+            offeringId: args?['offeringId'] ?? '0',
+            type: args?['type'] ?? 'session',
           ),
         );
       // في app_router.dart
@@ -995,14 +1006,14 @@ abstract class AppRouter {
             child: OtpPhoneUserQuestion(),
           ),
         );
-      case kPartnerFilterView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: PartnerFilterView(),
-          ),
-        );
+      // case kPartnerFilterView:
+      //   return MaterialPageRoute(
+      //     settings: settings,
+      //     builder: (_) => BlocProvider.value(
+      //       value: getIt<QuestionsCubit>(),
+      //       child: PartnerFilterView(),
+      //     ),
+      //   );
       case kCommitmentView:
         return MaterialPageRoute(
           settings: settings,
@@ -1146,6 +1157,36 @@ abstract class AppRouter {
               selectedCertificate:
                   args['selectedCertificate'] as CertificateModel?,
             ),
+          ),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kUserSubscriptionView:
+        final packageType = settings.arguments as SelectedPackage;
+        return SlideLeftRoute(
+          page: MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (context) => UserSubscriptionCubit(
+                  packageType,
+                  getIt<IAPService>(),
+                  getIt<ApiService>(),
+                ),
+              ),
+              BlocProvider(
+                create: (context) => getIt<UserPackagesCubit>()..getPackages(),
+              ),
+            ],
+            child: const UserSubscriptionView(),
+          ),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kUserMembershipManagementView:
+        return SlideLeftRoute(
+          page: BlocProvider<MembershipCubit>(
+            create: (context) => getIt<UserMembershipCubit>(),
+            child: const MembershipManagementView(),
           ),
           routeSettings: settings,
         );

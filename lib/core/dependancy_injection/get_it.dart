@@ -25,6 +25,10 @@ import 'package:tayseer/features/advisor/session/data/repos/advisor_session_repo
 import 'package:tayseer/features/advisor/session/presentation/manager/advisor_session_detailes_cubit.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/account_management_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/advisor_packages_repository.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_packages_repository.dart';
+import 'package:tayseer/features/user/user_profile/presentation/view_model/user_packages_cubit.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_membership_repository.dart';
+import 'package:tayseer/features/user/user_profile/presentation/view_model/user_membership_cubit.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/blocked_users_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_repository_impl.dart';
@@ -354,6 +358,22 @@ Future<void> setupGetIt() async {
 
   getIt.registerFactory<PackagesCubit>(
     () => PackagesCubit(getIt<AdvisorPackagesRepository>()),
+  );
+
+  getIt.registerLazySingleton<UserPackagesRepository>(
+    () => UserPackagesRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerFactory<UserPackagesCubit>(
+    () => UserPackagesCubit(getIt<UserPackagesRepository>()),
+  );
+
+  getIt.registerLazySingleton<UserMembershipRepository>(
+    () => UserMembershipRepositoryImpl(getIt<ApiService>()),
+  );
+
+  getIt.registerFactory<UserMembershipCubit>(
+    () => UserMembershipCubit(getIt<UserMembershipRepository>()),
   );
   getIt.registerFactory<MembershipCubit>(
     () => MembershipCubit(getIt<MembershipRepository>()),

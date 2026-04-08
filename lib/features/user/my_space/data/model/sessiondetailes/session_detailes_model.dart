@@ -26,6 +26,7 @@ class SessionDetailsModelResponse {
 
 class SessionDetailsDataResponse {
   final String sessionId;
+  final String type;
   final AdvisorModel advisor;
   final String status;
   final DateTime date;
@@ -34,9 +35,11 @@ class SessionDetailsDataResponse {
   final bool isAnonymous;
   final PricingModelResponse pricing;
   final String paymentMethods;
+  final SessionCreditModel? sessionCredit;
 
   SessionDetailsDataResponse({
     required this.sessionId,
+    required this.type,
     required this.advisor,
     required this.status,
     required this.date,
@@ -45,25 +48,57 @@ class SessionDetailsDataResponse {
     required this.isAnonymous,
     required this.pricing,
     required this.paymentMethods,
+    this.sessionCredit,
   });
+
+  // ============ HELPER GETTERS للـ Type ============
+
+  bool get isPackage => type.toLowerCase() == 'package';
+
+  bool get isSingle => type.toLowerCase() == 'single';
+
+  String get typeDisplayNameAr {
+    switch (type.toLowerCase()) {
+      case 'package':
+        return 'باقة';
+      case 'single':
+        return 'جلسة فردية';
+      default:
+        return type;
+    }
+  }
+
+  String get typeDisplayNameEn {
+    switch (type.toLowerCase()) {
+      case 'package':
+        return 'Package';
+      case 'single':
+        return 'Single Session';
+      default:
+        return type;
+    }
+  }
+
+  // ============ HELPER GETTERS للـ Session Credit ============
+
+  bool get hasSessionCredit => sessionCredit != null;
+
+  int get creditLeft => sessionCredit?.creditLeft ?? 0;
+
+  String get offerName => sessionCredit?.offerName ?? '';
 
   // ============ HELPER GETTERS للـ Date ============
 
-  /// اليوم في الشهر (1-31)
   int get dayOfMonth => date.day;
 
-  /// الشهر (1-12)
   int get month => date.month;
 
-  /// السنة
   int get year => date.year;
 
-  /// التاريخ كـ String بصيغة "yyyy-MM-dd"
   String get dateString {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
-  /// التاريخ للعرض بصيغة حلوة
   String get displayDate {
     final months = [
       '',
@@ -85,40 +120,27 @@ class SessionDetailsDataResponse {
 
   // ============ HELPER GETTERS للـ Time ============
 
-  /// هل الوقت متاح/موجود؟
   bool get hasTimeInfo => timeRange.hasValidTime;
 
-  /// وقت البداية (raw)
   String get startTime => timeRange.from;
 
-  /// وقت النهاية (raw)
   String get endTime => timeRange.to;
 
-  /// وقت البداية للعرض (مع fallback)
   String get displayStartTime {
-    if (timeRange.from.isNotEmpty) {
-      return timeRange.from;
-    }
+    if (timeRange.from.isNotEmpty) return timeRange.from;
     return '--:--';
   }
 
-  /// وقت النهاية للعرض (مع fallback)
   String get displayEndTime {
-    if (timeRange.to.isNotEmpty) {
-      return timeRange.to;
-    }
+    if (timeRange.to.isNotEmpty) return timeRange.to;
     return '--:--';
   }
 
-  /// وقت الجلسة كامل للعرض
   String get displayTime {
-    if (timeRange.hasValidTime) {
-      return '${timeRange.from} - ${timeRange.to}';
-    }
+    if (timeRange.hasValidTime) return '${timeRange.from} - ${timeRange.to}';
     return 'الوقت غير متاح';
   }
 
-  /// وقت الجلسة مع المدة
   String get displayTimeWithDuration {
     if (timeRange.hasValidTime) {
       return '${timeRange.from} - ${timeRange.to} ($duration دقيقة)';
@@ -128,7 +150,6 @@ class SessionDetailsDataResponse {
 
   // ============ HELPER GETTERS للـ Payment ============
 
-  /// index طريقة الدفع
   int get paymentMethodIndex {
     switch (paymentMethods.toLowerCase()) {
       case 'bank':
@@ -142,7 +163,6 @@ class SessionDetailsDataResponse {
     }
   }
 
-  /// اسم طريقة الدفع بالعربي
   String get paymentMethodDisplayName {
     switch (paymentMethods.toLowerCase()) {
       case 'bank':
@@ -161,6 +181,7 @@ class SessionDetailsDataResponse {
   factory SessionDetailsDataResponse.fromJson(Map<String, dynamic> json) {
     return SessionDetailsDataResponse(
       sessionId: json['sessionId'] ?? '',
+      type: json['type'] ?? 'single',
       advisor: AdvisorModel.fromJson(json['advisor'] ?? {}),
       status: json['status'] ?? '',
       date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
@@ -169,12 +190,15 @@ class SessionDetailsDataResponse {
       isAnonymous: json['isAnonymous'] ?? false,
       pricing: PricingModelResponse.fromJson(json['pricing'] ?? {}),
       paymentMethods: json['paymentMethods'] ?? '',
+      sessionCredit: json['sessionCredit'] != null
+          ? SessionCreditModel.fromJson(json['sessionCredit'])
+          : null,
     );
   }
 
-  /// Copy with للتعديل
   SessionDetailsDataResponse copyWith({
     String? sessionId,
+    String? type,
     AdvisorModel? advisor,
     String? status,
     DateTime? date,
@@ -183,9 +207,11 @@ class SessionDetailsDataResponse {
     bool? isAnonymous,
     PricingModelResponse? pricing,
     String? paymentMethods,
+    SessionCreditModel? sessionCredit,
   }) {
     return SessionDetailsDataResponse(
       sessionId: sessionId ?? this.sessionId,
+      type: type ?? this.type,
       advisor: advisor ?? this.advisor,
       status: status ?? this.status,
       date: date ?? this.date,
@@ -194,7 +220,44 @@ class SessionDetailsDataResponse {
       isAnonymous: isAnonymous ?? this.isAnonymous,
       pricing: pricing ?? this.pricing,
       paymentMethods: paymentMethods ?? this.paymentMethods,
+      sessionCredit: sessionCredit ?? this.sessionCredit,
     );
+  }
+}
+
+/* ===================== SESSION CREDIT ===================== */
+
+class SessionCreditModel {
+  final int creditLeft;
+  final String offerId;
+  final String offerName;
+
+  SessionCreditModel({
+    required this.creditLeft,
+    required this.offerId,
+    required this.offerName,
+  });
+
+  bool get hasCredit => creditLeft > 0;
+
+  String get displayCreditAr => 'متبقي $creditLeft جلسات';
+
+  String get displayCreditEn => '$creditLeft sessions left';
+
+  factory SessionCreditModel.fromJson(Map<String, dynamic> json) {
+    return SessionCreditModel(
+      creditLeft: json['creditLeft'] ?? 0,
+      offerId: json['offerId'] ?? '',
+      offerName: json['offerName'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'creditLeft': creditLeft,
+      'offerId': offerId,
+      'offerName': offerName,
+    };
   }
 }
 
@@ -206,16 +269,12 @@ class TimeRangeModel {
 
   TimeRangeModel({required this.from, required this.to});
 
-  /// هل الوقت صالح ومتاح؟
   bool get hasValidTime => from.isNotEmpty && to.isNotEmpty;
 
-  /// هل وقت البداية متاح؟
   bool get hasFromTime => from.isNotEmpty;
 
-  /// هل وقت النهاية متاح؟
   bool get hasToTime => to.isNotEmpty;
 
-  /// الوقت للعرض
   String get displayTime {
     if (hasValidTime) {
       return '$from - $to';
@@ -231,7 +290,6 @@ class TimeRangeModel {
     return TimeRangeModel(from: json['from'] ?? '', to: json['to'] ?? '');
   }
 
-  /// Empty constructor
   factory TimeRangeModel.empty() {
     return TimeRangeModel(from: '', to: '');
   }
@@ -258,7 +316,6 @@ class PricingModelResponse {
     required this.total,
   });
 
-  /// الإجمالي كـ int
   int get totalAsInt {
     if (total is int) return total;
     if (total is double) return total.toInt();
@@ -266,7 +323,6 @@ class PricingModelResponse {
     return 0;
   }
 
-  /// الإجمالي كـ double
   double get totalAsDouble {
     if (total is double) return total;
     if (total is int) return total.toDouble();
@@ -274,10 +330,8 @@ class PricingModelResponse {
     return 0.0;
   }
 
-  /// السعر للعرض
   String get displayTotal => '$totalAsInt ر.س';
 
-  /// سعر الجلسة للعرض
   String get displaySessionPrice => '$sessionPrice ر.س';
 
   factory PricingModelResponse.fromJson(Map<String, dynamic> json) {

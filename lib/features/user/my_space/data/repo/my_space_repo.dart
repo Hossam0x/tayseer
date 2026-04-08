@@ -42,7 +42,7 @@ class MySpaceRepo {
   ) async {
     try {
       final response = await apiService.get(
-        endPoint: ApiEndPoint.getOfferingsBooking("69d4c6ed5392a0a9e733bf1f"),
+        endPoint: ApiEndPoint.getOfferingsBooking(userId),
       );
       return Right(AdvisorOfferingResponseModel.fromJson(response));
     } catch (e) {
@@ -112,11 +112,14 @@ class MySpaceRepo {
   }
 
   Future<Either<Failure, SessionBookingModel>> createSession({
+    required String offeringId,
     required String date,
     required String advisorId,
     required String duration,
     required String time,
-    required String paymentMethod,
+    required bool fromWallet,
+    required bool isAnonymous,
+    required String type,
   }) async {
     try {
       final response = await apiService.post(
@@ -126,7 +129,10 @@ class MySpaceRepo {
           'advisorId': advisorId,
           'duration': duration,
           'time': time,
-          'paymentMethod': paymentMethod,
+          'fromWallet': fromWallet,
+          'isAnonymous': isAnonymous,
+          'type': type,
+          'offeringId': offeringId,
         },
       );
       return Right(SessionBookingModel.fromJson(response));

@@ -127,7 +127,10 @@ class AvailableSlotsCubit extends Cubit<AvailableSlotsState> {
     required String advisorId,
     required String duration,
     required String time,
-    required String paymentMethod,
+    required bool fromWallet,
+    required bool isAnonymous,
+    required String type,
+    required String offeringId,
   }) async {
     emit(state.copyWith(createSessionState: CubitStates.loading));
 
@@ -141,7 +144,10 @@ class AvailableSlotsCubit extends Cubit<AvailableSlotsState> {
       advisorId: advisorId,
       duration: duration,
       time: time,
-      paymentMethod: paymentMethod,
+      fromWallet: fromWallet,
+      isAnonymous: isAnonymous,
+      type: type,
+      offeringId: offeringId,
     );
 
     result.fold(

@@ -9,6 +9,7 @@ import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetail
 import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetails/cancel_search_listener.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetails/card_wipper_widget.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetails/error_state_widget.dart';
+import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetails/package_details_card.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetails/payment_card_widget.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetails/person_info_card.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/sessionDetails/price_detailes_card_widget.dart';
@@ -71,7 +72,6 @@ class _UserSessionDetailsViewBodyState extends State<UserSessionDetailsViewBody>
 
   Widget _buildBody() {
     return BlocConsumer<SesionDetailesCubit, SessionDetailesState>(
-      // ✅ تعديل الـ buildWhen لتشمل تغييرات البيانات
       buildWhen: (previous, current) {
         final stateChanged =
             previous.getSessionDetailesState != current.getSessionDetailesState;
@@ -105,7 +105,6 @@ class _UserSessionDetailsViewBodyState extends State<UserSessionDetailsViewBody>
         }
 
         if (state.sessionDetailsData != null) {
-          // ✅ شغل الـ animation مرة واحدة بس
           if (!_animationStarted) {
             _animationStarted = true;
             _animationController.forward();
@@ -152,6 +151,7 @@ class _SuccessContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = SessionDetailsHelper.parseStatus(data.status);
+    final bool isPackage = data.isPackage;
 
     return Stack(
       children: [
@@ -161,8 +161,8 @@ class _SuccessContent extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Person Info Section
-              const SectionLabel(title: "بيانات الشخص"),
+              // ─── 1. Person Info Section (مشترك) ───
+              SectionLabel(title: context.tr('person_info_label')),
               CardWrapper(
                 child: PersonInfoCard(
                   name: data.advisor.name,
@@ -172,69 +172,97 @@ class _SuccessContent extends StatelessWidget {
               ),
               SizedBox(height: 20.h),
 
-              // Status Section
-              const SectionLabel(title: "حالة الحجز"),
+              // ─── 2. Status Section (مشترك) ───
+              SectionLabel(title: context.tr('booking_status_label')),
               CardWrapper(child: StatusCard(status: status)),
               SizedBox(height: 20.h),
 
-              // Session Data Section
-              const SectionLabel(title: "بيانات الجلسة"),
-              CardWrapper(
-                child: SessionDataCard(
-                  date: SessionDetailsHelper.formatDateArabic(data.date),
-                  time: "${data.timeRange.from} - ${data.timeRange.to}",
-                  duration: "${data.duration} دقيقة",
-                  isAnonymous: data.isAnonymous,
+              // ─── 3. Session Data أو Package Details (حسب النوع) ───
+              if (isPackage) ...[
+                // ✅ باكدج: تفاصيل الباكدج
+                SectionLabel(title: context.tr('package_details_label')),
+                CardWrapper(
+                  child: PackageDetailsCard(
+                    sessionCredit: data.sessionCredit!,
+                    onScheduleSession: () {
+                      context.pushNamed(
+                        AppRouter.kUserRescheduleView,
+                        arguments: {
+                          // 'title': context.tr('book_consultation'),
+                          'advisorId': data.advisor.id,
+                          'duration': data.duration.toString(),
+                          'fromWallet': true,
+                          'offeringId': data.sessionCredit?.offerId ?? '',
+                          'type': data.isPackage ? 'package' : 'session',
+                        },
+                      );
+                    },
+                  ),
                 ),
-              ),
+              ] else ...[
+                // ✅ جلسة فردية: بيانات الجلسة العادية
+                SectionLabel(title: context.tr('session_data_label')),
+                CardWrapper(
+                  child: SessionDataCard(
+                    date: SessionDetailsHelper.formatDateArabic(data.date),
+                    time: "${data.timeRange.from} - ${data.timeRange.to}",
+                    duration: "${data.duration} ${context.tr('minutes_label')}",
+                    isAnonymous: data.isAnonymous,
+                  ),
+                ),
+              ],
               SizedBox(height: 20.h),
 
-              // Price Section
-              const SectionLabel(title: "بيانات السعر"),
+              // ─── 4. Price Section (مشترك) ───
+              SectionLabel(title: context.tr('price_info_label')),
               CardWrapper(child: PriceDetailsCard(pricing: data.pricing)),
               SizedBox(height: 20.h),
 
-              // Payment Method Section
-              const SectionLabel(title: "وسيلة الدفع"),
-              CardWrapper(
-                child: PaymentMethodCard(paymentMethod: data.paymentMethods),
-              ),
-              SizedBox(height: 30.h),
+              // ─── 5. Payment Method (للجلسة الفردية فقط) ───
+              if (!isPackage) ...[
+                SectionLabel(title: context.tr('payment_method_label')),
+                CardWrapper(
+                  child: PaymentMethodCard(paymentMethod: data.paymentMethods),
+                ),
+                SizedBox(height: 30.h),
+              ],
 
-              // Action Buttons
-              ActionButtons(
-                status: status,
-                sessionData: data,
-                onReschedule: () {
-                  context.pushNamed(
-                    AppRouter.kChooseSessionView,
-                    arguments: {
-                      "oldBookingData": data,
-                      "advisorId": data.advisor.id,
-                    },
-                  );
-                },
-                onCancel: () {
-                  showConfirmationDialog(
-                    context: context,
-                    imagePath: AssetsData.cancelDialogIcon,
-                    title: "هل تريد إلغاء الحجز ؟",
-                    subtitle:
-                        "هل انت متأكد انك تريد إلغاء حجز الجلسه مع المستشار لحل مشاكل علاقاتك التي تواجهها !",
-                    onConfirm: () {
-                      context.read<SesionDetailesCubit>().cancelSession(
-                        data.sessionId,
-                      );
-                    },
-                  );
-                },
-                onRateAdvisor: () {
-                  context.pushNamed(
-                    AppRouter.userRatingAdvisor,
-                    arguments: {"sessiondata": data},
-                  );
-                },
-              ),
+              // ─── 6. Action Buttons (للجلسة الفردية فقط) ───
+              if (!isPackage) ...[
+                ActionButtons(
+                  status: status,
+                  sessionData: data,
+                  onReschedule: () {
+                    context.pushNamed(
+                      AppRouter.kChooseSessionView,
+                      arguments: {
+                        "oldBookingData": data,
+                        "advisorId": data.advisor.id,
+                      },
+                    );
+                  },
+                  onCancel: () {
+                    showConfirmationDialog(
+                      context: context,
+                      imagePath: AssetsData.cancelDialogIcon,
+                      title: context.tr('cancel_booking_title'),
+                      subtitle: context.tr('cancel_booking_subtitle'),
+                      onConfirm: () {
+                        context.read<SesionDetailesCubit>().cancelSession(
+                          data.sessionId,
+                        );
+                      },
+                    );
+                  },
+                  onRateAdvisor: () {
+                    context.pushNamed(
+                      AppRouter.userRatingAdvisor,
+                      arguments: {"sessiondata": data},
+                    );
+                  },
+                ),
+              ],
+
               SizedBox(height: 30.h),
             ],
           ),

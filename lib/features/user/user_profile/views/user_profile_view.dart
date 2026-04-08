@@ -55,12 +55,14 @@ class _UserProfileViewState extends State<UserProfileView> {
                 listeners: [
                   BlocListener<UserProfileCubit, UserProfileState>(
                     listenWhen: (prev, curr) {
-                      if (prev is! SettingsLoaded && curr is SettingsLoaded)
+                      if (prev is! SettingsLoaded && curr is SettingsLoaded) {
                         return true;
+                      }
                       if (curr is SettingsLoaded && prev is SettingsLoaded) {
                         if (prev.isMarriageSectionDeactivated !=
-                            curr.isMarriageSectionDeactivated)
+                            curr.isMarriageSectionDeactivated) {
                           return true;
+                        }
                         return curr.actionTimestamp != prev.actionTimestamp;
                       }
                       return curr is SettingsLoaded &&
