@@ -17,6 +17,7 @@ class SliverProfileHeader extends StatelessWidget {
   final String? nationality;
   final String? height;
   final Widget? toggleWidget;
+  final bool showTitleBar;
   final String? reportId;
   final bool shouldBlur;
   final bool isVerified;
@@ -40,7 +41,7 @@ class SliverProfileHeader extends StatelessWidget {
   final VoidCallback? onFavoriteTap;
   final bool isFavorited;
 
-  // ✅ الجديد — widget مخصص يتعرض في الـ left بدل AnimatedBeFirstButton
+  // ✅ widget مخصص يتعرض في الـ left بدل AnimatedBeFirstButton
   final Widget? leftWidget;
 
   const SliverProfileHeader({
@@ -55,6 +56,7 @@ class SliverProfileHeader extends StatelessWidget {
     this.nationality,
     this.height,
     this.toggleWidget,
+    this.showTitleBar = true,
     this.reportId,
     this.shouldBlur = false,
     this.isVerified = false,
@@ -74,7 +76,7 @@ class SliverProfileHeader extends StatelessWidget {
     this.isFavorited = false,
     this.city,
     this.distanceKm,
-    this.leftWidget, // ✅
+    this.leftWidget,
   });
 
   bool get _isAnimating => swipeProgress > 0.01;
@@ -90,9 +92,17 @@ class SliverProfileHeader extends StatelessWidget {
     final double currentTranslateX =
         swipeDirection * swipeProgress * maxTranslateX;
 
+    // ✅ حساب الـ status bar height
+    final double statusBarHeight = MediaQuery.of(context).padding.top;
+    // ✅ الـ toolbar height الكلي = الارتفاع الأصلي + الـ status bar
+    final double totalToolbarHeight = 72.h + statusBarHeight;
+    final double toolbarHeight = showTitleBar ? totalToolbarHeight : statusBarHeight;
+
     return SliverAppBar(
-      expandedHeight: context.height * 0.9,
-      toolbarHeight: 72.h,
+      // ✅ الشاشة كاملة من أول لآخر
+      expandedHeight: context.height,
+      // ✅ toolbarHeight يشمل الـ status bar
+      toolbarHeight: toolbarHeight,
       pinned: true,
       floating: false,
       snap: false,
@@ -100,46 +110,52 @@ class SliverProfileHeader extends StatelessWidget {
       elevation: 0,
       automaticallyImplyLeading: false,
       titleSpacing: 0,
-      title: SizedBox(
-        height: 72.h,
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
-          child: Stack(
-            alignment: Alignment.center,
-            clipBehavior: Clip.none,
-            children: [
-              if (toggleWidget != null) Center(child: toggleWidget!),
-              Positioned(
-                right: 0,
-                child: GestureDetector(
-                  onTap: () {
-                    context.pushNamed(AppRouter.kMarriageFilterView);
-                  },
-                  child: CircleAvatar(
-                    backgroundColor: Colors.black26,
-                    child: AppImage(
-                      AssetsData.kfilterIcon,
-                      width: 20,
-                      height: 20,
+      title: showTitleBar
+          ? SizedBox(
+              // ✅ ارتفاع الـ title يشمل الـ status bar
+              height: totalToolbarHeight,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 16.w,
+                  right: 16.w,
+                  // ✅ padding من فوق بحجم الـ status bar عشان الأزرار تنزل تحته
+                  // top: statusBarHeight,
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.none,
+                  children: [
+                    if (toggleWidget != null) Center(child: toggleWidget!),
+                    Positioned(
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: () {
+                          context.pushNamed(AppRouter.kMarriageFilterView);
+                        },
+                        child: CircleAvatar(
+                          backgroundColor: Colors.black26,
+                          child: AppImage(
+                            AssetsData.kfilterIcon,
+                            width: 20,
+                            height: 20,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    // ✅ leftWidget أو AnimatedBeFirstButton الافتراضي
+                    Positioned(
+                      left: 0,
+                      child: leftWidget ?? AnimatedBeFirstButton(
+                        onTap: () {
+                          context.pushNamed(AppRouter.kBoostAccountView);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              // ✅ لو مرروا leftWidget استخدمه، لو لأ استخدم AnimatedBeFirstButton الافتراضي
-              Positioned(
-                left: 0,
-                child:
-                    leftWidget ??
-                    AnimatedBeFirstButton(
-                      onTap: () {
-                        context.pushNamed(AppRouter.kBoostAccountView);
-                      },
-                    ),
-              ),
-            ],
-          ),
-        ),
-      ),
+            )
+          : const SizedBox.shrink(),
       flexibleSpace: FlexibleSpaceBar(
         collapseMode: CollapseMode.pin,
         background: RepaintBoundary(

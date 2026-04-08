@@ -375,36 +375,55 @@ class MarriageBodyState extends State<MarriageBody>
     );
   }
 
+  Widget _buildToggleAppBar(BuildContext context) {
+    return Container(
+      color: Colors.transparent,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          child: SizedBox(
+            height: 72.h,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Center(child: _buildToggle()),
+                Positioned(
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: () {
+                      context.pushNamed(AppRouter.kMarriageFilterView);
+                    },
+                    child: CircleAvatar(
+                      backgroundColor: Colors.black12,
+                      child: AppImage(
+                        AssetsData.kfilterIcon,
+                        width: 20,
+                        height: 20,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  child: AnimatedBeFirstButton(
+                    onTap: () {
+                      context.pushNamed(AppRouter.kBoostAccountView);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   bool _isCurrentProfilePartial(MarriageState state, List<UserItem> users) {
     if (users.isEmpty) return false;
     final idx = state.currentIndex.clamp(0, users.length - 1);
     return users[idx].isPartialData;
-  }
-
-  bool _hasActiveFilters(Map<String, dynamic> filters) {
-    if (filters.isEmpty) return false;
-
-    final hasNonAgeFilter = filters.entries.any(
-      (e) =>
-          e.key != 'minAge' &&
-          e.key != 'maxAge' &&
-          e.value != null &&
-          e.value.toString().isNotEmpty &&
-          e.value != 'no_preference' &&
-          e.value != false,
-    );
-
-    if (hasNonAgeFilter) return true;
-
-    final minAge = filters['minAge'];
-    final maxAge = filters['maxAge'];
-    if (minAge != null || maxAge != null) {
-      final min = (minAge is num) ? minAge.toInt() : 22;
-      final max = (maxAge is num) ? maxAge.toInt() : 35;
-      return min != 22 || max != 35;
-    }
-
-    return false;
   }
 
   Widget _buildEmptyMarriage(MarriageCubit cubit, MarriageState state) {
@@ -689,38 +708,45 @@ class MarriageBodyState extends State<MarriageBody>
       child: CustomBackground(
         child: Column(
           children: [
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Center(child: _buildToggle()),
-                  Positioned(
-                    right: 0,
-                    child: GestureDetector(
-                      onTap: () {
-                        context.pushNamed(AppRouter.kMarriageFilterView);
-                      },
-                      child: CircleAvatar(
-                        backgroundColor: Colors.black12,
-                        child: AppImage(
-                          AssetsData.kfilterIcon,
-                          width: 20,
-                          height: 20,
+            SizedBox(
+              height: 72.h + MediaQuery.of(context).padding.top,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top,
+                  left: 16.w,
+                  right: 16.w,
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Center(child: _buildToggle()),
+                    Positioned(
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: () {
+                          context.pushNamed(AppRouter.kMarriageFilterView);
+                        },
+                        child: CircleAvatar(
+                          backgroundColor: Colors.black12,
+                          child: AppImage(
+                            AssetsData.kfilterIcon,
+                            width: 20,
+                            height: 20,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  // ✅ الـ AnimatedHistoryButton في الـ left يتحدث من InteractionsCubit
-                  Positioned(
-                    left: 0,
-                    child: AnimatedBeFirstButton(
-                      onTap: () {
-                        context.pushNamed(AppRouter.kBoostAccountView);
-                      },
+                    // ✅ الـ AnimatedHistoryButton في الـ left يتحدث من InteractionsCubit
+                    Positioned(
+                      left: 0,
+                      child: AnimatedBeFirstButton(
+                        onTap: () {
+                          context.pushNamed(AppRouter.kBoostAccountView);
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             Expanded(child: child),
@@ -982,9 +1008,8 @@ class MarriageBodyState extends State<MarriageBody>
                     nationality:
                         "${CountryFlagUtils.getFlag(_tr(user?.about?.nationality))} ${_tr(user?.about?.nationality)}",
                     height: "📏 ${user?.about?.height ?? ''}",
-                    toggleWidget: _isConsultantViewingProfile
-                        ? null
-                        : _buildToggle(),
+                    toggleWidget: null,
+                    showTitleBar: false,
                     swipeDirection: state.swipeDirection,
                     swipeProgress: state.swipeProgress,
                     shouldBlur: shouldBlurImages,
@@ -1364,6 +1389,13 @@ class MarriageBodyState extends State<MarriageBody>
               ),
             ),
 
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: _buildToggleAppBar(context),
+            ),
+
             if (!_isConsultantViewingProfile)
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 300),
@@ -1497,10 +1529,14 @@ class MarriageBodyState extends State<MarriageBody>
       child: CustomBackground(
         child: Column(
           children: [
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              child: SizedBox(
-                height: 72.h, // ← نفس toolbarHeight في SliverProfileHeader
+            SizedBox(
+              height: 72.h + MediaQuery.of(context).padding.top,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top,
+                  left: 16.w,
+                  right: 16.w,
+                ),
                 child: state.showHistory
                     ? SimpleAppBar(
                         title: context.tr('history'),
