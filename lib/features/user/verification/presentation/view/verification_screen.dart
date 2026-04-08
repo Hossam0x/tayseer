@@ -23,10 +23,7 @@ class VerificationScreen extends StatelessWidget {
         children: [
           // ── Background ──────────────────────────────
           Positioned.fill(
-            child: Image.asset(
-              AssetsData.userBGImage,
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset(AssetsData.userBGImage, fit: BoxFit.cover),
           ),
 
           // ── Content ─────────────────────────────────
@@ -57,11 +54,7 @@ class VerificationScreen extends StatelessWidget {
                 if (isApproved)
                   Column(
                     children: [
-                      Icon(
-                        Icons.verified,
-                        color: Colors.green,
-                        size: 80.sp,
-                      ),
+                      Icon(Icons.verified, color: Colors.blue, size: 80.sp),
                       SizedBox(height: 12.h),
                       Text(
                         context.tr('your_account_verified'),
@@ -97,8 +90,7 @@ class VerificationScreen extends StatelessWidget {
                             (reason) => Padding(
                               padding: EdgeInsets.only(bottom: 8.h),
                               child: Row(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const Text('• '),
                                   Expanded(
@@ -128,12 +120,28 @@ class VerificationScreen extends StatelessWidget {
 
                 const Spacer(),
 
-                // ── Action Button ───────────────────────
+                // ── Action Buttons ───────────────────────
                 Padding(
                   padding: EdgeInsets.all(20.w),
-                  child: CustomBotton(
-                    title: context.tr('okay_understood'),
-                    onPressed: () => Navigator.pop(context),
+                  child: Column(
+                    children: [
+                      // Retry button — shown only when rejected
+                      if (!isApproved) ...[
+                        CustomBotton(
+                          title: context.tr('retry'),
+                          onPressed: () =>
+                              Navigator.pop(context, true), // true = retry
+                        ),
+                        SizedBox(height: 10.h),
+                      ],
+
+                      // OK button
+                      CustomBotton(
+                        title: context.tr('okay_understood'),
+                        onPressed: () =>
+                            Navigator.pop(context, false), // false = dismiss
+                      ),
+                    ],
                   ),
                 ),
               ],

@@ -207,7 +207,7 @@ class QuestionsData {
   // Social Status
   // ─────────────────────────────────────────────────────
 
-  static final List<String> socialStatuses = kCurrentUserData?.gender == 'male'
+  static List<String> get socialStatuses => kCurrentUserData?.gender == 'male'
       ? const [
           'social_single',
           'social_married',

@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'dart:developer';
 
@@ -12,13 +11,6 @@ import 'package:tayseer/my_import.dart';
 class QuestionsRepoImpl implements QuestionsRepo {
   QuestionsRepoImpl({required this.apiService});
   final ApiService apiService;
-
-  String _normalizeSocialStatus(String? value) {
-    if (value == 'social_single' || value == 'F_social_single') {
-      return 'single';
-    }
-    return value ?? '';
-  }
 
   // ─────────────────────────────────────────────────────
   // Shared error handling wrapper
@@ -51,22 +43,13 @@ class QuestionsRepoImpl implements QuestionsRepo {
     bool? answerCompleted,
   }) {
     return _safeApiCall(() async {
-      final normalizedAnswers = questionCategoryEnum == 'socialStatus'
-          ? answers.map((answer) {
-              final normalized = _normalizeSocialStatus(
-                answer['answer']?.toString(),
-              );
-              return {...answer, 'answer': normalized};
-            }).toList()
-          : answers;
-
       final response = await apiService.post(
         endPoint: '/answer-questions',
         data: {
           'question': question,
           'questionCategory': questionCategoryEnum,
           'questionNumber': questionNumber,
-          'answers': normalizedAnswers,
+          'answers': answers,
           if (answerCompleted != null) 'answersCompleted': answerCompleted,
         },
         isAuth: true,
@@ -81,13 +64,12 @@ class QuestionsRepoImpl implements QuestionsRepo {
       final data = UserModel.fromJson(response['data']);
 
       if (questionCategoryEnum == 'socialStatus') {
-        final selectedStatus = normalizedAnswers.isNotEmpty
-            ? normalizedAnswers.first['answer']?.toString()
+        final selectedStatus = answers.isNotEmpty
+            ? answers.first['answer']?.toString()
             : null;
-        final normalizedStatus = _normalizeSocialStatus(selectedStatus);
 
         final userToCache = (kCurrentUserData ?? data).copyWith(
-          socialStatus: normalizedStatus,
+          socialStatus: selectedStatus,
         );
         kCurrentUserData = userToCache;
         await CachNetwork.setData(
@@ -96,8 +78,8 @@ class QuestionsRepoImpl implements QuestionsRepo {
         );
         log(">>>>>>>>>>>>>>>>>> status ${kCurrentUserData?.socialStatus}");
       } else if (questionCategoryEnum == 'hasChildren') {
-        final selectedStatus = normalizedAnswers.isNotEmpty
-            ? normalizedAnswers.first['answer']?.toString()
+        final selectedStatus = answers.isNotEmpty
+            ? answers.first['answer']?.toString()
             : null;
         final hasChildren = selectedStatus == 'yes';
 
