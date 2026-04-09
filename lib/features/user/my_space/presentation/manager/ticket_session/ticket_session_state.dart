@@ -1,5 +1,3 @@
-// lib/features/user/my_space/presentation/manager/ticket_session/ticket_session_state.dart
-
 import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/discount_model.dart';
 
@@ -9,6 +7,11 @@ class TicketSessionState {
 
   // حالة الدفع
   CubitStates paySessionState;
+
+  // ✅ جديد - حالة Paymob SDK
+  String? paymentKey;
+  int? orderId;
+  String? paymentResult; // "Successfull" / "Rejected" / "Pending"
 
   // بيانات الخصم
   DiscountResponseModel? discountResponse;
@@ -24,6 +27,9 @@ class TicketSessionState {
   TicketSessionState({
     this.validateDiscountState = CubitStates.initial,
     this.paySessionState = CubitStates.initial,
+    this.paymentKey,
+    this.orderId,
+    this.paymentResult,
     this.discountResponse,
     this.discountPercentage = 0,
     this.appliedCode,
@@ -34,6 +40,9 @@ class TicketSessionState {
   TicketSessionState copyWith({
     CubitStates? validateDiscountState,
     CubitStates? paySessionState,
+    String? paymentKey,
+    int? orderId,
+    String? paymentResult,
     DiscountResponseModel? discountResponse,
     int? discountPercentage,
     String? appliedCode,
@@ -44,6 +53,9 @@ class TicketSessionState {
       validateDiscountState:
           validateDiscountState ?? this.validateDiscountState,
       paySessionState: paySessionState ?? this.paySessionState,
+      paymentKey: paymentKey ?? this.paymentKey,
+      orderId: orderId ?? this.orderId,
+      paymentResult: paymentResult ?? this.paymentResult,
       discountResponse: discountResponse ?? this.discountResponse,
       discountPercentage: discountPercentage ?? this.discountPercentage,
       appliedCode: appliedCode ?? this.appliedCode,

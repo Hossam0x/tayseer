@@ -102,22 +102,22 @@ class TicketSessionViewBody extends StatelessWidget {
                 ],
               ),
 
-              // Loading Overlay for Payment
-              BlocSelector<TicketSessionCubit, TicketSessionState, bool>(
-                selector: (state) =>
-                    state.paySessionState == CubitStates.loading,
-                builder: (context, isLoading) {
-                  if (!isLoading) return const SizedBox.shrink();
-                  return Container(
-                    color: Colors.black.withOpacity(0.3),
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFFD3556E),
-                      ),
-                    ),
-                  );
-                },
-              ),
+              // // Loading Overlay for Payment
+              // BlocSelector<TicketSessionCubit, TicketSessionState, bool>(
+              //   selector: (state) =>
+              //       state.paySessionState == CubitStates.loading,
+              //   builder: (context, isLoading) {
+              //     if (!isLoading) return const SizedBox.shrink();
+              //     return Container(
+              //       color: Colors.black.withOpacity(0.3),
+              //       child: const Center(
+              //         child: CircularProgressIndicator(
+              //           color: Color(0xFFD3556E),
+              //         ),
+              //       ),
+              //     );
+              //   },
+              // ),
             ],
           ),
         ),

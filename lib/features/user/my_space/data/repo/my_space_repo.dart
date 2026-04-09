@@ -5,6 +5,7 @@ import 'package:tayseer/features/user/my_space/data/model/advisorprofile/session
 import 'package:tayseer/features/user/my_space/data/model/advisor_chat_model.dart';
 import 'package:tayseer/features/user/my_space/data/model/create_session/create_session_response.dart';
 import 'package:tayseer/features/user/my_space/data/model/create_session/get_available_day.dart';
+import 'package:tayseer/features/user/my_space/data/model/paymob/payment_intention_model.dart';
 import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/discount_model.dart';
 import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/session_detailes_model.dart';
 import 'package:tayseer/my_import.dart';
@@ -309,6 +310,25 @@ class MySpaceRepo {
       } else {
         return Left(ServerFailure(e.message ?? 'Connection error'));
       }
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  // ==================== بدء الدفع - Paymob ====================
+  Future<Either<Failure, PaymentIntentionModel>> initiatePayment({
+    required String sessionId,
+    String? discountCode,
+  }) async {
+    try {
+      final response = await apiService.post(
+        endPoint: '/new-paymob/initiate-advisor-session-payment',
+        data: {
+          'offeringId': sessionId,
+          if (discountCode != null) 'discountCode': discountCode,
+        },
+      );
+      return Right(PaymentIntentionModel.fromJson(response));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

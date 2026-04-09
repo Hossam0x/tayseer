@@ -24,6 +24,7 @@ class SessionBookingModel {
 
 class SessionData {
   final String id;
+  final String offeringId;
   final String userId;
   final Advisor advisor;
   final DateTime date;
@@ -31,9 +32,12 @@ class SessionData {
   final String time;
   final String fromTime;
   final String toTime;
+  final DateTime fromTimeUTC;
+  final DateTime toTimeUTC;
+  final String advisorTimezone;
   final bool am;
   final bool pm;
-  final bool anonymous;
+  final bool isAnonymous;
   final int price;
   final int tax;
   final int fees;
@@ -42,6 +46,7 @@ class SessionData {
 
   SessionData({
     required this.id,
+    required this.offeringId,
     required this.userId,
     required this.advisor,
     required this.date,
@@ -49,9 +54,12 @@ class SessionData {
     required this.time,
     required this.fromTime,
     required this.toTime,
+    required this.fromTimeUTC,
+    required this.toTimeUTC,
+    required this.advisorTimezone,
     required this.am,
     required this.pm,
-    required this.anonymous,
+    required this.isAnonymous,
     required this.price,
     required this.tax,
     required this.fees,
@@ -62,16 +70,20 @@ class SessionData {
   factory SessionData.fromJson(Map<String, dynamic> json) {
     return SessionData(
       id: json['id'] ?? '',
+      offeringId: json['offeringId'] ?? '',
       userId: json['userId'] ?? '',
       advisor: Advisor.fromJson(json['advisor'] ?? {}),
-      date: DateTime.parse(json['date'] ?? DateTime.now().toIso8601String()),
+      date: DateTime.parse(json['date']),
       duration: json['duration'] ?? '',
       time: json['time'] ?? '',
       fromTime: json['fromTime'] ?? '',
       toTime: json['toTime'] ?? '',
+      fromTimeUTC: DateTime.parse(json['fromTimeUTC']),
+      toTimeUTC: DateTime.parse(json['toTimeUTC']),
+      advisorTimezone: json['advisorTimezone'] ?? '',
       am: json['am'] ?? false,
       pm: json['pm'] ?? false,
-      anonymous: json['anonymous'] ?? false,
+      isAnonymous: json['isAnonymous'] ?? false,
       price: json['price'] ?? 0,
       tax: json['tax'] ?? 0,
       fees: json['fees'] ?? 0,
@@ -83,6 +95,7 @@ class SessionData {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'offeringId': offeringId,
       'userId': userId,
       'advisor': advisor.toJson(),
       'date': date.toIso8601String(),
@@ -90,9 +103,12 @@ class SessionData {
       'time': time,
       'fromTime': fromTime,
       'toTime': toTime,
+      'fromTimeUTC': fromTimeUTC.toIso8601String(),
+      'toTimeUTC': toTimeUTC.toIso8601String(),
+      'advisorTimezone': advisorTimezone,
       'am': am,
       'pm': pm,
-      'anonymous': anonymous,
+      'isAnonymous': isAnonymous,
       'price': price,
       'tax': tax,
       'fees': fees,

@@ -877,6 +877,7 @@ abstract class AppRouter {
 
       case AppRouter.userticketSessionView:
         final sessionData = settings.arguments as SessionData;
+        final offeringId = sessionData.offeringId;
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => TicketSessionView(sessionData: sessionData),

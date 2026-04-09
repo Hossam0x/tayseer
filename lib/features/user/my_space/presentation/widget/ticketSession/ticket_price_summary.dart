@@ -1,8 +1,3 @@
-// lib/features/user/my_space/presentation/widget/ticketSession/ticket_price_summary.dart
-
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:tayseer/features/user/my_space/data/model/create_session/create_session_response.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/ticket_session/ticket_session_cubit.dart';
 import 'package:tayseer/my_import.dart';
@@ -119,7 +114,7 @@ class TicketPriceSummary extends StatelessWidget {
             title: 'تأكيد الحجز',
             onPressed: () {
               context.read<TicketSessionCubit>().paySession(
-                sessionId: sessionData.id,
+                sessionId: sessionData.offeringId,
               );
             },
           ),

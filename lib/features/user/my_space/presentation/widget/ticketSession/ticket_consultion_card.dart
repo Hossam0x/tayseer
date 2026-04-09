@@ -44,7 +44,7 @@ class TicketConsultationCard extends StatelessWidget {
           SizedBox(height: 10.h),
 
           // مجهول الهوية
-          if (sessionData.anonymous)
+          if (sessionData.isAnonymous)
             _buildRow(AssetsData.anonIcon, "مجهول الهوية"),
         ],
       ),
