@@ -462,7 +462,7 @@ Future<void> setupGetIt() async {
   );
 
   // Interactions Cubit
-  getIt.registerFactory<InteractionsCubit>(
+  getIt.registerLazySingleton<InteractionsCubit>(
     () => InteractionsCubit(getIt<InteractionsRepository>()),
   );
 

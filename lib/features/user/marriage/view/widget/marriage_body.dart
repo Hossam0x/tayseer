@@ -116,11 +116,6 @@ class MarriageBodyState extends State<MarriageBody>
 
     cubit.initAnimation(this);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      context.read<MarriageCubit>().fetchNotificationCount();
-    });
-
     if (_isConsultantViewingProfile) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.delayed(const Duration(milliseconds: 600), () {
@@ -186,7 +181,6 @@ class MarriageBodyState extends State<MarriageBody>
     _scrollIdleTimer?.cancel();
     _mainScrollController.removeListener(_scrollListener);
     _mainScrollController.dispose();
-    _interactionsCubit?.close();
     super.dispose();
   }
 
@@ -228,7 +222,20 @@ class MarriageBodyState extends State<MarriageBody>
   }
 
   Future<void> _syncNotificationAfterInteraction() async {
+    // ✅ جلب الإشعارات من API عبر InteractionsCubit
     await interactionsCubit.fetchAndSyncNotificationCount();
+    
+    if (!mounted) return;
+    
+    // ✅ نقل البيانات من InteractionsCubit إلى MarriageCubit
+    // لتجنب مشكلة الـ states المنفصلة
+    final interactionsState = interactionsCubit.state;
+    context.read<MarriageCubit>().syncNotificationCountFromInteractions(
+      interactionsState.totalNotificationCount,
+      interactionsState.likesNotificationCount,
+      interactionsState.favoritesNotificationCount,
+      interactionsState.regardsNotificationCount,
+    );
   }
 
   // ✅ بيبني الـ AnimatedHistoryButton المتصل بالـ InteractionsCubit
