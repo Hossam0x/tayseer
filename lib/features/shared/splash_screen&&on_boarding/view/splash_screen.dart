@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/notifications/notificationHelper.dart';
+import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/main.dart';
 import '../../../../my_import.dart';
@@ -52,9 +53,19 @@ class _SplashScreenState extends State<SplashScreen>
       'UserType: $userType, selectedUserType: $selectedUserType',
     );
 
-    // ✅ نسحب الـ cold start URI ونمسحه فوراً
+    // ✅ سحب الـ cold start URI وحفظ الـ personId قبل أي حاجة
     final coldUri = pendingDeepLinkUri;
     pendingDeepLinkUri = null;
+
+    final String? coldPersonId = coldUri != null
+        ? _extractPersonId(coldUri)
+        : null;
+
+    // ✅ لو فيه personId من cold start، احفظه دايماً
+    if (coldPersonId != null) {
+      pendingDeepLinkPersonId = coldPersonId;
+      log('🔗 Cold start deep link personId: $coldPersonId');
+    }
 
     if (!mounted) return;
 
@@ -75,39 +86,28 @@ class _SplashScreenState extends State<SplashScreen>
         });
       });
 
-      // ✅ handle cold start deep link
-
-      if (coldUri != null) {
-        Future.delayed(const Duration(milliseconds: 2000), () {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            consumePendingDeepLink();
+      // ✅ فتح البروفيل بعد ما الـ Layout يكون جاهز خالص
+      if (coldPersonId != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          // نديه وقت كافي عشان الـ Layout يتبنى والـ navigator يكون جاهز
+          Future.delayed(const Duration(milliseconds: 1200), () {
+            if (!mounted) return;
+            final personId = pendingDeepLinkPersonId;
+            if (personId != null) {
+              pendingDeepLinkPersonId = null;
+              log('🔗 Opening deep link profile: $personId');
+              DeepLinkService.handleMarriageProfileLink(
+                context: context,
+                personId: personId,
+              );
+            }
           });
         });
       }
     } else {
       // ─── مش مسجل ───
+      // الـ pendingDeepLinkPersonId اتحفظ فوق، هيتستخدم بعد Login
       log('⚠️ No token found, navigating to registration');
-
-      // ✅ حفظ الـ cold start deep link لما يسجل دخول
-      // في _navigateBasedOnToken — قبل _navigateLoggedInUser()
-      if (coldUri != null) {
-        final personId = _extractPersonId(coldUri);
-        if (personId != null) {
-          pendingDeepLinkPersonId = personId; // ✅ حطه هنا الأول
-        }
-      }
-
-      _navigateLoggedInUser();
-
-      // ✅ بعدين استهلكه
-      if (coldUri != null) {
-        Future.delayed(const Duration(milliseconds: 2000), () {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            consumePendingDeepLink();
-          });
-        });
-      }
-
       if (!mounted) return;
       context.pushReplacementNamed(AppRouter.kRegisrationView);
     }
@@ -127,7 +127,6 @@ class _SplashScreenState extends State<SplashScreen>
           ? context.pushReplacementNamed(AppRouter.kUserLayoutView)
           : context.pushReplacementNamed(AppRouter.kRegisrationView);
     } else {
-      // fallback لو selectedUserType مش محدد
       navigatorKey.currentState?.pushReplacementNamed(
         AppRouter.kRegisrationView,
       );

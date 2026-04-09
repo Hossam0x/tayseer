@@ -23,19 +23,41 @@ void showGifOverlay(
   int currentKey = 0;
   int currentRepeat = 0;
 
+  void dismiss() {
+    entry?.remove();
+    entry = null;
+  }
+
   void insert() {
     entry = OverlayEntry(
-      builder: (_) => IgnorePointer(
+      builder: (_) => Material(
+        color: Colors.transparent,
         child: Container(
           color: Colors.white,
-          child: Center(
-            child: Image.asset(
-              asset,
-              key: ValueKey(currentKey),
-              width: imageSize,
-              height: imageSize,
-              gaplessPlayback: false,
-            ),
+          child: Stack(
+            children: [
+              Center(
+                child: Image.asset(
+                  asset,
+                  key: ValueKey(currentKey),
+                  width: imageSize,
+                  height: imageSize,
+                  gaplessPlayback: false,
+                ),
+              ),
+              SafeArea(
+                child: Align(
+                  alignment: AlignmentDirectional.topStart,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new),
+                    onPressed: () {
+                      dismiss();
+                      Navigator.maybePop(context);
+                    },
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -47,10 +69,10 @@ void showGifOverlay(
 
   Future.doWhile(() async {
     await Future.delayed(gifDuration);
+    if (entry == null) return false;
     currentRepeat++;
     if (currentRepeat >= repeatCount) {
-      entry?.remove();
-      entry = null;
+      dismiss();
       return false;
     }
     entry?.remove();

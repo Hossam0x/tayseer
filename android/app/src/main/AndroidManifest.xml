@@ -74,7 +74,6 @@
     </queries>
 
     <!-- ================= Application ================= -->
-
     <application
         android:name="${applicationName}"
         android:label="tayser"
@@ -107,31 +106,28 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
-            <!-- ✅ App Links (IMPORTANT FIX) -->
+            <!--
+                ✅ App Links (HTTPS) — يشتغل لما assetlinks.json يكون على السيرفر
+                بدون assetlinks.json صح، Android بيفتح المتصفح بدل التطبيق
+            -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
 
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-
-                <data
-                    android:scheme="https"
-                    android:host="tayser-app.net"
-                    android:pathPrefix="/marriage/profile"/>
+                <data android:scheme="https" android:host="tayser-app.net"/>
             </intent-filter>
 
-            <!-- ✅ fallback custom scheme -->
+            <!--
+                ✅ Custom Scheme — بيشتغل دايماً حتى بدون assetlinks.json
+                ده الـ fallback الموثوق للـ deep links
+            -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
-
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-
-                <data
-                    android:scheme="tayseer"
-                    android:host="marriage"/>
+                <data android:scheme="tayseer" android:host="marriage"/>
             </intent-filter>
-
 
             <!-- FCM Notification Click -->
             <intent-filter>

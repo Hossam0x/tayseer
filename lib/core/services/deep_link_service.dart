@@ -13,15 +13,27 @@ class DeepLinkService {
     return '$_baseUrl/marriage/profile/$personId';
   }
 
+  /// ✅ بيبني رابط يفتح التطبيق مباشرة بدون ما يروح للمتصفح
+  /// لو assetlinks.json مش شغال، الرابط ده هو الـ fallback الموثوق
+  static String buildCustomSchemeLink(String personId) {
+    return 'tayseer://marriage?profileId=$personId';
+  }
+
   static void shareProfile({
     required String personId,
     required String userName,
   }) {
-    final link = buildProfileLink(personId);
+    final httpsLink = buildProfileLink(personId);
+    final customLink = buildCustomSchemeLink(personId);
 
     SharePlus.instance.share(
       ShareParams(
-        text: 'شاهد ملف $userName الشخصي على تيسير 💍\n$link',
+        // ✅ بنبعت الاتنين: الـ HTTPS للناس اللي معهم التطبيق مع assetlinks صح
+        // والـ custom scheme كـ fallback
+        text:
+            'شاهد ملف $userName الشخصي على تيسير 💍\n'
+            '$httpsLink\n\n'
+            'لو التطبيق مثبت عندك: $customLink',
         subject: 'ملف $userName على تيسير',
       ),
     );
@@ -88,7 +100,6 @@ class DeepLinkService {
                 TextButton(
                   onPressed: () {
                     Navigator.pop(context);
-                    // ✅ اختياري: وجّهه لصفحة تسجيل الدخول
                     context.pushNamed(AppRouter.kRegisrationView);
                   },
                   child: Text(context.tr('login')),

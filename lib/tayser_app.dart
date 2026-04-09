@@ -7,8 +7,20 @@ import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart'
 import 'package:tayseer/main.dart';
 import 'package:tayseer/my_import.dart';
 
-class TayseerApp extends StatelessWidget {
+class TayseerApp extends StatefulWidget {
   const TayseerApp({super.key});
+
+  @override
+  State<TayseerApp> createState() => _TayseerAppState();
+}
+
+class _TayseerAppState extends State<TayseerApp> {
+  @override
+  void initState() {
+    super.initState();
+    // ✅ الـ Warm Start بيتهندل في main.dart عبر _listenToWarmStartLinks()
+    // بيستخدم navigatorKey مباشرة — مش محتاج حاجة هنا
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +40,6 @@ class TayseerApp extends StatelessWidget {
               builder: (context, state) {
                 final cubit = context.read<LanguageCubit>();
                 final pendingRoute = cubit.consumePendingWidget();
-
                 return MaterialApp(
                   navigatorKey: navigatorKey,
                   key: ValueKey(state.languageCode),
@@ -43,8 +54,7 @@ class TayseerApp extends StatelessWidget {
                   locale: state,
                   supportedLocales: const [Locale('ar'), Locale('en')],
                   localizationsDelegates: [
-                    CountryLocalizations.delegate, // <--- أضف هذا السطر هنا
-
+                    CountryLocalizations.delegate,
                     AppLocalizations.delegate,
                     GlobalCupertinoLocalizations.delegate,
                     GlobalMaterialLocalizations.delegate,
@@ -66,8 +76,7 @@ class TayseerApp extends StatelessWidget {
                     videoRouteObserver,
                   ],
                   onGenerateRoute: AppRouter.onGenerateRoute,
-                  home: pendingRoute ?? SplashScreen(),
-                  // initialRoute: AppRouter.kSelectCountryView,
+                  home: pendingRoute ?? const SplashScreen(),
                 );
               },
             ),
