@@ -13,6 +13,9 @@ class MarriageUserProfileModel {
   final num? answerCompletedPercentage;
   final int? interactionCount;
   final int? regredsCount;
+  final int? likesLeft;
+  final int? regardsLeft;
+  final String? subscriptionType;
   final bool? inReview;
   final bool? isVerified;
   final ProfileHeader? header;
@@ -33,6 +36,9 @@ class MarriageUserProfileModel {
     this.answerCompletedPercentage,
     this.interactionCount,
     this.regredsCount,
+    this.likesLeft,
+    this.regardsLeft,
+    this.subscriptionType,
     this.inReview,
     this.isVerified,
     this.header,
@@ -205,6 +211,9 @@ class MarriageUserProfileModel {
       answerCompletedPercentage: json['answerCompletedPercentage'] as num?,
       interactionCount: json['interactionCount'] as int?,
       regredsCount: json['regredsCount'] as int?,
+      likesLeft: json['likesLeft'] as int?,
+      regardsLeft: json['regardsLeft'] as int?,
+      subscriptionType: json['subscriptionType'] as String?,
       inReview: json['inReview'] as bool?,
       isVerified: json['isVerified'] as bool?,
     );
@@ -235,6 +244,9 @@ class MarriageUserProfileModel {
     num? answerCompletedPercentage,
     int? interactionCount,
     int? regredsCount,
+    int? likesLeft,
+    int? regardsLeft,
+    String? subscriptionType,
     bool? inReview,
     bool? isVerified,
     ProfileHeader? header,
@@ -256,6 +268,9 @@ class MarriageUserProfileModel {
           answerCompletedPercentage ?? this.answerCompletedPercentage,
       interactionCount: interactionCount ?? this.interactionCount,
       regredsCount: regredsCount ?? this.regredsCount,
+      likesLeft: likesLeft ?? this.likesLeft,
+      regardsLeft: regardsLeft ?? this.regardsLeft,
+      subscriptionType: subscriptionType ?? this.subscriptionType,
       inReview: inReview ?? this.inReview,
       isVerified: isVerified ?? this.isVerified,
       header: header ?? this.header,
