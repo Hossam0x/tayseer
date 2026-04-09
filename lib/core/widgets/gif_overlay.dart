@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:tayseer/core/utils/assets.dart';
+import 'package:tayseer/core/widgets/custom_app_image.dart';
 
 /// Shows a full-screen white overlay with a repeating GIF animation.
 ///
@@ -18,66 +19,86 @@ void showGifOverlay(
 }) {
   final String asset = gifPath ?? AssetsData.kGifOverlayLoading;
   final double imageSize = size ?? 400.w;
+  final bool flipX = Directionality.of(context) == TextDirection.ltr;
 
-  OverlayEntry? entry;
+  OverlayEntry? gifEntry;
+  OverlayEntry? backEntry;
   int currentKey = 0;
   int currentRepeat = 0;
 
   void dismiss() {
-    entry?.remove();
-    entry = null;
+    gifEntry?.remove();
+    gifEntry = null;
+    backEntry?.remove();
+    backEntry = null;
   }
 
-  void insert() {
-    entry = OverlayEntry(
-      builder: (_) => Material(
-        color: Colors.transparent,
+  void insertGif() {
+    gifEntry = OverlayEntry(
+      builder: (_) => IgnorePointer(
         child: Container(
           color: Colors.white,
-          child: Stack(
-            children: [
-              Center(
-                child: Image.asset(
-                  asset,
-                  key: ValueKey(currentKey),
-                  width: imageSize,
-                  height: imageSize,
-                  gaplessPlayback: false,
-                ),
-              ),
-              SafeArea(
-                child: Align(
-                  alignment: AlignmentDirectional.topStart,
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new),
-                    onPressed: () {
-                      dismiss();
-                      Navigator.maybePop(context);
-                    },
-                  ),
-                ),
-              ),
-            ],
+          child: Center(
+            child: Image.asset(
+              asset,
+              key: ValueKey(currentKey),
+              width: imageSize,
+              height: imageSize,
+              gaplessPlayback: false,
+            ),
           ),
         ),
       ),
     );
-    Overlay.of(context).insert(entry!);
+    Overlay.of(context).insert(gifEntry!);
   }
 
-  insert();
+  // الـ back button في overlay منفصل ثابت لا يتأثر بالـ GIF loop
+  backEntry = OverlayEntry(
+    builder: (_) => SafeArea(
+      child: Align(
+        alignment: AlignmentDirectional.topStart,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: 10.h),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                dismiss();
+                Navigator.maybePop(context);
+              },
+              borderRadius: BorderRadius.circular(24.r),
+              child: Padding(
+                padding: EdgeInsets.all(12.w),
+                child: Transform.flip(
+                  flipX: flipX,
+                  child: AppImage(AssetsData.backArrow, width: 19.w),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  insertGif();
+  Overlay.of(context).insert(backEntry!);
 
   Future.doWhile(() async {
     await Future.delayed(gifDuration);
-    if (entry == null) return false;
+    if (gifEntry == null) return false;
     currentRepeat++;
     if (currentRepeat >= repeatCount) {
       dismiss();
       return false;
     }
-    entry?.remove();
+    gifEntry?.remove();
     currentKey++;
-    insert();
+    insertGif();
+    // نعيد insert الـ backEntry فوق الـ gifEntry الجديد
+    backEntry?.remove();
+    Overlay.of(context).insert(backEntry!);
     return true;
   });
 }

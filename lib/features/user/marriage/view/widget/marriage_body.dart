@@ -405,9 +405,9 @@ class MarriageBodyState extends State<MarriageBody>
                           onTap: () => Navigator.maybePop(context),
                           child: CircleAvatar(
                             backgroundColor: Colors.black12,
-                            child: Icon(
-                              Icons.arrow_back_ios_new,
-                              size: 18,
+                            child: Transform.flip(
+                              flipX: Directionality.of(context) == TextDirection.ltr,
+                              child: AppImage(AssetsData.backArrow, width: 19.w),
                             ),
                           ),
                         )
@@ -753,9 +753,9 @@ class MarriageBodyState extends State<MarriageBody>
                               onTap: () => Navigator.maybePop(context),
                               child: CircleAvatar(
                                 backgroundColor: Colors.black12,
-                                child: Icon(
-                                  Icons.arrow_back_ios_new,
-                                  size: 18,
+                                child: Transform.flip(
+                                  flipX: Directionality.of(context) == TextDirection.ltr,
+                                  child: AppImage(AssetsData.backArrow, width: 19.w),
                                 ),
                               ),
                             )
