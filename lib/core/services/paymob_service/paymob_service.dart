@@ -5,7 +5,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class PaymobService {
   static const MethodChannel _channel = MethodChannel('paymob_sdk_flutter');
 
-  /// الـ Public Key من .env
   static String get _publicKey => dotenv.env['PAYMOB_PUBLIC_KEY'] ?? '';
 
   /// فتح Paymob SDK وبدء الدفع

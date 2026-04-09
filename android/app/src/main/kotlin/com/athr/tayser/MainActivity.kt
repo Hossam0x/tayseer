@@ -1,4 +1,4 @@
-package com.athr.tayseer
+package com.athr.tayser
 
 import android.content.Intent
 import android.graphics.Color
@@ -7,6 +7,7 @@ import android.util.Log
 import com.paymob.paymob_sdk.PaymobSdk
 import com.paymob.paymob_sdk.ui.PaymobSdkListener
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -17,18 +18,18 @@ class MainActivity : FlutterActivity(), MethodCallHandler, PaymobSdkListener {
     private val CHANNEL = "paymob_sdk_flutter"
     private var SDKResult: MethodChannel.Result? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
+            .setMethodCallHandler(this)
+    }
 
-        flutterEngine?.dartExecutor?.binaryMessenger?.let {
-            MethodChannel(it, CHANNEL).setMethodCallHandler { call, result ->
-                if (call.method == "payWithPaymob") {
-                    SDKResult = result
-                    callNativeSDK(call)
-                } else {
-                    result.notImplemented()
-                }
-            }
+    override fun onMethodCall(call: MethodCall, result: Result) {
+        if (call.method == "payWithPaymob") {
+            SDKResult = result
+            callNativeSDK(call)
+        } else {
+            result.notImplemented()
         }
     }
 
@@ -69,8 +70,6 @@ class MainActivity : FlutterActivity(), MethodCallHandler, PaymobSdkListener {
         }
 
         Log.d("PaymobSDK", "🔄 Starting payment...")
-        Log.d("PaymobSDK", "🔑 PublicKey exists: ${publicKey?.isNotEmpty()}")
-        Log.d("PaymobSDK", "🔑 ClientSecret length: ${clientSecret?.length}")
 
         try {
             val paymobsdk = PaymobSdk.Builder(
@@ -89,21 +88,18 @@ class MainActivity : FlutterActivity(), MethodCallHandler, PaymobSdkListener {
             paymobsdk.start()
         } catch (e: Exception) {
             Log.e("PaymobSDK", "🔴 Error: ${e.message}")
-            e.printStackTrace()
             SDKResult?.error("SDK_ERROR", e.message, e.stackTraceToString())
             SDKResult = null
         }
     }
 
-    // ─── SDK Callbacks ───
-
-    override fun onSuccess() {
+    override fun onSuccess(payResponse: HashMap<String, String?>) {
         Log.d("PaymobSDK", "🟢 Success!")
         SDKResult?.success("Successfull")
         SDKResult = null
     }
 
-    override fun onFailure() {
+    override fun onFailure(msg: String?) {
         Log.d("PaymobSDK", "🔴 Rejected!")
         SDKResult?.success("Rejected")
         SDKResult = null
@@ -113,8 +109,5 @@ class MainActivity : FlutterActivity(), MethodCallHandler, PaymobSdkListener {
         Log.d("PaymobSDK", "🟡 Pending!")
         SDKResult?.success("Pending")
         SDKResult = null
-    }
-
-    override fun onMethodCall(call: MethodCall, result: Result) {
     }
 }
