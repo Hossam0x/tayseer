@@ -260,7 +260,7 @@ Future<void> setupGetIt() async {
 
   /// Profile Cubit
   getIt.registerLazySingleton<ProfileCubit>(
-    () => ProfileCubit(getIt<ProfileRepository>()),
+    () => ProfileCubit(getIt<ProfileRepository>(), getIt<HomeRepository>()),
   );
 
   /// Ratings Repository
@@ -296,7 +296,8 @@ Future<void> setupGetIt() async {
   );
 
   getIt.registerFactory<ArchivedPostsCubit>(
-    () => ArchivedPostsCubit(getIt<ArchiveRepository>()),
+    () =>
+        ArchivedPostsCubit(getIt<ArchiveRepository>(), getIt<HomeRepository>()),
   );
 
   getIt.registerFactory<ArchivedStoriesCubit>(

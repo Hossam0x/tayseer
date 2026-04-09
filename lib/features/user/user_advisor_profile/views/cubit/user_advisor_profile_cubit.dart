@@ -3,6 +3,9 @@ import 'dart:developer';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/core/utils/post_event_bus.dart';
+import 'package:tayseer/core/utils/post_event_listener_mixin.dart';
+import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/shared/profile/widgets/profile_posts_tab.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/models/user_advisor_profile_model.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/repositories/user_advisor_profile_repository.dart';
@@ -10,16 +13,22 @@ import 'package:tayseer/my_import.dart';
 import 'user_advisor_profile_state.dart';
 
 class UserAdvisorProfileCubit
-    extends ProfilePostsCubitContract<UserAdvisorProfileState> {
+    extends ProfilePostsCubitContract<UserAdvisorProfileState>
+    with PostEventListenerMixin<UserAdvisorProfileState> {
   final UserAdvisorProfileRepository _repository;
+  final HomeRepository _homeRepository;
   final String advisorId;
   final int _pageSize = 10;
   Timer? _chatTimeoutTimer;
   final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
 
-  UserAdvisorProfileCubit(this._repository, this.advisorId)
-    : super(const UserAdvisorProfileState()) {
+  UserAdvisorProfileCubit(
+    this._repository,
+    this._homeRepository,
+    this.advisorId,
+  ) : super(const UserAdvisorProfileState()) {
     _initializeProfile();
+    subscribeToPostEvents();
   }
 
   // ── ProfilePostsCubitContract implementation ──
@@ -61,8 +70,16 @@ class UserAdvisorProfileCubit
     _chatTimeoutTimer?.cancel();
     socketHelper.off('chatRoomJoined');
     socketHelper.off('fail');
+    cancelPostEventSubscription();
     return super.close();
   }
+
+  @override
+  List<PostModel> getPostList() => state.posts;
+
+  @override
+  void applyUpdatedPosts(List<PostModel> posts) =>
+      emit(state.copyWith(posts: posts));
 
   Future<void> _initializeProfile() async {
     await Future.wait([fetchProfile(), fetchPosts()]);
@@ -318,6 +335,15 @@ class UserAdvisorProfileCubit
       reactionType: reactionType,
       isRemove: isRemoving,
     );
+    firePostEvent(
+      PostEvent(
+        type: PostEventType.reacted,
+        postId: postId,
+        reactionType: reactionType,
+        likesCount: newLikesCount,
+        topReactions: newTopReactions,
+      ),
+    );
   }
 
   Future<void> toggleSharePost({required String postId}) async {
@@ -362,6 +388,14 @@ class UserAdvisorProfileCubit
             shareActionState: CubitStates.success,
             shareMessage: message,
             isShareAdded: !isRemoving,
+          ),
+        );
+        firePostEvent(
+          PostEvent(
+            type: PostEventType.shared,
+            postId: postId,
+            isRepostedByMe: !isRemoving,
+            sharesCount: newSharesCount,
           ),
         );
       },
@@ -530,6 +564,111 @@ class UserAdvisorProfileCubit
     );
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // 🗳️ POLL VOTE
+  // ═══════════════════════════════════════════════════════════
+  @override
+  void voteInPoll({required String postId, required String choiceText}) {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (postIndex == -1) return;
+
+    final post = state.posts[postIndex];
+    if (post.pollModel == null) return;
+
+    final oldPoll = post.pollModel!;
+    final choices = oldPoll.pollChoices;
+    final tappedIndex = choices.indexWhere((c) => c.choice == choiceText);
+    if (tappedIndex == -1) return;
+
+    final tappedChoice = choices[tappedIndex];
+    final previouslySelectedIndex = choices.indexWhere((c) => c.isSelected);
+    final hadPreviousVote = previouslySelectedIndex != -1;
+    final isRemovingVote = tappedChoice.isSelected;
+
+    int newTotalVotes = oldPoll.totalPollVotes;
+    if (isRemovingVote) {
+      newTotalVotes = (newTotalVotes - 1).clamp(0, newTotalVotes);
+    } else if (!hadPreviousVote) {
+      newTotalVotes = newTotalVotes + 1;
+    }
+
+    final myAvatar = kCurrentUserData?.image ?? '';
+    final newChoices = <PollChoice>[];
+    for (int i = 0; i < choices.length; i++) {
+      final choice = choices[i];
+      if (isRemovingVote) {
+        if (i == tappedIndex) {
+          final newVoters = List<String>.from(choice.votersAvatars)
+            ..remove(myAvatar);
+          newChoices.add(
+            choice.copyWith(
+              isSelected: false,
+              votes: (choice.votes - 1).clamp(0, choice.votes),
+              votersAvatars: newVoters,
+            ),
+          );
+        } else {
+          newChoices.add(choice);
+        }
+      } else {
+        if (i == tappedIndex) {
+          final newVoters = List<String>.from(choice.votersAvatars);
+          if (myAvatar.isNotEmpty && !newVoters.contains(myAvatar)) {
+            newVoters.insert(0, myAvatar);
+          }
+          newChoices.add(
+            choice.copyWith(
+              isSelected: true,
+              votes: choice.votes + 1,
+              votersAvatars: newVoters,
+            ),
+          );
+        } else if (hadPreviousVote && i == previouslySelectedIndex) {
+          final newVoters = List<String>.from(choice.votersAvatars)
+            ..remove(myAvatar);
+          newChoices.add(
+            choice.copyWith(
+              isSelected: false,
+              votes: (choice.votes - 1).clamp(0, choice.votes),
+              votersAvatars: newVoters,
+            ),
+          );
+        } else {
+          newChoices.add(choice);
+        }
+      }
+    }
+
+    final updatedChoices = newChoices.map((c) {
+      final pct = newTotalVotes > 0
+          ? ((c.votes / newTotalVotes) * 100).round()
+          : 0;
+      return c.copyWith(percentage: pct);
+    }).toList();
+
+    final newPoll = oldPoll.copyWith(
+      pollChoices: updatedChoices,
+      totalPollVotes: newTotalVotes,
+    );
+
+    _updatePostInList(postId, post.copyWith(pollModel: newPoll));
+
+    _homeRepository
+        .voteInPoll(postId: postId, choiceIndex: tappedIndex.toString())
+        .then((result) {
+          result.fold(
+            (failure) => _updatePostInList(postId, post),
+            (_) => firePostEvent(
+              PostEvent(
+                type: PostEventType.pollVoted,
+                postId: postId,
+                pollModel: newPoll,
+              ),
+            ),
+          );
+        });
+  }
+
   void _updatePostInList(String postId, PostModel updatedPost) {
     final currentIndex = state.posts.indexWhere((p) => p.postId == postId);
     if (currentIndex == -1) return;
@@ -543,6 +682,13 @@ class UserAdvisorProfileCubit
   @override
   void updatePostLocally(PostModel updatedPost) {
     _updatePostInList(updatedPost.postId, updatedPost);
+    firePostEvent(
+      PostEvent(
+        type: PostEventType.edited,
+        postId: updatedPost.postId,
+        updatedPost: updatedPost,
+      ),
+    );
   }
 
   @override
@@ -556,6 +702,13 @@ class UserAdvisorProfileCubit
         postId,
         state.posts[index].copyWith(
           isCommented: true,
+          isAnonymous: isAnonymous,
+        ),
+      );
+      firePostEvent(
+        PostEvent(
+          type: PostEventType.commented,
+          postId: postId,
           isAnonymous: isAnonymous,
         ),
       );
@@ -581,6 +734,15 @@ class UserAdvisorProfileCubit
           isAnonymous: isAnonymous ?? post.isAnonymous,
         ),
       );
+      firePostEvent(
+        PostEvent(
+          type: PostEventType.commentCountUpdated,
+          postId: postId,
+          commentCountDelta: countDelta,
+          isCommented: isCommented,
+          isAnonymous: isAnonymous,
+        ),
+      );
     }
   }
 
@@ -593,6 +755,13 @@ class UserAdvisorProfileCubit
     if (index != -1) {
       final post = state.posts[index];
       _updatePostInList(postId, post.copyWith(commentsCount: totalCount));
+      firePostEvent(
+        PostEvent(
+          type: PostEventType.commentCountSynced,
+          postId: postId,
+          commentCountTotal: totalCount,
+        ),
+      );
     }
   }
 
@@ -636,6 +805,13 @@ class UserAdvisorProfileCubit
             saveMessage: message,
           ),
         );
+        firePostEvent(
+          PostEvent(
+            type: PostEventType.saved,
+            postId: postId,
+            isSaved: !isCurrentlySaved,
+          ),
+        );
       },
     );
   }
@@ -674,6 +850,7 @@ class UserAdvisorProfileCubit
             deletePostMessage: message,
           ),
         );
+        firePostEvent(PostEvent(type: PostEventType.deleted, postId: postId));
       },
     );
   }
@@ -712,6 +889,7 @@ class UserAdvisorProfileCubit
             archivePostMessage: message,
           ),
         );
+        firePostEvent(PostEvent(type: PostEventType.archived, postId: postId));
       },
     );
   }
@@ -725,6 +903,7 @@ class UserAdvisorProfileCubit
     _updatePostInList(postId, updatedPost);
 
     _repository.hidePost(postId: postId, isHide: newHideState);
+    firePostEvent(PostEvent(type: PostEventType.hidden, postId: postId));
   }
 
   Future<void> blockUser({
@@ -796,6 +975,13 @@ class UserAdvisorProfileCubit
               blockUserActionState: CubitStates.success,
               blockUserMessage: message,
               lastBlockedUserId: advisorId,
+            ),
+          );
+          firePostEvent(
+            PostEvent(
+              type: PostEventType.blocked,
+              postId: visiblePostId,
+              advisorId: advisorId,
             ),
           );
         } else {

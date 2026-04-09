@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/utils/post_event_bus.dart';
 import 'package:tayseer/features/advisor/search/data/models/search_advisor_model.dart';
 import 'package:tayseer/features/advisor/search/data/repos/search_repository.dart';
 import 'package:tayseer/features/shared/followers/data/repositories/followers_repository.dart';
@@ -17,13 +18,204 @@ class SearchCubit extends Cubit<SearchState> {
   final FollowersRepository _followersRepository;
   final UserFollowingsRepository _userFollowingsRepository;
   Timer? _searchDebounce;
+  StreamSubscription<PostEvent>? _postEventSub;
 
   SearchCubit(
     this._searchRepository,
     this._homeRepository,
     this._followersRepository,
     this._userFollowingsRepository,
-  ) : super(const SearchState());
+  ) : super(const SearchState()) {
+    _postEventSub = PostEventBus.instance.onPostEvent.listen((event) {
+      if (isClosed) return;
+      if (event.sourceId == 'SearchCubit') return;
+      _applyPostEvent(event);
+    });
+  }
+
+  void _applyPostEvent(PostEvent event) {
+    final found = _findPost(event.postId);
+    if (found.post == null) {
+      // للـ deleted/archived/blocked: نحاول نشيل حتى لو مش موجود في الـ find
+      if (event.type == PostEventType.deleted ||
+          event.type == PostEventType.archived) {
+        final postsData = state.tabData('posts');
+        final allData = state.tabData('all');
+        emit(
+          _removePostFromBothTabs(
+            postsData: postsData,
+            allData: allData,
+            postId: event.postId,
+          ),
+        );
+      } else if (event.type == PostEventType.blocked &&
+          event.advisorId != null) {
+        _removeAdvisorPostsFromBothTabs(event.advisorId!);
+      }
+      return;
+    }
+
+    final post = found.post!;
+    switch (event.type) {
+      case PostEventType.reacted:
+        emit(
+          _updatePostInBothTabs(
+            postsData: found.postsData,
+            allData: found.allData,
+            postsIdx: found.postsIdx,
+            allIdx: found.allIdx,
+            updatedPost: post.copyWith(
+              likesCount: event.likesCount ?? post.likesCount,
+              topReactions: event.topReactions ?? post.topReactions,
+              myReaction: event.reactionType,
+              clearMyReaction: event.reactionType == null,
+            ),
+          ),
+        );
+        break;
+      case PostEventType.shared:
+        emit(
+          _updatePostInBothTabs(
+            postsData: found.postsData,
+            allData: found.allData,
+            postsIdx: found.postsIdx,
+            allIdx: found.allIdx,
+            updatedPost: post.copyWith(
+              sharesCount: event.sharesCount ?? post.sharesCount,
+              isRepostedByMe: event.isRepostedByMe ?? post.isRepostedByMe,
+            ),
+          ),
+        );
+        break;
+      case PostEventType.saved:
+        emit(
+          _updatePostInBothTabs(
+            postsData: found.postsData,
+            allData: found.allData,
+            postsIdx: found.postsIdx,
+            allIdx: found.allIdx,
+            updatedPost: post.copyWith(isSaved: event.isSaved ?? post.isSaved),
+          ),
+        );
+        break;
+      case PostEventType.deleted:
+      case PostEventType.archived:
+        emit(
+          _removePostFromBothTabs(
+            postsData: found.postsData,
+            allData: found.allData,
+            postId: event.postId,
+          ),
+        );
+        break;
+      case PostEventType.hidden:
+        emit(
+          _updatePostInBothTabs(
+            postsData: found.postsData,
+            allData: found.allData,
+            postsIdx: found.postsIdx,
+            allIdx: found.allIdx,
+            updatedPost: post.copyWith(isHidden: true),
+          ),
+        );
+        break;
+      case PostEventType.blocked:
+        if (event.advisorId != null) {
+          _removeAdvisorPostsFromBothTabs(event.advisorId!);
+        }
+        break;
+      case PostEventType.pollVoted:
+        if (event.pollModel == null) break;
+        emit(
+          _updatePostInBothTabs(
+            postsData: found.postsData,
+            allData: found.allData,
+            postsIdx: found.postsIdx,
+            allIdx: found.allIdx,
+            updatedPost: post.copyWith(pollModel: event.pollModel),
+          ),
+        );
+        break;
+      case PostEventType.commentCountUpdated:
+        if (event.commentCountDelta == null) break;
+        emit(
+          _updatePostInBothTabs(
+            postsData: found.postsData,
+            allData: found.allData,
+            postsIdx: found.postsIdx,
+            allIdx: found.allIdx,
+            updatedPost: post.copyWith(
+              commentsCount: (post.commentsCount + event.commentCountDelta!)
+                  .clamp(0, 999999),
+              isCommented: event.isCommented ?? post.isCommented,
+              isAnonymous: event.isAnonymous ?? post.isAnonymous,
+            ),
+          ),
+        );
+        break;
+      case PostEventType.commentCountSynced:
+        if (event.commentCountTotal == null) break;
+        emit(
+          _updatePostInBothTabs(
+            postsData: found.postsData,
+            allData: found.allData,
+            postsIdx: found.postsIdx,
+            allIdx: found.allIdx,
+            updatedPost: post.copyWith(commentsCount: event.commentCountTotal),
+          ),
+        );
+        break;
+      case PostEventType.commented:
+        emit(
+          _updatePostInBothTabs(
+            postsData: found.postsData,
+            allData: found.allData,
+            postsIdx: found.postsIdx,
+            allIdx: found.allIdx,
+            updatedPost: post.copyWith(
+              isCommented: true,
+              isAnonymous: event.isAnonymous ?? post.isAnonymous,
+            ),
+          ),
+        );
+        break;
+      case PostEventType.edited:
+        if (event.updatedPost == null) break;
+        emit(
+          _updatePostInBothTabs(
+            postsData: found.postsData,
+            allData: found.allData,
+            postsIdx: found.postsIdx,
+            allIdx: found.allIdx,
+            updatedPost: event.updatedPost!,
+          ),
+        );
+        break;
+
+      case PostEventType.unarchived:
+        // Search مش محتاج يضيف البوست - بس يتجاهل الـ event
+        break;
+    }
+  }
+
+  void _removeAdvisorPostsFromBothTabs(String advisorId) {
+    final postsData = state.tabData('posts');
+    final allData = state.tabData('all');
+    var newState = state;
+    newState = newState.updateTab(
+      'posts',
+      postsData.copyWith(
+        posts: postsData.posts.where((p) => p.advisorId != advisorId).toList(),
+      ),
+    );
+    newState = newState.updateTab(
+      'all',
+      allData.copyWith(
+        posts: allData.posts.where((p) => p.advisorId != advisorId).toList(),
+      ),
+    );
+    emit(newState);
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 🔍 SEARCH
@@ -383,6 +575,16 @@ class SearchCubit extends Cubit<SearchState> {
       reactionType: reactionType,
       isRemove: isRemoving,
     );
+    PostEventBus.instance.fire(
+      PostEvent(
+        sourceId: 'SearchCubit',
+        type: PostEventType.reacted,
+        postId: postId,
+        reactionType: reactionType,
+        likesCount: newLikesCount,
+        topReactions: newTopReactions,
+      ),
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -419,9 +621,19 @@ class SearchCubit extends Cubit<SearchState> {
           updatedPost: post, // rollback
         ).copyWith(actionStatus: CubitStates.failure, actionMessage: f.message),
       ),
-      (m) => emit(
-        state.copyWith(actionStatus: CubitStates.success, actionMessage: m),
-      ),
+      (m) {
+        emit(
+          state.copyWith(actionStatus: CubitStates.success, actionMessage: m),
+        );
+        PostEventBus.instance.fire(
+          PostEvent(
+            sourceId: 'SearchCubit',
+            type: PostEventType.saved,
+            postId: postId,
+            isSaved: !post.isSaved,
+          ),
+        );
+      },
     );
   }
 
@@ -453,9 +665,18 @@ class SearchCubit extends Cubit<SearchState> {
           updatedPost: post, // rollback
         ).copyWith(actionStatus: CubitStates.failure, actionMessage: f.message),
       ),
-      (m) => emit(
-        state.copyWith(actionStatus: CubitStates.success, actionMessage: m),
-      ),
+      (m) {
+        emit(
+          state.copyWith(actionStatus: CubitStates.success, actionMessage: m),
+        );
+        PostEventBus.instance.fire(
+          PostEvent(
+            sourceId: 'SearchCubit',
+            type: PostEventType.deleted,
+            postId: postId,
+          ),
+        );
+      },
     );
   }
 
@@ -483,9 +704,18 @@ class SearchCubit extends Cubit<SearchState> {
           updatedPost: post, // rollback
         ).copyWith(actionStatus: CubitStates.failure, actionMessage: f.message),
       ),
-      (m) => emit(
-        state.copyWith(actionStatus: CubitStates.success, actionMessage: m),
-      ),
+      (m) {
+        emit(
+          state.copyWith(actionStatus: CubitStates.success, actionMessage: m),
+        );
+        PostEventBus.instance.fire(
+          PostEvent(
+            sourceId: 'SearchCubit',
+            type: PostEventType.archived,
+            postId: postId,
+          ),
+        );
+      },
     );
   }
 
@@ -509,6 +739,13 @@ class SearchCubit extends Cubit<SearchState> {
       ),
     );
     _homeRepository.hidePost(postId: postId, isHide: !post.isHidden);
+    PostEventBus.instance.fire(
+      PostEvent(
+        sourceId: 'SearchCubit',
+        type: PostEventType.hidden,
+        postId: postId,
+      ),
+    );
   }
 
   Future<void> blockUser({
@@ -561,6 +798,14 @@ class SearchCubit extends Cubit<SearchState> {
               .updateTab('posts', postsData.copyWith(posts: updatedPostsPosts))
               .updateTab('all', allData.copyWith(posts: updatedAllPosts))
               .copyWith(actionStatus: CubitStates.success, actionMessage: m),
+        );
+        PostEventBus.instance.fire(
+          PostEvent(
+            sourceId: 'SearchCubit',
+            type: PostEventType.blocked,
+            postId: visiblePostId,
+            advisorId: advisorId,
+          ),
         );
       },
     );
@@ -624,6 +869,14 @@ class SearchCubit extends Cubit<SearchState> {
             actionMessage: 'تم التصويت بنجاح',
           ),
         );
+        PostEventBus.instance.fire(
+          PostEvent(
+            sourceId: 'SearchCubit',
+            type: PostEventType.pollVoted,
+            postId: postId,
+            pollModel: updatedPost.pollModel,
+          ),
+        );
       },
     );
   }
@@ -665,9 +918,20 @@ class SearchCubit extends Cubit<SearchState> {
           updatedPost: post, // rollback
         ).copyWith(actionStatus: CubitStates.failure, actionMessage: f.message),
       ),
-      (m) => emit(
-        state.copyWith(actionStatus: CubitStates.success, actionMessage: m),
-      ),
+      (m) {
+        emit(
+          state.copyWith(actionStatus: CubitStates.success, actionMessage: m),
+        );
+        PostEventBus.instance.fire(
+          PostEvent(
+            sourceId: 'SearchCubit',
+            type: PostEventType.shared,
+            postId: postId,
+            isRepostedByMe: !isRemoving,
+            sharesCount: updatedPost.sharesCount,
+          ),
+        );
+      },
     );
   }
 
@@ -686,6 +950,14 @@ class SearchCubit extends Cubit<SearchState> {
         allData: found.allData,
         postsIdx: found.postsIdx,
         allIdx: found.allIdx,
+        updatedPost: updatedPost,
+      ),
+    );
+    PostEventBus.instance.fire(
+      PostEvent(
+        sourceId: 'SearchCubit',
+        type: PostEventType.edited,
+        postId: updatedPost.postId,
         updatedPost: updatedPost,
       ),
     );
@@ -708,6 +980,14 @@ class SearchCubit extends Cubit<SearchState> {
         postsIdx: found.postsIdx,
         allIdx: found.allIdx,
         updatedPost: updatedPost,
+      ),
+    );
+    PostEventBus.instance.fire(
+      PostEvent(
+        sourceId: 'SearchCubit',
+        type: PostEventType.commented,
+        postId: postId,
+        isAnonymous: isAnonymous,
       ),
     );
   }
@@ -735,6 +1015,16 @@ class SearchCubit extends Cubit<SearchState> {
         updatedPost: updatedPost,
       ),
     );
+    PostEventBus.instance.fire(
+      PostEvent(
+        sourceId: 'SearchCubit',
+        type: PostEventType.commentCountUpdated,
+        postId: postId,
+        commentCountDelta: countDelta,
+        isCommented: isCommented,
+        isAnonymous: isAnonymous,
+      ),
+    );
   }
 
   void syncCommentCountFromBackend({
@@ -753,11 +1043,20 @@ class SearchCubit extends Cubit<SearchState> {
         updatedPost: updatedPost,
       ),
     );
+    PostEventBus.instance.fire(
+      PostEvent(
+        sourceId: 'SearchCubit',
+        type: PostEventType.commentCountSynced,
+        postId: postId,
+        commentCountTotal: totalCount,
+      ),
+    );
   }
 
   @override
   Future<void> close() {
     _searchDebounce?.cancel();
+    _postEventSub?.cancel();
     return super.close();
   }
 }

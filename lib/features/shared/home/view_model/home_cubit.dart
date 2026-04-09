@@ -11,6 +11,7 @@ import 'package:tayseer/features/shared/home/view_model/home_event_bus.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
 import 'package:tayseer/core/utils/profile_event_bus.dart';
+import 'package:tayseer/core/utils/post_event_bus.dart';
 import '../../../../my_import.dart';
 import '../reposiotry/home_repository.dart';
 
@@ -24,6 +25,7 @@ class HomeCubit extends Cubit<HomeState> {
   bool _isPaginationEnabled = true;
   StreamSubscription? _connectivitySubscription;
   late StreamSubscription<ProfileUpdateEvent> _profileSubscription;
+  late StreamSubscription<PostEvent> _postEventSubscription;
 
   HomeCubit(
     this.homeRepository, {
@@ -33,6 +35,190 @@ class HomeCubit extends Cubit<HomeState> {
     _loadCachedUserData();
     _listenToConnectivity();
     _listenToProfileUpdates();
+    _listenToPostEvents();
+  }
+
+  void _listenToPostEvents() {
+    _postEventSubscription = PostEventBus.instance.onPostEvent.listen((event) {
+      if (isClosed) return;
+      // تجاهل الـ events اللي HomeCubit نفسه بعتها
+      if (event.sourceId == 'HomeCubit') return;
+      _applyPostEvent(event);
+    });
+  }
+
+  void _applyPostEvent(PostEvent event) {
+    final postId = event.postId;
+    // لو البوست مش موجود عندنا، مفيش حاجة نعملها
+    if (_findPost(postId) == null) {
+      // للـ deleted/archived/hidden/blocked: مش محتاجين البوست موجود
+      if (event.type != PostEventType.deleted &&
+          event.type != PostEventType.archived &&
+          event.type != PostEventType.hidden &&
+          event.type != PostEventType.blocked)
+        return;
+    }
+
+    switch (event.type) {
+      case PostEventType.reacted:
+        emit(
+          state.updatePostInAllCategories(
+            postId,
+            (p) => p.copyWith(
+              likesCount: event.likesCount ?? p.likesCount,
+              topReactions: event.topReactions ?? p.topReactions,
+              myReaction: event.reactionType,
+              clearMyReaction: event.reactionType == null,
+            ),
+          ),
+        );
+        break;
+
+      case PostEventType.shared:
+        emit(
+          state.updatePostInAllCategories(
+            postId,
+            (p) => p.copyWith(
+              sharesCount: event.sharesCount ?? p.sharesCount,
+              isRepostedByMe: event.isRepostedByMe ?? p.isRepostedByMe,
+            ),
+          ),
+        );
+        break;
+
+      case PostEventType.saved:
+        emit(
+          state.updatePostInAllCategories(
+            postId,
+            (p) => p.copyWith(isSaved: event.isSaved ?? p.isSaved),
+          ),
+        );
+        break;
+
+      case PostEventType.deleted:
+        final newMap = <String?, CategoryPostsData>{};
+        for (final entry in state.categoryPostsMap.entries) {
+          newMap[entry.key] = entry.value.copyWith(
+            posts: entry.value.posts.where((p) => p.postId != postId).toList(),
+          );
+        }
+        emit(state.copyWith(categoryPostsMap: newMap));
+        break;
+
+      case PostEventType.archived:
+        final newMap2 = <String?, CategoryPostsData>{};
+        for (final entry in state.categoryPostsMap.entries) {
+          newMap2[entry.key] = entry.value.copyWith(
+            posts: entry.value.posts.where((p) => p.postId != postId).toList(),
+          );
+        }
+        emit(state.copyWith(categoryPostsMap: newMap2));
+        break;
+
+      case PostEventType.hidden:
+        emit(
+          state.updatePostInAllCategories(
+            postId,
+            (p) => p.copyWith(isHidden: true),
+          ),
+        );
+        break;
+
+      case PostEventType.blocked:
+        if (event.advisorId == null) break;
+        final newMap3 = <String?, CategoryPostsData>{};
+        for (final entry in state.categoryPostsMap.entries) {
+          final updatedPosts = <PostModel>[];
+          for (final p in entry.value.posts) {
+            if (p.postId == postId) {
+              updatedPosts.add(p.copyWith(isBlocked: true));
+            } else if (p.advisorId == event.advisorId) {
+              continue;
+            } else {
+              updatedPosts.add(p);
+            }
+          }
+          newMap3[entry.key] = entry.value.copyWith(posts: updatedPosts);
+        }
+        emit(state.copyWith(categoryPostsMap: newMap3));
+        break;
+
+      case PostEventType.pollVoted:
+        if (event.pollModel == null) break;
+        emit(
+          state.updatePostInAllCategories(
+            postId,
+            (p) => p.copyWith(pollModel: event.pollModel),
+          ),
+        );
+        break;
+
+      case PostEventType.commentCountUpdated:
+        if (event.commentCountDelta == null) break;
+        emit(
+          state.updatePostInAllCategories(postId, (p) {
+            final newCount = (p.commentsCount + event.commentCountDelta!).clamp(
+              0,
+              999999,
+            );
+            return p.copyWith(
+              commentsCount: newCount,
+              isCommented: event.isCommented ?? p.isCommented,
+              isAnonymous: event.isAnonymous ?? p.isAnonymous,
+            );
+          }),
+        );
+        break;
+
+      case PostEventType.commentCountSynced:
+        if (event.commentCountTotal == null) break;
+        emit(
+          state.updatePostInAllCategories(
+            postId,
+            (p) => p.copyWith(commentsCount: event.commentCountTotal),
+          ),
+        );
+        break;
+
+      case PostEventType.commented:
+        emit(
+          state.updatePostInAllCategories(
+            postId,
+            (p) => p.copyWith(
+              isCommented: true,
+              isAnonymous: event.isAnonymous ?? p.isAnonymous,
+            ),
+          ),
+        );
+        break;
+
+      case PostEventType.edited:
+        if (event.updatedPost == null) break;
+        emit(
+          state.updatePostInAllCategories(postId, (_) => event.updatedPost!),
+        );
+        break;
+
+      case PostEventType.unarchived:
+        if (event.unarchivedPost == null) break;
+        // أضيف البوست في أول كل category لو مش موجود فيها
+        final uPost = event.unarchivedPost!;
+        final newMap = <String?, CategoryPostsData>{};
+        for (final entry in state.categoryPostsMap.entries) {
+          final alreadyExists = entry.value.posts.any(
+            (p) => p.postId == postId,
+          );
+          if (alreadyExists) {
+            newMap[entry.key] = entry.value;
+          } else {
+            newMap[entry.key] = entry.value.copyWith(
+              posts: [uPost, ...entry.value.posts],
+            );
+          }
+        }
+        emit(state.copyWith(categoryPostsMap: newMap));
+        break;
+    }
   }
 
   void _listenToProfileUpdates() {
@@ -95,6 +281,7 @@ class HomeCubit extends Cubit<HomeState> {
   Future<void> close() {
     _connectivitySubscription?.cancel();
     _profileSubscription.cancel();
+    _postEventSubscription.cancel();
     return super.close();
   }
 
@@ -750,6 +937,16 @@ class HomeCubit extends Cubit<HomeState> {
             (_) {
               log('>>>>>>>>>>>>>>>>> React To Post Success');
               _syncPostToCacheById(postId);
+              PostEventBus.instance.fire(
+                PostEvent(
+                  sourceId: 'HomeCubit',
+                  type: PostEventType.reacted,
+                  postId: postId,
+                  reactionType: reactionType,
+                  likesCount: newLikesCount,
+                  topReactions: newTopReactions,
+                ),
+              );
             },
           );
         });
@@ -811,6 +1008,15 @@ class HomeCubit extends Cubit<HomeState> {
       (message) {
         log('>>>>>>>>>>>>>>>>>Share Post Success: $message');
         _syncPostToCacheById(postId);
+        PostEventBus.instance.fire(
+          PostEvent(
+            sourceId: 'HomeCubit',
+            type: PostEventType.shared,
+            postId: postId,
+            isRepostedByMe: !isRemoving,
+            sharesCount: newSharesCount,
+          ),
+        );
         emit(
           state.copyWith(
             shareActionState: CubitStates.success,
@@ -874,7 +1080,14 @@ class HomeCubit extends Cubit<HomeState> {
       (message) {
         log('>>>>>>>>>>>>>>>>> Save Post Success: $message');
         _syncPostToCacheById(postId);
-
+        PostEventBus.instance.fire(
+          PostEvent(
+            sourceId: 'HomeCubit',
+            type: PostEventType.saved,
+            postId: postId,
+            isSaved: !isCurrentlySaved,
+          ),
+        );
         // النجاح: الـ UI متحدث بالفعل (Optimistic)، بس محتاجين نبعت Success عشان التوست الأخضر
         emit(
           state.copyWith(
@@ -933,7 +1146,13 @@ class HomeCubit extends Cubit<HomeState> {
         (message) {
           log('>>>>>>>>>>>>>>>>> Delete Post Success: $message');
           localDatasource.removePost(postId).catchError((_) {});
-
+          PostEventBus.instance.fire(
+            PostEvent(
+              sourceId: 'HomeCubit',
+              type: PostEventType.deleted,
+              postId: postId,
+            ),
+          );
           emit(
             state.copyWith(
               deletePostActionState: CubitStates.success,
@@ -992,7 +1211,13 @@ class HomeCubit extends Cubit<HomeState> {
         (message) {
           log('>>>>>>>>>>>>>>>>> Archive Post Success: $message');
           localDatasource.removePost(postId).catchError((_) {});
-
+          PostEventBus.instance.fire(
+            PostEvent(
+              sourceId: 'HomeCubit',
+              type: PostEventType.archived,
+              postId: postId,
+            ),
+          );
           emit(
             state.copyWith(
               archivePostActionState: CubitStates.success,
@@ -1010,6 +1235,14 @@ class HomeCubit extends Cubit<HomeState> {
   void updateEditedPost(PostModel updatedPost) {
     emit(
       state.updatePostInAllCategories(updatedPost.postId, (_) => updatedPost),
+    );
+    PostEventBus.instance.fire(
+      PostEvent(
+        sourceId: 'HomeCubit',
+        type: PostEventType.edited,
+        postId: updatedPost.postId,
+        updatedPost: updatedPost,
+      ),
     );
   }
 
@@ -1061,6 +1294,13 @@ class HomeCubit extends Cubit<HomeState> {
               ),
         );
         localDatasource.removePost(postId).catchError((_) {});
+        PostEventBus.instance.fire(
+          PostEvent(
+            sourceId: 'HomeCubit',
+            type: PostEventType.hidden,
+            postId: postId,
+          ),
+        );
       },
     );
   }
@@ -1133,6 +1373,14 @@ class HomeCubit extends Cubit<HomeState> {
             localDatasource.removePost(post.postId).catchError((_) {});
           }
         }
+        PostEventBus.instance.fire(
+          PostEvent(
+            sourceId: 'HomeCubit',
+            type: PostEventType.blocked,
+            postId: visiblePostId,
+            advisorId: advisorId,
+          ),
+        );
       },
     );
   }
@@ -1303,6 +1551,14 @@ class HomeCubit extends Cubit<HomeState> {
         (_) {
           log('>>>>>>>>>>>>>>>>> Vote In Poll Success');
           _syncPostToCacheById(postId);
+          PostEventBus.instance.fire(
+            PostEvent(
+              sourceId: 'HomeCubit',
+              type: PostEventType.pollVoted,
+              postId: postId,
+              pollModel: newPoll,
+            ),
+          );
         },
       );
     });
@@ -1352,15 +1608,18 @@ class HomeCubit extends Cubit<HomeState> {
     emit(
       state.updatePostInAllCategories(
         postId,
-        (p) => p.copyWith(
-          isCommented: true,
-          isAnonymous: isAnonymous,
-          // ❌ شلنا: commentsCount: p.commentsCount + 1,
-          // ✅ الـ Delta في BlocListener بيتكفل بالعدد
-        ),
+        (p) => p.copyWith(isCommented: true, isAnonymous: isAnonymous),
       ),
     );
     _syncPostToCacheById(postId);
+    PostEventBus.instance.fire(
+      PostEvent(
+        sourceId: 'HomeCubit',
+        type: PostEventType.commented,
+        postId: postId,
+        isAnonymous: isAnonymous,
+      ),
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1386,6 +1645,16 @@ class HomeCubit extends Cubit<HomeState> {
     );
 
     _syncPostToCacheById(postId);
+    PostEventBus.instance.fire(
+      PostEvent(
+        sourceId: 'HomeCubit',
+        type: PostEventType.commentCountUpdated,
+        postId: postId,
+        commentCountDelta: countDelta,
+        isCommented: isCommented,
+        isAnonymous: isAnonymous,
+      ),
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1402,6 +1671,14 @@ class HomeCubit extends Cubit<HomeState> {
     );
 
     _syncPostToCacheById(postId);
+    PostEventBus.instance.fire(
+      PostEvent(
+        sourceId: 'HomeCubit',
+        type: PostEventType.commentCountSynced,
+        postId: postId,
+        commentCountTotal: totalCount,
+      ),
+    );
   }
 
   final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();

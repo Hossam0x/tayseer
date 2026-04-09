@@ -4,16 +4,34 @@ import 'dart:developer';
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/utils/post_event_bus.dart';
+import 'package:tayseer/core/utils/post_event_listener_mixin.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/my_import.dart';
 
 part 'reels_state.dart';
 
-class ReelsCubit extends Cubit<ReelsState> {
+class ReelsCubit extends Cubit<ReelsState>
+    with PostEventListenerMixin<ReelsState> {
   final HomeRepository homeRepo;
   final PostModel? initialPost;
 
-  ReelsCubit(this.homeRepo, {this.initialPost}) : super(const ReelsState());
+  ReelsCubit(this.homeRepo, {this.initialPost}) : super(const ReelsState()) {
+    subscribeToPostEvents();
+  }
+
+  @override
+  List<PostModel> getPostList() => state.reels;
+
+  @override
+  void applyUpdatedPosts(List<PostModel> posts) =>
+      _safeEmit(state.copyWith(reels: posts));
+
+  @override
+  Future<void> close() {
+    cancelPostEventSubscription();
+    return super.close();
+  }
 
   static const int _pageSize = 7;
 
@@ -192,6 +210,15 @@ class ReelsCubit extends Cubit<ReelsState> {
       reactionType: reactionType,
       isRemove: isRemoving,
     );
+    firePostEvent(
+      PostEvent(
+        type: PostEventType.reacted,
+        postId: postId,
+        reactionType: reactionType,
+        likesCount: newLikesCount,
+        topReactions: newTopReactions,
+      ),
+    );
 
     log('🎬 React to Reel: $postId - ${reactionType?.name ?? "removed"}');
   }
@@ -251,11 +278,20 @@ class ReelsCubit extends Cubit<ReelsState> {
             isShareAdded: !isRemoving,
           ),
         );
+        firePostEvent(
+          PostEvent(
+            type: PostEventType.shared,
+            postId: postId,
+            isRepostedByMe: !isRemoving,
+            sharesCount: newSharesCount,
+          ),
+        );
       },
     );
   }
 
   // ═══════════════════════════════════════════════════════════
+  // 📌 SAVE REEL
   // 📌 SAVE REEL
   // ═══════════════════════════════════════════════════════════
 
@@ -295,6 +331,13 @@ class ReelsCubit extends Cubit<ReelsState> {
           state.copyWith(
             saveActionState: CubitStates.success,
             saveMessage: message,
+          ),
+        );
+        firePostEvent(
+          PostEvent(
+            type: PostEventType.saved,
+            postId: postId,
+            isSaved: updatedReel.isSaved,
           ),
         );
       },
@@ -366,6 +409,13 @@ class ReelsCubit extends Cubit<ReelsState> {
   // ═══════════════════════════════════════════════════════════
   void updateEditedReel(PostModel updatedPost) {
     _updateReelInList(updatedPost.postId, updatedPost);
+    firePostEvent(
+      PostEvent(
+        type: PostEventType.edited,
+        postId: updatedPost.postId,
+        updatedPost: updatedPost,
+      ),
+    );
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -425,5 +475,14 @@ class ReelsCubit extends Cubit<ReelsState> {
     );
 
     _updateReelInList(postId, updatedReel);
+    firePostEvent(
+      PostEvent(
+        type: PostEventType.commentCountSynced,
+        postId: postId,
+        commentCountTotal: newCount,
+        isCommented: isCommented,
+        isAnonymous: isAnonymous,
+      ),
+    );
   }
 }

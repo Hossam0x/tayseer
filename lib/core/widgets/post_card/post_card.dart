@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/post_card/post_actions_row.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
@@ -50,6 +52,15 @@ class _PostCardState extends State<PostCard> {
   void initState() {
     super.initState();
     _activeController = widget.sharedController;
+  }
+
+  @override
+  void dispose() {
+    // if (_activeController != null) {
+    //   _activeController?.dispose();
+    // }
+
+    super.dispose();
   }
 
   // ══════════════════════════════════════════════════════════════════════════

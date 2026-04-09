@@ -4,6 +4,7 @@ import 'package:tayseer/features/advisor/settings/data/repositories/saved_posts_
 import 'package:tayseer/features/advisor/settings/view/cubit/saved_posts/saved_posts_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/saved_posts/saved_posts_state.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart'
     as home_feed;
 import 'package:tayseer/my_import.dart';
@@ -17,7 +18,10 @@ class SavedPostsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => SavedPostsCubit(getIt<SavedPostsRepository>()),
+      create: (context) => SavedPostsCubit(
+        getIt<SavedPostsRepository>(),
+        getIt<HomeRepository>(),
+      ),
       child: const _SavedPostsBody(),
     );
   }
@@ -322,6 +326,8 @@ class _PostItemState extends State<_PostItem> {
       onCommentCountSync: ({required postId, required totalCount}) => widget
           .cubit
           .syncCommentCountFromBackend(postId: postId, totalCount: totalCount),
+      onPollVote: (postId, choiceText) =>
+          widget.cubit.voteInPoll(postId: postId, choiceText: choiceText),
     );
   }
 
