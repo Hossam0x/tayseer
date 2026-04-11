@@ -2,7 +2,6 @@ import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/core/models/post_model.dart';
-import 'package:tayseer/core/utils/app_strings.dart';
 import 'package:tayseer/core/widgets/end_of_cached_posts.dart';
 import 'package:tayseer/core/widgets/offline_empty_state.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
@@ -279,8 +278,8 @@ class HomePostFeed extends StatelessWidget {
     ),
   );
 
+  // ✅ CHANGED: O(1) indexMap + no KeepAlive
   Widget _buildPostList(_FeedState state) {
-    // ✅ O(1) lookup map — بيتبني مرة واحدة لكل rebuild
     final indexMap = {
       for (var i = 0; i < state.postIds.length; i++) state.postIds[i]: i,
     };
@@ -323,11 +322,10 @@ class HomePostFeed extends StatelessWidget {
           return _EndOfCategoryIndicator(onViewAllTap: _goToAllCategory);
         },
         childCount: state.postIds.length + 1,
-        addAutomaticKeepAlives: false, // ✅ مش محتاجينه
-        // ✅ O(1) lookup بدل O(n)
+        addAutomaticKeepAlives: false, // ✅ CHANGED
         findChildIndexCallback: (key) {
           if (key is ValueKey<String>) {
-            return indexMap[key.value];
+            return indexMap[key.value]; // ✅ CHANGED: O(1)
           }
           return null;
         },
@@ -382,7 +380,7 @@ class _FeedState extends Equatable {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Post Item Widget ✅ StatefulWidget بدون AutomaticKeepAlive
+// Post Item Widget ✅ CHANGED: StatefulWidget بدون AutomaticKeepAlive
 // ══════════════════════════════════════════════════════════════════════════════
 
 class _PostItem extends StatefulWidget {

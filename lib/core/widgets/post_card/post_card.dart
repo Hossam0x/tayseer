@@ -18,13 +18,9 @@ class PostCard extends StatefulWidget {
   final bool isDetailsView;
   final VideoPlayerController? sharedController;
   final bool isFromProfile;
-
-  /// Bundled callbacks for post actions
   final PostCallbacks callbacks;
   final String? heroPrefix;
   final bool isArchived;
-
-  /// Callback for navigating to post details
   final NavigateToDetailsCallback? onNavigateToDetails;
 
   const PostCard({
@@ -79,7 +75,6 @@ class _PostCardState extends State<PostCard> {
   @override
   Widget build(BuildContext context) {
     if (widget.post.isBlocked) {
-      // ✅ تم التعديل: تمرير البوست والـ callback
       return _BlockedPostUI(post: widget.post);
     }
     if (widget.post.isHidden) {
@@ -94,13 +89,10 @@ class _PostCardState extends State<PostCard> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Repost Header
           if (widget.post.repostedBy != null) ...[
             _RepostHeader(repostedBy: widget.post.repostedBy!),
             Gap(context.responsiveHeight(8)),
           ],
-
-          // User Info
           _PostUserHeader(
             isFromProfile: widget.isFromProfile,
             post: widget.post,
@@ -127,16 +119,12 @@ class _PostCardState extends State<PostCard> {
             ),
           ),
           Gap(context.responsiveHeight(15)),
-
-          // Content Text
           _PostContent(
             content: widget.post.content,
             onTap: _navigateToDetails,
             onHashtagTap: _handleHashtag,
           ),
           Gap(context.responsiveHeight(12)),
-
-          // Media
           _PostMedia(
             isFromProfile: widget.isFromProfile,
             post: widget.post,
@@ -147,16 +135,12 @@ class _PostCardState extends State<PostCard> {
             heroPrefix: widget.heroPrefix,
           ),
           Gap(context.responsiveHeight(15)),
-
-          // Stats
           PostStats(
             comments: widget.post.commentsCount,
             shares: widget.post.sharesCount,
             onTap: _navigateToDetails,
           ),
           Gap(context.responsiveHeight(8)),
-
-          // Actions Row
           PostActionsRow(
             topReactions: widget.post.topReactions,
             likesCount: widget.post.likesCount,
@@ -228,7 +212,7 @@ class _BlockedPostUIState extends State<_BlockedPostUI> {
                               border: Border.all(color: Colors.white, width: 2),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
+                                  color: Colors.black.withValues(alpha: 0.05),
                                   blurRadius: 5,
                                 ),
                               ],
@@ -243,21 +227,17 @@ class _BlockedPostUIState extends State<_BlockedPostUI> {
                               ),
                             ),
                           ),
-
                           Gap(10.w),
-
-                          // 2. الاسم والتوثيق
                           Flexible(
                             child: Text(
                               widget.post.name,
                               style: Styles.textStyle16Bold.copyWith(
-                                color: const Color(0xFF0D1C52), // كحلي غامق
+                                color: const Color(0xFF0D1C52),
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-
                           if (widget.post.isVerified) ...[
                             Gap(4.w),
                             Icon(
@@ -269,24 +249,19 @@ class _BlockedPostUIState extends State<_BlockedPostUI> {
                         ],
                       ),
                     ),
-
-                    // الجزء الأيسر (زر الإغلاق)
                     GestureDetector(
                       onTap: _onClose,
                       child: Padding(
-                        padding: EdgeInsets.only(
-                          right: 8.w,
-                        ), // مسافة صغيرة عن المحتوى
+                        padding: EdgeInsets.only(right: 8.w),
                         child: Icon(
                           Icons.close_rounded,
-                          color: const Color(0xFF757575), // رمادي
+                          color: const Color(0xFF757575),
                           size: 24.sp,
                         ),
                       ),
                     ),
                   ],
                 ),
-
                 Padding(
                   padding: EdgeInsetsGeometry.fromSTEB(34.w, 0, 0, 0),
                   child: Text(
@@ -296,7 +271,6 @@ class _BlockedPostUIState extends State<_BlockedPostUI> {
                     ),
                   ),
                 ),
-
                 Gap(8.h),
               ],
             ),
@@ -335,18 +309,14 @@ class _HiddenPostUI extends StatelessWidget {
             color: AppColors.primary300,
             size: 24.sp,
           ),
-
           Gap(8.w),
-
           Expanded(
             child: Text(
               context.tr(AppStrings.postHiddenMessage),
               style: Styles.textStyle14.copyWith(color: AppColors.secondary800),
             ),
           ),
-
           Gap(8.w),
-
           GestureDetector(
             onTap: onUndo,
             child: Container(
@@ -373,6 +343,7 @@ class _HiddenPostUI extends StatelessWidget {
   }
 }
 
+// ✅ CHANGED: شيلنا clipBehavior: Clip.antiAlias
 class _CardContainer extends StatelessWidget {
   final bool isDetailsView;
   final Widget child;
@@ -479,9 +450,8 @@ class _PostContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      overlayColor: WidgetStateProperty.all(Colors.transparent),
       child: PostContentText(
         text: content,
         style: Styles.textStyle14.copyWith(
@@ -578,7 +548,7 @@ class _PostMediaState extends State<_PostMedia> {
             _activeController = controller;
             widget.onControllerCreated(controller);
           },
-          onReelTap: _handleReelTap, // ✅ بتقبل nullable دلوقتي
+          onReelTap: _handleReelTap,
         );
     }
   }
@@ -593,7 +563,6 @@ class _PostMediaState extends State<_PostMedia> {
       return;
     }
 
-    // وقّف الفيديو لو شغال
     if (controller != null && controller.value.isInitialized) {
       try {
         controller.pause();
@@ -607,8 +576,6 @@ class _PostMediaState extends State<_PostMedia> {
             ReelsFeedView(post: widget.post, initialController: controller),
       ),
     );
-    // ✅ شلنا .then() خالص — didPopNext في RealVideoPlayer هو اللي
-    // هيعمل restore position + play لما اليوزر يرجع
   }
 
   void _playVideo(VideoPlayerController controller) {

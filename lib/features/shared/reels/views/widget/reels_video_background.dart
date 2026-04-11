@@ -110,7 +110,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
 
     _initCompleter = Completer<void>();
 
-    // Shared Controller
     if (widget.sharedController != null) {
       _controller = widget.sharedController;
       try {
@@ -230,14 +229,11 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
   }
 
   Future<void> _restorePosition() async {
-    // Reels should always start from the beginning (position 0:00)
     return;
   }
 
-  // ✅ التعديل الأساسي: شيلنا شرط sharedController عشان نحفظ الـ position دايماً
-  // لأن البوست في الـ Home محتاج يقرأ الـ position دي لما اليوزر يرجع
   void _savePosition() {
-    if (_controller == null) return; // ✅ بدون شرط sharedController
+    if (_controller == null) return;
 
     try {
       if (_controller!.value.isInitialized) {
@@ -251,6 +247,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
     }
   }
 
+  // ✅ CHANGED: حفظ كل 5 ثواني بدل كل ثانية
   void _videoListener() {
     final controller = _controller;
     if (controller == null || !mounted || _isDisposed) return;
@@ -268,12 +265,12 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
         _scheduleSetState(() => _isBuffering = value.isBuffering);
       }
 
-      // ✅ تعديل: بنحفظ كل ثانية بدل كل 5 ثواني
-      // عشان لما اليوزر يرجع للـ Home يلاقي الـ position محدّثة
+      // ✅ CHANGED: كل 5 ثواني بدل كل ثانية
       final currentSecond = value.position.inSeconds;
       if (_isInitialized &&
           !_isDragging &&
           currentSecond > 0 &&
+          currentSecond % 5 == 0 && // ✅ أضفنا % 5
           currentSecond != _lastSavedSecond) {
         _lastSavedSecond = currentSecond;
         _savePosition();
@@ -417,8 +414,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
     }
   }
 
-  // ✅ جديد: حفظ الـ position في deactivate (بيتنادى قبل dispose)
-  // ده بيضمن إن الـ position تتحفظ في أقرب وقت لما الـ widget يتشال من الشجرة
   @override
   void deactivate() {
     _savePosition();
@@ -431,7 +426,6 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
     _autoRetryTimer?.cancel();
     _savePosition();
 
-    // ✅ أكمل أي Completer معلّق عشان مفيش future يفضل hanging
     if (_initCompleter != null && !_initCompleter!.isCompleted) {
       _initCompleter!.complete();
     }
@@ -638,7 +632,6 @@ class _VideoSeekBarState extends State<_VideoSeekBar> {
   double _progress = 0.0;
   Duration _duration = Duration.zero;
 
-  // ✅ بدل Timer — استخدم الـ controller listener نفسه
   @override
   void initState() {
     super.initState();
@@ -660,7 +653,6 @@ class _VideoSeekBarState extends State<_VideoSeekBar> {
     final newProgress =
         value.position.inMilliseconds / value.duration.inMilliseconds;
 
-    // ✅ بيعمل rebuild بس لو فيه تغيير فعلي
     if ((newProgress - _progress).abs() > 0.005) {
       setState(() {
         _progress = newProgress;
