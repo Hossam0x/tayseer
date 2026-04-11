@@ -100,7 +100,7 @@ class SliverProfileHeader extends StatelessWidget {
 
     return SliverAppBar(
       // ✅ الشاشة كاملة من أول لآخر
-      expandedHeight: context.height,
+      expandedHeight: context.height*0.95.h,
       // ✅ toolbarHeight يشمل الـ status bar
       toolbarHeight: toolbarHeight,
       pinned: true,

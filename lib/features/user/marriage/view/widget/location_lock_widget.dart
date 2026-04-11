@@ -38,6 +38,27 @@ class LocationLockWidget extends StatelessWidget {
               height: MediaQuery.sizeOf(context).height * 0.05,
               fit: BoxFit.cover,
             ),
+          SafeArea(
+            bottom: false,
+            top: !showBackgroundImage,
+            child: Align(
+              alignment: AlignmentDirectional.topStart,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => Navigator.maybePop(context),
+                  borderRadius: BorderRadius.circular(24),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Transform.flip(
+                      flipX: Directionality.of(context) == TextDirection.ltr,
+                      child: AppImage(AssetsData.backArrow, width: 19),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),

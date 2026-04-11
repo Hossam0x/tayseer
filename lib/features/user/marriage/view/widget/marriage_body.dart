@@ -116,11 +116,6 @@ class MarriageBodyState extends State<MarriageBody>
 
     cubit.initAnimation(this);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      context.read<MarriageCubit>().fetchNotificationCount();
-    });
-
     if (_isConsultantViewingProfile) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.delayed(const Duration(milliseconds: 600), () {
@@ -186,7 +181,6 @@ class MarriageBodyState extends State<MarriageBody>
     _scrollIdleTimer?.cancel();
     _mainScrollController.removeListener(_scrollListener);
     _mainScrollController.dispose();
-    _interactionsCubit?.close();
     super.dispose();
   }
 
@@ -228,7 +222,20 @@ class MarriageBodyState extends State<MarriageBody>
   }
 
   Future<void> _syncNotificationAfterInteraction() async {
+    // ✅ جلب الإشعارات من API عبر InteractionsCubit
     await interactionsCubit.fetchAndSyncNotificationCount();
+    
+    if (!mounted) return;
+    
+    // ✅ نقل البيانات من InteractionsCubit إلى MarriageCubit
+    // لتجنب مشكلة الـ states المنفصلة
+    final interactionsState = interactionsCubit.state;
+    context.read<MarriageCubit>().syncNotificationCountFromInteractions(
+      interactionsState.totalNotificationCount,
+      interactionsState.likesNotificationCount,
+      interactionsState.favoritesNotificationCount,
+      interactionsState.regardsNotificationCount,
+    );
   }
 
   // ✅ بيبني الـ AnimatedHistoryButton المتصل بالـ InteractionsCubit
@@ -376,6 +383,9 @@ class MarriageBodyState extends State<MarriageBody>
   }
 
   Widget _buildToggleAppBar(BuildContext context) {
+    final bool showBackButton =
+        widget.personId != null || _isConsultantViewingProfile;
+
     return Container(
       color: Colors.transparent,
       child: SafeArea(
@@ -390,27 +400,40 @@ class MarriageBodyState extends State<MarriageBody>
                 Center(child: _buildToggle()),
                 Positioned(
                   right: 0,
-                  child: GestureDetector(
-                    onTap: () {
-                      context.pushNamed(AppRouter.kMarriageFilterView);
-                    },
-                    child: CircleAvatar(
-                      backgroundColor: Colors.black12,
-                      child: AppImage(
-                        AssetsData.kfilterIcon,
-                        width: 20,
-                        height: 20,
-                      ),
-                    ),
-                  ),
+                  child: showBackButton
+                      ? GestureDetector(
+                          onTap: () => Navigator.maybePop(context),
+                          child: CircleAvatar(
+                            backgroundColor: Colors.black12,
+                            child: Transform.flip(
+                              flipX: Directionality.of(context) == TextDirection.ltr,
+                              child: AppImage(AssetsData.backArrow, width: 19.w),
+                            ),
+                          ),
+                        )
+                      : GestureDetector(
+                          onTap: () {
+                            context.pushNamed(AppRouter.kMarriageFilterView);
+                          },
+                          child: CircleAvatar(
+                            backgroundColor: Colors.black12,
+                            child: AppImage(
+                              AssetsData.kfilterIcon,
+                              width: 20,
+                              height: 20,
+                            ),
+                          ),
+                        ),
                 ),
                 Positioned(
                   left: 0,
-                  child: AnimatedBeFirstButton(
-                    onTap: () {
-                      context.pushNamed(AppRouter.kBoostAccountView);
-                    },
-                  ),
+                  child: showBackButton
+                      ? const SizedBox.shrink()
+                      : AnimatedBeFirstButton(
+                          onTap: () {
+                            context.pushNamed(AppRouter.kBoostAccountView);
+                          },
+                        ),
                 ),
               ],
             ),
@@ -702,6 +725,9 @@ class MarriageBodyState extends State<MarriageBody>
   }
 
   Widget _buildWithAppBar({Key? key, required Widget child}) {
+    final bool showBackButton =
+        widget.personId != null || _isConsultantViewingProfile;
+
     return Directionality(
       key: key,
       textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
@@ -722,28 +748,40 @@ class MarriageBodyState extends State<MarriageBody>
                     Center(child: _buildToggle()),
                     Positioned(
                       right: 0,
-                      child: GestureDetector(
-                        onTap: () {
-                          context.pushNamed(AppRouter.kMarriageFilterView);
-                        },
-                        child: CircleAvatar(
-                          backgroundColor: Colors.black12,
-                          child: AppImage(
-                            AssetsData.kfilterIcon,
-                            width: 20,
-                            height: 20,
-                          ),
-                        ),
-                      ),
+                      child: showBackButton
+                          ? GestureDetector(
+                              onTap: () => Navigator.maybePop(context),
+                              child: CircleAvatar(
+                                backgroundColor: Colors.black12,
+                                child: Transform.flip(
+                                  flipX: Directionality.of(context) == TextDirection.ltr,
+                                  child: AppImage(AssetsData.backArrow, width: 19.w),
+                                ),
+                              ),
+                            )
+                          : GestureDetector(
+                              onTap: () {
+                                context.pushNamed(AppRouter.kMarriageFilterView);
+                              },
+                              child: CircleAvatar(
+                                backgroundColor: Colors.black12,
+                                child: AppImage(
+                                  AssetsData.kfilterIcon,
+                                  width: 20,
+                                  height: 20,
+                                ),
+                              ),
+                            ),
                     ),
-                    // ✅ الـ AnimatedHistoryButton في الـ left يتحدث من InteractionsCubit
                     Positioned(
                       left: 0,
-                      child: AnimatedBeFirstButton(
-                        onTap: () {
-                          context.pushNamed(AppRouter.kBoostAccountView);
-                        },
-                      ),
+                      child: showBackButton
+                          ? const SizedBox.shrink()
+                          : AnimatedBeFirstButton(
+                              onTap: () {
+                                context.pushNamed(AppRouter.kBoostAccountView);
+                              },
+                            ),
                     ),
                   ],
                 ),

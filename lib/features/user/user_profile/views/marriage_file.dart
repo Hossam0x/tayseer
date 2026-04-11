@@ -22,6 +22,7 @@ import 'package:tayseer/features/user/marriage/view/widget/interests_section.dar
 import 'package:tayseer/features/user/marriage/view/widget/religious.dart';
 import 'widgets/profile_statistics_cards.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/regards_purchase_sheet.dart';
 
 class MarriagefilePage extends StatefulWidget {
   final UserProfileModel? userProfile;
@@ -554,12 +555,10 @@ class _MarriagefilePageState extends State<MarriagefilePage>
 
           _buildSliverPadding(
             child: ProfileStatisticsCards(
-              upgradesCount: profile.interactionCount ?? 0,
-              resultsCount: profile.regredsCount ?? 0,
-              onUpgradesTap: () =>
-                  context.pushNamed(AppRouter.kinteractionSubscriptionView),
-              onResultsTap: () =>
-                  context.pushNamed(AppRouter.kinteractionSubscriptionView),
+              upgradesCount: profile.likesLeft ?? 0,
+              resultsCount: profile.regardsLeft  ?? 0,
+              onUpgradesTap: () => showRegardsPurchaseSheet(context),
+              onResultsTap: () => showRegardsPurchaseSheet(context),
             ),
           ),
 

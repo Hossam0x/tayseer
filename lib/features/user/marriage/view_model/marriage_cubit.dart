@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/animation.dart';
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
+import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_event_bus.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_state.dart';
@@ -325,6 +326,40 @@ class MarriageCubit extends Cubit<MarriageState> {
           ),
         );
       },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SYNC NOTIFICATION COUNT FROM INTERACTIONS CUBIT
+  // ═══════════════════════════════════════════════════════════════
+  // ✅ ده الحل: بنقرأ من InteractionsCubit ونحدث MarriageCubit state بنفس القيم
+  void syncNotificationCountFromInteractions(
+    int total,
+    int likes,
+    int favorites,
+    int regards,
+  ) {
+    if (isClosed) return;
+    emit(
+      state.copyWith(
+        interactionsNotificationCount: total,
+        likesNotificationCount: likes,
+        favoritesNotificationCount: favorites,
+        regardsNotificationCount: regards,
+      ),
+    );
+  }
+
+  Future<void> fetchAndSyncNotificationCount() async {
+    final interactionsCubit = getIt<InteractionsCubit>();
+    await interactionsCubit.fetchAndSyncNotificationCount();
+    if (isClosed) return;
+    final interactionsState = interactionsCubit.state;
+    syncNotificationCountFromInteractions(
+      interactionsState.totalNotificationCount,
+      interactionsState.likesNotificationCount,
+      interactionsState.favoritesNotificationCount,
+      interactionsState.regardsNotificationCount,
     );
   }
 
