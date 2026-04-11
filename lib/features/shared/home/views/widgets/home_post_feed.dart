@@ -11,8 +11,6 @@ import 'package:tayseer/features/shared/post_details/presentation/views/post_det
 import 'package:tayseer/core/widgets/post_card/post_shimmer.dart';
 import 'package:tayseer/my_import.dart';
 
-const int _kMaxKeepAliveCount = 50;
-
 class HomePostFeed extends StatelessWidget {
   const HomePostFeed({
     super.key,
@@ -281,54 +279,61 @@ class HomePostFeed extends StatelessWidget {
     ),
   );
 
-  // ✅ CHANGED: أضفنا findChildIndexCallback
-  Widget _buildPostList(_FeedState state) => SliverList(
-    delegate: SliverChildBuilderDelegate(
-      (context, index) {
-        if (index < state.postIds.length) {
-          return _PostItem(
-            key: ValueKey(state.postIds[index]),
-            postId: state.postIds[index],
-            homeCubit: homeCubit,
-            index: index,
-            showGap: index < state.postIds.length - 1,
-          );
-        }
+  Widget _buildPostList(_FeedState state) {
+    // ✅ O(1) lookup map — بيتبني مرة واحدة لكل rebuild
+    final indexMap = {
+      for (var i = 0; i < state.postIds.length; i++) state.postIds[i]: i,
+    };
 
-        if (state.isLoadingMore) {
-          return const _LoadingMoreIndicator();
-        }
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          if (index < state.postIds.length) {
+            return _PostItem(
+              key: ValueKey(state.postIds[index]),
+              postId: state.postIds[index],
+              homeCubit: homeCubit,
+              index: index,
+              showGap: index < state.postIds.length - 1,
+            );
+          }
 
-        if (state.isShowingCachedData && !state.hasMore) {
-          return const EndOfCachedPosts();
-        }
+          if (state.isLoadingMore) {
+            return const _LoadingMoreIndicator();
+          }
 
-        if (state.isOffline && state.hasMore) {
-          return const EndOfCachedPosts();
-        }
+          if (state.isShowingCachedData && !state.hasMore) {
+            return const EndOfCachedPosts();
+          }
 
-        if (state.loadMoreServerFailed) {
-          return _LoadMoreFailedRetry(onRetry: () => homeCubit.retryLoadMore());
-        }
+          if (state.isOffline && state.hasMore) {
+            return const EndOfCachedPosts();
+          }
 
-        if (state.isAllCategory) {
-          return const EndOfFeedIndicator();
-        }
+          if (state.loadMoreServerFailed) {
+            return _LoadMoreFailedRetry(
+              onRetry: () => homeCubit.retryLoadMore(),
+            );
+          }
 
-        return _EndOfCategoryIndicator(onViewAllTap: _goToAllCategory);
-      },
-      childCount: state.postIds.length + 1,
-      addAutomaticKeepAlives: true,
-      // ✅ NEW: يخلي Flutter يلاقي البوست بسرعة لما الليستة تتغير
-      findChildIndexCallback: (key) {
-        if (key is ValueKey<String>) {
-          final index = state.postIds.indexOf(key.value);
-          return index != -1 ? index : null;
-        }
-        return null;
-      },
-    ),
-  );
+          if (state.isAllCategory) {
+            return const EndOfFeedIndicator();
+          }
+
+          return _EndOfCategoryIndicator(onViewAllTap: _goToAllCategory);
+        },
+        childCount: state.postIds.length + 1,
+        addAutomaticKeepAlives: false, // ✅ مش محتاجينه
+        // ✅ O(1) lookup بدل O(n)
+        findChildIndexCallback: (key) {
+          if (key is ValueKey<String>) {
+            return indexMap[key.value];
+          }
+          return null;
+        },
+      ),
+    );
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -377,7 +382,7 @@ class _FeedState extends Equatable {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Post Item Widget ✅ معدّل — بدون Stream + O(1) lookup
+// Post Item Widget ✅ StatefulWidget بدون AutomaticKeepAlive
 // ══════════════════════════════════════════════════════════════════════════════
 
 class _PostItem extends StatefulWidget {
@@ -398,13 +403,8 @@ class _PostItem extends StatefulWidget {
   State<_PostItem> createState() => _PostItemState();
 }
 
-class _PostItemState extends State<_PostItem>
-    with AutomaticKeepAliveClientMixin {
-  // ✅ CHANGED: شيلنا الـ _postStream — الـ BlocSelector هيهاندل الـ updates
+class _PostItemState extends State<_PostItem> {
   late final PostCallbacks _callbacks;
-
-  @override
-  bool get wantKeepAlive => widget.index < _kMaxKeepAliveCount;
 
   @override
   void initState() {
@@ -412,7 +412,6 @@ class _PostItemState extends State<_PostItem>
     _initializeCallbacks();
   }
 
-  // ✅ CHANGED: callbacks بدون stream
   void _initializeCallbacks() {
     _callbacks = PostCallbacks(
       onReactionChanged: _onReaction,
@@ -431,7 +430,6 @@ class _PostItemState extends State<_PostItem>
     );
   }
 
-  // ✅ NEW: Stream يتعمل بس لما تفتح PostDetailsView
   PostCallbacks _buildCallbacksWithStream() {
     final stream = widget.homeCubit.stream
         .map((state) => state.postsMap[widget.postId])
@@ -530,7 +528,6 @@ class _PostItemState extends State<_PostItem>
     );
   }
 
-  // ✅ CHANGED: بنستخدم _buildCallbacksWithStream هنا بس
   void _onNavigateToDetails(
     BuildContext ctx,
     PostModel post,
@@ -543,7 +540,7 @@ class _PostItemState extends State<_PostItem>
           isFromProfile: false,
           post: post,
           cachedController: controller,
-          callbacks: _buildCallbacksWithStream(), // ✅ Stream بس هنا
+          callbacks: _buildCallbacksWithStream(),
         ),
       ),
     );
@@ -551,11 +548,8 @@ class _PostItemState extends State<_PostItem>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-
     return Column(
       children: [
-        // ✅ CHANGED: O(1) lookup بدل O(n)
         BlocSelector<HomeCubit, HomeState, PostModel?>(
           selector: (state) => state.postsMap[widget.postId],
           builder: (context, post) {
@@ -696,10 +690,10 @@ class _EndOfCategoryIndicator extends StatelessWidget {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
               decoration: BoxDecoration(
-                color: AppColors.kprimaryColor.withOpacity(0.1),
+                color: AppColors.kprimaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20.r),
                 border: Border.all(
-                  color: AppColors.kprimaryColor.withOpacity(0.3),
+                  color: AppColors.kprimaryColor.withValues(alpha: 0.3),
                 ),
               ),
               child: Row(
@@ -767,13 +761,13 @@ class _EmptyCategoryIndicator extends StatelessWidget {
                   gradient: LinearGradient(
                     colors: [
                       AppColors.kprimaryColor,
-                      AppColors.kprimaryColor.withOpacity(0.8),
+                      AppColors.kprimaryColor.withValues(alpha: 0.8),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(25.r),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.kprimaryColor.withOpacity(0.3),
+                      color: AppColors.kprimaryColor.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
