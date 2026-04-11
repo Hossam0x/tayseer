@@ -373,7 +373,6 @@ class _HiddenPostUI extends StatelessWidget {
   }
 }
 
-// ... بقية الـ Widgets (مثل _CardContainer, _RepostHeader, الخ) تبقى كما هي بدون تغيير
 class _CardContainer extends StatelessWidget {
   final bool isDetailsView;
   final Widget child;
@@ -394,7 +393,6 @@ class _CardContainer extends StatelessWidget {
             : BorderRadius.circular(15.r),
         border: isDetailsView ? null : Border.all(color: Colors.grey.shade200),
       ),
-      clipBehavior: Clip.antiAlias,
       child: child,
     );
   }
