@@ -41,14 +41,18 @@ class QuestionsCubit extends Cubit<QuestionsState> {
 
     response.fold(
       (failure) {
-        emit(state.copyWith(
-          uploadPersonalInfoState: CubitStates.failure,
-          errorMessage: failure.message,
-        ));
-        emit(state.copyWith(
-          uploadPersonalInfoState: CubitStates.initial,
-          errorMessage: null,
-        ));
+        emit(
+          state.copyWith(
+            uploadPersonalInfoState: CubitStates.failure,
+            errorMessage: failure.message,
+          ),
+        );
+        emit(
+          state.copyWith(
+            uploadPersonalInfoState: CubitStates.initial,
+            errorMessage: null,
+          ),
+        );
       },
       (_) {
         setMainImage(image!);
@@ -82,14 +86,18 @@ class QuestionsCubit extends Cubit<QuestionsState> {
 
     response.fold(
       (failure) {
-        emit(state.copyWith(
-          answerQuestionsState: CubitStates.failure,
-          errorMessage: failure.message,
-        ));
-        emit(state.copyWith(
-          answerQuestionsState: CubitStates.initial,
-          errorMessage: null,
-        ));
+        emit(
+          state.copyWith(
+            answerQuestionsState: CubitStates.failure,
+            errorMessage: failure.message,
+          ),
+        );
+        emit(
+          state.copyWith(
+            answerQuestionsState: CubitStates.initial,
+            errorMessage: null,
+          ),
+        );
       },
       (_) {
         emit(state.copyWith(answerQuestionsState: CubitStates.success));
@@ -103,10 +111,12 @@ class QuestionsCubit extends Cubit<QuestionsState> {
   // ─────────────────────────────────────────────────────
 
   Future<void> verifyFaceWithDidit() async {
-    emit(state.copyWith(
-      faceVerificationState: CubitStates.loading,
-      clearFaceVerificationError: true,
-    ));
+    emit(
+      state.copyWith(
+        faceVerificationState: CubitStates.loading,
+        clearFaceVerificationError: true,
+      ),
+    );
 
     try {
       // Step 1: اطلب Session Token من الـ Backend
@@ -116,10 +126,12 @@ class QuestionsCubit extends Cubit<QuestionsState> {
 
       sessionResult.fold(
         (failure) {
-          emit(state.copyWith(
-            faceVerificationState: CubitStates.failure,
-            faceVerificationError: 'session_creation_failed',
-          ));
+          emit(
+            state.copyWith(
+              faceVerificationState: CubitStates.failure,
+              faceVerificationError: 'session_creation_failed',
+            ),
+          );
         },
         (token) {
           sessionToken = token;
@@ -132,7 +144,7 @@ class QuestionsCubit extends Cubit<QuestionsState> {
       final result = await DiditSdk.startVerification(
         sessionToken!,
         config: DiditConfig(
-          languageCode: selectedLanguage?? 'ar',
+          languageCode: selectedLanguage ?? 'ar',
           loggingEnabled: true,
         ),
       );
@@ -143,46 +155,58 @@ class QuestionsCubit extends Cubit<QuestionsState> {
           switch (session.status) {
             case VerificationStatus.approved:
               debugPrint('✅ Approved! Session: ${session.sessionId}');
-              emit(state.copyWith(
-                faceVerificationState: CubitStates.success,
-                clearFaceVerificationError: true,
-              ));
+              emit(
+                state.copyWith(
+                  faceVerificationState: CubitStates.success,
+                  clearFaceVerificationError: true,
+                ),
+              );
 
             case VerificationStatus.declined:
               debugPrint('❌ Declined. Session: ${session.sessionId}');
-              emit(state.copyWith(
-                faceVerificationState: CubitStates.failure,
-                faceVerificationError: 'face_mismatch',
-              ));
+              emit(
+                state.copyWith(
+                  faceVerificationState: CubitStates.failure,
+                  faceVerificationError: 'face_mismatch',
+                ),
+              );
 
             case VerificationStatus.pending:
               debugPrint('⏳ Pending. Session: ${session.sessionId}');
-              emit(state.copyWith(
-                faceVerificationState: CubitStates.failure,
-                faceVerificationError: 'verification_pending',
-              ));
+              emit(
+                state.copyWith(
+                  faceVerificationState: CubitStates.failure,
+                  faceVerificationError: 'verification_pending',
+                ),
+              );
           }
 
         case VerificationCancelled():
           debugPrint('⚠️ User cancelled');
-          emit(state.copyWith(
-            faceVerificationState: CubitStates.failure,
-            faceVerificationError: 'verification_cancelled',
-          ));
+          emit(
+            state.copyWith(
+              faceVerificationState: CubitStates.failure,
+              faceVerificationError: 'verification_cancelled',
+            ),
+          );
 
         case VerificationFailed(:final error):
           debugPrint('❌ Error: ${error.type} - ${error.message}');
-          emit(state.copyWith(
-            faceVerificationState: CubitStates.failure,
-            faceVerificationError: _mapDiditError(error.type),
-          ));
+          emit(
+            state.copyWith(
+              faceVerificationState: CubitStates.failure,
+              faceVerificationError: _mapDiditError(error.type),
+            ),
+          );
       }
     } catch (e) {
       debugPrint('❌ Verification error: $e');
-      emit(state.copyWith(
-        faceVerificationState: CubitStates.failure,
-        faceVerificationError: 'verification_error',
-      ));
+      emit(
+        state.copyWith(
+          faceVerificationState: CubitStates.failure,
+          faceVerificationError: 'verification_error',
+        ),
+      );
     }
   }
 
@@ -202,10 +226,12 @@ class QuestionsCubit extends Cubit<QuestionsState> {
   }
 
   void resetFaceVerification() {
-    emit(state.copyWith(
-      faceVerificationState: CubitStates.initial,
-      clearFaceVerificationError: true,
-    ));
+    emit(
+      state.copyWith(
+        faceVerificationState: CubitStates.initial,
+        clearFaceVerificationError: true,
+      ),
+    );
   }
 
   // ─────────────────────────────────────────────────────
@@ -218,16 +244,20 @@ class QuestionsCubit extends Cubit<QuestionsState> {
     final result = await _repo.changeImageBlur();
     result.fold(
       (failure) {
-        emit(state.copyWith(
-          changeImageBlurState: CubitStates.failure,
-          errorMessage: failure.message,
-        ));
+        emit(
+          state.copyWith(
+            changeImageBlurState: CubitStates.failure,
+            errorMessage: failure.message,
+          ),
+        );
       },
       (_) {
-        emit(state.copyWith(
-          changeImageBlurState: CubitStates.success,
-          blurEnabled: enable,
-        ));
+        emit(
+          state.copyWith(
+            changeImageBlurState: CubitStates.success,
+            blurEnabled: enable,
+          ),
+        );
       },
     );
 
@@ -253,10 +283,12 @@ class QuestionsCubit extends Cubit<QuestionsState> {
     );
     result.fold(
       (failure) {
-        emit(state.copyWith(
-          phoneNumberState: CubitStates.failure,
-          errorMessage: failure.message,
-        ));
+        emit(
+          state.copyWith(
+            phoneNumberState: CubitStates.failure,
+            errorMessage: failure.message,
+          ),
+        );
       },
       (_) {
         emit(state.copyWith(phoneNumberState: CubitStates.success));
@@ -276,10 +308,12 @@ class QuestionsCubit extends Cubit<QuestionsState> {
     final result = await _repo.verifyOtp(otp: otp);
     result.fold(
       (failure) {
-        emit(state.copyWith(
-          verifyOtpState: CubitStates.failure,
-          errorMessage: failure.message,
-        ));
+        emit(
+          state.copyWith(
+            verifyOtpState: CubitStates.failure,
+            errorMessage: failure.message,
+          ),
+        );
       },
       (_) {
         emit(state.copyWith(verifyOtpState: CubitStates.success));
@@ -300,16 +334,20 @@ class QuestionsCubit extends Cubit<QuestionsState> {
     final result = await _repo.getLastQuestionNumber();
     result.fold(
       (failure) {
-        emit(state.copyWith(
-          lastQuestionNumberState: CubitStates.failure,
-          errorMessage: failure.message,
-        ));
+        emit(
+          state.copyWith(
+            lastQuestionNumberState: CubitStates.failure,
+            errorMessage: failure.message,
+          ),
+        );
       },
       (responseModel) {
-        emit(state.copyWith(
-          lastQuestionNumberState: CubitStates.success,
-          lastQuestionNumberResponse: responseModel,
-        ));
+        emit(
+          state.copyWith(
+            lastQuestionNumberState: CubitStates.success,
+            lastQuestionNumberResponse: responseModel,
+          ),
+        );
       },
     );
 
@@ -333,11 +371,13 @@ class QuestionsCubit extends Cubit<QuestionsState> {
   }
 
   void resetPartnerFilter() {
-    emit(state.copyWith(
-      partnerAgeRange: const RangeValues(22, 35),
-      clearPartnerCountry: true,
-      clearPartnerNationality: true,
-    ));
+    emit(
+      state.copyWith(
+        partnerAgeRange: const RangeValues(22, 35),
+        clearPartnerCountry: true,
+        clearPartnerNationality: true,
+      ),
+    );
   }
 
   Future<void> submitPartnerFilter() async {
@@ -357,10 +397,12 @@ class QuestionsCubit extends Cubit<QuestionsState> {
 
     result.fold(
       (failure) {
-        emit(state.copyWith(
-          partnerFilterState: CubitStates.failure,
-          errorMessage: failure.message,
-        ));
+        emit(
+          state.copyWith(
+            partnerFilterState: CubitStates.failure,
+            errorMessage: failure.message,
+          ),
+        );
         emit(state.copyWith(partnerFilterState: CubitStates.initial));
       },
       (_) {
@@ -384,17 +426,20 @@ class QuestionsCubit extends Cubit<QuestionsState> {
 
     final apiKey = dotenv.env['GEMINI_API_KEY'];
     if (apiKey == null || apiKey.isEmpty) {
-      emit(state.copyWith(
-        isAiLoading: false,
-        aiErrorMessage:
-            'Missing AI API key. Configure GEMINI_API_KEY in your .env',
-      ));
+      emit(
+        state.copyWith(
+          isAiLoading: false,
+          aiErrorMessage:
+              'Missing AI API key. Configure GEMINI_API_KEY in your .env',
+        ),
+      );
       return;
     }
 
     try {
       final model = GenerativeModel(model: 'gemma-3-4b-it', apiKey: apiKey);
-      final prompt = '''
+      final prompt =
+          '''
 You are a professional profile writer.
 
 TASK:
@@ -422,17 +467,18 @@ Use this information about the person:
       final response = await model.generateContent(content);
 
       if (response.text != null) {
-        emit(state.copyWith(
-          aiGeneratedText: response.text!,
-          isAiLoading: false,
-        ));
+        emit(
+          state.copyWith(aiGeneratedText: response.text!, isAiLoading: false),
+        );
       }
     } catch (e) {
       debugPrint('Gemini AI error: $e');
-      emit(state.copyWith(
-        isAiLoading: false,
-        aiErrorMessage: 'AI Error: ${e.toString()}',
-      ));
+      emit(
+        state.copyWith(
+          isAiLoading: false,
+          aiErrorMessage: 'AI Error: ${e.toString()}',
+        ),
+      );
     }
   }
 

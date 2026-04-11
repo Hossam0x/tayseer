@@ -1,7 +1,7 @@
-// lib/features/user/my_space/presentation/manager/ticket_session/ticket_session_cubit.dart
-
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
+import 'package:tayseer/core/services/paymob_service/paymob_service.dart';
 import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/ticket_session/ticket_session_state.dart';
 
@@ -60,7 +60,7 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
     );
   }
 
-  // ==================== دفع الجلسة ====================
+  // ==================== دفع الجلسة عبر Paymob ====================
   Future<void> paySession({required String sessionId}) async {
     emit(
       state.copyWith(paySessionState: CubitStates.loading, errorMessage: null),
@@ -71,15 +71,16 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
       state: CubitStates.loading,
     );
 
-    final result = await mySpaceRepo.paySession(
+    // ── Step 1: جلب paymentKey من Backend ──
+    final result = await mySpaceRepo.initiatePayment(
       sessionId: sessionId,
       discountCode: state.appliedCode,
     );
 
-    result.fold(
+    await result.fold(
       (failure) {
         CubitStates.printState(
-          stateName: 'TicketSessionCubit - paySession',
+          stateName: 'TicketSessionCubit - paySession (Backend)',
           state: CubitStates.failure,
         );
         emit(
@@ -89,12 +90,47 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
           ),
         );
       },
-      (success) {
-        CubitStates.printState(
-          stateName: 'TicketSessionCubit - paySession',
-          state: CubitStates.success,
-        );
-        emit(state.copyWith(paySessionState: CubitStates.success));
+      (paymentIntention) async {
+        // ── Step 2: فتح Paymob SDK ──
+        try {
+          final sdkResult = await PaymobService.pay(
+            clientSecret: paymentIntention.data.clientSecret,
+          );
+
+          // ── Step 3: التعامل مع النتيجة ──
+          if (sdkResult == 'Successfull') {
+            CubitStates.printState(
+              stateName: 'TicketSessionCubit - paySession (SDK)',
+              state: CubitStates.success,
+            );
+            emit(state.copyWith(paySessionState: CubitStates.success));
+          } else if (sdkResult == 'Pending') {
+            emit(
+              state.copyWith(
+                paySessionState: CubitStates.failure,
+                errorMessage: 'الدفع قيد المعالجة، سيتم إخطارك قريباً',
+              ),
+            );
+          } else {
+            CubitStates.printState(
+              stateName: 'TicketSessionCubit - paySession (SDK)',
+              state: CubitStates.failure,
+            );
+            emit(
+              state.copyWith(
+                paySessionState: CubitStates.failure,
+                errorMessage: 'تم رفض الدفع، يرجى المحاولة مرة أخرى',
+              ),
+            );
+          }
+        } on PlatformException catch (e) {
+          emit(
+            state.copyWith(
+              paySessionState: CubitStates.failure,
+              errorMessage: 'خطأ في الدفع: ${e.message}',
+            ),
+          );
+        }
       },
     );
   }
