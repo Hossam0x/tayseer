@@ -207,6 +207,7 @@ class _SingleStoryItemState extends State<SingleStoryItem> {
             child: Text(
               widget.parentUserStory.name,
               textAlign: TextAlign.center,
+              textDirection: TextDirection.ltr,
               style: Styles.textStyle10.copyWith(color: AppColors.kGreyB3),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

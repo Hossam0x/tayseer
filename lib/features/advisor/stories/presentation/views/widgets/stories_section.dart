@@ -241,6 +241,7 @@ class _UserStoryItem extends StatelessWidget {
                 child: Text(
                   userStoryModel.name,
                   textAlign: TextAlign.center,
+                  textDirection: TextDirection.ltr,
                   style: Styles.textStyle10.copyWith(color: AppColors.kGreyB3),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -349,9 +350,9 @@ class _AddStoryItem extends StatelessWidget {
                         if (myStory != null) {
                           final storiesCubit = context.read<StoriesCubit>();
 
-// Open my story fast without blocking the transition with a loading indicator.
+                          // Open my story fast without blocking the transition with a loading indicator.
                           // It will use the current story data instantly.
-                          
+
                           // We still request a quiet refetch in the background to keep data fresh later
                           storiesCubit.fetchMyStories(isSilent: true);
 
@@ -360,44 +361,49 @@ class _AddStoryItem extends StatelessWidget {
                               storiesCubit.state.myStories ?? myStory;
 
                           // Open my story in chronological order
-                          final chronologicalUserStory = latestMyStories.copyWith(
-                            stories: latestMyStories.stories.reversed.toList(),
-                          );
-                          
+                          final chronologicalUserStory = latestMyStories
+                              .copyWith(
+                                stories: latestMyStories.stories.reversed
+                                    .toList(),
+                              );
+
                           if (context.mounted) {
                             Navigator.push(
                               context,
                               PageRouteBuilder(
                                 opaque: false,
-                                pageBuilder: (
-                                  newContext,
-                                  animation,
-                                  secondaryAnimation,
-                                ) =>
-                                    BlocProvider.value(
+                                pageBuilder:
+                                    (
+                                      newContext,
+                                      animation,
+                                      secondaryAnimation,
+                                    ) => BlocProvider.value(
                                       value: storiesCubit,
                                       child: StoryDetailsView(
                                         usersStories: [chronologicalUserStory],
                                         initialUserIndex: 0,
                                       ),
                                     ),
-                                transitionsBuilder: (
-                                  context,
-                                  animation,
-                                  secondaryAnimation,
-                                  child,
-                                ) {
-                                  return FadeTransition(
-                                    opacity: animation,
-                                    child: child,
-                                  );
-                                },
+                                transitionsBuilder:
+                                    (
+                                      context,
+                                      animation,
+                                      secondaryAnimation,
+                                      child,
+                                    ) {
+                                      return FadeTransition(
+                                        opacity: animation,
+                                        child: child,
+                                      );
+                                    },
                               ),
                             ).then((_) {
                               // Re-fetch my stories when viewer is closed so the
                               // ring border and counters reflect the latest data.
                               if (context.mounted) {
-                                context.read<StoriesCubit>().fetchMyStories(isSilent: true);
+                                context.read<StoriesCubit>().fetchMyStories(
+                                  isSilent: true,
+                                );
                               }
                             });
                           }
