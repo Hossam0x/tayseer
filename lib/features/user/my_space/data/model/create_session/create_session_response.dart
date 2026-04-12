@@ -38,10 +38,11 @@ class SessionData {
   final bool am;
   final bool pm;
   final bool isAnonymous;
-  final int price;
-  final int tax;
-  final int fees;
-  final int total;
+  final double price;
+  final double tax;
+  final double fees;
+  final double total;
+  final String currency;
   final String displayTime;
 
   SessionData({
@@ -64,6 +65,7 @@ class SessionData {
     required this.tax,
     required this.fees,
     required this.total,
+    required this.currency,
     required this.displayTime,
   });
 
@@ -73,21 +75,23 @@ class SessionData {
       offeringId: json['offeringId'] ?? '',
       userId: json['userId'] ?? '',
       advisor: Advisor.fromJson(json['advisor'] ?? {}),
-      date: DateTime.parse(json['date']),
-      duration: json['duration'] ?? '',
+      date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
+      duration: json['duration']?.toString() ?? '',
       time: json['time'] ?? '',
       fromTime: json['fromTime'] ?? '',
       toTime: json['toTime'] ?? '',
-      fromTimeUTC: DateTime.parse(json['fromTimeUTC']),
-      toTimeUTC: DateTime.parse(json['toTimeUTC']),
+      fromTimeUTC:
+          DateTime.tryParse(json['fromTimeUTC'] ?? '') ?? DateTime.now(),
+      toTimeUTC: DateTime.tryParse(json['toTimeUTC'] ?? '') ?? DateTime.now(),
       advisorTimezone: json['advisorTimezone'] ?? '',
       am: json['am'] ?? false,
       pm: json['pm'] ?? false,
       isAnonymous: json['isAnonymous'] ?? false,
-      price: json['price'] ?? 0,
-      tax: json['tax'] ?? 0,
-      fees: json['fees'] ?? 0,
-      total: json['total'] ?? 0,
+      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      tax: (json['tax'] as num?)?.toDouble() ?? 0.0,
+      fees: (json['fees'] as num?)?.toDouble() ?? 0.0,
+      total: (json['total'] as num?)?.toDouble() ?? 0.0,
+      currency: json['currency'] ?? '',
       displayTime: json['displayTime'] ?? '',
     );
   }
@@ -113,6 +117,7 @@ class SessionData {
       'tax': tax,
       'fees': fees,
       'total': total,
+      'currency': currency,
       'displayTime': displayTime,
     };
   }

@@ -61,7 +61,7 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
   }
 
   // ==================== دفع الجلسة عبر Paymob ====================
-  Future<void> paySession({required String sessionId}) async {
+  Future<void> paySession({required String offeringId}) async {
     emit(
       state.copyWith(paySessionState: CubitStates.loading, errorMessage: null),
     );
@@ -73,7 +73,7 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
 
     // ── Step 1: جلب paymentKey من Backend ──
     final result = await mySpaceRepo.initiatePayment(
-      sessionId: sessionId,
+      sessionId: offeringId,
       discountCode: state.appliedCode,
     );
 

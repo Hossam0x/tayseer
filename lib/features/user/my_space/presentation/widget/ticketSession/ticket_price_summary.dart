@@ -6,7 +6,6 @@ class TicketPriceSummary extends StatelessWidget {
   final SessionData sessionData;
   final int discountPercentage;
   final bool isLoading;
-
   const TicketPriceSummary({
     super.key,
     required this.sessionData,
@@ -122,7 +121,7 @@ class TicketPriceSummary extends StatelessWidget {
             onPressed: () {
               if (!isLoading) {
                 context.read<TicketSessionCubit>().paySession(
-                  sessionId: sessionData.offeringId,
+                  offeringId: sessionData.offeringId,
                 );
               }
             },
