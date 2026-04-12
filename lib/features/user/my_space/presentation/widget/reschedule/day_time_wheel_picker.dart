@@ -31,6 +31,14 @@ class _DayTimeWheelPickerState extends State<DayTimeWheelPicker> {
   Widget build(BuildContext context) {
     final double itemHeight = 56.h;
 
+    // فلترة الأيام المتاحة فقط
+    final availableIndices = <int>[];
+    for (int i = 0; i < widget.days.length; i++) {
+      if (widget.days[i].isAvailable && widget.days[i].hasAvailableSlots) {
+        availableIndices.add(i);
+      }
+    }
+
     return Stack(
       children: [
         // ═══ القائمة ═══
@@ -38,11 +46,12 @@ class _DayTimeWheelPickerState extends State<DayTimeWheelPicker> {
           controller: _scrollController,
           physics: const BouncingScrollPhysics(),
           padding: EdgeInsets.symmetric(vertical: 16.h),
-          itemCount: widget.days.length,
+          itemCount: availableIndices.length,
           itemBuilder: (context, index) {
-            final day = widget.days[index];
+            final originalIndex = availableIndices[index];
+            final day = widget.days[originalIndex];
             final isAvailable = day.isAvailable && day.hasAvailableSlots;
-            final isSelected = widget.selectedIndex == index;
+            final isSelected = widget.selectedIndex == originalIndex;
 
             final dayText = isArabic ? day.dayName : day.dayNameEn;
             final month = isArabic ? day.monthName : day.monthNameEn;
@@ -51,7 +60,9 @@ class _DayTimeWheelPickerState extends State<DayTimeWheelPicker> {
                 : day.firstAvailableTime;
 
             return GestureDetector(
-              onTap: isAvailable ? () => widget.onItemTapped(index) : null,
+              onTap: isAvailable
+                  ? () => widget.onItemTapped(originalIndex)
+                  : null,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
                 curve: Curves.easeInOut,
