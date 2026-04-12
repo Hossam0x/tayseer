@@ -83,6 +83,7 @@ class User {
   bool? isBlocked;
   String? city;
   double? distanceKm;
+  String? subscriptionType;
 
   User({
     this.id,
@@ -101,6 +102,7 @@ class User {
     this.isBlocked,
     this.city,
     this.distanceKm,
+    this.subscriptionType,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
@@ -126,6 +128,7 @@ class User {
         distanceKm: json["distanceKm"] != null
             ? (json["distanceKm"] as num).toDouble()
             : null,
+        subscriptionType: json["subscriptionType"] as String?,
       );
 
   Map<String, dynamic> toJson() => {

@@ -150,26 +150,29 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView>
   }
 
   @override
-  Widget build(BuildContext context) {
-    super.build(context);
+Widget build(BuildContext context) {
+  super.build(context);
 
-    final isUpdatingNow = widget.state.isUpdating;
-    if (isUpdatingNow && !_wasUpdating) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          showGifOverlay(
-            context,
-            repeatCount: 10,
-            gifDuration: const Duration(milliseconds: 900),
-          );
-        }
-      });
-    }
-    _wasUpdating = isUpdatingNow;
-
-    return _buildScrollContent(context);
+  final isUpdatingNow = widget.state.isUpdating;
+  if (isUpdatingNow && !_wasUpdating) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final statusBar = MediaQuery.of(context).padding.top;
+        // ✅ نفس الحساب زي _appBarOffset في MarriagefilePage
+        final appBarHeight = 10.h + 56.h + 5.h + 46.h + 10.h;
+        showGifOverlay(
+          context,
+          repeatCount: 10,
+          gifDuration: const Duration(milliseconds: 900),
+          topOffset: statusBar + appBarHeight,
+        );
+      }
+    });
   }
+  _wasUpdating = isUpdatingNow;
 
+  return _buildScrollContent(context);
+}
   // ════════════════════════════════════════════════════════════════
   // SCROLL CONTENT
   // ✅ ClampingScrollPhysics = scroll يشتغل فوراً بدون ما ينتظر

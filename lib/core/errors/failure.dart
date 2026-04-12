@@ -8,7 +8,9 @@ abstract class Failure {
 
 //كلاس للتعامل مع مشاكل السيرفر
 class ServerFailure extends Failure {
-  ServerFailure(super.message);
+  final Map<String, dynamic>? data;
+
+  ServerFailure(super.message, {this.data});
 
   factory ServerFailure.fromDioError(DioError error) {
     debugPrint('DioError: ${error.toString()}');
@@ -58,7 +60,11 @@ class ServerFailure extends Failure {
         statusCode == 401 ||
         statusCode == 403 ||
         statusCode == 422) {
-      return ServerFailure(response["message"]);
+      final data = response is Map<String, dynamic> ? response['data'] : null;
+      return ServerFailure(
+        response["message"],
+        data: data is Map<String, dynamic> ? data : null,
+      );
     } else {
       return ServerFailure('عذرًا، حدث خطأ ما. يرجى المحاولة لاحقًا');
     }

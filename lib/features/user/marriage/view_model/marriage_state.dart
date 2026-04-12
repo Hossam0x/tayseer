@@ -33,6 +33,8 @@ class MarriageState extends Equatable {
   final int likesNotificationCount;
   final int favoritesNotificationCount;
   final int regardsNotificationCount;
+  final int? likesLeft;
+  final int? regardsLeft;
 
   const MarriageState({
     this.marriageProfileState = CubitStates.initial,
@@ -60,9 +62,11 @@ class MarriageState extends Equatable {
     this.favoritedIds = const {},
     this.showActionSnackbar = false,
     this.interactionsNotificationCount = 0,
-    this.likesNotificationCount = 0,       // ✅
-    this.favoritesNotificationCount = 0,   // ✅
-    this.regardsNotificationCount = 0,     // ✅
+    this.likesNotificationCount = 0,
+    this.favoritesNotificationCount = 0,
+    this.regardsNotificationCount = 0,
+    this.likesLeft,
+    this.regardsLeft,
   });
 
   MarriageState copyWith({
@@ -91,9 +95,11 @@ class MarriageState extends Equatable {
     Set<String>? favoritedIds,
     bool? showActionSnackbar,
     int? interactionsNotificationCount,
-    int? likesNotificationCount,       // ✅ FIX: was missing from copyWith
-    int? favoritesNotificationCount,   // ✅ FIX: was missing from copyWith
-    int? regardsNotificationCount,     // ✅ FIX: was missing from copyWith
+    int? likesNotificationCount,
+    int? favoritesNotificationCount,
+    int? regardsNotificationCount,
+    int? likesLeft,
+    int? regardsLeft,
   }) {
     return MarriageState(
       marriageProfileState: marriageProfileState ?? this.marriageProfileState,
@@ -127,14 +133,14 @@ class MarriageState extends Equatable {
       showActionSnackbar: showActionSnackbar ?? this.showActionSnackbar,
       interactionsNotificationCount:
           interactionsNotificationCount ?? this.interactionsNotificationCount,
-      // ✅ FIX: these three were absent from the return statement,
-      //    so every copyWith() call silently reset them to 0.
       likesNotificationCount:
           likesNotificationCount ?? this.likesNotificationCount,
       favoritesNotificationCount:
           favoritesNotificationCount ?? this.favoritesNotificationCount,
       regardsNotificationCount:
           regardsNotificationCount ?? this.regardsNotificationCount,
+      likesLeft: likesLeft ?? this.likesLeft,
+      regardsLeft: regardsLeft ?? this.regardsLeft,
     );
   }
 
@@ -165,8 +171,10 @@ class MarriageState extends Equatable {
     favoritedIds,
     showActionSnackbar,
     interactionsNotificationCount,
-    likesNotificationCount,       // ✅
-    favoritesNotificationCount,   // ✅
-    regardsNotificationCount,     // ✅
+    likesNotificationCount,
+    favoritesNotificationCount,
+    regardsNotificationCount,
+    likesLeft,
+    regardsLeft,
   ];
 }

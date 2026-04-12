@@ -1919,7 +1919,11 @@
 "regards_balance_finished_desc": "Buy more regards to keep getting matched with top professionals",
 "most_popular": "Most Popular",
 "per_unit": "per unit",
-"save_percent": "Save {percent}%"
-
-
+"save_percent": "Save {percent}%",
+  "likes_balance_finished": "Your likes balance has run out",
+  "likes_balance_finished_desc": "Buy more likes to keep connecting with others",
+  "ultra_profile_title": "This profile is an Elite subscriber and verified",
+"gold_profile_title": "This profile is a Gold subscriber and verified",
+"ultra_profile_desc": "All personal information has been verified by the app",
+"gold_profile_desc": "All personal information has been verified by the app"
 }

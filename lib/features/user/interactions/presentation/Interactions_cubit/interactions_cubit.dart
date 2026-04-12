@@ -31,8 +31,11 @@ class InteractionsCubit extends Cubit<InteractionsState> {
     );
 
     result.fold((failure) => null, (response) {
-      if (response.userSubscription != state.isSubscribed) {
-        emit(state.copyWith(isSubscribed: response.userSubscription));
+      if (response.isSubscribed != state.isSubscribed) {
+        emit(state.copyWith(
+          isSubscribed: response.isSubscribed,
+          subscriptionType: response.userSubscription,
+        ));
       }
     });
   }
@@ -117,13 +120,15 @@ class InteractionsCubit extends Cubit<InteractionsState> {
         ),
       ),
       (response) {
-        final bool isSubscribed = response.userSubscription;
+        final bool isSubscribed = response.isSubscribed;
+        final String subscriptionType = response.userSubscription;
         final section = response.sections[filter];
 
         if (section == null) {
           emit(
             state.copyWith(
               isSubscribed: isSubscribed,
+              subscriptionType: subscriptionType,
               historyState: CubitStates.success,
               historyData: {filter: []},
               historyCurrentPage: {filter: 1},
@@ -165,6 +170,7 @@ class InteractionsCubit extends Cubit<InteractionsState> {
           state.copyWith(
             historyState: CubitStates.success,
             isSubscribed: isSubscribed,
+            subscriptionType: subscriptionType,
             historyData: newData,
             historyCurrentPage: newCurrentPage,
             historyHasMore: newHasMore,
