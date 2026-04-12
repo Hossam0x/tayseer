@@ -2,9 +2,9 @@ import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/features/advisor/stories/data/models/stories_response_model.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_state.dart';
+import 'package:tayseer/features/advisor/stories/presentation/views/widgets/stories_shared_widgets.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/widgets/blocked_profile_placeholder.dart';
 import 'package:tayseer/my_import.dart';
-import 'stories/stories_sub_widgets.dart';
 
 class ProfileStoriesSection extends StatelessWidget {
   final String? advisorId;
@@ -106,11 +106,11 @@ class ProfileStoriesSection extends StatelessWidget {
   }
 
   Widget _buildContent(
-      BuildContext context,
-      CubitStates currentState,
-      List<UserStoriesModel> stories,
-      String errorMessage,
-      ) {
+    BuildContext context,
+    CubitStates currentState,
+    List<UserStoriesModel> stories,
+    String errorMessage,
+  ) {
     switch (currentState) {
       case CubitStates.loading:
         return const StoriesLoadingShimmer();
