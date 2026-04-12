@@ -60,7 +60,7 @@ import 'package:tayseer/features/advisor/notification/presentation/view/notifica
 import 'package:tayseer/features/advisor/session/presentation/view/session_details_view.dart';
 import 'package:tayseer/features/advisor/wallet/view/bookings_log_view.dart';
 import 'package:tayseer/features/advisor/wallet/view/transactions_log_view.dart';
-import 'package:tayseer/features/advisor/wallet/view/wallet_view.dart';
+import 'package:tayseer/features/advisor/wallet/view/wallet_guard_view.dart';
 import 'package:tayseer/features/advisor/wallet/view/withdraw_success_view.dart';
 import 'package:tayseer/features/advisor/wallet/view/withdraw_view.dart';
 import 'package:tayseer/features/advisor/wallet/view/recharge_view.dart';
@@ -451,7 +451,7 @@ abstract class AppRouter {
 
       case AppRouter.kWalletView:
         return SlideLeftRoute(
-          page: const WalletView(),
+          page: const WalletGuardView(),
           routeSettings: settings,
         );
 
