@@ -15,29 +15,55 @@ class HelpSupportReportSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            context.tr('report_problem'),
-            style: Styles.textStyle18Meduim.copyWith(
-              color: AppColors.primaryText,
-            ),
+          Row(
+            children: [
+              Icon(
+                Icons.support_agent_outlined,
+                color: AppColors.kprimaryColor,
+                size: 22.w,
+              ),
+              Gap(8.w),
+              Text(
+                context.tr('report_problem'),
+                style: Styles.textStyle18Meduim.copyWith(
+                  color: AppColors.primaryText,
+                ),
+              ),
+            ],
           ),
-          Gap(12.h),
+          Gap(8.h),
           Text(
             context.tr('report_problem_subtitle'),
-            style: Styles.textStyle14,
+            style: Styles.textStyle14.copyWith(
+              color: AppColors.secondary600,
+              height: 1.5,
+            ),
           ),
-          Gap(12.h),
+          Gap(14.h),
           TextField(
             controller: controller,
-            maxLines: 4,
+            maxLines: 5,
+            textAlignVertical: TextAlignVertical.top,
             decoration: InputDecoration(
               hintText: context.tr('problem_details_hint'),
               hintStyle: Styles.textStyle14.copyWith(color: AppColors.hintText),
               filled: true,
               fillColor: AppColors.secondary950,
+              contentPadding: EdgeInsets.all(14.w),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.r),
                 borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.r),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.r),
+                borderSide: BorderSide(
+                  color: AppColors.kprimaryColor,
+                  width: 1.5,
+                ),
               ),
             ),
           ),

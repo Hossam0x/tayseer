@@ -4,11 +4,15 @@ import 'package:tayseer/my_import.dart';
 class HelpSupportFaqsSection extends StatelessWidget {
   const HelpSupportFaqsSection({super.key});
 
-  static const List<String> _faqs = [
-    'ما هو تطبيق تيسير',
-    'كيف أحجز جلسة',
-    'طرق الدفع المتاحة',
-    'كيفية إلغاء الحجز',
+  static const List<_FaqItem> _faqs = [
+    _FaqItem(questionKey: 'faq_q1', answerKey: 'faq_a1'),
+    _FaqItem(questionKey: 'faq_q2', answerKey: 'faq_a2'),
+    _FaqItem(questionKey: 'faq_q3', answerKey: 'faq_a3'),
+    _FaqItem(questionKey: 'faq_q4', answerKey: 'faq_a4'),
+    _FaqItem(questionKey: 'faq_q5', answerKey: 'faq_a5'),
+    _FaqItem(questionKey: 'faq_q6', answerKey: 'faq_a6'),
+    _FaqItem(questionKey: 'faq_q7', answerKey: 'faq_a7'),
+    _FaqItem(questionKey: 'faq_q8', answerKey: 'faq_a8'),
   ];
 
   @override
@@ -37,7 +41,7 @@ class HelpSupportFaqsSection extends StatelessWidget {
               Gap(16.h),
               ..._faqs.asMap().entries.map((entry) {
                 final index = entry.key;
-                final question = entry.value;
+                final faq = entry.value;
                 final isExpanded = state.expandedMap[index] ?? false;
 
                 return Theme(
@@ -57,7 +61,7 @@ class HelpSupportFaqsSection extends StatelessWidget {
                       );
                     },
                     title: Text(
-                      question,
+                      context.tr(faq.questionKey),
                       style: Styles.textStyle16.copyWith(
                         color: AppColors.blackColor,
                       ),
@@ -85,7 +89,7 @@ class HelpSupportFaqsSection extends StatelessWidget {
                           bottom: 16.h,
                         ),
                         child: Text(
-                          context.tr('faq_answer_placeholder'),
+                          context.tr(faq.answerKey),
                           style: Styles.textStyle14.copyWith(
                             color: AppColors.primaryText,
                           ),
@@ -101,4 +105,10 @@ class HelpSupportFaqsSection extends StatelessWidget {
       },
     );
   }
+}
+
+class _FaqItem {
+  final String questionKey;
+  final String answerKey;
+  const _FaqItem({required this.questionKey, required this.answerKey});
 }
