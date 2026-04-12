@@ -1907,5 +1907,11 @@
   "schedule_session": "Schedule Session",
   "minutes_label": "Minutes",
   "booking_successful": "Booking Successful",
-  "your_session_has_been_booked_successfully": "Your session has been booked successfully. You can view the session details and manage your bookings in the 'My Bookings' section."
+  "your_session_has_been_booked_successfully": "Your session has been booked successfully. You can view the session details and manage your bookings in the 'My Bookings' section.",
+  "booking_details": "Booking Details",
+  "consultation_details": "Consultation Details",
+  "discount_code": "Discount Code",
+  "vat": "Value Added Tax (VAT)",
+  "confirm_booking": "Confirm Booking",
+  "currency_sar": "SAR"
 }

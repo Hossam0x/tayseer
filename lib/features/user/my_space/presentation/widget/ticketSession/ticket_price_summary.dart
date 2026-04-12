@@ -5,11 +5,13 @@ import 'package:tayseer/my_import.dart';
 class TicketPriceSummary extends StatelessWidget {
   final SessionData sessionData;
   final int discountPercentage;
+  final bool isLoading;
 
   const TicketPriceSummary({
     super.key,
     required this.sessionData,
     this.discountPercentage = 0,
+    required this.isLoading,
   });
 
   @override
@@ -42,22 +44,27 @@ class TicketPriceSummary extends StatelessWidget {
       child: Column(
         children: [
           // سعر الجلسة
-          _buildPriceRow("سعر الجلسة", "${sessionData.price} ر.س"),
+          _buildPriceRow(
+            context,
+            context.tr("session_price"),
+            "${sessionData.price} ${context.tr("currency_sar")}",
+          ),
           SizedBox(height: 10.h),
 
-          // // الرسوم
-          // _buildPriceRow("الرسوم", "${sessionData.fees} ر.س"),
-          // SizedBox(height: 10.h),
-
           // ضريبة القيمة المضافة
-          _buildPriceRow("ضريبة القيمة المضافة", "${sessionData.tax} ر.س"),
+          _buildPriceRow(
+            context,
+            context.tr("vat"),
+            "${sessionData.tax} ${context.tr("currency_sar")}",
+          ),
           SizedBox(height: 10.h),
 
           // الخصم (يظهر فقط لو في خصم)
           if (discountPercentage > 0) ...[
             _buildPriceRow(
-              "الخصم ($discountPercentage%)",
-              "-$discountAmount ر.س",
+              context,
+              "${context.tr("discount")} ($discountPercentage%)",
+              "-$discountAmount ${context.tr("currency_sar")}",
               valueColor: Colors.green,
             ),
             SizedBox(height: 10.h),
@@ -73,7 +80,7 @@ class TicketPriceSummary extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "الإجمالي",
+                context.tr("total"),
                 style: TextStyle(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.bold,
@@ -86,7 +93,7 @@ class TicketPriceSummary extends StatelessWidget {
                   // السعر الأصلي (مشطوب) لو في خصم
                   if (discountPercentage > 0)
                     Text(
-                      "${sessionData.total} ر.س",
+                      "${sessionData.total} ${context.tr("currency_sar")}",
                       style: TextStyle(
                         fontSize: 14.sp,
                         color: Colors.grey,
@@ -95,7 +102,7 @@ class TicketPriceSummary extends StatelessWidget {
                     ),
                   // السعر النهائي
                   Text(
-                    "$finalTotal ر.س",
+                    "$finalTotal ${context.tr("currency_sar")}",
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.bold,
@@ -111,11 +118,13 @@ class TicketPriceSummary extends StatelessWidget {
           // زر الدفع
           CustomBotton(
             useGradient: true,
-            title: 'تأكيد الحجز',
+            title: context.tr("confirm_booking"),
             onPressed: () {
-              context.read<TicketSessionCubit>().paySession(
-                sessionId: sessionData.offeringId,
-              );
+              if (!isLoading) {
+                context.read<TicketSessionCubit>().paySession(
+                  sessionId: sessionData.offeringId,
+                );
+              }
             },
           ),
         ],
@@ -123,7 +132,12 @@ class TicketPriceSummary extends StatelessWidget {
     );
   }
 
-  Widget _buildPriceRow(String label, String value, {Color? valueColor}) {
+  Widget _buildPriceRow(
+    BuildContext context,
+    String label,
+    String value, {
+    Color? valueColor,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [

@@ -1,5 +1,3 @@
-# ios/Podfile
-
 platform :ios, '15.0'
 
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -33,8 +31,6 @@ target 'Runner' do
   pod 'DiditSDK', :podspec => 'https://raw.githubusercontent.com/didit-protocol/sdk-ios/main/DiditSDK.podspec'
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-
-  pod 'DiditSDK', :podspec => 'https://raw.githubusercontent.com/didit-protocol/sdk-ios/main/DiditSDK.podspec'
 
   target 'RunnerTests' do
     inherit! :search_paths
