@@ -50,8 +50,11 @@ class HomeState extends Equatable {
   bool get isLoadingMore => currentCategoryPosts.isLoadingMore;
   bool get loadMoreServerFailed => currentCategoryPosts.loadMoreServerFailed;
 
-  // ✅ NEW: O(1) lookup بدل O(n)
+  // ✅ O(1) lookup
   Map<String, PostModel> get postsMap => currentCategoryPosts.postsMap;
+
+  // ✅ NEW: cached postIds — بتتحسب من الـ CategoryPostsData
+  List<String> get postIds => currentCategoryPosts.postIds;
 
   // ─────────────────────────────────────────────────────────────────────────
   // 📦 Save Action State
@@ -361,7 +364,7 @@ class HomeState extends Equatable {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 📌 CATEGORY POSTS DATA - ✅ معدّل بإضافة postsMap
+// 📌 CATEGORY POSTS DATA
 // ═══════════════════════════════════════════════════════════════════════════
 class CategoryPostsData extends Equatable {
   final CubitStates state;
@@ -375,13 +378,17 @@ class CategoryPostsData extends Equatable {
   final double? nextCursor;
   final bool loadMoreServerFailed;
 
-  // ✅ NEW: ماب للبحث السريع O(1) بدل O(n)
+  // ✅ O(1) lookup
   final Map<String, PostModel> postsMap;
+
+  // ✅ NEW: cached postIds — بتتبني مرة واحدة لما posts تتغير
+  final List<String> postIds;
 
   const CategoryPostsData({
     this.state = CubitStates.initial,
     this.posts = const [],
-    this.postsMap = const {}, // ✅ NEW
+    this.postsMap = const {},
+    this.postIds = const [], // ✅ NEW
     this.errorMessage,
     this.currentLocalPage = 0,
     this.currentServerPage = 0,
@@ -410,13 +417,18 @@ class CategoryPostsData extends Equatable {
     bool? loadMoreServerFailed,
   }) {
     final updatedPosts = posts ?? this.posts;
+    // ✅ postsMap و postIds بيتبنوا بس لما posts تتغير فعلاً
+    final postsChanged = posts != null;
+
     return CategoryPostsData(
       state: state ?? this.state,
       posts: updatedPosts,
-      // ✅ الماب يتبني تلقائي بس لما الـ posts تتغير
-      postsMap: posts != null
+      postsMap: postsChanged
           ? {for (final p in updatedPosts) p.postId: p}
           : this.postsMap,
+      postIds: postsChanged
+          ? List.unmodifiable(updatedPosts.map((p) => p.postId))
+          : this.postIds, // ✅ NEW
       errorMessage: errorMessage ?? this.errorMessage,
       currentLocalPage: currentLocalPage ?? this.currentLocalPage,
       currentServerPage: currentServerPage ?? this.currentServerPage,
@@ -432,7 +444,7 @@ class CategoryPostsData extends Equatable {
   List<Object?> get props => [
     state,
     posts,
-    // ⚠️ لا تضيف postsMap هنا — هو مشتق من posts
+    // ⚠️ لا تضيف postsMap أو postIds — مشتقين من posts
     errorMessage,
     currentLocalPage,
     currentServerPage,

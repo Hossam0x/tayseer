@@ -31,8 +31,8 @@ class HomeViewBodyState extends State<HomeViewBody> {
   double _scrollDelta = 0;
   static const double _scrollThreshold = 20.0;
 
-  // ✅ NEW: Throttle للـ scroll listener
-  DateTime _lastScrollUpdate = DateTime.now();
+  // ✅ CHANGED: int بدل DateTime object
+  int _lastScrollUpdateMs = 0;
 
   final StoriesCubit storiesCubit = getIt<StoriesCubit>();
   final HomeCubit homeCubit = getIt<HomeCubit>();
@@ -81,7 +81,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
     }
   }
 
-  // ✅ CHANGED: أضفنا Throttle — الـ LayoutCubit بيتحدث كل 100ms بدل كل بيكسل
+  // ✅ CHANGED: int milliseconds بدل DateTime object
   void _scrollListener() {
     final currentOffset = _scrollController.offset;
     final delta = currentOffset - _lastOffset;
@@ -95,10 +95,10 @@ class HomeViewBodyState extends State<HomeViewBody> {
 
     _lastOffset = currentOffset;
 
-    // ✅ Throttle: كل 100ms بس بدل كل بيكسل
-    final now = DateTime.now();
-    if (now.difference(_lastScrollUpdate).inMilliseconds > 100) {
-      _lastScrollUpdate = now;
+    // ✅ CHANGED: int بدل DateTime — أقل GC pressure
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    if (nowMs - _lastScrollUpdateMs > 100) {
+      _lastScrollUpdateMs = nowMs;
       context.read<LayoutCubit>().setHomeAtTop(currentOffset <= 0);
     }
 
@@ -151,7 +151,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
             children: [
               CustomScrollView(
                 physics: const ClampingScrollPhysics(),
-                cacheExtent: 300, // ✅ CHANGED: من 1000 لـ 300
+                cacheExtent: 300,
                 controller: _scrollController,
                 slivers: [
                   const HomeAppBar(),
@@ -164,19 +164,20 @@ class HomeViewBodyState extends State<HomeViewBody> {
                     ),
                   ),
                   const StoriesSection(),
+
+                  // ✅ CHANGED: BlocListener بدل BlocConsumer
                   SliverToBoxAdapter(
                     child:
-                        BlocConsumer<UploadPostCubit, UploadPostProgressState>(
+                        BlocListener<UploadPostCubit, UploadPostProgressState>(
                           listener: (context, state) {
                             if (state.status == UploadPostStatus.success) {
                               homeCubit.refreshHome();
                             }
                           },
-                          builder: (context, state) {
-                            return const UploadPostBanner();
-                          },
+                          child: const UploadPostBanner(),
                         ),
                   ),
+
                   HomeFilterSection(
                     key: _filterSectionKey,
                     scrollController: _filterScrollController,

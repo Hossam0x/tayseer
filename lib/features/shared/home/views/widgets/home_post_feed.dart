@@ -155,7 +155,7 @@ class HomePostFeed extends StatelessWidget {
   }
 
   _FeedState _selectFeedState(HomeState state) => _FeedState(
-    postIds: state.posts.map((p) => p.postId).toList(),
+    postIds: state.postIds,
     status: state.postsState,
     isLoadingMore: state.isLoadingMore,
     hasMore: state.hasMore,
