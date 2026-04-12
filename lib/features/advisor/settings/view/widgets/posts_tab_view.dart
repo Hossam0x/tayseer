@@ -240,6 +240,8 @@ class _PostItemState extends State<_PostItem>
               ),
       onCommentCountSync: ({required postId, required totalCount}) => _cubit
           .syncCommentCountFromBackend(postId: postId, totalCount: totalCount),
+      onPollVote: (postId, choiceText) =>
+          _cubit.voteInPoll(postId: postId, choiceText: choiceText),
     );
   }
 

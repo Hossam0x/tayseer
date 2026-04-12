@@ -1,5 +1,6 @@
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/video_playback_manager.dart';
+import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/user/user_advisor_profile/data/repositories/user_advisor_profile_repository.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_state.dart';
@@ -39,20 +40,19 @@ class UserAdvisorProfileView extends StatelessWidget {
           child: MultiBlocProvider(
             providers: [
               BlocProvider<UserAdvisorProfileCubit>(
-                create:
-                    (_) => UserAdvisorProfileCubit(
-                      getIt<UserAdvisorProfileRepository>(),
-                      advisorId,
-                    ),
+                create: (_) => UserAdvisorProfileCubit(
+                  getIt<UserAdvisorProfileRepository>(),
+                  getIt<HomeRepository>(),
+                  advisorId,
+                ),
               ),
               BlocProvider<StoriesCubit>.value(
-                value:
-                    getIt<StoriesCubit>()
-                      ..fetchStories(
-                        isSpecial: true,
-                        advisorId: advisorId,
-                        context: context,
-                      ),
+                value: getIt<StoriesCubit>()
+                  ..fetchStories(
+                    isSpecial: true,
+                    advisorId: advisorId,
+                    context: context,
+                  ),
               ),
               BlocProvider.value(value: getIt<ConnectivityCubit>()),
             ],
@@ -92,17 +92,18 @@ class _UserProfileContent extends StatelessWidget {
             // ✅ Refetch everything when unblocked
             context.read<UserAdvisorProfileCubit>().refresh();
             context.read<StoriesCubit>().fetchStories(
-                  isSpecial: true,
-                  advisorId: advisorId,
-                  context: context,
-                );
+              isSpecial: true,
+              advisorId: advisorId,
+              context: context,
+            );
           },
         ),
         BlocListener<ConnectivityCubit, ConnectivityState>(
           listenWhen: (prev, curr) => !prev.isConnected && curr.isConnected,
           listener: (context, state) {
             final storiesCubit = context.read<StoriesCubit>();
-            if (storiesCubit.state.advisorSpecialStoriesState == CubitStates.failure ||
+            if (storiesCubit.state.advisorSpecialStoriesState ==
+                    CubitStates.failure ||
                 storiesCubit.state.advisorSpecialStories.isEmpty) {
               storiesCubit.fetchStories(
                 isSpecial: true,
@@ -129,10 +130,10 @@ class _UserProfileContent extends StatelessWidget {
                 context.read<UserAdvisorProfileCubit>().refresh(),
                 if (!isBlocked)
                   context.read<StoriesCubit>().fetchStories(
-                        isSpecial: true,
-                        advisorId: advisorId,
-                        context: context,
-                      ),
+                    isSpecial: true,
+                    advisorId: advisorId,
+                    context: context,
+                  ),
               ]);
             },
             color: AppColors.kprimaryColor,

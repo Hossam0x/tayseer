@@ -48,6 +48,7 @@ abstract class ProfilePostsCubitContract<S> extends Cubit<S> {
   Future<void> blockUser({String? visiblePostId, required String advisorId});
   Future<void> fetchPosts({bool loadMore = false});
   void updatePostLocally(PostModel updatedPost);
+  void voteInPoll({required String postId, required String choiceText});
 
   void markPostAsCommented({required String postId, required bool isAnonymous});
   void updateCommentCountByDelta({
@@ -393,6 +394,8 @@ class _ProfilePostItemState<C extends ProfilePostsCubitContract>
       onCommentCountSync: ({required postId, required totalCount}) => widget
           .cubit
           .syncCommentCountFromBackend(postId: postId, totalCount: totalCount),
+      onPollVote: (postId, choiceText) =>
+          widget.cubit.voteInPoll(postId: postId, choiceText: choiceText),
     );
   }
 

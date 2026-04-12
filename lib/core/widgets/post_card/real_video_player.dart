@@ -83,12 +83,28 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     if (widget.videoController != oldWidget.videoController &&
         widget.videoController != null) {
       try {
-        final _ = widget.videoController!.value;
-        _disposeLocalController();
-        _controller = widget.videoController;
+        // ✅ تحقق إن الـ controller الجديد مش disposed
+        final newController = widget.videoController!;
+        final testValue = newController.value; // throws if disposed
+        if (!testValue.isInitialized && testValue.duration == Duration.zero) {
+          // controller لسه مش initialized — مش هنستخدمه
+          return;
+        }
+        // ✅ تأكد إن الـ _controller القديم مش نفس الجديد قبل dispose
+        if (_controller != null && _controller != newController) {
+          _controller!.removeListener(_videoListener);
+          // dispose بس لو هو اللي أنشأناه (مش shared من parent قديم)
+          if (oldWidget.videoController == null) {
+            _controller!.dispose();
+          }
+          _controller = null;
+          _isInitialized = false;
+          _isBuffering = false;
+        }
+        _controller = newController;
         _setupController();
       } catch (e) {
-        debugPrint('⚠️ Received disposed controller, ignoring');
+        debugPrint('⚠️ Received disposed controller, ignoring: $e');
       }
     }
   }
@@ -395,15 +411,20 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     if (controller == null) return;
 
     try {
-      _isInitialized = controller.value.isInitialized;
-      _isBuffering = controller.value.isBuffering;
+      // ✅ اختبار إن الـ controller مش disposed قبل أي عملية
+      final value = controller.value;
+      _isInitialized = value.isInitialized;
+      _isBuffering = value.isBuffering;
+      controller.removeListener(_videoListener); // منع double-attach
       controller.addListener(_videoListener);
       controller.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
       if (mounted && !_isDisposed) setState(() {});
     } catch (e) {
       debugPrint('⚠️ Controller disposed during setup: $e');
+      // ✅ لو الـ controller جاي من parent، مش بنعمله dispose — بس بنشيله
       _controller = null;
       _isInitialized = false;
+      _isBuffering = false;
     }
   }
 

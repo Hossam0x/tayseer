@@ -2,15 +2,34 @@ import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/archive_repository.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive/archived_posts_state.dart';
+import 'package:tayseer/core/utils/post_event_bus.dart';
+import 'package:tayseer/core/utils/post_event_listener_mixin.dart';
+import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/my_import.dart';
 
-class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
+class ArchivedPostsCubit extends Cubit<ArchivedPostsState>
+    with PostEventListenerMixin<ArchivedPostsState> {
   final ArchiveRepository _archiveRepository;
+  final HomeRepository _homeRepository;
   final int _pageSize = 10;
 
-  ArchivedPostsCubit(this._archiveRepository)
+  ArchivedPostsCubit(this._archiveRepository, this._homeRepository)
     : super(const ArchivedPostsState()) {
     fetchArchivedPosts();
+    subscribeToPostEvents();
+  }
+
+  @override
+  List<PostModel> getPostList() => state.posts;
+
+  @override
+  void applyUpdatedPosts(List<PostModel> posts) =>
+      emit(state.copyWith(posts: posts));
+
+  @override
+  Future<void> close() {
+    cancelPostEventSubscription();
+    return super.close();
   }
 
   Future<void> fetchArchivedPosts({bool loadMore = false}) async {
@@ -109,14 +128,29 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
           ),
         );
       },
-      (message) => emit(
-        state.copyWith(
-          shareActionState: CubitStates.success,
-          shareMessage: message,
-          isShareAdded: !isRemoving,
-          sharePostId: postId,
-        ),
-      ),
+      (message) {
+        emit(
+          state.copyWith(
+            shareActionState: CubitStates.success,
+            shareMessage: message,
+            isShareAdded: !isRemoving,
+            sharePostId: postId,
+          ),
+        );
+        firePostEvent(
+          PostEvent(
+            type: PostEventType.shared,
+            postId: postId,
+            isRepostedByMe: !isRemoving,
+            sharesCount: isRemoving
+                ? (originalPost.sharesCount - 1).clamp(
+                    0,
+                    originalPost.sharesCount,
+                  )
+                : originalPost.sharesCount + 1,
+          ),
+        );
+      },
     );
   }
 
@@ -145,12 +179,21 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
           ),
         );
       },
-      (message) => emit(
-        state.copyWith(
-          saveActionState: CubitStates.success,
-          saveMessage: message,
-        ),
-      ),
+      (message) {
+        emit(
+          state.copyWith(
+            saveActionState: CubitStates.success,
+            saveMessage: message,
+          ),
+        );
+        firePostEvent(
+          PostEvent(
+            type: PostEventType.saved,
+            postId: postId,
+            isSaved: !originalPost.isSaved,
+          ),
+        );
+      },
     );
   }
 
@@ -171,17 +214,21 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
             deletePostMessage: failure.message,
           ),
         ),
-        (message) => emit(
-          state.copyWith(
-            deletePostActionState: CubitStates.success,
-            deletePostMessage: message,
-          ),
-        ),
+        (message) {
+          emit(
+            state.copyWith(
+              deletePostActionState: CubitStates.success,
+              deletePostMessage: message,
+            ),
+          );
+          firePostEvent(PostEvent(type: PostEventType.deleted, postId: postId));
+        },
       );
     });
   }
 
   Future<void> unarchivePost(String postId) async {
+    final post = state.posts.where((p) => p.postId == postId).firstOrNull;
     final originalPosts = List<PostModel>.from(state.posts);
     emit(
       state.copyWith(
@@ -203,12 +250,24 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
           archivePostMessage: failure.message,
         ),
       ),
-      (_) => emit(
-        state.copyWith(
-          archivePostActionState: CubitStates.success,
-          archivePostMessage: 'post_unarchived_success',
-        ),
-      ),
+      (_) {
+        emit(
+          state.copyWith(
+            archivePostActionState: CubitStates.success,
+            archivePostMessage: 'post_unarchived_success',
+          ),
+        );
+        // بعت الـ post عشان يتضاف في أول الـ feeds التانية
+        if (post != null) {
+          firePostEvent(
+            PostEvent(
+              type: PostEventType.unarchived,
+              postId: postId,
+              unarchivedPost: post,
+            ),
+          );
+        }
+      },
     );
   }
 
@@ -223,13 +282,24 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
             blockUserMessage: failure.message,
           ),
         ),
-        (message) => emit(
-          state.copyWith(
-            posts: state.posts.where((p) => p.advisorId != advisorId).toList(),
-            blockUserActionState: CubitStates.success,
-            blockUserMessage: message,
-          ),
-        ),
+        (message) {
+          emit(
+            state.copyWith(
+              posts: state.posts
+                  .where((p) => p.advisorId != advisorId)
+                  .toList(),
+              blockUserActionState: CubitStates.success,
+              blockUserMessage: message,
+            ),
+          );
+          firePostEvent(
+            PostEvent(
+              type: PostEventType.blocked,
+              postId: visiblePostId,
+              advisorId: advisorId,
+            ),
+          );
+        },
       );
     });
   }
@@ -241,6 +311,7 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
       ),
     );
     _archiveRepository.toggleHidePost(postId: postId, isHide: true);
+    firePostEvent(PostEvent(type: PostEventType.hidden, postId: postId));
   }
 
   void reactToPost({required String postId, ReactionType? reactionType}) {
@@ -280,6 +351,128 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
       reactionType: reactionType,
       isRemove: isRemoving,
     );
+    firePostEvent(
+      PostEvent(
+        type: PostEventType.reacted,
+        postId: postId,
+        reactionType: reactionType,
+        likesCount: newLikesCount,
+        topReactions: calculateTopReactions(
+          currentTopReactions: post.topReactions,
+          oldReaction: oldReaction,
+          newReaction: reactionType,
+          newLikesCount: newLikesCount,
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 🗳️ POLL VOTE
+  // ═══════════════════════════════════════════════════════════
+  void voteInPoll({required String postId, required String choiceText}) {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (postIndex == -1) return;
+
+    final post = state.posts[postIndex];
+    if (post.pollModel == null) return;
+
+    final oldPoll = post.pollModel!;
+    final choices = oldPoll.pollChoices;
+    final tappedIndex = choices.indexWhere((c) => c.choice == choiceText);
+    if (tappedIndex == -1) return;
+
+    final tappedChoice = choices[tappedIndex];
+    final previouslySelectedIndex = choices.indexWhere((c) => c.isSelected);
+    final hadPreviousVote = previouslySelectedIndex != -1;
+    final isRemovingVote = tappedChoice.isSelected;
+
+    int newTotalVotes = oldPoll.totalPollVotes;
+    if (isRemovingVote) {
+      newTotalVotes = (newTotalVotes - 1).clamp(0, newTotalVotes);
+    } else if (!hadPreviousVote) {
+      newTotalVotes = newTotalVotes + 1;
+    }
+
+    final myAvatar = kCurrentUserData?.image ?? '';
+    final newChoices = <PollChoice>[];
+    for (int i = 0; i < choices.length; i++) {
+      final choice = choices[i];
+      if (isRemovingVote) {
+        if (i == tappedIndex) {
+          final newVoters = List<String>.from(choice.votersAvatars)
+            ..remove(myAvatar);
+          newChoices.add(
+            choice.copyWith(
+              isSelected: false,
+              votes: (choice.votes - 1).clamp(0, choice.votes),
+              votersAvatars: newVoters,
+            ),
+          );
+        } else {
+          newChoices.add(choice);
+        }
+      } else {
+        if (i == tappedIndex) {
+          final newVoters = List<String>.from(choice.votersAvatars);
+          if (myAvatar.isNotEmpty && !newVoters.contains(myAvatar)) {
+            newVoters.insert(0, myAvatar);
+          }
+          newChoices.add(
+            choice.copyWith(
+              isSelected: true,
+              votes: choice.votes + 1,
+              votersAvatars: newVoters,
+            ),
+          );
+        } else if (hadPreviousVote && i == previouslySelectedIndex) {
+          final newVoters = List<String>.from(choice.votersAvatars)
+            ..remove(myAvatar);
+          newChoices.add(
+            choice.copyWith(
+              isSelected: false,
+              votes: (choice.votes - 1).clamp(0, choice.votes),
+              votersAvatars: newVoters,
+            ),
+          );
+        } else {
+          newChoices.add(choice);
+        }
+      }
+    }
+
+    final updatedChoices = newChoices.map((c) {
+      final pct = newTotalVotes > 0
+          ? ((c.votes / newTotalVotes) * 100).round()
+          : 0;
+      return c.copyWith(percentage: pct);
+    }).toList();
+
+    final newPoll = oldPoll.copyWith(
+      pollChoices: updatedChoices,
+      totalPollVotes: newTotalVotes,
+    );
+
+    _updatePostInList(postId, post.copyWith(pollModel: newPoll));
+
+    _homeRepository
+        .voteInPoll(postId: postId, choiceIndex: tappedIndex.toString())
+        .then((result) {
+          result.fold(
+            (failure) {
+              _updatePostInList(postId, post); // rollback
+            },
+            (_) {
+              firePostEvent(
+                PostEvent(
+                  type: PostEventType.pollVoted,
+                  postId: postId,
+                  pollModel: newPoll,
+                ),
+              );
+            },
+          );
+        });
   }
 
   void _updatePostInList(String postId, PostModel updatedPost) {
@@ -292,6 +485,13 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
 
   void updatePostLocally(PostModel updatedPost) {
     _updatePostInList(updatedPost.postId, updatedPost);
+    firePostEvent(
+      PostEvent(
+        type: PostEventType.edited,
+        postId: updatedPost.postId,
+        updatedPost: updatedPost,
+      ),
+    );
   }
 
   void markPostAsCommented({
@@ -304,6 +504,13 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
         postId,
         state.posts[index].copyWith(
           isCommented: true,
+          isAnonymous: isAnonymous,
+        ),
+      );
+      firePostEvent(
+        PostEvent(
+          type: PostEventType.commented,
+          postId: postId,
           isAnonymous: isAnonymous,
         ),
       );
@@ -328,6 +535,15 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
           isAnonymous: isAnonymous ?? post.isAnonymous,
         ),
       );
+      firePostEvent(
+        PostEvent(
+          type: PostEventType.commentCountUpdated,
+          postId: postId,
+          commentCountDelta: countDelta,
+          isCommented: isCommented,
+          isAnonymous: isAnonymous,
+        ),
+      );
     }
   }
 
@@ -339,6 +555,13 @@ class ArchivedPostsCubit extends Cubit<ArchivedPostsState> {
     if (index != -1) {
       final post = state.posts[index];
       _updatePostInList(postId, post.copyWith(commentsCount: totalCount));
+      firePostEvent(
+        PostEvent(
+          type: PostEventType.commentCountSynced,
+          postId: postId,
+          commentCountTotal: totalCount,
+        ),
+      );
     }
   }
 

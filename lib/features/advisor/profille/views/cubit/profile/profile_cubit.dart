@@ -1,27 +1,33 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:tayseer/core/utils/profile_event_bus.dart';
+import 'package:tayseer/core/utils/post_event_bus.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/functions/set_advisor_status.dart';
 import 'package:tayseer/features/advisor/profille/data/repositories/profile_repository.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/shared/profile/widgets/profile_posts_tab.dart';
 import 'package:tayseer/my_import.dart';
 import 'profile_state.dart';
 
 class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
   final ProfileRepository _profileRepository;
+  final HomeRepository _homeRepository;
   final int _pageSize = 10;
 
   late StreamSubscription<ProfileUpdateEvent> _profileSubscription;
   late StreamSubscription<SubscriptionChangedEvent> _subscriptionSubscription;
+  late StreamSubscription<PostEvent> _postEventSubscription;
 
-  ProfileCubit(this._profileRepository) : super(const ProfileState()) {
+  ProfileCubit(this._profileRepository, this._homeRepository)
+    : super(const ProfileState()) {
     _initializeProfile();
     _listenToProfileUpdates();
     _listenToSubscriptionChanges();
+    _listenToPostEvents();
   }
 
   // ── ProfilePostsCubitContract implementation ──
@@ -92,7 +98,143 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
   Future<void> close() {
     _profileSubscription.cancel();
     _subscriptionSubscription.cancel();
+    _postEventSubscription.cancel();
     return super.close();
+  }
+
+  void _listenToPostEvents() {
+    _postEventSubscription = PostEventBus.instance.onPostEvent.listen((event) {
+      if (isClosed) return;
+      // تجاهل الـ events اللي ProfileCubit نفسه بعتها
+      if (event.sourceId == 'ProfileCubit') return;
+      _applyExternalPostEvent(event);
+    });
+  }
+
+  void _applyExternalPostEvent(PostEvent event) {
+    final postId = event.postId;
+    final idx = state.posts.indexWhere((p) => p.postId == postId);
+
+    switch (event.type) {
+      case PostEventType.reacted:
+        if (idx == -1) return;
+        _updatePostInList(
+          postId,
+          state.posts[idx].copyWith(
+            likesCount: event.likesCount ?? state.posts[idx].likesCount,
+            topReactions: event.topReactions ?? state.posts[idx].topReactions,
+            myReaction: event.reactionType,
+            clearMyReaction: event.reactionType == null,
+          ),
+        );
+        break;
+      case PostEventType.shared:
+        if (idx == -1) return;
+        _updatePostInList(
+          postId,
+          state.posts[idx].copyWith(
+            sharesCount: event.sharesCount ?? state.posts[idx].sharesCount,
+            isRepostedByMe:
+                event.isRepostedByMe ?? state.posts[idx].isRepostedByMe,
+          ),
+        );
+        break;
+      case PostEventType.saved:
+        if (idx == -1) return;
+        _updatePostInList(
+          postId,
+          state.posts[idx].copyWith(
+            isSaved: event.isSaved ?? state.posts[idx].isSaved,
+          ),
+        );
+        break;
+      case PostEventType.deleted:
+        if (idx == -1) return;
+        emit(
+          state.copyWith(
+            posts: state.posts.where((p) => p.postId != postId).toList(),
+          ),
+        );
+        break;
+      case PostEventType.archived:
+        if (idx == -1) return;
+        emit(
+          state.copyWith(
+            posts: state.posts.where((p) => p.postId != postId).toList(),
+          ),
+        );
+        break;
+      case PostEventType.hidden:
+        if (idx == -1) return;
+        _updatePostInList(postId, state.posts[idx].copyWith(isHidden: true));
+        break;
+      case PostEventType.blocked:
+        if (event.advisorId == null) return;
+        emit(
+          state.copyWith(
+            posts: state.posts
+                .map((p) {
+                  if (p.postId == postId) return p.copyWith(isBlocked: true);
+                  if (p.advisorId == event.advisorId) return null;
+                  return p;
+                })
+                .whereType<PostModel>()
+                .toList(),
+          ),
+        );
+        break;
+      case PostEventType.pollVoted:
+        if (idx == -1 || event.pollModel == null) return;
+        _updatePostInList(
+          postId,
+          state.posts[idx].copyWith(pollModel: event.pollModel),
+        );
+        break;
+      case PostEventType.commentCountUpdated:
+        if (idx == -1 || event.commentCountDelta == null) return;
+        final p = state.posts[idx];
+        _updatePostInList(
+          postId,
+          p.copyWith(
+            commentsCount: (p.commentsCount + event.commentCountDelta!).clamp(
+              0,
+              999999,
+            ),
+            isCommented: event.isCommented ?? p.isCommented,
+            isAnonymous: event.isAnonymous ?? p.isAnonymous,
+          ),
+        );
+        break;
+      case PostEventType.commentCountSynced:
+        if (idx == -1 || event.commentCountTotal == null) return;
+        _updatePostInList(
+          postId,
+          state.posts[idx].copyWith(commentsCount: event.commentCountTotal),
+        );
+        break;
+      case PostEventType.commented:
+        if (idx == -1) return;
+        _updatePostInList(
+          postId,
+          state.posts[idx].copyWith(
+            isCommented: true,
+            isAnonymous: event.isAnonymous ?? state.posts[idx].isAnonymous,
+          ),
+        );
+        break;
+      case PostEventType.edited:
+        if (idx == -1 || event.updatedPost == null) return;
+        _updatePostInList(postId, event.updatedPost!);
+        break;
+
+      case PostEventType.unarchived:
+        if (event.unarchivedPost == null) return;
+        // لو البوست مش موجود في الـ profile، أضيفه في الأول
+        if (idx == -1) {
+          emit(state.copyWith(posts: [event.unarchivedPost!, ...state.posts]));
+        }
+        break;
+    }
   }
 
   void _listenToSubscriptionChanges() {
@@ -441,6 +583,16 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
       reactionType: reactionType,
       isRemove: isRemoving,
     );
+    PostEventBus.instance.fire(
+      PostEvent(
+        sourceId: 'ProfileCubit',
+        type: PostEventType.reacted,
+        postId: postId,
+        reactionType: reactionType,
+        likesCount: newLikesCount,
+        topReactions: newTopReactions,
+      ),
+    );
   }
 
   Future<void> toggleSharePost({required String postId}) async {
@@ -494,6 +646,15 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
             isShareAdded: !isRemoving,
           ),
         );
+        PostEventBus.instance.fire(
+          PostEvent(
+            sourceId: 'ProfileCubit',
+            type: PostEventType.shared,
+            postId: postId,
+            isRepostedByMe: !isRemoving,
+            sharesCount: newSharesCount,
+          ),
+        );
       },
     );
   }
@@ -535,6 +696,14 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
             saveMessage: message,
           ),
         );
+        PostEventBus.instance.fire(
+          PostEvent(
+            sourceId: 'ProfileCubit',
+            type: PostEventType.saved,
+            postId: postId,
+            isSaved: !isCurrentlySaved,
+          ),
+        );
       },
     );
   }
@@ -573,6 +742,13 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
             state.copyWith(
               deletePostActionState: CubitStates.success,
               deletePostMessage: message,
+            ),
+          );
+          PostEventBus.instance.fire(
+            PostEvent(
+              sourceId: 'ProfileCubit',
+              type: PostEventType.deleted,
+              postId: postId,
             ),
           );
         },
@@ -616,6 +792,13 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
               archivePostMessage: message,
             ),
           );
+          PostEventBus.instance.fire(
+            PostEvent(
+              sourceId: 'ProfileCubit',
+              type: PostEventType.archived,
+              postId: postId,
+            ),
+          );
         },
       );
     });
@@ -635,6 +818,13 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
     _updatePostInList(postId, updatedPost);
 
     _profileRepository.toggleHidePost(postId: postId, isHide: newHideState);
+    PostEventBus.instance.fire(
+      PostEvent(
+        sourceId: 'ProfileCubit',
+        type: PostEventType.hidden,
+        postId: postId,
+      ),
+    );
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -676,8 +866,123 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
             blockUserMessage: message,
           ),
         );
+        PostEventBus.instance.fire(
+          PostEvent(
+            sourceId: 'ProfileCubit',
+            type: PostEventType.blocked,
+            postId: visiblePostId ?? '',
+            advisorId: advisorId,
+          ),
+        );
       },
     );
+  }
+
+  // Helper Method لتحديث البوست في الليست
+  // ═══════════════════════════════════════════════════════════
+  // 🗳️ POLL VOTE
+  // ═══════════════════════════════════════════════════════════
+  @override
+  void voteInPoll({required String postId, required String choiceText}) {
+    final postIndex = state.posts.indexWhere((p) => p.postId == postId);
+    if (postIndex == -1) return;
+
+    final post = state.posts[postIndex];
+    if (post.pollModel == null) return;
+
+    final oldPoll = post.pollModel!;
+    final choices = oldPoll.pollChoices;
+    final tappedIndex = choices.indexWhere((c) => c.choice == choiceText);
+    if (tappedIndex == -1) return;
+
+    final tappedChoice = choices[tappedIndex];
+    final previouslySelectedIndex = choices.indexWhere((c) => c.isSelected);
+    final hadPreviousVote = previouslySelectedIndex != -1;
+    final isRemovingVote = tappedChoice.isSelected;
+
+    int newTotalVotes = oldPoll.totalPollVotes;
+    if (isRemovingVote) {
+      newTotalVotes = (newTotalVotes - 1).clamp(0, newTotalVotes);
+    } else if (!hadPreviousVote) {
+      newTotalVotes = newTotalVotes + 1;
+    }
+
+    final myAvatar = kCurrentUserData?.image ?? '';
+    final newChoices = <PollChoice>[];
+    for (int i = 0; i < choices.length; i++) {
+      final choice = choices[i];
+      if (isRemovingVote) {
+        if (i == tappedIndex) {
+          final newVoters = List<String>.from(choice.votersAvatars)
+            ..remove(myAvatar);
+          newChoices.add(
+            choice.copyWith(
+              isSelected: false,
+              votes: (choice.votes - 1).clamp(0, choice.votes),
+              votersAvatars: newVoters,
+            ),
+          );
+        } else {
+          newChoices.add(choice);
+        }
+      } else {
+        if (i == tappedIndex) {
+          final newVoters = List<String>.from(choice.votersAvatars);
+          if (myAvatar.isNotEmpty && !newVoters.contains(myAvatar)) {
+            newVoters.insert(0, myAvatar);
+          }
+          newChoices.add(
+            choice.copyWith(
+              isSelected: true,
+              votes: choice.votes + 1,
+              votersAvatars: newVoters,
+            ),
+          );
+        } else if (hadPreviousVote && i == previouslySelectedIndex) {
+          final newVoters = List<String>.from(choice.votersAvatars)
+            ..remove(myAvatar);
+          newChoices.add(
+            choice.copyWith(
+              isSelected: false,
+              votes: (choice.votes - 1).clamp(0, choice.votes),
+              votersAvatars: newVoters,
+            ),
+          );
+        } else {
+          newChoices.add(choice);
+        }
+      }
+    }
+
+    final updatedChoices = newChoices.map((c) {
+      final pct = newTotalVotes > 0
+          ? ((c.votes / newTotalVotes) * 100).round()
+          : 0;
+      return c.copyWith(percentage: pct);
+    }).toList();
+
+    final newPoll = oldPoll.copyWith(
+      pollChoices: updatedChoices,
+      totalPollVotes: newTotalVotes,
+    );
+
+    _updatePostInList(postId, post.copyWith(pollModel: newPoll));
+
+    _homeRepository
+        .voteInPoll(postId: postId, choiceIndex: tappedIndex.toString())
+        .then((result) {
+          result.fold(
+            (failure) => _updatePostInList(postId, post),
+            (_) => PostEventBus.instance.fire(
+              PostEvent(
+                sourceId: 'ProfileCubit',
+                type: PostEventType.pollVoted,
+                postId: postId,
+                pollModel: newPoll,
+              ),
+            ),
+          );
+        });
   }
 
   // Helper Method لتحديث البوست في الليست
@@ -694,6 +999,14 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
   @override
   void updatePostLocally(PostModel updatedPost) {
     _updatePostInList(updatedPost.postId, updatedPost);
+    PostEventBus.instance.fire(
+      PostEvent(
+        sourceId: 'ProfileCubit',
+        type: PostEventType.edited,
+        postId: updatedPost.postId,
+        updatedPost: updatedPost,
+      ),
+    );
   }
 
   @override
@@ -707,6 +1020,14 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
         postId,
         state.posts[index].copyWith(
           isCommented: true,
+          isAnonymous: isAnonymous,
+        ),
+      );
+      PostEventBus.instance.fire(
+        PostEvent(
+          sourceId: 'ProfileCubit',
+          type: PostEventType.commented,
+          postId: postId,
           isAnonymous: isAnonymous,
         ),
       );
@@ -732,6 +1053,16 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
           isAnonymous: isAnonymous ?? post.isAnonymous,
         ),
       );
+      PostEventBus.instance.fire(
+        PostEvent(
+          sourceId: 'ProfileCubit',
+          type: PostEventType.commentCountUpdated,
+          postId: postId,
+          commentCountDelta: countDelta,
+          isCommented: isCommented,
+          isAnonymous: isAnonymous,
+        ),
+      );
     }
   }
 
@@ -744,6 +1075,14 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
     if (index != -1) {
       final post = state.posts[index];
       _updatePostInList(postId, post.copyWith(commentsCount: totalCount));
+      PostEventBus.instance.fire(
+        PostEvent(
+          sourceId: 'ProfileCubit',
+          type: PostEventType.commentCountSynced,
+          postId: postId,
+          commentCountTotal: totalCount,
+        ),
+      );
     }
   }
 }

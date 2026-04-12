@@ -95,11 +95,13 @@ class _SettingsViewState extends State<SettingsView> {
       title: context.tr('logout'),
       supTitle: context.tr('logout_confirmation'),
       imageUrl: AssetsData.kWoriningImage,
-      bottonText: context.tr('cancel'),
-      cancelText: context.tr('yes'),
+      bottonText: context.tr('yes'),
+      cancelText: context.tr('cancel'),
       showCancelButton: true,
-      onPressed: () {},
-      onCancel: () => _performLogout(context),
+      onPressed: () {
+        _performLogout(context);
+      },
+      onCancel: () {},
     );
   }
 
