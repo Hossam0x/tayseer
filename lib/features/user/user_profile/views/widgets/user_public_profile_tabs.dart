@@ -1,6 +1,6 @@
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_cubit.dart';
-import 'package:tayseer/features/user/user_profile/views/widgets/user_public_posts_tab.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/user_public_posts/user_public_posts_tab.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/widgets/blocked_profile_placeholder.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_state.dart';
 import 'package:tayseer/my_import.dart';

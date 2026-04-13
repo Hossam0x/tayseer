@@ -1,5 +1,5 @@
 // lib/core/widgets/user_info_header.dart
-import 'package:tayseer/core/widgets/custom_click.dart';
+import 'package:tayseer/core/utils/navigation_guard.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart';
@@ -30,6 +30,7 @@ class UserInfoHeader extends StatelessWidget {
   });
 
   void _navigateToUserProfile(BuildContext context) {
+    if (!NavigationGuard.canNavigate()) return;
     if (userType.toLowerCase() == 'advisor') {
       Navigator.push(
         context,

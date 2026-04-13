@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:tayseer/core/models/comment_model.dart';
+import 'package:tayseer/core/utils/navigation_guard.dart';
 import 'package:tayseer/my_import.dart';
 
 class SocialTextParser extends StatelessWidget {
@@ -116,6 +117,7 @@ class SocialTextParser extends StatelessWidget {
             style: defaultStyle,
             recognizer: TapGestureRecognizer()
               ..onTap = () {
+                if (!NavigationGuard.canNavigate()) return;
                 if (isHashtag) {
                   context.pushNamed(
                     AppRouter.kAdvisorSearchView,
