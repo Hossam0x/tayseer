@@ -406,10 +406,7 @@ class MarriageBodyState extends State<MarriageBody>
                           onTap: () => Navigator.maybePop(context),
                           child: CircleAvatar(
                             backgroundColor: Colors.black12,
-                            child: Transform.flip(
-                              flipX: Directionality.of(context) == TextDirection.ltr,
-                              child: AppImage(AssetsData.backArrow, width: 19.w),
-                            ),
+                          child: AppImage(AssetsData.backArrow, width: 19.w),
                           ),
                         )
                       : GestureDetector(
@@ -784,10 +781,7 @@ class MarriageBodyState extends State<MarriageBody>
                               onTap: () => Navigator.maybePop(context),
                               child: CircleAvatar(
                                 backgroundColor: Colors.black12,
-                                child: Transform.flip(
-                                  flipX: Directionality.of(context) == TextDirection.ltr,
-                                  child: AppImage(AssetsData.backArrow, width: 19.w),
-                                ),
+                                child: AppImage(AssetsData.backArrow, width: 19.w),
                               ),
                             )
                           : GestureDetector(
