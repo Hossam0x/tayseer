@@ -44,6 +44,10 @@ class SliverProfileHeader extends StatelessWidget {
   // ✅ widget مخصص يتعرض في الـ left بدل AnimatedBeFirstButton
   final Widget? leftWidget;
 
+  // subscription type: free, gold, ultra
+  final String? subscriptionType;
+  final String? nextSubscriptionType;
+
   const SliverProfileHeader({
     super.key,
     required this.images,
@@ -77,6 +81,8 @@ class SliverProfileHeader extends StatelessWidget {
     this.city,
     this.distanceKm,
     this.leftWidget,
+    this.subscriptionType,
+    this.nextSubscriptionType,
   });
 
   bool get _isAnimating => swipeProgress > 0.01;
@@ -176,6 +182,7 @@ class SliverProfileHeader extends StatelessWidget {
                     nextNationality: nextNationality,
                     nextHeight: nextHeight,
                     nextIsVerified: nextIsVerified ?? false,
+                    nextSubscriptionType: nextSubscriptionType,
                   ),
                 ),
 
@@ -206,6 +213,7 @@ class SliverProfileHeader extends StatelessWidget {
                     isFavorited: isFavorited,
                     shouldBlur: shouldBlur,
                     isVerified: isVerified,
+                    subscriptionType: subscriptionType,
                   ),
                 ),
               ),
@@ -240,6 +248,7 @@ class _FrontProfileCard extends StatelessWidget {
   final bool isFavorited;
   final bool shouldBlur;
   final bool isVerified;
+  final String? subscriptionType;
 
   const _FrontProfileCard({
     required this.images,
@@ -261,6 +270,7 @@ class _FrontProfileCard extends StatelessWidget {
     this.isVerified = false,
     this.city,
     this.distanceKm,
+    this.subscriptionType,
   });
 
   bool get _hasImage => coverImage.isNotEmpty;
@@ -359,6 +369,7 @@ class _FrontProfileCard extends StatelessWidget {
             isVerified: isVerified,
             city: city,
             distanceKm: distanceKm,
+            subscriptionType: subscriptionType,
           ),
         ),
       ],
@@ -420,6 +431,7 @@ class _BackProfileCard extends StatelessWidget {
   final String? nextNationality;
   final String? nextHeight;
   final bool nextIsVerified;
+  final String? nextSubscriptionType;
 
   const _BackProfileCard({
     this.nextImages,
@@ -432,6 +444,7 @@ class _BackProfileCard extends StatelessWidget {
     this.nextNationality,
     this.nextHeight,
     this.nextIsVerified = false,
+    this.nextSubscriptionType,
   });
 
   @override
@@ -493,6 +506,7 @@ class _BackProfileCard extends StatelessWidget {
             onFavoriteTap: null,
             isFavorited: false,
             isVerified: nextIsVerified,
+            subscriptionType: nextSubscriptionType,
           ),
         ),
       ],
@@ -519,6 +533,7 @@ class _InfoCard extends StatelessWidget {
   final bool isVerified;
   final double? distanceKm;
   final String? city;
+  final String? subscriptionType;
 
   const _InfoCard({
     required this.name,
@@ -536,6 +551,7 @@ class _InfoCard extends StatelessWidget {
     this.isVerified = false,
     this.distanceKm,
     this.city,
+    this.subscriptionType,
   });
 
   @override
@@ -601,9 +617,7 @@ class _InfoCard extends StatelessWidget {
                 ),
               ],
               SizedBox(width: 12.w),
-              isVerified
-                  ? AppImage(AssetsData.goldIcon)
-                  : const SizedBox.shrink(),
+              _buildSubscriptionIcon(),
             ],
           ),
           Gap(5.h),
@@ -663,6 +677,17 @@ class _InfoCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildSubscriptionIcon() {
+    switch (subscriptionType?.toLowerCase()) {
+      case 'gold':
+        return AppImage(AssetsData.goldIcon, width: 35.w);
+      case 'ultra':
+        return    AppImage(AssetsData.eliteIcon, width: 35.w);
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   Widget _buildTag(String text) {

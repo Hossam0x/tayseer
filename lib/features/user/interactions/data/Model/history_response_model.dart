@@ -3,7 +3,7 @@ import 'interaction_usermodel .dart';
 class HistoryResponseModel {
   final bool success;
   final String message;
-  final bool userSubscription;
+  final String userSubscription; // 'free', 'gold', 'ultra'
   final Map<String, HistoryDataSection> sections;
 
   HistoryResponseModel({
@@ -13,13 +13,24 @@ class HistoryResponseModel {
     required this.sections,
   });
 
+  bool get isSubscribed => userSubscription != 'free';
+
   factory HistoryResponseModel.fromJson(Map<String, dynamic> json) {
     final data = json['data'] as Map<String, dynamic>? ?? {};
-    
+
+    // يقبل bool (legacy) أو String (new)
+    final rawSub = data['userSubscription'];
+    final String subscriptionType;
+    if (rawSub is bool) {
+      subscriptionType = rawSub ? 'gold' : 'free';
+    } else {
+      subscriptionType = (rawSub as String?)?.toLowerCase() ?? 'free';
+    }
+
     return HistoryResponseModel(
       success: json['success'] ?? false,
       message: json['message'] ?? '',
-      userSubscription: data['userSubscription'] ?? false,
+      userSubscription: subscriptionType,
       sections: {
         'favorites': HistoryDataSection.fromJson(data['userIamFavorites'] ?? {}),
         'liked_you': HistoryDataSection.fromJson(data['userIamLikes'] ?? {}),

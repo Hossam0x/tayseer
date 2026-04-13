@@ -6,7 +6,8 @@ import '../../data/Model/history_response_model.dart';
 class InteractionsState extends Equatable {
   // Subscription
   final bool isSubscribed;
-  final bool answerCompleted; // ✅ NEW
+  final String subscriptionType; // 'free', 'gold', 'ultra'
+  final bool answerCompleted;
   final int likesNotificationCount;
   final int favoritesNotificationCount;
   final int regardsNotificationCount;
@@ -33,7 +34,8 @@ class InteractionsState extends Equatable {
 
   const InteractionsState({
     this.isSubscribed = false,
-    this.answerCompleted = true, // ✅ Default true to show content
+    this.subscriptionType = 'free',
+    this.answerCompleted = true,
     this.explorationState = CubitStates.initial,
     this.explorationData = const {},
     this.explorationCurrentPage = 1,
@@ -55,7 +57,8 @@ class InteractionsState extends Equatable {
 
   InteractionsState copyWith({
     bool? isSubscribed,
-    bool? answerCompleted, // ✅ NEW
+    String? subscriptionType,
+    bool? answerCompleted,
     CubitStates? explorationState,
     Map<String, List<InteractionUserModel>>? explorationData,
     int? explorationCurrentPage,
@@ -76,7 +79,8 @@ class InteractionsState extends Equatable {
   }) {
     return InteractionsState(
       isSubscribed: isSubscribed ?? this.isSubscribed,
-      answerCompleted: answerCompleted ?? this.answerCompleted, // ✅ NEW
+      subscriptionType: subscriptionType ?? this.subscriptionType,
+      answerCompleted: answerCompleted ?? this.answerCompleted,
       explorationState: explorationState ?? this.explorationState,
       explorationData: explorationData ?? this.explorationData,
       explorationCurrentPage:
@@ -105,6 +109,7 @@ class InteractionsState extends Equatable {
   @override
   List<Object?> get props => [
     isSubscribed,
+    subscriptionType,
     answerCompleted,
     explorationState,
     explorationData,

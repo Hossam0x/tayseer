@@ -377,13 +377,20 @@ class MarriageCubit extends Cubit<MarriageState> {
     if (isClosed) return;
 
     result.fold(
-      (failure) => emit(
-        state.copyWith(
-          userInteractionState: CubitStates.failure,
-          errorMessage: failure.message,
-          showActionSnackbar: false,
-        ),
-      ),
+      (failure) {
+        final data = failure is ServerFailure ? failure.data : null;
+        final likesLeft = data?['likesLeft'] as int?;
+        final regardsLeft = data?['regardsLeft'] as int?;
+        emit(
+          state.copyWith(
+            userInteractionState: CubitStates.failure,
+            errorMessage: failure.message,
+            showActionSnackbar: false,
+            likesLeft: likesLeft,
+            regardsLeft: regardsLeft,
+          ),
+        );
+      },
       (_) {
         emit(
           state.copyWith(
@@ -404,13 +411,20 @@ class MarriageCubit extends Cubit<MarriageState> {
     if (isClosed) return;
 
     result.fold(
-      (failure) => emit(
-        state.copyWith(
-          sendRegardState: CubitStates.failure,
-          errorMessage: failure.message,
-          showActionSnackbar: true,
-        ),
-      ),
+      (failure) {
+        final data = failure is ServerFailure ? failure.data : null;
+        final likesLeft = data?['likesLeft'] as int?;
+        final regardsLeft = data?['regardsLeft'] as int?;
+        emit(
+          state.copyWith(
+            sendRegardState: CubitStates.failure,
+            errorMessage: failure.message,
+            showActionSnackbar: true,
+            likesLeft: likesLeft,
+            regardsLeft: regardsLeft,
+          ),
+        );
+      },
       (_) {
         emit(
           state.copyWith(
@@ -921,6 +935,17 @@ class MarriageCubit extends Cubit<MarriageState> {
     if (state.currentIndex >= usersLength) {
       emit(state.copyWith(currentIndex: usersLength - 1));
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // UPDATE LIMITS
+  // ═══════════════════════════════════════════════════════════════
+  void updateLimits({int? likesLeft, int? regardsLeft}) {
+    if (isClosed) return;
+    emit(state.copyWith(
+      likesLeft: likesLeft,
+      regardsLeft: regardsLeft,
+    ));
   }
 
   // ═══════════════════════════════════════════════════════════════

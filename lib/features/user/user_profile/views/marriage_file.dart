@@ -73,6 +73,16 @@ class _MarriagefilePageState extends State<MarriagefilePage>
     super.dispose();
   }
 
+  // // ارتفاع الـ AppBar (SimpleAppBar + Toggle) بدون statusBar
+  // double _appBarHeight() {
+  //   return 10.h + 56.h + 5.h + 46.h + 10.h;
+  // }
+
+  // double _appBarOffset(BuildContext context) {
+  //   final statusBar = MediaQuery.of(context).padding.top;
+  //   return statusBar + _appBarHeight();
+  // }
+
   String _translateValue(String? value) {
     if (value == null || value.isEmpty) return '';
     final translated = context.tr(value);
@@ -169,9 +179,12 @@ class _MarriagefilePageState extends State<MarriagefilePage>
           child: Scaffold(
             body: Stack(
               children: [
+                // 1️⃣ Background
                 Positioned.fill(
                   child: Image.asset(AssetsData.userBGImage, fit: BoxFit.cover),
                 ),
+
+                // 2️⃣ Content — بيبدأ من أعلى لكن بيترك مساحة للـ AppBar
                 SafeArea(
                   child: BlocConsumer<MarriageProfileCubit, MarriageProfileState>(
                     listener: (context, state) {
@@ -183,6 +196,7 @@ class _MarriagefilePageState extends State<MarriagefilePage>
                           context,
                           repeatCount: 99,
                           gifDuration: const Duration(milliseconds: 900),
+                          topOffset: _appBarOffset(context),
                         );
                       }
 
@@ -195,6 +209,7 @@ class _MarriagefilePageState extends State<MarriagefilePage>
                           context,
                           repeatCount: 1,
                           gifDuration: const Duration(milliseconds: 900),
+                          topOffset: _appBarOffset(context),
                         );
                       }
 
@@ -223,7 +238,8 @@ class _MarriagefilePageState extends State<MarriagefilePage>
                       final cubit = context.read<MarriageProfileCubit>();
 
                       if (state.isLoading && state.profile == null) {
-                        return const SizedBox.expand();
+                        // ✅ مساحة فاضية بحجم الـ AppBar بس — الـ AppBar هيظهر فوق
+                        return SizedBox(height: _appBarHeight());
                       }
 
                       if (state.state == CubitStates.failure &&
@@ -240,21 +256,13 @@ class _MarriagefilePageState extends State<MarriagefilePage>
 
                       return Column(
                         children: [
-                          // ✅ الـ header ثابت فوق
-                          Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 24.h,
-                              vertical: 10.h,
-                            ),
-                            child: _buildFixedHeader(context),
-                          ),
-                          // ✅ الـ content يملأ الباقي
+                          // ✅ مساحة فاضية بحجم الـ AppBar عشان الـ content ميتغطيش
+                          SizedBox(height: _appBarHeight()),
+
+                          // ✅ Content
                           Expanded(
                             child: _selectedTabIndex == 1
                                 ? _buildViewContent(profile)
-                                // ✅ الإصلاح الرئيسي: MediaQuery.removePadding
-                                // يمنع الـ CustomScrollView من إضافة padding
-                                // زيادة بيسبب مشكلة الـ scroll
                                 : MediaQuery.removePadding(
                                     context: context,
                                     removeTop: true,
@@ -279,6 +287,7 @@ class _MarriagefilePageState extends State<MarriagefilePage>
                                             gifDuration: const Duration(
                                               milliseconds: 900,
                                             ),
+                                            topOffset: _appBarOffset(context),
                                           );
                                         }
                                       },
@@ -290,12 +299,40 @@ class _MarriagefilePageState extends State<MarriagefilePage>
                     },
                   ),
                 ),
+
+                // 3️⃣ ✅ AppBar فوق كل حاجة — فوق الـ GIF overlay دايمًا
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 24.h,
+                        vertical: 10.h,
+                      ),
+                      child: _buildFixedHeader(context),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  // ✅ ارتفاع الـ AppBar بدون statusBar
+  double _appBarHeight() {
+    return 10.h + 56.h + 5.h + 46.h + 10.h;
+  }
+
+  // ✅ الـ topOffset للـ GIF (بيشمل statusBar)
+  double _appBarOffset(BuildContext context) {
+    final statusBar = MediaQuery.of(context).padding.top;
+    return statusBar + _appBarHeight();
   }
 
   void _showMustAddImageDialog(
@@ -556,9 +593,10 @@ class _MarriagefilePageState extends State<MarriagefilePage>
           _buildSliverPadding(
             child: ProfileStatisticsCards(
               upgradesCount: profile.likesLeft ?? 0,
-              resultsCount: profile.regardsLeft  ?? 0,
-              onUpgradesTap: () => showRegardsPurchaseSheet(context),
-              onResultsTap: () => showRegardsPurchaseSheet(context),
+              resultsCount: profile.regardsLeft ?? 0,
+              onUpgradesTap: () => showLikesPurchaseSheet(context), // ✅ likes
+              onResultsTap: () =>
+                  showRegardsPurchaseSheet(context), // ✅ regards
             ),
           ),
 
