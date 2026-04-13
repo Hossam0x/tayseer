@@ -1078,6 +1078,16 @@ class MarriageBodyState extends State<MarriageBody>
               : [if (nextMainImage != null) nextMainImage, ...nextValidImages])
         : (nextMainImage != null ? [nextMainImage] : []);
 
+    // ✅ Pre-cache next profile images so they're ready when the user swipes
+    if (nextImages.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        for (final url in nextImages) {
+          precacheImage(CachedNetworkImageProvider(url), context);
+        }
+      });
+    }
+
     final bool isSubscribed = _interactionsCubit?.state.isSubscribed ?? false;
 
     final bool shouldBlurImages;
