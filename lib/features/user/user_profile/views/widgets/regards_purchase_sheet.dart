@@ -14,8 +14,9 @@ import 'package:tayseer/my_import.dart';
 class PurchasePackage {
   final String id;
   final int count;
-  final double price;       // total price
-  final double priceForOne; // price per unit
+  final double price;
+  final double priceForOne;
+  final String currency;
   final bool isMostPopular;
   final bool hasDiscount;
   final int? discountPercent;
@@ -25,6 +26,7 @@ class PurchasePackage {
     required this.count,
     required this.price,
     this.priceForOne = 0,
+    this.currency = 'EGP',
     this.isMostPopular = false,
     this.hasDiscount = false,
     this.discountPercent,
@@ -43,6 +45,7 @@ class PurchasePackage {
         count: pkg.amount,
         price: pkg.price,
         priceForOne: pkg.priceForOne,
+        currency: pkg.currency,
         isMostPopular: isMid,
         hasDiscount: isMid,
         discountPercent: isMid ? 20 : null,
@@ -325,7 +328,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                         Directionality(
                           textDirection: TextDirection.ltr,
                           child: Text(
-                            '${pkg.price.toStringAsFixed(0)} EGP',
+                            '${pkg.price.toStringAsFixed(0)} ${pkg.currency} ${context.tr('per_unit')}',
                             style: Styles.textStyle12SemiBold.copyWith(
                               color: AppColors.secondary400,
                             ),
