@@ -9,7 +9,6 @@ environment:
 
 dependencies:
   app_links: ^7.0.0
-  audioplayers: ^6.1.0
   cached_network_image: ^3.4.1
   camera: ^0.10.0
   carousel_slider: ^5.1.1

@@ -26,7 +26,7 @@ PODS:
   - didit_sdk (3.4.3):
     - DiditSDK (~> 3.2)
     - Flutter
-  - DiditSDK (3.2.9)
+  - DiditSDK (3.2.10)
   - DKImagePickerController/Core (4.3.9):
     - DKImagePickerController/ImageDataManager
     - DKImagePickerController/Resource
@@ -490,7 +490,7 @@ SPEC CHECKSUMS:
   CryptoSwift: e64e11850ede528a02a0f3e768cec8e9d92ecb90
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   didit_sdk: af559c66999a6ae99f47b961f98105ae2597b1b1
-  DiditSDK: 8dbd51910efebaabd3fcca14a238cc15d0486a6c
+  DiditSDK: f5faedded274d57e57e11fc2b7005f6e5f39f814
   DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
   emoji_picker_flutter: ece213fc274bdddefb77d502d33080dc54e616cc
@@ -566,6 +566,6 @@ SPEC CHECKSUMS:
   ZIPFoundation: dfd3d681c4053ff7e2f7350bc4e53b5dba3f5351
   ZPNs: 73bad0046a74e37315201053f9a0e7ac625d9436
 
-PODFILE CHECKSUM: a295d829d2599b47b6a003801c07248df6927a7a
+PODFILE CHECKSUM: c76d4d16bfe34b451c345c4e68d85e837b54d034
 
 COCOAPODS: 1.16.2
