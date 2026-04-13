@@ -1941,5 +1941,11 @@
   "regards_balance_finished_desc": "Buy more regards to keep getting matched with top professionals",
   "most_popular": "Most Popular",
   "per_unit": "per unit",
-  "save_percent": "Save {percent}%"
+  "save_percent": "Save {percent}%",
+  "reached_free_likes_limit": "You've reached your free likes limit",
+"subscribe_to_like_more": "Subscribe now to like more people",
+"later": "Later",
+"regard_limit_title": "You can't view compliments sent to you",
+"regard_limit_subtitle": "Subscribe and get a free trial period to unlock all features in the app",
+"subscribe_now": "Subscribe Now !"
 }

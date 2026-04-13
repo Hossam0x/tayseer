@@ -18,8 +18,6 @@ class MarriageCubit extends Cubit<MarriageState> {
   }) : _repo = repository ?? getIt<MarriageRepository>(),
        super(
          MarriageState(
-           // ✅ ابدأ بالـ favoritedIds محتوية على الـ seed من أول لحظة
-           // عشان القلب يبقى أحمر فوراً قبل ما أي API call يرجع
            favoritedIds: {
              if ((seedPersonId?.isNotEmpty ?? false) && seedIsFavorite)
                seedPersonId!,
@@ -51,7 +49,7 @@ class MarriageCubit extends Cubit<MarriageState> {
     if (_cardController != null) return;
     _cardController = AnimationController(
       vsync: vsync,
-      duration: const Duration(milliseconds: 350),
+      duration: const Duration(milliseconds: 180), // ✅ كانت 350
     );
     _cardAnimation = CurvedAnimation(
       parent: _cardController!,
@@ -68,6 +66,8 @@ class MarriageCubit extends Cubit<MarriageState> {
   }
 
   void emitSwipeLikeDislikeAnimation({required double direction}) {
+    if (state.isAnimating) return; // ✅ امنع أي call تاني لحد ما الأول يخلص
+
     emit(
       state.copyWith(
         swipeDirection: direction,
@@ -76,7 +76,9 @@ class MarriageCubit extends Cubit<MarriageState> {
       ),
     );
 
-    Future.delayed(const Duration(milliseconds: 300), () {
+    Future.delayed(const Duration(milliseconds: 250), () {
+      // ✅ كانت 300
+      if (isClosed) return;
       emit(
         state.copyWith(swipeDirection: 0, swipeProgress: 0, isAnimating: false),
       );
@@ -221,7 +223,7 @@ class MarriageCubit extends Cubit<MarriageState> {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // FETCH ONLY SPECIFIC PROFILE (للـ deep link - أسرع بكتير)
+  // FETCH ONLY SPECIFIC PROFILE
   // ═══════════════════════════════════════════════════════════════
   Future<void> fetchOnlySpecificProfile(String targetPersonId) async {
     final existing = state.allUsers.firstWhere(
@@ -332,7 +334,6 @@ class MarriageCubit extends Cubit<MarriageState> {
   // ═══════════════════════════════════════════════════════════════
   // SYNC NOTIFICATION COUNT FROM INTERACTIONS CUBIT
   // ═══════════════════════════════════════════════════════════════
-  // ✅ ده الحل: بنقرأ من InteractionsCubit ونحدث MarriageCubit state بنفس القيم
   void syncNotificationCountFromInteractions(
     int total,
     int likes,
@@ -942,10 +943,7 @@ class MarriageCubit extends Cubit<MarriageState> {
   // ═══════════════════════════════════════════════════════════════
   void updateLimits({int? likesLeft, int? regardsLeft}) {
     if (isClosed) return;
-    emit(state.copyWith(
-      likesLeft: likesLeft,
-      regardsLeft: regardsLeft,
-    ));
+    emit(state.copyWith(likesLeft: likesLeft, regardsLeft: regardsLeft));
   }
 
   // ═══════════════════════════════════════════════════════════════

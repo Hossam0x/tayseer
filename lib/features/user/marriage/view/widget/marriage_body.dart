@@ -225,9 +225,9 @@ class MarriageBodyState extends State<MarriageBody>
   Future<void> _syncNotificationAfterInteraction() async {
     // ✅ جلب الإشعارات من API عبر InteractionsCubit
     await interactionsCubit.fetchAndSyncNotificationCount();
-    
+
     if (!mounted) return;
-    
+
     // ✅ نقل البيانات من InteractionsCubit إلى MarriageCubit
     // لتجنب مشكلة الـ states المنفصلة
     final interactionsState = interactionsCubit.state;
@@ -406,7 +406,7 @@ class MarriageBodyState extends State<MarriageBody>
                           onTap: () => Navigator.maybePop(context),
                           child: CircleAvatar(
                             backgroundColor: Colors.black12,
-                          child: AppImage(AssetsData.backArrow, width: 19.w),
+                            child: AppImage(AssetsData.backArrow, width: 19.w),
                           ),
                         )
                       : GestureDetector(
@@ -429,7 +429,7 @@ class MarriageBodyState extends State<MarriageBody>
                       ? const SizedBox.shrink()
                       : AnimatedBeFirstButton(
                           onTap: () {
-                            context.pushNamed(AppRouter.kBoostAccountView);
+                            context.pushNamed(AppRouter.kUserPackagesView);
                           },
                         ),
                 ),
@@ -540,8 +540,9 @@ class MarriageBodyState extends State<MarriageBody>
               current.showActionSnackbar) ||
           (previous.userInteractionState != current.userInteractionState &&
               current.userInteractionState == CubitStates.failure) ||
-          previous.likesLeft != current.likesLeft ||
-          previous.regardsLeft != current.regardsLeft,
+          (previous.likesLeft != current.likesLeft && current.likesLeft == 0) ||
+          (previous.regardsLeft != current.regardsLeft &&
+              current.regardsLeft == 0),
 
       buildWhen: (previous, current) =>
           previous.marriageProfileState != current.marriageProfileState ||
@@ -563,12 +564,31 @@ class MarriageBodyState extends State<MarriageBody>
           previous.likesNotificationCount != current.likesNotificationCount,
 
       listener: (context, state) {
-        // ✅ لما likesLeft أو regardsLeft يبقى 0 → اعرض sheet الشراء
-        if ((state.likesLeft == 0 || state.regardsLeft == 0) &&
-            (state.userInteractionState == CubitStates.failure ||
-                state.sendRegardState == CubitStates.failure)) {
-          context.read<MarriageCubit>().resetState();
+        // ✅ likes خلصت
+        if (state.likesLeft == 0 &&
+            state.userInteractionState == CubitStates.failure) {
+          showLimitReachedDialog(
+            context,
+            title: context.tr('reached_free_likes_limit'),
+            subtitle: context.tr('subscribe_to_like_more'),
+            subscribeText: context.tr('subscribe'),
+            laterText: context.tr('later'),
+            onSubscribe: () {
+              context.read<MarriageCubit>().resetState();
+              context.pushNamed(AppRouter.kUserPackagesView);
+            },
+            onLater: () {
+              context.read<MarriageCubit>().resetState();
+            },
+          );
+          return;
+        }
+
+        // ✅ regards خلصت
+        if (state.regardsLeft == 0 &&
+            state.sendRegardState == CubitStates.failure) {
           showRegardsPurchaseSheet(context);
+          context.read<MarriageCubit>().resetState();
           return;
         }
 
@@ -624,7 +644,6 @@ class MarriageBodyState extends State<MarriageBody>
           context.read<MarriageCubit>().resetState();
         }
       },
-
       builder: (context, state) {
         if (state.marriageProfileState == CubitStates.loading) {
           return _buildShimmerScreen();
@@ -691,10 +710,7 @@ class MarriageBodyState extends State<MarriageBody>
                       state,
                       forceShowFilter: true,
                     )
-                  : _buildEmptyMarriage(
-                      context.read<MarriageCubit>(),
-                      state,
-                    ),
+                  : _buildEmptyMarriage(context.read<MarriageCubit>(), state),
             );
           }
 
@@ -781,12 +797,17 @@ class MarriageBodyState extends State<MarriageBody>
                               onTap: () => Navigator.maybePop(context),
                               child: CircleAvatar(
                                 backgroundColor: Colors.black12,
-                                child: AppImage(AssetsData.backArrow, width: 19.w),
+                                child: AppImage(
+                                  AssetsData.backArrow,
+                                  width: 19.w,
+                                ),
                               ),
                             )
                           : GestureDetector(
                               onTap: () {
-                                context.pushNamed(AppRouter.kMarriageFilterView);
+                                context.pushNamed(
+                                  AppRouter.kMarriageFilterView,
+                                );
                               },
                               child: CircleAvatar(
                                 backgroundColor: Colors.black12,
@@ -804,7 +825,7 @@ class MarriageBodyState extends State<MarriageBody>
                           ? const SizedBox.shrink()
                           : AnimatedBeFirstButton(
                               onTap: () {
-                                context.pushNamed(AppRouter.kBoostAccountView);
+                                context.pushNamed(AppRouter.kUserPackagesView);
                               },
                             ),
                     ),
@@ -827,14 +848,14 @@ class MarriageBodyState extends State<MarriageBody>
     final Color borderColor = isUltra
         ? const Color(0xFF6284FF).withOpacity(0.5)
         : isGold
-            ? const Color(0xFFF4AE00).withOpacity(0.5)
-            : const Color(0xFFE91E63).withOpacity(0.4);
+        ? const Color(0xFFF4AE00).withOpacity(0.5)
+        : const Color(0xFFE91E63).withOpacity(0.4);
 
     final Color bgColor = isUltra
         ? const Color(0xFFF0F3FF)
         : isGold
-            ? const Color(0xFFFFF8E1)
-            : const Color(0xFFFFF0F3);
+        ? const Color(0xFFFFF8E1)
+        : const Color(0xFFFFF0F3);
 
     final String titleKey = isPremium
         ? (isUltra ? 'ultra_profile_title' : 'gold_profile_title')
@@ -861,7 +882,14 @@ class MarriageBodyState extends State<MarriageBody>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            SvgPicture.asset(AssetsData.verIcon, height: 80.h),
+            SvgPicture.asset(
+              isUltra
+                  ? AssetsData.eliteVerIcon
+                  : isGold
+                  ? AssetsData.goldVerIcon
+                  : AssetsData.verIcon,
+              height: 80.h,
+            ),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -876,8 +904,8 @@ class MarriageBodyState extends State<MarriageBody>
                             color: isUltra
                                 ? const Color(0xFF6284FF)
                                 : isGold
-                                    ? const Color(0xFFF4AE00)
-                                    : AppColors.primary400,
+                                ? const Color(0xFFF4AE00)
+                                : AppColors.primary400,
                           ),
                         ),
                       ),
@@ -887,9 +915,17 @@ class MarriageBodyState extends State<MarriageBody>
                             ? ShaderMask(
                                 shaderCallback: (bounds) =>
                                     const LinearGradient(
-                                      colors: [Color(0xFF6284FF), Color(0xFF9FAEFF), Color(0xFFF4AE00)],
+                                      colors: [
+                                        Color(0xFF6284FF),
+                                        Color(0xFF9FAEFF),
+                                        Color(0xFFF4AE00),
+                                      ],
                                     ).createShader(bounds),
-                                child: AppImage(AssetsData.goldIcon, width: 24.w, color: Colors.white),
+                                child: AppImage(
+                                  AssetsData.goldIcon,
+                                  width: 24.w,
+                                  color: Colors.white,
+                                ),
                               )
                             : AppImage(AssetsData.goldIcon, width: 24.w),
                       ],
@@ -1149,7 +1185,9 @@ class MarriageBodyState extends State<MarriageBody>
                         : null,
                     isFavorited: state.favoritedIds.contains(user?.id ?? ''),
                     subscriptionType: user?.subscriptionType,
-                    nextSubscriptionType: hasNext ? nextUser?.subscriptionType : null,
+                    nextSubscriptionType: hasNext
+                        ? nextUser?.subscriptionType
+                        : null,
                     onFavoriteTap: canInteract
                         ? () async {
                             await _showSwipePopup(
@@ -1492,7 +1530,9 @@ class MarriageBodyState extends State<MarriageBody>
                       horizontal: 16.w,
                       vertical: 20.h,
                     ),
-                    sliver: SliverToBoxAdapter(child: _buildVerifiedCard(user?.subscriptionType)),
+                    sliver: SliverToBoxAdapter(
+                      child: _buildVerifiedCard(user?.subscriptionType),
+                    ),
                   ),
 
                   SliverToBoxAdapter(child: SizedBox(height: 150.h)),

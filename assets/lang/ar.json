@@ -1941,5 +1941,12 @@
   "regards_balance_finished_desc": "اشترِ تحيات إضافية للاستمرار في الحصول على تطابق مع أفضل المحترفين",
   "most_popular": "الأكثر شيوعاً",
   "per_unit": "للوحدة",
-  "save_percent": "وفر {percent}%"
+  "save_percent": "وفر {percent}%",
+  "reached_free_likes_limit": "لقد وصلت لنهاية عدد الاعجابات المجانيه",
+"subscribe_to_like_more": "اشترك الان حتي تتمكن من الاعجاب بناس اكتر",
+"later": "لاحقًا",
+"regard_limit_title": "لن تتمكن من رؤية الجاملات المرسلة لك",
+"regard_limit_subtitle": "اشترك معنا واحصل علي فترة تجريبيه مجاناً لتحصل علي كل الميزات في التطبيق",
+"subscribe_now": "اشترك الان !"
+
 }

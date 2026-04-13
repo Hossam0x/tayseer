@@ -541,3 +541,502 @@ void CustomSHowDetailsDialog(
     },
   );
 }
+
+void showLimitReachedDialog(
+  BuildContext context, {
+  required String title,
+  required String subtitle,
+  required String subscribeText,
+  required String laterText,
+  required VoidCallback onSubscribe,
+  VoidCallback? onLater,
+}) {
+  HapticFeedback.mediumImpact();
+
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: '',
+    barrierColor: Colors.black.withOpacity(0.3),
+    transitionDuration: const Duration(milliseconds: 400),
+    pageBuilder: (context, animation, secondaryAnimation) {
+      return Center(
+        child: ScaleTransition(
+          scale: CurvedAnimation(parent: animation, curve: Curves.elasticOut),
+          child: FadeTransition(
+            opacity: animation,
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 24),
+              constraints: const BoxConstraints(maxWidth: 380),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 30,
+                    offset: const Offset(0, 15),
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(28),
+                child: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFFE8B4B8),
+                          Color(0xFFF5E6E8),
+                          Color(0xFFFAF5F5),
+                          Colors.white,
+                        ],
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // ✅ أيقونة الحظر SVG
+                          SvgPicture.asset(
+                                AssetsData.pauseIcon,
+                                width: 90,
+                                height: 90,
+                              )
+                              .animate()
+                              .scale(
+                                begin: const Offset(0, 0),
+                                end: const Offset(1, 1),
+                                duration: const Duration(milliseconds: 600),
+                                curve: Curves.elasticOut,
+                              )
+                              .shake(
+                                delay: const Duration(milliseconds: 500),
+                                duration: const Duration(milliseconds: 500),
+                                hz: 2,
+                                rotation: 0.05,
+                              ),
+
+                          const SizedBox(height: 24),
+
+                          // ✅ العنوان
+                          Text(
+                                title,
+                                style: Styles.textStyle16.copyWith(
+                                  color: const Color(0xFF2D2D2D),
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.4,
+                                ),
+                                textAlign: TextAlign.center,
+                              )
+                              .animate()
+                              .fadeIn(
+                                delay: const Duration(milliseconds: 200),
+                                duration: const Duration(milliseconds: 400),
+                              )
+                              .slideY(
+                                begin: 0.5,
+                                end: 0,
+                                delay: const Duration(milliseconds: 200),
+                                duration: const Duration(milliseconds: 400),
+                                curve: Curves.easeOutCubic,
+                              ),
+
+                          const SizedBox(height: 12),
+
+                          // ✅ الوصف
+                          Text(
+                                subtitle,
+                                style: Styles.textStyle12.copyWith(
+                                  color: const Color(0xFF6B6B6B),
+                                  height: 1.5,
+                                ),
+                                textAlign: TextAlign.center,
+                              )
+                              .animate()
+                              .fadeIn(
+                                delay: const Duration(milliseconds: 300),
+                                duration: const Duration(milliseconds: 400),
+                              )
+                              .slideY(
+                                begin: 0.5,
+                                end: 0,
+                                delay: const Duration(milliseconds: 300),
+                                duration: const Duration(milliseconds: 400),
+                                curve: Curves.easeOutCubic,
+                              ),
+
+                          const SizedBox(height: 28),
+
+                          // ✅ الأزرار
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _GradientDialogButton(
+                                  text: subscribeText,
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    onSubscribe();
+                                  },
+                                  delay: const Duration(milliseconds: 400),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              // ✅ زرار لاحقاً - outlined فقط بدون fill
+                              Expanded(
+                                child: _OutlinedDialogButton(
+                                  text: laterText,
+                                  borderColor: AppColors.primary500,
+                                  textColor: AppColors.primary500,
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    onLater?.call();
+                                  },
+                                  delay: const Duration(milliseconds: 500),
+                                ),
+                              ),
+
+                              // ✅ زرار اشترك - gradient
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
+
+class _OutlinedDialogButton extends StatefulWidget {
+  final String text;
+  final Color borderColor;
+  final Color textColor;
+  final VoidCallback onPressed;
+  final Duration delay;
+
+  const _OutlinedDialogButton({
+    required this.text,
+    required this.borderColor,
+    required this.textColor,
+    required this.onPressed,
+    required this.delay,
+  });
+
+  @override
+  State<_OutlinedDialogButton> createState() => _OutlinedDialogButtonState();
+}
+
+class _OutlinedDialogButtonState extends State<_OutlinedDialogButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+          onTapDown: (_) => setState(() => _isPressed = true),
+          onTapUp: (_) => setState(() => _isPressed = false),
+          onTapCancel: () => setState(() => _isPressed = false),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            widget.onPressed();
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            transform: Matrix4.identity()..scale(_isPressed ? 0.95 : 1.0),
+            transformAlignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            decoration: BoxDecoration(
+              color: _isPressed
+                  ? widget.borderColor.withOpacity(0.08)
+                  : AppColors.primary200,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: widget.borderColor, width: 1.5),
+            ),
+            child: Text(
+              widget.text,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        )
+        .animate()
+        .fadeIn(
+          delay: widget.delay,
+          duration: const Duration(milliseconds: 300),
+        )
+        .slideY(
+          begin: 0.5,
+          end: 0,
+          delay: widget.delay,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+        );
+  }
+}
+
+class _GradientDialogButton extends StatefulWidget {
+  final String text;
+  final VoidCallback onPressed;
+  final Duration delay;
+
+  const _GradientDialogButton({
+    required this.text,
+    required this.onPressed,
+    required this.delay,
+  });
+
+  @override
+  State<_GradientDialogButton> createState() => _GradientDialogButtonState();
+}
+
+class _GradientDialogButtonState extends State<_GradientDialogButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+          onTapDown: (_) => setState(() => _isPressed = true),
+          onTapUp: (_) => setState(() => _isPressed = false),
+          onTapCancel: () => setState(() => _isPressed = false),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            widget.onPressed();
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            transform: Matrix4.identity()..scale(_isPressed ? 0.95 : 1.0),
+            transformAlignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary300, // rgba(235, 122, 145)
+                  AppColors.primary500, // rgba(172, 26, 55)
+                ],
+                begin: Alignment.centerRight,
+                end: Alignment.centerLeft,
+              ),
+              borderRadius: BorderRadius.circular(22),
+              // border: Border.all(
+              //   color: const Color(0x85133C2B), // rgba(133, 20, 43)
+              //   width: 1,
+              // ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary500.withOpacity(
+                    _isPressed ? 0.2 : 0.35,
+                  ),
+                  blurRadius: _isPressed ? 4 : 10,
+                  offset: Offset(0, _isPressed ? 2 : 5),
+                ),
+              ],
+            ),
+            child: Text(
+              widget.text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        )
+        .animate()
+        .fadeIn(
+          delay: widget.delay,
+          duration: const Duration(milliseconds: 300),
+        )
+        .slideY(
+          begin: 0.5,
+          end: 0,
+          delay: widget.delay,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+        );
+  }
+}
+
+void showRegardLimitDialog(
+  BuildContext context, {
+  required VoidCallback onSubscribe,
+}) {
+  HapticFeedback.mediumImpact();
+
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: '',
+    barrierColor: Colors.black.withOpacity(0.3),
+    transitionDuration: const Duration(milliseconds: 400),
+    pageBuilder: (context, animation, secondaryAnimation) {
+      return Center(
+        child: ScaleTransition(
+          scale: CurvedAnimation(parent: animation, curve: Curves.elasticOut),
+          child: FadeTransition(
+            opacity: animation,
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 24),
+              constraints: const BoxConstraints(maxWidth: 380),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 30,
+                    offset: const Offset(0, 15),
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(28),
+                child: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    decoration: const BoxDecoration(color: Colors.white),
+                    child: Stack(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // ✅ أيقونة الحظر
+                              SvgPicture.asset(
+                                    AssetsData.pauseIcon,
+                                    width: 100,
+                                    height: 100,
+                                  )
+                                  .animate()
+                                  .scale(
+                                    begin: const Offset(0, 0),
+                                    end: const Offset(1, 1),
+                                    duration: const Duration(milliseconds: 600),
+                                    curve: Curves.elasticOut,
+                                  )
+                                  .shake(
+                                    delay: const Duration(milliseconds: 500),
+                                    duration: const Duration(milliseconds: 500),
+                                    hz: 2,
+                                    rotation: 0.05,
+                                  ),
+
+                              const SizedBox(height: 8),
+
+                              // ✅ خط فاصل
+                              Divider(
+                                color: Colors.grey.shade200,
+                                thickness: 1,
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              // ✅ العنوان
+                              Text(
+                                    context.tr('regard_limit_title'),
+                                    style: Styles.textStyle16.copyWith(
+                                      color: const Color(0xFF2D2D2D),
+                                      fontWeight: FontWeight.bold,
+                                      height: 1.4,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  )
+                                  .animate()
+                                  .fadeIn(
+                                    delay: const Duration(milliseconds: 200),
+                                    duration: const Duration(milliseconds: 400),
+                                  )
+                                  .slideY(
+                                    begin: 0.5,
+                                    end: 0,
+                                    delay: const Duration(milliseconds: 200),
+                                    duration: const Duration(milliseconds: 400),
+                                    curve: Curves.easeOutCubic,
+                                  ),
+
+                              const SizedBox(height: 12),
+
+                              // ✅ الوصف
+                              Text(
+                                    context.tr('regard_limit_subtitle'),
+                                    style: Styles.textStyle12.copyWith(
+                                      color: const Color(0xFF6B6B6B),
+                                      height: 1.6,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  )
+                                  .animate()
+                                  .fadeIn(
+                                    delay: const Duration(milliseconds: 300),
+                                    duration: const Duration(milliseconds: 400),
+                                  )
+                                  .slideY(
+                                    begin: 0.5,
+                                    end: 0,
+                                    delay: const Duration(milliseconds: 300),
+                                    duration: const Duration(milliseconds: 400),
+                                    curve: Curves.easeOutCubic,
+                                  ),
+
+                              const SizedBox(height: 24),
+
+                              // ✅ زرار اشترك الان
+                              _GradientDialogButton(
+                                text: context.tr('subscribe_now'),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  onSubscribe();
+                                },
+                                delay: const Duration(milliseconds: 400),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // ✅ زرار الإغلاق X
+                        Positioned(
+                          top: 12,
+                          right: 12,
+                          child: GestureDetector(
+                            onTap: () => Navigator.of(context).pop(),
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                size: 18,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}

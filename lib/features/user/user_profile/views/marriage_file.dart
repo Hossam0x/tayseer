@@ -594,7 +594,16 @@ class _MarriagefilePageState extends State<MarriagefilePage>
             child: ProfileStatisticsCards(
               upgradesCount: profile.likesLeft ?? 0,
               resultsCount: profile.regardsLeft ?? 0,
-              onUpgradesTap: () => showLikesPurchaseSheet(context), // ✅ likes
+              onUpgradesTap: () => showLimitReachedDialog(
+                context,
+                title: context.tr('reached_free_likes_limit'),
+                subtitle: context.tr('subscribe_to_like_more'),
+                subscribeText: context.tr('subscribe'),
+                laterText: context.tr('later'),
+                onSubscribe: () {
+                  context.pushNamed(AppRouter.kUserPackagesView);
+                },
+              ),
               onResultsTap: () =>
                   showRegardsPurchaseSheet(context), // ✅ regards
             ),

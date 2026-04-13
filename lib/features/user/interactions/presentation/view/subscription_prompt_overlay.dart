@@ -8,7 +8,7 @@ class SubscriptionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onPressed ??
-          () => context.pushNamed(AppRouter.kinteractionSubscriptionView),
+          () => context.pushNamed(AppRouter.kUserPackagesView),
       child: Container(
         width: double.infinity,
         height: 55.h,
