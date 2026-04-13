@@ -71,6 +71,7 @@ class MarriageRepositoryImpl implements MarriageRepository {
   Future<Either<Failure, void>> sendRegard({
     required String personId,
     String? text,
+    bool countView = false,
   }) async {
     try {
       final response = await _apiService.post(
@@ -78,6 +79,7 @@ class MarriageRepositoryImpl implements MarriageRepository {
         data: {
           'personInteractedWith': personId,
           if (text != null) 'text': text,
+          if (countView) 'countView': true,
         },
       );
 
@@ -97,12 +99,17 @@ class MarriageRepositoryImpl implements MarriageRepository {
   Future<Either<Failure, void>> toggleFavorite({
     required String userId,
     required bool isAdd,
+    bool countView = false,
   }) async {
     try {
       final response = await _apiService.post(
         endPoint: '/user/user-interaction',
         query: isAdd ? null : {'action': 'remove'},
-        data: {'personInteractedWith': userId, 'interactionType': 'favorite'},
+        data: {
+          'personInteractedWith': userId,
+          'interactionType': 'favorite',
+          if (countView && isAdd) 'countView': true,
+        },
       );
 
       if (response['success'] == true) {

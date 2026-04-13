@@ -18,6 +18,7 @@ abstract class MarriageRepository {
   Future<Either<Failure, void>> sendRegard({
     required String personId,
     String? text,
+    bool countView = false,
   });
 
   Future<Either<Failure, String>> blockUser({required String personId});
@@ -25,6 +26,7 @@ abstract class MarriageRepository {
   Future<Either<Failure, void>> toggleFavorite({
     required String userId,
     required bool isAdd,
+    bool countView = false,
   });
 
   Future<Either<Failure, List<String>>> getFavoriteIds();

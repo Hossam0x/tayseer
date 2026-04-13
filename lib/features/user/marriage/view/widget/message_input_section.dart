@@ -114,6 +114,7 @@ class _MessageInputSectionState extends State<MessageInputSection> {
                                       .sendRegardText(
                                         personId: widget.personId,
                                         text: value.text.trim(),
+                                        countView: true,
                                       );
                                   _controller.clear();
                                 }

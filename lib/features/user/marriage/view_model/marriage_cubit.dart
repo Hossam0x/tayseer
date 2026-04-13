@@ -409,8 +409,14 @@ class MarriageCubit extends Cubit<MarriageState> {
   // ═══════════════════════════════════════════════════════════════
   // SEND REGARD
   // ═══════════════════════════════════════════════════════════════
-  Future<void> sendRegard({required String personId}) async {
-    final result = await _repo.sendRegard(personId: personId);
+  Future<void> sendRegard({
+    required String personId,
+    bool countView = false,
+  }) async {
+    final result = await _repo.sendRegard(
+      personId: personId,
+      countView: countView,
+    );
     if (isClosed) return;
 
     result.fold(
@@ -446,6 +452,7 @@ class MarriageCubit extends Cubit<MarriageState> {
   Future<void> sendRegardText({
     required String personId,
     required String text,
+    bool countView = false,
   }) async {
     emit(
       state.copyWith(
@@ -455,7 +462,11 @@ class MarriageCubit extends Cubit<MarriageState> {
       ),
     );
 
-    final result = await _repo.sendRegard(personId: personId, text: text);
+    final result = await _repo.sendRegard(
+      personId: personId,
+      text: text,
+      countView: countView,
+    );
 
     result.fold(
       (failure) => emit(
@@ -877,6 +888,7 @@ class MarriageCubit extends Cubit<MarriageState> {
   Future<void> toggleLocalFavorite(
     String userId, {
     bool removeFromList = false,
+    bool countView = false,
   }) async {
     final isCurrentlyFavorited = state.favoritedIds.contains(userId);
     final updatedFavorites = Set<String>.from(state.favoritedIds);
@@ -919,6 +931,7 @@ class MarriageCubit extends Cubit<MarriageState> {
     final result = await _repo.toggleFavorite(
       userId: userId,
       isAdd: !isCurrentlyFavorited,
+      countView: countView,
     );
 
     result.fold(

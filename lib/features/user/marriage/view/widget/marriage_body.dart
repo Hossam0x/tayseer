@@ -1199,6 +1199,9 @@ class MarriageBodyState extends State<MarriageBody>
                               removeFromList:
                                   widget.personId == null &&
                                   !widget.fromInteractions,
+                              countView:
+                                  widget.personId == null &&
+                                  !widget.fromInteractions,
                             );
                             await _syncNotificationAfterInteraction();
                             if (widget.fromInteractions && mounted) {
@@ -1599,6 +1602,8 @@ class MarriageBodyState extends State<MarriageBody>
                               onTap: () async {
                                 await cubit.sendRegard(
                                   personId: profile.user?.id ?? '',
+                                  countView: widget.personId == null &&
+                                      !widget.fromInteractions,
                                 );
                                 await _syncNotificationAfterInteraction();
                               },
