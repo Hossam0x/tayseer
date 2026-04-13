@@ -41,6 +41,7 @@ class MarriageRepositoryImpl implements MarriageRepository {
   Future<Either<Failure, void>> userInteraction({
     required String personId,
     required String interactionType,
+    bool countView = false,
   }) async {
     try {
       final response = await _apiService.post(
@@ -48,6 +49,7 @@ class MarriageRepositoryImpl implements MarriageRepository {
         data: {
           'personInteractedWith': personId,
           'interactionType': interactionType,
+          if (countView) 'countView': true,
         },
       );
 

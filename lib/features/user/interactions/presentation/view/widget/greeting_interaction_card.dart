@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/regards_purchase_sheet.dart';
 import 'package:tayseer/my_import.dart';
 
 import '../../Interactions_cubit/interactions_cubit.dart';
@@ -158,13 +159,11 @@ class GreetingProfileCard extends StatelessWidget {
                   ),
                 ),
 
-                // ✅ زر التحية — behavior: opaque يمنع الـ tap من الوصول للأب
+                // ✅ زر التحية
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
-                    context.read<InteractionsCubit>().sendCompliment(
-                      userId: item.userId,
-                    );
+                    showRegardsPurchaseSheet(context);
                   },
                   child: Container(
                     width: 55.w,

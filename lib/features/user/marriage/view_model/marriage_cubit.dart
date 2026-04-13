@@ -370,10 +370,12 @@ class MarriageCubit extends Cubit<MarriageState> {
   Future<void> userInteraction({
     required String personId,
     required String interactionType,
+    bool countView = false,
   }) async {
     final result = await _repo.userInteraction(
       personId: personId,
       interactionType: interactionType,
+      countView: countView,
     );
     if (isClosed) return;
 
@@ -731,7 +733,11 @@ class MarriageCubit extends Cubit<MarriageState> {
   }) async {
     if (state.isAnimating || _cardController == null) return;
     emit(state.copyWith(swipeDirection: 1, isAnimating: true));
-    userInteraction(personId: personId, interactionType: 'like');
+    userInteraction(
+      personId: personId,
+      interactionType: 'like',
+      countView: !hasSinglePerson,
+    );
     await _cardController!.forward(from: 0);
     _onSwipeComplete(personId: personId, hasSinglePerson: hasSinglePerson);
   }
@@ -746,7 +752,11 @@ class MarriageCubit extends Cubit<MarriageState> {
   }) async {
     if (state.isAnimating || _cardController == null) return;
     emit(state.copyWith(swipeDirection: -1, isAnimating: true));
-    userInteraction(personId: personId, interactionType: 'dislike');
+    userInteraction(
+      personId: personId,
+      interactionType: 'dislike',
+      countView: !hasSinglePerson,
+    );
     await _cardController!.forward(from: 0);
     _onSwipeComplete(personId: personId, hasSinglePerson: hasSinglePerson);
   }

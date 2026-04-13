@@ -1,4 +1,6 @@
 import 'package:tayseer/core/widgets/custom_build_age_and_country_section.dart';
+import 'package:tayseer/core/widgets/custom_show_dialog.dart';
+import 'package:tayseer/features/user/user_profile/presentation/view_model/user_packages_cubit.dart';
 import 'package:tayseer/features/user/marriage_filter/view/widget/custom_data_card.dart';
 import 'package:tayseer/features/user/marriage_filter/view/widget/filter_selection_body.dart';
 import 'package:tayseer/features/user/marriage_filter/view_models/marriage_filter_cubit.dart';
@@ -252,8 +254,18 @@ class MarriageFilterBody extends StatelessWidget {
             useGradient: hasFilters,
             width: context.width * 0.9,
             title: context.tr('apply_filters'),
-            onPressed: () {
-              if (hasFilters) {
+            onPressed: () async {
+              if (!hasFilters) return;
+              final cachedSub = await UserPackagesCubit.getCachedSubType();
+              final isFree = cachedSub == null;
+              if (!context.mounted) return;
+              if (isFree) {
+                showFiltterLimitDialogs(
+                  context,
+                  onSubscribe: () =>
+                      context.pushNamed(AppRouter.kUserPackagesView),
+                );
+              } else {
                 context.read<MarriageFilterCubit>().sendMarriageFilter();
               }
             },

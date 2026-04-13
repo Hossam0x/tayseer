@@ -1,9 +1,4 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:tayseer/core/dependancy_injection/get_it.dart';
-import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/features/user/marriage/model/regards_package_model.dart';
 import 'package:tayseer/features/user/marriage/view_model/regards_packages_cubit.dart';
 import 'package:tayseer/my_import.dart';
@@ -220,9 +215,8 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
           ),
         ],
 
-        SizedBox(height: 12.h),
-        _buildWalletToggle(),
-        SizedBox(height: 20.h),
+        SizedBox(height: 44.h),
+
         CustomBotton(
           title: context.tr('pay'),
           height: 54.h,
@@ -422,25 +416,4 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     );
   }
 
-  Widget _buildWalletToggle() {
-    return Row(
-      children: [
-        Transform.scale(
-          scale: 0.85,
-          child: Switch(
-            value: _useWallet,
-            activeTrackColor: AppColors.primary400,
-            inactiveThumbColor: Colors.white,
-            inactiveTrackColor: AppColors.secondary200,
-            onChanged: (val) => setState(() => _useWallet = val),
-          ),
-        ),
-        SizedBox(width: 8.w),
-        Text(
-          context.tr('pay_from_wallet'),
-          style: Styles.textStyle14.copyWith(color: AppColors.secondary700),
-        ),
-      ],
-    );
-  }
 }

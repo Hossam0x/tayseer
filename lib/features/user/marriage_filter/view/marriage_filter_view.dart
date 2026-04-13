@@ -1,5 +1,7 @@
 import 'package:tayseer/features/user/marriage_filter/view/widget/marriage_filter_view_body.dart';
 import 'package:tayseer/features/user/marriage_filter/view_models/marriage_filter_cubit.dart';
+import 'package:tayseer/features/user/user_profile/presentation/view_model/user_packages_cubit.dart';
+import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/my_import.dart';
 
 class MarriageFilterView extends StatelessWidget {
@@ -29,9 +31,18 @@ class MarriageFilterView extends StatelessWidget {
       onPressed: () {
         Navigator.pop(context); // ✅ ارجع من صفحة الفلتر
       },
-      onCancel: () {
-        cubit
-            .sendMarriageFilter(); // ✅ الـ listener في MarriageFilterBody هيعمل pop تلقائي
+      onCancel: () async {
+        final cachedSub = await UserPackagesCubit.getCachedSubType();
+        final isFree = cachedSub == null;
+        if (!context.mounted) return;
+        if (isFree) {
+          showFiltterLimitDialogs(
+            context,
+            onSubscribe: () => context.pushNamed(AppRouter.kUserPackagesView),
+          );
+        } else {
+          cubit.sendMarriageFilter();
+        }
       },
     );
   }

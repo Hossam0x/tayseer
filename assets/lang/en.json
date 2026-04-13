@@ -1947,5 +1947,7 @@
 "later": "Later",
 "regard_limit_title": "You can't view compliments sent to you",
 "regard_limit_subtitle": "Subscribe and get a free trial period to unlock all features in the app",
-"subscribe_now": "Subscribe Now !"
+"subscribe_now": "Subscribe Now !",
+"filter_locked_title": "🔒 This Filter is for Subscribers Only",
+"filter_locked_subtitle": "Subscribe now to unlock all filters and enjoy a full experience with no limits"
 }

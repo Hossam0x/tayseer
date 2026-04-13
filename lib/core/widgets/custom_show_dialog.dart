@@ -1040,3 +1040,162 @@ void showRegardLimitDialog(
     },
   );
 }
+
+void showFiltterLimitDialogs(
+  BuildContext context, {
+  required VoidCallback onSubscribe,
+}) {
+  HapticFeedback.mediumImpact();
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: '',
+    barrierColor: Colors.black.withOpacity(0.3),
+    transitionDuration: const Duration(milliseconds: 400),
+    pageBuilder: (context, animation, secondaryAnimation) {
+      return Center(
+        child: ScaleTransition(
+          scale: CurvedAnimation(parent: animation, curve: Curves.elasticOut),
+          child: FadeTransition(
+            opacity: animation,
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 24),
+              constraints: const BoxConstraints(maxWidth: 380),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 30,
+                    offset: const Offset(0, 15),
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(28),
+                child: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    decoration: const BoxDecoration(color: Colors.white),
+                    child: Stack(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SvgPicture.asset(
+                                    AssetsData.pauseIcon,
+                                    width: 100,
+                                    height: 100,
+                                  )
+                                  .animate()
+                                  .scale(
+                                    begin: const Offset(0, 0),
+                                    end: const Offset(1, 1),
+                                    duration: const Duration(milliseconds: 600),
+                                    curve: Curves.elasticOut,
+                                  )
+                                  .shake(
+                                    delay: const Duration(milliseconds: 500),
+                                    duration: const Duration(milliseconds: 500),
+                                    hz: 2,
+                                    rotation: 0.05,
+                                  ),
+                              const SizedBox(height: 8),
+                              Divider(
+                                color: Colors.grey.shade200,
+                                thickness: 1,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                    context.tr(
+                                      'filter_locked_title',
+                                    ), // 🔒 هذا الفلتر حصري للمشتركين
+                                    style: Styles.textStyle16.copyWith(
+                                      color: const Color(0xFF2D2D2D),
+                                      fontWeight: FontWeight.bold,
+                                      height: 1.4,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  )
+                                  .animate()
+                                  .fadeIn(
+                                    delay: const Duration(milliseconds: 200),
+                                    duration: const Duration(milliseconds: 400),
+                                  )
+                                  .slideY(
+                                    begin: 0.5,
+                                    end: 0,
+                                    delay: const Duration(milliseconds: 200),
+                                    duration: const Duration(milliseconds: 400),
+                                    curve: Curves.easeOutCubic,
+                                  ),
+                              const SizedBox(height: 12),
+                              Text(
+                                    context.tr(
+                                      'filter_locked_subtitle',
+                                    ), // اشترك الآن للوصول إلى جميع الفلاتر واستمتع بتجربة كاملة بدون قيود
+                                    style: Styles.textStyle12.copyWith(
+                                      color: const Color(0xFF6B6B6B),
+                                      height: 1.6,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  )
+                                  .animate()
+                                  .fadeIn(
+                                    delay: const Duration(milliseconds: 300),
+                                    duration: const Duration(milliseconds: 400),
+                                  )
+                                  .slideY(
+                                    begin: 0.5,
+                                    end: 0,
+                                    delay: const Duration(milliseconds: 300),
+                                    duration: const Duration(milliseconds: 400),
+                                    curve: Curves.easeOutCubic,
+                                  ),
+                              const SizedBox(height: 24),
+                              _GradientDialogButton(
+                                text: context.tr('subscribe_now'),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  onSubscribe();
+                                },
+                                delay: const Duration(milliseconds: 400),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Positioned(
+                          top: 12,
+                          right: 12,
+                          child: GestureDetector(
+                            onTap: () => Navigator.of(context).pop(),
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                size: 18,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}

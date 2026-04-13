@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/regards_purchase_sheet.dart';
 import 'package:tayseer/my_import.dart';
 
 class AdditionalImageSection extends StatelessWidget {
@@ -75,13 +76,8 @@ class AdditionalImageSection extends StatelessWidget {
                         color: AppColors.kWhiteColor,
                         size: 20.sp,
                       ),
-                      onPressed: () async {
-                        if (personId != null) {
-                          context.read<MarriageCubit>().sendRegard(
-                            personId: personId!,
-                          );
-                          await _syncNotificationAfterInteraction(context);
-                        }
+                      onPressed: () {
+                        showRegardsPurchaseSheet(context);
                       },
                     ),
                   ),

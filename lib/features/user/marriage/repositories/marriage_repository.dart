@@ -12,6 +12,7 @@ abstract class MarriageRepository {
   Future<Either<Failure, void>> userInteraction({
     required String personId,
     required String interactionType,
+    bool countView = false,
   });
 
   Future<Either<Failure, void>> sendRegard({
