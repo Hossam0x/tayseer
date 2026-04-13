@@ -46,7 +46,7 @@ class TicketPriceSummary extends StatelessWidget {
           _buildPriceRow(
             context,
             context.tr("session_price"),
-            "${sessionData.price} ${context.tr("currency_sar")}",
+            "${sessionData.price} ${sessionData.currency}",
           ),
           SizedBox(height: 10.h),
 
@@ -54,7 +54,7 @@ class TicketPriceSummary extends StatelessWidget {
           _buildPriceRow(
             context,
             context.tr("vat"),
-            "${sessionData.tax} ${context.tr("currency_sar")}",
+            "${sessionData.tax} ${sessionData.currency}",
           ),
           SizedBox(height: 10.h),
 
@@ -63,7 +63,7 @@ class TicketPriceSummary extends StatelessWidget {
             _buildPriceRow(
               context,
               "${context.tr("discount")} ($discountPercentage%)",
-              "-$discountAmount ${context.tr("currency_sar")}",
+              "-$discountAmount ${sessionData.currency}",
               valueColor: Colors.green,
             ),
             SizedBox(height: 10.h),
@@ -92,7 +92,7 @@ class TicketPriceSummary extends StatelessWidget {
                   // السعر الأصلي (مشطوب) لو في خصم
                   if (discountPercentage > 0)
                     Text(
-                      "${sessionData.total} ${context.tr("currency_sar")}",
+                      "${sessionData.total} ${sessionData.currency}",
                       style: TextStyle(
                         fontSize: 14.sp,
                         color: Colors.grey,
@@ -101,7 +101,7 @@ class TicketPriceSummary extends StatelessWidget {
                     ),
                   // السعر النهائي
                   Text(
-                    "$finalTotal ${context.tr("currency_sar")}",
+                    "$finalTotal ${sessionData.currency}",
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.bold,

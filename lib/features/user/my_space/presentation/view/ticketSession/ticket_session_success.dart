@@ -16,8 +16,9 @@ class BookingSuccessView extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerRight,
                   child: IconButton(
-                    onPressed: () => context.popUntil(
-                      routeName: AppRouter.advisorchatprofile,
+                    onPressed: () => context.pushNamedAndRemoveUntil(
+                      predicate: (route) => true,
+                      AppRouter.kUserLayoutView,
                     ),
                     icon: Icon(
                       Icons.close,
