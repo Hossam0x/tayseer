@@ -51,7 +51,7 @@ class ProfileModel extends Equatable with ProfileProfessionalInfoMixin {
       isVerified: json['isVerified'] ?? false,
       verificationType: VerificationType.fromString(json['verificationType']),
       approvalKey: json['approvalKey'] ?? '',
-      location: json['location'],
+      location: json['location'] is Map ? null : json['location']?.toString(),
     );
   }
 
