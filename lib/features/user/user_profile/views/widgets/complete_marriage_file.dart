@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:tayseer/core/widgets/custom_outline_button.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
@@ -27,9 +28,11 @@ class CompleteMarriageFile extends StatefulWidget {
 
 class _CompleteMarriageFileState extends State<CompleteMarriageFile>
     with SingleTickerProviderStateMixin {
-
   late AnimationController _floatController;
   late Animation<double> _floatAnimation;
+
+  // ── NEW: holds the latest verification status fetched from backend ──
+  VerificationResult? _verificationStatus;
 
   @override
   void initState() {
@@ -41,17 +44,27 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
     )..repeat(reverse: true);
 
     _floatAnimation = Tween<double>(begin: 0, end: 8).animate(
-      CurvedAnimation(
-        parent: _floatController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
     );
+
+    // ── NEW: load verification status on init ──
+    _loadVerificationStatus();
   }
 
   @override
   void dispose() {
     _floatController.dispose();
     super.dispose();
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // NEW: Load verification status from backend
+  // ─────────────────────────────────────────────────────────────────────────
+  Future<void> _loadVerificationStatus() async {
+    final status = await VerificationService.getUserVerificationStatus();
+    if (mounted) {
+      setState(() => _verificationStatus = status);
+    }
   }
 
   @override
@@ -62,29 +75,34 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
       '📋 [CompleteMarriageFile] profile.isVerified: ${widget.profile.isVerified}',
     );
 
+    // ── Use _verificationStatus?.isVerified for card display ──
+    final isVerifiedFromStatus = _verificationStatus?.isVerified == true;
+
     final List<Map<String, dynamic>> verificationItems = [
       {
         'title': context.tr('photo_verification'),
         'description': context.tr('photo_verification_desc'),
-        'isVerified': widget.profile.isVerified == true,
+        'isVerified': isVerifiedFromStatus,
       },
       {
         'title': context.tr('age_verification'),
         'description': context.tr('age_verification_desc'),
-        'isVerified': widget.profile.isVerified == true,
+        'isVerified': isVerifiedFromStatus,
       },
       {
         'title': context.tr('identity_verification'),
         'description': context.tr('identity_verification_desc'),
-        'isVerified': widget.profile.isVerified == true,
+        'isVerified': isVerifiedFromStatus,
       },
     ];
 
     int totalItems = verificationItems.length;
-    int completedItems =
-        verificationItems.where((item) => item['isVerified'] as bool).length;
-    int verificationPercentage =
-        totalItems > 0 ? ((completedItems / totalItems) * 100).round() : 0;
+    int completedItems = verificationItems
+        .where((item) => item['isVerified'] as bool)
+        .length;
+    int verificationPercentage = totalItems > 0
+        ? ((completedItems / totalItems) * 100).round()
+        : 0;
 
     final imageCount = widget.profile.userMedia?.images.length ?? 0;
     final hasVideo =
@@ -93,7 +111,6 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
     final hasAudio =
         widget.profile.userMedia?.audio != null &&
         widget.profile.userMedia!.audio!.isNotEmpty;
-    final isVerified = widget.profile.isVerified == true;
 
     return Scaffold(
       body: SafeArea(
@@ -115,15 +132,14 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
                     _buildEnhancedTimeline(progress: widget.progress),
                     SizedBox(height: 20.h),
 
-                    widget.profile.isVerified == true
-                        ? const SizedBox.shrink()
-                        : _buildVerificationCard(
-                            context,
-                            verificationPercentage,
-                            verificationItems,
-                          ),
+                    // ── CHANGED: always show verification card ──
+                    _buildVerificationCard(
+                      context,
+                      verificationPercentage,
+                      verificationItems,
+                    ),
 
-                    if (!isVerified) SizedBox(height: 12.h),
+                    if (!isVerifiedFromStatus) SizedBox(height: 12.h),
 
                     if (imageCount < 4)
                       _buildTaskCard(
@@ -184,7 +200,9 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
     if (!context.mounted) return;
     Navigator.pop(context);
 
+    // ✅ Already verified — open success screen directly
     if (currentStatus?.isVerified == true) {
+      setState(() => _verificationStatus = currentStatus);
       await Navigator.push(
         context,
         MaterialPageRoute(
@@ -200,7 +218,11 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
 
     if (url == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(context, text: context.tr('error_occurred'), isError: true),
+        CustomSnackBar(
+          context,
+          text: context.tr('error_occurred'),
+          isError: true,
+        ),
       );
       return;
     }
@@ -222,16 +244,22 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
           builder: (_) => const Center(child: CircularProgressIndicator()),
         );
 
-        final updatedStatus = await VerificationService.getUserVerificationStatus();
+        final updatedStatus =
+            await VerificationService.getUserVerificationStatus();
 
         if (!context.mounted) return;
         Navigator.pop(context);
+
+        // ✅ Update card to show Approved + 100% immediately
+        setState(() => _verificationStatus = updatedStatus);
 
         await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => VerificationScreen(
-              result: updatedStatus ?? VerificationResult(isVerified: true, rejectReasons: []),
+              result:
+                  updatedStatus ??
+                  VerificationResult(isVerified: true, rejectReasons: []),
             ),
           ),
         );
@@ -240,7 +268,23 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
         break;
 
       case VerificationStatus.rejected:
-        await _showRejectionScreen(context);
+        // ❌ Fetch reject reasons and show in SnackBar
+        final rejectedStatus =
+            await VerificationService.getUserVerificationStatus();
+
+        if (!context.mounted) return;
+
+        // Update local status
+        setState(() => _verificationStatus = rejectedStatus);
+
+        final reasons = rejectedStatus?.rejectReasons ?? [];
+        final message = reasons.isNotEmpty
+            ? reasons.join(' | ')
+            : context.tr('verification_failed');
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(CustomSnackBar(context, text: message, isError: true));
         break;
 
       default:
@@ -249,88 +293,15 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Show VerificationScreen with rejection reasons + handle retry
-  // ─────────────────────────────────────────────────────────────────────────
-  Future<void> _showRejectionScreen(BuildContext context) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
-
-    final currentStatus = await VerificationService.getUserVerificationStatus();
-
-    if (!context.mounted) return;
-    Navigator.pop(context);
-
-    final shouldRetry = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => VerificationScreen(
-          result: currentStatus ?? VerificationResult(isVerified: false, rejectReasons: []),
-        ),
-      ),
-    );
-
-    if (!context.mounted) return;
-
-    if (shouldRetry == true) {
-      final url = await VerificationService.getVerificationUrl();
-
-      if (!context.mounted) return;
-
-      if (url == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          CustomSnackBar(context, text: context.tr('error_occurred'), isError: true),
-        );
-        return;
-      }
-
-      final retryResult = await Navigator.push<VerificationStatus>(
-        context,
-        MaterialPageRoute(
-          builder: (_) => VerificationWebViewScreen(webviewUrl: url),
-        ),
-      );
-
-      if (!context.mounted) return;
-
-      if (retryResult == VerificationStatus.approved) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) => const Center(child: CircularProgressIndicator()),
-        );
-
-        final updatedStatus = await VerificationService.getUserVerificationStatus();
-
-        if (!context.mounted) return;
-        Navigator.pop(context);
-
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => VerificationScreen(
-              result: updatedStatus ?? VerificationResult(isVerified: true, rejectReasons: []),
-            ),
-          ),
-        );
-
-        await widget.onProfileRefresh();
-      } else if (retryResult == VerificationStatus.rejected) {
-        await _showRejectionScreen(context); // recursive retry
-      }
-    }
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Verification Card with Float Animation
+  // CHANGED: Verification Card — shows Approved state when isVerified = true
   // ─────────────────────────────────────────────────────────────────────────
   Widget _buildVerificationCard(
     BuildContext context,
     int percentage,
     List<Map<String, dynamic>> items,
   ) {
+    final isApproved = _verificationStatus?.isVerified == true;
+
     return AnimatedBuilder(
       animation: _floatAnimation,
       builder: (context, child) {
@@ -339,90 +310,130 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
           child: child,
         );
       },
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 6.h, horizontal: 6.w),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20.r),
-          border: Border.all(color: AppColors.primary100, width: 1.w),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary100.withOpacity(0.1),
-              blurRadius: 10,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(6.h),
-              decoration: BoxDecoration(
-                color: AppColors.primary200.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(16.r),
+      child: GestureDetector(
+        onTap: () async {
+          if (isApproved) {
+            // ✅ Open success screen directly
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    VerificationScreen(result: _verificationStatus!),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.verified_user,
-                    color: AppColors.primary200,
-                    size: MediaQuery.of(context).size.width >= 600 ? 56 : 44,
-                  ),
-                  SizedBox(height: 3.h),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20.r),
+            );
+          } else {
+            // Start verification flow
+            await _startVerificationFlow(context);
+          }
+        },
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 6.h, horizontal: 6.w),
+          decoration: BoxDecoration(
+            color: isApproved ? Colors.green.shade50 : Colors.white,
+            borderRadius: BorderRadius.circular(20.r),
+            border: Border.all(
+              color: isApproved ? Colors.green : AppColors.primary100,
+              width: 1.w,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: (isApproved ? Colors.green : AppColors.primary100)
+                    .withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // ── Icon + Percentage ──────────────────────────────────────
+              Container(
+                padding: EdgeInsets.all(6.h),
+                decoration: BoxDecoration(
+                  color: isApproved
+                      ? Colors.green.withOpacity(0.15)
+                      : AppColors.primary200.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(16.r),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      isApproved ? Icons.verified : Icons.verified_user,
+                      color: isApproved ? Colors.green : AppColors.primary200,
+                      size: MediaQuery.of(context).size.width >= 600 ? 56 : 44,
                     ),
-                    child: Text(
-                      "$percentage%",
-                      style: Styles.textStyle12.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary200,
+                    SizedBox(height: 3.h),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 4.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                      child: Text(
+                        isApproved ? "100%" : "$percentage%",
+                        style: Styles.textStyle12.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: isApproved
+                              ? Colors.green
+                              : AppColors.primary200,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.tr('get_verified'),
-                    style: Styles.textStyle16Bold,
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    context.tr('verify_profile_description'),
-                    style: Styles.textStyle12.copyWith(
-                      color: Colors.black.withOpacity(0.7),
+
+              SizedBox(width: 12.w),
+
+              // ── Text ──────────────────────────────────────────────────
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isApproved
+                          ? context.tr('verified')
+                          : context.tr('get_verified'),
+                      style: Styles.textStyle16Bold.copyWith(
+                        color: isApproved ? Colors.green : Colors.black,
+                      ),
                     ),
-                  ),
-                ],
+                    SizedBox(height: 4.h),
+                    Text(
+                      isApproved
+                          ? context.tr('your_account_verified')
+                          : context.tr('verify_profile_description'),
+                      style: Styles.textStyle12.copyWith(
+                        color: Colors.black.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(width: 8.w),
-            IconButton(
-              onPressed: () => _startVerificationFlow(context),
-              icon: Icon(
+
+              SizedBox(width: 8.w),
+
+              // ── Arrow ─────────────────────────────────────────────────
+              Icon(
                 Icons.arrow_forward_ios,
-                color: Colors.black.withOpacity(0.5),
+                color: isApproved
+                    ? Colors.green.withOpacity(0.5)
+                    : Colors.black.withOpacity(0.5),
                 size: 20.sp,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Task Card
+  // Task Card (unchanged)
   // ─────────────────────────────────────────────────────────────────────────
   Widget _buildTaskCard(
     BuildContext context, {
@@ -443,7 +454,7 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
           BoxShadow(
             color: AppColors.primary100.withOpacity(0.1),
             blurRadius: 10,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -458,12 +469,17 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
                     Expanded(
                       child: Text(
                         title,
-                        style: Styles.textStyle16Bold.copyWith(color: Colors.black),
+                        style: Styles.textStyle16Bold.copyWith(
+                          color: Colors.black,
+                        ),
                       ),
                     ),
                     if (currentCount != null && requiredCount != null)
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 4.h,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.primary50,
                           borderRadius: BorderRadius.circular(12.r),
@@ -482,7 +498,7 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
                 Text(
                   subtitle,
                   style: Styles.textStyle12.copyWith(
-                    color: Color.fromRGBO(60, 60, 67, 0.6),
+                    color: const Color.fromRGBO(60, 60, 67, 0.6),
                   ),
                 ),
               ],
@@ -501,11 +517,11 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Timeline
+  // Timeline (unchanged)
   // ─────────────────────────────────────────────────────────────────────────
   Widget _buildEnhancedTimeline({required double progress}) {
     return Container(
-      padding: EdgeInsets.all(10),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -520,11 +536,11 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
         ),
         borderRadius: BorderRadius.circular(24.r),
         border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Color.fromRGBO(235, 122, 145, 0.46),
             blurRadius: 20,
-            offset: const Offset(0, 10),
+            offset: Offset(0, 10),
           ),
         ],
       ),
@@ -549,16 +565,21 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
                       SizedBox(height: 6.h),
                       Center(
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 4.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 7.w,
+                            vertical: 4.h,
+                          ),
                           decoration: BoxDecoration(
-                            color: isReached ? const Color(0xFFFFC107) : Colors.grey.shade300,
+                            color: isReached
+                                ? const Color(0xFFFFC107)
+                                : Colors.grey.shade300,
                             borderRadius: BorderRadius.circular(8.r),
                             boxShadow: isReached
                                 ? [
                                     BoxShadow(
                                       color: Colors.black.withOpacity(0.1),
                                       blurRadius: 3,
-                                      offset: Offset(0, 1),
+                                      offset: const Offset(0, 1),
                                     ),
                                   ]
                                 : [],
@@ -568,7 +589,9 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
                             style: TextStyle(
                               fontSize: 11.sp,
                               fontWeight: FontWeight.bold,
-                              color: isReached ? Colors.white : Colors.grey.shade600,
+                              color: isReached
+                                  ? Colors.white
+                                  : Colors.grey.shade600,
                             ),
                           ),
                         ),
@@ -634,7 +657,10 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
                           bottom: 0,
                           child: Center(
                             child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8.w,
+                                vertical: 2.h,
+                              ),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFFD375F),
                                 borderRadius: BorderRadius.circular(20.r),
