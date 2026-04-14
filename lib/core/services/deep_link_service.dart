@@ -22,19 +22,14 @@ class DeepLinkService {
   static void shareProfile({
     required String personId,
     required String userName,
+    required BuildContext context,
   }) {
     final httpsLink = buildProfileLink(personId);
-    final customLink = buildCustomSchemeLink(personId);
 
     SharePlus.instance.share(
       ShareParams(
-        // ✅ بنبعت الاتنين: الـ HTTPS للناس اللي معهم التطبيق مع assetlinks صح
-        // والـ custom scheme كـ fallback
-        text:
-            'شاهد ملف $userName الشخصي على تيسير 💍\n'
-            '$httpsLink\n\n'
-            'لو التطبيق مثبت عندك: $customLink',
-        subject: 'ملف $userName على تيسير',
+        text: '${context.tr('share_profile_text').replaceAll('{name}', userName)}\n$httpsLink',
+        // subject: context.tr('share_profile_subject').replaceAll('{name}', userName),
       ),
     );
   }

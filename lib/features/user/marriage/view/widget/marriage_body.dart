@@ -1579,6 +1579,7 @@ class MarriageBodyState extends State<MarriageBody>
                       child: BottomActionsSection(
                         onShare: () {
                           DeepLinkService.shareProfile(
+                            context: context,
                             personId: user?.id ?? '',
                             userName: user?.name ?? '',
                           );

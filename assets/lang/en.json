@@ -803,6 +803,8 @@
   "select_experience_years": "Select Years of Experience",
   "compatibility_profile": "Compatibility between you",
   "share_profile_marri": "Share Profile",
+  "share_profile_text": "View {name}'s profile on Tayseer 💍\n",
+  "share_profile_subject": "{name}'s profile on Tayseer",
   "report_profile": "Report",
   "block_profile": "Block",
   "report_reason": "Report Reason",

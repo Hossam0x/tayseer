@@ -803,6 +803,8 @@
   "select_experience_years": "اختر سنوات الخبرة",
   "compatibility_profile": " التوافق بينكم",
   "share_profile_marri": "مشاركة الملف",
+  "share_profile_text": "شاهد ملف {name} الشخصي على تيسير 💍\n",
+  "share_profile_subject": "ملف {name} على تيسير",
   "report_profile": "ابلاغ",
   "block_profile": "حظر",
   "report_reason": "سبب الابلاغ",
