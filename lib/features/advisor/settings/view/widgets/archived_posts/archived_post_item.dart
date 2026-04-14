@@ -1,18 +1,20 @@
-import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
-import 'package:tayseer/features/advisor/search/presentation/cubit/search_cubit.dart';
-import 'package:tayseer/features/advisor/search/presentation/cubit/search_state.dart';
-import 'package:tayseer/features/advisor/search/presentation/view/a_search_view.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_cubits.dart';
+import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_states.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
+import 'package:tayseer/my_import.dart';
 
-class AdvisorSearchPostItem extends StatelessWidget {
+class ArchivedPostItem extends StatelessWidget {
+  const ArchivedPostItem({super.key, required this.postId});
+
   final String postId;
 
-  const AdvisorSearchPostItem({super.key, required this.postId});
-
-  PostCallbacks _buildCallbacks(BuildContext context, SearchCubit cubit) {
+  PostCallbacks _buildCallbacks(
+    BuildContext context,
+    ArchivedPostsCubit cubit,
+  ) {
     final postStream = cubit.stream
         .map(
           (state) => state.posts.where((p) => p.postId == postId).firstOrNull,
@@ -21,18 +23,16 @@ class AdvisorSearchPostItem extends StatelessWidget {
 
     return PostCallbacks(
       postUpdatesStream: postStream,
-      onReactionChanged: (id, type) =>
-          cubit.reactToPost(postId: id, reactionType: type),
+      onReactionChanged: (id, reaction) =>
+          cubit.reactToPost(postId: id, reactionType: reaction),
       onShareTap: (id) => cubit.toggleSharePost(postId: id),
       onSave: (id) => cubit.toggleSavePost(postId: id),
       onDelete: (id) => cubit.deletePost(postId: id),
-      onArchive: (id) => cubit.archivePost(postId: id),
+      onArchive: (id) => cubit.unarchivePost(id),
       onHide: (id) => cubit.toggleHidePost(postId: id),
       onBlock: (id, advisorId) =>
           cubit.blockUser(visiblePostId: id, advisorId: advisorId),
       onEdit: (post) => cubit.updatePostLocally(post),
-      onPollVote: (id, choiceText) =>
-          cubit.voteInPoll(postId: id, choiceText: choiceText),
       onCommented: (id, isAnonymous) =>
           cubit.markPostAsCommented(postId: id, isAnonymous: isAnonymous),
       onCommentCountDelta:
@@ -45,44 +45,38 @@ class AdvisorSearchPostItem extends StatelessWidget {
               ),
       onCommentCountSync: ({required postId, required totalCount}) => cubit
           .syncCommentCountFromBackend(postId: postId, totalCount: totalCount),
-      onHashtagTap: (hashtag) {
-        final clean = hashtag.startsWith('#') ? hashtag.substring(1) : hashtag;
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                AdvisorSearchView(initialQuery: clean, initialTab: 'posts'),
-          ),
-        );
-      },
+      onPollVote: (id, choiceText) =>
+          cubit.voteInPoll(postId: id, choiceText: choiceText),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<SearchCubit>();
+    final cubit = context.read<ArchivedPostsCubit>();
     final callbacks = _buildCallbacks(context, cubit);
 
-    return BlocSelector<SearchCubit, SearchState, PostModel?>(
+    return BlocSelector<ArchivedPostsCubit, ArchivedPostsState, PostModel?>(
       selector: (state) =>
           state.posts.where((p) => p.postId == postId).firstOrNull,
       builder: (context, post) {
         if (post == null) return const SizedBox.shrink();
         return Padding(
-          padding: EdgeInsets.only(bottom: 12.h),
+          padding: EdgeInsets.only(bottom: 8.h),
           child: PostCard(
+            isFromProfile: true,
+            heroPrefix: 'archived_posts',
+            isArchived: true,
             post: post,
-            isFromProfile: false,
-            heroPrefix: 'search_advisor',
             callbacks: callbacks,
             onNavigateToDetails: (ctx, p, controller) {
               Navigator.push(
                 ctx,
                 MaterialPageRoute(
                   builder: (_) => PostDetailsView(
-                    isFromProfile: false,
-                    heroPrefix: 'search_advisor',
                     post: p,
+                    isFromProfile: true,
+                    isArchived: true,
+                    heroPrefix: 'archived_posts',
                     cachedController: controller,
                     callbacks: callbacks,
                   ),

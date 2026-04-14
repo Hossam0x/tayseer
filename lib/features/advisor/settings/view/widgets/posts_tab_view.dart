@@ -1,14 +1,11 @@
-import 'package:tayseer/core/widgets/post_card/post_card.dart';
+import 'package:tayseer/core/widgets/post_card/post_shimmer.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
-import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_states.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/archived_posts/archived_post_item.dart';
 import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart'
     as home_feed;
-import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
-import 'package:tayseer/core/models/post_model.dart';
-import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
-import 'package:tayseer/core/widgets/post_card/post_shimmer.dart';
+import 'package:tayseer/my_import.dart';
 
 class PostsTabView extends StatelessWidget {
   const PostsTabView({super.key});
@@ -27,22 +24,17 @@ class _PostsTabBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final cubit = context.read<ArchivedPostsCubit>();
-
     return MultiBlocListener(
       listeners: [
         BlocListener<ArchivedPostsCubit, ArchivedPostsState>(
           listener: (context, state) {
             final cubit = context.read<ArchivedPostsCubit>();
 
-            // ⭐ Handle General Error
             if (state.errorMessage != null &&
                 state.state == CubitStates.failure) {
               AppToast.error(context, state.errorMessage!);
               cubit.clearError();
             }
-
-            // 📢 SHARE FEEDBACK
             if (state.shareActionState == CubitStates.success) {
               if (state.shareMessage != null) {
                 AppToast.success(context, context.tr(state.shareMessage!));
@@ -54,8 +46,6 @@ class _PostsTabBody extends StatelessWidget {
               }
               cubit.resetSharePostActionState();
             }
-
-            // 💾 SAVE FEEDBACK
             if (state.saveActionState == CubitStates.success) {
               if (state.saveMessage != null) {
                 AppToast.success(context, context.tr(state.saveMessage!));
@@ -67,8 +57,6 @@ class _PostsTabBody extends StatelessWidget {
               }
               cubit.resetSavePostActionState();
             }
-
-            // 🗑 DELETE FEEDBACK
             if (state.deletePostActionState == CubitStates.success) {
               if (state.deletePostMessage != null) {
                 AppToast.success(context, context.tr(state.deletePostMessage!));
@@ -80,8 +68,6 @@ class _PostsTabBody extends StatelessWidget {
               }
               cubit.resetDeletePostActionState();
             }
-
-            // 📦 ARCHIVE FEEDBACK (Unarchive)
             if (state.archivePostActionState == CubitStates.success) {
               if (state.archivePostMessage != null) {
                 AppToast.success(
@@ -96,8 +82,6 @@ class _PostsTabBody extends StatelessWidget {
               }
               cubit.resetArchivePostState();
             }
-
-            // 🚫 BLOCK FEEDBACK
             if (state.blockUserActionState == CubitStates.success) {
               if (state.blockUserMessage != null) {
                 AppToast.success(context, context.tr(state.blockUserMessage!));
@@ -116,7 +100,7 @@ class _PostsTabBody extends StatelessWidget {
         builder: (context, state) {
           switch (state.state) {
             case CubitStates.loading:
-              return _buildSkeletonPosts();
+              return _ArchivedPostsShimmer();
             case CubitStates.failure:
               return CustomErrorView(
                 message: state.errorMessage,
@@ -126,7 +110,7 @@ class _PostsTabBody extends StatelessWidget {
               if (state.posts.isEmpty) {
                 return SharedEmptyState(title: context.tr("no_archived_posts"));
               }
-              return _buildPostsContent(context, state);
+              return _ArchivedPostsList(state: state);
             default:
               return const SizedBox.shrink();
           }
@@ -134,19 +118,19 @@ class _PostsTabBody extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildSkeletonPosts() {
-    return ListView.builder(
-      padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 16.w),
-      itemCount: 3,
-      itemBuilder: (context, index) => Padding(
-        padding: EdgeInsets.only(bottom: 16.h),
-        child: const PostCardShimmer(),
-      ),
-    );
-  }
+// ─────────────────────────────────────────────
+// Posts List
+// ─────────────────────────────────────────────
 
-  Widget _buildPostsContent(BuildContext context, ArchivedPostsState state) {
+class _ArchivedPostsList extends StatelessWidget {
+  const _ArchivedPostsList({required this.state});
+
+  final ArchivedPostsState state;
+
+  @override
+  Widget build(BuildContext context) {
     final cubit = context.read<ArchivedPostsCubit>();
 
     return NotificationListener<ScrollNotification>(
@@ -176,8 +160,7 @@ class _PostsTabBody extends StatelessWidget {
               }
               return const SizedBox.shrink();
             }
-
-            return _PostItem(
+            return ArchivedPostItem(
               key: ValueKey(state.posts[index].postId),
               postId: state.posts[index].postId,
             );
@@ -188,97 +171,20 @@ class _PostsTabBody extends StatelessWidget {
   }
 }
 
-class _PostItem extends StatefulWidget {
-  final String postId;
-  const _PostItem({super.key, required this.postId});
+// ─────────────────────────────────────────────
+// Shimmer
+// ─────────────────────────────────────────────
 
-  @override
-  State<_PostItem> createState() => _PostItemState();
-}
-
-class _PostItemState extends State<_PostItem>
-    with AutomaticKeepAliveClientMixin {
-  late final ArchivedPostsCubit _cubit;
-  late final Stream<PostModel?> _postStream;
-  late final PostCallbacks _callbacks;
-
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
-  void initState() {
-    super.initState();
-    _cubit = context.read<ArchivedPostsCubit>();
-    _postStream = _cubit.stream
-        .map(
-          (state) =>
-              state.posts.where((p) => p.postId == widget.postId).firstOrNull,
-        )
-        .distinct();
-
-    _callbacks = PostCallbacks(
-      postUpdatesStream: _postStream,
-      onReactionChanged: (postId, reaction) =>
-          _cubit.reactToPost(postId: postId, reactionType: reaction),
-      onShareTap: (postId) => _cubit.toggleSharePost(postId: postId),
-      onSave: (postId) => _cubit.toggleSavePost(postId: postId),
-      onDelete: (postId) => _cubit.deletePost(postId: postId),
-      onArchive: (postId) => _cubit.unarchivePost(postId),
-      onHide: (postId) => _cubit.toggleHidePost(postId: postId),
-      onBlock: (postId, advisorId) =>
-          _cubit.blockUser(visiblePostId: postId, advisorId: advisorId),
-      onEdit: (updatedPost) => _cubit.updatePostLocally(updatedPost),
-      onCommented: (postId, isAnonymous) =>
-          _cubit.markPostAsCommented(postId: postId, isAnonymous: isAnonymous),
-      onCommentCountDelta:
-          ({required postId, required countDelta, isCommented, isAnonymous}) =>
-              _cubit.updateCommentCountByDelta(
-                postId: postId,
-                countDelta: countDelta,
-                isCommented: isCommented,
-                isAnonymous: isAnonymous,
-              ),
-      onCommentCountSync: ({required postId, required totalCount}) => _cubit
-          .syncCommentCountFromBackend(postId: postId, totalCount: totalCount),
-      onPollVote: (postId, choiceText) =>
-          _cubit.voteInPoll(postId: postId, choiceText: choiceText),
-    );
-  }
-
+class _ArchivedPostsShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-    return BlocSelector<ArchivedPostsCubit, ArchivedPostsState, PostModel?>(
-      selector: (state) =>
-          state.posts.where((p) => p.postId == widget.postId).firstOrNull,
-      builder: (context, post) {
-        if (post == null) return const SizedBox.shrink();
-        return Padding(
-          padding: EdgeInsets.only(bottom: 8.h),
-          child: PostCard(
-            isFromProfile: true,
-            heroPrefix: 'archived_posts',
-            isArchived: true,
-            post: post,
-            callbacks: _callbacks,
-            onNavigateToDetails: (context, post, controller) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PostDetailsView(
-                    post: post,
-                    isFromProfile: true,
-                    isArchived: true,
-                    heroPrefix: 'archived_posts',
-                    cachedController: controller,
-                    callbacks: _callbacks,
-                  ),
-                ),
-              );
-            },
-          ),
-        );
-      },
+    return ListView.builder(
+      padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 16.w),
+      itemCount: 3,
+      itemBuilder: (_, i) => Padding(
+        padding: EdgeInsets.only(bottom: 16.h),
+        child: const PostCardShimmer(),
+      ),
     );
   }
 }

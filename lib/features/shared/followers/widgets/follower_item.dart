@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:tayseer/core/enum/verification_type.dart';
+import 'package:tayseer/core/utils/navigation_guard.dart';
 import 'package:tayseer/features/shared/followers/data/models/follower_model.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
@@ -19,6 +20,7 @@ class FollowerItem extends StatelessWidget {
   });
 
   void _navigateToUserAdvisorProfile(BuildContext context) {
+    if (!NavigationGuard.canNavigate()) return;
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -28,9 +30,8 @@ class FollowerItem extends StatelessWidget {
   }
 
   void _navigateToUserProfile(BuildContext context) {
-    if (follower.id.isEmpty) {
-      return;
-    }
+    if (follower.id.isEmpty) return;
+    if (!NavigationGuard.canNavigate()) return;
 
     Navigator.push(
       context,

@@ -1,9 +1,9 @@
 import 'package:tayseer/core/models/comment_model.dart';
+import 'package:tayseer/core/utils/navigation_guard.dart';
 import 'package:tayseer/core/widgets/social_text_parser.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_actions_menu.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_avatar.dart';
 import 'package:tayseer/core/widgets/comment_card/comment_callbacks.dart';
-import 'package:tayseer/core/widgets/custom_click.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart';
@@ -423,9 +423,8 @@ class NavToProfile extends StatelessWidget {
   }
 
   void _navigateToUserProfile(BuildContext context) {
-    if (userId.isEmpty) {
-      return;
-    }
+    if (userId.isEmpty) return;
+    if (!NavigationGuard.canNavigate()) return;
 
     Navigator.push(
       context,

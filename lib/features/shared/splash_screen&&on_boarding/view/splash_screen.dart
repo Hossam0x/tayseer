@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/notifications/notificationHelper.dart';
 import 'package:tayseer/core/services/deep_link_service.dart';
@@ -15,11 +16,31 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
   @override
   void initState() {
     super.initState();
     _initializeSocket();
     _navigateBasedOnToken();
+    _playSoundAfterHalfAnimation();
+  }
+
+  Future<void> _playSoundAfterHalfAnimation() async {
+    // نص الـ animation = 4800 / 2 = 2400ms
+    await Future.delayed(const Duration(milliseconds: 2400));
+    if (!mounted) return;
+    try {
+      await _audioPlayer.play(AssetSource('sounds/whistle.mp3'));
+    } catch (e) {
+      log('🔊 Sound error: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
   }
 
   Future<void> _initializeSocket() async {

@@ -83,7 +83,7 @@ class UserAdvisorProfileModel extends Equatable
       isVerified: json['isVerified'] ?? false,
       verificationType: VerificationType.fromString(json['verificationType']),
       isApproved: json['isApproved'] ?? true,
-      location: json['location'],
+      location: json['location'] is Map ? null : json['location']?.toString(),
       videoLink: json['videoLink'],
       isMe: json['isMe'] ?? false,
       isFollowing: json['isFollowing'] ?? json['isFollowed'] ?? false,

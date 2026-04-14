@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:tayseer/core/enum/verification_type.dart';
+import 'package:tayseer/core/utils/navigation_guard.dart';
 import 'package:tayseer/features/advisor/profille/data/models/profile_visitors_model.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
@@ -17,6 +18,7 @@ class VisitorItem extends StatelessWidget {
 
   void _navigateToProfile(BuildContext context) {
     if (!canSeeVisitors) return;
+    if (!NavigationGuard.canNavigate()) return;
     if (visitor.userType == 'User') {
       Navigator.push(
         context,
