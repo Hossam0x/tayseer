@@ -1352,7 +1352,9 @@ class MarriageBodyState extends State<MarriageBody>
                       sliver: SliverToBoxAdapter(
                         child: MarriageLifeEventsSection(
                           titleName:
-                              "${user?.name ?? ''} ${context.tr('goals')}",
+                              Directionality.of(context) == TextDirection.rtl
+                              ? '${context.tr('goals')} ${user?.name ?? ''}' 
+                              : '${user?.name ?? ''} ${context.tr('goals')}',
                           events: timelineEvents,
                         ),
                       ),
@@ -1579,6 +1581,18 @@ class MarriageBodyState extends State<MarriageBody>
 
                             buildCircleButton(
                               onTap: () async {
+                                // ✅ لو likesLeft = 0 اعرض dialog مباشرة
+                                if (state.likesLeft == 0) {
+                                  showLimitReachedDialog(
+                                    context,
+                                    title: context.tr('reached_free_likes_limit'),
+                                    subtitle: context.tr('subscribe_to_like_more'),
+                                    subscribeText: context.tr('subscribe'),
+                                    laterText: context.tr('later'),
+                                    onSubscribe: () => context.pushNamed(AppRouter.kUserPackagesView),
+                                  );
+                                  return;
+                                }
                                 await _showSwipePopup(
                                   context,
                                   SwipeActionType.like,
@@ -1612,7 +1626,8 @@ class MarriageBodyState extends State<MarriageBody>
                               onTap: () async {
                                 await cubit.sendRegard(
                                   personId: profile.user?.id ?? '',
-                                  countView: widget.personId == null &&
+                                  countView:
+                                      widget.personId == null &&
                                       !widget.fromInteractions,
                                 );
                                 await _syncNotificationAfterInteraction();

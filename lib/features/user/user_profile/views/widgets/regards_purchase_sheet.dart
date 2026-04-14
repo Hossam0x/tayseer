@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:tayseer/features/user/marriage/model/regards_package_model.dart';
 import 'package:tayseer/features/user/marriage/view_model/regards_packages_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/regards_package_cubit/regards_package_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/regards_package_cubit/regards_package_state.dart';
 import 'package:tayseer/my_import.dart';
 
 // ═══════════════════════════════════════
@@ -8,6 +10,7 @@ import 'package:tayseer/my_import.dart';
 // ═══════════════════════════════════════
 class PurchasePackage {
   final String id;
+  final String appleProductId;
   final int count;
   final double price;
   final double priceForOne;
@@ -18,6 +21,7 @@ class PurchasePackage {
 
   const PurchasePackage({
     required this.id,
+    required this.appleProductId,
     required this.count,
     required this.price,
     this.priceForOne = 0,
@@ -37,6 +41,7 @@ class PurchasePackage {
       final isMid = i == 1 && sorted.length >= 3;
       return PurchasePackage(
         id: pkg.id,
+        appleProductId: pkg.appleProductId,
         count: pkg.amount,
         price: pkg.price,
         priceForOne: pkg.priceForOne,
@@ -59,8 +64,13 @@ void showRegardsPurchaseSheet(BuildContext context) {
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => BlocProvider(
-      create: (_) => getIt<RegardsPackagesCubit>()..fetchPackages(),
+    builder: (_) => MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => getIt<RegardsPackagesCubit>()..fetchPackages(),
+        ),
+        BlocProvider(create: (_) => getIt<RegardsPackagePurchaseCubit>()),
+      ],
       child: const _PurchaseSheet(type: PurchaseType.regards),
     ),
   );
@@ -128,31 +138,71 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
   String get _minutes => _pad((_remainingSeconds % 3600) ~/ 60);
   String get _seconds => _pad(_remainingSeconds % 60);
 
+  void _onPay(BuildContext context, List<PurchasePackage> packages) {
+    if (packages.isEmpty) return;
+    final idx = _selectedIndex.clamp(0, packages.length - 1);
+    final selected = packages[idx];
+
+    final rawPackage = RegardsPackageModel(
+      id: selected.id,
+      appleProductId: selected.appleProductId,
+      amount: selected.count,
+      price: selected.price,
+      currency: selected.currency,
+      priceForOne: selected.priceForOne,
+    );
+
+    context.read<RegardsPackagePurchaseCubit>().purchasePackage(rawPackage);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+    return BlocListener<
+      RegardsPackagePurchaseCubit,
+      RegardsPackagePurchaseState
+    >(
+      listener: (context, state) {
+        if (state.status == RegardsPackagePurchaseStatus.success) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(
+              context,
+              text: context.tr('purchase_success'),
+              isSuccess: true,
+            ),
+          );
+        } else if (state.status == RegardsPackagePurchaseStatus.error &&
+            state.error != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(context, text: state.error!, isError: true),
+          );
+          context.read<RegardsPackagePurchaseCubit>().resetStatus();
+        }
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+        ),
+        padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 32.h),
+        child: _isRegards
+            ? BlocBuilder<RegardsPackagesCubit, RegardsPackagesState>(
+                builder: (context, state) {
+                  if (state.regardsIncrementAt != null) {
+                    _initCountdown(state.regardsIncrementAt);
+                  }
+                  final packages = state.status == CubitStates.success
+                      ? PurchasePackage.fromApiPackages(state.packages)
+                      : <PurchasePackage>[];
+                  return _buildContent(
+                    context,
+                    packages: packages,
+                    isLoading: state.status == CubitStates.loading,
+                  );
+                },
+              )
+            : _buildContent(context, packages: [], isLoading: false),
       ),
-      padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 32.h),
-      child: _isRegards
-          ? BlocBuilder<RegardsPackagesCubit, RegardsPackagesState>(
-              builder: (context, state) {
-                if (state.regardsIncrementAt != null) {
-                  _initCountdown(state.regardsIncrementAt);
-                }
-                final packages = state.status == CubitStates.success
-                    ? PurchasePackage.fromApiPackages(state.packages)
-                    : <PurchasePackage>[];
-                return _buildContent(
-                  context,
-                  packages: packages,
-                  isLoading: state.status == CubitStates.loading,
-                );
-              },
-            )
-          : _buildContent(context, packages: [], isLoading: false),
     );
   }
 
@@ -161,70 +211,83 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     required List<PurchasePackage> packages,
     required bool isLoading,
   }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Handle
-        Container(
-          width: 40.w,
-          height: 4.h,
-          decoration: BoxDecoration(
-            color: AppColors.secondary200,
-            borderRadius: BorderRadius.circular(2.r),
-          ),
-        ),
-        SizedBox(height: 20.h),
-
-        // Title
-        Text(
-          _isRegards
-              ? context.tr('regards_balance_finished')
-              : context.tr('likes_balance_finished'),
-          style: Styles.textStyle20Meduim.copyWith(
-            color: AppColors.kscandryTextColor,
-            fontWeight: FontWeight.w700,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        SizedBox(height: 8.h),
-        Text(
-          _isRegards
-              ? context.tr('regards_balance_finished_desc')
-              : context.tr('likes_balance_finished_desc'),
-          style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
-          textAlign: TextAlign.center,
-        ),
-        SizedBox(height: 20.h),
-
-        if (_remainingSeconds > 0) ...[
-          _buildCountdown(),
-          SizedBox(height: 20.h),
-        ],
-
-        if (isLoading)
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 24.h),
-            child: const CircularProgressIndicator(),
-          )
-        else ...[
-          ...packages.asMap().entries.map(
-            (e) => Padding(
-              padding: EdgeInsets.only(bottom: 10.h),
-              child: _buildPackageCard(e.key, e.value),
+    return BlocBuilder<
+      RegardsPackagePurchaseCubit,
+      RegardsPackagePurchaseState
+    >(
+      builder: (context, purchaseState) {
+        final isPurchasing =
+            purchaseState.status == RegardsPackagePurchaseStatus.purchasing;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle
+            Container(
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: AppColors.secondary200,
+                borderRadius: BorderRadius.circular(2.r),
+              ),
             ),
-          ),
-        ],
+            SizedBox(height: 20.h),
 
-        SizedBox(height: 44.h),
+            // Title
+            Text(
+              _isRegards
+                  ? context.tr('regards_balance_finished')
+                  : context.tr('likes_balance_finished'),
+              style: Styles.textStyle20Meduim.copyWith(
+                color: AppColors.kscandryTextColor,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              _isRegards
+                  ? context.tr('regards_balance_finished_desc')
+                  : context.tr('likes_balance_finished_desc'),
+              style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 20.h),
 
-        CustomBotton(
-          title: context.tr('pay'),
-          height: 54.h,
-          width: double.infinity,
-          useGradient: true,
-          onPressed: () => Navigator.pop(context),
-        ),
-      ],
+            if (_remainingSeconds > 0) ...[
+              _buildCountdown(),
+              SizedBox(height: 20.h),
+            ],
+
+            if (isLoading)
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 24.h),
+                child: const CircularProgressIndicator(),
+              )
+            else ...[
+              ...packages.asMap().entries.map(
+                (e) => Padding(
+                  padding: EdgeInsets.only(bottom: 10.h),
+                  child: _buildPackageCard(e.key, e.value),
+                ),
+              ),
+            ],
+
+            SizedBox(height: 12.h),
+            _buildWalletToggle(),
+            SizedBox(height: 20.h),
+            CustomBotton(
+              title: isPurchasing ? '' : context.tr('pay'),
+              height: 54.h,
+              width: double.infinity,
+              useGradient: true,
+              isLoading: isPurchasing,
+              onPressed: isPurchasing || packages.isEmpty
+                  ? null
+                  : () => _onPay(context, packages),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -273,8 +336,9 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
 
   Widget _buildPackageCard(int index, PurchasePackage pkg) {
     final isSelected = _selectedIndex == index;
-    final String itemLabel =
-        _isRegards ? context.tr('regard') : context.tr('like');
+    final String itemLabel = _isRegards
+        ? context.tr('regard')
+        : context.tr('like');
 
     return GestureDetector(
       onTap: () => setState(() => _selectedIndex = index),
@@ -286,7 +350,9 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               margin: EdgeInsets.only(
-                top: (pkg.hasDiscount && pkg.discountPercent != null) ? 14.h : 0,
+                top: (pkg.hasDiscount && pkg.discountPercent != null)
+                    ? 14.h
+                    : 0,
               ),
               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
               decoration: BoxDecoration(
@@ -354,8 +420,9 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                                 : AppColors.secondary300,
                             width: 2,
                           ),
-                          color:
-                              isSelected ? AppColors.primary400 : Colors.white,
+                          color: isSelected
+                              ? AppColors.primary400
+                              : Colors.white,
                         ),
                         child: isSelected
                             ? Icon(Icons.check, size: 14.w, color: Colors.white)
@@ -416,4 +483,25 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     );
   }
 
+  Widget _buildWalletToggle() {
+    return Row(
+      children: [
+        Transform.scale(
+          scale: 0.85,
+          child: Switch(
+            value: _useWallet,
+            activeTrackColor: AppColors.primary400,
+            inactiveThumbColor: Colors.white,
+            inactiveTrackColor: AppColors.secondary200,
+            onChanged: (val) => setState(() => _useWallet = val),
+          ),
+        ),
+        SizedBox(width: 8.w),
+        Text(
+          context.tr('pay_from_wallet'),
+          style: Styles.textStyle14.copyWith(color: AppColors.secondary700),
+        ),
+      ],
+    );
+  }
 }

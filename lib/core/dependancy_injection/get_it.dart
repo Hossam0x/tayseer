@@ -95,6 +95,7 @@ import 'package:tayseer/features/user/user_profile/data/repositories/user_accoun
 import 'package:tayseer/features/user/user_profile/data/repositories/user_posts_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_public_profile_repository.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/regards_package_cubit/regards_package_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile_edit/user_profile_edit_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_cubit.dart';
 import 'package:tayseer/features/advisor/search/data/repos/search_repository.dart';
@@ -592,6 +593,9 @@ Future<void> setupGetIt() async {
 
   getIt.registerFactory<RegardsPackagesCubit>(
     () => RegardsPackagesCubit(getIt<ApiService>()),
+  );
+    getIt.registerFactory<RegardsPackagePurchaseCubit>(
+    () => RegardsPackagePurchaseCubit(getIt<IAPService>(), getIt<ApiService>()),
   );
 }
 

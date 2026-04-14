@@ -1,8 +1,3 @@
-// marriage_life_events_section.dart - FIXED VERSION
-// ════════════════════════════════════════════════════════════════
-// ✅ FIX: استخدام goalType بدل goalLabel للترجمة الصحيحة
-// ════════════════════════════════════════════════════════════════
-
 import 'package:tayseer/my_import.dart';
 
 class MarriageLifeEventsSection extends StatelessWidget {
@@ -17,6 +12,8 @@ class MarriageLifeEventsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 24.h),
       decoration: BoxDecoration(
@@ -24,9 +21,9 @@ class MarriageLifeEventsSection extends StatelessWidget {
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
           colors: [
-            Color(0xFFD3EFFF), // Soft Blue
-            Color(0xFFFFF9E3), // Soft Yellow
-            Color(0xFFFFE1EA), // Soft Pink
+            Color(0xFFD3EFFF),
+            Color(0xFFFFF9E3),
+            Color(0xFFFFE1EA),
           ],
         ),
         borderRadius: BorderRadius.circular(25.r),
@@ -42,10 +39,14 @@ class MarriageLifeEventsSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.w),
-            child: Text(
-              titleName,
-              style: Styles.textStyle20Bold.copyWith(color: Colors.black87),
+            padding: EdgeInsets.symmetric(horizontal: 9.w),
+            child: Directionality(
+              // ✅ التغيير الأول: عربي → أهداف + اسم | إنجليزي → اسم + أهداف
+              textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+              child: Text(
+                titleName,
+                style: Styles.textStyle20Bold.copyWith(color: Colors.black87),
+              ),
             ),
           ),
           Gap(25.h),
@@ -55,10 +56,10 @@ class MarriageLifeEventsSection extends StatelessWidget {
     );
   }
 
-  Widget _buildTimelineSection(context) {
+  Widget _buildTimelineSection(BuildContext context) {
     return Column(
       children: [
-        // 1. Time Labels (Top) - الفترة الزمنية
+        // 1. Time Labels (Top)
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
           child: Row(
@@ -81,13 +82,12 @@ class MarriageLifeEventsSection extends StatelessWidget {
         ),
         Gap(8.h),
 
-        // 2. The Timeline Line and Nodes
+        // 2. Timeline Line and Nodes
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // The solid pink line
               Container(
                 height: 4.h,
                 margin: EdgeInsets.symmetric(horizontal: 15.w),
@@ -96,7 +96,6 @@ class MarriageLifeEventsSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              // The circular dots
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: events.map((event) {
@@ -106,10 +105,7 @@ class MarriageLifeEventsSection extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: const Color(0xFFF094A5),
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 3,
-                      ),
+                      border: Border.all(color: Colors.white, width: 3),
                       boxShadow: [
                         BoxShadow(
                           color: const Color(0xFFF094A5).withOpacity(0.3),
@@ -126,7 +122,7 @@ class MarriageLifeEventsSection extends StatelessWidget {
         ),
         Gap(6.h),
 
-        // 3. Goal Labels (Bottom Bubbles) - الهدف الفعلي
+        // 3. Goal Labels (Bottom Bubbles)
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
           child: Row(
@@ -136,19 +132,17 @@ class MarriageLifeEventsSection extends StatelessWidget {
               return Expanded(
                 child: Column(
                   children: [
-                    // Little pointer triangle
                     CustomPaint(
                       size: Size(12.w, 6.h),
                       painter: TrianglePainter(
                         color: Colors.white.withOpacity(0.9),
                       ),
                     ),
-                    // Rounded pill container
                     Container(
                       margin: EdgeInsets.symmetric(horizontal: 2.w),
                       padding: EdgeInsets.symmetric(
                         vertical: 10.h,
-                        horizontal: 12.w,
+                        horizontal: 6.w, // ✅ قللنا الـ horizontal عشان النص يتسع
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.9),
@@ -163,15 +157,15 @@ class MarriageLifeEventsSection extends StatelessWidget {
                       ),
                       child: Center(
                         child: Text(
-                          // ⭐⭐⭐ استخدام goalType للترجمة الصحيحة
                           _getGoalDisplayName(event['goalType'], context),
                           style: Styles.textStyle12Bold.copyWith(
                             color: const Color(0xFF9E1C36),
                             height: 1.2,
                           ),
                           textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                          softWrap: true,        // ✅ التغيير الثاني
+                          maxLines: 4,           // ✅ زيادة من 2 لـ 3
+                          overflow: TextOverflow.visible, // ✅ بدل ellipsis
                         ),
                       ),
                     ),
@@ -184,31 +178,26 @@ class MarriageLifeEventsSection extends StatelessWidget {
       ],
     );
   }
-String _getGoalDisplayName(String? goalType, BuildContext context) {
-  if (goalType == null || goalType.isEmpty) return '';
-  
-  final normalized = goalType.toLowerCase().trim();
-  
-  switch (normalized) {
-    case 'engagement':
-      return context.tr('engagement_profile');  // 'الخطوبة'
-      
-    case 'marriage_intentions':
-    case 'marriage':
-      return context.tr('marriage_profile');    // 'الزواج'
-      
-    // ✅ الأسرة (familyAcceptance)
-    case 'familyacceptance':
-      return context.tr('children_profile');      // 'الأسرة'
-      
-    // ✅ السفر (intendTravelAbroad)
-    case 'intendtravelabroad':
-      return context.tr('travel_profile');      // 'السفر'
-      
-    default:
-      return goalType;
+
+  String _getGoalDisplayName(String? goalType, BuildContext context) {
+    if (goalType == null || goalType.isEmpty) return '';
+
+    final normalized = goalType.toLowerCase().trim();
+
+    switch (normalized) {
+      case 'engagement':
+        return context.tr('engagement_profile');
+      case 'marriage_intentions':
+      case 'marriage':
+        return context.tr('marriage_profile');
+      case 'familyacceptance':
+        return context.tr('children_profile');
+      case 'intendtravelabroad':
+        return context.tr('travel_profile');
+      default:
+        return goalType;
+    }
   }
-}
 }
 
 class TrianglePainter extends CustomPainter {
@@ -221,7 +210,7 @@ class TrianglePainter extends CustomPainter {
       ..color = color
       ..style = PaintingStyle.fill;
     final path = Path();
-    path.moveTo(size.width / 2, 0); // Tip of triangle
+    path.moveTo(size.width / 2, 0);
     path.lineTo(0, size.height);
     path.lineTo(size.width, size.height);
     path.close();

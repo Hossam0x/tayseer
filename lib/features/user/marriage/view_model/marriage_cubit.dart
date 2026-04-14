@@ -744,11 +744,21 @@ class MarriageCubit extends Cubit<MarriageState> {
   }) async {
     if (state.isAnimating || _cardController == null) return;
     emit(state.copyWith(swipeDirection: 1, isAnimating: true));
-    userInteraction(
+    await userInteraction(
       personId: personId,
       interactionType: 'like',
       countView: !hasSinglePerson,
     );
+    // ✅ لو فشل بسبب likesLeft = 0 → ارجع بدون ما تشيل اليوزر
+    if (state.userInteractionState == CubitStates.failure &&
+        state.likesLeft == 0) {
+      emit(state.copyWith(
+        swipeDirection: 0,
+        swipeProgress: 0,
+        isAnimating: false,
+      ));
+      return;
+    }
     await _cardController!.forward(from: 0);
     _onSwipeComplete(personId: personId, hasSinglePerson: hasSinglePerson);
   }

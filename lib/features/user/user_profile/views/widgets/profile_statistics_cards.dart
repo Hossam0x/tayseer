@@ -18,7 +18,7 @@ class ProfileStatisticsCards extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 16.h),
-      child: IntrinsicHeight(  // ✅ lets both cards match height dynamically
+      child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -30,6 +30,7 @@ class ProfileStatisticsCards extends StatelessWidget {
                 title: context.tr('remaining_likes_count'),
                 description: context.tr('go_unlimited_with_effort'),
                 buttonText: context.tr('upgrade'),
+                showButtonWhenZero: true, // ✅ يظهر بس لما يكون 0
                 onTap: onUpgradesTap,
               ),
             ),
@@ -42,6 +43,7 @@ class ProfileStatisticsCards extends StatelessWidget {
                 title: context.tr('greeting'),
                 description: context.tr('get_free_credit_daily_with_gold'),
                 buttonText: context.tr('upgrade'),
+                alwaysShowButton: true,
                 onTap: onResultsTap,
               ),
             ),
@@ -51,14 +53,22 @@ class ProfileStatisticsCards extends StatelessWidget {
     );
   }
 
-Widget _buildStatCard({
+  Widget _buildStatCard({
     required BuildContext context,
     required int number,
     required String title,
     required String description,
     required String buttonText,
+    bool showButtonWhenZero = false,
+    bool alwaysShowButton = false,
     VoidCallback? onTap,
   }) {
+    final shouldShowButton = alwaysShowButton
+        ? true
+        : showButtonWhenZero
+            ? number == 0
+            : number > 0;
+
     return Container(
       padding: EdgeInsets.all(16.r),
       decoration: BoxDecoration(
@@ -70,14 +80,15 @@ Widget _buildStatCard({
         ),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.max, // ✅ يملأ الارتفاع الكامل
+        mainAxisSize: MainAxisSize.max,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ⭐ Number
           Text(
             '$number',
             textAlign: TextAlign.start,
-            style: Styles.textStyle32Bold.copyWith(fontWeight: FontWeight.w600),
+            style:
+                Styles.textStyle32Bold.copyWith(fontWeight: FontWeight.w600),
           ),
           SizedBox(height: 8.h),
           // ⭐ Title
@@ -95,9 +106,11 @@ Widget _buildStatCard({
               color: AppColors.secondary400,
             ),
           ),
-          Expanded(child: SizedBox()), // ✅ يدفع الزر للأسفل
-          SizedBox(height: 12.h),
-          CustomBotton(title: buttonText, height: 48.h, onPressed: onTap),
+          Expanded(child: SizedBox()),
+          if (shouldShowButton) ...[
+            SizedBox(height: 12.h),
+            CustomBotton(title: buttonText, height: 48.h, onPressed: onTap),
+          ],
         ],
       ),
     );

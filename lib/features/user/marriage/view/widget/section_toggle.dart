@@ -84,7 +84,7 @@ class SectionToggle extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: Styles.textStyle14.copyWith(
+          style: Styles.textStyle12Bold.copyWith(
             color: isActive ? Colors.white : const Color(0xFF4A4A4A),
             fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
           ),
