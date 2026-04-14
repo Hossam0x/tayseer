@@ -505,3 +505,78 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     );
   }
 }
+
+// ═══════════════════════════════════════
+// REGARD INPUT SHEET (standalone)
+// ═══════════════════════════════════════
+void showRegardInputSheet(
+  BuildContext context, {
+  required String personId,
+  required String personName,
+  required void Function(String text) onSend,
+}) {
+  final controller = TextEditingController();
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+    ),
+    builder: (sheetContext) {
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+          left: 20.w,
+          right: 20.w,
+          top: 20.h,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '$personName ${context.tr('messge_profil_title')}',
+              style: Styles.textStyle14Bold,
+            ),
+            Gap(10.h),
+            TextField(
+              controller: controller,
+              maxLines: 4,
+              autofocus: true,
+              decoration: InputDecoration(
+                fillColor: HexColor('f9f8ec'),
+                filled: true,
+                hintText: context.tr('type_your_message'),
+                hintStyle: Styles.textStyle12.copyWith(color: Colors.grey),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16.r),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            Gap(16.h),
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: controller,
+              builder: (_, value, __) {
+                final enabled = value.text.trim().isNotEmpty;
+                return CustomBotton(
+                  backGroundcolor: AppColors.kgreyColor,
+                  useGradient: enabled,
+                  title: context.tr('send_reply'),
+                  onPressed: enabled
+                      ? () {
+                          Navigator.pop(sheetContext);
+                          onSend(value.text.trim());
+                        }
+                      : null,
+                );
+              },
+            ),
+            Gap(20.h),
+          ],
+        ),
+      );
+    },
+  );
+}

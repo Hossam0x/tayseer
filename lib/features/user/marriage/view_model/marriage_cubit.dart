@@ -469,13 +469,18 @@ class MarriageCubit extends Cubit<MarriageState> {
     );
 
     result.fold(
-      (failure) => emit(
-        state.copyWith(
-          sendRegardTextState: CubitStates.failure,
-          errorMessage: failure.message,
-          showActionSnackbar: true,
-        ),
-      ),
+      (failure) {
+        final data = failure is ServerFailure ? failure.data : null;
+        final regardsLeft = data?['regardsLeft'] as int?;
+        emit(
+          state.copyWith(
+            sendRegardTextState: CubitStates.failure,
+            errorMessage: failure.message,
+            showActionSnackbar: true,
+            regardsLeft: regardsLeft,
+          ),
+        );
+      },
       (_) => emit(
         state.copyWith(
           sendRegardTextState: CubitStates.success,

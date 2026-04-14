@@ -322,10 +322,16 @@ class InteractionsCubit extends Cubit<InteractionsState> {
   // SEND COMPLIMENT
   // ═══════════════════════════════════════════════════════════════════
 
-  Future<void> sendCompliment({required String userId}) async {
+  Future<void> sendCompliment({
+    required String userId,
+    String text = '',
+  }) async {
     emit(state.copyWith(actionState: CubitStates.loading));
 
-    final result = await repository.sendCompliment(personId: userId);
+    final result = await repository.sendCompliment(
+      personId: userId,
+      text: text,
+    );
 
     result.fold((failure) {
       log('Send Compliment Failed: ${failure.message}');

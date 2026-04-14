@@ -75,10 +75,10 @@ class MarriageRepositoryImpl implements MarriageRepository {
   }) async {
     try {
       final response = await _apiService.post(
-        endPoint: '/user/send-regards',
+        endPoint: '/user-chat/regards/send',
         data: {
-          'personInteractedWith': personId,
-          if (text != null) 'text': text,
+          'recipientId': personId,
+          'message': text ?? '',
           if (countView) 'countView': true,
         },
       );

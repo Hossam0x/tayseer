@@ -109,21 +109,7 @@ class _SplashScreenState extends State<SplashScreen>
 
       // ✅ فتح البروفيل بعد ما الـ Layout يكون جاهز خالص
       if (coldPersonId != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          // نديه وقت كافي عشان الـ Layout يتبنى والـ navigator يكون جاهز
-          Future.delayed(const Duration(milliseconds: 1200), () {
-            if (!mounted) return;
-            final personId = pendingDeepLinkPersonId;
-            if (personId != null) {
-              pendingDeepLinkPersonId = null;
-              log('🔗 Opening deep link profile: $personId');
-              DeepLinkService.handleMarriageProfileLink(
-                context: context,
-                personId: personId,
-              );
-            }
-          });
-        });
+        _openDeepLinkWithRetry(coldPersonId);
       }
     } else {
       // ─── مش مسجل ───
@@ -152,6 +138,32 @@ class _SplashScreenState extends State<SplashScreen>
         AppRouter.kRegisrationView,
       );
     }
+  }
+
+  void _openDeepLinkWithRetry(String personId, [int retries = 10]) {
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+
+      // ✅ تحقق إن الـ navigator جاهز وفيه route مش الـ splash
+      final navState = navigatorKey.currentState;
+
+      if (navState != null && navState.canPop()) {
+        final id = pendingDeepLinkPersonId;
+        if (id != null) {
+          pendingDeepLinkPersonId = null;
+          log('🔗 Opening deep link profile: $id (retries left: $retries)');
+          DeepLinkService.handleMarriageProfileLink(
+            context: context,
+            personId: id,
+          );
+        }
+      } else if (retries > 0) {
+        log('🔗 Navigator not ready, retrying... ($retries left)');
+        _openDeepLinkWithRetry(personId, retries - 1);
+      } else {
+        log('🔗 Max retries reached, deep link lost');
+      }
+    });
   }
 
   String? _extractPersonId(Uri uri) {

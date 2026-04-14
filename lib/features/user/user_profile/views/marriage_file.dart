@@ -299,7 +299,7 @@ class _MarriagefilePageState extends State<MarriagefilePage>
                     },
                   ),
                 ),
-
+                
                 // 3️⃣ ✅ AppBar فوق كل حاجة — فوق الـ GIF overlay دايمًا
                 Positioned(
                   top: 0,
@@ -590,24 +590,34 @@ class _MarriagefilePageState extends State<MarriagefilePage>
                 : SizedBox.shrink(),
           ),
 
-          _buildSliverPadding(
-            child: ProfileStatisticsCards(
-              upgradesCount: profile.likesLeft ?? 0,
-              resultsCount: profile.regardsLeft ?? 0,
-              onUpgradesTap: () => showLimitReachedDialog(
-                context,
-                title: context.tr('reached_free_likes_limit'),
-                subtitle: context.tr('subscribe_to_like_more'),
-                subscribeText: context.tr('subscribe'),
-                laterText: context.tr('later'),
-                onSubscribe: () {
-                  context.pushNamed(AppRouter.kUserPackagesView);
-                },
+          if (profile.subscriptionType == null ||
+              profile.subscriptionType == 'free')
+            _buildSliverPadding(
+              child: ProfileStatisticsCards(
+                upgradesCount: profile.likesLeft ?? 0,
+                resultsCount: profile.regardsLeft ?? 0,
+                onUpgradesTap: () => showLimitReachedDialog(
+                  context,
+                  title: context.tr('reached_free_likes_limit'),
+                  subtitle: context.tr('subscribe_to_like_more'),
+                  subscribeText: context.tr('subscribe'),
+                  laterText: context.tr('later'),
+                  onSubscribe: () {
+                    context.pushNamed(AppRouter.kUserPackagesView);
+                  },
+                ),
+                onResultsTap: () => showRegardsPurchaseSheet(context),
               ),
-              onResultsTap: () =>
-                  showRegardsPurchaseSheet(context), // ✅ regards
+            )
+          else
+            _buildSliverPadding(
+              child: Center(
+                child: SizedBox(
+                  width: context.width * 0.55,
+                  child: _buildRegardsOnlyCard(context, profile.regardsLeft ?? 0),
+                ),
+              ),
             ),
-          ),
 
           _buildSliverPadding(
             child: AboutMeSection(items: _buildAboutMeItems(profile)),
@@ -936,6 +946,50 @@ class _MarriagefilePageState extends State<MarriagefilePage>
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildRegardsOnlyCard(BuildContext context, int regardsLeft) {
+    return Container(
+      padding: EdgeInsets.all(16.r),
+      decoration: BoxDecoration(
+        color: AppColors.primary50.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: AppColors.primary100.withOpacity(0.5),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            '$regardsLeft',
+            style: Styles.textStyle32Bold.copyWith(fontWeight: FontWeight.w600),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            context.tr('greeting'),
+            style: Styles.textStyle16Meduim,
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            context.tr('get_free_credit_daily_with_gold'),
+            style: Styles.textStyle12SemiBold.copyWith(
+              color: AppColors.secondary400,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 12.h),
+          CustomBotton(
+            title: context.tr('upgrade'),
+            height: 48.h,
+            onPressed: () => showRegardsPurchaseSheet(context),
+          ),
+        ],
       ),
     );
   }

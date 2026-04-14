@@ -163,7 +163,17 @@ class GreetingProfileCard extends StatelessWidget {
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
-                    showRegardsPurchaseSheet(context);
+                    showRegardInputSheet(
+                      context,
+                      personId: item.userId,
+                      personName: item.name,
+                      onSend: (text) {
+                        context.read<InteractionsCubit>().sendCompliment(
+                          userId: item.userId,
+                          text: text,
+                        );
+                      },
+                    );
                   },
                   child: Container(
                     width: 55.w,

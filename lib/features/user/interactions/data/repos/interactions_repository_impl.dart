@@ -156,10 +156,10 @@ class InteractionsRepositoryImpl implements InteractionsRepository {
   }) async {
     try {
       final response = await apiService.post(
-        endPoint: '/user/send-regards',
+        endPoint: '/user-chat/regards/send',
         data: {
-          'personInteractedWith': personId,
-          if (text != null) 'text': text,
+          'recipientId': personId,
+          'message': text ?? '',
         },
       );
 

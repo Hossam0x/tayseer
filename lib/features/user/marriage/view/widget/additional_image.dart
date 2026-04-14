@@ -3,7 +3,6 @@ import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/regards_purchase_sheet.dart';
 import 'package:tayseer/my_import.dart';
-
 class AdditionalImageSection extends StatelessWidget {
   final String imageUrl;
   final String? personId;
@@ -77,7 +76,19 @@ class AdditionalImageSection extends StatelessWidget {
                         size: 20.sp,
                       ),
                       onPressed: () {
-                        showRegardsPurchaseSheet(context);
+                        if (personId == null) return;
+                        showRegardInputSheet(
+                          context,
+                          personId: personId!,
+                          personName: '',
+                          onSend: (text) {
+                            context.read<MarriageCubit>().sendRegardText(
+                              personId: personId!,
+                              text: text,
+                              countView: true,
+                            );
+                          },
+                        );
                       },
                     ),
                   ),

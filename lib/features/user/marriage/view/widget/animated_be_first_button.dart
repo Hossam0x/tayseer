@@ -43,7 +43,7 @@ class _AnimatedBeFirstButtonState extends State<AnimatedBeFirstButton> {
         curve: Curves.easeInOutBack,
         padding: EdgeInsets.symmetric(
           horizontal: _isExpanded ? 12.w : 15.w,
-          vertical: 15.h,
+          vertical: 12.h,
         ),
         decoration: BoxDecoration(
           gradient: const LinearGradient(

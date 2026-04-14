@@ -36,26 +36,21 @@ class _MessageInputSectionState extends State<MessageInputSection> {
           prev.sendRegardTextState != curr.sendRegardTextState,
       listener: (context, state) {
         if (state.sendRegardTextState == CubitStates.success) {
-          // ✅ أظهر الـ GIF
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (_) =>
-                AppImage(AssetsData.kSuccessMarriageAnimationsLottie),
-          );
-          Future.delayed(const Duration(seconds: 4), () {
-            if (context.mounted) Navigator.of(context).pop();
-          });
+          // ✅ الـ GIF بيتعرض من marriage_body.dart listener
           context.read<MarriageCubit>().resetState();
         } else if (state.sendRegardTextState == CubitStates.failure) {
-          // ✅ لو regardsLeft = 0 → اعرض sheet الشراء
           if (state.regardsLeft == 0) {
+            context.read<MarriageCubit>().resetState();
             showRegardsPurchaseSheet(context);
+            return;
           }
           context.read<MarriageCubit>().resetState();
         }
       },
-      child: Column(
+      child: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        behavior: HitTestBehavior.translucent,
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -80,6 +75,9 @@ class _MessageInputSectionState extends State<MessageInputSection> {
                 TextField(
                   controller: _controller,
                   maxLines: 4,
+                  scrollPadding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 100,
+                  ),
                   decoration: InputDecoration(
                     fillColor: HexColor('f9f8ec'),
                     filled: true,
@@ -128,6 +126,7 @@ class _MessageInputSectionState extends State<MessageInputSection> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

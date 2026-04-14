@@ -43,7 +43,10 @@ class _CustomToggleTabBarState extends State<CustomToggleTabBar> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
       margin: EdgeInsets.symmetric(horizontal: 40.w, vertical: 10.h),
       padding: EdgeInsets.all(2.5.w),
       decoration: BoxDecoration(
@@ -57,6 +60,9 @@ class _CustomToggleTabBarState extends State<CustomToggleTabBar> {
           _buildTab(1, widget.secondTabText),
         ],
       ),
+    ),
+        SizedBox(height: 22.h),
+      ],
     );
   }
 

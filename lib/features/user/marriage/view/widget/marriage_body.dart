@@ -304,6 +304,83 @@ class MarriageBodyState extends State<MarriageBody>
     entry.remove();
   }
 
+  void _showRegardInputSheet(
+    BuildContext context, {
+    required MarriageCubit cubit,
+    required String personId,
+    required String personName,
+    bool countView = false,
+  }) {
+    final controller = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+      ),
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+            left: 20.w,
+            right: 20.w,
+            top: 20.h,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$personName ${context.tr('messge_profil_title')}',
+                style: Styles.textStyle14Bold,
+              ),
+              Gap(10.h),
+              TextField(
+                controller: controller,
+                maxLines: 4,
+                autofocus: true,
+                decoration: InputDecoration(
+                  fillColor: HexColor('f9f8ec'),
+                  filled: true,
+                  hintText: context.tr('type_your_message'),
+                  hintStyle: Styles.textStyle12.copyWith(color: Colors.grey),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              Gap(16.h),
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: controller,
+                builder: (_, value, __) {
+                  final enabled = value.text.trim().isNotEmpty;
+                  return CustomBotton(
+                    backGroundcolor: AppColors.kgreyColor,
+                    useGradient: enabled,
+                    title: context.tr('send_reply'),
+                    onPressed: enabled
+                        ? () {
+                            Navigator.pop(sheetContext);
+                            cubit.sendRegardText(
+                              personId: personId,
+                              text: value.text.trim(),
+                              countView: countView,
+                            );
+                          }
+                        : null,
+                  );
+                },
+              ),
+              Gap(20.h),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void scrollToTop() {
     if (_mainScrollController.hasClients) {
       _mainScrollController.animateTo(
@@ -542,6 +619,9 @@ class MarriageBodyState extends State<MarriageBody>
               current.userInteractionState == CubitStates.failure) ||
           (previous.likesLeft != current.likesLeft && current.likesLeft == 0) ||
           (previous.regardsLeft != current.regardsLeft &&
+              current.regardsLeft == 0) ||
+          (previous.sendRegardTextState != current.sendRegardTextState &&
+              current.sendRegardTextState == CubitStates.failure &&
               current.regardsLeft == 0),
 
       buildWhen: (previous, current) =>
@@ -586,7 +666,8 @@ class MarriageBodyState extends State<MarriageBody>
 
         // ✅ regards خلصت
         if (state.regardsLeft == 0 &&
-            state.sendRegardState == CubitStates.failure) {
+            (state.sendRegardState == CubitStates.failure ||
+                state.sendRegardTextState == CubitStates.failure)) {
           showRegardsPurchaseSheet(context);
           context.read<MarriageCubit>().resetState();
           return;
@@ -594,7 +675,8 @@ class MarriageBodyState extends State<MarriageBody>
 
         if ((state.sendRegardState == CubitStates.failure ||
                 state.sendRegardTextState == CubitStates.failure) &&
-            state.showActionSnackbar) {
+            state.showActionSnackbar &&
+            state.regardsLeft != 0) {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
@@ -605,7 +687,8 @@ class MarriageBodyState extends State<MarriageBody>
           context.read<MarriageCubit>().resetState();
         }
 
-        if (state.sendRegardState == CubitStates.success &&
+        if ((state.sendRegardState == CubitStates.success ||
+                state.sendRegardTextState == CubitStates.success) &&
             state.showActionSnackbar) {
           showDialog(
             context: context,
@@ -1353,7 +1436,7 @@ class MarriageBodyState extends State<MarriageBody>
                         child: MarriageLifeEventsSection(
                           titleName:
                               Directionality.of(context) == TextDirection.rtl
-                              ? '${context.tr('goals')} ${user?.name ?? ''}' 
+                              ? '${context.tr('goals')} ${user?.name ?? ''}'
                               : '${user?.name ?? ''} ${context.tr('goals')}',
                           events: timelineEvents,
                         ),
@@ -1474,20 +1557,19 @@ class MarriageBodyState extends State<MarriageBody>
                     ),
                   ),
 
-                  if (!_isConsultantViewingProfile)
-                    SliverPadding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 16.w,
-                        vertical: 10.h,
-                      ),
-                      sliver: SliverToBoxAdapter(
-                        child: MessageInputSection(
-                          name: user?.name ?? '',
-                          personId: user?.id ?? '',
-                        ),
-                      ),
-                    ),
-
+                  // if (!_isConsultantViewingProfile)
+                  //   SliverPadding(
+                  //     padding: EdgeInsets.symmetric(
+                  //       horizontal: 16.w,
+                  //       vertical: 10.h,
+                  //     ),
+                  //     sliver: SliverToBoxAdapter(
+                  //       child: MessageInputSection(
+                  //         name: user?.name ?? '',
+                  //         personId: user?.id ?? '',
+                  //       ),
+                  //     ),
+                  //   ),
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -1585,11 +1667,17 @@ class MarriageBodyState extends State<MarriageBody>
                                 if (state.likesLeft == 0) {
                                   showLimitReachedDialog(
                                     context,
-                                    title: context.tr('reached_free_likes_limit'),
-                                    subtitle: context.tr('subscribe_to_like_more'),
+                                    title: context.tr(
+                                      'reached_free_likes_limit',
+                                    ),
+                                    subtitle: context.tr(
+                                      'subscribe_to_like_more',
+                                    ),
                                     subscribeText: context.tr('subscribe'),
                                     laterText: context.tr('later'),
-                                    onSubscribe: () => context.pushNamed(AppRouter.kUserPackagesView),
+                                    onSubscribe: () => context.pushNamed(
+                                      AppRouter.kUserPackagesView,
+                                    ),
                                   );
                                   return;
                                 }
@@ -1624,8 +1712,11 @@ class MarriageBodyState extends State<MarriageBody>
 
                             buildCircleButton(
                               onTap: () async {
-                                await cubit.sendRegard(
+                                _showRegardInputSheet(
+                                  context,
+                                  cubit: cubit,
                                   personId: profile.user?.id ?? '',
+                                  personName: profile.user?.name ?? '',
                                   countView:
                                       widget.personId == null &&
                                       !widget.fromInteractions,
