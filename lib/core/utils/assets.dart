@@ -233,6 +233,7 @@ abstract class AssetsData {
   static const String icSavedSettings = "assets/icons/icSavedSettings.svg";
   static const String icBlockedSettings = "assets/icons/icBlockedSettings.svg";
   static const String icInviteSettings = "assets/icons/icInviteSettings.svg";
+  static const String heartLockIcon = "assets/icons/heartLock.svg";
   static const String icManagementSettings =
       "assets/icons/icManagementSettings.svg";
   static const String anonymousProfile = "assets/images/anonymous_profile.png";

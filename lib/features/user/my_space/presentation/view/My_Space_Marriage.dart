@@ -1,5 +1,6 @@
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_state.dart';
+import 'package:tayseer/features/user/my_space/users_chat/presentation/view/user_chat_content.dart';
 import 'package:tayseer/my_import.dart';
 
 class MySpaceMarriageContent extends StatelessWidget {
@@ -15,10 +16,15 @@ class MySpaceMarriageContent extends StatelessWidget {
         isDataCompleted = userState.userProfile?.dataCompleted ?? false;
       }
     } catch (_) {}
+  // ✅ لو البيانات مكتملة، ما نعرضش شاشة الاستكمال
+    if (!isDataCompleted) {
+      return _buildIncompleteProfile(context);
+    }
 
-    // ✅ لو البيانات مكتملة، ما نعرضش شاشة الاستكمال
-    if (isDataCompleted) return const SizedBox.shrink();
+    return const UserChatContent();
+  }
 
+  Widget _buildIncompleteProfile(BuildContext context) {
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -37,9 +43,7 @@ class MySpaceMarriageContent extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   AppImage(AssetsData.guestLockImage, width: 228.w),
-
                   SizedBox(height: 24.w),
-
                   Text(
                     context.tr('complete_your_profile'),
                     textAlign: TextAlign.center,
@@ -47,9 +51,7 @@ class MySpaceMarriageContent extends StatelessWidget {
                       color: AppColors.kTextGrey,
                     ),
                   ),
-
                   SizedBox(height: 12.h),
-
                   Text(
                     context.tr('complete_your_profile_description'),
                     textAlign: TextAlign.center,
@@ -58,7 +60,6 @@ class MySpaceMarriageContent extends StatelessWidget {
                       height: 1.5,
                     ),
                   ),
-
                   SizedBox(height: 40.h),
 
                   // ✅ روح لصفحة الزواج عشان يستكمل بياناته
@@ -74,7 +75,6 @@ class MySpaceMarriageContent extends StatelessWidget {
               ),
             ),
           ),
-
           SizedBox(height: 90.h),
         ],
       ),

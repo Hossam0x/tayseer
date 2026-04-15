@@ -30,12 +30,7 @@ class VerificationScreen extends StatelessWidget {
           SafeArea(
             child: Column(
               children: [
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.w),
-                  child: const SimpleAppBar(title: ''),
-                ),
-
-                SizedBox(height: 30.h),
+                SizedBox(height: 55.h),
 
                 // ── Status Title ────────────────────────
                 Text(
@@ -54,12 +49,48 @@ class VerificationScreen extends StatelessWidget {
                 if (isApproved)
                   Column(
                     children: [
-                      Icon(Icons.verified, color: Colors.blue, size: 80.sp),
+                      Icon(Icons.verified, color: Colors.green, size: 80.sp),
                       SizedBox(height: 12.h),
                       Text(
                         context.tr('your_account_verified'),
                         style: Styles.textStyle16Meduim,
                         textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 24.h),
+
+                      // ── Verification Items List ──
+                      Container(
+                        margin: EdgeInsets.symmetric(horizontal: 24.w),
+                        padding: EdgeInsets.all(16.w),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(20.r),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildVerificationItem(
+                              context,
+                              title: context.tr('photo_verification'),
+                              description: context.tr(
+                                'photo_verification_desc',
+                              ),
+                            ),
+                            Divider(height: 20.h, color: Colors.grey.shade200),
+                            _buildVerificationItem(
+                              context,
+                              title: context.tr('age_verification'),
+                              description: context.tr('age_verification_desc'),
+                            ),
+                            Divider(height: 20.h, color: Colors.grey.shade200),
+                            _buildVerificationItem(
+                              context,
+                              title: context.tr('identity_verification'),
+                              description: context.tr(
+                                'identity_verification_desc',
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -149,6 +180,38 @@ class VerificationScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildVerificationItem(
+    BuildContext context, {
+    required String title,
+    required String description,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.verified, color: Colors.green, size: 33.sp),
+        SizedBox(width: 10.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Styles.textStyle16Bold.copyWith(color: Colors.black),
+              ),
+              SizedBox(height: 9.h),
+              Text(
+                description,
+                style: Styles.textStyle14.copyWith(
+                  color: Colors.black.withOpacity(0.6),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

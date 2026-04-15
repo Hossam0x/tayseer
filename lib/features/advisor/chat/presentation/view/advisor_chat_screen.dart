@@ -70,12 +70,21 @@ class AdvisorChatScreen extends StatelessWidget {
           create: (_) => TypingCubit()..listenToUserTyping(chatRoomId!),
         ),
         BlocProvider(
-          create: (context) => ChatInputCubit(
-            onTypingStart: () =>
-                context.read<ChatMessagesCubit>().typingStart(chatRoomId!),
-            onTypingStop: () =>
-                context.read<ChatMessagesCubit>().typingStop(chatRoomId!),
-          ),
+          create: (context) {
+            final messagesCubit = context.read<ChatMessagesCubit>();
+            return ChatInputCubit(
+              onTypingStart: () {
+                if (!messagesCubit.isClosed) {
+                  messagesCubit.typingStart(chatRoomId!);
+                }
+              },
+              onTypingStop: () {
+                if (!messagesCubit.isClosed) {
+                  messagesCubit.typingStop(chatRoomId!);
+                }
+              },
+            );
+          },
         ),
       ],
       child: _ChatContent(
@@ -124,6 +133,7 @@ class _ChatContentState extends State<_ChatContent> {
   late final OverlayManager _overlayManager;
   late final MessageActionsHandler _actionsHandler;
   StreamSubscription<String>? _failEventSubscription;
+  bool _handlersInitialized = false;
 
   @override
   void initState() {
@@ -144,7 +154,10 @@ class _ChatContentState extends State<_ChatContent> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _initializeHandlers();
+    if (!_handlersInitialized) {
+      _initializeHandlers();
+      _handlersInitialized = true;
+    }
   }
 
   void _initializeHandlers() {
