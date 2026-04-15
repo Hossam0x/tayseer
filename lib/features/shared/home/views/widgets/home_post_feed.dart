@@ -4,6 +4,7 @@ import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/widgets/end_of_cached_posts.dart';
 import 'package:tayseer/core/widgets/offline_empty_state.dart';
+import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
@@ -251,6 +252,8 @@ class HomePostFeed extends StatelessWidget {
           context,
           state.shareToStoryMessage ?? context.tr('share_to_story_success'),
         );
+        // ✅ refresh myStories locally so the new post story appears immediately
+        getIt<StoriesCubit>().fetchMyStories(isSilent: true);
         break;
       case CubitStates.failure:
         AppToast.error(

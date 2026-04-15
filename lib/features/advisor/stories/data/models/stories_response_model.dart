@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/models/pagination_model.dart';
+import 'package:tayseer/core/models/post_model.dart';
 
 class StoriesResponseModel {
   final bool success;
@@ -127,12 +128,16 @@ class StoryModel extends Equatable {
   final int viewsCount;
   final int likesCount;
   final bool isLiked;
-  final bool isViewedByMe; // ⭐ هل أنا شخصياً شوفت القصة دي؟
+  final bool isViewedByMe;
   final DateTime createdAt;
   final DateTime updatedAt;
-
   final double? videoDuration;
   final List<StoryUserModel>? likedBy;
+
+  // ── Post story fields ──
+  final String? mediaType; // 'post' | 'image' | 'video'
+  final String? postId;
+  final PostModel? post;
 
   const StoryModel({
     required this.id,
@@ -149,7 +154,12 @@ class StoryModel extends Equatable {
     this.likedBy,
     required this.createdAt,
     required this.updatedAt,
+    this.mediaType,
+    this.postId,
+    this.post,
   });
+
+  bool get isPostStory => mediaType == 'post' && post != null;
 
   factory StoryModel.fromJson(Map<String, dynamic> json) {
     String userIdStr = "";
@@ -195,7 +205,6 @@ class StoryModel extends Equatable {
       viewsCount: viewsCount,
       likesCount: likesCount,
       isLiked: json['isLiked'] ?? false,
-      // ⭐ isViewedByMe: هل أنا شخصياً شوفت القصة؟ مستقل عن viewsCount
       isViewedByMe: json['isViewedByMe'] == true || json['isViewed'] == true,
       likedBy: json['likedBy'] != null
           ? List<StoryUserModel>.from(
@@ -208,6 +217,11 @@ class StoryModel extends Equatable {
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'])
           : DateTime.now(),
+      mediaType: json['mediaType']?.toString(),
+      postId: json['postId']?.toString(),
+      post: json['post'] != null
+          ? PostModel.fromJson(json['post'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -229,6 +243,9 @@ class StoryModel extends Equatable {
     List<StoryUserModel>? likedBy,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? mediaType,
+    String? postId,
+    PostModel? post,
   }) {
     return StoryModel(
       id: id ?? this.id,
@@ -245,6 +262,9 @@ class StoryModel extends Equatable {
       likedBy: likedBy ?? this.likedBy,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      mediaType: mediaType ?? this.mediaType,
+      postId: postId ?? this.postId,
+      post: post ?? this.post,
     );
   }
 
@@ -264,6 +284,9 @@ class StoryModel extends Equatable {
     likedBy,
     createdAt,
     updatedAt,
+    mediaType,
+    postId,
+    post,
   ];
 }
 

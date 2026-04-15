@@ -1959,5 +1959,6 @@
   "share_profile_deeplink": "Meet {name} on Tayseer",
   "share_to_story_success": "Shared to story successfully",
   "share_to_story_error": "Failed to share to story",
-  "consultant_marriage_blocked_msg": "This feature is only available for Tayseer users.\nPlease log in with a user account to access marriage profiles."
+  "consultant_marriage_blocked_msg": "This feature is only available for Tayseer users.\nPlease log in with a user account to access marriage profiles.",
+  "open_post": "Open Post"
 }

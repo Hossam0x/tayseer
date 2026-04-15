@@ -4,6 +4,8 @@ import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/features/advisor/stories/stories.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_states.dart';
+import 'package:tayseer/features/advisor/stories/presentation/views/widgets/shared/story_post_card.dart';
+import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
 import 'package:tayseer/my_import.dart' hide Direction;
@@ -249,8 +251,10 @@ class _UserStoryPageState extends State<_UserStoryPage> {
   late List<StoryModel> _reorderedStories;
   int _currentStoryIndex = 0;
   DateTime? _currentStoryTime;
-
   bool _storyItemsInitialized = false;
+
+  // ✅ bounds الـ PostCard الفعلية — بتتحدث لما الـ StoryPostCard يتبني
+  Rect? _postCardBounds;
 
   @override
   void initState() {
@@ -341,6 +345,28 @@ class _UserStoryPageState extends State<_UserStoryPage> {
     final isArabic = context.isArabicLang;
 
     for (var story in _reorderedStories) {
+      // ── Post story ──
+      if (story.isPostStory) {
+        _storyItems.add(
+          StoryItem(
+            // ✅ counter-flip في العربي عشان الـ PostCard ميتشقلبش
+            Transform.scale(
+              scaleX: isArabic ? -1.0 : 1.0,
+              child: StoryPostCard(
+                post: story.post!,
+                storyController: _storyController,
+                onCardBoundsReady: (bounds) {
+                  if (mounted) {
+                    setState(() => _postCardBounds = bounds);
+                  }
+                },
+              ),
+            ),
+            duration: const Duration(seconds: 8),
+          ),
+        );
+        continue;
+      }
       final hasVideo = story.video != null && story.video!.isNotEmpty;
       if (hasVideo) {
         final duration =
@@ -475,6 +501,43 @@ class _UserStoryPageState extends State<_UserStoryPage> {
     }
   }
 
+  /// ✅ Tap handler بحجم الـ PostCard الفعلي — بيتحدث من الـ bounds
+  /// الضغط جوا الـ PostCard → يفتح PostDetailsView
+  /// الضغط برا → الـ StoryView يشتغل عادي (next/previous)
+  Widget _buildOpenPostButton(BuildContext context) {
+    final story = _reorderedStories[_currentStoryIndex];
+    if (!story.isPostStory) return const SizedBox.shrink();
+
+    final bounds = _postCardBounds;
+    if (bounds == null) return const SizedBox.shrink();
+
+    return Positioned(
+      top: bounds.top,
+      left: bounds.left,
+      width: bounds.width,
+      height: bounds.height,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => _storyController.pause(),
+        onTapCancel: () {
+          if (widget.isActive) _storyController.play();
+        },
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  PostDetailsView(post: story.post!, isFromProfile: false),
+            ),
+          ).then((_) {
+            if (mounted && widget.isActive) _storyController.play();
+          });
+        },
+        child: const SizedBox.expand(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isArabic = context.isArabicLang;
@@ -565,6 +628,13 @@ class _UserStoryPageState extends State<_UserStoryPage> {
               ),
             ),
           ),
+
+        // ── Post story open button ─────────────────────────────────────────
+        // زرار ثابت في أسفل الـ PostCard — في layer فوق الـ StoryView
+        // الضغط عليه يفتح PostDetailsView، الضغط برا يقلب الـ story عادي
+        if (_currentStoryIndex < _reorderedStories.length &&
+            _reorderedStories[_currentStoryIndex].isPostStory)
+          _buildOpenPostButton(context),
 
         // ── Header (avatar + name + time + menu) ───────────────────────────
         Positioned(
