@@ -255,13 +255,10 @@ class _UserStoryPageState extends State<_UserStoryPage> {
   DateTime? _currentStoryTime;
   bool _storyItemsInitialized = false;
 
-  // ✅ bounds الـ PostCard الفعلية — بتتحدث لما الـ StoryPostCard يتبني
-  Rect? _postCardBounds;
-
   // ✅ هل يظهر زرار "Open Post" دلوقتي؟
   bool _showOpenPostButton = false;
 
-  // ✅ نقطة الضغط عشان نظهر الزرار عندها
+  // ✅ نقطة الـ LongPress عشان نظهر الزرار عندها
   Offset? _openPostButtonPosition;
 
   @override
@@ -363,11 +360,6 @@ class _UserStoryPageState extends State<_UserStoryPage> {
               child: StoryPostCard(
                 post: story.post!,
                 storyController: _storyController,
-                onCardBoundsReady: (bounds) {
-                  if (mounted) {
-                    setState(() => _postCardBounds = bounds);
-                  }
-                },
               ),
             ),
             duration: const Duration(seconds: 8),
@@ -509,63 +501,116 @@ class _UserStoryPageState extends State<_UserStoryPage> {
     }
   }
 
-  /// ✅ Tap handler بحجم الـ PostCard الفعلي — بيتحدث من الـ bounds
-  /// أول ضغطة → يظهر زرار "Open Post" عند نقطة الضغط بالظبط
-  /// ضغطة على الزرار → يفتح PostDetailsView
-  /// ضغطة برا الـ PostCard → next/previous عادي (الـ interceptor بيشتغل)
-  Widget _buildOpenPostButton(BuildContext context) {
-    final story = _reorderedStories[_currentStoryIndex];
-    if (!story.isPostStory) return const SizedBox.shrink();
+  // ── Unified 3-zone gesture layer (Instagram-style) ──────────────────────
+  // • جانب (25%) → previous/next
+  // • وسط (50%) → لو post story: يظهر زرار فتح البوست | لو مش post: next
+  // • جانب (25%) → next/previous
+  Widget _buildGestureLayer(BuildContext context, bool isArabic) {
+    final isPostStory =
+        _currentStoryIndex < _reorderedStories.length &&
+        _reorderedStories[_currentStoryIndex].isPostStory;
 
-    final bounds = _postCardBounds;
-    if (bounds == null) return const SizedBox.shrink();
+    // في العربي: يمين = previous، يسار = next
+    // في الإنجليزي: يسار = previous، يمين = next
+    void doNext() {
+      if (!widget.isActive) return;
+      _storyController.play();
+      _storyController.next();
+    }
 
-    return Stack(
-      children: [
-        // ── طبقة الـ PostCard: تاخد الضغطات جوا الـ card فقط ──
-        Positioned(
-          top: bounds.top,
-          left: bounds.left,
-          width: bounds.width,
-          height: bounds.height,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTapUp: (details) {
-              if (_showOpenPostButton) {
-                // ضغطة تانية جوا الـ card → اخفي الزرار وكمل
-                setState(() => _showOpenPostButton = false);
+    void doPrevious() {
+      if (!widget.isActive) return;
+      _storyController.play();
+      _storyController.previous();
+    }
+
+    void dismissButton() {
+      if (_showOpenPostButton) {
+        setState(() => _showOpenPostButton = false);
+        if (widget.isActive) _storyController.play();
+      }
+    }
+
+    // الجانب الأيسر من الشاشة
+    final leftAction = isArabic ? doNext : doPrevious;
+    // الجانب الأيمن من الشاشة
+    final rightAction = isArabic ? doPrevious : doNext;
+
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Row(
+        children: [
+          // ── LEFT 25% ──
+          Expanded(
+            flex: 1,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapDown: (_) {
+                if (widget.isActive) _storyController.pause();
+              },
+              onTapCancel: () {
                 if (widget.isActive) _storyController.play();
-                return;
-              }
-              // أول ضغطة: وقف الستوري وأظهر الزرار عند نقطة الضغط
-              _storyController.pause();
-              setState(() {
-                _showOpenPostButton = true;
-                _openPostButtonPosition = details.globalPosition;
-              });
-            },
-            child: const SizedBox.expand(),
+              },
+              onTapUp: (_) {
+                dismissButton();
+                leftAction();
+              },
+            ),
           ),
-        ),
 
-        // ── زرار "Open Post" عند نقطة الضغط مع animation ──
-        if (_showOpenPostButton && _openPostButtonPosition != null)
-          _OpenPostButtonOverlay(
-            position: _openPostButtonPosition!,
-            onTap: () {
-              setState(() => _showOpenPostButton = false);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      PostDetailsView(post: story.post!, isFromProfile: false),
-                ),
-              ).then((_) {
-                if (mounted && widget.isActive) _storyController.play();
-              });
-            },
+          // ── CENTER 50% ──
+          Expanded(
+            flex: 2,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapDown: (_) {
+                if (widget.isActive) _storyController.pause();
+              },
+              onTapCancel: () {
+                if (widget.isActive) _storyController.play();
+              },
+              onTapUp: (details) {
+                if (!widget.isActive) return;
+                // لو الزرار ظاهر → اخفيه وكمل
+                if (_showOpenPostButton) {
+                  dismissButton();
+                  return;
+                }
+                // لو post story → أظهر زرار فتح البوست
+                if (isPostStory) {
+                  _storyController.pause();
+                  setState(() {
+                    _showOpenPostButton = true;
+                    _openPostButtonPosition = details.globalPosition;
+                  });
+                  return;
+                }
+                // مش post story → next عادي
+                _storyController.play();
+                _storyController.next();
+              },
+            ),
           ),
-      ],
+
+          // ── RIGHT 25% ──
+          Expanded(
+            flex: 1,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapDown: (_) {
+                if (widget.isActive) _storyController.pause();
+              },
+              onTapCancel: () {
+                if (widget.isActive) _storyController.play();
+              },
+              onTapUp: (_) {
+                dismissButton();
+                rightAction();
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -624,92 +669,35 @@ class _UserStoryPageState extends State<_UserStoryPage> {
           ),
         ),
 
-        // ── RTL Gesture interceptor ─────────────────────────────────────────
-        // The stock StoryView has: right 70% = next, left 70px = previous.
-        // In Arabic UI we flip it: left 75% = next, right 25% = previous.
-        // ⚠️ يتجاهل الضغطات اللي جوا الـ PostCard bounds عشان الـ PostCard تاخدها
-        if (isArabic)
-          Positioned.fill(
-            child: Directionality(
-              textDirection: TextDirection.ltr,
-              child: Row(
-                children: [
-                  // LEFT area (75%) → NEXT story
-                  Expanded(
-                    flex: 3,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTapDown: (details) {
-                        // لو الضغط جوا الـ PostCard، اتركه للـ PostCard
-                        final bounds = _postCardBounds;
-                        if (bounds != null &&
-                            bounds.contains(details.globalPosition))
-                          return;
-                        if (widget.isActive) _storyController.pause();
-                      },
-                      onTapCancel: () {
-                        if (widget.isActive) _storyController.play();
-                      },
-                      onTapUp: (details) {
-                        if (!widget.isActive) return;
-                        // لو الضغط جوا الـ PostCard، اتركه للـ PostCard
-                        final bounds = _postCardBounds;
-                        if (bounds != null &&
-                            bounds.contains(details.globalPosition))
-                          return;
-                        // لو الزرار ظاهر، اخفيه وكمل
-                        if (_showOpenPostButton) {
-                          setState(() => _showOpenPostButton = false);
-                          _storyController.play();
-                          return;
-                        }
-                        _storyController.play();
-                        _storyController.next();
-                      },
-                    ),
-                  ),
-                  // RIGHT area (25%) → PREVIOUS story
-                  Expanded(
-                    flex: 1,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTapDown: (details) {
-                        final bounds = _postCardBounds;
-                        if (bounds != null &&
-                            bounds.contains(details.globalPosition))
-                          return;
-                        if (widget.isActive) _storyController.pause();
-                      },
-                      onTapCancel: () {
-                        if (widget.isActive) _storyController.play();
-                      },
-                      onTapUp: (details) {
-                        if (!widget.isActive) return;
-                        final bounds = _postCardBounds;
-                        if (bounds != null &&
-                            bounds.contains(details.globalPosition))
-                          return;
-                        if (_showOpenPostButton) {
-                          setState(() => _showOpenPostButton = false);
-                          _storyController.play();
-                          return;
-                        }
-                        _storyController.play();
-                        _storyController.previous();
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        // ── Unified Gesture Layer ───────────────────────────────────────────
+        // الشاشة مقسمة لـ 3 zones أفقية (زي إنستغرام):
+        //   • 25% جنب (previous) | 50% وسط (open post / next) | 25% جنب (next)
+        // في العربي: يمين = previous، يسار = next
+        // في الإنجليزي: يسار = previous، يمين = next
+        Positioned.fill(child: _buildGestureLayer(context, isArabic)),
 
-        // ── Post story open button ─────────────────────────────────────────
-        // زرار ثابت في أسفل الـ PostCard — في layer فوق الـ StoryView
-        // الضغط عليه يفتح PostDetailsView، الضغط برا يقلب الـ story عادي
-        if (_currentStoryIndex < _reorderedStories.length &&
+        // ── Post story open button overlay ────────────────────────────────
+        // يظهر بس لما المستخدم يضغط على وسط الشاشة في post story
+        if (_showOpenPostButton &&
+            _openPostButtonPosition != null &&
+            _currentStoryIndex < _reorderedStories.length &&
             _reorderedStories[_currentStoryIndex].isPostStory)
-          _buildOpenPostButton(context),
+          _OpenPostButtonOverlay(
+            position: _openPostButtonPosition!,
+            onTap: () {
+              final story = _reorderedStories[_currentStoryIndex];
+              setState(() => _showOpenPostButton = false);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      PostDetailsView(post: story.post!, isFromProfile: false),
+                ),
+              ).then((_) {
+                if (mounted && widget.isActive) _storyController.play();
+              });
+            },
+          ),
 
         // ── Mute button (video stories + reel post stories) ──────────────
         if (_currentStoryIndex < _reorderedStories.length)
