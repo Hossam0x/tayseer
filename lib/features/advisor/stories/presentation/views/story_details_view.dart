@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:story_view/story_view.dart';
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/utils/global_mute_manager.dart';
@@ -255,11 +257,27 @@ class _UserStoryPageState extends State<_UserStoryPage> {
   DateTime? _currentStoryTime;
   bool _storyItemsInitialized = false;
 
+  // Tracks whether the current story's media has finished loading.
+  // When false, any play() signal is suppressed until the media calls
+  // _onMediaReady(), which then decides whether to play or stay paused.
+  bool _isCurrentMediaReady = false;
+
   // ✅ هل يظهر زرار "Open Post" دلوقتي؟
   bool _showOpenPostButton = false;
 
   // ✅ نقطة الـ LongPress عشان نظهر الزرار عندها
   Offset? _openPostButtonPosition;
+
+  /// Called by media widgets (StoryVideoMuted / _StoryImageGuard) once their
+  /// content is loaded and the progress bar can safely start running.
+  void _onMediaReady() {
+    if (!mounted) return;
+    _isCurrentMediaReady = true;
+    // If the page is already active and not dragging, start the bar now.
+    if (widget.isActive && !widget.isDragging) {
+      _storyController.play();
+    }
+  }
 
   @override
   void initState() {
@@ -269,12 +287,20 @@ class _UserStoryPageState extends State<_UserStoryPage> {
     _storyController.isAllowedToPlay = widget.isActive;
     // Note: _initStoryItems is called in didChangeDependencies (needs context)
 
-    // Immediately pause inactive pages so the media loader doesn't fire play
-    if (!widget.isActive) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _storyController.pause();
-      });
-    }
+    // Pause the bar immediately so it doesn't start filling before the first
+    // story item finishes loading.
+    //
+    // We call pause() twice:
+    //   1. Right now — seeds the BehaviorSubject so StoryView's stream
+    //      listener sees "pause" as soon as it subscribes in its own initState.
+    //   2. In a postFrameCallback — catches the widget.controller.play() that
+    //      StoryView._play() emits at the end of its initState, ensuring the
+    //      bar stays stopped until the media widget (StoryImage / StoryVideoMuted)
+    //      calls play() once loading is complete.
+    _storyController.pause();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _storyController.pause();
+    });
   }
 
   @override
@@ -294,7 +320,9 @@ class _UserStoryPageState extends State<_UserStoryPage> {
     // Page became active — allow and start playing
     if (widget.isActive && !oldWidget.isActive) {
       _storyController.isAllowedToPlay = true;
-      if (!widget.isDragging) {
+      // Only play immediately if the media is already loaded (e.g. cached).
+      // If it's still loading, _onMediaReady() will call play() once ready.
+      if (!widget.isDragging && _isCurrentMediaReady) {
         _storyController.play();
       }
       _markCurrentStoryAsViewed();
@@ -310,7 +338,7 @@ class _UserStoryPageState extends State<_UserStoryPage> {
     if (widget.isDragging && !oldWidget.isDragging && widget.isActive) {
       _storyController.pause();
     } else if (!widget.isDragging && oldWidget.isDragging && widget.isActive) {
-      _storyController.play();
+      if (_isCurrentMediaReady) _storyController.play();
     }
   }
 
@@ -345,6 +373,8 @@ class _UserStoryPageState extends State<_UserStoryPage> {
     if (_reorderedStories.isNotEmpty) {
       _currentStoryTime = _reorderedStories[startIndex].createdAt;
       _currentStoryIndex = startIndex;
+      // Post stories have no async loading — mark them ready immediately.
+      _isCurrentMediaReady = _reorderedStories[startIndex].isPostStory;
     }
 
     final isArabic = context.isArabicLang;
@@ -387,6 +417,7 @@ class _UserStoryPageState extends State<_UserStoryPage> {
                       key: ValueKey('video_${story.id}'),
                       url: story.video!,
                       storyController: _storyController,
+                      onReady: _onMediaReady,
                       loadingWidget: const Center(
                         child: SizedBox(
                           width: 40,
@@ -444,10 +475,10 @@ class _UserStoryPageState extends State<_UserStoryPage> {
                   color: Colors.black,
                   child: Transform.scale(
                     scaleX: isArabic ? -1.0 : 1.0,
-                    child: StoryImage.url(
-                      story.image,
-                      controller: _storyController,
-                      fit: BoxFit.contain,
+                    child: _StoryImageGuard(
+                      url: story.image,
+                      storyController: _storyController,
+                      onReady: _onMediaReady,
                     ),
                   ),
                 ),
@@ -655,6 +686,10 @@ class _UserStoryPageState extends State<_UserStoryPage> {
                         _currentStoryIndex = index;
                         _currentStoryTime = _reorderedStories[index].createdAt;
                         _showOpenPostButton = false;
+                        // Reset media-ready flag for the new story item.
+                        // Post stories have no async loading so mark them ready.
+                        _isCurrentMediaReady =
+                            _reorderedStories[index].isPostStory;
                         _markCurrentStoryAsViewed();
                       }
                     });
@@ -1086,6 +1121,95 @@ class _UserStoryPageState extends State<_UserStoryPage> {
       enableDrag: true,
       builder: (ctx) => _LikersBottomSheet(likers: likers),
     );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// StoryImage Guard — wraps StoryImage.url and fires onReady once loaded
+// ─────────────────────────────────────────────────────────────────────────────
+/// Wraps [StoryImage.url] and intercepts any [PlaybackState.play] signal that
+/// arrives before the image has finished loading, re-issuing a pause so the
+/// progress bar stays frozen.  Once [StoryImage] calls controller.play()
+/// internally (image loaded), we forward that signal and notify [onReady].
+class _StoryImageGuard extends StatefulWidget {
+  final String url;
+  final StoryController storyController;
+  final VoidCallback onReady;
+
+  const _StoryImageGuard({
+    required this.url,
+    required this.storyController,
+    required this.onReady,
+  });
+
+  @override
+  State<_StoryImageGuard> createState() => _StoryImageGuardState();
+}
+
+class _StoryImageGuardState extends State<_StoryImageGuard> {
+  late final _ProxyStoryController _proxy;
+
+  @override
+  void initState() {
+    super.initState();
+    _proxy = _ProxyStoryController(
+      delegate: widget.storyController,
+      onImageReady: widget.onReady,
+    );
+  }
+
+  @override
+  void dispose() {
+    _proxy.disposeProxy();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StoryImage.url(widget.url, controller: _proxy, fit: BoxFit.contain);
+  }
+}
+
+/// A [StoryController] proxy that sits between [StoryImage] and the real
+/// [StoryController].  It intercepts the first [play()] call that [StoryImage]
+/// makes when the image finishes loading so we can fire [onImageReady], then
+/// delegates everything else to the real controller.
+class _ProxyStoryController extends StoryController {
+  final StoryController delegate;
+  final VoidCallback onImageReady;
+  bool _readyFired = false;
+
+  _ProxyStoryController({required this.delegate, required this.onImageReady});
+
+  // Forward the stream so StoryImage subscribes to the real notifier.
+  @override
+  // ignore: overridden_fields
+  late final playbackNotifier = delegate.playbackNotifier;
+
+  @override
+  void play() {
+    if (!_readyFired) {
+      _readyFired = true;
+      onImageReady();
+    }
+    delegate.play();
+  }
+
+  @override
+  void pause() => delegate.pause();
+
+  @override
+  void next() => delegate.next();
+
+  @override
+  void previous() => delegate.previous();
+
+  /// Do NOT close the delegate's stream — it is owned by _UserStoryPageState.
+  void disposeProxy() {}
+
+  @override
+  void dispose() {
+    // Intentionally empty — delegate owns the stream.
   }
 }
 

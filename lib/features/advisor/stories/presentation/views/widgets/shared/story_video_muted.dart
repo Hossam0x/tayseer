@@ -20,12 +20,17 @@ class StoryVideoMuted extends StatefulWidget {
   final Widget? loadingWidget;
   final Widget? errorWidget;
 
+  /// Called once the video is initialized and the progress bar has been
+  /// resumed. Use this to know when it is safe to call play() externally.
+  final VoidCallback? onReady;
+
   const StoryVideoMuted({
     super.key,
     required this.url,
     required this.storyController,
     this.loadingWidget,
     this.errorWidget,
+    this.onReady,
   });
 
   @override
@@ -35,6 +40,7 @@ class StoryVideoMuted extends StatefulWidget {
 class _StoryVideoMutedState extends State<StoryVideoMuted> {
   VideoPlayerController? _controller;
   StreamSubscription? _playbackSub;
+  StreamSubscription? _guardSub; // intercepts play() while still loading
   bool _isInitialized = false;
   bool _hasError = false;
   bool _disposed = false;
@@ -46,12 +52,30 @@ class _StoryVideoMutedState extends State<StoryVideoMuted> {
     super.initState();
     _muteManager.isMuted.addListener(_onMuteChanged);
 
-    // Pause the progress bar after the first frame so StoryView has had time
-    // to register its playbackNotifier subscription and start the animation.
-    // Without the postFrameCallback the pause() fires before StoryView's
-    // _playbackSubscription is attached and gets silently dropped.
+    // ── Guard: keep the bar paused until the video is ready ─────────────────
+    // Any play() signal that arrives before _isInitialized (e.g. from
+    // StoryView._play() on first build, or from didUpdateWidget when the page
+    // becomes active mid-download) is immediately countered with a pause().
+    // Once _loadVideo() finishes it cancels this guard and calls play() itself.
+    _guardSub = widget.storyController.playbackNotifier.listen((state) {
+      if (_disposed || !mounted) return;
+      if (state == PlaybackState.play && !_isInitialized) {
+        // Re-pause on the next microtask so we don't emit synchronously
+        // inside the stream listener (which can cause re-entrancy issues).
+        Future.microtask(() {
+          if (!_disposed && mounted && !_isInitialized) {
+            widget.storyController.pause();
+          }
+        });
+      }
+    });
+
+    // Seed the BehaviorSubject with pause so StoryView's listener sees it
+    // immediately on subscribe, and fire a second pause in postFrameCallback
+    // to catch the play() that StoryView._play() emits at the end of initState.
+    widget.storyController.pause();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_disposed && mounted) {
+      if (!_disposed && mounted && !_isInitialized) {
         widget.storyController.pause();
       }
     });
@@ -63,6 +87,7 @@ class _StoryVideoMutedState extends State<StoryVideoMuted> {
   void dispose() {
     _disposed = true;
     _muteManager.isMuted.removeListener(_onMuteChanged);
+    _guardSub?.cancel();
     _playbackSub?.cancel();
     _controller?.dispose();
     _controller = null;
@@ -113,11 +138,16 @@ class _StoryVideoMutedState extends State<StoryVideoMuted> {
       // Show the video frame before resuming the progress bar.
       if (mounted) setState(() => _isInitialized = true);
 
+      // Cancel the loading guard — video is ready, we own play() from here.
+      _guardSub?.cancel();
+      _guardSub = null;
+
       // Resume the progress bar — this also starts the VideoPlayer via the
       // playbackNotifier subscription we just attached above.
       // Guard: only resume if we're still the active widget.
       if (!_disposed && mounted) {
         widget.storyController.play();
+        widget.onReady?.call();
       }
     } catch (e) {
       debugPrint('❌ StoryVideoMuted error: $e');
