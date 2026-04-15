@@ -32,8 +32,44 @@ class _ALayOutViewBodyState extends State<ALayOutViewBody> {
       const ReelsNavView(tabIndex: 2),
       ProfileView(),
     ];
-    // ✅ الـ layout جاهز — deep link يقدر يتفتح دلوقتي
+    // ✅ الـ layout جاهز — افتح أي pending deep link
     isMainLayoutReady = true;
+    _consumePendingDeepLink();
+  }
+
+  void _consumePendingDeepLink() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (pendingDeepLinkPersonId != null) {
+        final id = pendingDeepLinkPersonId!;
+        pendingDeepLinkPersonId = null;
+        navigatorKey.currentState?.pushNamed(
+          AppRouter.kMarriageView,
+          arguments: {'personId': id},
+        );
+      } else if (pendingDeepLinkAdvisorId != null) {
+        final id = pendingDeepLinkAdvisorId!;
+        pendingDeepLinkAdvisorId = null;
+        navigatorKey.currentState?.pushNamed(
+          AppRouter.kUserProfileView,
+          arguments: {'advisorId': id},
+        );
+      } else if (pendingDeepLinkUserId != null) {
+        final id = pendingDeepLinkUserId!;
+        pendingDeepLinkUserId = null;
+        navigatorKey.currentState?.pushNamed(
+          AppRouter.kUserPublicProfileView,
+          arguments: id,
+        );
+      } else if (pendingDeepLinkPostId != null) {
+        final id = pendingDeepLinkPostId!;
+        pendingDeepLinkPostId = null;
+        navigatorKey.currentState?.pushNamed(
+          AppRouter.kPostDetailsView,
+          arguments: {'postID': id},
+        );
+      }
+    });
   }
 
   @override

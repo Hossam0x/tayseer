@@ -87,6 +87,9 @@ class _SplashScreenState extends State<SplashScreen>
     final String? coldUserId = coldUri != null
         ? DeepLinkService.extractUserId(coldUri)
         : null;
+    final String? coldPostId = coldUri != null
+        ? DeepLinkService.extractPostId(coldUri)
+        : null;
 
     // ✅ لو فيه ID من cold start، احفظه
     if (coldPersonId != null) {
@@ -98,6 +101,9 @@ class _SplashScreenState extends State<SplashScreen>
     } else if (coldUserId != null) {
       pendingDeepLinkUserId = coldUserId;
       log('🔗 Cold start user deep link: $coldUserId');
+    } else if (coldPostId != null) {
+      pendingDeepLinkPostId = coldPostId;
+      log('🔗 Cold start post deep link: $coldPostId');
     }
 
     if (!mounted) return;
@@ -118,15 +124,7 @@ class _SplashScreenState extends State<SplashScreen>
           }
         });
       });
-
-      // ✅ فتح البروفيل بعد ما الـ Layout يكون جاهز خالص
-      if (coldPersonId != null) {
-        _openDeepLinkWithRetry(pendingType: _PendingType.marriage);
-      } else if (coldAdvisorId != null) {
-        _openDeepLinkWithRetry(pendingType: _PendingType.advisor);
-      } else if (coldUserId != null) {
-        _openDeepLinkWithRetry(pendingType: _PendingType.user);
-      }
+      // ✅ الـ deep link هيتفتح تلقائياً من _consumePendingDeepLink في الـ layout body
     } else {
       // ─── مش مسجل ───
       // الـ pendingDeepLinkPersonId اتحفظ فوق، هيتستخدم بعد Login
@@ -154,55 +152,6 @@ class _SplashScreenState extends State<SplashScreen>
         AppRouter.kRegisrationView,
       );
     }
-  }
-
-  void _openDeepLinkWithRetry({
-    required _PendingType pendingType,
-    int retries = 15,
-  }) {
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (!mounted) return;
-
-      if (isMainLayoutReady) {
-        switch (pendingType) {
-          case _PendingType.marriage:
-            final id = pendingDeepLinkPersonId;
-            if (id != null) {
-              pendingDeepLinkPersonId = null;
-              log('🔗 Opening marriage deep link: $id');
-              DeepLinkService.handleMarriageProfileLink(
-                context: context,
-                personId: id,
-              );
-            }
-          case _PendingType.advisor:
-            final id = pendingDeepLinkAdvisorId;
-            if (id != null) {
-              pendingDeepLinkAdvisorId = null;
-              log('🔗 Opening advisor deep link: $id');
-              DeepLinkService.handleAdvisorProfileLink(
-                context: context,
-                advisorId: id,
-              );
-            }
-          case _PendingType.user:
-            final id = pendingDeepLinkUserId;
-            if (id != null) {
-              pendingDeepLinkUserId = null;
-              log('🔗 Opening user deep link: $id');
-              DeepLinkService.handleUserProfileLink(
-                context: context,
-                userId: id,
-              );
-            }
-        }
-      } else if (retries > 0) {
-        log('🔗 Layout not ready yet, retrying... ($retries left)');
-        _openDeepLinkWithRetry(pendingType: pendingType, retries: retries - 1);
-      } else {
-        log('🔗 Max retries reached, deep link lost');
-      }
-    });
   }
 
   @override
@@ -234,5 +183,3 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 }
-
-enum _PendingType { marriage, advisor, user }

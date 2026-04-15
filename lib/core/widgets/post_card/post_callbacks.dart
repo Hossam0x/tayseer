@@ -61,6 +61,7 @@ class PostCallbacks {
   // Existing callbacks
   final ReactionCallback? onReactionChanged;
   final ShareCallback? onShareTap;
+  final ShareCallback? onShareToStoryTap;
   final HashtagCallback? onHashtagTap;
   final Stream<PostModel?>? postUpdatesStream;
   // ✅ New callbacks for Options Bottom Sheet
@@ -79,6 +80,7 @@ class PostCallbacks {
   const PostCallbacks({
     this.onReactionChanged,
     this.onShareTap,
+    this.onShareToStoryTap,
     this.onHashtagTap,
     this.postUpdatesStream,
     // New ones
@@ -102,6 +104,7 @@ class PostCallbacks {
   bool get hasCallbacks =>
       onReactionChanged != null ||
       onShareTap != null ||
+      onShareToStoryTap != null ||
       onHashtagTap != null ||
       onEdit != null ||
       onDelete != null ||

@@ -103,4 +103,6 @@ abstract class HomeRepository {
   });
 
   Future<Either<Failure, PostModel>> fetchPostById({required String postId});
+
+  Future<Either<Failure, String>> sharePostToStory({required String postId});
 }

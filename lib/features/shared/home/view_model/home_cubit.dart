@@ -1029,6 +1029,37 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // 📤 SHARE POST TO STORY
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Future<void> sharePostToStory({required String postId}) async {
+    emit(state.copyWith(shareToStoryState: CubitStates.loading));
+
+    final result = await homeRepository.sharePostToStory(postId: postId);
+
+    result.fold(
+      (failure) {
+        log('>>>>>>>>>>>>>>>>>Share To Story Failed: ${failure.message}');
+        emit(
+          state.copyWith(
+            shareToStoryState: CubitStates.failure,
+            shareToStoryMessage: failure.message,
+          ),
+        );
+      },
+      (message) {
+        log('>>>>>>>>>>>>>>>>>Share To Story Success: $message');
+        emit(
+          state.copyWith(
+            shareToStoryState: CubitStates.success,
+            shareToStoryMessage: message,
+          ),
+        );
+      },
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // 💾 SAVE POST
   // ═══════════════════════════════════════════════════════════════════════════
 

@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/post_card/post_actions_row.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
@@ -10,6 +8,7 @@ import 'package:tayseer/core/widgets/post_card/post_stats.dart';
 import 'package:tayseer/core/widgets/post_card/real_video_player.dart';
 import 'package:tayseer/core/widgets/post_card/user_info_header.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/features/shared/event/view/widget/event_cart_item.dart';
 import 'package:tayseer/features/shared/reels/views/reels_feed_view.dart';
 import 'package:tayseer/core/widgets/post_card/post_poll_view.dart';
@@ -72,7 +71,134 @@ class _PostCardState extends State<PostCard> {
   }
 
   void _handleShare() {
-    widget.callbacks.onShareTap?.call(widget.post.postId);
+    // ✅ يفتح sheet بخيارات الـ share فقط (2 أو 3 حسب نوع المستخدم)
+    _showShareSheet(context);
+  }
+
+  void _showShareSheet(BuildContext context) {
+    final postId = widget.post.postId;
+    final isShared = widget.post.isRepostedByMe;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 24.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(26.r),
+              ),
+              child: Column(
+                children: [
+                  Center(
+                    child: Container(
+                      margin: EdgeInsets.symmetric(vertical: 10.h),
+                      width: 100.w,
+                      height: 8.h,
+                      decoration: BoxDecoration(
+                        color: AppColors.secondary50,
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                    ),
+                  ),
+                  // ── Repost ──
+                  _buildShareTile(
+                    context,
+                    icon: Icons.repeat_rounded,
+                    text: isShared
+                        ? context.tr(AppStrings.unshare)
+                        : context.tr(AppStrings.share),
+                    onTap: () {
+                      Navigator.pop(context);
+                      widget.callbacks.onShareTap?.call(postId);
+                    },
+                  ),
+                  Divider(height: 1.h, color: AppColors.secondary50),
+                  // ── Share as link ──
+                  _buildShareTile(
+                    context,
+                    icon: Icons.link_rounded,
+                    text: context.tr('share_as_link'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      DeepLinkService.sharePostDeepLink(
+                        postId: postId,
+                        context: context,
+                      );
+                    },
+                  ),
+                  // ── Share to story (advisor only) ──
+                  if (isAdvisor) ...[
+                    Divider(height: 1.h, color: AppColors.secondary50),
+                    _buildShareTile(
+                      context,
+                      icon: Icons.auto_stories_rounded,
+                      text: context.tr('share_to_story'),
+                      onTap: () {
+                        Navigator.pop(context);
+                        widget.callbacks.onShareToStoryTap?.call(postId);
+                      },
+                    ),
+                  ],
+                  Gap(10.h),
+                ],
+              ),
+            ),
+            Gap(16.h),
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 18.h),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(26.r),
+                ),
+                child: Text(
+                  context.tr(AppStrings.cancel),
+                  textAlign: TextAlign.center,
+                  style: Styles.textStyle16SemiBold.copyWith(
+                    color: AppColors.secondary800,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShareTile(
+    BuildContext context, {
+    required IconData icon,
+    required String text,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 20.h),
+        child: Row(
+          children: [
+            Icon(icon, size: 20.sp, color: AppColors.secondary800),
+            Gap(16.w),
+            Text(
+              text,
+              style: Styles.textStyle16SemiBold.copyWith(
+                color: AppColors.secondary800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _handleHashtag(String hashtag) {
@@ -110,12 +236,15 @@ class _PostCardState extends State<PostCard> {
             onMoreTap: () => PostOptionsBottomSheet.show(
               context,
               post: widget.post,
+              isShared: widget.post.isRepostedByMe,
               onDelete: () =>
                   widget.callbacks.onDelete?.call(widget.post.postId),
               onArchive: () =>
                   widget.callbacks.onArchive?.call(widget.post.postId),
               onShare: () =>
                   widget.callbacks.onShareTap?.call(widget.post.postId),
+              onShareToStory: () =>
+                  widget.callbacks.onShareToStoryTap?.call(widget.post.postId),
               onReport: () =>
                   widget.callbacks.onReport?.call(widget.post.postId),
               onHide: () => widget.callbacks.onHide?.call(widget.post.postId),

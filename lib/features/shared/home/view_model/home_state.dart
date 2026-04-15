@@ -31,6 +31,12 @@ class HomeState extends Equatable {
   final String? sharePostId;
 
   // ─────────────────────────────────────────────────────────────────────────
+  // 📤 Share To Story State
+  // ─────────────────────────────────────────────────────────────────────────
+  final CubitStates shareToStoryState;
+  final String? shareToStoryMessage;
+
+  // ─────────────────────────────────────────────────────────────────────────
   // 📦 User Info
   // ─────────────────────────────────────────────────────────────────────────
   final ImageAndNameModel? homeInfo;
@@ -117,6 +123,9 @@ class HomeState extends Equatable {
     this.shareMessage,
     this.isShareAdded,
     this.sharePostId,
+    // Share To Story
+    this.shareToStoryState = CubitStates.initial,
+    this.shareToStoryMessage,
     // User Info
     this.homeInfo,
     this.fetchNameAndImageState = CubitStates.initial,
@@ -165,6 +174,9 @@ class HomeState extends Equatable {
     String? shareMessage,
     bool? isShareAdded,
     String? sharePostId,
+    // Share To Story
+    CubitStates? shareToStoryState,
+    String? shareToStoryMessage,
     // User Info
     ImageAndNameModel? homeInfo,
     CubitStates? fetchNameAndImageState,
@@ -213,6 +225,9 @@ class HomeState extends Equatable {
       shareMessage: shareMessage ?? this.shareMessage,
       isShareAdded: isShareAdded ?? this.isShareAdded,
       sharePostId: sharePostId ?? this.sharePostId,
+      // Share To Story
+      shareToStoryState: shareToStoryState ?? this.shareToStoryState,
+      shareToStoryMessage: shareToStoryMessage ?? this.shareToStoryMessage,
       // User Info
       homeInfo: homeInfo ?? this.homeInfo,
       fetchNameAndImageState:
@@ -342,6 +357,8 @@ class HomeState extends Equatable {
     shareMessage,
     isShareAdded,
     sharePostId,
+    shareToStoryState,
+    shareToStoryMessage,
     homeInfo,
     fetchNameAndImageState,
     currentAdvisorStatus,

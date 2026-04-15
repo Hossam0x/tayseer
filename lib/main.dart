@@ -34,6 +34,9 @@ String? pendingDeepLinkAdvisorId;
 /// userId بعد ما يسجل دخول (user public profile)
 String? pendingDeepLinkUserId;
 
+/// postId بعد ما يسجل دخول
+String? pendingDeepLinkPostId;
+
 /// ✅ flag — بيتبقى true لما الـ Layout يكون جاهز فعلاً
 bool isMainLayoutReady = false;
 
@@ -139,6 +142,10 @@ String? _extractUserId(Uri uri) {
   return DeepLinkService.extractUserId(uri);
 }
 
+String? _extractPostId(Uri uri) {
+  return DeepLinkService.extractPostId(uri);
+}
+
 void _navigateFromUri(Uri uri) {
   final token = CachNetwork.getStringData(key: ktoken);
   final hasToken = token.isNotEmpty;
@@ -176,6 +183,18 @@ void _navigateFromUri(Uri uri) {
       return;
     }
     _navigateUserSafely(userId);
+    return;
+  }
+
+  // ── Post ──
+  final postId = _extractPostId(uri);
+  if (postId != null) {
+    if (!hasToken || isGuest || isUserAnonymous) {
+      pendingDeepLinkPostId = postId;
+      debugPrint('🔗 Warm start: saved post for after login: $postId');
+      return;
+    }
+    _navigatePostSafely(postId);
     return;
   }
 }
@@ -220,6 +239,20 @@ void _navigateUserSafely(String userId) {
     } else {
       pendingDeepLinkUserId = userId;
       debugPrint('🔗 Navigator not ready, saved user as pending: $userId');
+    }
+  });
+}
+
+void _navigatePostSafely(String postId) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (navigatorKey.currentState != null) {
+      navigatorKey.currentState!.pushNamed(
+        AppRouter.kPostDetailsView,
+        arguments: {'postID': postId},
+      );
+    } else {
+      pendingDeepLinkPostId = postId;
+      debugPrint('🔗 Navigator not ready, saved post as pending: $postId');
     }
   });
 }
@@ -287,6 +320,31 @@ void consumePendingDeepLink() {
           navigatorKey.currentState!.pushNamed(
             AppRouter.kUserPublicProfileView,
             arguments: userId,
+          );
+        } else if (retries > 0) {
+          Future.delayed(
+            const Duration(milliseconds: 300),
+            () => tryNavigate(retries - 1),
+          );
+        }
+      });
+    }
+
+    tryNavigate();
+    return;
+  }
+
+  // ── Post ──
+  final postId = pendingDeepLinkPostId;
+  if (postId != null) {
+    pendingDeepLinkPostId = null;
+    debugPrint('🔗 Consuming pending post deep link: $postId');
+    void tryNavigate([int retries = 5]) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (navigatorKey.currentState != null) {
+          navigatorKey.currentState!.pushNamed(
+            AppRouter.kPostDetailsView,
+            arguments: {'postID': postId},
           );
         } else if (retries > 0) {
           Future.delayed(

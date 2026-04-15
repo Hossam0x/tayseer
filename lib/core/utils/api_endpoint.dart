@@ -90,4 +90,5 @@ class ApiEndPoint {
   static const String cancelUserSubscription =
       '/new-user-sub/cancel-my-subscription';
   static const String regardsPackages = '/regards-package';
+  static const String sharePostToStory = '/stories/share-post';
 }

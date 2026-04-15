@@ -1,5 +1,6 @@
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class PostOptionsBottomSheet extends StatelessWidget {
@@ -7,6 +8,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
   final bool isShared;
   final bool isFromReels;
   final VoidCallback? onShare;
+  final VoidCallback? onShareToStory;
   final VoidCallback? onReport;
   final VoidCallback? onBlock;
   final VoidCallback? onHide;
@@ -21,6 +23,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
     super.key,
     required this.post,
     this.onShare,
+    this.onShareToStory,
     this.isFromReels = false,
     this.isShared = false,
     this.onReport,
@@ -38,6 +41,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
     BuildContext context, {
     required PostModel post,
     VoidCallback? onShare,
+    VoidCallback? onShareToStory,
     VoidCallback? onDownload,
     bool isShared = false,
     bool isFromReels = false,
@@ -59,6 +63,7 @@ class PostOptionsBottomSheet extends StatelessWidget {
         isShared: isShared,
         isFromReels: isFromReels,
         onShare: onShare,
+        onShareToStory: onShareToStory,
         onReport: () {
           context.pushNamed(
             AppRouter.kReportsView,
@@ -80,6 +85,8 @@ class PostOptionsBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isSaved = post?.isSaved ?? false;
+    // ✅ "مشاركة في القصة" متاحة فقط للمستشار
+    final bool showShareToStory = isAdvisor;
 
     final List<OptionItem> options = isFromReels
         ? [
@@ -87,9 +94,23 @@ class PostOptionsBottomSheet extends StatelessWidget {
               text: isShared
                   ? context.tr(AppStrings.unshare)
                   : context.tr(AppStrings.share),
-              icon: Icons.ios_share_rounded,
+              icon: Icons.repeat_rounded,
               onTap: onShare,
             ),
+            OptionItem(
+              text: context.tr('share_as_link'),
+              icon: Icons.link_rounded,
+              onTap: () => DeepLinkService.sharePostDeepLink(
+                postId: post?.postId ?? '',
+                context: context,
+              ),
+            ),
+            if (showShareToStory)
+              OptionItem(
+                text: context.tr('share_to_story'),
+                icon: Icons.auto_stories_rounded,
+                onTap: onShareToStory,
+              ),
             if (!(post?.isMine ?? false))
               OptionItem(
                 text: context.tr(AppStrings.report),
@@ -116,9 +137,23 @@ class PostOptionsBottomSheet extends StatelessWidget {
               text: isShared
                   ? context.tr(AppStrings.unshare)
                   : context.tr(AppStrings.share),
-              icon: Icons.ios_share_rounded,
+              icon: Icons.repeat_rounded,
               onTap: onShare,
             ),
+            OptionItem(
+              text: context.tr('share_as_link'),
+              icon: Icons.link_rounded,
+              onTap: () => DeepLinkService.sharePostDeepLink(
+                postId: post?.postId ?? '',
+                context: context,
+              ),
+            ),
+            if (showShareToStory)
+              OptionItem(
+                text: context.tr('share_to_story'),
+                icon: Icons.auto_stories_rounded,
+                onTap: onShareToStory,
+              ),
             OptionItem(
               text: context.tr(AppStrings.edit),
               icon: Icons.drive_file_rename_outline_rounded,
@@ -156,9 +191,23 @@ class PostOptionsBottomSheet extends StatelessWidget {
               text: isShared
                   ? context.tr(AppStrings.unshare)
                   : context.tr(AppStrings.share),
-              icon: Icons.ios_share_rounded,
+              icon: Icons.repeat_rounded,
               onTap: onShare,
             ),
+            OptionItem(
+              text: context.tr('share_as_link'),
+              icon: Icons.link_rounded,
+              onTap: () => DeepLinkService.sharePostDeepLink(
+                postId: post?.postId ?? '',
+                context: context,
+              ),
+            ),
+            if (showShareToStory)
+              OptionItem(
+                text: context.tr('share_to_story'),
+                icon: Icons.auto_stories_rounded,
+                onTap: onShareToStory,
+              ),
             OptionItem(
               text: context.tr(AppStrings.report),
               icon: Icons.error_outline_rounded,

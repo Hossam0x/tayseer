@@ -56,6 +56,12 @@ class HomePostFeed extends StatelessWidget {
             listenWhen: _shouldListenToPollVote,
             listener: _handlePollVoteFeedback,
           ),
+          BlocListener<HomeCubit, HomeState>(
+            listenWhen: (prev, curr) =>
+                prev.shareToStoryState != curr.shareToStoryState &&
+                curr.shareToStoryState != CubitStates.initial,
+            listener: _handleShareToStoryFeedback,
+          ),
         ],
         child: BlocSelector<HomeCubit, HomeState, _FeedState>(
           selector: _selectFeedState,
@@ -238,6 +244,25 @@ class HomePostFeed extends StatelessWidget {
     );
   }
 
+  void _handleShareToStoryFeedback(BuildContext context, HomeState state) {
+    switch (state.shareToStoryState) {
+      case CubitStates.success:
+        AppToast.success(
+          context,
+          state.shareToStoryMessage ?? context.tr('share_to_story_success'),
+        );
+        break;
+      case CubitStates.failure:
+        AppToast.error(
+          context,
+          state.shareToStoryMessage ?? context.tr('share_to_story_error'),
+        );
+        break;
+      default:
+        break;
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // 🏗️ Build Content
   // ═══════════════════════════════════════════════════════════════════════════
@@ -414,6 +439,7 @@ class _PostItemState extends State<_PostItem> {
     _callbacks = PostCallbacks(
       onReactionChanged: _onReaction,
       onShareTap: _onShare,
+      onShareToStoryTap: _onShareToStory,
       onHashtagTap: _onHashtagTap,
       onSave: _onSave,
       onDelete: _onDelete,
@@ -437,6 +463,7 @@ class _PostItemState extends State<_PostItem> {
       postUpdatesStream: stream,
       onReactionChanged: _onReaction,
       onShareTap: _onShare,
+      onShareToStoryTap: _onShareToStory,
       onHashtagTap: _onHashtagTap,
       onSave: _onSave,
       onDelete: _onDelete,
@@ -513,6 +540,10 @@ class _PostItemState extends State<_PostItem> {
 
   void _onShare(String id) {
     widget.homeCubit.toggleSharePost(postId: id);
+  }
+
+  void _onShareToStory(String id) {
+    widget.homeCubit.sharePostToStory(postId: id);
   }
 
   void _onHashtagTap(String hashtag) {

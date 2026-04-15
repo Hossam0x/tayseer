@@ -50,7 +50,7 @@ class DeepLinkService {
     SharePlus.instance.share(
       ShareParams(
         text:
-            '${context.tr('share_profile_text').replaceAll('{name}', advisorName)}\n$httpsLink',
+            '${context.tr('share_profile_deeplink').replaceAll('{name}', advisorName)}\n$httpsLink',
       ),
     );
   }
@@ -70,8 +70,24 @@ class DeepLinkService {
     SharePlus.instance.share(
       ShareParams(
         text:
-            '${context.tr('share_profile_text').replaceAll('{name}', userName)}\n$httpsLink',
+            '${context.tr('share_profile_deeplink').replaceAll('{name}', userName)}\n$httpsLink',
       ),
+    );
+  }
+
+  // ── Post deep link ──
+  static String buildPostLink(String postId) {
+    return '$_baseUrl/posts/$postId';
+  }
+
+  static void sharePostDeepLink({
+    required String postId,
+    required BuildContext context,
+  }) {
+    final httpsLink = buildPostLink(postId);
+
+    SharePlus.instance.share(
+      ShareParams(text: '${context.tr('share_post_text')}\n$httpsLink'),
     );
   }
 
@@ -147,6 +163,27 @@ class DeepLinkService {
 
   static bool isUserProfileLink(Uri uri) {
     return extractUserId(uri) != null;
+  }
+
+  /// استخراج postId من رابط البوست
+  static String? extractPostId(Uri uri) {
+    final segments = uri.pathSegments;
+
+    // https://tayser-app.net/posts/{postId}
+    if (segments.length >= 2 && segments[0] == 'posts') {
+      return segments[1];
+    }
+
+    // tayseer://post?postId={postId}
+    if (uri.scheme == 'tayseer' && uri.host == 'post') {
+      return uri.queryParameters['postId'];
+    }
+
+    return null;
+  }
+
+  static bool isPostLink(Uri uri) {
+    return extractPostId(uri) != null;
   }
 
   // ─────────────────────────────────────────────
@@ -336,6 +373,56 @@ class DeepLinkService {
 
     if (context.mounted) {
       context.pushNamed(AppRouter.kUserPublicProfileView, arguments: userId);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ✅ Handle post deep link
+  // ─────────────────────────────────────────────────────────────────────────
+
+  static void handlePostLink({
+    required BuildContext context,
+    required String postId,
+  }) {
+    if (kIsUserGuest) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Text(
+                context.tr('guest_login_first'),
+                textAlign: TextAlign.center,
+                style: Styles.textStyle18Bold,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.pushNamed(AppRouter.kRegisrationView);
+                  },
+                  child: Text(context.tr('login')),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(context.tr('cancel')),
+                ),
+              ],
+            ),
+          );
+        }
+      });
+      return;
+    }
+
+    if (context.mounted) {
+      context.pushNamed(
+        AppRouter.kPostDetailsView,
+        arguments: {'postID': postId},
+      );
     }
   }
 }

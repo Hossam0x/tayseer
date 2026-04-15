@@ -121,6 +121,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
       onReactionChanged: (pId, type) =>
           homeCubit.reactToPost(postId: pId, reactionType: type),
       onShareTap: (pId) => homeCubit.toggleSharePost(postId: pId),
+      onShareToStoryTap: (pId) => homeCubit.sharePostToStory(postId: pId),
       onHashtagTap: (hashtag) {
         final clean = hashtag.startsWith('#') ? hashtag.substring(1) : hashtag;
         navigatorKey.currentContext?.pushNamed(

@@ -621,4 +621,19 @@ class HomeRepositoryImpl implements HomeRepository {
       return Left(ServerFailure('حدث خطأ: ${e.toString()}'));
     }
   }
+
+  @override
+  Future<Either<Failure, String>> sharePostToStory({
+    required String postId,
+  }) async {
+    try {
+      final response = await apiService.post(
+        endPoint: ApiEndPoint.sharePostToStory,
+        data: {"postId": postId},
+      );
+      return Right(response['message'] ?? 'تمت المشاركة في القصة بنجاح');
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
+  }
 }
