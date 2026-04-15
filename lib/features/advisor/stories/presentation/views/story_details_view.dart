@@ -258,6 +258,12 @@ class _UserStoryPageState extends State<_UserStoryPage> {
   // ✅ bounds الـ PostCard الفعلية — بتتحدث لما الـ StoryPostCard يتبني
   Rect? _postCardBounds;
 
+  // ✅ هل يظهر زرار "Open Post" دلوقتي؟
+  bool _showOpenPostButton = false;
+
+  // ✅ نقطة الضغط عشان نظهر الزرار عندها
+  Offset? _openPostButtonPosition;
+
   @override
   void initState() {
     super.initState();
@@ -504,8 +510,9 @@ class _UserStoryPageState extends State<_UserStoryPage> {
   }
 
   /// ✅ Tap handler بحجم الـ PostCard الفعلي — بيتحدث من الـ bounds
-  /// الضغط جوا الـ PostCard → يفتح PostDetailsView
-  /// الضغط برا → الـ StoryView يشتغل عادي (next/previous)
+  /// أول ضغطة → يظهر زرار "Open Post" عند نقطة الضغط بالظبط
+  /// ضغطة على الزرار → يفتح PostDetailsView
+  /// ضغطة برا الـ PostCard → next/previous عادي (الـ interceptor بيشتغل)
   Widget _buildOpenPostButton(BuildContext context) {
     final story = _reorderedStories[_currentStoryIndex];
     if (!story.isPostStory) return const SizedBox.shrink();
@@ -513,30 +520,52 @@ class _UserStoryPageState extends State<_UserStoryPage> {
     final bounds = _postCardBounds;
     if (bounds == null) return const SizedBox.shrink();
 
-    return Positioned(
-      top: bounds.top,
-      left: bounds.left,
-      width: bounds.width,
-      height: bounds.height,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => _storyController.pause(),
-        onTapCancel: () {
-          if (widget.isActive) _storyController.play();
-        },
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) =>
-                  PostDetailsView(post: story.post!, isFromProfile: false),
-            ),
-          ).then((_) {
-            if (mounted && widget.isActive) _storyController.play();
-          });
-        },
-        child: const SizedBox.expand(),
-      ),
+    return Stack(
+      children: [
+        // ── طبقة الـ PostCard: تاخد الضغطات جوا الـ card فقط ──
+        Positioned(
+          top: bounds.top,
+          left: bounds.left,
+          width: bounds.width,
+          height: bounds.height,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTapUp: (details) {
+              if (_showOpenPostButton) {
+                // ضغطة تانية جوا الـ card → اخفي الزرار وكمل
+                setState(() => _showOpenPostButton = false);
+                if (widget.isActive) _storyController.play();
+                return;
+              }
+              // أول ضغطة: وقف الستوري وأظهر الزرار عند نقطة الضغط
+              _storyController.pause();
+              setState(() {
+                _showOpenPostButton = true;
+                _openPostButtonPosition = details.globalPosition;
+              });
+            },
+            child: const SizedBox.expand(),
+          ),
+        ),
+
+        // ── زرار "Open Post" عند نقطة الضغط مع animation ──
+        if (_showOpenPostButton && _openPostButtonPosition != null)
+          _OpenPostButtonOverlay(
+            position: _openPostButtonPosition!,
+            onTap: () {
+              setState(() => _showOpenPostButton = false);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      PostDetailsView(post: story.post!, isFromProfile: false),
+                ),
+              ).then((_) {
+                if (mounted && widget.isActive) _storyController.play();
+              });
+            },
+          ),
+      ],
     );
   }
 
@@ -580,6 +609,7 @@ class _UserStoryPageState extends State<_UserStoryPage> {
                       if (index < _reorderedStories.length) {
                         _currentStoryIndex = index;
                         _currentStoryTime = _reorderedStories[index].createdAt;
+                        _showOpenPostButton = false;
                         _markCurrentStoryAsViewed();
                       }
                     });
@@ -597,6 +627,7 @@ class _UserStoryPageState extends State<_UserStoryPage> {
         // ── RTL Gesture interceptor ─────────────────────────────────────────
         // The stock StoryView has: right 70% = next, left 70px = previous.
         // In Arabic UI we flip it: left 75% = next, right 25% = previous.
+        // ⚠️ يتجاهل الضغطات اللي جوا الـ PostCard bounds عشان الـ PostCard تاخدها
         if (isArabic)
           Positioned.fill(
             child: Directionality(
@@ -608,14 +639,30 @@ class _UserStoryPageState extends State<_UserStoryPage> {
                     flex: 3,
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTapDown: (_) {
+                      onTapDown: (details) {
+                        // لو الضغط جوا الـ PostCard، اتركه للـ PostCard
+                        final bounds = _postCardBounds;
+                        if (bounds != null &&
+                            bounds.contains(details.globalPosition))
+                          return;
                         if (widget.isActive) _storyController.pause();
                       },
                       onTapCancel: () {
                         if (widget.isActive) _storyController.play();
                       },
-                      onTapUp: (_) {
+                      onTapUp: (details) {
                         if (!widget.isActive) return;
+                        // لو الضغط جوا الـ PostCard، اتركه للـ PostCard
+                        final bounds = _postCardBounds;
+                        if (bounds != null &&
+                            bounds.contains(details.globalPosition))
+                          return;
+                        // لو الزرار ظاهر، اخفيه وكمل
+                        if (_showOpenPostButton) {
+                          setState(() => _showOpenPostButton = false);
+                          _storyController.play();
+                          return;
+                        }
                         _storyController.play();
                         _storyController.next();
                       },
@@ -626,14 +673,27 @@ class _UserStoryPageState extends State<_UserStoryPage> {
                     flex: 1,
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTapDown: (_) {
+                      onTapDown: (details) {
+                        final bounds = _postCardBounds;
+                        if (bounds != null &&
+                            bounds.contains(details.globalPosition))
+                          return;
                         if (widget.isActive) _storyController.pause();
                       },
                       onTapCancel: () {
                         if (widget.isActive) _storyController.play();
                       },
-                      onTapUp: (_) {
+                      onTapUp: (details) {
                         if (!widget.isActive) return;
+                        final bounds = _postCardBounds;
+                        if (bounds != null &&
+                            bounds.contains(details.globalPosition))
+                          return;
+                        if (_showOpenPostButton) {
+                          setState(() => _showOpenPostButton = false);
+                          _storyController.play();
+                          return;
+                        }
                         _storyController.play();
                         _storyController.previous();
                       },
@@ -1037,6 +1097,124 @@ class _UserStoryPageState extends State<_UserStoryPage> {
       backgroundColor: Colors.transparent,
       enableDrag: true,
       builder: (ctx) => _LikersBottomSheet(likers: likers),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Open Post Button Overlay — يظهر عند نقطة الضغط بالظبط مع animation
+// ─────────────────────────────────────────────────────────────────────────────
+class _OpenPostButtonOverlay extends StatefulWidget {
+  final Offset position;
+  final VoidCallback onTap;
+
+  const _OpenPostButtonOverlay({required this.position, required this.onTap});
+
+  @override
+  State<_OpenPostButtonOverlay> createState() => _OpenPostButtonOverlayState();
+}
+
+class _OpenPostButtonOverlayState extends State<_OpenPostButtonOverlay>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnim;
+  late Animation<double> _fadeAnim;
+  late Animation<double> _slideAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 280),
+    );
+
+    _scaleAnim = CurvedAnimation(parent: _controller, curve: Curves.elasticOut);
+
+    _fadeAnim = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+    );
+
+    _slideAnim = Tween<double>(
+      begin: 12,
+      end: 0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // نحسب الموضع عشان الزرار يظهر فوق نقطة الضغط بـ offset بسيط
+    final screenWidth = MediaQuery.of(context).size.width;
+    const buttonWidth = 160.0;
+    // نضمن إن الزرار ميطلعش برا الشاشة
+    double left = widget.position.dx - buttonWidth / 2;
+    left = left.clamp(16.0, screenWidth - buttonWidth - 16.0);
+    final top = widget.position.dy - 60.0;
+
+    return Positioned(
+      left: left,
+      top: top,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Opacity(
+            opacity: _fadeAnim.value,
+            child: Transform.translate(
+              offset: Offset(0, _slideAnim.value),
+              child: Transform.scale(
+                scale: _scaleAnim.value,
+                alignment: Alignment.bottomCenter,
+                child: child,
+              ),
+            ),
+          );
+        },
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: Container(
+            width: buttonWidth,
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(30.r),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.open_in_new_rounded,
+                  size: 16.sp,
+                  color: AppColors.kprimaryColor,
+                ),
+                Gap(6.w),
+                Text(
+                  context.tr('open_post'),
+                  style: Styles.textStyle14SemiBold.copyWith(
+                    color: AppColors.kprimaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
