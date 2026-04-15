@@ -90,4 +90,7 @@ class ApiEndPoint {
   static const String cancelUserSubscription =
       '/new-user-sub/cancel-my-subscription';
   static const String regardsPackages = '/regards-package';
+  static const String userChatRegardRequests = '/user-chat/regards/incoming';
+  static const String userChatAcceptRegard = '/user-chat/regards/accept';
+  static const String userChatRejectRegard = '/user-chat/regards/reject';
 }
