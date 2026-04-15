@@ -14,11 +14,8 @@ class VerificationWebViewScreen extends StatefulWidget {
       _VerificationWebViewScreenState();
 }
 
-class _VerificationWebViewScreenState
-    extends State<VerificationWebViewScreen> {
+class _VerificationWebViewScreenState extends State<VerificationWebViewScreen> {
   bool _isLoading = true;
-
-  // ✅ FIX: منفصلين عشان نعرف نعرض رسالة لو الأذونات اترفضت
   bool _permissionsGranted = false;
   bool _permissionsPermanentlyDenied = false;
 
@@ -30,15 +27,10 @@ class _VerificationWebViewScreenState
     _requestPermissions();
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // ✅ FIX: طلب الأذونات بشكل صحيح مع التعامل مع حالة الرفض الدائم
-  // ─────────────────────────────────────────────────────────────────────────
   Future<void> _requestPermissions() async {
-    // ✅ تحقق من الـ status الحالي أول
     var cameraStatus = await Permission.camera.status;
     var micStatus = await Permission.microphone.status;
 
-    // لو مش granted، اطلبهم
     if (!cameraStatus.isGranted) {
       cameraStatus = await Permission.camera.request();
     }
@@ -46,7 +38,6 @@ class _VerificationWebViewScreenState
       micStatus = await Permission.microphone.request();
     }
 
-    // ✅ انتظر عشان الـ system يسجل الـ grant
     await Future.delayed(const Duration(milliseconds: 500));
 
     if (!mounted) return;
@@ -59,7 +50,6 @@ class _VerificationWebViewScreenState
       return;
     }
 
-    // ✅ تحقق مرة تانية بعد الـ delay
     final finalCamera = await Permission.camera.status;
     final finalMic = await Permission.microphone.status;
 
@@ -74,14 +64,11 @@ class _VerificationWebViewScreenState
     }
 
     setState(() {
-      _permissionsGranted = true;
+      _permissionsGranted = finalCamera.isGranted && finalMic.isGranted;
       _permissionsPermanentlyDenied = false;
     });
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Callback URL handler — unchanged logic
-  // ─────────────────────────────────────────────────────────────────────────
   void _handleCallbackUrl(String url) {
     if (!mounted) return;
 
@@ -95,9 +82,6 @@ class _VerificationWebViewScreenState
     }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // ✅ FIX: شاشة بديلة لما الأذونات ترفض نهائياً
-  // ─────────────────────────────────────────────────────────────────────────
   Widget _buildPermissionDeniedScreen() {
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -121,7 +105,6 @@ class _VerificationWebViewScreenState
           ElevatedButton(
             onPressed: () async {
               await openAppSettings();
-              // بعد ما يرجع من الإعدادات، نعيد المحاولة
               await _requestPermissions();
             },
             style: ElevatedButton.styleFrom(
@@ -139,10 +122,7 @@ class _VerificationWebViewScreenState
           const SizedBox(height: 12),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'رجوع',
-              style: TextStyle(color: Colors.grey),
-            ),
+            child: const Text('رجوع', style: TextStyle(color: Colors.grey)),
           ),
         ],
       ),
@@ -160,40 +140,54 @@ class _VerificationWebViewScreenState
         ),
       ),
       body: _permissionsPermanentlyDenied
-          // ✅ لو اترفض نهائياً، اعرض شاشة توضيحية
           ? _buildPermissionDeniedScreen()
           : !_permissionsGranted
-              // لو لسه بيطلب الأذونات
-              ? const Center(child: CircularProgressIndicator())
-              // ✅ الأذونات اتأخدت، اعرض الـ WebView
-              : Stack(
-                  children: [
-                    InAppWebView(
-                      initialUrlRequest: URLRequest(
-                        url: WebUri(widget.webviewUrl),
-                      ),
-                      initialSettings: InAppWebViewSettings(
-                        mediaPlaybackRequiresUserGesture: false,
-                        allowsInlineMediaPlayback: true,
-                        javaScriptEnabled: true,
-                        domStorageEnabled: true,
-                        useHybridComposition: true,
-                        allowFileAccessFromFileURLs: true,
-                        allowUniversalAccessFromFileURLs: true,
-                        disableDefaultErrorPage: true,
-                      ),
-                      onWebViewCreated: (controller) {
-                        webViewController = controller;
-                      },
-                      // ✅ FIX: منح الأذونات للموقع داخل الـ WebView
-                      onPermissionRequest: (controller, request) async {
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
+              children: [
+                InAppWebView(
+                  initialUrlRequest: URLRequest(url: WebUri(widget.webviewUrl)),
+                  initialSettings: InAppWebViewSettings(
+                    mediaPlaybackRequiresUserGesture: false,
+                    allowsInlineMediaPlayback: true,
+                    javaScriptEnabled: true,
+                    domStorageEnabled: true,
+                    useHybridComposition: true,
+                    allowFileAccessFromFileURLs: true,
+                    allowUniversalAccessFromFileURLs: true,
+                    disableDefaultErrorPage: true,
+                  ),
+                  onWebViewCreated: (controller) {
+                    webViewController = controller;
+                  },
+                  onPermissionRequest: (controller, request) async {
+                    final cameraStatus = await Permission.camera.status;
+                    final micStatus = await Permission.microphone.status;
+
+                    if (cameraStatus.isGranted && micStatus.isGranted) {
+                      return PermissionResponse(
+                        resources: request.resources,
+                        action: PermissionResponseAction.GRANT,
+                      );
+                    } else {
+                      await Permission.camera.request();
+                      await Permission.microphone.request();
+
+                      final newCamera = await Permission.camera.status;
+                      if (newCamera.isGranted) {
                         return PermissionResponse(
                           resources: request.resources,
                           action: PermissionResponseAction.GRANT,
                         );
-                      },
-                      shouldOverrideUrlLoading:
-                          (controller, navigationAction) async {
+                      }
+                      return PermissionResponse(
+                        resources: request.resources,
+                        action: PermissionResponseAction.DENY,
+                      );
+                    }
+                  },
+                  shouldOverrideUrlLoading:
+                      (controller, navigationAction) async {
                         final url =
                             navigationAction.request.url?.toString() ?? '';
 
@@ -204,25 +198,12 @@ class _VerificationWebViewScreenState
 
                         return NavigationActionPolicy.ALLOW;
                       },
-                      // ✅ لما الكاميرا تفشل في الـ WebView، اعرض شاشة الإعدادات
-                      onConsoleMessage: (controller, message) async {
-                        if (message.message.contains('Error getting user media') ||
-                            message.message.contains('cannot open camera')) {
-                          if (mounted) {
-                            setState(() {
-                              _permissionsPermanentlyDenied = true;
-                              _permissionsGranted = false;
-                            });
-                          }
-                        }
-                      },
-                      onLoadStop: (_, __) =>
-                          setState(() => _isLoading = false),
-                    ),
-                    if (_isLoading)
-                      const Center(child: CircularProgressIndicator()),
-                  ],
+                  onLoadStop: (_, __) => setState(() => _isLoading = false),
                 ),
+                if (_isLoading)
+                  const Center(child: CircularProgressIndicator()),
+              ],
+            ),
     );
   }
 }
