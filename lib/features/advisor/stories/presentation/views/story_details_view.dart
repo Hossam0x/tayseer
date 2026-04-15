@@ -1,10 +1,12 @@
 import 'package:story_view/story_view.dart';
 import 'package:tayseer/core/enum/report_type.dart';
+import 'package:tayseer/core/utils/global_mute_manager.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/features/advisor/stories/stories.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_states.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/widgets/shared/story_post_card.dart';
+import 'package:tayseer/features/advisor/stories/presentation/views/widgets/shared/story_video_muted.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
@@ -383,10 +385,10 @@ class _UserStoryPageState extends State<_UserStoryPage> {
                   color: Colors.black,
                   child: Transform.scale(
                     scaleX: isArabic ? -1.0 : 1.0,
-                    child: StoryVideo.url(
-                      story.video!,
-                      controller: _storyController,
+                    child: StoryVideoMuted(
                       key: ValueKey('video_${story.id}'),
+                      url: story.video!,
+                      storyController: _storyController,
                       loadingWidget: const Center(
                         child: SizedBox(
                           width: 40,
@@ -538,6 +540,19 @@ class _UserStoryPageState extends State<_UserStoryPage> {
     );
   }
 
+  /// زرار الـ mute — يظهر بس لو الستوري فيديو أو post story فيه reel
+  Widget _buildMuteButton(StoryModel story) {
+    final bool hasVideo =
+        (!story.isPostStory &&
+            story.video != null &&
+            story.video!.isNotEmpty) ||
+        (story.isPostStory && story.post != null && story.post!.isReel);
+
+    if (!hasVideo) return const SizedBox.shrink();
+
+    return Positioned(top: 120.h, right: 16.w, child: const _StoryMuteButton());
+  }
+
   @override
   Widget build(BuildContext context) {
     final isArabic = context.isArabicLang;
@@ -635,6 +650,10 @@ class _UserStoryPageState extends State<_UserStoryPage> {
         if (_currentStoryIndex < _reorderedStories.length &&
             _reorderedStories[_currentStoryIndex].isPostStory)
           _buildOpenPostButton(context),
+
+        // ── Mute button (video stories + reel post stories) ──────────────
+        if (_currentStoryIndex < _reorderedStories.length)
+          _buildMuteButton(_reorderedStories[_currentStoryIndex]),
 
         // ── Header (avatar + name + time + menu) ───────────────────────────
         Positioned(
@@ -1018,6 +1037,39 @@ class _UserStoryPageState extends State<_UserStoryPage> {
       backgroundColor: Colors.transparent,
       enableDrag: true,
       builder: (ctx) => _LikersBottomSheet(likers: likers),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mute Button for Story Videos
+// ─────────────────────────────────────────────────────────────────────────────
+class _StoryMuteButton extends StatelessWidget {
+  const _StoryMuteButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: GlobalMuteManager.instance.isMuted,
+      builder: (context, isMuted, _) {
+        return GestureDetector(
+          onTap: () => GlobalMuteManager.instance.toggleMute(),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.6),
+              shape: BoxShape.circle,
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(8.r),
+              child: Icon(
+                isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                color: Colors.white,
+                size: 22.sp,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
