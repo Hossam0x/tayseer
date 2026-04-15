@@ -144,7 +144,9 @@ class MySpaceRepo {
       } else {
         return Left(ServerFailure(e.message ?? 'Connection error'));
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint(e.toString());
+      debugPrint(stackTrace.toString());
       return Left(ServerFailure(e.toString()));
     }
   }

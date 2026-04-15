@@ -1,5 +1,3 @@
-// lib/features/user/my_space/presentation/widget/ticketSession/ticket_session_view_body.dart
-
 import 'package:tayseer/features/user/my_space/data/model/create_session/create_session_response.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/ticket_session/ticket_session_cubit.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/ticket_session/ticket_session_state.dart';
@@ -46,13 +44,13 @@ class TicketSessionViewBody extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SizedBox(height: 10.h),
-                          const TicketHeader(
-                            title: "تفاصيل الحجز",
+                          TicketHeader(
+                            title: context.tr("booking_details"),
                             showicon: false,
                           ),
                           SizedBox(height: 25.h),
                           Text(
-                            "تفاصيل الاستشارة",
+                            context.tr("consultation_details"),
                             style: TextStyle(
                               fontSize: 16.sp,
                               fontWeight: FontWeight.bold,
@@ -63,7 +61,7 @@ class TicketSessionViewBody extends StatelessWidget {
                           TicketConsultationCard(sessionData: sessionData),
                           SizedBox(height: 25.h),
                           Text(
-                            "كود الخصم",
+                            context.tr("discount_code"),
                             style: TextStyle(
                               fontSize: 16.sp,
                               fontWeight: FontWeight.bold,
@@ -82,7 +80,6 @@ class TicketSessionViewBody extends StatelessWidget {
                     child: Column(
                       children: [
                         const Spacer(),
-                        // Price Summary with selective rebuild
                         BlocSelector<
                           TicketSessionCubit,
                           TicketSessionState,
@@ -91,6 +88,11 @@ class TicketSessionViewBody extends StatelessWidget {
                           selector: (state) => state.discountPercentage,
                           builder: (context, discountPercentage) {
                             return TicketPriceSummary(
+                              isLoading: context.select(
+                                (TicketSessionCubit cubit) =>
+                                    cubit.state.paySessionState ==
+                                    CubitStates.loading,
+                              ),
                               sessionData: sessionData,
                               discountPercentage: discountPercentage,
                             );
@@ -101,23 +103,6 @@ class TicketSessionViewBody extends StatelessWidget {
                   ),
                 ],
               ),
-
-              // // Loading Overlay for Payment
-              // BlocSelector<TicketSessionCubit, TicketSessionState, bool>(
-              //   selector: (state) =>
-              //       state.paySessionState == CubitStates.loading,
-              //   builder: (context, isLoading) {
-              //     if (!isLoading) return const SizedBox.shrink();
-              //     return Container(
-              //       color: Colors.black.withOpacity(0.3),
-              //       child: const Center(
-              //         child: CircularProgressIndicator(
-              //           color: Color(0xFFD3556E),
-              //         ),
-              //       ),
-              //     );
-              //   },
-              // ),
             ],
           ),
         ),
