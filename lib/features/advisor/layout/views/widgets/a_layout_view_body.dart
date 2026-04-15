@@ -7,6 +7,7 @@ import 'package:tayseer/features/advisor/layout/views/widgets/add_post_button.da
 import 'package:tayseer/features/advisor/profille/views/profile_view.dart';
 import 'package:tayseer/features/shared/reels/views/reels_nav_view.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
+import 'package:tayseer/main.dart';
 import 'package:tayseer/my_import.dart';
 
 class ALayOutViewBody extends StatefulWidget {
@@ -31,6 +32,14 @@ class _ALayOutViewBodyState extends State<ALayOutViewBody> {
       const ReelsNavView(tabIndex: 2),
       ProfileView(),
     ];
+    // ✅ الـ layout جاهز — deep link يقدر يتفتح دلوقتي
+    isMainLayoutReady = true;
+  }
+
+  @override
+  void dispose() {
+    isMainLayoutReady = false;
+    super.dispose();
   }
 
   @override
@@ -129,4 +138,3 @@ class _ALayOutViewBodyState extends State<ALayOutViewBody> {
     }
   }
 }
-

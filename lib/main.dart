@@ -7,6 +7,7 @@ import 'package:tayseer/core/cache/chat_cache_service.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:tayseer/core/services/connectivity_service.dart';
+import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/utils/global_mute_manager.dart';
 import 'package:tayseer/firebase_options.dart';
 import 'package:tayseer/tayser_app.dart';
@@ -24,8 +25,17 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 /// الـ URI الخام — يُحفظ هنا فقط، الـ SplashScreen هو اللي يتعامل معه
 Uri? pendingDeepLinkUri;
 
-/// personId بعد ما يسجل دخول
+/// personId بعد ما يسجل دخول (marriage)
 String? pendingDeepLinkPersonId;
+
+/// advisorId بعد ما يسجل دخول
+String? pendingDeepLinkAdvisorId;
+
+/// userId بعد ما يسجل دخول (user public profile)
+String? pendingDeepLinkUserId;
+
+/// ✅ flag — بيتبقى true لما الـ Layout يكون جاهز فعلاً
+bool isMainLayoutReady = false;
 
 /// ✅ متغير global - HomeScreen هتاخده وتعمل Navigate
 RemoteMessage? pendingNotificationMessage;
@@ -118,38 +128,59 @@ void _listenToWarmStartLinks() {
 }
 
 String? _extractPersonId(Uri uri) {
-  final segments = uri.pathSegments;
+  return DeepLinkService.extractPersonId(uri);
+}
 
-  if (segments.length >= 3 &&
-      segments[0] == 'marriage' &&
-      segments[1] == 'profile') {
-    return segments[2];
-  }
+String? _extractAdvisorId(Uri uri) {
+  return DeepLinkService.extractAdvisorId(uri);
+}
 
-  if (uri.scheme == 'tayseer' && uri.host == 'marriage') {
-    return uri.queryParameters['profileId'];
-  }
-
-  return null;
+String? _extractUserId(Uri uri) {
+  return DeepLinkService.extractUserId(uri);
 }
 
 void _navigateFromUri(Uri uri) {
-  final personId = _extractPersonId(uri);
-  if (personId == null) return;
-
   final token = CachNetwork.getStringData(key: ktoken);
-  final hasToken = token != null && token.isNotEmpty;
+  final hasToken = token.isNotEmpty;
 
-  if (!hasToken || isGuest || isUserAnonymous) {
-    pendingDeepLinkPersonId = personId;
-    debugPrint('🔗 Warm start: saved for after login: $personId');
+  // ── Marriage ──
+  final personId = _extractPersonId(uri);
+  if (personId != null) {
+    if (!hasToken || isGuest || isUserAnonymous) {
+      pendingDeepLinkPersonId = personId;
+      debugPrint('🔗 Warm start: saved marriage for after login: $personId');
+      return;
+    }
+    _navigateMarriageSafely(personId);
     return;
   }
 
-  _navigateSafely(personId);
+  // ── Advisor ──
+  final advisorId = _extractAdvisorId(uri);
+  if (advisorId != null) {
+    if (!hasToken || isGuest || isUserAnonymous) {
+      pendingDeepLinkAdvisorId = advisorId;
+      debugPrint('🔗 Warm start: saved advisor for after login: $advisorId');
+      return;
+    }
+    _navigateAdvisorSafely(advisorId);
+    return;
+  }
+
+  // ── User public profile ──
+  final userId = _extractUserId(uri);
+  if (userId != null) {
+    if (!hasToken || isGuest || isUserAnonymous) {
+      pendingDeepLinkUserId = userId;
+      debugPrint('🔗 Warm start: saved user for after login: $userId');
+      return;
+    }
+    _navigateUserSafely(userId);
+    return;
+  }
 }
 
-void _navigateSafely(String personId) {
+void _navigateMarriageSafely(String personId) {
   WidgetsBinding.instance.addPostFrameCallback((_) {
     if (navigatorKey.currentState != null) {
       navigatorKey.currentState!.pushNamed(
@@ -163,31 +194,112 @@ void _navigateSafely(String personId) {
   });
 }
 
+void _navigateAdvisorSafely(String advisorId) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (navigatorKey.currentState != null) {
+      navigatorKey.currentState!.pushNamed(
+        AppRouter.kUserProfileView,
+        arguments: {'advisorId': advisorId},
+      );
+    } else {
+      pendingDeepLinkAdvisorId = advisorId;
+      debugPrint(
+        '🔗 Navigator not ready, saved advisor as pending: $advisorId',
+      );
+    }
+  });
+}
+
+void _navigateUserSafely(String userId) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (navigatorKey.currentState != null) {
+      navigatorKey.currentState!.pushNamed(
+        AppRouter.kUserPublicProfileView,
+        arguments: userId,
+      );
+    } else {
+      pendingDeepLinkUserId = userId;
+      debugPrint('🔗 Navigator not ready, saved user as pending: $userId');
+    }
+  });
+}
+
 /// ✅ استدعيها بعد نجاح اللوجن في RegistrationView
 void consumePendingDeepLink() {
+  // ── Marriage ──
   final personId = pendingDeepLinkPersonId;
-  if (personId == null) return;
+  if (personId != null) {
+    pendingDeepLinkPersonId = null;
+    debugPrint('🔗 Consuming pending marriage deep link: $personId');
+    void tryNavigate([int retries = 5]) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (navigatorKey.currentState != null) {
+          navigatorKey.currentState!.pushNamed(
+            AppRouter.kMarriageView,
+            arguments: {'personId': personId},
+          );
+        } else if (retries > 0) {
+          Future.delayed(
+            const Duration(milliseconds: 300),
+            () => tryNavigate(retries - 1),
+          );
+        }
+      });
+    }
 
-  pendingDeepLinkPersonId = null;
-  debugPrint('🔗 Consuming pending deep link: $personId');
-
-  // ✅ retry لو الـ Navigator لسه مش جاهز
-  void tryNavigate([int retries = 5]) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (navigatorKey.currentState != null) {
-        navigatorKey.currentState!.pushNamed(
-          AppRouter.kMarriageView,
-          arguments: {'personId': personId},
-        );
-      } else if (retries > 0) {
-        Future.delayed(const Duration(milliseconds: 300), () {
-          tryNavigate(retries - 1);
-        });
-      }
-    });
+    tryNavigate();
+    return;
   }
 
-  tryNavigate();
+  // ── Advisor ──
+  final advisorId = pendingDeepLinkAdvisorId;
+  if (advisorId != null) {
+    pendingDeepLinkAdvisorId = null;
+    debugPrint('🔗 Consuming pending advisor deep link: $advisorId');
+    void tryNavigate([int retries = 5]) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (navigatorKey.currentState != null) {
+          navigatorKey.currentState!.pushNamed(
+            AppRouter.kUserProfileView,
+            arguments: {'advisorId': advisorId},
+          );
+        } else if (retries > 0) {
+          Future.delayed(
+            const Duration(milliseconds: 300),
+            () => tryNavigate(retries - 1),
+          );
+        }
+      });
+    }
+
+    tryNavigate();
+    return;
+  }
+
+  // ── User public profile ──
+  final userId = pendingDeepLinkUserId;
+  if (userId != null) {
+    pendingDeepLinkUserId = null;
+    debugPrint('🔗 Consuming pending user deep link: $userId');
+    void tryNavigate([int retries = 5]) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (navigatorKey.currentState != null) {
+          navigatorKey.currentState!.pushNamed(
+            AppRouter.kUserPublicProfileView,
+            arguments: userId,
+          );
+        } else if (retries > 0) {
+          Future.delayed(
+            const Duration(milliseconds: 300),
+            () => tryNavigate(retries - 1),
+          );
+        }
+      });
+    }
+
+    tryNavigate();
+    return;
+  }
 }
 
 // ─────────────────────────────────────────────

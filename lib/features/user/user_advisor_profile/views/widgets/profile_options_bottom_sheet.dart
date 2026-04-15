@@ -1,4 +1,5 @@
 import 'package:tayseer/core/enum/report_type.dart';
+import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/cubit/user_advisor_profile_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -157,14 +158,10 @@ class ProfileOptionsBottomSheet extends StatelessWidget {
   }
 
   void _handleShare(BuildContext context) {
-    // TODO: ضع هنا الـ logic بتاعة مشاركة الرابط
-    // مثال:
-    "https://tayseer.app/profile/$advisorId";
-    // Share.share(profileLink, subject: "تعرف على $advisorName");
-    showSafeSnackBar(
+    DeepLinkService.shareAdvisorProfile(
+      advisorId: advisorId,
+      advisorName: advisorName ?? '',
       context: context,
-      text: context.tr('copied_to_clipboard'),
-      isSuccess: true,
     );
   }
 

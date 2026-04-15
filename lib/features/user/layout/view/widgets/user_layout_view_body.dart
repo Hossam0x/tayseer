@@ -14,6 +14,7 @@ import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/my_space_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_view.dart';
+import 'package:tayseer/main.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserLayOutViewBody extends StatefulWidget {
@@ -77,6 +78,15 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
         onTap: () => _guestAction(context),
       ),
     ];
+
+    // ✅ الـ layout جاهز — deep link يقدر يتفتح دلوقتي
+    isMainLayoutReady = true;
+  }
+
+  @override
+  void dispose() {
+    isMainLayoutReady = false;
+    super.dispose();
   }
 
   void _guestAction(BuildContext context) {

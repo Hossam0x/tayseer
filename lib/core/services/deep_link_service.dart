@@ -9,6 +9,7 @@ class DeepLinkService {
   // Outgoing — بناء وإرسال الرابط
   // ─────────────────────────────────────────────
 
+  // ── Marriage profile ──
   static String buildProfileLink(String personId) {
     return '$_baseUrl/marriage/profile/$personId';
   }
@@ -28,8 +29,48 @@ class DeepLinkService {
 
     SharePlus.instance.share(
       ShareParams(
-        text: '${context.tr('share_profile_text').replaceAll('{name}', userName)}\n$httpsLink',
-        // subject: context.tr('share_profile_subject').replaceAll('{name}', userName),
+        text:
+            '${context.tr('share_profile_text').replaceAll('{name}', userName)}\n$httpsLink',
+      ),
+    );
+  }
+
+  // ── Advisor profile ──
+  static String buildAdvisorProfileLink(String advisorId) {
+    return '$_baseUrl/advisor/profile/$advisorId';
+  }
+
+  static void shareAdvisorProfile({
+    required String advisorId,
+    required String advisorName,
+    required BuildContext context,
+  }) {
+    final httpsLink = buildAdvisorProfileLink(advisorId);
+
+    SharePlus.instance.share(
+      ShareParams(
+        text:
+            '${context.tr('share_profile_text').replaceAll('{name}', advisorName)}\n$httpsLink',
+      ),
+    );
+  }
+
+  // ── User public profile ──
+  static String buildUserProfileLink(String userId) {
+    return '$_baseUrl/user/profile/$userId';
+  }
+
+  static void shareUserProfile({
+    required String userId,
+    required String userName,
+    required BuildContext context,
+  }) {
+    final httpsLink = buildUserProfileLink(userId);
+
+    SharePlus.instance.share(
+      ShareParams(
+        text:
+            '${context.tr('share_profile_text').replaceAll('{name}', userName)}\n$httpsLink',
       ),
     );
   }
@@ -38,7 +79,7 @@ class DeepLinkService {
   // Incoming — التحقق من الرابط
   // ─────────────────────────────────────────────
 
-  /// استخراج personId من أي نوع رابط
+  /// استخراج personId من أي نوع رابط (marriage)
   static String? extractPersonId(Uri uri) {
     final segments = uri.pathSegments;
 
@@ -57,9 +98,55 @@ class DeepLinkService {
     return null;
   }
 
+  /// استخراج advisorId من رابط المستشار
+  static String? extractAdvisorId(Uri uri) {
+    final segments = uri.pathSegments;
+
+    // https://tayser-app.net/advisor/profile/{advisorId}
+    if (segments.length >= 3 &&
+        segments[0] == 'advisor' &&
+        segments[1] == 'profile') {
+      return segments[2];
+    }
+
+    // tayseer://advisor?profileId={advisorId}
+    if (uri.scheme == 'tayseer' && uri.host == 'advisor') {
+      return uri.queryParameters['profileId'];
+    }
+
+    return null;
+  }
+
+  /// استخراج userId من رابط المستخدم العام
+  static String? extractUserId(Uri uri) {
+    final segments = uri.pathSegments;
+
+    // https://tayser-app.net/user/profile/{userId}
+    if (segments.length >= 3 &&
+        segments[0] == 'user' &&
+        segments[1] == 'profile') {
+      return segments[2];
+    }
+
+    // tayseer://user?profileId={userId}
+    if (uri.scheme == 'tayseer' && uri.host == 'user') {
+      return uri.queryParameters['profileId'];
+    }
+
+    return null;
+  }
+
   /// التحقق إن الرابط هو profile link
   static bool isProfileLink(Uri uri) {
     return extractPersonId(uri) != null;
+  }
+
+  static bool isAdvisorProfileLink(Uri uri) {
+    return extractAdvisorId(uri) != null;
+  }
+
+  static bool isUserProfileLink(Uri uri) {
+    return extractUserId(uri) != null;
   }
 
   // ─────────────────────────────────────────────
@@ -152,6 +239,103 @@ class DeepLinkService {
         AppRouter.kMarriageView,
         arguments: {'personId': personId},
       );
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // ✅ Handle advisor profile deep link
+  // ─────────────────────────────────────────────
+
+  static void handleAdvisorProfileLink({
+    required BuildContext context,
+    required String advisorId,
+  }) {
+    if (kIsUserGuest) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Text(
+                context.tr('guest_login_first'),
+                textAlign: TextAlign.center,
+                style: Styles.textStyle18Bold,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.pushNamed(AppRouter.kRegisrationView);
+                  },
+                  child: Text(context.tr('login')),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(context.tr('cancel')),
+                ),
+              ],
+            ),
+          );
+        }
+      });
+      return;
+    }
+
+    if (context.mounted) {
+      context.pushNamed(
+        AppRouter.kUserProfileView,
+        arguments: {'advisorId': advisorId},
+      );
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // ✅ Handle user public profile deep link
+  // ─────────────────────────────────────────────
+
+  static void handleUserProfileLink({
+    required BuildContext context,
+    required String userId,
+  }) {
+    if (kIsUserGuest) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Text(
+                context.tr('guest_login_first'),
+                textAlign: TextAlign.center,
+                style: Styles.textStyle18Bold,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.pushNamed(AppRouter.kRegisrationView);
+                  },
+                  child: Text(context.tr('login')),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(context.tr('cancel')),
+                ),
+              ],
+            ),
+          );
+        }
+      });
+      return;
+    }
+
+    if (context.mounted) {
+      context.pushNamed(AppRouter.kUserPublicProfileView, arguments: userId);
     }
   }
 }
