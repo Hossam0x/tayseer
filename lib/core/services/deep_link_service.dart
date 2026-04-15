@@ -211,7 +211,7 @@ class DeepLinkService {
                 style: Styles.textStyle18Bold,
               ),
               content: Text(
-                'هذه الميزة متاحة فقط لمستخدمي تطبيق تيسير.\nيرجى تسجيل الدخول بحساب مستخدم للوصول إلى ملفات الزواج.',
+                context.tr('consultant_marriage_blocked_msg'),
                 textAlign: TextAlign.center,
                 style: Styles.textStyle14,
               ),

@@ -1958,5 +1958,6 @@
   "share_post_text": "شاهد هذا المنشور على تيسير",
   "share_profile_deeplink": "تعرف على {name} على تيسير",
   "share_to_story_success": "تمت المشاركة في القصة بنجاح",
-  "share_to_story_error": "فشل في المشاركة في القصة"
+  "share_to_story_error": "فشل في المشاركة في القصة",
+  "consultant_marriage_blocked_msg": "هذه الميزة متاحة فقط لمستخدمي تطبيق تيسير.\nيرجى تسجيل الدخول بحساب مستخدم للوصول إلى ملفات الزواج."
 }
