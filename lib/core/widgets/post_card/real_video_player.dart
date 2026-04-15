@@ -341,7 +341,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
           : VideoPlayerController.networkUrl(
               Uri.parse(widget.videoUrl),
               videoPlayerOptions: VideoPlayerOptions(
-                mixWithOthers: true,
+                mixWithOthers: false,
                 allowBackgroundPlayback: false,
               ),
             );

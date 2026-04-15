@@ -3,25 +3,19 @@ import 'dart:async';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:story_view/story_view.dart';
 import 'package:tayseer/core/utils/global_mute_manager.dart';
+import 'package:tayseer/core/utils/story_audio_manager.dart';
 import 'package:tayseer/my_import.dart';
 
-/// Custom video widget for stories that integrates with [GlobalMuteManager].
-/// Replaces [StoryVideo.url] so the mute button works the same as in posts.
-///
-/// ─── Timing contract ───────────────────────────────────────────────────────
-/// • While loading  → pause the StoryController so the progress bar waits.
-/// • After loaded   → resume the StoryController so the progress bar runs.
-/// • If disposed before loading finishes → do nothing (user swiped away).
-/// • StoryController play/pause events → mirror them on the VideoPlayer.
-/// ───────────────────────────────────────────────────────────────────────────
+/// Story video widget that:
+/// • Integrates with [GlobalMuteManager] for app-wide mute toggle.
+/// • Registers its [VideoPlayerController] with [StoryAudioManager] so the
+///   story screen can silence it immediately on navigation / dispose.
+/// • Uses mixWithOthers:false to take exclusive audio focus.
 class StoryVideoMuted extends StatefulWidget {
   final String url;
   final StoryController storyController;
   final Widget? loadingWidget;
   final Widget? errorWidget;
-
-  /// Called once the video is initialized and the progress bar has been
-  /// resumed. Use this to know when it is safe to call play() externally.
   final VoidCallback? onReady;
 
   const StoryVideoMuted({
@@ -40,28 +34,23 @@ class StoryVideoMuted extends StatefulWidget {
 class _StoryVideoMutedState extends State<StoryVideoMuted> {
   VideoPlayerController? _controller;
   StreamSubscription? _playbackSub;
-  StreamSubscription? _guardSub; // intercepts play() while still loading
+  StreamSubscription? _guardSub;
   bool _isInitialized = false;
   bool _hasError = false;
   bool _disposed = false;
 
-  final _muteManager = GlobalMuteManager.instance;
+  final _mute = GlobalMuteManager.instance;
+  final _audio = StoryAudioManager.instance;
 
   @override
   void initState() {
     super.initState();
-    _muteManager.isMuted.addListener(_onMuteChanged);
+    _mute.isMuted.addListener(_onMuteChanged);
 
-    // ── Guard: keep the bar paused until the video is ready ─────────────────
-    // Any play() signal that arrives before _isInitialized (e.g. from
-    // StoryView._play() on first build, or from didUpdateWidget when the page
-    // becomes active mid-download) is immediately countered with a pause().
-    // Once _loadVideo() finishes it cancels this guard and calls play() itself.
-    _guardSub = widget.storyController.playbackNotifier.listen((state) {
+    // Guard: keep progress bar paused until video is ready.
+    _guardSub = widget.storyController.playbackNotifier.listen((s) {
       if (_disposed || !mounted) return;
-      if (state == PlaybackState.play && !_isInitialized) {
-        // Re-pause on the next microtask so we don't emit synchronously
-        // inside the stream listener (which can cause re-entrancy issues).
+      if (s == PlaybackState.play && !_isInitialized) {
         Future.microtask(() {
           if (!_disposed && mounted && !_isInitialized) {
             widget.storyController.pause();
@@ -70,9 +59,6 @@ class _StoryVideoMutedState extends State<StoryVideoMuted> {
       }
     });
 
-    // Seed the BehaviorSubject with pause so StoryView's listener sees it
-    // immediately on subscribe, and fire a second pause in postFrameCallback
-    // to catch the play() that StoryView._play() emits at the end of initState.
     widget.storyController.pause();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_disposed && mounted && !_isInitialized) {
@@ -86,34 +72,43 @@ class _StoryVideoMutedState extends State<StoryVideoMuted> {
   @override
   void dispose() {
     _disposed = true;
-    _muteManager.isMuted.removeListener(_onMuteChanged);
+    _mute.isMuted.removeListener(_onMuteChanged);
     _guardSub?.cancel();
     _playbackSub?.cancel();
-    _controller?.dispose();
-    _controller = null;
+    // Unregister BEFORE dispose so silenceAll() can still reach it if called
+    // concurrently (e.g. didPushNext fires while dispose is in progress).
+    if (_controller != null) {
+      _audio.unregister(_controller!);
+      try {
+        _controller!.pause();
+        _controller!.setVolume(0);
+      } catch (_) {}
+      _controller!.dispose();
+      _controller = null;
+    }
     super.dispose();
   }
-
-  // ── Mute ──────────────────────────────────────────────────────────────────
 
   void _onMuteChanged() {
     final ctrl = _controller;
     if (ctrl == null || !ctrl.value.isInitialized) return;
     try {
-      ctrl.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
+      ctrl.setVolume(_mute.isMuted.value ? 0.0 : 1.0);
     } catch (_) {}
   }
-
-  // ── Load ──────────────────────────────────────────────────────────────────
 
   Future<void> _loadVideo() async {
     try {
       final fileInfo = await DefaultCacheManager().getSingleFile(widget.url);
-
-      // User may have swiped to next story while we were downloading.
       if (_disposed || !mounted) return;
 
-      _controller = VideoPlayerController.file(fileInfo);
+      _controller = VideoPlayerController.file(
+        fileInfo,
+        videoPlayerOptions: VideoPlayerOptions(
+          mixWithOthers: false,
+          allowBackgroundPlayback: false,
+        ),
+      );
       await _controller!.initialize();
 
       if (_disposed || !mounted) {
@@ -123,28 +118,26 @@ class _StoryVideoMutedState extends State<StoryVideoMuted> {
       }
 
       await _controller!.setLooping(true);
-      _controller!.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
+      _controller!.setVolume(_mute.isMuted.value ? 0.0 : 1.0);
 
-      // Mirror StoryController play/pause onto the VideoPlayer.
-      _playbackSub = widget.storyController.playbackNotifier.listen((state) {
+      // Register with StoryAudioManager so navigation can silence this.
+      _audio.register(_controller!);
+
+      // Mirror StoryController play/pause onto VideoPlayer.
+      _playbackSub = widget.storyController.playbackNotifier.listen((s) {
         if (_disposed || !mounted) return;
-        if (state == PlaybackState.pause) {
+        if (s == PlaybackState.pause) {
           _controller?.pause();
         } else {
           _controller?.play();
         }
       });
 
-      // Show the video frame before resuming the progress bar.
       if (mounted) setState(() => _isInitialized = true);
 
-      // Cancel the loading guard — video is ready, we own play() from here.
       _guardSub?.cancel();
       _guardSub = null;
 
-      // Resume the progress bar — this also starts the VideoPlayer via the
-      // playbackNotifier subscription we just attached above.
-      // Guard: only resume if we're still the active widget.
       if (!_disposed && mounted) {
         widget.storyController.play();
         widget.onReady?.call();
@@ -155,8 +148,6 @@ class _StoryVideoMutedState extends State<StoryVideoMuted> {
     }
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     if (_hasError) {
@@ -165,7 +156,6 @@ class _StoryVideoMutedState extends State<StoryVideoMuted> {
             child: Icon(Icons.error_outline, color: Colors.white54, size: 40),
           );
     }
-
     if (!_isInitialized || _controller == null) {
       return widget.loadingWidget ??
           const Center(
@@ -179,11 +169,8 @@ class _StoryVideoMutedState extends State<StoryVideoMuted> {
             ),
           );
     }
-
-    return Container(
+    return ColoredBox(
       color: Colors.black,
-      width: double.infinity,
-      height: double.infinity,
       child: Center(
         child: AspectRatio(
           aspectRatio: _controller!.value.aspectRatio,

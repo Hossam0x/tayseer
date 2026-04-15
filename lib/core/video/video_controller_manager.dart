@@ -171,7 +171,7 @@ class VideoControllerManager {
         controller = VideoPlayerController.file(
           cachedFile,
           videoPlayerOptions: VideoPlayerOptions(
-            mixWithOthers: true,
+            mixWithOthers: false,
             allowBackgroundPlayback: false,
           ),
         );
@@ -181,7 +181,7 @@ class VideoControllerManager {
         controller = VideoPlayerController.networkUrl(
           Uri.parse(url),
           videoPlayerOptions: VideoPlayerOptions(
-            mixWithOthers: true,
+            mixWithOthers: false,
             allowBackgroundPlayback: false,
           ),
         );

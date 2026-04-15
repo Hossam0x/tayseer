@@ -51,10 +51,6 @@ class _PostCardState extends State<PostCard> {
 
   @override
   void dispose() {
-    // if (_activeController != null) {
-    //   _activeController?.dispose();
-    // }
-
     super.dispose();
   }
 

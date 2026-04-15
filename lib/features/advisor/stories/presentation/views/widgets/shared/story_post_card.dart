@@ -37,6 +37,9 @@ class StoryPostCard extends StatelessWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16.r),
+              // PostCallbacks.empty ensures no video plays inside the story card.
+              // Reels inside post cards are intentionally disabled here to prevent
+              // audio conflicts with the story video/audio layer.
               child: PostCard(
                 post: post,
                 isFromProfile: false,
