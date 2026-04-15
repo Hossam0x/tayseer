@@ -7,18 +7,46 @@ import 'package:tayseer/features/user/my_space/users_chat/data/repo/user_chat_re
 import 'package:tayseer/features/user/my_space/users_chat/presentation/cubit/user_chat_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
-class UserChatContent extends StatelessWidget {
+class UserChatContent extends StatefulWidget {
   const UserChatContent({super.key});
 
   @override
+  State<UserChatContent> createState() => _UserChatContentState();
+}
+
+class _UserChatContentState extends State<UserChatContent>
+    with WidgetsBindingObserver {
+  late final UserChatCubit _cubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _cubit = UserChatCubit(UserChatRepo(getIt<ApiService>()))..loadAll();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _cubit.close();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _cubit.loadAll();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => UserChatCubit(UserChatRepo(getIt<ApiService>()))..loadAll(),
+    return BlocProvider.value(
+      value: _cubit,
       child: const _UserChatBody(),
     );
   }
 }
-
 class _UserChatBody extends StatelessWidget {
   const _UserChatBody();
 
@@ -31,8 +59,7 @@ class _UserChatBody extends StatelessWidget {
         }
 
         return RefreshIndicator(
-          onRefresh: () => context.read<UserChatCubit>().loadAll(),
-          child: CustomScrollView(
+          onRefresh: () => context.read<UserChatCubit>().loadAll(),          child: CustomScrollView(
             slivers: [
               // ✅ Banner
               SliverToBoxAdapter(child: _buildBanner(context)),
@@ -190,7 +217,11 @@ class _UserChatBody extends StatelessWidget {
             'isSystemChat': false,
             'receiverid': room.otherUser.userId,
           },
-        );
+        ).then((_) {
+          if (context.mounted) {
+            context.read<UserChatCubit>().loadAll();
+          }
+        });
       },
       onDelete: () => ChatRoomDialogHelper.showDeleteDialog(
         context: context,
