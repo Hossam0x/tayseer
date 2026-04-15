@@ -82,17 +82,17 @@ class _CompleteMarriageFileState extends State<CompleteMarriageFile>
       {
         'title': context.tr('photo_verification'),
         'description': context.tr('photo_verification_desc'),
-        'isVerified': isVerifiedFromStatus,
+        'isVerified': true,
       },
       {
         'title': context.tr('age_verification'),
         'description': context.tr('age_verification_desc'),
-        'isVerified': isVerifiedFromStatus,
+        'isVerified': true,
       },
       {
         'title': context.tr('identity_verification'),
         'description': context.tr('identity_verification_desc'),
-        'isVerified': isVerifiedFromStatus,
+        'isVerified': true,
       },
     ];
 

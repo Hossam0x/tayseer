@@ -1952,5 +1952,10 @@
 "subscribe_now": "Subscribe Now !",
 "filter_locked_title": "🔒 This Filter is for Subscribers Only",
 "filter_locked_subtitle": "Subscribe now to unlock all filters and enjoy a full experience with no limits",
-"purchase_success": "Purchase completed successfully"
+"purchase_success": "Purchase completed successfully",
+"your_account_verified": "Your account has been verified",
+"verified": "Verified",
+"verification_failed": "Verification Failed",
+"rejection_reasons": "Rejection Reasons"
+
 }

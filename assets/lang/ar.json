@@ -1952,6 +1952,9 @@
 "subscribe_now": "اشترك الان !",
 "filter_locked_title": "🔒 هذا الفلتر حصري للمشتركين",
 "filter_locked_subtitle": "اشترك الآن للوصول إلى جميع الفلاتر واستمتع بتجربة كاملة بدون قيود",
-"purchase_success": "تمت عملية الشراء بنجاح"
+"purchase_success": "تمت عملية الشراء بنجاح",
+"verified": "موثق",
+"your_account_verified": "تم التحقق من حسابك بنجاح",
+"rejection_reasons": "أسباب الرفض"
 
 }
