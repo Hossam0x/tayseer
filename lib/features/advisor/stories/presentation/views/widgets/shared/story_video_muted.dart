@@ -7,6 +7,13 @@ import 'package:tayseer/my_import.dart';
 
 /// Custom video widget for stories that integrates with [GlobalMuteManager].
 /// Replaces [StoryVideo.url] so the mute button works the same as in posts.
+///
+/// ─── Timing contract ───────────────────────────────────────────────────────
+/// • While loading  → pause the StoryController so the progress bar waits.
+/// • After loaded   → resume the StoryController so the progress bar runs.
+/// • If disposed before loading finishes → do nothing (user swiped away).
+/// • StoryController play/pause events → mirror them on the VideoPlayer.
+/// ───────────────────────────────────────────────────────────────────────────
 class StoryVideoMuted extends StatefulWidget {
   final String url;
   final StoryController storyController;
@@ -30,6 +37,7 @@ class _StoryVideoMutedState extends State<StoryVideoMuted> {
   StreamSubscription? _playbackSub;
   bool _isInitialized = false;
   bool _hasError = false;
+  bool _disposed = false;
 
   final _muteManager = GlobalMuteManager.instance;
 
@@ -37,16 +45,31 @@ class _StoryVideoMutedState extends State<StoryVideoMuted> {
   void initState() {
     super.initState();
     _muteManager.isMuted.addListener(_onMuteChanged);
+
+    // Pause the progress bar after the first frame so StoryView has had time
+    // to register its playbackNotifier subscription and start the animation.
+    // Without the postFrameCallback the pause() fires before StoryView's
+    // _playbackSubscription is attached and gets silently dropped.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_disposed && mounted) {
+        widget.storyController.pause();
+      }
+    });
+
     _loadVideo();
   }
 
   @override
   void dispose() {
+    _disposed = true;
     _muteManager.isMuted.removeListener(_onMuteChanged);
     _playbackSub?.cancel();
     _controller?.dispose();
+    _controller = null;
     super.dispose();
   }
+
+  // ── Mute ──────────────────────────────────────────────────────────────────
 
   void _onMuteChanged() {
     final ctrl = _controller;
@@ -56,28 +79,30 @@ class _StoryVideoMutedState extends State<StoryVideoMuted> {
     } catch (_) {}
   }
 
+  // ── Load ──────────────────────────────────────────────────────────────────
+
   Future<void> _loadVideo() async {
     try {
-      // Use flutter_cache_manager (same as StoryVideo internally)
       final fileInfo = await DefaultCacheManager().getSingleFile(widget.url);
 
-      if (!mounted) return;
+      // User may have swiped to next story while we were downloading.
+      if (_disposed || !mounted) return;
 
       _controller = VideoPlayerController.file(fileInfo);
-
       await _controller!.initialize();
 
-      if (!mounted) {
+      if (_disposed || !mounted) {
         _controller?.dispose();
+        _controller = null;
         return;
       }
 
       await _controller!.setLooping(true);
       _controller!.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
 
-      // Listen to StoryController play/pause events
+      // Mirror StoryController play/pause onto the VideoPlayer.
       _playbackSub = widget.storyController.playbackNotifier.listen((state) {
-        if (!mounted) return;
+        if (_disposed || !mounted) return;
         if (state == PlaybackState.pause) {
           _controller?.pause();
         } else {
@@ -85,15 +110,22 @@ class _StoryVideoMutedState extends State<StoryVideoMuted> {
         }
       });
 
-      setState(() => _isInitialized = true);
+      // Show the video frame before resuming the progress bar.
+      if (mounted) setState(() => _isInitialized = true);
 
-      // Start playing immediately (StoryController will manage pause/resume)
-      widget.storyController.play();
+      // Resume the progress bar — this also starts the VideoPlayer via the
+      // playbackNotifier subscription we just attached above.
+      // Guard: only resume if we're still the active widget.
+      if (!_disposed && mounted) {
+        widget.storyController.play();
+      }
     } catch (e) {
       debugPrint('❌ StoryVideoMuted error: $e');
-      if (mounted) setState(() => _hasError = true);
+      if (!_disposed && mounted) setState(() => _hasError = true);
     }
   }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
