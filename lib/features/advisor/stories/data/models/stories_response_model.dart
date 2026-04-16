@@ -159,7 +159,9 @@ class StoryModel extends Equatable {
     this.post,
   });
 
-  bool get isPostStory => mediaType == 'post' && post != null;
+  // postId موجود = story مرتبطة بـ post، بغض النظر عن mediaType
+  // (الـ API بيرجع mediaType: "image" حتى لو فيه postId)
+  bool get isPostStory => postId != null && postId!.isNotEmpty;
 
   factory StoryModel.fromJson(Map<String, dynamic> json) {
     String userIdStr = "";

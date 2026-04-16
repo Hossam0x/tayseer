@@ -5,6 +5,7 @@ import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/widgets/end_of_cached_posts.dart';
 import 'package:tayseer/core/widgets/offline_empty_state.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
+import 'package:tayseer/features/advisor/stories/presentation/views/story_post_editor_view.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
@@ -545,8 +546,19 @@ class _PostItemState extends State<_PostItem> {
     widget.homeCubit.toggleSharePost(postId: id);
   }
 
-  void _onShareToStory(String id) {
-    widget.homeCubit.sharePostToStory(postId: id);
+  void _onShareToStory(String postId) {
+    // ابحث عن الـ post من الـ state
+    final post = widget.homeCubit.state.postsMap[postId];
+    if (post == null) return;
+
+    // افتح شاشة الـ editor بدل ما تبعت مباشرة للـ API
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StoryPostEditorView(post: post),
+        fullscreenDialog: true,
+      ),
+    );
   }
 
   void _onHashtagTap(String hashtag) {

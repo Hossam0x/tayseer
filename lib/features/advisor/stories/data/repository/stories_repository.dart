@@ -28,6 +28,7 @@ abstract class StoriesRepository {
     List<File>? images,
     List<XFile>? videos,
     double? videoDuration,
+    String? postId,
     Function(int sent, int total)? onSendProgress,
   });
   Future<Either<Failure, void>> toggleArchiveStory({

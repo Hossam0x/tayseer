@@ -24,6 +24,15 @@ class PostCard extends StatefulWidget {
   final bool isArchived;
   final NavigateToDetailsCallback? onNavigateToDetails;
 
+  /// إخفاء صف الإحصائيات (كومنتات/شيرات) وصف الأكشن (إيك/كومنت/شير)
+  final bool hideActions;
+
+  /// إخفاء الوقت وزرار الـ options من الـ header
+  final bool hideHeaderMeta;
+
+  /// تحديد أقصى ارتفاع للميديا (صور/فيديو) — مفيد في الـ story canvas
+  final double? mediaMaxHeight;
+
   const PostCard({
     super.key,
     required this.post,
@@ -34,6 +43,9 @@ class PostCard extends StatefulWidget {
     required this.isFromProfile,
     this.heroPrefix,
     this.isArchived = false,
+    this.hideActions = false,
+    this.hideHeaderMeta = false,
+    this.mediaMaxHeight,
   });
 
   @override
@@ -229,30 +241,35 @@ class _PostCardState extends State<PostCard> {
           _PostUserHeader(
             isFromProfile: widget.isFromProfile,
             post: widget.post,
-            onMoreTap: () => PostOptionsBottomSheet.show(
-              context,
-              post: widget.post,
-              isShared: widget.post.isRepostedByMe,
-              onDelete: () =>
-                  widget.callbacks.onDelete?.call(widget.post.postId),
-              onArchive: () =>
-                  widget.callbacks.onArchive?.call(widget.post.postId),
-              onShare: () =>
-                  widget.callbacks.onShareTap?.call(widget.post.postId),
-              onShareToStory: () =>
-                  widget.callbacks.onShareToStoryTap?.call(widget.post.postId),
-              onReport: () =>
-                  widget.callbacks.onReport?.call(widget.post.postId),
-              onHide: () => widget.callbacks.onHide?.call(widget.post.postId),
-              onSave: () => widget.callbacks.onSave?.call(widget.post.postId),
-              onBlock: () => widget.callbacks.onBlock?.call(
-                widget.post.postId,
-                widget.post.advisorId,
-              ),
-              onEdit: (updatedPost) =>
-                  widget.callbacks.onEdit?.call(updatedPost),
-              isArchived: widget.isArchived,
-            ),
+            hideHeaderMeta: widget.hideHeaderMeta,
+            onMoreTap: widget.hideHeaderMeta
+                ? null
+                : () => PostOptionsBottomSheet.show(
+                    context,
+                    post: widget.post,
+                    isShared: widget.post.isRepostedByMe,
+                    onDelete: () =>
+                        widget.callbacks.onDelete?.call(widget.post.postId),
+                    onArchive: () =>
+                        widget.callbacks.onArchive?.call(widget.post.postId),
+                    onShare: () =>
+                        widget.callbacks.onShareTap?.call(widget.post.postId),
+                    onShareToStory: () => widget.callbacks.onShareToStoryTap
+                        ?.call(widget.post.postId),
+                    onReport: () =>
+                        widget.callbacks.onReport?.call(widget.post.postId),
+                    onHide: () =>
+                        widget.callbacks.onHide?.call(widget.post.postId),
+                    onSave: () =>
+                        widget.callbacks.onSave?.call(widget.post.postId),
+                    onBlock: () => widget.callbacks.onBlock?.call(
+                      widget.post.postId,
+                      widget.post.advisorId,
+                    ),
+                    onEdit: (updatedPost) =>
+                        widget.callbacks.onEdit?.call(updatedPost),
+                    isArchived: widget.isArchived,
+                  ),
           ),
           Gap(context.responsiveHeight(15)),
           _PostContent(
@@ -269,23 +286,26 @@ class _PostCardState extends State<PostCard> {
             onControllerCreated: (c) => _activeController = c,
             callbacks: widget.callbacks,
             heroPrefix: widget.heroPrefix,
+            mediaMaxHeight: widget.mediaMaxHeight,
           ),
-          Gap(context.responsiveHeight(15)),
-          PostStats(
-            comments: widget.post.commentsCount,
-            shares: widget.post.sharesCount,
-            onTap: _navigateToDetails,
-          ),
-          Gap(context.responsiveHeight(8)),
-          PostActionsRow(
-            topReactions: widget.post.topReactions,
-            likesCount: widget.post.likesCount,
-            myReaction: widget.post.myReaction,
-            isRepostedByMe: widget.post.isRepostedByMe,
-            onCommentTap: _navigateToDetails,
-            onReactionChanged: _handleReaction,
-            onShareTap: _handleShare,
-          ),
+          if (!widget.hideActions) ...[
+            Gap(context.responsiveHeight(15)),
+            PostStats(
+              comments: widget.post.commentsCount,
+              shares: widget.post.sharesCount,
+              onTap: _navigateToDetails,
+            ),
+            Gap(context.responsiveHeight(8)),
+            PostActionsRow(
+              topReactions: widget.post.topReactions,
+              likesCount: widget.post.likesCount,
+              myReaction: widget.post.myReaction,
+              isRepostedByMe: widget.post.isRepostedByMe,
+              onCommentTap: _navigateToDetails,
+              onReactionChanged: _handleReaction,
+              onShareTap: _handleShare,
+            ),
+          ],
         ],
       ),
     );
@@ -530,11 +550,13 @@ class _PostUserHeader extends StatelessWidget {
   final PostModel post;
   final VoidCallback? onMoreTap;
   final bool isFromProfile;
+  final bool hideHeaderMeta;
 
   const _PostUserHeader({
     required this.post,
     this.onMoreTap,
     required this.isFromProfile,
+    this.hideHeaderMeta = false,
   });
 
   @override
@@ -546,28 +568,39 @@ class _PostUserHeader extends StatelessWidget {
       isVerified: post.isVerified,
       userType: post.userType,
       isMine: post.isMine,
-      onMoreTap: onMoreTap ?? () {},
-      subtitle: Row(
-        children: [
-          Flexible(
-            child: Text(
+      onMoreTap: hideHeaderMeta ? null : (onMoreTap ?? () {}),
+      subtitle: hideHeaderMeta
+          ? Text(
               post.category,
               style: Styles.textStyle14.copyWith(
                 color: AppColors.kprimaryColor,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
+            )
+          : Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    post.category,
+                    style: Styles.textStyle14.copyWith(
+                      color: AppColors.kprimaryColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Gap(context.responsiveWidth(4)),
+                Text(
+                  " • ${post.timeAgo}",
+                  style: Styles.textStyle10.copyWith(
+                    color: HexColor("#99A1BE"),
+                  ),
+                ),
+                Gap(context.responsiveWidth(4)),
+                Icon(Icons.public, color: AppColors.kGreyB3, size: 12.sp),
+              ],
             ),
-          ),
-          Gap(context.responsiveWidth(4)),
-          Text(
-            " • ${post.timeAgo}",
-            style: Styles.textStyle10.copyWith(color: HexColor("#99A1BE")),
-          ),
-          Gap(context.responsiveWidth(4)),
-          Icon(Icons.public, color: AppColors.kGreyB3, size: 12.sp),
-        ],
-      ),
       isFromProfile: isFromProfile,
     );
   }
@@ -609,6 +642,7 @@ class _PostMedia extends StatefulWidget {
   final PostCallbacks callbacks;
   final bool isFromProfile;
   final String? heroPrefix;
+  final double? mediaMaxHeight;
 
   const _PostMedia({
     required this.post,
@@ -618,6 +652,7 @@ class _PostMedia extends StatefulWidget {
     required this.callbacks,
     required this.isFromProfile,
     this.heroPrefix,
+    this.mediaMaxHeight,
   });
 
   @override
@@ -637,17 +672,22 @@ class _PostMediaState extends State<_PostMedia> {
   Widget build(BuildContext context) {
     switch (widget.post.contentType) {
       case PostContentType.post:
-        return widget.post.images.isNotEmpty
-            ? PostImagesGrid(
-                isFromProfile: widget.isFromProfile,
-                isFromPostDetails: widget.isDetailsView,
-                images: widget.post.images,
-                postId: widget.post.postId,
-                post: widget.post,
-                callbacks: widget.callbacks,
-                heroPrefix: widget.heroPrefix,
+        if (widget.post.images.isEmpty) return const SizedBox.shrink();
+        final imagesWidget = PostImagesGrid(
+          isFromProfile: widget.isFromProfile,
+          isFromPostDetails: widget.isDetailsView,
+          images: widget.post.images,
+          postId: widget.post.postId,
+          post: widget.post,
+          callbacks: widget.callbacks,
+          heroPrefix: widget.heroPrefix,
+        );
+        return widget.mediaMaxHeight != null
+            ? ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: widget.mediaMaxHeight!),
+                child: imagesWidget,
               )
-            : const SizedBox.shrink();
+            : imagesWidget;
 
       case PostContentType.event:
         return EventCardItem(
@@ -675,7 +715,7 @@ class _PostMediaState extends State<_PostMedia> {
         );
 
       case PostContentType.reel:
-        return RealVideoPlayer(
+        final videoWidget = RealVideoPlayer(
           postId: widget.post.postId,
           videoUrl: widget.post.videoUrl ?? '',
           videoData: widget.post.videoData,
@@ -686,6 +726,12 @@ class _PostMediaState extends State<_PostMedia> {
           },
           onReelTap: _handleReelTap,
         );
+        return widget.mediaMaxHeight != null
+            ? ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: widget.mediaMaxHeight!),
+                child: videoWidget,
+              )
+            : videoWidget;
     }
   }
 

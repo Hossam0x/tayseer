@@ -171,7 +171,9 @@ class _UserStoryPageState extends State<UserStoryPage> with RouteAware {
     if (sorted.isNotEmpty) {
       _storyTime = sorted[start].createdAt;
       _index = start;
-      _mediaReady = sorted[start].isPostStory;
+      // post story مع PostModel كاملة تبدأ ready مباشرة (مفيش media تتحمل)
+      // post story بـ postId بس أو story عادية تستنى الـ media
+      _mediaReady = sorted[start].isPostStory && sorted[start].post != null;
     }
 
     final isArabic = context.isArabicLang;
@@ -191,7 +193,8 @@ class _UserStoryPageState extends State<UserStoryPage> with RouteAware {
   }
 
   StoryItem _buildItem(StoryModel story, bool isArabic) {
-    if (story.isPostStory) {
+    // post story مع الـ PostModel كاملة — نعرض الـ PostCard
+    if (story.isPostStory && story.post != null) {
       return StoryItem(
         Transform.scale(
           scaleX: isArabic ? -1.0 : 1.0,
@@ -200,6 +203,9 @@ class _UserStoryPageState extends State<UserStoryPage> with RouteAware {
         duration: const Duration(seconds: 8),
       );
     }
+
+    // post story بـ postId بس (صورة مع postId) — نعرض الصورة عادي
+    // الـ open post button هيظهر لما المستخدم يضغط على المنتصف
 
     final hasVideo = story.video?.isNotEmpty == true;
     final Duration dur;
@@ -265,7 +271,8 @@ class _UserStoryPageState extends State<UserStoryPage> with RouteAware {
                     _index = i;
                     if (i < _stories.length) {
                       _storyTime = _stories[i].createdAt;
-                      _mediaReady = _stories[i].isPostStory;
+                      _mediaReady =
+                          _stories[i].isPostStory && _stories[i].post != null;
                       _showPostBtn = false;
                     }
                   });
@@ -322,8 +329,12 @@ class _UserStoryPageState extends State<UserStoryPage> with RouteAware {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) =>
-                      PostDetailsView(post: story!.post!, isFromProfile: false),
+                  builder: (_) => story!.post != null
+                      ? PostDetailsView(post: story.post!, isFromProfile: false)
+                      : PostDetailsView(
+                          isFromProfile: false,
+                          postId_fromNotifc: story.postId,
+                        ),
                 ),
               ).then((_) {
                 if (mounted && widget.isActive) _ctrl.play();
