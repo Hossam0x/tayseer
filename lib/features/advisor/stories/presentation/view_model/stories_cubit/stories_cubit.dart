@@ -741,6 +741,57 @@ class StoriesCubit extends Cubit<StoriesState> {
     storiesRepository.likeStory(storyId: storyId);
   }
 
+  // ── Helper: remove a story from ALL local lists (including myStories) ────────
+  void _removeStoryLocally({required String storyId, required String userId}) {
+    List<UserStoriesModel> _removeFrom(List<UserStoriesModel> list) {
+      final idx = list.indexWhere((us) => us.userId == userId);
+      if (idx == -1) return list;
+      final userStory = list[idx];
+      final updated = userStory.stories.where((s) => s.id != storyId).toList();
+      final result = List<UserStoriesModel>.from(list);
+      if (updated.isEmpty) {
+        result.removeAt(idx);
+      } else {
+        result[idx] = userStory.copyWith(
+          stories: updated,
+          storiesCount: updated.length,
+        );
+      }
+      return result;
+    }
+
+    // Update myStories (self-story ring)
+    UserStoriesModel? updatedMyStories = state.myStories;
+    if (updatedMyStories != null && updatedMyStories.userId == userId) {
+      final updated = updatedMyStories.stories
+          .where((s) => s.id != storyId)
+          .toList();
+      updatedMyStories = updated.isEmpty
+          ? null
+          : updatedMyStories.copyWith(
+              stories: updated,
+              storiesCount: updated.length,
+            );
+    }
+
+    // Track whether myStories was actually modified (including set to null)
+    final bool myStoriesChanged =
+        state.myStories != null && state.myStories!.userId == userId;
+
+    emit(
+      state.copyWith(
+        storiesList: _removeFrom(state.storiesList),
+        mySpecialStories: _removeFrom(state.mySpecialStories),
+        advisorSpecialStories: _removeFrom(state.advisorSpecialStories),
+        // Use sentinel-aware copyWith: pass null explicitly when stories are gone
+        myStories: myStoriesChanged ? updatedMyStories : state.myStories,
+      ),
+    );
+
+    // Broadcast updated myStories so other cubit instances stay in sync
+    StoriesEventBus.instance.updateMyStories(updatedMyStories);
+  }
+
   Future<void> deleteStory({
     required BuildContext context,
     required String storyId,
@@ -756,82 +807,7 @@ class StoriesCubit extends Cubit<StoriesState> {
         }
       },
       (_) {
-        // 1. Update storiesList (Home)
-        final userStoryIndex = state.storiesList.indexWhere(
-          (us) => us.userId == userId,
-        );
-        List<UserStoriesModel>? updatedList;
-        if (userStoryIndex != -1) {
-          final userStory = state.storiesList[userStoryIndex];
-          final updatedStories = userStory.stories
-              .where((s) => s.id != storyId)
-              .toList();
-          updatedList = List<UserStoriesModel>.from(state.storiesList);
-          if (updatedStories.isEmpty) {
-            updatedList.removeAt(userStoryIndex);
-          } else {
-            updatedList[userStoryIndex] = userStory.copyWith(
-              stories: updatedStories,
-              storiesCount: updatedStories.length,
-            );
-          }
-        }
-
-        // 2. Update mySpecialStories (My Profile)
-        final mySpecialIndex = state.mySpecialStories.indexWhere(
-          (us) => us.userId == userId,
-        );
-        List<UserStoriesModel>? updatedMySpecialList;
-        if (mySpecialIndex != -1) {
-          final userStory = state.mySpecialStories[mySpecialIndex];
-          final updatedStories = userStory.stories
-              .where((s) => s.id != storyId)
-              .toList();
-          updatedMySpecialList = List<UserStoriesModel>.from(
-            state.mySpecialStories,
-          );
-          if (updatedStories.isEmpty) {
-            updatedMySpecialList.removeAt(mySpecialIndex);
-          } else {
-            updatedMySpecialList[mySpecialIndex] = userStory.copyWith(
-              stories: updatedStories,
-              storiesCount: updatedStories.length,
-            );
-          }
-        }
-
-        // 3. Update advisorSpecialStories (Other Advisor Profile)
-        final advisorSpecialIndex = state.advisorSpecialStories.indexWhere(
-          (us) => us.userId == userId,
-        );
-        List<UserStoriesModel>? updatedAdvisorSpecialList;
-        if (advisorSpecialIndex != -1) {
-          final userStory = state.advisorSpecialStories[advisorSpecialIndex];
-          final updatedStories = userStory.stories
-              .where((s) => s.id != storyId)
-              .toList();
-          updatedAdvisorSpecialList = List<UserStoriesModel>.from(
-            state.advisorSpecialStories,
-          );
-          if (updatedStories.isEmpty) {
-            updatedAdvisorSpecialList.removeAt(advisorSpecialIndex);
-          } else {
-            updatedAdvisorSpecialList[advisorSpecialIndex] = userStory.copyWith(
-              stories: updatedStories,
-              storiesCount: updatedStories.length,
-            );
-          }
-        }
-
-        emit(
-          state.copyWith(
-            storiesList: updatedList ?? state.storiesList,
-            mySpecialStories: updatedMySpecialList ?? state.mySpecialStories,
-            advisorSpecialStories:
-                updatedAdvisorSpecialList ?? state.advisorSpecialStories,
-          ),
-        );
-
+        _removeStoryLocally(storyId: storyId, userId: userId);
         if (context.mounted) {
           AppToast.success(context, context.tr('story_deleted_success'));
         }
@@ -859,83 +835,7 @@ class StoriesCubit extends Cubit<StoriesState> {
       },
       (_) {
         if (isArchive) {
-          // 1. Update storiesList (Home)
-          final userStoryIndex = state.storiesList.indexWhere(
-            (us) => us.userId == userId,
-          );
-          List<UserStoriesModel>? updatedList;
-          if (userStoryIndex != -1) {
-            final userStory = state.storiesList[userStoryIndex];
-            final updatedStories = userStory.stories
-                .where((s) => s.id != storyId)
-                .toList();
-            updatedList = List<UserStoriesModel>.from(state.storiesList);
-            if (updatedStories.isEmpty) {
-              updatedList.removeAt(userStoryIndex);
-            } else {
-              updatedList[userStoryIndex] = userStory.copyWith(
-                stories: updatedStories,
-                storiesCount: updatedStories.length,
-              );
-            }
-          }
-
-          // 2. Update mySpecialStories (My Profile)
-          final mySpecialIndex = state.mySpecialStories.indexWhere(
-            (us) => us.userId == userId,
-          );
-          List<UserStoriesModel>? updatedMySpecialList;
-          if (mySpecialIndex != -1) {
-            final userStory = state.mySpecialStories[mySpecialIndex];
-            final updatedStories = userStory.stories
-                .where((s) => s.id != storyId)
-                .toList();
-            updatedMySpecialList = List<UserStoriesModel>.from(
-              state.mySpecialStories,
-            );
-            if (updatedStories.isEmpty) {
-              updatedMySpecialList.removeAt(mySpecialIndex);
-            } else {
-              updatedMySpecialList[mySpecialIndex] = userStory.copyWith(
-                stories: updatedStories,
-                storiesCount: updatedStories.length,
-              );
-            }
-          }
-
-          // 3. Update advisorSpecialStories (Other Advisor Profile)
-          final advisorSpecialIndex = state.advisorSpecialStories.indexWhere(
-            (us) => us.userId == userId,
-          );
-          List<UserStoriesModel>? updatedAdvisorSpecialList;
-          if (advisorSpecialIndex != -1) {
-            final userStory = state.advisorSpecialStories[advisorSpecialIndex];
-            final updatedStories = userStory.stories
-                .where((s) => s.id != storyId)
-                .toList();
-            updatedAdvisorSpecialList = List<UserStoriesModel>.from(
-              state.advisorSpecialStories,
-            );
-            if (updatedStories.isEmpty) {
-              updatedAdvisorSpecialList.removeAt(advisorSpecialIndex);
-            } else {
-              updatedAdvisorSpecialList[advisorSpecialIndex] = userStory
-                  .copyWith(
-                    stories: updatedStories,
-                    storiesCount: updatedStories.length,
-                  );
-            }
-          }
-
-          emit(
-            state.copyWith(
-              storiesList: updatedList ?? state.storiesList,
-              mySpecialStories: updatedMySpecialList ?? state.mySpecialStories,
-              advisorSpecialStories:
-                  updatedAdvisorSpecialList ?? state.advisorSpecialStories,
-            ),
-          );
-
+          _removeStoryLocally(storyId: storyId, userId: userId);
           if (context.mounted) {
             AppToast.success(context, context.tr('story_archived_success'));
           }
@@ -960,82 +860,7 @@ class StoriesCubit extends Cubit<StoriesState> {
         return Left(failure);
       },
       (_) {
-        // 1. Update storiesList (Home)
-        final userStoryIndex = state.storiesList.indexWhere(
-          (us) => us.userId == userId,
-        );
-        List<UserStoriesModel>? updatedList;
-        if (userStoryIndex != -1) {
-          final userStory = state.storiesList[userStoryIndex];
-          final updatedStories = userStory.stories
-              .where((s) => s.id != storyId)
-              .toList();
-          updatedList = List<UserStoriesModel>.from(state.storiesList);
-          if (updatedStories.isEmpty) {
-            updatedList.removeAt(userStoryIndex);
-          } else {
-            updatedList[userStoryIndex] = userStory.copyWith(
-              stories: updatedStories,
-              storiesCount: updatedStories.length,
-            );
-          }
-        }
-
-        // 2. Update mySpecialStories (My Profile)
-        final mySpecialIndex = state.mySpecialStories.indexWhere(
-          (us) => us.userId == userId,
-        );
-        List<UserStoriesModel>? updatedMySpecialList;
-        if (mySpecialIndex != -1) {
-          final userStory = state.mySpecialStories[mySpecialIndex];
-          final updatedStories = userStory.stories
-              .where((s) => s.id != storyId)
-              .toList();
-          updatedMySpecialList = List<UserStoriesModel>.from(
-            state.mySpecialStories,
-          );
-          if (updatedStories.isEmpty) {
-            updatedMySpecialList.removeAt(mySpecialIndex);
-          } else {
-            updatedMySpecialList[mySpecialIndex] = userStory.copyWith(
-              stories: updatedStories,
-              storiesCount: updatedStories.length,
-            );
-          }
-        }
-
-        // 3. Update advisorSpecialStories (Other Advisor Profile)
-        final advisorSpecialIndex = state.advisorSpecialStories.indexWhere(
-          (us) => us.userId == userId,
-        );
-        List<UserStoriesModel>? updatedAdvisorSpecialList;
-        if (advisorSpecialIndex != -1) {
-          final userStory = state.advisorSpecialStories[advisorSpecialIndex];
-          final updatedStories = userStory.stories
-              .where((s) => s.id != storyId)
-              .toList();
-          updatedAdvisorSpecialList = List<UserStoriesModel>.from(
-            state.advisorSpecialStories,
-          );
-          if (updatedStories.isEmpty) {
-            updatedAdvisorSpecialList.removeAt(advisorSpecialIndex);
-          } else {
-            updatedAdvisorSpecialList[advisorSpecialIndex] = userStory.copyWith(
-              stories: updatedStories,
-              storiesCount: updatedStories.length,
-            );
-          }
-        }
-
-        emit(
-          state.copyWith(
-            storiesList: updatedList ?? state.storiesList,
-            mySpecialStories: updatedMySpecialList ?? state.mySpecialStories,
-            advisorSpecialStories:
-                updatedAdvisorSpecialList ?? state.advisorSpecialStories,
-          ),
-        );
-
+        _removeStoryLocally(storyId: storyId, userId: userId);
         if (context.mounted) {
           AppToast.success(context, context.tr('story_hidden_success'));
         }

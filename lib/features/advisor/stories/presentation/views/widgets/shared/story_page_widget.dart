@@ -61,9 +61,20 @@ class _UserStoryPageState extends State<UserStoryPage> with RouteAware {
     super.initState();
     _ctrl = CustomStoryController()..isAllowedToPlay = widget.isActive;
     _ctrl.pause();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _ctrl.pause();
-    });
+    // Only schedule an initial pause if NOT already active.
+    // When isActive=true from the start (e.g. "My Stories"), we must NOT
+    // post-frame-pause again — _onMediaReady() will call play() once media
+    // is ready, and a late pause would freeze the first story.
+    if (!widget.isActive) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _ctrl.pause();
+      });
+    } else {
+      // Active from the start: mark viewed after first frame
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _markViewed();
+      });
+    }
   }
 
   @override

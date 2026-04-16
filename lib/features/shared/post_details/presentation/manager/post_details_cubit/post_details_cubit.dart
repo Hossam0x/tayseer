@@ -71,6 +71,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
       postId: postIdFromNotification,
     );
 
+    if (isClosed) return;
     result.fold(
       (failure) => emit(
         state.copyWith(
@@ -102,6 +103,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
 
     final result = await homeRepository.fetchComments(postId: postId, page: 1);
 
+    if (isClosed) return;
     result.fold(
       (failure) => emit(
         state.copyWith(
@@ -140,6 +142,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
     // 2️⃣ ننتظر رد السيرفر
     final result = await homeRepository.deleteComment(commentId: commentId);
 
+    if (isClosed) return;
     result.fold(
       (failure) {
         // ❌ فشل → مفيش تغيير، نعرض الرسالة بس
@@ -181,6 +184,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
     // 2️⃣ ننتظر رد السيرفر
     final result = await homeRepository.deleteReply(replyId: replyId);
 
+    if (isClosed) return;
     result.fold(
       (failure) => emit(
         state.copyWith(
@@ -276,6 +280,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
       page: state.currentPage + 1,
     );
 
+    if (isClosed) return;
     result.fold(
       (failure) => emit(state.copyWith(isLoadingMore: false)),
       (response) => emit(
@@ -327,6 +332,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
       anonymous: anonymous,
     );
 
+    if (isClosed) return;
     result.fold(
       (failure) {
         final updatedComments = state.comments
@@ -384,6 +390,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
       anonymous: anonymous,
     );
 
+    if (isClosed) return;
     result.fold(
       (failure) {
         emit(
@@ -455,6 +462,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
       page: nextPage,
     );
 
+    if (isClosed) return;
     result.fold(
       (failure) {
         emit(
@@ -527,6 +535,7 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
             comment: newContent,
           );
 
+    if (isClosed) return;
     result.fold(
       (failure) {
         emit(
