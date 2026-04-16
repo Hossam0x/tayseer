@@ -147,12 +147,21 @@ class NotificationCubit extends Cubit<NotificationState> {
     await notificationRepo.readAllNotifications();
   }
 
-  // ─── Delete Notification ───────────────────────────────────
-  void deleteNotification(String notificationId) {
+  // ─── Delete One Notification ──────────────────────────────
+  Future<void> deleteNotification(String notificationId) async {
+    // Optimistic update
     final updatedList = notifications
         .where((n) => n.id != notificationId)
         .toList();
     _emitUpdatedList(updatedList);
+    await notificationRepo.deleteOneNotification(notificationId);
+  }
+
+  // ─── Delete All Notifications ─────────────────────────────
+  Future<void> deleteAllNotifications() async {
+    // Optimistic update
+    _emitUpdatedList([]);
+    await notificationRepo.deleteAllNotifications();
   }
 
   // ─── Helper ────────────────────────────────────────────────

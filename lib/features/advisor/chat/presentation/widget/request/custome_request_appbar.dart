@@ -22,6 +22,7 @@ class CustomAppBar extends StatelessWidget {
         Image.asset(
           AssetsData.homeBarBackgroundImage,
           width: double.infinity,
+          height: 100.h,
           fit: BoxFit.fill,
         ),
         SafeArea(

@@ -141,6 +141,9 @@ class AppStrings {
   static const String noNotificationsYet = "no_notifications_yet";
   static const String notificationsAppearHere = "notifications_appear_here";
   static const String markAllAsRead = "mark_all_as_read";
+  static const String deleteAllNotifications = "delete_all_notifications";
+  static const String unreadNotifications = "unread_notifications";
+  static const String notificationsCount = "notifications_count";
   static const String accept = "accept";
   static const String reject = "reject";
   static const String errorAddingComment = "error_adding_comment";

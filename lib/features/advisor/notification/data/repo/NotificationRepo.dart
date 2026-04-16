@@ -45,4 +45,26 @@ class NotificationRepo {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  Future<Either<Failure, void>> deleteOneNotification(String id) async {
+    try {
+      await apiService.delete(endPoint: "/notification/delete-one/$id");
+      return const Right(null);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  Future<Either<Failure, void>> deleteAllNotifications() async {
+    try {
+      await apiService.delete(endPoint: "/notification/delete-all");
+      return const Right(null);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }

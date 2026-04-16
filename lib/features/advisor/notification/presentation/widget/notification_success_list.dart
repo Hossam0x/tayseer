@@ -1,4 +1,5 @@
 import 'package:tayseer/features/advisor/notification/presentation/manager/notification_cubit.dart';
+import 'package:tayseer/features/advisor/notification/presentation/manager/notification_state.dart';
 import 'package:tayseer/features/advisor/notification/presentation/widget/notification_item.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/story_details_view.dart';
@@ -19,6 +20,10 @@ class NotificationSuccessList extends StatefulWidget {
 class _NotificationSuccessListState extends State<NotificationSuccessList> {
   late ScrollController _scrollController;
 
+  /// Tracks which item's slidable is currently open (by id).
+  /// Shared across all NotificationItem widgets so only one is open at a time.
+  final ValueNotifier<String?> _openItemNotifier = ValueNotifier(null);
+
   @override
   void initState() {
     super.initState();
@@ -30,6 +35,7 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _openItemNotifier.dispose();
     super.dispose();
   }
 
@@ -40,44 +46,71 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
     }
   }
 
+  List<NotificationModel> _uniqueNotifications(List<NotificationModel> items) {
+    final seen = <String>{};
+    return items.where((item) {
+      final dedupKey = item.id ?? item.key;
+      if (dedupKey == null || dedupKey.isEmpty) return true;
+      return seen.add(dedupKey);
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<NotificationCubit>();
-    final uniqueNotifications = _uniqueNotifications(cubit.notifications);
+    return BlocBuilder<NotificationCubit, NotificationState>(
+      builder: (context, state) {
+        final cubit = context.read<NotificationCubit>();
+        final items = _uniqueNotifications(cubit.notifications);
 
-    return ListView.separated(
-      controller: _scrollController,
-      cacheExtent: 9999,
+        return ListView.builder(
+          controller: _scrollController,
+          cacheExtent: 9999,
+          padding: const EdgeInsets.only(top: 10, bottom: 20),
+          itemCount: items.length + (cubit.hasNextPage ? 1 : 0),
+          itemBuilder: (context, index) {
+            // Loading More indicator
+            if (index == items.length) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
 
-      padding: const EdgeInsets.only(top: 10, bottom: 20),
-      itemCount: uniqueNotifications.length + (cubit.hasNextPage ? 1 : 0),
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        // Loading More indicator
-        if (index == uniqueNotifications.length) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        final item = uniqueNotifications[index];
-        return NotificationItem(
-          key: ValueKey(item.id ?? item.key ?? '$index'),
-          notification: item,
-          onTap: () => _handleNotificationTap(context, item),
-          onAccept: () => cubit.markAsRead(item.id ?? ""),
-          onReject: () => cubit.deleteNotification(item.id ?? ""),
-          onSubscribe: () => _handleSubscribe(context),
+            final item = items[index];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _AnimatedNotificationItem(
+                key: ValueKey(item.id ?? item.key ?? '$index'),
+                notification: item,
+                openItemNotifier: _openItemNotifier,
+                onTap: () => _handleNotificationTap(context, item),
+                onAccept: () => cubit.markAsRead(item.id ?? ""),
+                onReject: () => cubit.deleteNotification(item.id ?? ""),
+                onDelete: () => _handleDelete(context, cubit, item),
+                onSubscribe: () {},
+              ),
+            );
+          },
         );
       },
     );
+  }
+
+  void _handleDelete(
+    BuildContext context,
+    NotificationCubit cubit,
+    NotificationModel item,
+  ) {
+    cubit.deleteNotification(item.id ?? "");
   }
 
   void _handleNotificationTap(
     BuildContext context,
     NotificationModel notification,
   ) {
+    // Close any open slidable first
+    _openItemNotifier.value = null;
+
     context.read<NotificationCubit>().markAsRead(notification.id ?? "");
 
     if (notification.type == NotificationType.newFollower) {
@@ -98,7 +131,7 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
       );
     } else if (notification.type == NotificationType.newChat ||
         notification.type == NotificationType.newMessage) {
-      //from her go new message
+      // navigate to chat
     } else if (notification.type == NotificationType.sessionPaid) {
       context.pushNamed(
         AppRouter.incommingsessiondetails,
@@ -117,10 +150,6 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
     }
   }
 
-  void _handleSubscribe(BuildContext context) {
-    // TODO: Navigate to subscription screen
-  }
-
   Future<void> _navigateToStory(BuildContext context, String storyId) async {
     final storiesCubit = getIt<StoriesCubit>();
     final userStories = await storiesCubit.fetchStoriesForNavigation(
@@ -129,7 +158,6 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
 
     if (userStories.isEmpty || !context.mounted) return;
 
-    // Find which user's story list contains this storyId
     int userIndex = userStories.indexWhere(
       (us) => us.stories.any((s) => s.id == storyId),
     );
@@ -153,13 +181,99 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
       ),
     );
   }
+}
 
-  List<NotificationModel> _uniqueNotifications(List<NotificationModel> items) {
-    final seen = <String>{};
-    return items.where((item) {
-      final dedupKey = item.id ?? item.key;
-      if (dedupKey == null || dedupKey.isEmpty) return true;
-      return seen.add(dedupKey);
-    }).toList();
+// ─── Animated wrapper: slide-out on delete, fade on read ──────────────────────
+
+class _AnimatedNotificationItem extends StatefulWidget {
+  final NotificationModel notification;
+  final ValueNotifier<String?> openItemNotifier;
+  final VoidCallback? onTap;
+  final VoidCallback? onAccept;
+  final VoidCallback? onReject;
+  final VoidCallback? onDelete;
+  final VoidCallback? onSubscribe;
+
+  const _AnimatedNotificationItem({
+    super.key,
+    required this.notification,
+    required this.openItemNotifier,
+    this.onTap,
+    this.onAccept,
+    this.onReject,
+    this.onDelete,
+    this.onSubscribe,
+  });
+
+  @override
+  State<_AnimatedNotificationItem> createState() =>
+      _AnimatedNotificationItemState();
+}
+
+class _AnimatedNotificationItemState extends State<_AnimatedNotificationItem>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _slideAnim;
+  late Animation<double> _fadeAnim;
+  late Animation<double> _sizeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 320),
+    );
+
+    _slideAnim = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(1.2, 0),
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInCubic));
+
+    _fadeAnim = Tween<double>(
+      begin: 1.0,
+      end: 0.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+
+    _sizeAnim = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.5, 1.0, curve: Curves.easeInOut),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _animateThenDelete() async {
+    await _controller.forward();
+    widget.onDelete?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizeTransition(
+      sizeFactor: _sizeAnim,
+      axisAlignment: -1,
+      child: FadeTransition(
+        opacity: _fadeAnim,
+        child: SlideTransition(
+          position: _slideAnim,
+          child: NotificationItem(
+            notification: widget.notification,
+            openItemNotifier: widget.openItemNotifier,
+            onTap: widget.onTap,
+            onAccept: widget.onAccept,
+            onReject: widget.onReject,
+            onDelete: _animateThenDelete,
+            onSubscribe: widget.onSubscribe,
+          ),
+        ),
+      ),
+    );
   }
 }

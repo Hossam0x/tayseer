@@ -1,7 +1,9 @@
 // notification_item.dart
 
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/widgets/custom_button.dart';
@@ -11,12 +13,18 @@ import 'package:tayseer/features/advisor/notification/data/models/notification_m
 import 'package:tayseer/core/utils/app_strings.dart';
 import 'package:tayseer/core/utils/extensions/extensions.dart';
 
-class NotificationItem extends StatelessWidget {
+class NotificationItem extends StatefulWidget {
   final NotificationModel notification;
   final VoidCallback? onTap;
   final VoidCallback? onAccept;
   final VoidCallback? onReject;
   final VoidCallback? onSubscribe;
+  final VoidCallback? onDelete;
+
+  /// Shared notifier — holds the id of the currently open slidable.
+  /// When this item opens, it writes its own id here.
+  /// When another item writes a different id, this item closes itself.
+  final ValueNotifier<String?>? openItemNotifier;
 
   const NotificationItem({
     super.key,
@@ -25,94 +33,202 @@ class NotificationItem extends StatelessWidget {
     this.onAccept,
     this.onReject,
     this.onSubscribe,
+    this.onDelete,
+    this.openItemNotifier,
   });
 
   @override
+  State<NotificationItem> createState() => _NotificationItemState();
+}
+
+class _NotificationItemState extends State<NotificationItem>
+    with SingleTickerProviderStateMixin {
+  late final SlidableController _slidableController;
+
+  String get _itemId => widget.notification.id ?? widget.notification.key ?? '';
+
+  @override
+  void initState() {
+    super.initState();
+    _slidableController = SlidableController(this);
+    widget.openItemNotifier?.addListener(_onOpenItemChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.openItemNotifier?.removeListener(_onOpenItemChanged);
+    _slidableController.dispose();
+    super.dispose();
+  }
+
+  void _onOpenItemChanged() {
+    final openId = widget.openItemNotifier?.value;
+    // If another item became open, close this one
+    if (openId != _itemId) {
+      _slidableController.close();
+    }
+  }
+
+  void _handleDragStart() {
+    // Notify others that this item is being opened
+    widget.openItemNotifier?.value = _itemId;
+  }
+
+  void _handleTap() {
+    // Close the slidable first, then fire the tap callback
+    _slidableController.close();
+    widget.onTap?.call();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final bool isUnread = !(notification.isRead ?? false);
+    final bool isUnread = !(widget.notification.isRead ?? false);
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: isUnread ? Colors.white : Colors.transparent,
-            borderRadius: isUnread ? BorderRadius.circular(12) : null,
-            boxShadow: isUnread
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: GestureDetector(
+        onHorizontalDragStart: (_) => _handleDragStart(),
+        behavior: HitTestBehavior.translucent,
+        child: Slidable(
+          key: ValueKey(_itemId),
+          controller: _slidableController,
+          endActionPane: ActionPane(
+            motion: const DrawerMotion(),
+            extentRatio: 0.22,
+            openThreshold: 0.15,
+            closeThreshold: 0.15,
             children: [
-              _buildAvatarArea(),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            notification.title ?? "",
-                            style: TextStyle(
-                              fontWeight: isUnread
-                                  ? FontWeight.bold
-                                  : FontWeight.w600,
-                              fontSize: 14,
-                              color: Colors.black,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+              CustomSlidableAction(
+                onPressed: (_) {
+                  _slidableController.close();
+                  widget.onDelete?.call();
+                },
+                backgroundColor: Colors.transparent,
+                padding: EdgeInsets.zero,
+                autoClose: false,
+                child: _buildDeletePanel(context),
+              ),
+            ],
+          ),
+          child: InkWell(
+            onTap: _handleTap,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: isUnread ? Colors.white : Colors.transparent,
+                borderRadius: isUnread ? BorderRadius.circular(12) : null,
+                boxShadow: isUnread
+                    ? [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
                         ),
-                        const SizedBox(width: 8),
+                      ]
+                    : null,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildAvatarArea(),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              _formatTime(context, notification.dateTime),
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: 12,
+                            Expanded(
+                              child: Text(
+                                widget.notification.title ?? "",
+                                style: TextStyle(
+                                  fontWeight: isUnread
+                                      ? FontWeight.bold
+                                      : FontWeight.w600,
+                                  fontSize: 14,
+                                  color: Colors.black,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (isUnread) ...[
-                              const SizedBox(width: 5),
-                              const CircleAvatar(
-                                radius: 4,
-                                backgroundColor: Colors.red,
-                              ),
-                            ],
+                            const SizedBox(width: 8),
+                            Row(
+                              children: [
+                                Text(
+                                  _formatTime(
+                                    context,
+                                    widget.notification.dateTime,
+                                  ),
+                                  style: TextStyle(
+                                    color: Colors.grey[500],
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                if (isUnread) ...[
+                                  const SizedBox(width: 5),
+                                  const CircleAvatar(
+                                    radius: 4,
+                                    backgroundColor: Colors.red,
+                                  ),
+                                ],
+                              ],
+                            ),
                           ],
                         ),
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.notification.description ?? "",
+                          style: TextStyle(
+                            color: isUnread ? Colors.black87 : Colors.grey[600],
+                            fontSize: 13,
+                            height: 1.4,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (_hasActionButtons()) ...[
+                          const SizedBox(height: 12),
+                          _buildActionButtons(context),
+                        ],
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      notification.description ?? "",
-                      style: TextStyle(
-                        color: isUnread ? Colors.black87 : Colors.grey[600],
-                        fontSize: 13,
-                        height: 1.4,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (_hasActionButtons()) ...[
-                      const SizedBox(height: 12),
-                      _buildActionButtons(context),
-                    ],
-                  ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDeletePanel(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12.r),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+        child: Container(
+          width: 62.w,
+          height: 66.h,
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(color: Colors.red.withOpacity(0.2)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.delete_outline_rounded, color: Colors.red, size: 26.h),
+              SizedBox(height: 2.h),
+              Text(
+                context.tr(AppStrings.delete),
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -123,19 +239,6 @@ class NotificationItem extends StatelessWidget {
   }
 
   Widget _buildAvatarArea() {
-    /* if (isSystemOrConsultation) {
-      return Container(
-        width: 55,
-        height: 55,
-        decoration: const BoxDecoration(
-          color: Color(0xFFF2F2F2),
-          shape: BoxShape.circle,
-        ),
-        padding: const EdgeInsets.all(14),
-        child: SvgPicture.asset(AssetsData.consultationIcon),
-      );
-    }*/
-
     return SizedBox(
       width: 55,
       height: 55,
@@ -146,8 +249,8 @@ class NotificationItem extends StatelessWidget {
             child: CircleAvatar(
               radius: 24,
               backgroundColor: Colors.grey[200],
-              backgroundImage: notification.senderImage != null
-                  ? NetworkImage(notification.senderImage!)
+              backgroundImage: widget.notification.senderImage != null
+                  ? NetworkImage(widget.notification.senderImage!)
                   : const AssetImage(AssetsData.kUserImage) as ImageProvider,
             ),
           ),
@@ -163,30 +266,22 @@ class NotificationItem extends StatelessWidget {
     );
   }
 
-  // ─── Map NotificationType → Icon ──────────────────────────
   String _getIconByType() {
-    switch (notification.type) {
+    switch (widget.notification.type) {
       case NotificationType.commentLike:
       case NotificationType.commentReply:
         return AssetsData.commentIcon;
 
       case NotificationType.storyLike:
-
-      case
-      NotificationType.postLike:
+      case NotificationType.postLike:
       case NotificationType.replyLike:
-          if(notification.likeType=="dislike")
-            {
-              return AssetsData.disLikeIcon;
-            }else if(notification.likeType=="love")
-              {
-                return AssetsData.loveIcon;
-
-              }else if(notification.likeType==null)
-                {
-                  return AssetsData.loveIcon;
-
-                }else {return AssetsData.careIcon;}
+        if (widget.notification.likeType == "dislike") {
+          return AssetsData.disLikeIcon;
+        } else if (widget.notification.likeType == "love") {
+          return AssetsData.loveIcon;
+        } else {
+          return AssetsData.loveIcon;
+        }
 
       case NotificationType.postShare:
       case NotificationType.eventShare:
@@ -205,7 +300,6 @@ class NotificationItem extends StatelessWidget {
     }
   }
 
-  // ─── Format DateTime ───────────────────────────────────────
   String _formatTime(BuildContext context, DateTime? dateTime) {
     if (dateTime == null) return "";
     final now = DateTime.now();
@@ -232,23 +326,11 @@ class NotificationItem extends StatelessWidget {
   }
 
   bool _hasActionButtons() {
-    return notification.type != NotificationType.newFollower;
+    return widget.notification.type == NotificationType.newChat;
   }
 
   Widget _buildActionButtons(BuildContext context) {
-    // if (notification.type == NotificationType.sessionPaid) {
-    //   return Align(
-    //     alignment: Alignment.centerRight,
-    //     child: CustomBotton(
-    //       width: 90.w,
-    //       height: 40.h,
-    //       useGradient: true,
-    //       title: 'اشترك الان',
-    //       onPressed: onSubscribe,
-    //     ),
-    //   );
-    // }
-    if (notification.type == NotificationType.newChat) {
+    if (widget.notification.type == NotificationType.newChat) {
       return Row(
         children: [
           Expanded(
@@ -256,7 +338,7 @@ class NotificationItem extends StatelessWidget {
               height: 40,
               useGradient: true,
               title: context.tr(AppStrings.accept),
-              onPressed: onAccept,
+              onPressed: widget.onAccept,
             ),
           ),
           const SizedBox(width: 12),
@@ -265,12 +347,12 @@ class NotificationItem extends StatelessWidget {
               height: 40,
               width: double.infinity,
               text: context.tr(AppStrings.reject),
-              onTap: onReject,
+              onTap: widget.onReject,
             ),
           ),
         ],
       );
     }
-    return SizedBox.shrink();
+    return const SizedBox.shrink();
   }
 }
