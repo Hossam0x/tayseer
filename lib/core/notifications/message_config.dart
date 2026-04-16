@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:tayseer/core/notifications/notificationHelper.dart';
+import 'package:tayseer/core/utils/notification_event_bus.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -109,6 +110,9 @@ class LocalNotification {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
       print("========== 📩 FOREGROUND MESSAGE ==========");
       _printFullMessage(message);
+
+      // 🔔 Notify HomeCubit (and any other listener) to refresh notification count
+      NotificationEventBus.instance.fire();
 
       await _displayNotification(
         message.notification?.title ?? 'Notification',

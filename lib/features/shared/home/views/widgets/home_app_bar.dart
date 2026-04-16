@@ -18,8 +18,7 @@ class _HomeAppBarState extends State<HomeAppBar> {
         buildWhen: (previous, current) =>
             previous.homeInfo?.image != current.homeInfo?.image ||
             previous.homeInfo?.name != current.homeInfo?.name ||
-            previous.homeInfo?.notifications !=
-                current.homeInfo?.notifications,
+            previous.homeInfo?.notifications != current.homeInfo?.notifications,
         builder: (context, state) {
           final userName = state.homeInfo?.name ?? '';
           final notificationsCount = state.homeInfo?.notifications ?? 0;
@@ -77,8 +76,11 @@ class _HomeAppBarState extends State<HomeAppBar> {
                     ),
 
                     IconButton(
-                      onPressed: () {
-                        context.pushNamed(AppRouter.notification);
+                      onPressed: () async {
+                        await context.pushNamed(AppRouter.notification);
+                        if (context.mounted) {
+                          context.read<HomeCubit>().fetchNameAndImage();
+                        }
                       },
                       icon: Stack(
                         clipBehavior: Clip.none,
@@ -95,8 +97,12 @@ class _HomeAppBarState extends State<HomeAppBar> {
                               top: context.responsiveHeight(-8),
                               right: context.responsiveWidth(-6),
                               child: Container(
-                                width: context.responsiveWidth(16),   // ← fixed width
-                                height: context.responsiveHeight(16), // ← fixed height
+                                width: context.responsiveWidth(
+                                  16,
+                                ), // ← fixed width
+                                height: context.responsiveHeight(
+                                  16,
+                                ), // ← fixed height
                                 decoration: BoxDecoration(
                                   color: AppColors.kprimaryColor,
                                   shape: BoxShape.circle,

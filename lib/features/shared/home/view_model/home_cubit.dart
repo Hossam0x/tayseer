@@ -12,6 +12,7 @@ import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
 import 'package:tayseer/core/utils/profile_event_bus.dart';
 import 'package:tayseer/core/utils/post_event_bus.dart';
+import 'package:tayseer/core/utils/notification_event_bus.dart';
 import '../../../../my_import.dart';
 import '../reposiotry/home_repository.dart';
 
@@ -26,6 +27,7 @@ class HomeCubit extends Cubit<HomeState> {
   StreamSubscription? _connectivitySubscription;
   late StreamSubscription<ProfileUpdateEvent> _profileSubscription;
   late StreamSubscription<PostEvent> _postEventSubscription;
+  late StreamSubscription<PushNotificationReceivedEvent> _pushNotifSubscription;
 
   HomeCubit(
     this.homeRepository, {
@@ -36,6 +38,17 @@ class HomeCubit extends Cubit<HomeState> {
     _listenToConnectivity();
     _listenToProfileUpdates();
     _listenToPostEvents();
+    _listenToPushNotifications();
+  }
+
+  void _listenToPushNotifications() {
+    _pushNotifSubscription = NotificationEventBus
+        .instance
+        .onNotificationReceived
+        .listen((_) {
+          if (isClosed) return;
+          fetchNameAndImage();
+        });
   }
 
   void _listenToPostEvents() {
@@ -282,6 +295,7 @@ class HomeCubit extends Cubit<HomeState> {
     _connectivitySubscription?.cancel();
     _profileSubscription.cancel();
     _postEventSubscription.cancel();
+    _pushNotifSubscription.cancel();
     return super.close();
   }
 
@@ -499,6 +513,23 @@ class HomeCubit extends Cubit<HomeState> {
     return state.homeInfo?.image != newData.image ||
         state.homeInfo?.name != newData.name ||
         state.homeInfo?.notifications != newData.notifications;
+  }
+
+  /// تحديث عدد الإشعارات محلياً بدون API call
+  void updateNotificationsCount(int count) {
+    final current = state.homeInfo;
+    if (current == null) return;
+    if (current.notifications == count) return;
+    emit(
+      state.copyWith(
+        homeInfo: ImageAndNameModel(
+          image: current.image,
+          name: current.name,
+          notifications: count,
+          approvalKey: current.approvalKey,
+        ),
+      ),
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
