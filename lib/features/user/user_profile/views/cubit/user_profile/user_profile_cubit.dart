@@ -3,6 +3,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tayseer/core/functions/get_language_code_name.dart';
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
+import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/core/utils/profile_event_bus.dart';
 import 'package:tayseer/features/shared/settings/models/setting_item_model.dart';
@@ -831,7 +832,10 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       await CachNetwork.clearCache();
       await getIt<CacheCleanupService>().clearAllUserCache();
-      getIt<tayseerSocketHelper>().disconnect();
+      if (getIt.isRegistered<ChatSocketService>()) {
+        getIt<ChatSocketService>().removeListeners();
+      }
+      getIt<tayseerSocketHelper>().reset();
 
       // ✅ ريسيت الـ Singletons عشان يتعملوا instance جديد بعد اللوجن الجديد
       if (getIt.isRegistered<HomeCubit>()) {

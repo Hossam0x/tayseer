@@ -128,3 +128,53 @@ class NotificationCountModel {
     );
   }
 }
+
+class PastMatchItem {
+  final String chatRoomId;
+  final String userId;
+  final String name;
+  final String image;
+  final DateTime? expiredAt;
+
+  PastMatchItem({
+    required this.chatRoomId,
+    required this.userId,
+    required this.name,
+    required this.image,
+    this.expiredAt,
+  });
+
+  /// Human-readable reason derived from expiredAt
+  String get reason => 'انتهي مدة التوافق بينكم';
+
+  factory PastMatchItem.fromJson(Map<String, dynamic> json) {
+    final user = json['user'] as Map<String, dynamic>? ?? {};
+    return PastMatchItem(
+      chatRoomId: json['chatRoomId']?.toString() ?? '',
+      userId: user['id']?.toString() ?? '',
+      name: user['name']?.toString() ?? '',
+      image: user['image']?.toString() ?? '',
+      expiredAt: json['expiredAt'] != null
+          ? DateTime.tryParse(json['expiredAt'].toString())
+          : null,
+    );
+  }
+}
+
+class PastMatchesResponse {
+  final List<PastMatchItem> items;
+  final PaginationModel pagination;
+
+  PastMatchesResponse({required this.items, required this.pagination});
+
+  factory PastMatchesResponse.fromJson(Map<String, dynamic> json) {
+    final data = json['data'] as Map<String, dynamic>? ?? {};
+    final list = data['data'] as List<dynamic>? ?? [];
+    return PastMatchesResponse(
+      items: list.map((e) => PastMatchItem.fromJson(e as Map<String, dynamic>)).toList(),
+      pagination: PaginationModel.fromJson(
+        data['pagination'] as Map<String, dynamic>? ?? {},
+      ),
+    );
+  }
+}

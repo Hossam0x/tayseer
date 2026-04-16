@@ -7,6 +7,7 @@ import 'package:tayseer/core/shared/network/local_network.dart';
 class tayseerSocketHelper {
   IO.Socket? _socket;
   bool _isConnected = false;
+  bool _isConnecting = false;
   Completer<bool>? _connectionCompleter;
 
   final Map<String, Map<String, Function(dynamic)>> _listeners = {};
@@ -22,21 +23,26 @@ class tayseerSocketHelper {
   Future<bool> connect() async {
     if (_socket != null && _socket!.connected) {
       log('🔁 Already connected');
-      _isConnected = true; // Sync internal flag
+      _isConnected = true;
       return true;
     }
 
+    // Guard: if a connection attempt is already in progress, wait for it
+    if (_isConnecting && _connectionCompleter != null) {
+      log('⏳ Connection already in progress, waiting...');
+      return await _connectionCompleter!.future;
+    }
+
+    _isConnecting = true;
     _connectionCompleter = Completer<bool>();
     log('🔧 Initializing socket connection...');
 
     final String? token = CachNetwork.getStringData(key: 'token');
-    log(
-      'Token: $token',
-    ); // Log only first 20 chars for security
 
     if (token == null || token.isEmpty) {
       log('❌ No token found in SharedPreferences');
       onError?.call('لا يوجد توكين محفوظه');
+      _isConnecting = false;
       if (!(_connectionCompleter?.isCompleted ?? true)) {
         _connectionCompleter?.complete(false);
       }
@@ -48,6 +54,7 @@ class tayseerSocketHelper {
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
+          .disableReconnection()
           .setExtraHeaders({'Authorization': 'Bearer $token'})
           .build(),
     );
@@ -55,6 +62,7 @@ class tayseerSocketHelper {
     _socket!.onConnect((_) {
       log('✅ Connected to tayseer Game Socket');
       _isConnected = true;
+      _isConnecting = false;
       if (!(_connectionCompleter?.isCompleted ?? true)) {
         _connectionCompleter?.complete(true);
       }
@@ -63,6 +71,7 @@ class tayseerSocketHelper {
     _socket!.onConnectError((error) {
       log('❌ Connection Error: $error');
       onError?.call('فشل الاتصال: $error');
+      _isConnecting = false;
       if (!(_connectionCompleter?.isCompleted ?? true)) {
         _connectionCompleter?.complete(false);
       }
@@ -76,6 +85,7 @@ class tayseerSocketHelper {
     _socket!.on('error', (error) {
       log('❌ Socket Error: $error');
       onError?.call('خطأ: $error');
+      _isConnecting = false;
       if (!(_connectionCompleter?.isCompleted ?? true)) {
         _connectionCompleter?.complete(false);
       }
@@ -110,13 +120,16 @@ class tayseerSocketHelper {
         onTimeout: () {
           log('⏱️ Connection timeout');
           onError?.call('انتهت مهلة الاتصال');
+          _isConnecting = false;
           return false;
         },
       );
       if (connected) _isConnected = true;
+      _isConnecting = false;
       return connected;
     } catch (e) {
       log('❌ Error during connection: $e');
+      _isConnecting = false;
       return false;
     }
   }
@@ -288,6 +301,22 @@ class tayseerSocketHelper {
       _socket!.disconnect();
       _isConnected = false;
     }
+  }
+
+  /// ✅ Full reset — call on logout to destroy socket and clear all listeners
+  void reset() {
+    _listeners.clear(); // clear our map only (don't touch socket listeners yet)
+    _isConnecting = false;
+    _connectionCompleter = null;
+    if (_socket != null) {
+      _socket!.disconnect(); // sends disconnect packet → triggers onDisconnect
+      _socket!.destroy();    // stops any reconnection attempts
+      _socket!.clearListeners(); // now safe to clear socket-level handlers
+      _socket!.dispose();
+      _socket = null;
+    }
+    _isConnected = false;
+    log('🔄 Socket helper reset');
   }
 
   /// ✅ تنظيف كل الـ listeners

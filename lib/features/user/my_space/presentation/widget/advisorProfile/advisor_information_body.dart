@@ -290,7 +290,7 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
       },
       {
         'icon': AssetsData.experienceIcon,
-        'value': "${advisor?.yearsOfExperience ?? 0}+",
+        'value': "${context.tr(advisor?.yearsOfExperience) ?? 0}",
         'label': "سنوات الخبرة",
       },
       {

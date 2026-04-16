@@ -1,4 +1,5 @@
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
+import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/shared/settings/models/setting_item_model.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
@@ -126,7 +127,10 @@ class _SettingsViewState extends State<SettingsView> {
       _settingsCubit.logoutFromSever();
       await CachNetwork.clearCache();
       await getIt<CacheCleanupService>().clearAllUserCache();
-      getIt<tayseerSocketHelper>().disconnect();
+      if (getIt.isRegistered<ChatSocketService>()) {
+        getIt<ChatSocketService>().removeListeners();
+      }
+      getIt<tayseerSocketHelper>().reset();
       if (getIt.isRegistered<HomeCubit>())
         getIt.resetLazySingleton<HomeCubit>();
       if (getIt.isRegistered<ProfileCubit>())

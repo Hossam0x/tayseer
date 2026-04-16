@@ -171,11 +171,7 @@ Future<void> setupGetIt() async {
   getIt.registerLazySingleton<tayseerSocketHelper>(() => tayseerSocketHelper());
 
   /// ChatSocketService
-  getIt.registerLazySingleton<ChatSocketService>(() {
-    final service = ChatSocketService();
-    service.init();
-    return service;
-  });
+  getIt.registerLazySingleton<ChatSocketService>(() => ChatSocketService());
 
   /// AuthRepo
   getIt.registerLazySingleton<AuthRepo>(

@@ -12,6 +12,8 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/functions/set_advisor_status.dart';
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
+import 'package:tayseer/core/services/chat_socket_service.dart';
+import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/shared/auth/model/day_time_range_model.dart';
 import 'package:tayseer/features/shared/auth/model/summar_session_model.dart'; // ★ import جديد
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
@@ -634,7 +636,7 @@ class AuthCubit extends Cubit<AuthState> {
             ),
           );
         },
-        (result) {
+        (result) async{
           setAdvisorStatus(result.data?.approvalKey);
           emit(
             state.copyWith(
@@ -645,6 +647,14 @@ class AuthCubit extends Cubit<AuthState> {
               isNew: result.data?.user?.isNew ?? true,
             ),
           );
+          // Connect socket after Google login
+          try {
+            final socketHelper = getIt<tayseerSocketHelper>();
+            await socketHelper.connect();
+            getIt<ChatSocketService>().init();
+          } catch (e) {
+            debugPrint('Socket connect after Google login error: $e');
+          }
         },
       );
     } catch (e) {
@@ -755,7 +765,7 @@ class AuthCubit extends Cubit<AuthState> {
             ),
           );
         },
-        (result) {
+        (result)async {
           setAdvisorStatus(result.data?.approvalKey);
           emit(
             state.copyWith(
@@ -766,6 +776,14 @@ class AuthCubit extends Cubit<AuthState> {
               isNew: result.data?.user?.isNew ?? true,
             ),
           );
+          // Connect socket after Apple login
+          try {
+            final socketHelper = getIt<tayseerSocketHelper>();
+            await socketHelper.connect();
+            getIt<ChatSocketService>().init();
+          } catch (e) {
+            debugPrint('Socket connect after Apple login error: $e');
+          }
         },
       );
     } catch (e) {
@@ -808,13 +826,22 @@ class AuthCubit extends Cubit<AuthState> {
           );
           emit(state.copyWith(verifyOtpState: CubitStates.initial));
         },
-        (verifyResponse) {
+        (verifyResponse) async{
           emit(
             state.copyWith(
               verifyOtpState: CubitStates.success,
               isNew: verifyResponse.data?.user?.isNew ?? true,
             ),
           );
+          // Connect socket after successful login
+          try {
+            final socketHelper = getIt<tayseerSocketHelper>();
+            await socketHelper.connect();
+            // Re-init ChatSocketService with new socket
+            getIt<ChatSocketService>().init();
+          } catch (e) {
+            debugPrint('Socket connect after login error: $e');
+          }
           emit(state.copyWith(verifyOtpState: CubitStates.initial));
         },
       );
@@ -901,13 +928,21 @@ class AuthCubit extends Cubit<AuthState> {
 
     try {
       await _googleSignIn.signOut();
-
       await _firebaseAuth.signOut();
-
       googleLoggedOut = true;
       debugPrint('Google logout successful');
     } catch (e) {
       debugPrint('Google logout error: $e');
+    }
+
+    // Disconnect socket on logout
+    try {
+      final socketHelper = getIt<tayseerSocketHelper>();
+      getIt<ChatSocketService>().removeListeners();
+      socketHelper.reset();
+      debugPrint('Socket reset on logout');
+    } catch (e) {
+      debugPrint('Socket disconnect error: $e');
     }
 
     try {

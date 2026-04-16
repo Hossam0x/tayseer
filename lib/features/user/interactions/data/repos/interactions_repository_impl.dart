@@ -245,4 +245,19 @@ Future<Either<Failure, void>> resetRegardsNotificationCount() async {
     return Left(ServerFailure('حدث خطأ غير متوقع: ${e.toString()}'));
   }
 }
+
+@override
+Future<Either<Failure, PastMatchesResponse>> fetchPastMatches({int page = 1}) async {
+  try {
+    final response = await apiService.get(
+      endPoint: '/user/past-matches',
+      query: {'page': page.toString(), 'limit': '10'},
+    );
+    return Right(PastMatchesResponse.fromJson(response));
+  } on DioException catch (e) {
+    return Left(ServerFailure.fromDioError(e));
+  } catch (e) {
+    return Left(ServerFailure('حدث خطأ غير متوقع: ${e.toString()}'));
+  }
+}
 }

@@ -28,6 +28,26 @@ class UserChatRepo {
     }
   }
 
+  Future<Either<Failure, UserChatRoomsResponse>> getMatchingChatRooms({
+    int page = 1,
+    int limit = 10,
+  }) async {
+    try {
+      final response = await _apiService.get(
+        endPoint: ApiEndPoint.userChatMatchingList,
+        query: {'page': page, 'limit': limit},
+      );
+      if (response['success'] == true) {
+        return Right(UserChatRoomsResponse.fromJson(response));
+      }
+      return Left(ServerFailure(response['message'] ?? 'فشل جلب المطابقات'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
   Future<Either<Failure, List<RegardRequestModel>>> getRegardRequests() async {
     try {
       final response = await _apiService.get(
@@ -39,7 +59,9 @@ class UserChatRepo {
         final list = data['data'] as List? ?? [];
         return Right(
           list
-              .map((e) => RegardRequestModel.fromJson(e as Map<String, dynamic>))
+              .map(
+                (e) => RegardRequestModel.fromJson(e as Map<String, dynamic>),
+              )
               .toList(),
         );
       }
