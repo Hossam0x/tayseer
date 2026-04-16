@@ -455,6 +455,7 @@ class _PostItemState extends State<_PostItem> {
       onCommented: _onCommented,
       onCommentCountDelta: _onCommentCountDelta,
       onCommentCountSync: _onCommentCountSync,
+      onFollowTap: _onFollowAdvisor,
     );
   }
 
@@ -479,7 +480,12 @@ class _PostItemState extends State<_PostItem> {
       onCommented: _onCommented,
       onCommentCountDelta: _onCommentCountDelta,
       onCommentCountSync: _onCommentCountSync,
+      onFollowTap: _onFollowAdvisor,
     );
+  }
+
+  void _onFollowAdvisor(String advisorId) {
+    widget.homeCubit.toggleFollowAdvisor(advisorId: advisorId);
   }
 
   void _editPost(PostModel post) {

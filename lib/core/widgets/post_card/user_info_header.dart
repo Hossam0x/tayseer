@@ -1,4 +1,5 @@
 // lib/core/widgets/user_info_header.dart
+import 'package:flutter/services.dart';
 import 'package:tayseer/core/utils/navigation_guard.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
@@ -15,6 +16,8 @@ class UserInfoHeader extends StatelessWidget {
   final bool isFromProfile;
   final String userType;
   final bool isMine;
+  final bool isFollowing;
+  final VoidCallback? onFollowTap;
 
   const UserInfoHeader({
     super.key,
@@ -27,6 +30,8 @@ class UserInfoHeader extends StatelessWidget {
     required this.isFromProfile,
     required this.userType,
     required this.isMine,
+    this.isFollowing = true,
+    this.onFollowTap,
   });
 
   void _navigateToUserProfile(BuildContext context) {
@@ -97,6 +102,14 @@ class UserInfoHeader extends StatelessWidget {
                               size: 16.sp,
                             ),
                           ],
+                          // ✅ Follow button — shown only when not mine
+                          if (!isMine && onFollowTap != null) ...[
+                            Gap(8.w),
+                            _FollowButton(
+                              initiallyFollowing: isFollowing,
+                              onTap: onFollowTap!,
+                            ),
+                          ],
                         ],
                       ),
                       if (subtitle != null) ...[Gap(2.h), subtitle!],
@@ -126,6 +139,106 @@ class UserInfoHeader extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🔔 Follow Button with animation
+// ══════════════════════════════════════════════════════════════════════════════
+
+class _FollowButton extends StatefulWidget {
+  final bool initiallyFollowing;
+  final VoidCallback onTap;
+
+  const _FollowButton({required this.initiallyFollowing, required this.onTap});
+
+  @override
+  State<_FollowButton> createState() => _FollowButtonState();
+}
+
+class _FollowButtonState extends State<_FollowButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnim;
+  late bool _isFollowing;
+  bool _hasBeenTapped = false; // تتبع إذا تم الضغط محلياً
+
+  @override
+  void initState() {
+    super.initState();
+    _isFollowing = widget.initiallyFollowing;
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+      lowerBound: 0.0,
+      upperBound: 1.0,
+    );
+    _scaleAnim = Tween<double>(
+      begin: 1.0,
+      end: 0.85,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleTap() async {
+    // Heavy vibration on tap
+    HapticFeedback.heavyImpact();
+    await Future.delayed(const Duration(milliseconds: 60));
+    HapticFeedback.heavyImpact();
+
+    // Scale-down then back animation
+    await _controller.forward();
+    await _controller.reverse();
+
+    // Toggle local state
+    setState(() {
+      _isFollowing = !_isFollowing;
+      _hasBeenTapped = true;
+    });
+
+    widget.onTap();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // إذا كان متابع من البداية ولم يتم الضغط محلياً، لا تظهر شيء
+    if (widget.initiallyFollowing && !_hasBeenTapped) {
+      return const SizedBox.shrink();
+    }
+
+    return GestureDetector(
+      onTap: _handleTap,
+      child: ScaleTransition(
+        scale: _scaleAnim,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          transitionBuilder: (child, animation) => ScaleTransition(
+            scale: animation,
+            child: FadeTransition(opacity: animation, child: child),
+          ),
+          child: _isFollowing
+              ? Text(
+                  key: const ValueKey('following'),
+                  context.tr('following'),
+                  style: Styles.textStyle12SemiBold.copyWith(
+                    color: AppColors.kGreyB3,
+                  ),
+                )
+              : Text(
+                  key: const ValueKey('follow'),
+                  context.tr('follow'),
+                  style: Styles.textStyle12SemiBold.copyWith(
+                    color: AppColors.kprimaryColor,
+                  ),
+                ),
+        ),
+      ),
     );
   }
 }

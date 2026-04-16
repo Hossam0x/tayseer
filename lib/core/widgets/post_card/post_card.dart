@@ -242,6 +242,10 @@ class _PostCardState extends State<PostCard> {
             isFromProfile: widget.isFromProfile,
             post: widget.post,
             hideHeaderMeta: widget.hideHeaderMeta,
+            onFollowTap: widget.post.isMine
+                ? null
+                : () =>
+                      widget.callbacks.onFollowTap?.call(widget.post.advisorId),
             onMoreTap: widget.hideHeaderMeta
                 ? null
                 : () => PostOptionsBottomSheet.show(
@@ -551,12 +555,14 @@ class _PostUserHeader extends StatelessWidget {
   final VoidCallback? onMoreTap;
   final bool isFromProfile;
   final bool hideHeaderMeta;
+  final VoidCallback? onFollowTap;
 
   const _PostUserHeader({
     required this.post,
     this.onMoreTap,
     required this.isFromProfile,
     this.hideHeaderMeta = false,
+    this.onFollowTap,
   });
 
   @override
@@ -568,6 +574,8 @@ class _PostUserHeader extends StatelessWidget {
       isVerified: post.isVerified,
       userType: post.userType,
       isMine: post.isMine,
+      isFollowing: post.isFollowing,
+      onFollowTap: onFollowTap,
       onMoreTap: hideHeaderMeta ? null : (onMoreTap ?? () {}),
       subtitle: hideHeaderMeta
           ? Text(

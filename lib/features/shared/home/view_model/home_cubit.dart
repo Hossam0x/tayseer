@@ -1452,23 +1452,56 @@ class HomeCubit extends Cubit<HomeState> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   void toggleFollowAdvisor({required String advisorId}) {
-    final currentPosts = state.posts;
-    final updatedPosts = currentPosts.map((post) {
-      if (post.advisorId == advisorId) {
-        return post.copyWith(isFollowing: !post.isFollowing);
-      }
-      return post;
-    }).toList();
-
-    emit(
-      state.updateCategoryPosts(
-        state.selectedCategoryId,
-        (data) => data.copyWith(posts: updatedPosts),
-      ),
+    // Find current follow state from any post by this advisor
+    final currentPost = state.posts.firstWhere(
+      (p) => p.advisorId == advisorId,
+      orElse: () => state.categoryPostsMap.values
+          .expand((d) => d.posts)
+          .firstWhere(
+            (p) => p.advisorId == advisorId,
+            orElse: () => state.posts.first,
+          ),
     );
+    final isCurrentlyFollowing = currentPost.isFollowing;
+    final isAdding = !isCurrentlyFollowing;
 
-    // TODO: API Call
-    // homeRepository.toggleFollowAdvisor(advisorId: advisorId);
+    // Optimistic update across all categories
+    final newMap = <String?, CategoryPostsData>{};
+    for (final entry in state.categoryPostsMap.entries) {
+      newMap[entry.key] = entry.value.copyWith(
+        posts: entry.value.posts.map((post) {
+          if (post.advisorId == advisorId) {
+            return post.copyWith(isFollowing: isAdding);
+          }
+          return post;
+        }).toList(),
+      );
+    }
+    emit(state.copyWith(categoryPostsMap: newMap));
+
+    // API Call with rollback on failure
+    homeRepository.followAdvisor(advisorId: advisorId, isAdding: isAdding).then(
+      (result) {
+        result.fold(
+          (failure) {
+            // Rollback
+            final rollbackMap = <String?, CategoryPostsData>{};
+            for (final entry in state.categoryPostsMap.entries) {
+              rollbackMap[entry.key] = entry.value.copyWith(
+                posts: entry.value.posts.map((post) {
+                  if (post.advisorId == advisorId) {
+                    return post.copyWith(isFollowing: isCurrentlyFollowing);
+                  }
+                  return post;
+                }).toList(),
+              );
+            }
+            if (!isClosed) emit(state.copyWith(categoryPostsMap: rollbackMap));
+          },
+          (_) {}, // success — optimistic update already applied
+        );
+      },
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

@@ -98,6 +98,7 @@ class NotificationData {
     required this.chatId,
     required this.eventId,
     required this.senderId,
+    required this.regardRequestId,
   });
 
   final String? postId;
@@ -108,6 +109,7 @@ class NotificationData {
   final String? chatId;
   final String? eventId;
   final String? senderId;
+  final String? regardRequestId;
 
   factory NotificationData.fromJson(Map<String, dynamic> json) {
     return NotificationData(
@@ -119,6 +121,7 @@ class NotificationData {
       chatId: json["chatId"]?.toString(),
       eventId: json["eventId"]?.toString(),
       senderId: json["senderId"],
+      regardRequestId: json["regardRequestId"]?.toString(),
     );
   }
 }

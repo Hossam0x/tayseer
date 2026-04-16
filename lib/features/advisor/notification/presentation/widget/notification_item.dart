@@ -20,10 +20,13 @@ class NotificationItem extends StatefulWidget {
   final VoidCallback? onReject;
   final VoidCallback? onSubscribe;
   final VoidCallback? onDelete;
+  final VoidCallback? onAcceptRegard;
+  final VoidCallback? onRejectRegard;
+  final bool hideRegardButtons;
+  final Animation<double>? buttonFadeAnimation;
+  final Animation<double>? buttonScaleAnimation;
 
   /// Shared notifier — holds the id of the currently open slidable.
-  /// When this item opens, it writes its own id here.
-  /// When another item writes a different id, this item closes itself.
   final ValueNotifier<String?>? openItemNotifier;
 
   const NotificationItem({
@@ -34,7 +37,12 @@ class NotificationItem extends StatefulWidget {
     this.onReject,
     this.onSubscribe,
     this.onDelete,
+    this.onAcceptRegard,
+    this.onRejectRegard,
     this.openItemNotifier,
+    this.hideRegardButtons = false,
+    this.buttonFadeAnimation,
+    this.buttonScaleAnimation,
   });
 
   @override
@@ -63,19 +71,14 @@ class _NotificationItemState extends State<NotificationItem>
 
   void _onOpenItemChanged() {
     final openId = widget.openItemNotifier?.value;
-    // If another item became open, close this one
-    if (openId != _itemId) {
-      _slidableController.close();
-    }
+    if (openId != _itemId) _slidableController.close();
   }
 
   void _handleDragStart() {
-    // Notify others that this item is being opened
     widget.openItemNotifier?.value = _itemId;
   }
 
   void _handleTap() {
-    // Close the slidable first, then fire the tap callback
     _slidableController.close();
     widget.onTap?.call();
   }
@@ -205,6 +208,7 @@ class _NotificationItemState extends State<NotificationItem>
     );
   }
 
+  // ─── Delete panel (slidable) ───────────────────────────────
   Widget _buildDeletePanel(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12.r),
@@ -238,6 +242,7 @@ class _NotificationItemState extends State<NotificationItem>
     );
   }
 
+  // ─── Avatar + type icon ────────────────────────────────────
   Widget _buildAvatarArea() {
     return SizedBox(
       width: 55,
@@ -266,23 +271,19 @@ class _NotificationItemState extends State<NotificationItem>
     );
   }
 
+  // ─── Icon per type ─────────────────────────────────────────
   String _getIconByType() {
     switch (widget.notification.type) {
       case NotificationType.commentLike:
       case NotificationType.commentReply:
         return AssetsData.commentIcon;
-
       case NotificationType.storyLike:
       case NotificationType.postLike:
       case NotificationType.replyLike:
         if (widget.notification.likeType == "dislike") {
           return AssetsData.disLikeIcon;
-        } else if (widget.notification.likeType == "love") {
-          return AssetsData.loveIcon;
-        } else {
-          return AssetsData.loveIcon;
         }
-
+        return AssetsData.loveIcon;
       case NotificationType.postShare:
       case NotificationType.eventShare:
         return AssetsData.shareIcon;
@@ -295,11 +296,14 @@ class _NotificationItemState extends State<NotificationItem>
         return AssetsData.messageNotify;
       case NotificationType.eventReservation:
         return AssetsData.ticketEventNotify;
+      case NotificationType.regardRequest:
+        return AssetsData.heartLockIcon;
       default:
         return AssetsData.careIcon;
     }
   }
 
+  // ─── Time formatter ────────────────────────────────────────
   String _formatTime(BuildContext context, DateTime? dateTime) {
     if (dateTime == null) return "";
     final now = DateTime.now();
@@ -325,8 +329,14 @@ class _NotificationItemState extends State<NotificationItem>
     return "${dateTime.day}/${dateTime.month}/${dateTime.year}";
   }
 
+  // ─── Action buttons ────────────────────────────────────────
   bool _hasActionButtons() {
-    return widget.notification.type == NotificationType.newChat;
+    if (widget.hideRegardButtons &&
+        widget.notification.type == NotificationType.regardRequest) {
+      return false;
+    }
+    return widget.notification.type == NotificationType.newChat ||
+        widget.notification.type == NotificationType.regardRequest;
   }
 
   Widget _buildActionButtons(BuildContext context) {
@@ -353,6 +363,60 @@ class _NotificationItemState extends State<NotificationItem>
         ],
       );
     }
+
+    if (widget.notification.type == NotificationType.regardRequest) {
+      return _buildRegardButtons(context);
+    }
+
     return const SizedBox.shrink();
+  }
+
+  // ─── Regard request buttons (matches screenshot UI) ───────
+  Widget _buildRegardButtons(BuildContext context) {
+    Widget buttons = Row(
+      children: [
+        // رفض — outline style
+        Expanded(
+          child: CustomOutlineButton(
+            height: 44.h,
+            width: double.infinity,
+            text: context.tr(AppStrings.reject),
+            onTap: widget.onRejectRegard,
+          ),
+        ),
+        SizedBox(width: 10.w),
+        // قبول — gradient style
+        Expanded(
+          child: CustomBotton(
+            height: 44.h,
+            useGradient: true,
+            title: context.tr(AppStrings.accept),
+            onPressed: widget.onAcceptRegard,
+          ),
+        ),
+      ],
+    );
+
+    // Apply animation if provided
+    if (widget.buttonFadeAnimation != null &&
+        widget.buttonScaleAnimation != null) {
+      return AnimatedBuilder(
+        animation: Listenable.merge([
+          widget.buttonFadeAnimation!,
+          widget.buttonScaleAnimation!,
+        ]),
+        builder: (context, child) {
+          return FadeTransition(
+            opacity: widget.buttonFadeAnimation!,
+            child: ScaleTransition(
+              scale: widget.buttonScaleAnimation!,
+              child: buttons,
+            ),
+          );
+        },
+      );
+    }
+
+    return buttons;
   }
 }

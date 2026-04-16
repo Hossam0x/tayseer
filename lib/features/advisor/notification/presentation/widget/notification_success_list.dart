@@ -3,6 +3,7 @@ import 'package:tayseer/features/advisor/notification/presentation/manager/notif
 import 'package:tayseer/features/advisor/notification/presentation/widget/notification_item.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/story_details_view.dart';
+import 'package:tayseer/features/user/my_space/users_chat/data/repo/user_chat_repo.dart';
 
 import 'package:tayseer/my_import.dart';
 
@@ -19,6 +20,7 @@ class NotificationSuccessList extends StatefulWidget {
 
 class _NotificationSuccessListState extends State<NotificationSuccessList> {
   late ScrollController _scrollController;
+  late final UserChatRepo _userChatRepo;
 
   /// Tracks which item's slidable is currently open (by id).
   /// Shared across all NotificationItem widgets so only one is open at a time.
@@ -27,6 +29,7 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
   @override
   void initState() {
     super.initState();
+    _userChatRepo = UserChatRepo(getIt<ApiService>());
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
   }
@@ -88,6 +91,8 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
                 onReject: () => cubit.deleteNotification(item.id ?? ""),
                 onDelete: () => _handleDelete(context, cubit, item),
                 onSubscribe: () {},
+                onAcceptRegard: () => _handleAcceptRegard(context, cubit, item),
+                onRejectRegard: () => _handleRejectRegard(context, cubit, item),
               ),
             );
           },
@@ -102,6 +107,48 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
     NotificationModel item,
   ) {
     cubit.deleteNotification(item.id ?? "");
+  }
+
+  Future<void> _handleAcceptRegard(
+    BuildContext context,
+    NotificationCubit cubit,
+    NotificationModel item,
+  ) async {
+    // Use senderId as regardRequestId based on the API response structure
+    final regardRequestId = item.data?.senderId;
+    if (regardRequestId == null || regardRequestId.isEmpty) return;
+
+    final result = await _userChatRepo.acceptRegardRequest(regardRequestId);
+    result.fold(
+      (_) {
+        // Handle error if needed
+      },
+      (_) {
+        // Success - mark as read but keep notification visible without buttons
+        cubit.markAsRead(item.id ?? "");
+      },
+    );
+  }
+
+  Future<void> _handleRejectRegard(
+    BuildContext context,
+    NotificationCubit cubit,
+    NotificationModel item,
+  ) async {
+    // Use senderId as regardRequestId based on the API response structure
+    final regardRequestId = item.data?.senderId;
+    if (regardRequestId == null || regardRequestId.isEmpty) return;
+
+    final result = await _userChatRepo.rejectRegardRequest(regardRequestId);
+    result.fold(
+      (_) {
+        // Handle error if needed
+      },
+      (_) {
+        // Success - mark as read but keep notification visible without buttons
+        cubit.markAsRead(item.id ?? "");
+      },
+    );
   }
 
   void _handleNotificationTap(
@@ -193,6 +240,8 @@ class _AnimatedNotificationItem extends StatefulWidget {
   final VoidCallback? onReject;
   final VoidCallback? onDelete;
   final VoidCallback? onSubscribe;
+  final VoidCallback? onAcceptRegard;
+  final VoidCallback? onRejectRegard;
 
   const _AnimatedNotificationItem({
     super.key,
@@ -203,6 +252,8 @@ class _AnimatedNotificationItem extends StatefulWidget {
     this.onReject,
     this.onDelete,
     this.onSubscribe,
+    this.onAcceptRegard,
+    this.onRejectRegard,
   });
 
   @override
@@ -216,6 +267,12 @@ class _AnimatedNotificationItemState extends State<_AnimatedNotificationItem>
   late Animation<Offset> _slideAnim;
   late Animation<double> _fadeAnim;
   late Animation<double> _sizeAnim;
+
+  // Track if regard buttons should be hidden
+  bool _hideRegardButtons = false;
+  late AnimationController _buttonController;
+  late Animation<double> _buttonFadeAnim;
+  late Animation<double> _buttonScaleAnim;
 
   @override
   void initState() {
@@ -241,17 +298,41 @@ class _AnimatedNotificationItemState extends State<_AnimatedNotificationItem>
         curve: const Interval(0.5, 1.0, curve: Curves.easeInOut),
       ),
     );
+
+    // Button animation controller
+    _buttonController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    _buttonFadeAnim = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _buttonController, curve: Curves.easeOut),
+    );
+
+    _buttonScaleAnim = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _buttonController, curve: Curves.easeOut),
+    );
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _buttonController.dispose();
     super.dispose();
   }
 
   Future<void> _animateThenDelete() async {
     await _controller.forward();
     widget.onDelete?.call();
+  }
+
+  Future<void> _hideButtonsWithAnimation() async {
+    await _buttonController.forward();
+    if (mounted) {
+      setState(() {
+        _hideRegardButtons = true;
+      });
+    }
   }
 
   @override
@@ -271,6 +352,17 @@ class _AnimatedNotificationItemState extends State<_AnimatedNotificationItem>
             onReject: widget.onReject,
             onDelete: _animateThenDelete,
             onSubscribe: widget.onSubscribe,
+            onAcceptRegard: () async {
+              await _hideButtonsWithAnimation();
+              widget.onAcceptRegard?.call();
+            },
+            onRejectRegard: () async {
+              await _hideButtonsWithAnimation();
+              widget.onRejectRegard?.call();
+            },
+            hideRegardButtons: _hideRegardButtons,
+            buttonFadeAnimation: _buttonFadeAnim,
+            buttonScaleAnimation: _buttonScaleAnim,
           ),
         ),
       ),

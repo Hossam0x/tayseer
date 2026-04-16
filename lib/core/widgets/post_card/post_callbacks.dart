@@ -56,6 +56,9 @@ typedef CommentCountDeltaCallback =
 typedef CommentCountSyncCallback =
     void Function({required String postId, required int totalCount});
 
+/// Callback when user taps follow on a post creator
+typedef FollowAdvisorCallback = void Function(String advisorId);
+
 /// Bundle of post-related callbacks for easy passing
 class PostCallbacks {
   // Existing callbacks
@@ -76,6 +79,8 @@ class PostCallbacks {
   final CommentedCallback? onCommented;
   final CommentCountDeltaCallback? onCommentCountDelta;
   final CommentCountSyncCallback? onCommentCountSync;
+  // ✅ Follow advisor
+  final FollowAdvisorCallback? onFollowTap;
 
   const PostCallbacks({
     this.onReactionChanged,
@@ -95,6 +100,7 @@ class PostCallbacks {
     this.onCommented,
     this.onCommentCountDelta,
     this.onCommentCountSync,
+    this.onFollowTap,
   });
 
   /// Empty callbacks (for optional usage)
@@ -116,5 +122,6 @@ class PostCallbacks {
       onPollVote != null ||
       onCommented != null ||
       onCommentCountDelta != null ||
-      onCommentCountSync != null;
+      onCommentCountSync != null ||
+      onFollowTap != null;
 }
