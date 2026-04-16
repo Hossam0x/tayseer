@@ -6,6 +6,7 @@ import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
 import 'package:tayseer/features/advisor/add_post/view/add_post_view.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/advisor_chat_screen.dart';
+import 'package:tayseer/features/user/my_space/users_chat/presentation/view/user_chat_screen.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/requests.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/search_view.dart';
 import 'package:tayseer/features/advisor/profille/views/boost_account_view.dart';
@@ -183,6 +184,7 @@ abstract class AppRouter {
   static const kChatRequest = '/chatrequest';
   static const kChatSearchView = '/ChatSearchView';
   static const kConversitionView = '/ConversitionView';
+  static const kUserChatView = '/UserChatView';
   static const advisorchatprofile = '/advisorchatprofile';
   static const sessionhistory = '/sessionhistory';
   static const incommingsessiondetails = '/incommingsessiondetails';
@@ -821,7 +823,7 @@ abstract class AppRouter {
           settings: settings,
           builder: (_) => AdvisorChatScreen(
             receiverId: (isSystemChat || hasSystem)
-                ? null // في حالة System Chat لا نرسل receiverId
+                ? null
                 : (args?['receiverid'] as String?),
             chatRoomId: args?['chatroomid'] as String?,
             username: args?['username'] as String?,
@@ -831,6 +833,19 @@ abstract class AppRouter {
             isSystemChat: isSystemChat || hasSystem,
             onBlockStatusChanged:
                 args?['onBlockStatusChanged'] as void Function(bool)?,
+          ),
+        );
+
+      case kUserChatView:
+        final userArgs = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => UserChatScreen(
+            chatRoomId: userArgs?['chatroomid'] as String?,
+            receiverId: userArgs?['receiverid'] as String?,
+            username: userArgs?['username'] as String?,
+            userimage: userArgs?['userimage'] as String?,
+            isBlocked: userArgs?['isBlocked'] as bool? ?? false,
           ),
         );
       case notification:

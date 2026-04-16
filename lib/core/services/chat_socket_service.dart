@@ -10,6 +10,7 @@ import 'package:tayseer/core/utils/helper/socket_helper.dart';
 class ChatSocketService {
   final tayseerSocketHelper _socket = getIt.get<tayseerSocketHelper>();
   static const _id = 'ChatSocketService';
+  bool _isInitialized = false;
 
   // Streams للـ events
   final _newMessage = StreamController<NewMessageSocketEvent>.broadcast();
@@ -33,6 +34,12 @@ class ChatSocketService {
 
   /// تهيئة الـ service وتسجيل الـ listeners
   void init() {
+    // منع التسجيل المزدوج — لو اتنادى init() قبل dispose()، نشيل القديم أولاً
+    if (_isInitialized) {
+      _socket.offAllForListener(_id);
+      log('🔄 [ChatSocketService] re-initializing — removed old listeners');
+    }
+    _isInitialized = true;
     // New message
     _socket.listenWithId('newMessage', _id, (data) {
       if (data is! Map) return;
@@ -160,6 +167,13 @@ class ChatSocketService {
       'chatMessageId': chatMessageId,
     }, onAck);
     log('📤 [ChatSocketService] unreactToMessage: $chatMessageId');
+  }
+
+  /// إزالة الـ socket listeners فقط (بدون إغلاق الـ streams)
+  void removeListeners() {
+    _socket.offAllForListener(_id);
+    _isInitialized = false;
+    log('🔕 [ChatSocketService] listeners removed');
   }
 
   /// تنظيف الـ service

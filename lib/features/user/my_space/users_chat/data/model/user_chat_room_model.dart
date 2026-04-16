@@ -82,22 +82,42 @@ class UserLastMessageModel {
 class UserChatRoomsResponse {
   final List<UserChatRoomModel> chatRooms;
   final int pendingRequestsCount;
+  final int slotLimit;
 
   UserChatRoomsResponse({
     required this.chatRooms,
     required this.pendingRequestsCount,
+    this.slotLimit = 3,
   });
 
   factory UserChatRoomsResponse.fromJson(Map<String, dynamic> json) {
     final data = json['data'] as Map<String, dynamic>? ?? {};
-    final innerData = data['data'] as Map<String, dynamic>? ?? data;
-    final list = innerData['chatRooms'] as List? ?? [];
+    final dynamic innerData = data['data'];
+
+    List<dynamic> chatRoomsList = [];
+    Map<String, dynamic> paginationData = {};
+    int slotLimit = 4;
+
+    if (innerData is List) {
+      chatRoomsList = innerData;
+      paginationData = data['pagination'] as Map<String, dynamic>? ?? {};
+      slotLimit = data['slotLimit'] ?? 4;
+    } else if (innerData is Map<String, dynamic>) {
+      chatRoomsList = innerData['chatRooms'] as List? ?? innerData['data'] as List? ?? [];
+      paginationData = innerData['pagination'] as Map<String, dynamic>? ?? {};
+      slotLimit = innerData['slotLimit'] ?? data['slotLimit'] ?? 4;
+    } else {
+      chatRoomsList = data['chatRooms'] as List? ?? [];
+      paginationData = data['pagination'] as Map<String, dynamic>? ?? {};
+      slotLimit = data['slotLimit'] ?? 4;
+    }
 
     return UserChatRoomsResponse(
-      chatRooms: list
+      chatRooms: chatRoomsList
           .map((e) => UserChatRoomModel.fromJson(e as Map<String, dynamic>))
           .toList(),
-      pendingRequestsCount: innerData['pendingRequestsCount'] ?? 0,
+      pendingRequestsCount: data['pendingRequestsCount'] ?? paginationData['pendingRequestsCount'] ?? 0,
+      slotLimit: slotLimit,
     );
   }
 }

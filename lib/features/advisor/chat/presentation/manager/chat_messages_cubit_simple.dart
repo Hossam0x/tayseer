@@ -680,15 +680,19 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   // ══════════════════════════════════════════════════════════════════════════
 
   void typingStart(String chatRoomId) {
+    if (_currentReceiverId == null) return;
     _socketHelper.send('typingStatus', {
       'chatRoomId': chatRoomId,
+      'receiverId': _currentReceiverId,
       'isTyping': true,
     }, null);
   }
 
   void typingStop(String chatRoomId) {
+    if (_currentReceiverId == null) return;
     _socketHelper.send('typingStatus', {
       'chatRoomId': chatRoomId,
+      'receiverId': _currentReceiverId,
       'isTyping': false,
     }, null);
   }

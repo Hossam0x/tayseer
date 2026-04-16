@@ -17,6 +17,7 @@ class ChatMessagesArea extends StatelessWidget {
   final ScrollBehaviorHandler scrollHandler;
   final OverlayManager overlayManager;
   final VoidCallback onStateChanged;
+  final bool showFreeChatBanner;
 
   const ChatMessagesArea({
     super.key,
@@ -25,6 +26,7 @@ class ChatMessagesArea extends StatelessWidget {
     required this.scrollHandler,
     required this.overlayManager,
     required this.onStateChanged,
+    this.showFreeChatBanner = true,
   });
 
   @override
@@ -53,7 +55,7 @@ class ChatMessagesArea extends StatelessWidget {
           return Column(
             children: [
               if (!state.isOnline) _buildOfflineIndicator(),
-              if (state.freeChatMinutes != null && state.freeChatMinutes! > 0)
+              if (showFreeChatBanner && state.freeChatMinutes != null && state.freeChatMinutes! > 0)
                 _FreeChatBanner(minutes: state.freeChatMinutes!),
               Expanded(
                 child: NotificationListener<ScrollNotification>(

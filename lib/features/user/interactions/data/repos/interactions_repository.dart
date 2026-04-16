@@ -35,4 +35,5 @@ abstract class InteractionsRepository {
 Future<Either<Failure, void>> resetLikesNotificationCount();
 Future<Either<Failure, void>> resetFavoritesNotificationCount();
 Future<Either<Failure, void>> resetRegardsNotificationCount();
+Future<Either<Failure, PastMatchesResponse>> fetchPastMatches({int page = 1});
 }
