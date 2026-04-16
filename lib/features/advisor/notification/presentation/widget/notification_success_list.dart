@@ -158,7 +158,11 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
     // Close any open slidable first
     _openItemNotifier.value = null;
 
-    context.read<NotificationCubit>().markAsRead(notification.id ?? "");
+    // Only mark as read if notification is currently unread
+    final bool isUnread = !(notification.isRead ?? false);
+    if (isUnread) {
+      context.read<NotificationCubit>().markAsRead(notification.id ?? "");
+    }
 
     if (notification.type == NotificationType.newFollower) {
       context.pushNamed(

@@ -263,7 +263,7 @@ class _NotificationItemState extends State<NotificationItem>
             alignment: Alignment.bottomRight,
             child: Container(
               padding: const EdgeInsets.all(4),
-              child: SvgPicture.asset(_getIconByType(), width: 24, height: 24),
+              child: _buildTypeIcon(),
             ),
           ),
         ],
@@ -276,6 +276,10 @@ class _NotificationItemState extends State<NotificationItem>
     switch (widget.notification.type) {
       case NotificationType.commentLike:
       case NotificationType.commentReply:
+        return AssetsData.commentIcon;
+      case NotificationType.newPostFromFollowing:
+        return AssetsData.addCertificateImage;
+      case NotificationType.postComment:
         return AssetsData.commentIcon;
       case NotificationType.storyLike:
       case NotificationType.postLike:
@@ -301,6 +305,18 @@ class _NotificationItemState extends State<NotificationItem>
       default:
         return AssetsData.careIcon;
     }
+  }
+
+  // ─── Build type icon with specific sizing ─────────────────
+  Widget _buildTypeIcon() {
+    final iconPath = _getIconByType();
+    final isFollowNotify = iconPath == AssetsData.followNotify;
+
+    return SvgPicture.asset(
+      iconPath,
+      width: isFollowNotify ? 30 : 22,
+      height: isFollowNotify ? 30 : 22,
+    );
   }
 
   // ─── Time formatter ────────────────────────────────────────
