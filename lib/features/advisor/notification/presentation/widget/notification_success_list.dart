@@ -262,7 +262,7 @@ class _AnimatedNotificationItem extends StatefulWidget {
 }
 
 class _AnimatedNotificationItemState extends State<_AnimatedNotificationItem>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Offset> _slideAnim;
   late Animation<double> _fadeAnim;

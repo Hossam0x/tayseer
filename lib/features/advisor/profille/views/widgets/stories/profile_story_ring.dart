@@ -74,24 +74,19 @@ class ProfileStoryRing extends StatelessWidget {
               ),
               if (!isUploading)
                 Positioned(
-                  bottom: 2,
-                  right: 2,
+                  bottom: 0,
+                  right: 0,
                   child: CustomClick(
                     onTap: () => _openAddStory(context),
                     child: Container(
-                      width: 22.w,
-                      height: 22.w,
+                      width: context.responsiveWidth(26),
+                      height: context.responsiveWidth(26),
                       decoration: BoxDecoration(
                         color: AppColors.kprimaryColor,
                         shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2.sp),
                       ),
-                      child: Center(
-                        child: AppImage(
-                          width: 12.w,
-                          AssetsData.icAdd,
-                          color: AppColors.kWhiteColor,
-                        ),
-                      ),
+                      child: Icon(Icons.add, color: Colors.white, size: 18.sp),
                     ),
                   ),
                 ),

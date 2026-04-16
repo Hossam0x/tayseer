@@ -50,7 +50,7 @@ class NotificationItem extends StatefulWidget {
 }
 
 class _NotificationItemState extends State<NotificationItem>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final SlidableController _slidableController;
 
   String get _itemId => widget.notification.id ?? widget.notification.key ?? '';

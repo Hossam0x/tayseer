@@ -114,11 +114,15 @@ class LocalNotification {
       // 🔔 Notify HomeCubit (and any other listener) to refresh notification count
       NotificationEventBus.instance.fire();
 
-      await _displayNotification(
-        message.notification?.title ?? 'Notification',
-        message.notification?.body ?? '',
-        payload: jsonEncode(message.data),
-      );
+      // Only show local notification if there's no system notification
+      // This prevents duplicate notifications
+      if (message.notification == null) {
+        await _displayNotification(
+          message.data['title'] ?? 'Notification',
+          message.data['body'] ?? '',
+          payload: jsonEncode(message.data),
+        );
+      }
     });
 
     /// 🚀 Background click
