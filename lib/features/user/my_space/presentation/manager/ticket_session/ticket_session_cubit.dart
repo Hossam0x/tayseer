@@ -83,12 +83,25 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
           stateName: 'TicketSessionCubit - paySession (Backend)',
           state: CubitStates.failure,
         );
-        emit(
-          state.copyWith(
-            paySessionState: CubitStates.failure,
-            errorMessage: failure.message,
-          ),
-        );
+
+        // ✅ لو الـ error هو profileIncomplete نعمل emit خاص
+        if (failure.message == 'profileIncomplete') {
+          emit(
+            state.copyWith(
+              paySessionState: CubitStates.failure,
+              profileIncomplete: true,
+              errorMessage: null,
+            ),
+          );
+        } else {
+          emit(
+            state.copyWith(
+              paySessionState: CubitStates.failure,
+              profileIncomplete: false,
+              errorMessage: failure.message,
+            ),
+          );
+        }
       },
       (paymentIntention) async {
         // ── Step 2: فتح Paymob SDK ──
@@ -154,6 +167,11 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
     emit(
       state.copyWith(paySessionState: CubitStates.initial, errorMessage: null),
     );
+  }
+
+  // ==================== إعادة تعيين profileIncomplete ====================
+  void resetProfileIncomplete() {
+    emit(state.copyWith(profileIncomplete: false));
   }
 
   // ==================== إعادة تعيين الحالة ====================

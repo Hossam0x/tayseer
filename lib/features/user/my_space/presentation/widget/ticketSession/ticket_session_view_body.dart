@@ -5,31 +5,65 @@ import 'package:tayseer/features/user/my_space/presentation/widget/ticketSession
 import 'package:tayseer/features/user/my_space/presentation/widget/ticketSession/ticket_header.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/ticketSession/ticket_price_summary.dart';
 import 'package:tayseer/features/user/my_space/presentation/widget/ticketSession/ticket_promo_code.dart';
+import 'package:tayseer/features/user/questions/presentation/views/add_phone_view.dart';
 import 'package:tayseer/my_import.dart';
 
-class TicketSessionViewBody extends StatelessWidget {
+class TicketSessionViewBody extends StatefulWidget {
   final SessionData sessionData;
 
   const TicketSessionViewBody({super.key, required this.sessionData});
 
+  @override
+  State<TicketSessionViewBody> createState() => _TicketSessionViewBodyState();
+}
+
+class _TicketSessionViewBodyState extends State<TicketSessionViewBody> {
   @override
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: SafeArea(
         child: BlocListener<TicketSessionCubit, TicketSessionState>(
-          listenWhen: (previous, current) =>
-              previous.paySessionState != current.paySessionState,
           listener: (context, state) {
+            debugPrint(
+              '🎯 Listener fired: payState=${state.paySessionState}, profileIncomplete=${state.profileIncomplete}, errorMsg=${state.errorMessage}',
+            );
+
             if (state.paySessionState == CubitStates.success) {
               context.pushNamed(
                 AppRouter.sessionticketsuccessview,
-                arguments: sessionData,
+                arguments: widget.sessionData,
               );
               context.read<TicketSessionCubit>().resetPayState();
+              return;
             }
 
-            if (state.paySessionState == CubitStates.failure) {
+            // ✅ لو الـ profile ناقص → روح لصفحة إضافة رقم الموبايل
+            if (state.profileIncomplete) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                context.read<TicketSessionCubit>().resetProfileIncomplete();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AddPhoneViewFromTicket(
+                      onPhoneAdded: () {
+                        if (!mounted) return;
+                        // بعد ما يضيف الرقم بنجاح، نعيد محاولة الدفع
+                        context.read<TicketSessionCubit>().paySession(
+                          offeringId: widget.sessionData.id,
+                        );
+                      },
+                    ),
+                  ),
+                );
+              });
+              return;
+            }
+
+            // نعرض الـ error بس لو مش profileIncomplete
+            if (state.paySessionState == CubitStates.failure &&
+                state.errorMessage != null) {
               AppToast.error(context, state.errorMessage.toString());
             }
           },
@@ -58,7 +92,9 @@ class TicketSessionViewBody extends StatelessWidget {
                             ),
                           ),
                           SizedBox(height: 12.h),
-                          TicketConsultationCard(sessionData: sessionData),
+                          TicketConsultationCard(
+                            sessionData: widget.sessionData,
+                          ),
                           SizedBox(height: 25.h),
                           Text(
                             context.tr("discount_code"),
@@ -93,7 +129,7 @@ class TicketSessionViewBody extends StatelessWidget {
                                     cubit.state.paySessionState ==
                                     CubitStates.loading,
                               ),
-                              sessionData: sessionData,
+                              sessionData: widget.sessionData,
                               discountPercentage: discountPercentage,
                             );
                           },

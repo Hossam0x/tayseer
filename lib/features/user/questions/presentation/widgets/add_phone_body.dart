@@ -3,7 +3,10 @@ import 'package:tayseer/features/user/questions/presentation/manager/questions_s
 import 'package:tayseer/my_import.dart';
 
 class AddPhoneBody extends StatelessWidget {
-  const AddPhoneBody({super.key});
+  /// لو مش null، هيتم استدعاؤه بدل الـ navigation الافتراضي بعد النجاح
+  final VoidCallback? onSuccessOverride;
+
+  const AddPhoneBody({super.key, this.onSuccessOverride});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +23,13 @@ class AddPhoneBody extends StatelessWidget {
             );
           } else if (state.phoneNumberState == CubitStates.success) {
             context.pop();
-            context.pushReplacementNamed(AppRouter.kCommitmentView);
+            if (onSuccessOverride != null) {
+              // ✅ لو في override (جاي من TicketSession) نستدعيه
+              onSuccessOverride!();
+            } else {
+              // الـ flow الافتراضي
+              context.pushReplacementNamed(AppRouter.kCommitmentView);
+            }
           } else if (state.phoneNumberState == CubitStates.loading) {
             showDialog(
               context: context,

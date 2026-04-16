@@ -331,6 +331,10 @@ class MySpaceRepo {
         },
       );
       return Right(PaymentIntentionModel.fromJson(response));
+    } on DioException catch (e) {
+      final message =
+          e.response?.data?['message'] ?? e.message ?? 'فشل في بدء الدفع';
+      return Left(ServerFailure(message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

@@ -8,6 +8,9 @@ class TicketSessionState {
   // حالة الدفع
   CubitStates paySessionState;
 
+  // ✅ جديد - حالة profileIncomplete
+  bool profileIncomplete;
+
   // ✅ جديد - حالة Paymob SDK
   String? paymentKey;
   int? orderId;
@@ -27,6 +30,7 @@ class TicketSessionState {
   TicketSessionState({
     this.validateDiscountState = CubitStates.initial,
     this.paySessionState = CubitStates.initial,
+    this.profileIncomplete = false,
     this.paymentKey,
     this.orderId,
     this.paymentResult,
@@ -40,6 +44,7 @@ class TicketSessionState {
   TicketSessionState copyWith({
     CubitStates? validateDiscountState,
     CubitStates? paySessionState,
+    bool? profileIncomplete,
     String? paymentKey,
     int? orderId,
     String? paymentResult,
@@ -53,6 +58,7 @@ class TicketSessionState {
       validateDiscountState:
           validateDiscountState ?? this.validateDiscountState,
       paySessionState: paySessionState ?? this.paySessionState,
+      profileIncomplete: profileIncomplete ?? this.profileIncomplete,
       paymentKey: paymentKey ?? this.paymentKey,
       orderId: orderId ?? this.orderId,
       paymentResult: paymentResult ?? this.paymentResult,
