@@ -1,5 +1,7 @@
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/request/custome_request_appbar.dart';
+import 'package:tayseer/features/advisor/notification/presentation/manager/notification_cubit.dart';
+import 'package:tayseer/features/advisor/notification/presentation/manager/notification_state.dart';
 
 class NotificationPageContainer extends StatelessWidget {
   final Widget child;
@@ -18,7 +20,29 @@ class NotificationPageContainer extends StatelessWidget {
       ),
       child: Column(
         children: [
-          CustomAppBar(title: context.tr(AppStrings.notifications)),
+          CustomAppBar(
+            title: context.tr(AppStrings.notifications),
+            actions: [
+              BlocBuilder<NotificationCubit, NotificationState>(
+                buildWhen: (prev, curr) =>
+                    prev.notificationsModel != curr.notificationsModel,
+                builder: (context, state) {
+                  final cubit = context.read<NotificationCubit>();
+                  if (cubit.unreadCount == 0) return const SizedBox.shrink();
+                  return TextButton(
+                    onPressed: cubit.markAllAsRead,
+                    child: Text(
+                      context.tr(AppStrings.markAllAsRead),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
           Expanded(child: child),
         ],
       ),

@@ -10,11 +10,35 @@ class NotificationRepo {
   NotificationRepo({required this.apiService});
 
   Future<Either<Failure, NotificationsModel>> getAllNotification(
-      int page
-      ) async {
+    int page,
+  ) async {
     try {
-      final response = await apiService.get(endPoint: "/notification/me?page=$page");
+      final response = await apiService.get(
+        endPoint: "/notification/me?page=$page",
+      );
       return Right(NotificationsModel.fromJson(response));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  Future<Either<Failure, void>> readOneNotification(String id) async {
+    try {
+      await apiService.patch(endPoint: "/notification/read-one/$id");
+      return const Right(null);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  Future<Either<Failure, void>> readAllNotifications() async {
+    try {
+      await apiService.patch(endPoint: "/notification/read");
+      return const Right(null);
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {

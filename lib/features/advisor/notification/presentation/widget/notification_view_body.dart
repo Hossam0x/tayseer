@@ -1,6 +1,5 @@
 // notification_view_body.dart
 
-
 import 'package:tayseer/features/advisor/notification/presentation/widget/empty_notification.dart';
 import 'package:tayseer/features/advisor/notification/presentation/widget/notification_failure_state.dart';
 import 'package:tayseer/features/advisor/notification/presentation/widget/notification_loading_state.dart';
@@ -19,8 +18,6 @@ class NotificationViewBody extends StatelessWidget {
     return NotificationPageContainer(
       child: BlocBuilder<NotificationCubit, NotificationState>(
         builder: (context, state) {
-          final cubit = context.read<NotificationCubit>();
-
           // ─── Loading ───────────────────────────────
           if (state.notificationState == CubitStates.loading) {
             return const NotificationLoadingState();
@@ -42,12 +39,4 @@ class NotificationViewBody extends StatelessWidget {
       ),
     );
   }
-
-  // void _handleNotificationTap(BuildContext context) {
-  //   // TODO: Navigation based on notification.type
-  // }
-  //
-  // void _handleSubscribe(BuildContext context) {
-  //   // TODO: Navigate to subscription screen
-  // }
 }

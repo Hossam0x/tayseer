@@ -21,6 +21,7 @@ class NotificationsModel {
     );
   }
 }
+
 class NotificationsModelData {
   NotificationsModelData({
     required this.notifications,
@@ -72,9 +73,9 @@ class NotificationModel {
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     return NotificationModel(
       id: json["id"],
-      type:NotificationType.fromType(json["type"]),
+      type: NotificationType.fromType(json["type"]),
       key: json["key"],
-      likeType:json["likeType"],
+      likeType: json["likeType"],
       title: json["title"],
       description: json["description"],
       dateTime: DateTime.tryParse(json["dateTime"] ?? ""),
@@ -93,6 +94,7 @@ class NotificationData {
     required this.storyId,
     required this.commentId,
     required this.replyId,
+    required this.sessionId,
     required this.chatId,
     required this.eventId,
     required this.senderId,
@@ -102,6 +104,7 @@ class NotificationData {
   final String? storyId;
   final String? commentId;
   final String? replyId;
+  final String? sessionId;
   final String? chatId;
   final String? eventId;
   final String? senderId;
@@ -112,6 +115,7 @@ class NotificationData {
       storyId: json["storyId"],
       commentId: json["commentId"]?.toString(),
       replyId: json["replyId"]?.toString(),
+      sessionId: json["sessionId"]?.toString(),
       chatId: json["chatId"]?.toString(),
       eventId: json["eventId"]?.toString(),
       senderId: json["senderId"],

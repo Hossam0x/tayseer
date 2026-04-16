@@ -1,4 +1,3 @@
-import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/features/advisor/notification/presentation/manager/notification_cubit.dart';
 import 'package:tayseer/features/advisor/notification/presentation/widget/notification_item.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
@@ -101,10 +100,10 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
         notification.type == NotificationType.newMessage) {
       //from her go new message
     } else if (notification.type == NotificationType.sessionPaid) {
-      // context.pushNamed(
-      //   AppRouter.incommingsessiondetails,
-      //   arguments: notification.data!. ,
-      // );
+      context.pushNamed(
+        AppRouter.incommingsessiondetails,
+        arguments: notification.data?.sessionId,
+      );
     } else if (notification.type == NotificationType.storyLike ||
         notification.type == NotificationType.storyView) {
       final storyId = notification.data?.storyId;

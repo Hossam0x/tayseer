@@ -302,11 +302,11 @@ class TimeRangeModel {
 /* ===================== PRICING ===================== */
 
 class PricingModelResponse {
-  final int sessionPrice;
-  final int taxes;
-  final int fees;
-  final int discount;
-  final dynamic total;
+  final num sessionPrice;
+  final num taxes;
+  final num fees;
+  final num discount;
+  final num total;
 
   PricingModelResponse({
     required this.sessionPrice,
@@ -316,31 +316,23 @@ class PricingModelResponse {
     required this.total,
   });
 
-  int get totalAsInt {
-    if (total is int) return total;
-    if (total is double) return total.toInt();
-    if (total is String) return int.tryParse(total) ?? 0;
-    return 0;
-  }
+  int get totalAsInt => total.toInt();
 
-  double get totalAsDouble {
-    if (total is double) return total;
-    if (total is int) return total.toDouble();
-    if (total is String) return double.tryParse(total) ?? 0.0;
-    return 0.0;
-  }
+  double get totalAsDouble => total.toDouble();
 
-  String get displayTotal => '$totalAsInt ر.س';
+  String get displayTotal =>
+      '${total.toStringAsFixed(total % 1 == 0 ? 0 : 2)} ر.س';
 
-  String get displaySessionPrice => '$sessionPrice ر.س';
+  String get displaySessionPrice =>
+      '${sessionPrice.toStringAsFixed(sessionPrice % 1 == 0 ? 0 : 2)} ر.س';
 
   factory PricingModelResponse.fromJson(Map<String, dynamic> json) {
     return PricingModelResponse(
-      sessionPrice: json['sessionPrice'] ?? 0,
-      taxes: json['taxes'] ?? 0,
-      fees: json['fees'] ?? 0,
-      discount: json['discount'] ?? 0,
-      total: json['total'] ?? 0,
+      sessionPrice: (json['sessionPrice'] ?? 0) as num,
+      taxes: (json['taxes'] ?? 0) as num,
+      fees: (json['fees'] ?? 0) as num,
+      discount: (json['discount'] ?? 0) as num,
+      total: (json['total'] ?? 0) as num,
     );
   }
 

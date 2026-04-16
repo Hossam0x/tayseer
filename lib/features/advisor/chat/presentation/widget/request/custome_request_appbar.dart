@@ -1,8 +1,9 @@
 import 'package:tayseer/my_import.dart';
 
 class CustomAppBar extends StatelessWidget {
-  const CustomAppBar({super.key, required this.title});
+  const CustomAppBar({super.key, required this.title, this.actions});
   final String title;
+  final List<Widget>? actions;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +54,10 @@ class CustomAppBar extends StatelessWidget {
                     color: Colors.black54,
                   ),
                 ),
-                SizedBox(width: spacing),
+                if (actions != null && actions!.isNotEmpty)
+                  Row(mainAxisSize: MainAxisSize.min, children: actions!)
+                else
+                  SizedBox(width: spacing),
               ],
             ),
           ),

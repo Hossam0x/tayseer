@@ -103,7 +103,8 @@ class NotificationCubit extends Cubit<NotificationState> {
   }
 
   // ─── Mark As Read ──────────────────────────────────────────
-  void markAsRead(String notificationId) {
+  Future<void> markAsRead(String notificationId) async {
+    // Optimistic update
     final updatedList = notifications.map((notif) {
       if (notif.id == notificationId) {
         return NotificationModel(
@@ -122,10 +123,12 @@ class NotificationCubit extends Cubit<NotificationState> {
     }).toList();
 
     _emitUpdatedList(updatedList);
+    await notificationRepo.readOneNotification(notificationId);
   }
 
   // ─── Mark All As Read ──────────────────────────────────────
-  void markAllAsRead() {
+  Future<void> markAllAsRead() async {
+    // Optimistic update
     final updatedList = notifications.map((notif) {
       return NotificationModel(
         id: notif.id,
@@ -135,13 +138,13 @@ class NotificationCubit extends Cubit<NotificationState> {
         dateTime: notif.dateTime,
         isRead: true,
         likeType: notif.likeType,
-
         senderImage: notif.senderImage,
         data: notif.data,
       );
     }).toList();
 
     _emitUpdatedList(updatedList);
+    await notificationRepo.readAllNotifications();
   }
 
   // ─── Delete Notification ───────────────────────────────────

@@ -1662,6 +1662,7 @@
   "failed_to_load_post": "Failed to load post",
   "no_post_data": "No post data available",
   "notifications": "Notifications",
+  "mark_all_as_read": "Mark all as read",
   "no_notifications_yet": "No notifications yet",
   "notifications_appear_here": "All your notifications about subscriptions and events will appear here",
   "accept": "Accept",
