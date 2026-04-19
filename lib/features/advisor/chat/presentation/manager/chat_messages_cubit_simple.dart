@@ -13,7 +13,6 @@ import 'package:tayseer/features/advisor/chat/presentation/manager/state/chat_me
 import 'package:tayseer/my_import.dart';
 import 'package:uuid/uuid.dart';
 
-
 class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   final ChatRepoSimple _repo;
   final ChatCacheService _cacheService = getIt<ChatCacheService>();
@@ -22,10 +21,14 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   String? _currentChatRoomId;
   String? _currentReceiverId;
   bool _isBlocked = false;
-  bool _amIBlocker = false; // true = أنا الحاظر, false = أنا محظور
+  bool _amIBlocker = false;
   bool _isUserTyping = false;
   TypingModel? _typingInfo;
   int? _freeChatMinsLeft;
+  bool _listenersSetup = false; // ✅ Guard flag
+  bool _hasJoinedRoom = false;  // ✅ True only after chatRoomJoined received
+  int _joinAttempts = 0; // ✅ Prevent infinite join loop
+  DateTime? _chatExpiresAt;
 
   final Map<String, double> _uploadProgress = {};
 
@@ -37,8 +40,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   // JOIN / LEAVE ROOM
   // ══════════════════════════════════════════════════════════════════════════
 
-  /// Join a chat room with [targetId] and load messages.
-  /// Emits `joinChatRoom` socket event, then waits for `chatRoomJoined`.
   Future<void> loadInitialMessages(
     String chatRoomId, {
     String? receiverId,
@@ -46,9 +47,13 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   }) async {
     _currentChatRoomId = chatRoomId;
     _currentReceiverId = receiverId;
+    _joinAttempts = 0; // reset on new room
+    _hasJoinedRoom = false; // reset until chatRoomJoined received
 
     // 1. عرض الكاش فوراً لو موجود
-    final cachedMessages = _cacheService.getCachedMessages(chatRoomId: chatRoomId);
+    final cachedMessages = _cacheService.getCachedMessages(
+      chatRoomId: chatRoomId,
+    );
     if (cachedMessages != null && cachedMessages.isNotEmpty) {
       _isBlocked = _checkBlockStatusFromMessages(cachedMessages);
       emit(
@@ -76,7 +81,11 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         ),
       );
 
-      setupSocketListeners();
+      // ✅ FIX 1: Guard against duplicate listener setup
+      if (!_listenersSetup) {
+        _listenersSetup = true;
+        setupSocketListeners();
+      }
 
       // 3. حفظ في الكاش
       await _cacheService.saveMessages(
@@ -84,20 +93,56 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         messages: messages,
       );
 
-      // Join the chat room via socket so the server starts delivering events.
-      if (isSystemChat) {
-        // في حالة System Chat نرسل system: true
-        _socketHelper.send('joinChatRoom', {'system': true}, null);
-      } else if (receiverId != null) {
-        // في حالة المحادثات العادية نرسل targetId
-        _socketHelper.send('joinChatRoom', {'targetId': receiverId}, null);
-      }
+      // ✅ FIX 2: Wait for socket then join
+      await _waitForSocketAndJoin(
+        isSystemChat: isSystemChat,
+        receiverId: receiverId,
+      );
     } catch (e) {
       log('❌ Error loading messages: $e');
-      // لو فشل وما عندناش كاش، نعرض error
       if (cachedMessages == null || cachedMessages.isEmpty) {
         emit(ChatMessagesState.failure(message: e.toString()));
       }
+    }
+  }
+
+  /// ✅ NEW: Wait for socket connection then join room
+  Future<void> _waitForSocketAndJoin({
+    required bool isSystemChat,
+    String? receiverId,
+  }) async {
+    int retries = 0;
+    const maxRetries = 6;
+    const delay = Duration(milliseconds: 500);
+
+    while (!_socketHelper.isConnected && retries < maxRetries) {
+      log('⏳ Waiting for socket... attempt ${retries + 1}/$maxRetries');
+      await Future.delayed(delay);
+      retries++;
+    }
+
+    if (!_socketHelper.isConnected) {
+      log('❌ Socket not connected after ${maxRetries * 500}ms');
+      return;
+    }
+
+    // ✅ delay صغير بعد الـ connect عشان السيرفر يـ register الـ token
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    log('✅ Socket connected, joining room: $_currentChatRoomId');
+
+    _sendJoinRequest(isSystemChat: isSystemChat, receiverId: receiverId);
+  }
+
+  void _sendJoinRequest({required bool isSystemChat, String? receiverId}) {
+    if (isSystemChat) {
+      _socketHelper.send('joinChatRoom', {'system': true}, null);
+    } else if (_currentChatRoomId != null) {
+      _joinAttempts++;
+      final payload = <String, dynamic>{'chatRoomId': _currentChatRoomId};
+      if (receiverId != null) payload['targetId'] = receiverId;
+      log('📤 joinChatRoom attempt $_joinAttempts: $payload');
+      _socketHelper.send('joinChatRoom', payload, null);
     }
   }
 
@@ -111,6 +156,9 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
 
     final listenerId = 'ChatMessagesCubit_$_currentChatRoomId';
     _socketHelper.offAllForListener(listenerId);
+
+    // ✅ FIX 3: Reset flag on leave
+    _listenersSetup = false;
   }
 
   bool _checkBlockStatusFromMessages(List<ChatMessage> messages) {
@@ -176,10 +224,8 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       ),
     );
 
-    // New event name: sendTextMessage
-    // New payload: chatRoomId + text (not content) + optional replyToMessageId + tempId
     final socketData = <String, dynamic>{
-      'chatRoomId': chatRoomId,
+      'chatRoomId': _currentChatRoomId ?? chatRoomId,
       'text': message,
       'tempId': tempId,
     };
@@ -333,9 +379,10 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     if (index == -1) return;
 
     final updatedMessages = List<ChatMessage>.from(currentMessages);
-    // Use the status from the server message instead of hardcoding 'sent'
     updatedMessages[index] = serverMessage;
-    log('✅ Replaced optimistic message with server message - status: ${serverMessage.status}');
+    log(
+      '✅ Replaced optimistic message with server message - status: ${serverMessage.status}',
+    );
 
     emit(
       ChatMessagesState.loaded(
@@ -355,7 +402,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   void setupSocketListeners() {
     final listenerId = 'ChatMessagesCubit_$_currentChatRoomId';
 
-    // SERVER → CLIENT: newMessage  { message: {...}, chatRoom: {...} }
     _socketHelper.listenWithId('newMessage', listenerId, (data) {
       if (data is! Map) return;
       final messageData = data['message'];
@@ -364,7 +410,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       _handleNewMessage(message);
     });
 
-    // SERVER → CLIENT: messageDeleted  { chatMessageIds: string[] }
     _socketHelper.listenWithId('messageDeleted', listenerId, (data) {
       if (data is! Map) return;
       final ids = data['chatMessageIds'];
@@ -375,14 +420,12 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       }
     });
 
-    // SERVER → CLIENT: typingStatus  { isTyping: boolean }
     _socketHelper.listenWithId('typingStatus', listenerId, (data) {
       if (data is! Map) return;
       final isTyping = data['isTyping'] as bool? ?? false;
       _handleTypingStatus(isTyping);
     });
 
-    // SERVER → CLIENT: newMessageState  { status: "RECEIVED"|"READ", messageIds: string[] }
     _socketHelper.listenWithId('newMessageState', listenerId, (data) {
       if (data is! Map) return;
       final status = data['status']?.toString() ?? '';
@@ -395,39 +438,76 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       }
     });
 
-    // SERVER → CLIENT: blockerStatus  { userId, newBlockStatus }
-    // أنا اللي حاظر - يظهر لي حذف المحادثة أو إلغاء الحظر
     _socketHelper.listenWithId('blockerStatus', listenerId, (data) {
       if (data is! Map) return;
       final newBlockStatus = data['newBlockStatus'] as bool? ?? false;
       _handleBlockerStatusChanged(newBlockStatus);
     });
 
-    // SERVER → CLIENT: blockedStatus  { userId, newBlockStatus }
-    // أنا محظور - مقدرش أبعت رسائل
     _socketHelper.listenWithId('blockedStatus', listenerId, (data) {
       if (data is! Map) return;
       final newBlockStatus = data['newBlockStatus'] as bool? ?? false;
       _handleBlockedStatusChanged(newBlockStatus);
     });
 
-    // SERVER → CLIENT: chatRoomJoined  { chatRoomId, blockExists, isMe, ... }
     _socketHelper.listenWithId('chatRoomJoined', listenerId, (data) {
       if (data is! Map) return;
+      final receivedRoomId = data['chatRoomId']?.toString();
       final blockExists = data['blockExists'] as bool? ?? false;
       final isMe = data['isMe'] as bool?;
       _freeChatMinsLeft = data['freeChatMinsLeft'] as int?;
       _isBlocked = blockExists;
-      log('✅ chatRoomJoined: blockExists=$blockExists, isMe=$isMe, freeChatMinsLeft=$_freeChatMinsLeft');
+      // parse chatExpiresAt (UTC) → local
+      final expiresStr = data['chatExpiresAt']?.toString();
+      if (expiresStr != null) {
+        final utc = DateTime.tryParse(expiresStr);
+        _chatExpiresAt = utc?.toLocal();
+      }
+
+      // ✅ FIX: السيرفر بيستخدم targetId لإيجاد room قديم بين نفس الـ users
+      // لو رجع room مختلف، نطلع من الـ room الغلط ونقبل الـ room الصح من السيرفر
+      if (receivedRoomId != null && receivedRoomId != _currentChatRoomId) {
+        log('⚠️ chatRoomJoined: server returned different roomId!'
+            ' expected: $_currentChatRoomId, got: $receivedRoomId'
+            ' — accepting server room and leaving wrong one');
+
+        // اطلع من الـ room الغلط (اللي طلبناه)
+        _socketHelper.send('leaveChatRoom', {'chatRoomId': _currentChatRoomId}, null);
+
+        // انقل الـ listeners للـ room ID الجديد
+        final oldListenerId = 'ChatMessagesCubit_$_currentChatRoomId';
+        final newListenerId = 'ChatMessagesCubit_$receivedRoomId';
+        _socketHelper.renameListenerId(oldListenerId, newListenerId);
+
+        // قبل الـ room اللي السيرفر رجعه
+        _currentChatRoomId = receivedRoomId;
+        _joinAttempts = 0;
+      }
+
+      log('✅ chatRoomJoined: blockExists=$blockExists, isMe=$isMe, '
+          'freeChatMinsLeft=$_freeChatMinsLeft, roomId=$receivedRoomId');
+      _joinAttempts = 0;
+      _hasJoinedRoom = true;
       _emitCurrentState();
     });
 
-    // SERVER → CLIENT: chatRoomLeft  { chatRoomId }
     _socketHelper.listenWithId('chatRoomLeft', listenerId, (data) {
       log('👋 chatRoomLeft: $data');
     });
 
-    // SERVER → CLIENT: messageReaction  { chatMessageId, reactions: [{userId, emoji}] }
+    // ✅ Retry join on fail — try with chatRoomId if targetId failed
+    _socketHelper.listenWithId('fail', listenerId, (data) {
+      if (_hasJoinedRoom || isClosed) return;
+      if (_joinAttempts >= 2) return; // max 2 attempts
+      log('⚠️ joinChatRoom failed, retrying with chatRoomId only...');
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (!isClosed && !_hasJoinedRoom && _currentChatRoomId != null) {
+          _joinAttempts++;
+          _socketHelper.send('joinChatRoom', {'chatRoomId': _currentChatRoomId}, null);
+        }
+      });
+    });
+
     _socketHelper.listenWithId('messageReaction', listenerId, (data) {
       if (data is! Map) return;
       _handleMessageReaction(data);
@@ -443,7 +523,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
 
     final currentMessages = state.messagesOrEmpty;
 
-    // Match by tempId first (most reliable), then fall back to content match
     if (message.isMe) {
       final tempIndex = currentMessages.indexWhere(
         (m) =>
@@ -453,9 +532,10 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       );
       if (tempIndex != -1) {
         final updatedMessages = List<ChatMessage>.from(currentMessages);
-        // Use the status from the server message instead of hardcoding 'sent'
         updatedMessages[tempIndex] = message;
-        log('✅ Replaced temp message with server message - status: ${message.status}');
+        log(
+          '✅ Replaced temp message with server message - status: ${message.status}',
+        );
         emit(
           ChatMessagesState.loaded(
             messages: updatedMessages,
@@ -465,13 +545,11 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
             typingInfo: _typingInfo,
           ),
         );
-        // تحديث الكاش
         _updateCache(updatedMessages);
         return;
       }
     }
 
-    // Handle system messages (block/unblock)
     if (message.messageType == 'system') {
       if (message.action.isBlock) _isBlocked = true;
       if (message.action.isUnblock) _isBlocked = false;
@@ -495,7 +573,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
             typingInfo: _typingInfo,
           ),
         );
-        // تحديث الكاش
         _updateCache(updatedMessages);
         return;
       }
@@ -511,7 +588,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         typingInfo: _typingInfo,
       ),
     );
-    // تحديث الكاش
     _updateCache(updatedMessages);
   }
 
@@ -530,11 +606,9 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         typingInfo: _typingInfo,
       ),
     );
-    // تحديث الكاش
     _updateCache(updatedMessages);
   }
 
-  /// تحديث الكاش بعد أي تغيير في الرسائل
   Future<void> _updateCache(List<ChatMessage> messages) async {
     if (_currentChatRoomId != null) {
       await _cacheService.saveMessages(
@@ -544,7 +618,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     }
   }
 
-  /// Handles `typingStatus` from the other participant.
   void _handleTypingStatus(bool isTyping) {
     _isUserTyping = isTyping;
     if (isTyping) {
@@ -567,7 +640,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       ),
     );
 
-    // Auto-clear after 3 s in case the stop event never arrives
     if (isTyping) {
       Future.delayed(const Duration(seconds: 3), () {
         if (_isUserTyping) {
@@ -586,7 +658,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     }
   }
 
-  /// Handles `newMessageState` — updates delivery/read status for specific messages.
   void _handleMessageStateUpdate({
     required String status,
     required List<String> messageIds,
@@ -595,9 +666,10 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     final currentMessages = state.messagesOrEmpty;
     final messageIdSet = messageIds.toSet();
 
-    log('📊 Updating message status: $status → $parsedStatus for ${messageIds.length} messages');
+    log(
+      '📊 Updating message status: $status → $parsedStatus for ${messageIds.length} messages',
+    );
 
-    // Create a completely new list with updated messages
     final updatedMessages = List<ChatMessage>.from(
       currentMessages.map((m) {
         if (messageIdSet.contains(m.id)) {
@@ -621,16 +693,13 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       ),
     );
 
-    // تحديث الكاش
     _updateCache(updatedMessages);
   }
 
-  /// معالجة blockerStatus - أنا اللي حاظر
-  /// يظهر لي حذف المحادثة أو إلغاء الحظر
   void _handleBlockerStatusChanged(bool isBlocked) {
     log('🔒 blockerStatus changed: isBlocked=$isBlocked (أنا الحاظر)');
     _isBlocked = isBlocked;
-    _amIBlocker = isBlocked; // أنا الحاظر
+    _amIBlocker = isBlocked;
     emit(
       ChatMessagesState.loaded(
         messages: state.messagesOrEmpty,
@@ -642,12 +711,10 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     );
   }
 
-  /// معالجة blockedStatus - أنا محظور
-  /// مقدرش أبعت رسائل
   void _handleBlockedStatusChanged(bool isBlocked) {
     log('🚫 blockedStatus changed: isBlocked=$isBlocked (أنا محظور)');
     _isBlocked = isBlocked;
-    _amIBlocker = false; // أنا محظور
+    _amIBlocker = false;
     emit(
       ChatMessagesState.loaded(
         messages: state.messagesOrEmpty,
@@ -659,7 +726,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     );
   }
 
-  /// getter للتحقق من نوع الحظر
   bool get amIBlocker => _amIBlocker;
 
   void _emitCurrentState() {
@@ -671,27 +737,30 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         isUserTyping: _isUserTyping,
         typingInfo: _typingInfo,
         freeChatMinsLeft: _freeChatMinsLeft,
+        chatExpiresAt: _chatExpiresAt,
       ),
     );
   }
 
+  DateTime? get chatExpiresAt => _chatExpiresAt;
+
   // ══════════════════════════════════════════════════════════════════════════
-  // TYPING  (CLIENT → SERVER)
+  // TYPING (CLIENT → SERVER)
   // ══════════════════════════════════════════════════════════════════════════
 
   void typingStart(String chatRoomId) {
-    if (_currentReceiverId == null) return;
+    if (!_hasJoinedRoom || _currentReceiverId == null || _currentChatRoomId == null) return;
     _socketHelper.send('typingStatus', {
-      'chatRoomId': chatRoomId,
+      'chatRoomId': _currentChatRoomId,
       'receiverId': _currentReceiverId,
       'isTyping': true,
     }, null);
   }
 
   void typingStop(String chatRoomId) {
-    if (_currentReceiverId == null) return;
+    if (!_hasJoinedRoom || _currentReceiverId == null || _currentChatRoomId == null) return;
     _socketHelper.send('typingStatus', {
-      'chatRoomId': chatRoomId,
+      'chatRoomId': _currentChatRoomId,
       'receiverId': _currentReceiverId,
       'isTyping': false,
     }, null);
@@ -736,7 +805,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   }) async {
     if (_currentChatRoomId == null) return false;
 
-    // Optimistic delete: remove from UI immediately
     _handleMessageDeleted(messageId);
 
     final result = await _repo.deleteMessage(
@@ -747,8 +815,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
 
     return result.fold((error) {
       log('❌ Delete failed on server: $error');
-      // We could potentially reload messages here to revert the optimistic delete,
-      // but removing it is usually safer for UX.
       return false;
     }, (_) => true);
   }
@@ -759,7 +825,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   }) async {
     if (_currentChatRoomId == null) return false;
 
-    // Optimistic delete
     for (final id in messageIds) {
       _handleMessageDeleted(id);
     }
@@ -786,7 +851,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     final now = DateTime.now().toIso8601String();
 
     _isBlocked = true;
-    _amIBlocker = true; // أنا الحاظر
+    _amIBlocker = true;
 
     final optimisticMessage = ChatMessage(
       id: localId,
@@ -849,7 +914,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     final now = DateTime.now().toIso8601String();
 
     _isBlocked = false;
-    _amIBlocker = false; // مش حاظر دلوقتي
+    _amIBlocker = false;
 
     final optimisticMessage = ChatMessage(
       id: localId,
@@ -919,6 +984,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       _socketHelper.offAllForListener(listenerId);
     }
     leaveCurrentChatRoom();
+    _listenersSetup = false; // ✅ FIX 4: Reset on close
     return super.close();
   }
 
@@ -930,59 +996,52 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   // REACTIONS
   // ══════════════════════════════════════════════════════════════════════════
 
-  /// إضافة أو إزالة reaction على رسالة
-  void reactToMessage({
-    required String messageId,
-    required String emoji,
-  }) {
+  void reactToMessage({required String messageId, required String emoji}) {
     final currentMessages = state.messagesOrEmpty;
     final messageIndex = currentMessages.indexWhere((m) => m.id == messageId);
-    
+
     if (messageIndex == -1) return;
 
     final message = currentMessages[messageIndex];
     final currentUserId = kCurrentUserData?.id ?? '';
-    
-    // Check if user already reacted with this emoji
+
     final existingReaction = message.reactions.firstWhere(
       (r) => r.userId == currentUserId && r.emoji == emoji,
       orElse: () => const MessageReaction(userId: '', emoji: ''),
     );
 
     if (existingReaction.userId.isNotEmpty) {
-      // User already reacted with this emoji, so remove it
-      _socketHelper.send('unreactToMessage', {
-        'chatMessageId': messageId,
-      }, (ack) {
+      _socketHelper.send('unreactToMessage', {'chatMessageId': messageId}, (
+        ack,
+      ) {
         log('✅ unreactToMessage ACK: $ack');
       });
     } else {
-      // Add new reaction
-      _socketHelper.send('reactToMessage', {
-        'chatMessageId': messageId,
-        'emoji': emoji,
-      }, (ack) {
-        log('✅ reactToMessage ACK: $ack');
-      });
+      _socketHelper.send(
+        'reactToMessage',
+        {'chatMessageId': messageId, 'emoji': emoji},
+        (ack) {
+          log('✅ reactToMessage ACK: $ack');
+        },
+      );
     }
   }
 
-  /// Handle reaction update from server
   void _handleMessageReaction(Map data) {
     final chatMessageId = data['chatMessageId']?.toString();
     final reactionsData = data['reactions'] as List?;
 
     if (chatMessageId == null || reactionsData == null) return;
 
-    final reactions = reactionsData
-        .map((r) {
-          final reactionMap = Map<String, dynamic>.from(r as Map);
-          return MessageReaction.fromJson(reactionMap);
-        })
-        .toList();
+    final reactions = reactionsData.map((r) {
+      final reactionMap = Map<String, dynamic>.from(r as Map);
+      return MessageReaction.fromJson(reactionMap);
+    }).toList();
 
     final currentMessages = state.messagesOrEmpty;
-    final messageIndex = currentMessages.indexWhere((m) => m.id == chatMessageId);
+    final messageIndex = currentMessages.indexWhere(
+      (m) => m.id == chatMessageId,
+    );
 
     if (messageIndex == -1) return;
 
@@ -1001,6 +1060,8 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       ),
     );
 
-    log('✅ Message reactions updated: $chatMessageId - ${reactions.length} reactions');
+    log(
+      '✅ Message reactions updated: $chatMessageId - ${reactions.length} reactions',
+    );
   }
 }

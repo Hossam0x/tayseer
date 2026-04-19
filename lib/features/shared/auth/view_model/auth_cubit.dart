@@ -15,7 +15,7 @@ import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/shared/auth/model/day_time_range_model.dart';
-import 'package:tayseer/features/shared/auth/model/summar_session_model.dart'; // ★ import جديد
+import 'package:tayseer/features/shared/auth/model/summar_session_model.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
 import 'package:crypto/crypto.dart';
@@ -68,6 +68,42 @@ class AuthCubit extends Cubit<AuthState> {
   void setVideoLoading(bool isLoading) {
     _isVideoLoading = isLoading;
     emit(state.copyWith());
+  }
+
+  // =============================================
+  // ★★★ Socket Connection Helper ★★★
+  // =============================================
+
+  /// يُستدعى بعد أي login ناجح لضمان socket نظيف للـ user الجديد.
+  /// يضمن الترتيب الصحيح: connect → init (الـ reset بيتعمل في logout)
+  Future<void> _connectSocketForNewUser() async {
+    try {
+      final socketHelper = getIt<tayseerSocketHelper>();
+      final chatSocketService = getIt<ChatSocketService>();
+
+      // 1. أزل الـ listeners القديمة (احتياطي)
+      chatSocketService.removeListeners();
+
+      // ✅ delay عشان السيرفر يـ register الـ session الجديدة قبل الـ socket connect
+      await Future.delayed(const Duration(milliseconds: 800));
+
+      // 2. connect فقط — الـ socket اتعمل reset بالفعل في logout
+      //    لو لسه موجود (Google/Apple login بدون logout)، نعمل resetAndConnect
+      final bool needsReset = socketHelper.isConnected;
+      final bool connected = needsReset
+          ? await socketHelper.resetAndConnect()
+          : await socketHelper.connect();
+
+      if (connected) {
+        // 3. بس بعد ما الـ socket اتوصل فعلاً نعمل init للـ listeners
+        chatSocketService.init();
+        debugPrint('✅ Socket connected and initialized for new user');
+      } else {
+        debugPrint('⚠️ Socket connection failed for new user');
+      }
+    } catch (e) {
+      debugPrint('Socket error after login: $e');
+    }
   }
 
   // =============================================
@@ -215,7 +251,6 @@ class AuthCubit extends Cubit<AuthState> {
       debugPrint('📦 Final Payload: $countriesPayload');
 
       // ★ بناء الـ body النهائي
-      // غيّر الشكل ده حسب الـ API بتاعك
       final body = {'countries': countriesPayload, 'timezone': 'Asia/Riyadh'};
 
       final response = await _repo.addDay(body: body);
@@ -647,14 +682,8 @@ class AuthCubit extends Cubit<AuthState> {
               isNew: result.data?.user?.isNew ?? true,
             ),
           );
-          // Connect socket after Google login
-          try {
-            final socketHelper = getIt<tayseerSocketHelper>();
-            await socketHelper.connect();
-            getIt<ChatSocketService>().init();
-          } catch (e) {
-            debugPrint('Socket connect after Google login error: $e');
-          }
+          // ✅ استخدام الـ helper بدل الكود المتكرر
+          await _connectSocketForNewUser();
         },
       );
     } catch (e) {
@@ -765,7 +794,7 @@ class AuthCubit extends Cubit<AuthState> {
             ),
           );
         },
-        (result)async {
+        (result) async {
           setAdvisorStatus(result.data?.approvalKey);
           emit(
             state.copyWith(
@@ -776,14 +805,8 @@ class AuthCubit extends Cubit<AuthState> {
               isNew: result.data?.user?.isNew ?? true,
             ),
           );
-          // Connect socket after Apple login
-          try {
-            final socketHelper = getIt<tayseerSocketHelper>();
-            await socketHelper.connect();
-            getIt<ChatSocketService>().init();
-          } catch (e) {
-            debugPrint('Socket connect after Apple login error: $e');
-          }
+          // ✅ استخدام الـ helper بدل الكود المتكرر
+          await _connectSocketForNewUser();
         },
       );
     } catch (e) {
@@ -833,15 +856,8 @@ class AuthCubit extends Cubit<AuthState> {
               isNew: verifyResponse.data?.user?.isNew ?? true,
             ),
           );
-          // Connect socket after successful login
-          try {
-            final socketHelper = getIt<tayseerSocketHelper>();
-            await socketHelper.connect();
-            // Re-init ChatSocketService with new socket
-            getIt<ChatSocketService>().init();
-          } catch (e) {
-            debugPrint('Socket connect after login error: $e');
-          }
+          // ✅ استخدام الـ helper بدل الكود المتكرر
+          await _connectSocketForNewUser();
           emit(state.copyWith(verifyOtpState: CubitStates.initial));
         },
       );
@@ -937,9 +953,9 @@ class AuthCubit extends Cubit<AuthState> {
 
     // Disconnect socket on logout
     try {
-      final socketHelper = getIt<tayseerSocketHelper>();
+      // ✅ الترتيب الصحيح: listeners أولاً ثم reset
       getIt<ChatSocketService>().removeListeners();
-      socketHelper.reset();
+      getIt<tayseerSocketHelper>().reset();
       debugPrint('Socket reset on logout');
     } catch (e) {
       debugPrint('Socket disconnect error: $e');
@@ -1124,22 +1140,6 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
-  // /// Days
-  // void toggleDay(String day) {
-  //   final map = Map<String, DayTimeRange>.from(state.availableDays);
-
-  //   if (map.containsKey(day)) {
-  //     map.remove(day);
-  //   } else {
-  //     map[day] = DayTimeRange(
-  //       from: const TimeOfDay(hour: 9, minute: 0),
-  //       to: const TimeOfDay(hour: 17, minute: 0),
-  //     );
-  //   }
-
-  //   emit(AuthState(availableDays: map));
-  // }
-
   void guestLogin() async {
     emit(state.copyWith(guestLoginState: CubitStates.loading));
 
@@ -1311,7 +1311,6 @@ class AuthCubit extends Cubit<AuthState> {
       );
     }
 
-    // ✅ copyWith بدل AuthState()
     emit(state.copyWith(availableDays: map));
   }
 
@@ -1319,7 +1318,6 @@ class AuthCubit extends Cubit<AuthState> {
     final range = state.availableDays[day];
     if (range == null) return;
 
-    // ✅ copyWith بدل AuthState()
     emit(
       state.copyWith(
         availableDays: {
@@ -1334,7 +1332,6 @@ class AuthCubit extends Cubit<AuthState> {
     final range = state.availableDays[day];
     if (range == null) return;
 
-    // ✅ copyWith بدل AuthState()
     emit(
       state.copyWith(
         availableDays: {
@@ -1344,7 +1341,6 @@ class AuthCubit extends Cubit<AuthState> {
       ),
     );
   }
-  // ★ أضف في AuthCubit
 
   /// Reset حالة addDayProvider بعد الاستخدام
   void resetAddDayProviderState() {
@@ -1357,7 +1353,6 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   /// ★★★ Reset شامل لكل بيانات الكيوبت ★★★
-  /// بتتنادي بعد نجاح submitOfferings
   void resetEntireCubit() {
     // 1. مسح كل الـ Controllers
     emailController.clear();

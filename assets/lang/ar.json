@@ -1396,6 +1396,8 @@
   "see_all": "عرض الكل",
   "no_marriage_users": "لا يوجد مستخدمين في قسم الزواج حالياً",
   "share_app_to_find_users": "شارك التطبيق حتي تجد مستخدمين للتوافق",
+  "no_exploration_results": "لا توجد نتائج حالياً",
+  "no_exploration_results_desc": "لم نجد أشخاصاً مناسبين لك الآن، حاول مرة أخرى لاحقاً",
   "marriage_tab": "الزواج",
   "interactions_tab": "التفاعلات",
   "exit_app": "خروج",

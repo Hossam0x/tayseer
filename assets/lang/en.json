@@ -1437,6 +1437,8 @@
   "discover_profiles": "Discover Profiles",
   "no_marriage_users": "No marriage users available",
   "share_app_to_find_users": "Share the app to find compatible users",
+  "no_exploration_results": "No results available",
+  "no_exploration_results_desc": "We couldn't find suitable people for you right now, try again later",
   "verify_personal_photo": "Verify Personal Photo",
   "verification_done": "Verification Done",
   "retry_verification": "Retry Verification",

@@ -77,9 +77,17 @@ class tayseerSocketHelper {
       }
     });
 
-    _socket!.on('fail', (data) {
+    // ✅ Register via listenWithId so it's not wiped by legacy listen() calls
+    _listeners['fail'] ??= {};
+    _listeners['fail']!['_global_fail_handler'] = (data) {
       log('⚠️ fail: $data');
-      onError?.call(data['message'] ?? 'فشل غير معروف');
+      onError?.call(data is Map ? (data['message'] ?? 'فشل غير معروف') : 'فشل غير معروف');
+    };
+    _socket!.on('fail', (data) {
+      final listeners = Map<String, Function(dynamic)>.from(_listeners['fail'] ?? {});
+      listeners.forEach((id, cb) {
+        try { cb(data); } catch (e) { log('❌ Error in fail listener "$id": $e'); }
+      });
     });
 
     _socket!.on('error', (error) {
@@ -224,6 +232,16 @@ class tayseerSocketHelper {
     }
   }
 
+  /// ✅ Rename all listeners from oldId to newId across all events
+  void renameListenerId(String oldId, String newId) {
+    _listeners.forEach((event, listeners) {
+      if (listeners.containsKey(oldId)) {
+        listeners[newId] = listeners.remove(oldId)!;
+        log('🔄 Renamed listener "$oldId" → "$newId" for event "$event"');
+      }
+    });
+  }
+
   /// ✅ إزالة كل الـ listeners لـ listener ID معين (في كل الـ events)
   void offAllForListener(String listenerId) {
     log('🔕 Removing all listeners for "$listenerId"');
@@ -327,7 +345,26 @@ class tayseerSocketHelper {
     _listeners.clear();
     log('🧹 Cleared all listeners');
   }
+/// Full reset ثم connect للـ user الجديد
+Future<bool> resetAndConnect() async {
+  // 1. نظف الـ listeners الأقدم أولاً
+  _listeners.clear();
+  _isConnecting = false;
+  _connectionCompleter = null;
 
+  if (_socket != null) {
+    _socket!.clearListeners();
+    _socket!.disconnect();
+    _socket!.destroy();
+    _socket!.dispose();
+    _socket = null;
+  }
+  _isConnected = false;
+  log('🔄 Socket fully reset — connecting for new user...');
+
+  // 2. connect مباشرة بعد الـ reset
+  return await connect();
+}
   /// ✅ Dispose كامل
   void dispose() {
     clearAllListeners();

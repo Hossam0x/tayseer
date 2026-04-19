@@ -1713,6 +1713,11 @@ class MarriageBodyState extends State<MarriageBody>
 
                             buildCircleButton(
                               onTap: () async {
+                                // ✅ لو regardsLeft = 0 اعرض purchase sheet مباشرة
+                                if (state.regardsLeft == 0) {
+                                  showRegardsPurchaseSheet(context);
+                                  return;
+                                }
                                 _showRegardInputSheet(
                                   context,
                                   cubit: cubit,

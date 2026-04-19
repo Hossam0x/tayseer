@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:tayseer/features/user/interactions/data/Model/history_response_model.dart';
 import 'package:tayseer/features/user/interactions/data/repos/interactions_repository.dart';
+import 'package:tayseer/features/user/interactions/presentation/view/widget/rematch_purchase_sheet.dart';
 import 'package:tayseer/my_import.dart';
 
 class PastMatchesView extends StatefulWidget {
@@ -67,7 +68,7 @@ class _PastMatchesViewState extends State<PastMatchesView> {
                           Gap(4.h),
                           Text(
                             'تظهر التوافقات منتهية هنا ويبقى امامك فرصة حتي تعيد الارسال مره أخرى',
-                            style: Styles.textStyle12.copyWith(color: AppColors.secondary600),
+                            style: Styles.textStyle14.copyWith(color: AppColors.secondary600),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -116,18 +117,7 @@ class _PastMatchesViewState extends State<PastMatchesView> {
 
                     final items = snapshot.data?.items ?? [];
                     if (items.isEmpty) {
-                      return Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 24.w),
-                          child: Text(
-                            'لا توجد توافقات سابقة حتى الآن.',
-                            style: Styles.textStyle16.copyWith(
-                              color: AppColors.secondary800,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      );
+                      return _EmptyState(message: 'لا توجد توافقات سابقة حتى الآن.');
                     }
 
                     return Directionality(
@@ -158,7 +148,18 @@ class _PastMatchesViewState extends State<PastMatchesView> {
                             children: [
                               // Re-match button (left side in RTL)
                               OutlinedButton(
-                                onPressed: () {},
+                                onPressed: () {
+                                  showRematchPurchaseSheet(
+                                    context,
+                                    userName: item.name.isNotEmpty ? item.name : 'مستخدم سابق',
+                                    userImage: item.image,
+                                    onSuccess: () {
+                                      setState(() {
+                                        _pastMatchesFuture = _loadPastMatches();
+                                      });
+                                    },
+                                  );
+                                },
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: AppColors.primary400,
                                   side: BorderSide(color: AppColors.primary400),
@@ -232,6 +233,31 @@ class _PastMatchesViewState extends State<PastMatchesView> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final String message;
+  const _EmptyState({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(height: 80.h),
+          AppImage(AssetsData.noSessionHistoryIcon, width: 268.w),
+          SizedBox(height: 24.h),
+          Text(
+            message,
+            style: Styles.textStyle16.copyWith(color: AppColors.secondary400),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

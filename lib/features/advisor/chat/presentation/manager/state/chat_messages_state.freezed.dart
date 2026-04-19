@@ -31,7 +31,8 @@ mixin _$ChatMessagesState {
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
             CubitStates sendMediaState,
-            int? freeChatMinsLeft)
+            int? freeChatMinsLeft,
+            DateTime? chatExpiresAt)
         loaded,
     required TResult Function(
             List<ChatMessage> messages,
@@ -63,7 +64,8 @@ mixin _$ChatMessagesState {
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
             CubitStates sendMediaState,
-            int? freeChatMinsLeft)?
+            int? freeChatMinsLeft,
+            DateTime? chatExpiresAt)?
         loaded,
     TResult? Function(
             List<ChatMessage> messages,
@@ -95,7 +97,8 @@ mixin _$ChatMessagesState {
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
             CubitStates sendMediaState,
-            int? freeChatMinsLeft)?
+            int? freeChatMinsLeft,
+            DateTime? chatExpiresAt)?
         loaded,
     TResult Function(
             List<ChatMessage> messages,
@@ -213,7 +216,8 @@ class _$ChatMessagesInitialImpl extends ChatMessagesInitial {
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
             CubitStates sendMediaState,
-            int? freeChatMinsLeft)
+            int? freeChatMinsLeft,
+            DateTime? chatExpiresAt)
         loaded,
     required TResult Function(
             List<ChatMessage> messages,
@@ -248,7 +252,8 @@ class _$ChatMessagesInitialImpl extends ChatMessagesInitial {
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
             CubitStates sendMediaState,
-            int? freeChatMinsLeft)?
+            int? freeChatMinsLeft,
+            DateTime? chatExpiresAt)?
         loaded,
     TResult? Function(
             List<ChatMessage> messages,
@@ -283,7 +288,8 @@ class _$ChatMessagesInitialImpl extends ChatMessagesInitial {
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
             CubitStates sendMediaState,
-            int? freeChatMinsLeft)?
+            int? freeChatMinsLeft,
+            DateTime? chatExpiresAt)?
         loaded,
     TResult Function(
             List<ChatMessage> messages,
@@ -404,7 +410,8 @@ class _$ChatMessagesLoadingImpl extends ChatMessagesLoading {
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
             CubitStates sendMediaState,
-            int? freeChatMinsLeft)
+            int? freeChatMinsLeft,
+            DateTime? chatExpiresAt)
         loaded,
     required TResult Function(
             List<ChatMessage> messages,
@@ -439,7 +446,8 @@ class _$ChatMessagesLoadingImpl extends ChatMessagesLoading {
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
             CubitStates sendMediaState,
-            int? freeChatMinsLeft)?
+            int? freeChatMinsLeft,
+            DateTime? chatExpiresAt)?
         loaded,
     TResult? Function(
             List<ChatMessage> messages,
@@ -474,7 +482,8 @@ class _$ChatMessagesLoadingImpl extends ChatMessagesLoading {
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
             CubitStates sendMediaState,
-            int? freeChatMinsLeft)?
+            int? freeChatMinsLeft,
+            DateTime? chatExpiresAt)?
         loaded,
     TResult Function(
             List<ChatMessage> messages,
@@ -560,7 +569,8 @@ abstract class _$$ChatMessagesLoadedImplCopyWith<$Res> {
       ChatMessage? replyingToMessage,
       CubitStates paginationState,
       CubitStates sendMediaState,
-      int? freeChatMinsLeft});
+      int? freeChatMinsLeft,
+      DateTime? chatExpiresAt});
 }
 
 /// @nodoc
@@ -585,6 +595,7 @@ class __$$ChatMessagesLoadedImplCopyWithImpl<$Res>
     Object? paginationState = null,
     Object? sendMediaState = null,
     Object? freeChatMinsLeft = freezed,
+    Object? chatExpiresAt = freezed,
   }) {
     return _then(_$ChatMessagesLoadedImpl(
       messages: null == messages
@@ -631,6 +642,10 @@ class __$$ChatMessagesLoadedImplCopyWithImpl<$Res>
           ? _value.freeChatMinsLeft
           : freeChatMinsLeft // ignore: cast_nullable_to_non_nullable
               as int?,
+      chatExpiresAt: freezed == chatExpiresAt
+          ? _value.chatExpiresAt
+          : chatExpiresAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
     ));
   }
 }
@@ -649,7 +664,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
       this.replyingToMessage,
       this.paginationState = CubitStates.initial,
       this.sendMediaState = CubitStates.initial,
-      this.freeChatMinsLeft})
+      this.freeChatMinsLeft,
+      this.chatExpiresAt})
       : _messages = messages,
         super._();
 
@@ -711,9 +727,13 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
   @override
   final int? freeChatMinsLeft;
 
+  /// Chat expiry date (for user-user chat)
+  @override
+  final DateTime? chatExpiresAt;
+
   @override
   String toString() {
-    return 'ChatMessagesState.loaded(messages: $messages, hasMoreMessages: $hasMoreMessages, isOnline: $isOnline, pendingCount: $pendingCount, isBlocked: $isBlocked, isUserTyping: $isUserTyping, typingInfo: $typingInfo, replyingToMessage: $replyingToMessage, paginationState: $paginationState, sendMediaState: $sendMediaState, freeChatMinsLeft: $freeChatMinsLeft)';
+    return 'ChatMessagesState.loaded(messages: $messages, hasMoreMessages: $hasMoreMessages, isOnline: $isOnline, pendingCount: $pendingCount, isBlocked: $isBlocked, isUserTyping: $isUserTyping, typingInfo: $typingInfo, replyingToMessage: $replyingToMessage, paginationState: $paginationState, sendMediaState: $sendMediaState, freeChatMinsLeft: $freeChatMinsLeft, chatExpiresAt: $chatExpiresAt)';
   }
 
   @override
@@ -741,7 +761,9 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
             (identical(other.sendMediaState, sendMediaState) ||
                 other.sendMediaState == sendMediaState) &&
             (identical(other.freeChatMinsLeft, freeChatMinsLeft) ||
-                other.freeChatMinsLeft == freeChatMinsLeft));
+                other.freeChatMinsLeft == freeChatMinsLeft) &&
+            (identical(other.chatExpiresAt, chatExpiresAt) ||
+                other.chatExpiresAt == chatExpiresAt));
   }
 
   @override
@@ -757,7 +779,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
       replyingToMessage,
       paginationState,
       sendMediaState,
-      freeChatMinsLeft);
+      freeChatMinsLeft,
+      chatExpiresAt);
 
   @JsonKey(ignore: true)
   @override
@@ -782,7 +805,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
             CubitStates sendMediaState,
-            int? freeChatMinsLeft)
+            int? freeChatMinsLeft,
+            DateTime? chatExpiresAt)
         loaded,
     required TResult Function(
             List<ChatMessage> messages,
@@ -809,7 +833,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
         replyingToMessage,
         paginationState,
         sendMediaState,
-        freeChatMinsLeft);
+        freeChatMinsLeft,
+        chatExpiresAt);
   }
 
   @override
@@ -828,7 +853,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
             CubitStates sendMediaState,
-            int? freeChatMinsLeft)?
+            int? freeChatMinsLeft,
+            DateTime? chatExpiresAt)?
         loaded,
     TResult? Function(
             List<ChatMessage> messages,
@@ -855,7 +881,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
         replyingToMessage,
         paginationState,
         sendMediaState,
-        freeChatMinsLeft);
+        freeChatMinsLeft,
+        chatExpiresAt);
   }
 
   @override
@@ -874,7 +901,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
             CubitStates sendMediaState,
-            int? freeChatMinsLeft)?
+            int? freeChatMinsLeft,
+            DateTime? chatExpiresAt)?
         loaded,
     TResult Function(
             List<ChatMessage> messages,
@@ -903,7 +931,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
           replyingToMessage,
           paginationState,
           sendMediaState,
-          freeChatMinsLeft);
+          freeChatMinsLeft,
+          chatExpiresAt);
     }
     return orElse();
   }
@@ -961,7 +990,8 @@ abstract class ChatMessagesLoaded extends ChatMessagesState {
       final ChatMessage? replyingToMessage,
       final CubitStates paginationState,
       final CubitStates sendMediaState,
-      final int? freeChatMinsLeft}) = _$ChatMessagesLoadedImpl;
+      final int? freeChatMinsLeft,
+      final DateTime? chatExpiresAt}) = _$ChatMessagesLoadedImpl;
   const ChatMessagesLoaded._() : super._();
 
   /// All messages in the current chat (from local DB)
@@ -996,6 +1026,9 @@ abstract class ChatMessagesLoaded extends ChatMessagesState {
 
   /// Free chat minutes left (for user side)
   int? get freeChatMinsLeft;
+
+  /// Chat expiry date (for user-user chat)
+  DateTime? get chatExpiresAt;
   @JsonKey(ignore: true)
   _$$ChatMessagesLoadedImplCopyWith<_$ChatMessagesLoadedImpl> get copyWith =>
       throw _privateConstructorUsedError;
@@ -1194,7 +1227,8 @@ class _$ChatMessagesLoadingMoreImpl extends ChatMessagesLoadingMore {
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
             CubitStates sendMediaState,
-            int? freeChatMinsLeft)
+            int? freeChatMinsLeft,
+            DateTime? chatExpiresAt)
         loaded,
     required TResult Function(
             List<ChatMessage> messages,
@@ -1238,7 +1272,8 @@ class _$ChatMessagesLoadingMoreImpl extends ChatMessagesLoadingMore {
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
             CubitStates sendMediaState,
-            int? freeChatMinsLeft)?
+            int? freeChatMinsLeft,
+            DateTime? chatExpiresAt)?
         loaded,
     TResult? Function(
             List<ChatMessage> messages,
@@ -1282,7 +1317,8 @@ class _$ChatMessagesLoadingMoreImpl extends ChatMessagesLoadingMore {
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
             CubitStates sendMediaState,
-            int? freeChatMinsLeft)?
+            int? freeChatMinsLeft,
+            DateTime? chatExpiresAt)?
         loaded,
     TResult Function(
             List<ChatMessage> messages,
@@ -1484,7 +1520,8 @@ class _$ChatMessagesFailureImpl extends ChatMessagesFailure {
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
             CubitStates sendMediaState,
-            int? freeChatMinsLeft)
+            int? freeChatMinsLeft,
+            DateTime? chatExpiresAt)
         loaded,
     required TResult Function(
             List<ChatMessage> messages,
@@ -1519,7 +1556,8 @@ class _$ChatMessagesFailureImpl extends ChatMessagesFailure {
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
             CubitStates sendMediaState,
-            int? freeChatMinsLeft)?
+            int? freeChatMinsLeft,
+            DateTime? chatExpiresAt)?
         loaded,
     TResult? Function(
             List<ChatMessage> messages,
@@ -1554,7 +1592,8 @@ class _$ChatMessagesFailureImpl extends ChatMessagesFailure {
             ChatMessage? replyingToMessage,
             CubitStates paginationState,
             CubitStates sendMediaState,
-            int? freeChatMinsLeft)?
+            int? freeChatMinsLeft,
+            DateTime? chatExpiresAt)?
         loaded,
     TResult Function(
             List<ChatMessage> messages,

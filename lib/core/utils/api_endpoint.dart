@@ -94,6 +94,7 @@ class ApiEndPoint {
   static const String userChatAcceptRegard = '/user-chat/regards/accept';
   static const String userChatRejectRegard = '/user-chat/regards/reject';
   static const String userChatMatchingList = '/user-chat/rooms/matching-list';
+  static const String userChatRoomState = '/user-chat/rooms/state';
   static const String userChatCancelMatch = '/user-chat/rooms/cancel';
   static const String sharePostToStory = '/stories/share-post';
   static const String pastMatches = '/user/past-matches';
