@@ -83,11 +83,13 @@ class UserChatRoomsResponse {
   final List<UserChatRoomModel> chatRooms;
   final int pendingRequestsCount;
   final int slotLimit;
+  final int totalCount;
 
   UserChatRoomsResponse({
     required this.chatRooms,
     required this.pendingRequestsCount,
     this.slotLimit = 3,
+    this.totalCount = 0,
   });
 
   factory UserChatRoomsResponse.fromJson(Map<String, dynamic> json) {
@@ -112,12 +114,15 @@ class UserChatRoomsResponse {
       slotLimit = data['slotLimit'] ?? 4;
     }
 
+    final totalCount = paginationData['totalCount'] as int? ?? chatRoomsList.length;
+
     return UserChatRoomsResponse(
       chatRooms: chatRoomsList
           .map((e) => UserChatRoomModel.fromJson(e as Map<String, dynamic>))
           .toList(),
       pendingRequestsCount: data['pendingRequestsCount'] ?? paginationData['pendingRequestsCount'] ?? 0,
       slotLimit: slotLimit,
+      totalCount: totalCount,
     );
   }
 }

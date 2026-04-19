@@ -46,7 +46,6 @@ class UserChatScreen extends StatelessWidget {
             final cubit = getIt<ChatMessagesCubit>(param1: chatRoomId);
             cubit.setInitialBlocked(isBlocked);
             cubit.loadInitialMessages(chatRoomId!, receiverId: receiverId);
-            cubit.setupSocketListeners();
             return cubit;
           },
         ),
@@ -113,6 +112,9 @@ class _UserChatContentState extends State<_UserChatContent> {
     _scrollController = ScrollController();
     final chatSocketService = getIt<ChatSocketService>();
     _failEventSubscription = chatSocketService.onFailEvent.listen((message) {
+      // suppress join-related fail — server returns this when chatRoomId is sent
+      // without targetId; the chat still works correctly after chatRoomJoined
+      if (message.contains('طلب غير صالح')) return;
       if (mounted) AppToast.error(context, message);
     });
   }
@@ -190,6 +192,7 @@ class _UserChatContentState extends State<_UserChatContent> {
                     Column(
                       children: [
                         _buildAppBar(context),
+                        _buildExpiryBanner(context),
                         Expanded(
                           child: Container(
                             decoration: const BoxDecoration(
@@ -240,8 +243,50 @@ class _UserChatContentState extends State<_UserChatContent> {
     );
   }
 
-  Widget _buildScrollToBottomButton() {
-    return BlocBuilder<ChatScrollCubit, ChatScrollState>(
+  Widget _buildExpiryBanner(BuildContext context) {
+    return BlocBuilder<ChatMessagesCubit, ChatMessagesState>(
+      buildWhen: (p, c) => p.chatExpiresAt != c.chatExpiresAt,
+      builder: (context, state) {
+        final expiresAt = state.chatExpiresAt;
+        if (expiresAt == null) return const SizedBox.shrink();
+
+        final now = DateTime.now();
+        final diff = expiresAt.difference(now);
+        if (diff.isNegative) return const SizedBox.shrink();
+
+        final days = diff.inDays;
+        final hours = diff.inHours % 24;
+        final minutes = diff.inMinutes % 60;
+
+        final parts = <String>[];
+        if (days > 0) parts.add('${days}يوم');
+        if (hours > 0) parts.add('${hours}س');
+        if (minutes > 0) parts.add('${minutes}د');
+        final timeStr = parts.join(' ');
+
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 16.w),
+          decoration: BoxDecoration(
+          
+            borderRadius: BorderRadius.circular(8.r),
+            color: AppColors.primary50,
+          ),
+          // margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+          child: Text(
+            'ينتهى هذا التوافق في $timeStr',
+            style: Styles.textStyle14.copyWith(
+              color: AppColors.primary400,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildScrollToBottomButton() {    return BlocBuilder<ChatScrollCubit, ChatScrollState>(
       buildWhen: (p, c) => p.isAtBottom != c.isAtBottom,
       builder: (context, state) {
         return ScrollToBottomButton(

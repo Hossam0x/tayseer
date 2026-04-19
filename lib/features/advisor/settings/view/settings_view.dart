@@ -1,6 +1,7 @@
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_list_cubit.dart';
 import 'package:tayseer/features/shared/settings/models/setting_item_model.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
@@ -114,28 +115,41 @@ class _SettingsViewState extends State<SettingsView> {
       builder: (_) =>
           Center(child: CircularProgressIndicator(color: AppColors.primary100)),
     );
+
     try {
+      // ✅ الترتيب مهم: الـ listeners أولاً ثم الـ socket
+      if (getIt.isRegistered<ChatSocketService>()) {
+        getIt<ChatSocketService>().removeListeners();
+      }
+
+      // إزالة الصورة من الكاش
       final img = CachNetwork.getStringData(key: kMyProfileImage);
       if (img.isNotEmpty) {
         try {
           CachedNetworkImage.evictFromCache(img);
         } catch (_) {}
       }
+
       await CachNetwork.removeData(key: kAdvisorProfileCache);
       await CachNetwork.removeData(key: kMyProfileImage);
       await CachNetwork.removeData(key: kMyProfileName);
+
       _settingsCubit.logoutFromSever();
       await CachNetwork.clearCache();
       await getIt<CacheCleanupService>().clearAllUserCache();
-      if (getIt.isRegistered<ChatSocketService>()) {
-        getIt<ChatSocketService>().removeListeners();
-      }
+
+      // ✅ reset بعد تنظيف كل حاجة
       getIt<tayseerSocketHelper>().reset();
+      if (getIt.isRegistered<ChatListCubit>()) {
+        getIt.resetLazySingleton<ChatListCubit>();
+      }
       if (getIt.isRegistered<HomeCubit>())
         getIt.resetLazySingleton<HomeCubit>();
       if (getIt.isRegistered<ProfileCubit>())
         getIt.resetLazySingleton<ProfileCubit>();
+
       if (!context.mounted) return;
+      Navigator.pop(context); // اقفل الـ loading dialog
       Navigator.pushNamedAndRemoveUntil(
         context,
         AppRouter.kRegisrationView,

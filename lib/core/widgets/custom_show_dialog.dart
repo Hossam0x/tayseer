@@ -1199,3 +1199,28 @@ void showFiltterLimitDialogs(
     },
   );
 }
+
+
+/// Public wrapper for gradient button used in custom dialogs
+Widget showLimitReachedGradientButton({
+  required String text,
+  required VoidCallback onPressed,
+  required Duration delay,
+}) {
+  return _GradientDialogButton(text: text, onPressed: onPressed, delay: delay);
+}
+
+/// Public wrapper for outlined button used in custom dialogs
+Widget showLimitReachedOutlinedButton({
+  required String text,
+  required VoidCallback onPressed,
+  required Duration delay,
+}) {
+  return _OutlinedDialogButton(
+    text: text,
+    borderColor: AppColors.primary500,
+    textColor: AppColors.primary500,
+    onPressed: onPressed,
+    delay: delay,
+  );
+}

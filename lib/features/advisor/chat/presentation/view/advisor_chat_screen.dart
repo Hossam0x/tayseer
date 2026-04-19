@@ -23,7 +23,6 @@ import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/c
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/chat_messages_area.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/scroll_to_bottom_button.dart';
 
-/// Unified Chat Screen - Works for both Advisor and User
 class AdvisorChatScreen extends StatelessWidget {
   final String? chatRoomId;
   final String? receiverId;
@@ -55,12 +54,13 @@ class AdvisorChatScreen extends StatelessWidget {
             log('🚀 Creating ChatMessagesCubit for room: $chatRoomId');
             final cubit = getIt<ChatMessagesCubit>(param1: chatRoomId);
             cubit.setInitialBlocked(isBlocked);
+            // ✅ FIX: Only call loadInitialMessages - it handles setupSocketListeners internally
+            // Do NOT call cubit.setupSocketListeners() here separately
             cubit.loadInitialMessages(
               chatRoomId!,
               receiverId: receiverId,
               isSystemChat: isSystemChat,
             );
-            cubit.setupSocketListeners();
             return cubit;
           },
         ),
@@ -101,7 +101,6 @@ class AdvisorChatScreen extends StatelessWidget {
   }
 }
 
-/// Chat Content Widget
 class _ChatContent extends StatefulWidget {
   final String? chatRoomId;
   final String? receiverId;
@@ -145,6 +144,7 @@ class _ChatContentState extends State<_ChatContent> {
   void _setupFailEventListener() {
     final chatSocketService = getIt<ChatSocketService>();
     _failEventSubscription = chatSocketService.onFailEvent.listen((message) {
+      if (message.contains('طلب غير صالح')) return;
       if (mounted) {
         AppToast.error(context, message);
       }

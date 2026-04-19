@@ -297,6 +297,7 @@ class HomeCubit extends Cubit<HomeState> {
     _profileSubscription.cancel();
     _postEventSubscription.cancel();
     _pushNotifSubscription.cancel();
+    socketHelper.offAllForListener('HomeCubit_sessionStarted'); // ← أضف ده
     return super.close();
   }
 
@@ -1783,18 +1784,19 @@ class HomeCubit extends Cubit<HomeState> {
 
   final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
 
+  // ✅ جديد
   void sessionStart() {
     log('📡 Setting up Session Start Listener');
-    socketHelper.listen('sessionStarted', (data) {
+    socketHelper.listenWithId('sessionStarted', 'HomeCubit_sessionStarted', (
+      data,
+    ) {
       log('📡 Session Started Event Received: $data');
-
+      if (isClosed) return;
       final response = SessionStartModel.fromJson(data);
-
       emit(state.copyWith(sessionStartModel: response));
       HomeEventBus.instance.notifysessionstart(response);
-
       Future.delayed(Duration(milliseconds: 100), () {
-        emit(state.copyWith(sessionStartModel: null));
+        if (!isClosed) emit(state.copyWith(sessionStartModel: null));
       });
     });
   }

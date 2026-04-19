@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/notifications/notificationHelper.dart';
 import 'package:tayseer/core/services/audio_service.dart';
+import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/main.dart';
@@ -47,9 +48,11 @@ class _SplashScreenState extends State<SplashScreen>
       if (userType == UserTypeEnum.guest.name || token.isEmpty) return;
 
       final socketHelper = getIt<tayseerSocketHelper>();
+      final chatSocketService = getIt<ChatSocketService>();
       final connected = await socketHelper.connect();
       if (connected) {
-        log('✅ Socket connected successfully');
+        chatSocketService.init();
+        log('✅ Socket connected and initialized successfully');
       } else {
         log('⚠️ Socket connection failed, but continuing...');
       }

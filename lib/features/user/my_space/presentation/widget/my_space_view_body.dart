@@ -3,6 +3,7 @@ import 'package:tayseer/core/widgets/custom_content_switcher.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/past_matches_view.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/My_Space_Consultatioin_Content.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/My_Space_Marriage.dart';
+import 'package:tayseer/features/user/my_space/users_chat/data/repo/user_chat_repo.dart';
 import 'package:tayseer/features/user/my_space/users_chat/presentation/view/user_chat_matching_list_view.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_cubit.dart';
@@ -21,6 +22,7 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody>
   bool _isMarriageDeactivated = false;
   late StreamSubscription<bool> _marriageStatusSub;
   late final UserProfileCubit _userProfileCubit;
+  int _matchingCount = 0;
 
   @override
   void initState() {
@@ -28,6 +30,7 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody>
     _userProfileCubit = UserProfileCubit(getIt<UserProfileRepository>());
     WidgetsBinding.instance.addObserver(this);
     _loadMarriageStatus();
+    _loadMatchingCount();
 
     // ✅ استمع لتغييرات حالة الزواج فوراً
     _marriageStatusSub = UserProfileCubit.marriageStatusStream.stream.listen((
@@ -58,6 +61,14 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody>
     if (mounted && _isMarriageDeactivated != value) {
       setState(() => _isMarriageDeactivated = value);
     }
+  }
+
+  Future<void> _loadMatchingCount() async {
+    final repo = UserChatRepo(getIt<ApiService>());
+    final result = await repo.getMatchingChatRooms(page: 1, limit: 1);
+    result.fold((_) {}, (response) {
+      if (mounted) setState(() => _matchingCount = response.totalCount ?? response.chatRooms.length);
+    });
   }
 
   @override
@@ -96,38 +107,73 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody>
                                       builder: (_) =>
                                           const UserChatMatchingListView(),
                                     ),
-                                  );
+                                  ).then((_) => _loadMatchingCount());
                                 },
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  margin: const EdgeInsets.only(right: 12),
-                                  decoration: BoxDecoration(
-                                    color: HexColor('eb7a91').withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(16.r),
-                                  ),
-                                  child: AppImage(
-                                    AssetsData.heartLockIcon,
-                                    width: 30.w,
-                                    height: 30.w,
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const PastMatchesView(),
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    Container(
+                                      padding:  EdgeInsets.all(8.w),
+                                      margin:  EdgeInsets.only(right: 12.w),
+                                      decoration: BoxDecoration(
+                                        color: HexColor('eb7a91').withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(16.r),
+                                      ),
+                                      child: AppImage(
+                                        AssetsData.heartLockIcon,
+                                        width: 30.w,
+                                        height: 30.w,
+                                      ),
                                     ),
-                                  );
-                                },
-                                icon: Icon(
-                                  Icons.heart_broken_rounded,
-                                  size: 33,
-                                  color: AppColors.primary300,
+                                    if (_matchingCount > 0)
+                                      Positioned(
+                                        top: -2.w,
+                                        right: 13.w,
+                                        child: Container(
+                                          padding:  EdgeInsets.all(4.w),
+                                          decoration:  BoxDecoration(
+                                            color: Colors.red[400],
+                                            shape: BoxShape.circle,
+                                          ),
+                                          constraints:  BoxConstraints(
+                                            minWidth: 18.w,
+                                            minHeight: 18.w,
+                                          ),
+                                          child: Text(
+                                            _matchingCount > 99 ? '99+' : '$_matchingCount',
+                                            style:  TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10.sp,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
+                              Padding(
+                                padding:  EdgeInsets.symmetric(horizontal:  8.w),
+                                child: IconButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const PastMatchesView(),
+                                      ),
+                                    );
+                                  },
+                                  icon: Icon(
+                                    Icons.heart_broken_rounded,
+                                    size: 33.sp,
+                                    color: AppColors.primary300,
+                                  ),
+                                ),
+                              ),
+                              
                             ],
+                            
                           ),
                         ),
                     ],

@@ -51,6 +51,9 @@ class ChatMessagesState with _$ChatMessagesState {
 
     /// Free chat minutes left (for user side)
     int? freeChatMinsLeft,
+
+    /// Chat expiry date (for user-user chat)
+    DateTime? chatExpiresAt,
   }) = ChatMessagesLoaded;
 
   /// Loading more messages (pagination)
@@ -159,6 +162,12 @@ class ChatMessagesState with _$ChatMessagesState {
   int? get freeChatMinutes => maybeMap(
     loaded: (state) => state.freeChatMinsLeft,
     loadingMore: (state) => state.freeChatMinsLeft,
+    orElse: () => null,
+  );
+
+  /// Get chat expiry date
+  DateTime? get chatExpiresAt => maybeMap(
+    loaded: (state) => state.chatExpiresAt,
     orElse: () => null,
   );
 

@@ -12,6 +12,7 @@ class UserChatState {
   final List<UserChatRoomModel> chatRooms;
   final List<RegardRequestModel> requests;
   final int slotLimit;
+  final int matchingCount;
   final String? errorMessage;
 
   const UserChatState({
@@ -19,6 +20,7 @@ class UserChatState {
     this.chatRooms = const [],
     this.requests = const [],
     this.slotLimit = 4,
+    this.matchingCount = 0,
     this.errorMessage,
   });
 
@@ -27,6 +29,7 @@ class UserChatState {
     List<UserChatRoomModel>? chatRooms,
     List<RegardRequestModel>? requests,
     int? slotLimit,
+    int? matchingCount,
     String? errorMessage,
   }) {
     return UserChatState(
@@ -34,6 +37,7 @@ class UserChatState {
       chatRooms: chatRooms ?? this.chatRooms,
       requests: requests ?? this.requests,
       slotLimit: slotLimit ?? this.slotLimit,
+      matchingCount: matchingCount ?? this.matchingCount,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
@@ -104,20 +108,24 @@ class UserChatCubit extends Cubit<UserChatState> {
     final results = await Future.wait([
       _repo.getUserChatRooms(),
       _repo.getRegardRequests(),
+      _repo.getMatchingChatRooms(page: 1, limit: 1),
     ]);
 
     final roomsResult = results[0] as dynamic;
     final requestsResult = results[1] as dynamic;
+    final matchingResult = results[2] as dynamic;
 
     final rooms = roomsResult.fold((_) => <UserChatRoomModel>[], (r) => r.chatRooms as List<UserChatRoomModel>);
     final requests = requestsResult.fold((_) => <RegardRequestModel>[], (r) => r as List<RegardRequestModel>);
     final slotLimit = roomsResult.fold((_) => 4, (r) => (r as dynamic).slotLimit as int? ?? 4);
+    final matchingCount = matchingResult.fold((_) => 0, (r) => (r as dynamic).totalCount as int? ?? 0);
 
     emit(state.copyWith(
       status: CubitStates.success,
       chatRooms: rooms,
       requests: requests,
       slotLimit: slotLimit,
+      matchingCount: matchingCount,
     ));
   }
 

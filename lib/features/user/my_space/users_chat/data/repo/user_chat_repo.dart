@@ -105,4 +105,19 @@ class UserChatRepo {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  Future<Either<Failure, void>> activateMatchingRoom(String chatRoomId) async {
+    try {
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.userChatRoomState,
+        data: {'chatRoomId': chatRoomId, 'action': 'activate'},
+      );
+      if (response['success'] == true) return const Right(null);
+      return Left(ServerFailure(response['message'] ?? 'فشل تفعيل المحادثة'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }

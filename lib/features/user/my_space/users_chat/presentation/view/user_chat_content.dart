@@ -4,6 +4,7 @@ import 'package:tayseer/features/user/my_space/users_chat/data/model/regard_requ
 import 'package:tayseer/features/user/my_space/users_chat/data/model/user_chat_room_model.dart';
 import 'package:tayseer/features/user/my_space/users_chat/data/repo/user_chat_repo.dart';
 import 'package:tayseer/features/user/my_space/users_chat/presentation/cubit/user_chat_cubit.dart';
+import 'package:tayseer/features/user/my_space/users_chat/presentation/view/user_chat_matching_list_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserChatContent extends StatefulWidget {
@@ -134,16 +135,89 @@ class _UserChatBody extends StatelessWidget {
                   ),
                 ),
 
-              SliverToBoxAdapter(child: SizedBox(height: 100.h)),
-            ],
+              // ✅ Matching rooms banner — only when slots available AND matching rooms exist
+              if (state.matchingCount > 0 && state.chatRooms.length < state.slotLimit)
+                SliverToBoxAdapter(
+                  child: _buildMatchingBanner(context, state),
+                ),
+
+              SliverToBoxAdapter(child: SizedBox(height: 100.h)),            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildBanner(BuildContext context, int slotLimit) {
-    return Container(
+  Widget _buildMatchingBanner(BuildContext context, UserChatState state) {
+    final available = state.slotLimit - state.chatRooms.length;
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const UserChatMatchingListView()),
+      ).then((_) {
+        if (context.mounted) context.read<UserChatCubit>().loadAll();
+      }),
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+        decoration: BoxDecoration(
+          color: AppColors.primary50,
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: AppColors.primary200),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44.w,
+              height: 44.w,
+              decoration: BoxDecoration(
+                color: AppColors.primary100,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.favorite_rounded,
+                  color: AppColors.primary400, size: 22.w),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'لديك ${state.matchingCount} توافق في الانتظار',
+                    style: Styles.textStyle14Bold.copyWith(
+                        color: AppColors.kscandryTextColor),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    'يمكنك إضافة $available ${available == 1 ? 'شخص' : 'أشخاص'} للمحادثات',
+                    style: Styles.textStyle12.copyWith(
+                        color: AppColors.secondary400),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.primary300, AppColors.primary500],
+                  begin: Alignment.centerRight,
+                  end: Alignment.centerLeft,
+                ),
+                borderRadius: BorderRadius.circular(20.r),
+              ),
+              child: Text(
+                'إضافة',
+                style: Styles.textStyle12SemiBold.copyWith(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBanner(BuildContext context, int slotLimit) {    return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       padding: EdgeInsets.all(14.w),
       child: RichText(
@@ -170,6 +244,7 @@ class _UserChatBody extends StatelessWidget {
                     color: AppColors.primary400,
                     fontWeight: FontWeight.bold,
                     decoration: TextDecoration.underline,
+                    decorationColor: AppColors.primary400,
                   ),
                 ),
               ),

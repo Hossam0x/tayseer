@@ -69,8 +69,7 @@ class UserAdvisorProfileCubit
   @override
   Future<void> close() {
     _chatTimeoutTimer?.cancel();
-    socketHelper.off('chatRoomJoined');
-    socketHelper.off('fail');
+    socketHelper.offAllForListener('UserAdvisorProfileCubit_$advisorId');
     cancelPostEventSubscription();
     return super.close();
   }
@@ -466,16 +465,16 @@ class UserAdvisorProfileCubit
       ),
     );
 
-    // تنظيف وتهيئة الـ listeners (نستخدم listen بدلاً من legacy لتفادي التكرار)
-    socketHelper.off('chatRoomJoined');
-    socketHelper.off('fail');
+    // تنظيف وتهيئة الـ listeners
+    final listenerId = 'UserAdvisorProfileCubit_$advisorId';
+    socketHelper.offAllForListener(listenerId);
 
-    socketHelper.listen('chatRoomJoined', (data) {
-      if (!isClosed) _handleRoomCreated(data);
+    socketHelper.listenWithId('chatRoomJoined', listenerId, (data) {
+      if (!isClosed) _handleRoomCreated(Map<String, dynamic>.from(data as Map));
     });
 
-    socketHelper.listen('fail', (data) {
-      if (!isClosed) _handleRoomCreationFailed(data);
+    socketHelper.listenWithId('fail', listenerId, (data) {
+      if (!isClosed) _handleRoomCreationFailed(Map<String, dynamic>.from(data as Map));
     });
 
     // إرسال طلب إنشاء room

@@ -27,8 +27,52 @@ class ExplorationState extends State<Exploration> {
     });
   }
 
-  Future<void> _onRefresh() async {
-    await context.read<InteractionsCubit>().fetchExploration(
+  Widget _buildNoResultsView(BuildContext context) {
+    return RefreshIndicator.adaptive(
+      onRefresh: _onRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(height: MediaQuery.of(context).size.height * 0.12),
+          Center(
+            child: AppImage(AssetsData.noPersonsBlocked, width: 180.w),
+          ),
+          SizedBox(height: 24.h),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 32.w),
+            child: Text(
+              context.tr('no_exploration_results'),
+              textAlign: TextAlign.center,
+              style: Styles.textStyle18Bold.copyWith(
+                color: AppColors.kprimaryTextColor,
+              ),
+            ),
+          ),
+          SizedBox(height: 12.h),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 32.w),
+            child: Text(
+              context.tr('no_exploration_results_desc'),
+              textAlign: TextAlign.center,
+              style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
+            ),
+          ),
+          SizedBox(height: 32.h),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 48.w),
+            child: CustomBotton(
+              radius: 16,
+              useGradient: true,
+              title: context.tr('retry'),
+              onPressed: _onRefresh,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _onRefresh() async {    await context.read<InteractionsCubit>().fetchExploration(
       category: "all",
       forceRefresh: true,
     );
@@ -99,7 +143,7 @@ class ExplorationState extends State<Exploration> {
           (list) => list.isNotEmpty,
         );
         if (!hasData) {
-          return const EmptyExploration();
+          return _buildNoResultsView(context);
         }
 
         return RefreshIndicator.adaptive(
