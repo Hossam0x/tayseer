@@ -110,7 +110,7 @@ class UserPublicProfileBio extends StatelessWidget {
   ) {
     final isBlocked = state.profile?.isBlockedByMe ?? false;
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      padding: EdgeInsets.symmetric(horizontal: 12.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -1,4 +1,5 @@
 import 'package:tayseer/core/utils/video_playback_manager.dart';
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/widgets/post_card/post_actions_row.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_contect_text.dart';
@@ -33,6 +34,9 @@ class PostCard extends StatefulWidget {
   /// تحديد أقصى ارتفاع للميديا (صور/فيديو) — مفيد في الـ story canvas
   final double? mediaMaxHeight;
 
+  /// Initial image index for the carousel (used in details view)
+  final int initialImageIndex;
+
   const PostCard({
     super.key,
     required this.post,
@@ -46,6 +50,7 @@ class PostCard extends StatefulWidget {
     this.hideActions = false,
     this.hideHeaderMeta = false,
     this.mediaMaxHeight,
+    this.initialImageIndex = 0,
   });
 
   @override
@@ -54,11 +59,13 @@ class PostCard extends StatefulWidget {
 
 class _PostCardState extends State<PostCard> {
   VideoPlayerController? _activeController;
+  int _currentImageIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _activeController = widget.sharedController;
+    _currentImageIndex = widget.initialImageIndex;
   }
 
   @override
@@ -70,8 +77,13 @@ class _PostCardState extends State<PostCard> {
   // Callbacks
   // ══════════════════════════════════════════════════════════════════════════
 
-  void _navigateToDetails() {
-    widget.onNavigateToDetails?.call(context, widget.post, _activeController);
+  void _navigateToDetails({int initialImageIndex = 0}) {
+    widget.onNavigateToDetails?.call(
+      context,
+      widget.post,
+      _activeController,
+      initialImageIndex: _currentImageIndex,
+    );
   }
 
   void _handleReaction(ReactionType? type) {
@@ -124,6 +136,7 @@ class _PostCardState extends State<PostCard> {
                         : context.tr(AppStrings.share),
                     onTap: () {
                       Navigator.pop(context);
+                      AudioService.instance.playShareSound();
                       widget.callbacks.onShareTap?.call(postId);
                     },
                   ),
@@ -228,60 +241,80 @@ class _PostCardState extends State<PostCard> {
       );
     }
 
-    final content = _CardContainer(
+    return _CardContainer(
       isDetailsView: widget.isDetailsView,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (widget.post.repostedBy != null) ...[
-            _RepostHeader(repostedBy: widget.post.repostedBy!),
-            Gap(context.responsiveHeight(8)),
-          ],
-          _PostUserHeader(
-            isFromProfile: widget.isFromProfile,
-            post: widget.post,
-            hideHeaderMeta: widget.hideHeaderMeta,
-            onFollowTap: widget.post.isMine
-                ? null
-                : () =>
-                      widget.callbacks.onFollowTap?.call(widget.post.advisorId),
-            onMoreTap: widget.hideHeaderMeta
-                ? null
-                : () => PostOptionsBottomSheet.show(
-                    context,
-                    post: widget.post,
-                    isShared: widget.post.isRepostedByMe,
-                    onDelete: () =>
-                        widget.callbacks.onDelete?.call(widget.post.postId),
-                    onArchive: () =>
-                        widget.callbacks.onArchive?.call(widget.post.postId),
-                    onShare: () =>
-                        widget.callbacks.onShareTap?.call(widget.post.postId),
-                    onShareToStory: () => widget.callbacks.onShareToStoryTap
-                        ?.call(widget.post.postId),
-                    onReport: () =>
-                        widget.callbacks.onReport?.call(widget.post.postId),
-                    onHide: () =>
-                        widget.callbacks.onHide?.call(widget.post.postId),
-                    onSave: () =>
-                        widget.callbacks.onSave?.call(widget.post.postId),
-                    onBlock: () => widget.callbacks.onBlock?.call(
-                      widget.post.postId,
-                      widget.post.advisorId,
-                    ),
-                    onEdit: (updatedPost) =>
-                        widget.callbacks.onEdit?.call(updatedPost),
-                    isArchived: widget.isArchived,
-                  ),
+          // Content with horizontal padding
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: context.responsiveWidth(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.post.repostedBy != null &&
+                    !widget.hideHeaderMeta) ...[
+                  _RepostHeader(repostedBy: widget.post.repostedBy!),
+                  Gap(context.responsiveHeight(8)),
+                ],
+                _PostUserHeader(
+                  isFromProfile: widget.isFromProfile,
+                  post: widget.post,
+                  hideHeaderMeta: widget.hideHeaderMeta,
+                  onFollowTap: widget.hideHeaderMeta || widget.post.isMine
+                      ? null
+                      : () => widget.callbacks.onFollowTap?.call(
+                          widget.post.advisorId,
+                        ),
+                  onMoreTap: widget.hideHeaderMeta
+                      ? null
+                      : () => PostOptionsBottomSheet.show(
+                          context,
+                          post: widget.post,
+                          isShared: widget.post.isRepostedByMe,
+                          onDelete: () => widget.callbacks.onDelete?.call(
+                            widget.post.postId,
+                          ),
+                          onArchive: () => widget.callbacks.onArchive?.call(
+                            widget.post.postId,
+                          ),
+                          onShare: () => widget.callbacks.onShareTap?.call(
+                            widget.post.postId,
+                          ),
+                          onShareToStory: () => widget
+                              .callbacks
+                              .onShareToStoryTap
+                              ?.call(widget.post.postId),
+                          onReport: () => widget.callbacks.onReport?.call(
+                            widget.post.postId,
+                          ),
+                          onHide: () =>
+                              widget.callbacks.onHide?.call(widget.post.postId),
+                          onSave: () =>
+                              widget.callbacks.onSave?.call(widget.post.postId),
+                          onBlock: () => widget.callbacks.onBlock?.call(
+                            widget.post.postId,
+                            widget.post.advisorId,
+                          ),
+                          onEdit: (updatedPost) =>
+                              widget.callbacks.onEdit?.call(updatedPost),
+                          isArchived: widget.isArchived,
+                        ),
+                ),
+                Gap(context.responsiveHeight(15)),
+                _PostContent(
+                  content: widget.post.content,
+                  onTap: _navigateToDetails,
+                  onHashtagTap: _handleHashtag,
+                ),
+                Gap(context.responsiveHeight(12)),
+              ],
+            ),
           ),
-          Gap(context.responsiveHeight(15)),
-          _PostContent(
-            content: widget.post.content,
-            onTap: _navigateToDetails,
-            onHashtagTap: _handleHashtag,
-          ),
-          Gap(context.responsiveHeight(12)),
+          // Media without padding (full width)
           _PostMedia(
             isFromProfile: widget.isFromProfile,
             post: widget.post,
@@ -291,37 +324,45 @@ class _PostCardState extends State<PostCard> {
             callbacks: widget.callbacks,
             heroPrefix: widget.heroPrefix,
             mediaMaxHeight: widget.mediaMaxHeight,
+            onNavigateToDetails: _navigateToDetails,
+            onImageIndexChanged: (index) => _currentImageIndex = index,
+            initialImageIndex: widget.initialImageIndex,
           ),
+          // Actions with horizontal padding
           if (!widget.hideActions) ...[
-            Gap(context.responsiveHeight(15)),
-            PostStats(
-              comments: widget.post.commentsCount,
-              shares: widget.post.sharesCount,
-              onTap: _navigateToDetails,
-            ),
-            Gap(context.responsiveHeight(8)),
-            PostActionsRow(
-              topReactions: widget.post.topReactions,
-              likesCount: widget.post.likesCount,
-              myReaction: widget.post.myReaction,
-              isRepostedByMe: widget.post.isRepostedByMe,
-              onCommentTap: _navigateToDetails,
-              onReactionChanged: _handleReaction,
-              onShareTap: _handleShare,
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: context.responsiveWidth(12),
+              ),
+              child: Column(
+                children: [
+                  Gap(context.responsiveHeight(15)),
+                  Row(
+                    children: [
+                      PostStats(
+                        comments: widget.post.commentsCount,
+                        shares: widget.post.sharesCount,
+                        onTap: _navigateToDetails,
+                      ),
+                    ],
+                  ),
+                  Gap(context.responsiveHeight(8)),
+                  PostActionsRow(
+                    topReactions: widget.post.topReactions,
+                    likesCount: widget.post.likesCount,
+                    myReaction: widget.post.myReaction,
+                    isRepostedByMe: widget.post.isRepostedByMe,
+                    onCommentTap: _navigateToDetails,
+                    onReactionChanged: _handleReaction,
+                    onShareTap: _handleShare,
+                  ),
+                ],
+              ),
             ),
           ],
         ],
       ),
     );
-
-    return widget.isDetailsView
-        ? content
-        : Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: context.responsiveWidth(22),
-            ),
-            child: content,
-          );
   }
 }
 
@@ -343,96 +384,101 @@ class _BlockedPostUIState extends State<_BlockedPostUI> {
   Widget build(BuildContext context) {
     return _isClosed
         ? const SizedBox.shrink()
-        : Container(
-            margin: EdgeInsets.symmetric(
-              horizontal: context.responsiveWidth(22),
-            ),
+        : Padding(
             padding: EdgeInsets.symmetric(
               horizontal: context.responsiveWidth(12),
-              vertical: context.responsiveHeight(12),
             ),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFCF7FA),
-              borderRadius: BorderRadius.circular(16.r),
-              border: Border.all(color: AppColors.primary100, width: 1.sp),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
-                                  blurRadius: 5,
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: context.responsiveWidth(12),
+                vertical: context.responsiveHeight(12),
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFCF7FA),
+                borderRadius: BorderRadius.circular(16.r),
+                border: Border.all(color: AppColors.primary100, width: 1.sp),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
                                 ),
-                              ],
-                            ),
-                            child: ClipOval(
-                              child: AppImage(
-                                widget.post.avatar,
-                                width: 28.w,
-                                height: 28.w,
-                                fit: BoxFit.cover,
-                                isAvatar: true,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.05),
+                                    blurRadius: 5,
+                                  ),
+                                ],
+                              ),
+                              child: ClipOval(
+                                child: AppImage(
+                                  widget.post.avatar,
+                                  width: 28.w,
+                                  height: 28.w,
+                                  fit: BoxFit.cover,
+                                  isAvatar: true,
+                                ),
                               ),
                             ),
-                          ),
-                          Gap(10.w),
-                          Flexible(
-                            child: Text(
-                              widget.post.name,
-                              style: Styles.textStyle16Bold.copyWith(
-                                color: const Color(0xFF0D1C52),
+                            Gap(10.w),
+                            Flexible(
+                              child: Text(
+                                widget.post.name,
+                                style: Styles.textStyle16Bold.copyWith(
+                                  color: const Color(0xFF0D1C52),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          if (widget.post.isVerified) ...[
-                            Gap(4.w),
-                            Icon(
-                              Icons.verified,
-                              color: Colors.blue,
-                              size: 16.sp,
-                            ),
+                            if (widget.post.isVerified) ...[
+                              Gap(4.w),
+                              Icon(
+                                Icons.verified,
+                                color: Colors.blue,
+                                size: 16.sp,
+                              ),
+                            ],
                           ],
-                        ],
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: _onClose,
-                      child: Padding(
-                        padding: EdgeInsets.only(right: 8.w),
-                        child: Icon(
-                          Icons.close_rounded,
-                          color: const Color(0xFF757575),
-                          size: 24.sp,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: EdgeInsetsGeometry.fromSTEB(34.w, 0, 0, 0),
-                  child: Text(
-                    context.tr(AppStrings.userBlockedMessage),
-                    style: Styles.textStyle14.copyWith(
-                      color: AppColors.secondary800,
+                      GestureDetector(
+                        onTap: _onClose,
+                        child: Padding(
+                          padding: EdgeInsets.only(right: 8.w),
+                          child: Icon(
+                            Icons.close_rounded,
+                            color: const Color(0xFF757575),
+                            size: 24.sp,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: EdgeInsetsGeometry.fromSTEB(34.w, 0, 0, 0),
+                    child: Text(
+                      context.tr(AppStrings.userBlockedMessage),
+                      style: Styles.textStyle14.copyWith(
+                        color: AppColors.secondary800,
+                      ),
                     ),
                   ),
-                ),
-                Gap(8.h),
-              ],
+                  Gap(8.h),
+                ],
+              ),
             ),
           );
   }
@@ -448,56 +494,58 @@ class _HiddenPostUI extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: context.responsiveWidth(22),
-        vertical: context.responsiveHeight(8),
-      ),
-      padding: EdgeInsets.symmetric(
-        horizontal: context.responsiveWidth(12),
-        vertical: context.responsiveHeight(16),
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFCF7FA),
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.primary100, width: 1.sp),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.layers_clear_outlined,
-            color: AppColors.primary300,
-            size: 24.sp,
-          ),
-          Gap(8.w),
-          Expanded(
-            child: Text(
-              context.tr(AppStrings.postHiddenMessage),
-              style: Styles.textStyle14.copyWith(color: AppColors.secondary800),
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: context.responsiveWidth(22)),
+      child: Container(
+        margin: EdgeInsets.symmetric(vertical: context.responsiveHeight(8)),
+        padding: EdgeInsets.symmetric(
+          horizontal: context.responsiveWidth(12),
+          vertical: context.responsiveHeight(16),
+        ),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFCF7FA),
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: AppColors.primary100, width: 1.sp),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.layers_clear_outlined,
+              color: AppColors.primary300,
+              size: 24.sp,
             ),
-          ),
-          Gap(8.w),
-          GestureDetector(
-            onTap: onUndo,
-            child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: context.responsiveWidth(20),
-                vertical: context.responsiveHeight(8),
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.primary200,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: AppColors.primary400),
-              ),
+            Gap(8.w),
+            Expanded(
               child: Text(
-                context.tr(AppStrings.cancel),
-                style: Styles.textStyle14SemiBold.copyWith(
-                  color: AppColors.primary400,
+                context.tr(AppStrings.postHiddenMessage),
+                style: Styles.textStyle14.copyWith(
+                  color: AppColors.secondary800,
                 ),
               ),
             ),
-          ),
-        ],
+            Gap(8.w),
+            GestureDetector(
+              onTap: onUndo,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: context.responsiveWidth(20),
+                  vertical: context.responsiveHeight(8),
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary200,
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: AppColors.primary400),
+                ),
+                child: Text(
+                  context.tr(AppStrings.cancel),
+                  style: Styles.textStyle14SemiBold.copyWith(
+                    color: AppColors.primary400,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -513,15 +561,10 @@ class _CardContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        vertical: context.responsiveHeight(14),
-        horizontal: context.responsiveWidth(10),
-      ),
+      padding: EdgeInsets.symmetric(vertical: context.responsiveHeight(14)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: isDetailsView
-            ? BorderRadius.zero
-            : BorderRadius.circular(15.r),
+        // ✅ شيلنا الـ border radius عشان يبقى حواف حادة زي انستغرام
         border: isDetailsView ? null : Border.all(color: Colors.grey.shade200),
       ),
       child: child,
@@ -651,6 +694,9 @@ class _PostMedia extends StatefulWidget {
   final bool isFromProfile;
   final String? heroPrefix;
   final double? mediaMaxHeight;
+  final void Function({int initialImageIndex})? onNavigateToDetails;
+  final void Function(int index)? onImageIndexChanged;
+  final int initialImageIndex;
 
   const _PostMedia({
     required this.post,
@@ -661,6 +707,9 @@ class _PostMedia extends StatefulWidget {
     required this.isFromProfile,
     this.heroPrefix,
     this.mediaMaxHeight,
+    this.onNavigateToDetails,
+    this.onImageIndexChanged,
+    this.initialImageIndex = 0,
   });
 
   @override
@@ -689,6 +738,12 @@ class _PostMediaState extends State<_PostMedia> {
           post: widget.post,
           callbacks: widget.callbacks,
           heroPrefix: widget.heroPrefix,
+          onNavigateToDetails: widget.isDetailsView
+              ? null
+              : (index) =>
+                    widget.onNavigateToDetails?.call(initialImageIndex: index),
+          onImageIndexChanged: widget.onImageIndexChanged,
+          initialImageIndex: widget.initialImageIndex,
         );
         return widget.mediaMaxHeight != null
             ? ConstrainedBox(

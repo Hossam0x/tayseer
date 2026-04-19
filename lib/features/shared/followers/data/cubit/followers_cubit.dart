@@ -1,6 +1,6 @@
-// features/shared/followers/views/cubit/followers_cubit.dart
 import 'dart:async';
 import 'package:dartz/dartz.dart';
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/features/shared/followers/data/models/follower_model.dart';
 import 'package:tayseer/features/shared/followers/data/repositories/followers_repository.dart';
 import 'package:tayseer/my_import.dart';
@@ -216,6 +216,7 @@ class FollowersCubit extends Cubit<FollowersState> {
       },
       (_) {
         // Success - keep optimistic update
+        AudioService.instance.playFollowSound(isFollowing: !currentFollowState);
       },
     );
   }

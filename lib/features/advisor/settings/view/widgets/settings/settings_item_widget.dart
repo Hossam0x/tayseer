@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/features/shared/settings/models/setting_item_model.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_state.dart';
@@ -31,6 +32,8 @@ class SettingsItemWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isNotificationsItem = setting.id == 'notifications';
+    final isSoundItem = setting.id == 'sound_in_app';
+    final isSwitchItem = isNotificationsItem || isSoundItem;
     final isGuestProtected = _guestProtectedIds.contains(setting.id);
     final isCustomClickItem =
         isGuestProtected || setting.id == 'session_settings';
@@ -40,11 +43,11 @@ class SettingsItemWidget extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: isNotificationsItem || isCustomClickItem ? null : onTap,
+          onTap: isSwitchItem || isCustomClickItem ? null : onTap,
           borderRadius: BorderRadius.circular(16.r),
-          highlightColor: isNotificationsItem ? Colors.transparent : null,
+          highlightColor: isSwitchItem ? Colors.transparent : null,
           child: Container(
-            padding: isNotificationsItem
+            padding: isSwitchItem
                 ? EdgeInsets.only(
                     top: 12.h,
                     bottom: 12.h,
@@ -68,7 +71,7 @@ class SettingsItemWidget extends StatelessWidget {
                   child: Text(
                     context.tr(setting.title),
                     style: Styles.textStyle16Meduim.copyWith(
-                      color: isNotificationsItem
+                      color: isSwitchItem
                           ? AppColors.secondary800.withOpacity(0.9)
                           : AppColors.secondary800,
                     ),
@@ -106,15 +109,23 @@ class _NotificationSwitch extends StatelessWidget {
     return BlocBuilder<SettingsCubit, SettingsState>(
       buildWhen: (previous, current) {
         if (previous is SettingsLoaded && current is SettingsLoaded) {
+          if (settingId == 'sound_in_app') {
+            return previous.isSoundEnabled != current.isSoundEnabled;
+          }
           return previous.isNotificationEnabled !=
               current.isNotificationEnabled;
         }
         return false;
       },
       builder: (context, state) {
-        final isEnabled = state is SettingsLoaded
-            ? state.isNotificationEnabled
-            : false;
+        final bool isEnabled;
+        if (state is SettingsLoaded) {
+          isEnabled = settingId == 'sound_in_app'
+              ? state.isSoundEnabled
+              : state.isNotificationEnabled;
+        } else {
+          isEnabled = false;
+        }
         return Transform.scale(
           scaleX: -1.r,
           scaleY: 1.r,
@@ -130,6 +141,7 @@ class _NotificationSwitch extends StatelessWidget {
                   activeColor: const Color(0xFFF06C88),
                   trackColor: AppColors.dropDownArrow,
                   onChanged: (value) {
+                    AudioService.instance.playToggleSound();
                     onChanged();
                     context.read<SettingsCubit>().updateSwitch(
                       settingId,

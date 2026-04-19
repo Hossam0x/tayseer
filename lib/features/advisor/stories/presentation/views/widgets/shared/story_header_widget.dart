@@ -52,11 +52,11 @@ class StoryHeaderWidget extends StatelessWidget {
               },
               child: Row(
                 children: [
-                  HeroMode(
-                    enabled: isActive,
-                    child: Hero(
-                      tag: heroTag ?? userStories.userId,
-                      child: Container(
+                  Builder(
+                    builder: (context) {
+                      final bool hasAncestorHero = context.findAncestorWidgetOfExactType<Hero>() != null;
+                      
+                      Widget content = Container(
                         width: 45.w,
                         height: 45.w,
                         decoration: const BoxDecoration(shape: BoxShape.circle),
@@ -64,8 +64,20 @@ class StoryHeaderWidget extends StatelessWidget {
                           borderRadius: BorderRadius.circular(1000.r),
                           child: AppImage(userStories.image, fit: BoxFit.cover),
                         ),
-                      ),
-                    ),
+                      );
+
+                      if (!hasAncestorHero) {
+                        content = Hero(
+                          tag: heroTag ?? userStories.userId,
+                          child: content,
+                        );
+                      }
+
+                      return HeroMode(
+                        enabled: isActive,
+                        child: content,
+                      );
+                    },
                   ),
                   Gap(10.w),
                   Flexible(

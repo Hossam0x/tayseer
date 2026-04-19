@@ -614,7 +614,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     }
 
     final thumbnail = videoData?.thumbnail;
-    final maxAllowedHeight = context.responsiveHeight(500);
+    final maxAllowedHeight = context.responsiveHeight(720);
 
     final isLoading = !_isInitialized && !_hasError && _controller != null;
 
@@ -627,10 +627,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
         child: AspectRatio(
           aspectRatio: aspectRatio,
           child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(12.r),
-            ),
+            decoration: const BoxDecoration(color: Colors.black),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12.r),
               child: GestureDetector(

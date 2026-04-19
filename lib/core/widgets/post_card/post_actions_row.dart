@@ -107,7 +107,12 @@ class _ActionButtons extends StatelessWidget {
           onReactionChanged: onReactionChanged,
         ),
         Gap(15.w),
-        CircularIconButton(icon: AssetsData.commentIcon, onTap: onCommentTap),
+        CircularIconButton(
+          icon: AssetsData.commentIcon,
+          onTap: () {
+            onCommentTap?.call();
+          },
+        ),
         Gap(15.w),
         ShareButton(
           isShared: isRepostedByMe,

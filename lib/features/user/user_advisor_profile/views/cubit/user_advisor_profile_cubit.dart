@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/core/utils/post_event_bus.dart';
 import 'package:tayseer/core/utils/post_event_listener_mixin.dart';
@@ -280,6 +281,7 @@ class UserAdvisorProfileCubit
           followers: newFollowerCount,
         );
 
+        AudioService.instance.playFollowSound(isFollowing: !currentFollowState);
         emit(
           state.copyWith(
             profile: updatedProfile,
@@ -302,6 +304,7 @@ class UserAdvisorProfileCubit
     if (post.myReaction == null && reactionType == null) return;
 
     final isRemoving = reactionType == null;
+    AudioService.instance.playLikeSound(isLiked: !isRemoving);
     final oldReaction = post.myReaction;
 
     int newLikesCount = post.likesCount;
@@ -656,16 +659,16 @@ class UserAdvisorProfileCubit
     _homeRepository
         .voteInPoll(postId: postId, choiceIndex: tappedIndex.toString())
         .then((result) {
-          result.fold(
-            (failure) => _updatePostInList(postId, post),
-            (_) => firePostEvent(
+          result.fold((failure) => _updatePostInList(postId, post), (_) {
+            AudioService.instance.playVoteSound();
+            firePostEvent(
               PostEvent(
                 type: PostEventType.pollVoted,
                 postId: postId,
                 pollModel: newPoll,
               ),
-            ),
-          );
+            );
+          });
         });
   }
 
@@ -805,6 +808,7 @@ class UserAdvisorProfileCubit
             saveMessage: message,
           ),
         );
+        AudioService.instance.playSaveSound(isSaved: !isCurrentlySaved);
         firePostEvent(
           PostEvent(
             type: PostEventType.saved,
@@ -850,6 +854,7 @@ class UserAdvisorProfileCubit
             deletePostMessage: message,
           ),
         );
+        AudioService.instance.playDeleteSound();
         firePostEvent(PostEvent(type: PostEventType.deleted, postId: postId));
       },
     );
@@ -889,6 +894,7 @@ class UserAdvisorProfileCubit
             archivePostMessage: message,
           ),
         );
+        AudioService.instance.playArchiveSound();
         firePostEvent(PostEvent(type: PostEventType.archived, postId: postId));
       },
     );
@@ -977,6 +983,7 @@ class UserAdvisorProfileCubit
               lastBlockedUserId: advisorId,
             ),
           );
+          AudioService.instance.playBlockSound();
           firePostEvent(
             PostEvent(
               type: PostEventType.blocked,
@@ -1003,6 +1010,7 @@ class UserAdvisorProfileCubit
               lastBlockedUserId: advisorId, // ✅ Consistent tracking
             ),
           );
+          AudioService.instance.playBlockSound();
         }
       },
     );
@@ -1037,7 +1045,7 @@ class UserAdvisorProfileCubit
             blockMessage: message,
           ),
         );
-
+        AudioService.instance.playUnblockSound();
         // ✅ Automatically refresh everything after unblocking
         await refresh();
       },
@@ -1071,5 +1079,43 @@ class UserAdvisorProfileCubit
         ),
       ),
     );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 👥 FOLLOW ADVISOR
+  // ═══════════════════════════════════════════════════════════
+  @override
+  void toggleFollowAdvisor({required String advisorId}) {
+    final postIndex = state.posts.indexWhere((p) => p.advisorId == advisorId);
+    if (postIndex == -1) return;
+
+    final isCurrentlyFollowing = state.posts[postIndex].isFollowing;
+    final isAdding = !isCurrentlyFollowing;
+
+    // Optimistic update
+    final updatedPosts = state.posts.map((post) {
+      if (post.advisorId == advisorId) {
+        return post.copyWith(isFollowing: isAdding);
+      }
+      return post;
+    }).toList();
+    emit(state.copyWith(posts: updatedPosts));
+
+    // API Call with rollback on failure
+    _homeRepository
+        .followAdvisor(advisorId: advisorId, isAdding: isAdding)
+        .then((result) {
+          result.fold((failure) {
+            if (!isClosed) {
+              final rollback = state.posts.map((post) {
+                if (post.advisorId == advisorId) {
+                  return post.copyWith(isFollowing: isCurrentlyFollowing);
+                }
+                return post;
+              }).toList();
+              emit(state.copyWith(posts: rollback));
+            }
+          }, (_) {});
+        });
   }
 }

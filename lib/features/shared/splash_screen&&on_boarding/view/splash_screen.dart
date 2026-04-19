@@ -1,7 +1,7 @@
 import 'dart:developer';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/notifications/notificationHelper.dart';
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/main.dart';
@@ -16,8 +16,6 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  final AudioPlayer _audioPlayer = AudioPlayer();
-
   @override
   void initState() {
     super.initState();
@@ -31,16 +29,14 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 2400));
     if (!mounted) return;
     try {
-      await _audioPlayer.play(AssetSource('sounds/whistle.mp3'));
+      // استخدام AudioService عشان يحترم إعداد الصوت
+      await AudioService.instance.playSound(
+        AudioService.splashSound,
+        forcePlay: false,
+      );
     } catch (e) {
       log('🔊 Sound error: $e');
     }
-  }
-
-  @override
-  void dispose() {
-    _audioPlayer.dispose();
-    super.dispose();
   }
 
   Future<void> _initializeSocket() async {

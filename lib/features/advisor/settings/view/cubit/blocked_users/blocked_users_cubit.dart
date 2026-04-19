@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/features/advisor/settings/data/models/blocked_user_model.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/blocked_users_repository.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/blocked_users/blocked_users_state.dart';
@@ -64,6 +65,7 @@ class BlockedUsersCubit extends Cubit<BlockedUsersState> {
           );
         },
         (_) {
+          AudioService.instance.playUnblockSound();
           emit(
             currentState.copyWith(
               blockedUsers: updatedList,

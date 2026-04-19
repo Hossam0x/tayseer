@@ -1,3 +1,4 @@
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
@@ -125,6 +126,7 @@ class _UserProfileContent extends StatelessWidget {
           return RefreshIndicator(
             onRefresh: () async {
               if (getIt<ConnectivityCubit>().isOffline) return;
+              AudioService.instance.playRefreshSound();
               VideoManager.instance.stopAll();
               await Future.wait([
                 context.read<UserAdvisorProfileCubit>().refresh(),

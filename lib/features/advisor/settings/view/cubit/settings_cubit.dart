@@ -1,6 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tayseer/core/functions/get_language_code_name.dart';
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/features/shared/settings/models/setting_item_model.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_state.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
@@ -19,6 +20,7 @@ class SettingsCubit extends Cubit<SettingsState> {
   }
 
   Future<void> _loadSettings() async {
+    if (isClosed) return;
     emit(SettingsLoading());
 
     try {
@@ -29,6 +31,7 @@ class SettingsCubit extends Cubit<SettingsState> {
 
       // Get initial notification status
       final notificationStatus = await _getNotificationStatus();
+      final soundStatus = AudioService.instance.soundEffectsEnabled;
 
       final settings = [
         SettingItemModel(
@@ -51,6 +54,14 @@ class SettingsCubit extends Cubit<SettingsState> {
               !notificationStatus,
             );
           },
+        ),
+        SettingItemModel(
+          id: 'sound_in_app',
+          title: 'sound_in_app',
+          iconAsset: AssetsData.icSoundSettings,
+          hasSwitch: true,
+          routeName: '',
+          switchValue: soundStatus,
         ),
         SettingItemModel(
           id: 'events',
@@ -156,16 +167,19 @@ class SettingsCubit extends Cubit<SettingsState> {
       final userId = kCurrentUserData?.id ?? 'user';
       final referralLink = 'https://tayseer.app/referral/$userId';
 
-      emit(
-        SettingsLoaded(
-          settings: settings,
-          isNotificationEnabled: notificationStatus,
-          points: 0,
-          referralLink: referralLink,
-        ),
-      );
+      if (!isClosed) {
+        emit(
+          SettingsLoaded(
+            settings: settings,
+            isNotificationEnabled: notificationStatus,
+            isSoundEnabled: soundStatus,
+            points: 0,
+            referralLink: referralLink,
+          ),
+        );
+      }
     } catch (e) {
-      emit(SettingsError(message: 'settings_load_error'));
+      if (!isClosed) emit(SettingsError(message: 'settings_load_error'));
     }
   }
 
@@ -178,7 +192,6 @@ class SettingsCubit extends Cubit<SettingsState> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('app_language', languageCode);
 
-      // تحديث القائمة محلياً بعرض مفتاح اللغة
       final updatedSettings = currentState.settings.map((item) {
         if (item.id == 'language') {
           return item.copyWith(subtitle: getLanguageKey(languageCode));
@@ -186,22 +199,26 @@ class SettingsCubit extends Cubit<SettingsState> {
         return item;
       }).toList();
 
-      emit(
-        currentState.copyWith(
-          settings: updatedSettings,
-          actionSuccess: "update_language_success",
-          isActionKey: true,
-          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
-        ),
-      );
+      if (!isClosed) {
+        emit(
+          currentState.copyWith(
+            settings: updatedSettings,
+            actionSuccess: "update_language_success",
+            isActionKey: true,
+            actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+          ),
+        );
+      }
     } catch (e) {
-      emit(
-        currentState.copyWith(
-          actionError: "update_language_error",
-          isActionKey: true,
-          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
-        ),
-      );
+      if (!isClosed) {
+        emit(
+          currentState.copyWith(
+            actionError: "update_language_error",
+            isActionKey: true,
+            actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+          ),
+        );
+      }
     }
   }
 
@@ -335,29 +352,37 @@ class SettingsCubit extends Cubit<SettingsState> {
     final currentState = state;
     if (currentState is! SettingsLoaded) return;
 
+    if (id == 'sound_in_app') {
+      await AudioService.instance.setSoundEffectsEnabled(value);
+      if (!isClosed) emit(currentState.copyWith(isSoundEnabled: value));
+      return;
+    }
+
     try {
       await _toggleNotificationSetting(id, value);
 
-      // Re-fetch current state as it might have been updated by _toggleNotificationSetting
-      final latestState = state as SettingsLoaded;
-
-      emit(
-        latestState.copyWith(
-          actionSuccess: value
-              ? "notifications_enabled_success"
-              : "notifications_disabled_success",
-          isActionKey: true,
-          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
-        ),
-      );
+      if (!isClosed) {
+        final latestState = state as SettingsLoaded;
+        emit(
+          latestState.copyWith(
+            actionSuccess: value
+                ? "notifications_enabled_success"
+                : "notifications_disabled_success",
+            isActionKey: true,
+            actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+          ),
+        );
+      }
     } catch (e) {
-      emit(
-        currentState.copyWith(
-          actionError: "update_settings_error",
-          isActionKey: true,
-          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
-        ),
-      );
+      if (!isClosed) {
+        emit(
+          currentState.copyWith(
+            actionError: "update_settings_error",
+            isActionKey: true,
+            actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+          ),
+        );
+      }
     }
   }
 
@@ -368,34 +393,38 @@ class SettingsCubit extends Cubit<SettingsState> {
     try {
       final result = await _userProfileRepository.rateApp(rating);
 
-      result.fold(
-        (failure) {
-          emit(
-            currentState.copyWith(
-              actionError: failure.message,
-              isActionKey: false, // Message from API
-              actionTimestamp: DateTime.now().millisecondsSinceEpoch,
-            ),
-          );
-        },
-        (_) {
-          emit(
-            currentState.copyWith(
-              actionSuccess: "rate_app_success",
-              isActionKey: true,
-              actionTimestamp: DateTime.now().millisecondsSinceEpoch,
-            ),
-          );
-        },
-      );
+      if (!isClosed) {
+        result.fold(
+          (failure) {
+            emit(
+              currentState.copyWith(
+                actionError: failure.message,
+                isActionKey: false,
+                actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+              ),
+            );
+          },
+          (_) {
+            emit(
+              currentState.copyWith(
+                actionSuccess: "rate_app_success",
+                isActionKey: true,
+                actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+              ),
+            );
+          },
+        );
+      }
     } catch (e) {
-      emit(
-        currentState.copyWith(
-          actionError: "rate_app_error",
-          isActionKey: true,
-          actionTimestamp: DateTime.now().millisecondsSinceEpoch,
-        ),
-      );
+      if (!isClosed) {
+        emit(
+          currentState.copyWith(
+            actionError: "rate_app_error",
+            isActionKey: true,
+            actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+          ),
+        );
+      }
     }
   }
 

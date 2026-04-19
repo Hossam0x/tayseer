@@ -1,5 +1,6 @@
 // lib/core/widgets/user_info_header.dart
 import 'package:flutter/services.dart';
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/utils/navigation_guard.dart';
 import 'package:tayseer/features/user/user_advisor_profile/views/user_advisor_profile_view.dart';
 import 'package:tayseer/features/user/user_profile/views/user_public_profile_view.dart';
@@ -187,6 +188,9 @@ class _FollowButtonState extends State<_FollowButton>
   }
 
   Future<void> _handleTap() async {
+    // Play follow/unfollow sound effect
+    AudioService.instance.playFollowSound(isFollowing: !_isFollowing);
+
     // Heavy vibration on tap
     HapticFeedback.heavyImpact();
     await Future.delayed(const Duration(milliseconds: 60));

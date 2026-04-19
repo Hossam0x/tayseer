@@ -1,4 +1,5 @@
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_public_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_state.dart';
@@ -7,6 +8,7 @@ import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/utils/post_event_bus.dart';
 import 'package:tayseer/core/utils/post_event_listener_mixin.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_posts_repository.dart';
+import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 
 // في user_public_profile_cubit.dart
 // في user_public_profile_cubit.dart
@@ -14,13 +16,15 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState>
     with PostEventListenerMixin<UserPublicProfileState> {
   final UserPublicProfileRepository _profileRepository;
   final UserPostsRepository _postsRepository;
+  final HomeRepository _homeRepository;
   final String? userId; // ⭐ ابقاء nullable
 
   final int _pageSize = 10;
 
   UserPublicProfileCubit(
     this._profileRepository,
-    this._postsRepository, {
+    this._postsRepository,
+    this._homeRepository, {
     this.userId, // ⭐ nullable
     UserProfileModel? initialProfile,
   }) : super(
@@ -205,6 +209,7 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState>
     if (post.myReaction == null && reactionType == null) return;
 
     final isRemoving = reactionType == null;
+    AudioService.instance.playLikeSound(isLiked: !isRemoving);
     final oldReaction = post.myReaction;
 
     int newLikesCount = post.likesCount;
@@ -483,16 +488,16 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState>
     _postsRepository
         .voteInPoll(postId: postId, choiceIndex: tappedIndex.toString())
         .then((result) {
-          result.fold(
-            (failure) => _updatePostInList(postId, post),
-            (_) => firePostEvent(
+          result.fold((failure) => _updatePostInList(postId, post), (_) {
+            AudioService.instance.playVoteSound();
+            firePostEvent(
               PostEvent(
                 type: PostEventType.pollVoted,
                 postId: postId,
                 pollModel: newPoll,
               ),
-            ),
-          );
+            );
+          });
         });
   }
 
@@ -546,6 +551,7 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState>
             saveMessage: message,
           ),
         );
+        AudioService.instance.playSaveSound(isSaved: !isCurrentlySaved);
         firePostEvent(
           PostEvent(
             type: PostEventType.saved,
@@ -591,6 +597,7 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState>
             deletePostMessage: message,
           ),
         );
+        AudioService.instance.playDeleteSound();
         firePostEvent(PostEvent(type: PostEventType.deleted, postId: postId));
       },
     );
@@ -630,6 +637,7 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState>
             archivePostMessage: message,
           ),
         );
+        AudioService.instance.playArchiveSound();
         firePostEvent(PostEvent(type: PostEventType.archived, postId: postId));
       },
     );
@@ -676,6 +684,47 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState>
 
   void clearError() {
     emit(state.copyWith(profileErrorMessage: null, postsErrorMessage: null));
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 👥 FOLLOW ADVISOR
+  // ═══════════════════════════════════════════════════════════
+  void toggleFollowAdvisor({required String advisorId}) {
+    final postIndex = state.posts.indexWhere((p) => p.advisorId == advisorId);
+    if (postIndex == -1) return;
+
+    final isCurrentlyFollowing = state.posts[postIndex].isFollowing;
+    final isAdding = !isCurrentlyFollowing;
+
+    // Optimistic update
+    final updatedPosts = state.posts.map((post) {
+      if (post.advisorId == advisorId) {
+        return post.copyWith(isFollowing: isAdding);
+      }
+      return post;
+    }).toList();
+    emit(state.copyWith(posts: updatedPosts));
+
+    // API Call with rollback on failure
+    _homeRepository
+        .followAdvisor(advisorId: advisorId, isAdding: isAdding)
+        .then((result) {
+          result.fold(
+            (failure) {
+              // Rollback
+              if (!isClosed) {
+                final rollback = state.posts.map((post) {
+                  if (post.advisorId == advisorId) {
+                    return post.copyWith(isFollowing: isCurrentlyFollowing);
+                  }
+                  return post;
+                }).toList();
+                emit(state.copyWith(posts: rollback));
+              }
+            },
+            (_) {}, // success — optimistic update already applied
+          );
+        });
   }
 
   Future<void> blockUser({
@@ -732,6 +781,7 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState>
               blockUserMessage: message,
             ),
           );
+          AudioService.instance.playBlockSound();
           firePostEvent(
             PostEvent(
               type: PostEventType.blocked,
@@ -753,6 +803,7 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState>
               blockMessage: message,
             ),
           );
+          AudioService.instance.playBlockSound();
         }
       },
     );
@@ -789,7 +840,7 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState>
             blockMessage: message,
           ),
         );
-
+        AudioService.instance.playUnblockSound();
         // ✅ Automatically refresh everything after unblocking
         await refresh();
       },

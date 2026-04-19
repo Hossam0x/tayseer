@@ -1,3 +1,4 @@
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/widgets/snack_bar_service.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_cubit.dart';
 import 'package:tayseer/my_import.dart';
@@ -139,6 +140,8 @@ class _SendGreetingDialogState extends State<SendGreetingDialog> {
 
     if (message.isEmpty) {
       if (mounted) {
+        // Play error sound for empty message
+        AudioService.instance.playErrorSound();
         showSafeSnackBar(
           context: context,
           text: context.tr('please_enter_message'),
@@ -150,6 +153,8 @@ class _SendGreetingDialogState extends State<SendGreetingDialog> {
 
     if (message.length > 500) {
       if (mounted) {
+        // Play error sound for message too long
+        AudioService.instance.playErrorSound();
         showSafeSnackBar(
           context: context,
           text: context.tr('message_too_long_error'),
@@ -167,6 +172,9 @@ class _SendGreetingDialogState extends State<SendGreetingDialog> {
         receiverId: widget.receiverId, // ⭐ هذا هو الـ personInteractedWith
         message: message, // ⭐ هذا هو الـ text
       );
+
+      // Play send success sound
+      AudioService.instance.playSendSound();
 
       if (mounted) {
         Navigator.pop(context);

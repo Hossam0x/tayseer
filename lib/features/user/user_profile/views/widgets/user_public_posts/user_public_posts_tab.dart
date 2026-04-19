@@ -1,6 +1,7 @@
 import 'package:tayseer/features/shared/home/views/widgets/home_post_feed.dart'
     as home_feed;
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/widgets/post_card/post_shimmer.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/shared_empty_state.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_cubit.dart';
@@ -77,7 +78,10 @@ class UserPublicPostsTab extends StatelessWidget {
 
           return RefreshIndicator(
             color: AppColors.kprimaryColor,
-            onRefresh: () => cubit.fetchPosts(),
+            onRefresh: () async {
+              AudioService.instance.playRefreshSound();
+              await cubit.fetchPosts();
+            },
             child: Column(
               children: [
                 _PostList(posts: state.posts, cubit: cubit),

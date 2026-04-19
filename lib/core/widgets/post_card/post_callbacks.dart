@@ -20,8 +20,9 @@ typedef NavigateToDetailsCallback =
     void Function(
       BuildContext context,
       PostModel post,
-      VideoPlayerController? controller,
-    );
+      VideoPlayerController? controller, {
+      int initialImageIndex,
+    });
 
 // ==========================================
 // ✅ New Typedefs for Bottom Sheet Options

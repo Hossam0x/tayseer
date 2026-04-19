@@ -22,6 +22,7 @@ class PostDetailsView extends StatefulWidget {
   final String? heroPrefix;
   final bool isArchived;
   final String? postId_fromNotifc;
+  final int initialImageIndex;
 
   const PostDetailsView({
     super.key,
@@ -32,6 +33,7 @@ class PostDetailsView extends StatefulWidget {
     this.heroPrefix,
     this.isArchived = false,
     this.postId_fromNotifc,
+    this.initialImageIndex = 0,
   });
 
   @override
@@ -209,6 +211,7 @@ class _PostDetailsViewState extends State<PostDetailsView> {
                     isFromProfile: widget.isFromProfile,
                     heroPrefix: widget.heroPrefix,
                     isArchived: widget.isArchived,
+                    initialImageIndex: widget.initialImageIndex,
                   ),
                 ),
                 const CommentInputArea(),
@@ -248,6 +251,7 @@ class _PostDetailsBody extends StatefulWidget {
   final bool isFromProfile;
   final String? heroPrefix;
   final bool isArchived;
+  final int initialImageIndex;
 
   const _PostDetailsBody({
     required this.currentPost,
@@ -257,6 +261,7 @@ class _PostDetailsBody extends StatefulWidget {
     required this.isFromProfile,
     this.heroPrefix,
     this.isArchived = false,
+    this.initialImageIndex = 0,
   });
 
   @override
@@ -439,6 +444,7 @@ class _PostDetailsBodyState extends State<_PostDetailsBody> {
                   callbacks: widget.callbacks,
                   heroPrefix: widget.heroPrefix,
                   isArchived: widget.isArchived,
+                  initialImageIndex: widget.initialImageIndex,
                   commentCallbacks: commentCallbacks,
                   onCommentTap: () => cubit.requestInputFocus(),
                   comments: uiState.comments,

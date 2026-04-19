@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/utils/animation/fly_animation.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/widgets/custom_click.dart';
@@ -112,6 +113,9 @@ class _ReactionLikeButtonState extends State<ReactionLikeButton> {
   void _triggerFlyAnimation(ReactionType reaction, GlobalKey? sourceKey) {
     setState(() => _selectedReaction = reaction);
 
+    // Play like sound effect
+    AudioService.instance.playLikeSound(isLiked: true);
+
     if (widget.destinationKey != null && sourceKey != null) {
       FlyAnimation.flyWidget(
         context: context,
@@ -132,11 +136,12 @@ class _ReactionLikeButtonState extends State<ReactionLikeButton> {
 
   void _onTap() {
     if (_selectedReaction != null) {
-      // Remove reaction
+      // Remove reaction - play unlike sound
+      AudioService.instance.playLikeSound(isLiked: false);
       setState(() => _selectedReaction = null);
       widget.onReactionChanged(null);
     } else {
-      // Quick like with love reaction
+      // Quick like with love reaction - sound will be played in _triggerFlyAnimation
       _triggerFlyAnimation(ReactionType.love, _buttonKey);
     }
   }
@@ -294,8 +299,11 @@ class _ReactionBubbleState extends State<_ReactionBubble>
 
   Widget _buildReactionItem(({ReactionType type, Color color}) reaction) {
     return GestureDetector(
-      onTap: () =>
-          widget.onSelected(reaction.type, _reactionKeys[reaction.type]),
+      onTap: () {
+        // Play button tap sound for reaction selection
+        AudioService.instance.playButtonTap();
+        widget.onSelected(reaction.type, _reactionKeys[reaction.type]);
+      },
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 4.w),
         child: Container(

@@ -16,6 +16,7 @@ class SettingsLoading extends SettingsState {}
 class SettingsLoaded extends SettingsState {
   final List<SettingItemModel> settings;
   final bool isNotificationEnabled;
+  final bool isSoundEnabled;
   final CubitStates notificationStatus;
   final String? actionSuccess; // Key or message
   final String? actionError; // Key or message
@@ -27,6 +28,7 @@ class SettingsLoaded extends SettingsState {
   const SettingsLoaded({
     required this.settings,
     this.isNotificationEnabled = false,
+    this.isSoundEnabled = false,
     this.notificationStatus = CubitStates.initial,
     this.actionSuccess,
     this.actionError,
@@ -39,6 +41,7 @@ class SettingsLoaded extends SettingsState {
   SettingsLoaded copyWith({
     List<SettingItemModel>? settings,
     bool? isNotificationEnabled,
+    bool? isSoundEnabled,
     CubitStates? notificationStatus,
     String? actionSuccess,
     String? actionError,
@@ -51,6 +54,7 @@ class SettingsLoaded extends SettingsState {
       settings: settings ?? this.settings,
       isNotificationEnabled:
           isNotificationEnabled ?? this.isNotificationEnabled,
+      isSoundEnabled: isSoundEnabled ?? this.isSoundEnabled,
       notificationStatus: notificationStatus ?? this.notificationStatus,
       actionSuccess: actionSuccess, // Intentionally not keeping previous
       actionError: actionError, // Intentionally not keeping previous
@@ -65,6 +69,7 @@ class SettingsLoaded extends SettingsState {
   List<Object?> get props => [
     settings,
     isNotificationEnabled,
+    isSoundEnabled,
     notificationStatus,
     actionSuccess,
     actionError,

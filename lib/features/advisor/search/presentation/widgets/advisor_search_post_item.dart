@@ -45,6 +45,8 @@ class AdvisorSearchPostItem extends StatelessWidget {
               ),
       onCommentCountSync: ({required postId, required totalCount}) => cubit
           .syncCommentCountFromBackend(postId: postId, totalCount: totalCount),
+      onFollowTap: (advisorId) =>
+          cubit.toggleFollowAdvisorFromPost(advisorId: advisorId),
       onHashtagTap: (hashtag) {
         final clean = hashtag.startsWith('#') ? hashtag.substring(1) : hashtag;
         Navigator.push(
@@ -75,7 +77,7 @@ class AdvisorSearchPostItem extends StatelessWidget {
             isFromProfile: false,
             heroPrefix: 'search_advisor',
             callbacks: callbacks,
-            onNavigateToDetails: (ctx, p, controller) {
+            onNavigateToDetails: (ctx, p, controller, {initialImageIndex = 0}) {
               Navigator.push(
                 ctx,
                 MaterialPageRoute(
@@ -84,6 +86,7 @@ class AdvisorSearchPostItem extends StatelessWidget {
                     heroPrefix: 'search_advisor',
                     post: p,
                     cachedController: controller,
+                    initialImageIndex: initialImageIndex,
                     callbacks: callbacks,
                   ),
                 ),

@@ -1,4 +1,5 @@
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/features/shared/post_details/data/repos/mention_search_repo.dart';
 import 'package:tayseer/features/shared/post_details/presentation/manager/post_details_cubit/post_details_cubit.dart';
@@ -185,6 +186,9 @@ class _CommentInputAreaBodyState extends State<_CommentInputAreaBody> {
   void _sendComment() {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
+
+    // Play comment success sound
+    AudioService.instance.playCommentSound();
 
     _controller.clear();
     setState(() {

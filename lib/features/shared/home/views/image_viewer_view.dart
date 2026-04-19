@@ -201,7 +201,7 @@ class _ImageViewerViewState extends State<ImageViewerView>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
         children: [

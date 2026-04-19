@@ -1,3 +1,4 @@
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/widgets/custom_click.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/models/post_model.dart';
@@ -37,6 +38,8 @@ class PostPollView extends StatelessWidget {
       padding: EdgeInsets.only(bottom: context.responsiveHeight(10)),
       child: CustomClick(
         onTap: () {
+          // Play vote success sound
+          AudioService.instance.playVoteSound();
           onVote?.call(choice.choice);
         },
         child: AnimatedContainer(

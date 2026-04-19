@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tayseer/core/functions/get_language_code_name.dart';
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
@@ -103,6 +104,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         }
 
         final notificationStatus = await _getNotificationStatus();
+        final soundStatus = await _getSoundStatus();
         final isMarriageDeactivated = await _getMarriageSectionDeactivated();
         final isMarriageComplete = await _getMarriageComplete();
 
@@ -116,6 +118,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
             settings: settings,
             userProfile: profile,
             isNotificationEnabled: notificationStatus,
+            isSoundEnabled: soundStatus,
             isMarriageSectionDeactivated: isMarriageDeactivated,
             isMarriageProfileComplete: isMarriageComplete,
           ),
@@ -154,6 +157,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     final prefs = await SharedPreferences.getInstance();
     final savedLanguage = prefs.getString('app_language') ?? 'ar';
     final notificationStatus = await _getNotificationStatus();
+    final soundStatus = await _getSoundStatus();
 
     return [
       SettingItemModel(
@@ -197,6 +201,14 @@ class UserProfileCubit extends Cubit<UserProfileState> {
             !notificationStatus,
           );
         },
+      ),
+      SettingItemModel(
+        id: 'sound_in_app',
+        title: 'sound_in_app',
+        iconAsset: AssetsData.icSoundSettings,
+        hasSwitch: true,
+        routeName: '',
+        switchValue: soundStatus,
       ),
       SettingItemModel(
         id: 'events',
@@ -289,6 +301,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     try {
       final profile = await _fetchUserProfile();
       final isNotificationEnabled = await _getNotificationStatus();
+      final soundStatus = await _getSoundStatus();
       final isMarriageDeactivated = await _getMarriageSectionDeactivated();
 
       // ⭐ اقرأ من SharedPreferences مش من dataCompleted
@@ -304,6 +317,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
           settings: settings,
           userProfile: profile, // ⭐ profile كما هو بدون تعديل dataCompleted
           isNotificationEnabled: isNotificationEnabled,
+          isSoundEnabled: soundStatus,
           isMarriageSectionDeactivated: isMarriageDeactivated,
           isMarriageProfileComplete: isMarriageComplete, // ⭐
         ),
@@ -622,6 +636,10 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     return prefs.getBool('notifications_enabled') ?? true;
   }
 
+  Future<bool> _getSoundStatus() async {
+    return AudioService.instance.soundEffectsEnabled;
+  }
+
   Future<void> _shareAppLink() async {
     try {
       const String appLink =
@@ -698,6 +716,9 @@ class UserProfileCubit extends Cubit<UserProfileState> {
           ),
         );
       }
+    } else if (id == 'sound_in_app') {
+      await AudioService.instance.setSoundEffectsEnabled(value);
+      emit(currentState.copyWith(isSoundEnabled: value));
     } else if (id == 'deactivate_the_marriage_section') {
       emit(currentState.copyWith(isMarriageSectionDeactivated: value));
       await _saveMarriageSectionDeactivated(value);

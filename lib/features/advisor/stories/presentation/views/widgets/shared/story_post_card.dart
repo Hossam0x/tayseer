@@ -40,12 +40,17 @@ class StoryPostCard extends StatelessWidget {
               // PostCallbacks.empty ensures no video plays inside the story card.
               // Reels inside post cards are intentionally disabled here to prevent
               // audio conflicts with the story video/audio layer.
-              child: PostCard(
-                post: post,
-                isFromProfile: false,
-                isDetailsView: false,
-                callbacks: PostCallbacks.empty,
-                onNavigateToDetails: null,
+              // HeroMode disabled to prevent Hero nesting conflicts with the
+              // home feed's Hero widgets when this card is kept Offstage by StoryView.
+              child: HeroMode(
+                enabled: false,
+                child: PostCard(
+                  post: post,
+                  isFromProfile: false,
+                  isDetailsView: false,
+                  callbacks: PostCallbacks.empty,
+                  onNavigateToDetails: null,
+                ),
               ),
             ),
           ),

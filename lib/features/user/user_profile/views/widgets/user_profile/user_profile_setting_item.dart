@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/features/shared/settings/models/setting_item_model.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_state.dart';
@@ -25,17 +26,20 @@ class UserProfileSettingItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isNotificationsItem = setting.id == 'notifications';
+    final isSoundItem = setting.id == 'sound_in_app';
     final isInviteItem = setting.id == 'invite';
     final isRateAppItem = setting.id == 'rate_app';
     final isEditMarriageProfile = setting.id == 'edit_marriage_profile';
     final isDeactiveTheMarriageSection =
         setting.id == 'deactivate_the_marriage_section';
+    final isSwitchItem =
+        isNotificationsItem || isDeactiveTheMarriageSection || isSoundItem;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          if (isNotificationsItem || isDeactiveTheMarriageSection) return;
+          if (isSwitchItem) return;
           if (isInviteItem) {
             setting.onTap?.call();
             return;
@@ -70,11 +74,9 @@ class UserProfileSettingItem extends StatelessWidget {
           }
         },
         borderRadius: BorderRadius.circular(16.r),
-        highlightColor: isNotificationsItem || isDeactiveTheMarriageSection
-            ? Colors.transparent
-            : null,
+        highlightColor: isSwitchItem ? Colors.transparent : null,
         child: Container(
-          padding: isNotificationsItem || isDeactiveTheMarriageSection
+          padding: isSwitchItem
               ? EdgeInsets.only(top: 12.h, bottom: 12.h, right: 12.w, left: 8.w)
               : EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
           decoration: BoxDecoration(
@@ -98,7 +100,7 @@ class UserProfileSettingItem extends StatelessWidget {
                 child: Text(
                   context.tr(setting.title),
                   style: Styles.textStyle16Meduim.copyWith(
-                    color: isNotificationsItem || isDeactiveTheMarriageSection
+                    color: isSwitchItem
                         ? AppColors.secondary800.withOpacity(0.9)
                         : AppColors.secondary800,
                   ),
@@ -120,12 +122,18 @@ class UserProfileSettingItem extends StatelessWidget {
     SettingItemModel setting,
     bool isDeactivateMarriage,
   ) {
-    if (setting.id == 'notifications' || isDeactivateMarriage) {
+    if (setting.id == 'notifications' ||
+        isDeactivateMarriage ||
+        setting.id == 'sound_in_app') {
       return BlocSelector<UserProfileCubit, UserProfileState, bool>(
         selector: (state) {
           if (state is SettingsLoaded) {
-            if (setting.id == 'notifications')
+            if (setting.id == 'notifications') {
               return state.isNotificationEnabled;
+            }
+            if (setting.id == 'sound_in_app') {
+              return state.isSoundEnabled;
+            }
             if (isDeactivateMarriage) return state.isMarriageSectionDeactivated;
           }
           return false;
@@ -133,6 +141,8 @@ class UserProfileSettingItem extends StatelessWidget {
         builder: (context, isEnabled) {
           return _switchWidget(isEnabled, (value) {
             if (setting.id == 'notifications') {
+              context.read<UserProfileCubit>().updateSwitch(setting.id, value);
+            } else if (setting.id == 'sound_in_app') {
               context.read<UserProfileCubit>().updateSwitch(setting.id, value);
             } else {
               onMarriageDeactivate?.call(context, value);
@@ -156,7 +166,10 @@ class UserProfileSettingItem extends StatelessWidget {
           value: value,
           activeColor: const Color(0xFFF06C88),
           trackColor: AppColors.dropDownArrow,
-          onChanged: onChanged,
+          onChanged: (v) {
+            AudioService.instance.playToggleSound();
+            onChanged(v);
+          },
         ),
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
+import 'package:tayseer/features/advisor/stories/presentation/views/story_post_editor_view.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_state.dart';
@@ -30,6 +31,17 @@ class UserPublicPostItem extends StatelessWidget {
       onReactionChanged: (id, type) =>
           cubit.reactToPost(postId: id, reactionType: type),
       onShareTap: (id) => cubit.toggleSharePost(postId: id),
+      onShareToStoryTap: (id) {
+        final post = cubit.state.posts.where((p) => p.postId == id).firstOrNull;
+        if (post == null) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => StoryPostEditorView(post: post),
+            fullscreenDialog: true,
+          ),
+        );
+      },
       onHashtagTap: (hashtag) {
         final clean = hashtag.startsWith('#') ? hashtag.substring(1) : hashtag;
         context.pushNamed(
@@ -61,6 +73,8 @@ class UserPublicPostItem extends StatelessWidget {
               ),
       onCommentCountSync: ({required postId, required totalCount}) => cubit
           .syncCommentCountFromBackend(postId: postId, totalCount: totalCount),
+      onFollowTap: (advisorId) =>
+          cubit.toggleFollowAdvisor(advisorId: advisorId),
     );
   }
 
@@ -83,20 +97,22 @@ class UserPublicPostItem extends StatelessWidget {
               heroPrefix: 'user_profile',
               post: post,
               callbacks: callbacks,
-              onNavigateToDetails: (ctx, p, controller) {
-                Navigator.push(
-                  ctx,
-                  MaterialPageRoute(
-                    builder: (_) => PostDetailsView(
-                      isFromProfile: true,
-                      heroPrefix: 'user_profile',
-                      post: p,
-                      cachedController: controller,
-                      callbacks: callbacks,
-                    ),
-                  ),
-                );
-              },
+              onNavigateToDetails:
+                  (ctx, p, controller, {initialImageIndex = 0}) {
+                    Navigator.push(
+                      ctx,
+                      MaterialPageRoute(
+                        builder: (_) => PostDetailsView(
+                          isFromProfile: true,
+                          heroPrefix: 'user_profile',
+                          post: p,
+                          cachedController: controller,
+                          initialImageIndex: initialImageIndex,
+                          callbacks: callbacks,
+                        ),
+                      ),
+                    );
+                  },
             );
           },
         ),

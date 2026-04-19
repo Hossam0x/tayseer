@@ -1,5 +1,6 @@
 import 'package:country_picker/country_picker.dart';
 import 'package:tayseer/core/appLocalizations/appLocalizations.dart';
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/splash_screen.dart';
@@ -14,12 +15,38 @@ class TayseerApp extends StatefulWidget {
   State<TayseerApp> createState() => _TayseerAppState();
 }
 
-class _TayseerAppState extends State<TayseerApp> {
+class _TayseerAppState extends State<TayseerApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    // Add app lifecycle observer for AudioService
+    WidgetsBinding.instance.addObserver(this);
     // ✅ الـ Warm Start بيتهندل في main.dart عبر _listenToWarmStartLinks()
     // بيستخدم navigatorKey مباشرة — مش محتاج حاجة هنا
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+        AudioService.instance.onAppPaused();
+        break;
+      case AppLifecycleState.resumed:
+        AudioService.instance.onAppResumed();
+        break;
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.detached:
+        break;
+    }
   }
 
   @override

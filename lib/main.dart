@@ -6,6 +6,7 @@ import 'package:hive_flutter/adapters.dart';
 import 'package:tayseer/core/cache/chat_cache_service.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/connectivity_service.dart';
 import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/utils/global_mute_manager.dart';
@@ -90,6 +91,9 @@ void main() async {
 
   // ✅ بعد runApp — initialize الإشعارات بعد ما التطبيق يشتغل
   WidgetsBinding.instance.addPostFrameCallback((_) async {
+    // Initialize AudioService AFTER runApp so platform channels are ready
+    await AudioService.instance.initialize();
+
     final localNotification = LocalNotification(navigatorKey: navigatorKey);
     await localNotification.initialize();
   });

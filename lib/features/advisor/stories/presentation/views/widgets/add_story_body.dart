@@ -1,4 +1,5 @@
 import 'package:camera/camera.dart';
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/add_story_cubit/add_story_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/add_story_cubit/add_story_state.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/widgets/stories_gallery_grid.dart';
@@ -68,6 +69,9 @@ class _AddStoryBodyState extends State<AddStoryBody> {
             builder: (context) => const CustomloadingApp(),
           );
         } else if (state.addStoryState == CubitStates.success) {
+          // Play upload success sound
+          AudioService.instance.playUploadSound();
+
           WidgetsBinding.instance.addPostFrameCallback((_) {
             // 1. Dismiss loading dialog
             if (Navigator.canPop(context)) {
@@ -88,6 +92,9 @@ class _AddStoryBodyState extends State<AddStoryBody> {
             if (nav.canPop()) nav.pop();
           });
         } else if (state.addStoryState == CubitStates.failure) {
+          // Play error sound for failed story upload
+          AudioService.instance.playErrorSound();
+
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (Navigator.canPop(context)) {
               Navigator.pop(context); // Dismiss loading dialog

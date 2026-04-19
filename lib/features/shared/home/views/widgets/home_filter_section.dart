@@ -13,10 +13,8 @@ class HomeFilterSection extends StatelessWidget {
     return SliverToBoxAdapter(
       child: Padding(
         padding: EdgeInsets.only(
-          bottom: context.responsiveHeight(10),
-          right: context.responsiveWidth(24),
-          left: context.responsiveWidth(24),
-        ),
+          bottom: context.responsiveHeight(8),
+        ), // ✅ قللنا من 10 لـ 8
         child: BlocBuilder<HomeCubit, HomeState>(
           buildWhen: (previous, current) =>
               previous.categoriesState != current.categoriesState ||
@@ -84,6 +82,8 @@ class _FilterList extends StatelessWidget {
         child: Row(
           spacing: 8.w,
           children: [
+            // Left padding
+            Gap(context.responsiveWidth(10)),
             // "الكل" filter
             _FilterItem(
               title: context.tr('all'),
@@ -101,6 +101,8 @@ class _FilterList extends StatelessWidget {
             }),
             // Loading more indicator
             if (isLoadingMore) const _ShimmerItem(),
+            // Right padding
+            Gap(context.responsiveWidth(22)),
           ],
         ),
       ),
@@ -161,13 +163,19 @@ class _ShimmerLoading extends StatelessWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: List.generate(
-          5,
-          (index) => Padding(
-            padding: EdgeInsets.only(left: context.responsiveWidth(8)),
-            child: const _ShimmerItem(),
+        children: [
+          // Left padding
+          Gap(context.responsiveWidth(10)),
+          ...List.generate(
+            5,
+            (index) => Padding(
+              padding: EdgeInsets.only(left: context.responsiveWidth(8)),
+              child: const _ShimmerItem(),
+            ),
           ),
-        ),
+          // Right padding
+          Gap(context.responsiveWidth(22)),
+        ],
       ),
     );
   }

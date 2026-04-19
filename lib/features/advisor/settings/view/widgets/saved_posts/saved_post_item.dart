@@ -45,6 +45,8 @@ class SavedPostItem extends StatelessWidget {
           .syncCommentCountFromBackend(postId: postId, totalCount: totalCount),
       onPollVote: (id, choiceText) =>
           cubit.voteInPoll(postId: id, choiceText: choiceText),
+      onFollowTap: (advisorId) =>
+          cubit.toggleFollowAdvisor(advisorId: advisorId),
     );
   }
 
@@ -63,7 +65,7 @@ class SavedPostItem extends StatelessWidget {
             heroPrefix: 'saved_posts',
             post: post,
             callbacks: callbacks,
-            onNavigateToDetails: (ctx, p, controller) {
+            onNavigateToDetails: (ctx, p, controller, {initialImageIndex = 0}) {
               Navigator.push(
                 ctx,
                 MaterialPageRoute(
@@ -72,6 +74,7 @@ class SavedPostItem extends StatelessWidget {
                     isFromProfile: false,
                     heroPrefix: 'saved_posts',
                     cachedController: controller,
+                    initialImageIndex: initialImageIndex,
                     callbacks: callbacks,
                   ),
                 ),

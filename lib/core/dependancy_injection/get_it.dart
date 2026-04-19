@@ -446,6 +446,7 @@ Future<void> setupGetIt() async {
     (userId, initialProfile) => UserPublicProfileCubit(
       getIt<UserPublicProfileRepository>(),
       getIt<UserPostsRepository>(),
+      getIt<HomeRepository>(),
       userId: userId,
       initialProfile: initialProfile,
     ),
@@ -590,7 +591,7 @@ Future<void> setupGetIt() async {
   getIt.registerFactory<RegardsPackagesCubit>(
     () => RegardsPackagesCubit(getIt<ApiService>()),
   );
-    getIt.registerFactory<RegardsPackagePurchaseCubit>(
+  getIt.registerFactory<RegardsPackagePurchaseCubit>(
     () => RegardsPackagePurchaseCubit(getIt<IAPService>(), getIt<ApiService>()),
   );
 }

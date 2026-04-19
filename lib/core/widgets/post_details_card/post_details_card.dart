@@ -50,6 +50,9 @@ class PostDetailsCard extends StatelessWidget {
   /// ✅ Function to get the Key for a comment by its ID
   final GlobalKey Function(String commentId)? getCommentKey;
 
+  /// Initial image index to show in the carousel (for navigating from feed)
+  final int initialImageIndex;
+
   const PostDetailsCard({
     super.key,
     required this.post,
@@ -84,6 +87,7 @@ class PostDetailsCard extends StatelessWidget {
     required this.isFromProfile,
     this.heroPrefix,
     this.isArchived = false,
+    this.initialImageIndex = 0,
   });
 
   @override
@@ -101,6 +105,7 @@ class PostDetailsCard extends StatelessWidget {
           onCommentTap: onCommentTap,
           heroPrefix: heroPrefix,
           isArchived: isArchived,
+          initialImageIndex: initialImageIndex,
         ),
 
         SliverToBoxAdapter(child: Gap(10.h)),
@@ -170,6 +175,7 @@ class _PostSection extends StatelessWidget {
   final bool isFromProfile;
   final String? heroPrefix;
   final bool isArchived;
+  final int initialImageIndex;
 
   const _PostSection({
     required this.post,
@@ -179,6 +185,7 @@ class _PostSection extends StatelessWidget {
     required this.isFromProfile,
     this.heroPrefix,
     this.isArchived = false,
+    this.initialImageIndex = 0,
   });
 
   @override
@@ -192,7 +199,9 @@ class _PostSection extends StatelessWidget {
         isFromProfile: isFromProfile,
         heroPrefix: heroPrefix,
         isArchived: isArchived,
-        onNavigateToDetails: (_, __, ___) => onCommentTap?.call(),
+        initialImageIndex: initialImageIndex,
+        onNavigateToDetails: (_, __, ___, {initialImageIndex = 0}) =>
+            onCommentTap?.call(),
       ),
     );
   }

@@ -16,10 +16,11 @@ class PostStats extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-
-      child: Text(
-        "${formatCount(comments)} ${context.tr('comments')}  . ${formatCount(shares)} ${context.tr('shares')}",
-        style: Styles.textStyle12.copyWith(color: AppColors.kGreyB3),
+      child: Center(
+        child: Text(
+          "${formatCount(comments)} ${context.tr('comments')}  . ${formatCount(shares)} ${context.tr('shares')}",
+          style: Styles.textStyle12.copyWith(color: AppColors.kGreyB3),
+        ),
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_posts_repository.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_public_profile_repository.dart';
@@ -8,6 +9,7 @@ import 'package:tayseer/features/user/user_profile/views/widgets/user_public_pro
 import 'package:tayseer/features/user/user_profile/views/widgets/user_public_profile_header.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/user_public_profile_tabs.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/user_public_profile_skeletonizer.dart';
+import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserPublicProfileView extends StatelessWidget {
@@ -23,6 +25,7 @@ class UserPublicProfileView extends StatelessWidget {
           create: (_) => UserPublicProfileCubit(
             getIt<UserPublicProfileRepository>(),
             getIt<UserPostsRepository>(),
+            getIt<HomeRepository>(),
             userId: userId,
             initialProfile: null,
           ),
@@ -126,7 +129,10 @@ class _UserPublicProfileContent extends StatelessWidget {
         }
 
         return RefreshIndicator.adaptive(
-          onRefresh: () => context.read<UserPublicProfileCubit>().refresh(),
+          onRefresh: () async {
+            AudioService.instance.playRefreshSound();
+            await context.read<UserPublicProfileCubit>().refresh();
+          },
           color: AppColors.kprimaryColor,
           backgroundColor: AppColors.kWhiteColor,
           child: CustomScrollView(

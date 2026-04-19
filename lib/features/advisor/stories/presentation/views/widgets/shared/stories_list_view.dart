@@ -54,6 +54,31 @@ class _StoriesListViewState extends State<StoriesListView> {
       for (final story in userStory.stories) MapEntry(userStory, story),
   ];
 
+  Widget _buildStoryItem(
+    int index,
+    List<MapEntry<UserStoriesModel, StoryModel>> flatStories,
+    bool isLoadingMore,
+  ) {
+    if (index == flatStories.length) {
+      return Padding(
+        padding: EdgeInsetsDirectional.only(end: context.responsiveWidth(14)),
+        child: const StoriesLoadingShimmer(count: 1),
+      );
+    }
+    final parentUserStory = flatStories[index].key;
+    final story = flatStories[index].value;
+    return Padding(
+      key: ValueKey('story_profile_${story.id}'),
+      padding: EdgeInsetsDirectional.only(end: context.responsiveWidth(14)),
+      child: SingleStoryItem(
+        key: ValueKey('story_profile_item_${story.id}'),
+        story: story,
+        parentUserStory: parentUserStory,
+        allStories: widget.stories,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final flatStories = _flatStories;
@@ -81,28 +106,27 @@ class _StoriesListViewState extends State<StoriesListView> {
             physics: const ClampingScrollPhysics(),
             itemCount: itemCount,
             itemBuilder: (context, index) {
-              if (index == flatStories.length) {
-                return Padding(
-                  padding: EdgeInsetsDirectional.only(
-                    end: context.responsiveWidth(14),
-                  ),
-                  child: const StoriesLoadingShimmer(count: 1),
+              // Left padding for first item
+              if (index == 0) {
+                return Row(
+                  children: [
+                    Gap(context.responsiveWidth(22)),
+                    _buildStoryItem(index, flatStories, isLoadingMore),
+                  ],
                 );
               }
-              final parentUserStory = flatStories[index].key;
-              final story = flatStories[index].value;
-              return Padding(
-                key: ValueKey('story_profile_${story.id}'),
-                padding: EdgeInsetsDirectional.only(
-                  end: context.responsiveWidth(14),
-                ),
-                child: SingleStoryItem(
-                  key: ValueKey('story_profile_item_${story.id}'),
-                  story: story,
-                  parentUserStory: parentUserStory,
-                  allStories: widget.stories,
-                ),
-              );
+
+              // Right padding for last item
+              if (index == itemCount - 1) {
+                return Row(
+                  children: [
+                    _buildStoryItem(index, flatStories, isLoadingMore),
+                    Gap(context.responsiveWidth(22)),
+                  ],
+                );
+              }
+
+              return _buildStoryItem(index, flatStories, isLoadingMore);
             },
           ),
         );

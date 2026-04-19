@@ -71,7 +71,7 @@ class ProfileHeader extends StatelessWidget {
 
   Widget _buildError(BuildContext context, String? errorMessage) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -118,7 +118,7 @@ class ProfileHeader extends StatelessWidget {
     required BuildContext context,
   }) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

@@ -49,4 +49,5 @@ abstract class ProfilePostsCubitContract<S> extends Cubit<S> {
     required String postId,
     required int totalCount,
   });
+  void toggleFollowAdvisor({required String advisorId});
 }

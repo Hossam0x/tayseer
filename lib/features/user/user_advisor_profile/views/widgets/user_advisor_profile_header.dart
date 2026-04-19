@@ -101,8 +101,8 @@ class UserAdvisorProfileHeader extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsetsDirectional.only(
-        start: 20.w,
-        end: 20.w,
+        start: 12.w,
+        end: 12.w,
         top: 12.h,
         bottom: 12.h,
       ),

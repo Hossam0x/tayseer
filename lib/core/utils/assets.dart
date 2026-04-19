@@ -109,8 +109,7 @@ abstract class AssetsData {
   static const String joinedIcon = "assets/icons/Joined.svg";
   static const String kSinventoryOutlinedIcon =
       "assets/images/inventory_2_outlined.png";
-  static const String kpersonOutlineIcon =
-      "assets/images/person_outline.png";
+  static const String kpersonOutlineIcon = "assets/images/person_outline.png";
   static const String notificationIcon = "assets/icons/notification.svg";
   static const String emptynotification = "assets/icons/empty_notification.png";
 
@@ -194,8 +193,7 @@ abstract class AssetsData {
       "assets/animations/success_marriage.json";
   static const String kLoadingAiAnimationLottie =
       "assets/animations/Loading_ai_animation.json";
-  static const String loading =
-      "assets/animations/loading.gif";
+  static const String loading = "assets/animations/loading.gif";
 
   /////////////// Profile assests/////////////////////
   static const String certificatePlaceholder =
@@ -220,6 +218,7 @@ abstract class AssetsData {
   // Settings assets
   static const String icNotificationSettings =
       "assets/icons/icNotificationSettings.svg";
+  static const String icSoundSettings = "assets/icons/icSoundSettings.svg";
   static const String icEditSettings = "assets/icons/icEditSettings.svg";
   static const String icWalletSettings = "assets/icons/icWalletSettings.svg";
   static const String icLanguageSettings =

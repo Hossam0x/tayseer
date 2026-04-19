@@ -77,8 +77,7 @@ class ProfileStoriesSection extends StatelessWidget {
             return SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(
-                  vertical: context.responsiveHeight(12),
-                  horizontal: context.responsiveWidth(30),
+                  vertical: context.responsiveHeight(8), // ✅ قللنا من 12 لـ 8
                 ),
                 child: const StoriesLoadingShimmer(),
               ),
@@ -90,8 +89,7 @@ class ProfileStoriesSection extends StatelessWidget {
         return SliverToBoxAdapter(
           child: Padding(
             padding: EdgeInsets.symmetric(
-              vertical: context.responsiveHeight(12),
-              horizontal: context.responsiveWidth(30),
+              vertical: context.responsiveHeight(8), // ✅ قللنا من 12 لـ 8
             ),
             child: _buildContent(
               context,

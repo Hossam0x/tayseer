@@ -631,6 +631,7 @@
   "complete_marriage_profile": "Complete Marriage Profile",
   "general_settings": "General Settings",
   "notifications_settings": "Notifications",
+  "sound_in_app": "App Sounds",
   "app_language": "Language",
   "archived_chats": "Archived Chats",
   "chat_archived_success": "Chat archived successfully",
@@ -1976,5 +1977,10 @@
   "edit_story": "Edit Story",
   "preparing_story_editor": "Preparing editor...",
   "consultant_marriage_blocked_msg": "This feature is only available for Tayseer users.\nPlease log in with a user account to access marriage profiles.",
-  "open_post": "Open Post"
+  "open_post": "Open Post",
+  "sound_effects": "Sound Effects",
+  "enable_sound_effects": "Enable Sound Effects",
+  "disable_sound_effects": "Disable Sound Effects",
+  "volume": "Volume",
+  "test_sound": "Test Sound"
 }

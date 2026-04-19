@@ -47,6 +47,8 @@ class ArchivedPostItem extends StatelessWidget {
           .syncCommentCountFromBackend(postId: postId, totalCount: totalCount),
       onPollVote: (id, choiceText) =>
           cubit.voteInPoll(postId: id, choiceText: choiceText),
+      onFollowTap: (advisorId) =>
+          cubit.toggleFollowAdvisor(advisorId: advisorId),
     );
   }
 
@@ -68,7 +70,7 @@ class ArchivedPostItem extends StatelessWidget {
             isArchived: true,
             post: post,
             callbacks: callbacks,
-            onNavigateToDetails: (ctx, p, controller) {
+            onNavigateToDetails: (ctx, p, controller, {initialImageIndex = 0}) {
               Navigator.push(
                 ctx,
                 MaterialPageRoute(
@@ -78,6 +80,7 @@ class ArchivedPostItem extends StatelessWidget {
                     isArchived: true,
                     heroPrefix: 'archived_posts',
                     cachedController: controller,
+                    initialImageIndex: initialImageIndex,
                     callbacks: callbacks,
                   ),
                 ),

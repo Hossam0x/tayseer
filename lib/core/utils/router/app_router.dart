@@ -3,6 +3,8 @@ import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/utils/animation/slide_right_animation.dart';
+import 'package:tayseer/features/shared/audio_test/audio_test_view.dart';
+import 'package:tayseer/features/shared/audio_test/sound_settings_demo_view.dart';
 import 'package:tayseer/features/advisor/add_post/view/add_post_view.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/view/advisor_chat_screen.dart';
@@ -143,6 +145,9 @@ abstract class AppRouter {
   static const kSplashView = '/splashView';
   // static const kOnBoardingScreen = '/OnBoardingScreen';
   static const kHomeScreen = '/HomeScreen';
+  static const kAudioTestView = '/AudioTestView'; // للاختبار فقط
+  static const kSoundSettingsDemoView =
+      '/SoundSettingsDemoView'; // عرض إعدادات الأصوات
   static const kRegisrationView = '/RegisrationView';
   static const kRegisterView = '/RegisterView';
   static const kOtpView = '/OtpView';
@@ -586,6 +591,19 @@ abstract class AppRouter {
           settings: settings,
           builder: (_) => const SplashScreen(),
         );
+
+      case kAudioTestView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const AudioTestView(),
+        );
+
+      case kSoundSettingsDemoView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const SoundSettingsDemoView(),
+        );
+
       ////////////////////// AuthCubit///////////////////////
 
       case kRegisrationView:

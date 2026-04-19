@@ -1,3 +1,4 @@
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/features/advisor/add_post/view/widget/upload_post_banner.dart';
@@ -140,6 +141,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
           color: AppColors.kprimaryColor,
           onRefresh: () async {
             if (getIt<ConnectivityCubit>().isOffline) return;
+            AudioService.instance.playRefreshSound();
             VideoManager.instance.stopAll();
             await Future.wait([
               storiesCubit.fetchStories(context: context),

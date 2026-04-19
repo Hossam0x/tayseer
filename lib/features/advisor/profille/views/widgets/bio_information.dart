@@ -100,7 +100,7 @@ class BioInformation extends StatelessWidget {
 
   Widget _buildContent(BuildContext context, ProfileModel profile) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      padding: EdgeInsets.symmetric(horizontal: 12.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

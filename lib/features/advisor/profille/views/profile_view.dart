@@ -1,4 +1,5 @@
 import 'package:tayseer/core/enum/advisor_status.dart';
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/advisor_status_widget.dart';
@@ -136,6 +137,7 @@ class _ProfileContentState extends State<_ProfileContent> {
       child: RefreshIndicator(
         onRefresh: () async {
           if (getIt<ConnectivityCubit>().isOffline) return;
+          AudioService.instance.playRefreshSound();
           VideoManager.instance.stopAll();
           await Future.wait([
             context.read<ProfileCubit>().refresh(),

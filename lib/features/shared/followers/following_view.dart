@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/shared/followers/data/cubit/followers_cubit.dart';
 import 'package:tayseer/features/shared/followers/data/cubit/followers_state.dart';
@@ -65,6 +66,7 @@ class _FollowingViewState extends State<FollowingView> {
   }
 
   void _onRefresh() async {
+    AudioService.instance.playRefreshSound();
     await _cubit.refresh();
   }
 

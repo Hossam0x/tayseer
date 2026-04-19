@@ -8,7 +8,7 @@ class HomeSearchBar extends StatelessWidget {
     return SliverToBoxAdapter(
       child: Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: context.responsiveWidth(28),
+          horizontal: context.responsiveWidth(12), // ✅ قللنا من 28 لـ 12
           vertical: context.responsiveWidth(16),
         ),
         child: Hero(

@@ -14,10 +14,11 @@ class SettingsInitial extends UserProfileState {}
 class SettingsLoading extends UserProfileState {}
 
 class SettingsLoaded extends UserProfileState {
-  final bool isMarriageSectionDeactivated; 
+  final bool isMarriageSectionDeactivated;
   final List<SettingItemModel> settings;
   final UserProfileModel? userProfile;
   final bool isNotificationEnabled;
+  final bool isSoundEnabled;
   final String? actionMessage;
   final bool?
   isActionSuccess; // Simple boolean for success/failure of last action
@@ -28,6 +29,7 @@ class SettingsLoaded extends UserProfileState {
     required this.settings,
     this.userProfile,
     this.isNotificationEnabled = false,
+    this.isSoundEnabled = false,
     this.actionMessage,
     this.isActionSuccess,
     this.actionTimestamp = 0,
@@ -39,20 +41,24 @@ class SettingsLoaded extends UserProfileState {
     List<SettingItemModel>? settings,
     UserProfileModel? userProfile,
     bool? isNotificationEnabled,
+    bool? isSoundEnabled,
     bool? isMarriageSectionDeactivated,
     String? actionMessage,
     bool? isActionSuccess,
     int? actionTimestamp,
-     bool? isMarriageProfileComplete,
+    bool? isMarriageProfileComplete,
   }) {
     return SettingsLoaded(
       settings: settings ?? this.settings,
       userProfile: userProfile ?? this.userProfile,
       isNotificationEnabled:
           isNotificationEnabled ?? this.isNotificationEnabled,
-      isMarriageSectionDeactivated: isMarriageSectionDeactivated ?? this.isMarriageSectionDeactivated,   
-      isMarriageProfileComplete: isMarriageProfileComplete ?? this.isMarriageProfileComplete, // ⭐
- 
+      isSoundEnabled: isSoundEnabled ?? this.isSoundEnabled,
+      isMarriageSectionDeactivated:
+          isMarriageSectionDeactivated ?? this.isMarriageSectionDeactivated,
+      isMarriageProfileComplete:
+          isMarriageProfileComplete ?? this.isMarriageProfileComplete, // ⭐
+
       actionMessage:
           actionMessage, // Not keeping previous message by default to avoid stale snacks
       isActionSuccess: isActionSuccess,
@@ -67,6 +73,7 @@ class SettingsLoaded extends UserProfileState {
     isMarriageSectionDeactivated,
     isMarriageProfileComplete,
     isNotificationEnabled,
+    isSoundEnabled,
     actionMessage,
     isActionSuccess,
     actionTimestamp,

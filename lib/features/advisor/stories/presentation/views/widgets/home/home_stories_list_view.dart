@@ -61,6 +61,8 @@ class _HomeStoriesListViewState extends State<HomeStoriesListView> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Left padding
+              Gap(context.responsiveWidth(10)),
               if (isAdvisor)
                 Padding(
                   padding: EdgeInsetsDirectional.only(
@@ -95,6 +97,8 @@ class _HomeStoriesListViewState extends State<HomeStoriesListView> {
                   );
                 },
               ),
+              // Right padding
+              Gap(context.responsiveWidth(22)),
             ],
           ),
         );

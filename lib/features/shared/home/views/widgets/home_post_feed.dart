@@ -581,8 +581,9 @@ class _PostItemState extends State<_PostItem> {
   void _onNavigateToDetails(
     BuildContext ctx,
     PostModel post,
-    VideoPlayerController? controller,
-  ) {
+    VideoPlayerController? controller, {
+    int initialImageIndex = 0,
+  }) {
     Navigator.push(
       ctx,
       MaterialPageRoute(
@@ -590,6 +591,7 @@ class _PostItemState extends State<_PostItem> {
           isFromProfile: false,
           post: post,
           cachedController: controller,
+          initialImageIndex: initialImageIndex,
           callbacks: _buildCallbacksWithStream(),
         ),
       ),

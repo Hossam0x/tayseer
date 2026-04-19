@@ -438,6 +438,56 @@ class SearchCubit extends Cubit<SearchState> {
     }, (_) {});
   }
 
+  /// يُستخدم من الـ PostCard مباشرة — يحدث الـ isFollowing في posts/all tabs فقط
+  Future<void> toggleFollowAdvisorFromPost({required String advisorId}) async {
+    final postsData = state.tabData('posts');
+    final allData = state.tabData('all');
+
+    // جيب الـ isFollowing الحالي من أي post بالـ advisorId ده
+    final post = postsData.posts.firstWhere(
+      (p) => p.advisorId == advisorId,
+      orElse: () => allData.posts.firstWhere(
+        (p) => p.advisorId == advisorId,
+        orElse: () => postsData.posts.isEmpty
+            ? allData.posts.first
+            : postsData.posts.first,
+      ),
+    );
+
+    // تحقق إن الـ post ده فعلاً بالـ advisorId المطلوب
+    final isCurrentlyFollowing = post.advisorId == advisorId
+        ? post.isFollowing
+        : false;
+    final isAdding = !isCurrentlyFollowing;
+
+    // Optimistic update في posts و all tabs
+    final updatedPostsPosts = postsData.posts.map((p) {
+      if (p.advisorId == advisorId) return p.copyWith(isFollowing: isAdding);
+      return p;
+    }).toList();
+    final updatedAllPosts = allData.posts.map((p) {
+      if (p.advisorId == advisorId) return p.copyWith(isFollowing: isAdding);
+      return p;
+    }).toList();
+
+    emit(
+      state
+          .updateTab('posts', postsData.copyWith(posts: updatedPostsPosts))
+          .updateTab('all', allData.copyWith(posts: updatedAllPosts)),
+    );
+
+    final result = await _followersRepository.toggleFollow(
+      advisorId,
+      isCurrentlyFollowing: isCurrentlyFollowing,
+    );
+    result.fold((failure) {
+      // Rollback
+      if (!isClosed) {
+        emit(state.updateTab('posts', postsData).updateTab('all', allData));
+      }
+    }, (_) {});
+  }
+
   Future<void> _toggleFollowUser(String userId) async {
     final result = await _userFollowingsRepository.toggleFollow(
       userId,

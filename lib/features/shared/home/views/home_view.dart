@@ -37,8 +37,30 @@ class _HomeViewState extends State<HomeView> {
         ),
       ],
       child: Scaffold(
-        body: AdvisorBackground(
-          child: HomeViewBody(key: _homeViewBodyKey, onScroll: widget.onScroll),
+        body: Stack(
+          children: [
+            AdvisorBackground(
+              child: HomeViewBody(
+                key: _homeViewBodyKey,
+                onScroll: widget.onScroll,
+              ),
+            ),
+            // ثابت فوق كل حاجة — يغطي الـ status bar دايمًا حتى عند الـ scroll
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: MediaQuery.of(context).padding.top,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(AssetsData.homeBarBackgroundImage),
+                    fit: BoxFit.fill,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

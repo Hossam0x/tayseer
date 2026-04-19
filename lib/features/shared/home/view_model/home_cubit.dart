@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/functions/set_advisor_status.dart';
+import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
@@ -1140,7 +1141,7 @@ class HomeCubit extends Cubit<HomeState> {
         );
       },
       (message) {
-        log('>>>>>>>>>>>>>>>>> Save Post Success: $message');
+        log('>>>>>>>>>>>>>>>>>Save Post Success: $message');
         _syncPostToCacheById(postId);
         PostEventBus.instance.fire(
           PostEvent(
@@ -1150,6 +1151,7 @@ class HomeCubit extends Cubit<HomeState> {
             isSaved: !isCurrentlySaved,
           ),
         );
+        AudioService.instance.playSaveSound(isSaved: !isCurrentlySaved);
         // النجاح: الـ UI متحدث بالفعل (Optimistic)، بس محتاجين نبعت Success عشان التوست الأخضر
         emit(
           state.copyWith(
@@ -1215,6 +1217,7 @@ class HomeCubit extends Cubit<HomeState> {
               postId: postId,
             ),
           );
+          AudioService.instance.playDeleteSound();
           emit(
             state.copyWith(
               deletePostActionState: CubitStates.success,
@@ -1280,6 +1283,7 @@ class HomeCubit extends Cubit<HomeState> {
               postId: postId,
             ),
           );
+          AudioService.instance.playArchiveSound();
           emit(
             state.copyWith(
               archivePostActionState: CubitStates.success,
@@ -1427,7 +1431,7 @@ class HomeCubit extends Cubit<HomeState> {
             blockUserMessage: message,
           ),
         );
-
+        AudioService.instance.playBlockSound();
         // ✅ مزامنة الكاش: حدث البوست الظاهر + احذف باقي بوستات اليوزر المحظور
         _syncPostToCacheById(visiblePostId);
         for (final post in state.posts) {
@@ -1645,6 +1649,7 @@ class HomeCubit extends Cubit<HomeState> {
         },
         (_) {
           log('>>>>>>>>>>>>>>>>> Vote In Poll Success');
+          AudioService.instance.playVoteSound();
           _syncPostToCacheById(postId);
           PostEventBus.instance.fire(
             PostEvent(

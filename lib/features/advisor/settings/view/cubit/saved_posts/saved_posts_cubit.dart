@@ -580,4 +580,41 @@ class SavedPostsCubit extends Cubit<SavedPostsState>
   Future<void> refresh() async {
     await fetchSavedPosts();
   }
+
+  // ═══════════════════════════════════════════════════════════
+  // 👥 FOLLOW ADVISOR
+  // ═══════════════════════════════════════════════════════════
+  void toggleFollowAdvisor({required String advisorId}) {
+    final postIndex = state.posts.indexWhere((p) => p.advisorId == advisorId);
+    if (postIndex == -1) return;
+
+    final isCurrentlyFollowing = state.posts[postIndex].isFollowing;
+    final isAdding = !isCurrentlyFollowing;
+
+    // Optimistic update
+    final updatedPosts = state.posts.map((post) {
+      if (post.advisorId == advisorId) {
+        return post.copyWith(isFollowing: isAdding);
+      }
+      return post;
+    }).toList();
+    emit(state.copyWith(posts: updatedPosts));
+
+    // API Call with rollback on failure
+    _homeRepository
+        .followAdvisor(advisorId: advisorId, isAdding: isAdding)
+        .then((result) {
+          result.fold((failure) {
+            if (!isClosed) {
+              final rollback = state.posts.map((post) {
+                if (post.advisorId == advisorId) {
+                  return post.copyWith(isFollowing: isCurrentlyFollowing);
+                }
+                return post;
+              }).toList();
+              emit(state.copyWith(posts: rollback));
+            }
+          }, (_) {});
+        });
+  }
 }

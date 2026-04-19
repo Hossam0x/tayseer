@@ -629,6 +629,7 @@
   "deactivate_the_marriage_section": "إلغاء تفعيل قسم الزواج",
   "general_settings": "الاعدادات العامة",
   "notifications_settings": "الاشعارات",
+  "sound_in_app": "أصوات التطبيق",
   "app_language": "اللغة",
   "archived_chats": "المحادثات المؤرشفة",
   "chat_archived_success": "تم أرشفة المحادثة بنجاح",
@@ -1975,5 +1976,10 @@
   "edit_story": "تعديل القصة",
   "preparing_story_editor": "جاري تحضير المحرر...",
   "consultant_marriage_blocked_msg": "هذه الميزة متاحة فقط لمستخدمي تطبيق تيسير.\nيرجى تسجيل الدخول بحساب مستخدم للوصول إلى ملفات الزواج.",
-  "open_post": "فتح المنشور"
+  "open_post": "فتح المنشور",
+  "sound_effects": "المؤثرات الصوتية",
+  "enable_sound_effects": "تفعيل المؤثرات الصوتية",
+  "disable_sound_effects": "إيقاف المؤثرات الصوتية",
+  "volume": "مستوى الصوت",
+  "test_sound": "اختبار الصوت"
 }

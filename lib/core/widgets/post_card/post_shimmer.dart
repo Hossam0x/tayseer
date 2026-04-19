@@ -5,31 +5,43 @@ class PostCardShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 28.w),
-      child: Container(
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        child: Shimmer.fromColors(
-          baseColor: Colors.grey[300]!,
-          highlightColor: Colors.grey[100]!,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(),
-              Gap(15.h),
-              _buildTextLines(),
-              Gap(12.h),
-              _buildImagePlaceholder(),
-              Gap(15.h),
-              _buildStats(),
-              Gap(12.h),
-              _buildActions(),
-            ],
-          ),
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 14.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        // ✅ شيلنا الـ border radius عشان يبقى حواف حادة زي انستغرام
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+        highlightColor: Colors.grey[100]!,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with padding
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12.w),
+              child: _buildHeader(),
+            ),
+            Gap(15.h),
+            // Text with padding
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12.w),
+              child: _buildTextLines(),
+            ),
+            Gap(12.h),
+            // Image without padding (full width)
+            _buildImagePlaceholder(),
+            Gap(15.h),
+            // Stats and actions with padding
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [_buildStats(), Gap(8.h), _buildActions()],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -61,10 +73,15 @@ class PostCardShimmer extends StatelessWidget {
     ],
   );
 
-  Widget _buildImagePlaceholder() =>
-      _rect(width: double.infinity, height: 206.h, radius: 12);
+  Widget _buildImagePlaceholder() => _rect(
+    width: double.infinity,
+    height: 250.h, // ✅ رجعناه لحجم مناسب
+    radius: 0,
+  );
 
-  Widget _buildStats() => _rect(width: 150.w, height: 12.h);
+  Widget _buildStats() => Center(
+    child: _rect(width: 150.w, height: 12.h),
+  );
 
   Widget _buildActions() => Row(
     children: [_circle(38.w), Gap(6.w), _circle(38.w), Gap(6.w), _circle(38.w)],
