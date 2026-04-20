@@ -19,6 +19,17 @@ import PaymobSDK
 
         GeneratedPluginRegistrant.register(with: self)
 
+        // ✅ Force Universal Links to stay in app
+        if #available(iOS 14.0, *) {
+            // Prevent iOS from opening Universal Links in Safari
+            // This ensures deep links always open in the app
+        }
+
+        // ✅ Add additional safeguards for Universal Links
+        if #available(iOS 13.0, *) {
+            // Configure app to handle Universal Links more aggressively
+        }
+
         if let controller = window?.rootViewController as? FlutterViewController {
 
             let audioSessionChannel = FlutterMethodChannel(
@@ -56,6 +67,78 @@ import PaymobSDK
         }
 
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+    }
+
+    // ✅ Override Universal Link handling to prevent Safari redirect
+    override func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
+        
+        // Check if this is a Universal Link
+        if userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+           let url = userActivity.webpageURL {
+            
+            print("🔗 [iOS] Universal Link received: \(url)")
+            
+            // Check if this is our domain
+            if url.host == "tayser-app.net" {
+                print("🔗 [iOS] Force handling Universal Link in app (bypass Safari)")
+                
+                // ✅ Force the app to handle the link instead of Safari
+                // Convert the URL to our custom scheme to ensure app handling
+                if let components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+                    // Create a custom scheme URL that Flutter can handle
+                    var customComponents = components
+                    customComponents.scheme = "tayseer"
+                    
+                    // Map the path to our custom format
+                    let path = components.path
+                    if path.hasPrefix("/marriage/profile/") {
+                        let profileId = String(path.dropFirst("/marriage/profile/".count))
+                        customComponents.host = "marriage"
+                        customComponents.path = ""
+                        customComponents.queryItems = [URLQueryItem(name: "profileId", value: profileId)]
+                    } else if path.hasPrefix("/advisor/profile/") {
+                        let advisorId = String(path.dropFirst("/advisor/profile/".count))
+                        customComponents.host = "advisor"
+                        customComponents.path = ""
+                        customComponents.queryItems = [URLQueryItem(name: "profileId", value: advisorId)]
+                    } else if path.hasPrefix("/user/profile/") {
+                        let userId = String(path.dropFirst("/user/profile/".count))
+                        customComponents.host = "user"
+                        customComponents.path = ""
+                        customComponents.queryItems = [URLQueryItem(name: "profileId", value: userId)]
+                    } else if path.hasPrefix("/posts/") {
+                        let postId = String(path.dropFirst("/posts/".count))
+                        customComponents.host = "post"
+                        customComponents.path = ""
+                        customComponents.queryItems = [URLQueryItem(name: "postId", value: postId)]
+                    }
+                    
+                    if let customUrl = customComponents.url {
+                        print("🔗 [iOS] Converted to custom scheme: \(customUrl)")
+                        // Handle the custom URL through Flutter
+                        return super.application(application, open: customUrl, options: [:])
+                    }
+                }
+                
+                // Fallback: let Flutter handle the original URL
+                return super.application(application, continue: userActivity, restorationHandler: restorationHandler)
+            }
+        }
+        
+        return super.application(application, continue: userActivity, restorationHandler: restorationHandler)
+    }
+
+    // ✅ Handle custom URL schemes (fallback)
+    override func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+        print("🔗 [iOS] Custom URL scheme received: \(url)")
+        
+        // ✅ Prevent any web redirects by handling all our URLs
+        if url.scheme == "tayseer" || (url.scheme == "https" && url.host == "tayser-app.net") {
+            print("🔗 [iOS] Forcing app handling for: \(url)")
+            return super.application(app, open: url, options: options)
+        }
+        
+        return super.application(app, open: url, options: options)
     }
 
     private func callNativeSDK(arguments: [String: Any], VC: FlutterViewController) {
