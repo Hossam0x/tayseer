@@ -228,7 +228,7 @@ class _PostsShimmer extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 16.h),
       itemCount: 3,
       itemBuilder: (_, i) =>
-          Column(children: [const PostCardShimmer(), if (i < 2) Gap(16.h)]),
+          Column(children: [const PostCardShimmer(), if (i < 2) Gap(1.h)]),
     );
   }
 }
@@ -254,7 +254,7 @@ class _LoadMoreButton extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         itemCount: 3,
         itemBuilder: (_, i) =>
-            Column(children: [const PostCardShimmer(), if (i < 2) Gap(16.h)]),
+            Column(children: [const PostCardShimmer(), if (i < 2) Gap(1.h)]),
       );
     }
     return Padding(

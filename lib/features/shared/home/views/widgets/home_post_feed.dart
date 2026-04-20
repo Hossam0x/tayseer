@@ -10,6 +10,12 @@ import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
 import 'package:tayseer/features/shared/post_details/presentation/views/post_details_view.dart';
 import 'package:tayseer/core/widgets/post_card/post_shimmer.dart';
+import 'package:tayseer/features/shared/home/model/best_advisor_model.dart';
+import 'package:tayseer/features/shared/home/model/similar_user_model.dart';
+import 'package:tayseer/features/shared/home/model/past_match_model.dart';
+import 'package:tayseer/features/shared/home/views/widgets/sections/best_advisor_section.dart';
+import 'package:tayseer/features/shared/home/views/widgets/sections/best_matches_section.dart';
+import 'package:tayseer/features/shared/home/views/widgets/sections/similar_users_section.dart';
 import 'package:tayseer/my_import.dart';
 
 class HomePostFeed extends StatelessWidget {
@@ -172,6 +178,9 @@ class HomePostFeed extends StatelessWidget {
     isOffline: state.isOffline,
     isShowingCachedData: state.isShowingCachedData,
     loadMoreServerFailed: state.loadMoreServerFailed,
+    bestAdvisors: state.bestAdvisors,
+    similarUsers: state.similarUsers,
+    pastMatches: state.pastMatches,
   );
 
   void _handleHideFeedback(BuildContext context, HomeState state) {
@@ -280,7 +289,7 @@ class HomePostFeed extends StatelessWidget {
     if (state.isEmpty && !state.isAllCategory) {
       return _EmptyCategoryIndicator(onViewAllTap: _goToAllCategory);
     }
-    return _buildPostList(state);
+    return _buildPostList(context, state);
   }
 
   void _goToAllCategory() {
@@ -308,53 +317,127 @@ class HomePostFeed extends StatelessWidget {
   );
 
   // ✅ CHANGED: O(1) indexMap + no KeepAlive
-  Widget _buildPostList(_FeedState state) {
-    final indexMap = {
-      for (var i = 0; i < state.postIds.length; i++) state.postIds[i]: i,
-    };
+  Widget _buildPostList(BuildContext context, _FeedState state) {
+    // 1. Determine which sections to show
+    final List<Widget> items = [];
+    final Map<int, int> postIndexToItemIndex = {};
+
+    // Get feature flags from LayoutState
+    // Note: In this context, "Consultation" is active if isMarriageVisible is false,
+    // but the user said "لو هو مفعل الاستشارات يظهر" which usually means a separate flag or always for users.
+    // We'll use the flags if available or assume true for isUser.
+    final layoutState = context.read<LayoutCubit>().state;
+    final bool isMarriageVisible = layoutState.isMarriageVisible;
+
+    // RULE:
+    // If Marriage active -> Show All 3.
+    // If Only Consultation active -> Show Similar Users & Best Matches (Hide Best Advisor).
+    final bool showAdvisors =
+        isUser && isMarriageVisible && state.bestAdvisors.isNotEmpty;
+    final bool showMarriageContent =
+        isUser &&
+        (state.similarUsers.isNotEmpty || state.pastMatches.isNotEmpty);
+    // Always show similar/matches if isUser, because user said they should show even if ONLY consultation active.
+
+    int currentPostIndex = 0;
+    const int maxItems = 100; // Safety break
+    int iterations = 0;
+
+    while (iterations < maxItems) {
+      iterations++;
+
+      // Inject Best Advisors after 2 items (ideally 2 posts)
+      if (showAdvisors && items.length == 2) {
+        items.add(
+          BestAdvisorSection(
+            advisors: state.bestAdvisors,
+            pagination: homeCubit.state.bestAdvisorsPagination,
+            onLoadMore: () => homeCubit.loadMoreBestAdvisors(),
+            onFollowTap: (advisorId) =>
+                homeCubit.toggleFollowBestAdvisor(advisorId: advisorId),
+            isLoadingMore: homeCubit.state.bestAdvisorsIsLoadingMore,
+          ),
+        );
+        continue;
+      }
+
+      // Inject Similar Users & Matches after 5 items
+      if (showMarriageContent && items.length == 5) {
+        if (state.similarUsers.isNotEmpty) {
+          items.add(
+            SimilarUsersSection(
+              users: state.similarUsers,
+              pagination: homeCubit.state.similarUsersPagination,
+              onLoadMore: () => homeCubit.loadMoreSimilarUsers(),
+              isLoadingMore: homeCubit.state.similarUsersIsLoadingMore,
+            ),
+          );
+        }
+        if (state.pastMatches.isNotEmpty) {
+          items.add(
+            BestMatchesSection(
+              matches: state.pastMatches,
+              pagination: homeCubit.state.pastMatchesPagination,
+              onLoadMore: () => homeCubit.loadMorePastMatches(),
+              isLoadingMore: homeCubit.state.pastMatchesIsLoadingMore,
+            ),
+          );
+        }
+        if (state.similarUsers.isNotEmpty || state.pastMatches.isNotEmpty) {
+          continue;
+        }
+      }
+
+      if (currentPostIndex < state.postIds.length) {
+        final postId = state.postIds[currentPostIndex];
+        postIndexToItemIndex[currentPostIndex] = items.length;
+        items.add(
+          _PostItem(
+            key: ValueKey(postId),
+            postId: postId,
+            homeCubit: homeCubit,
+            index: currentPostIndex,
+            showGap: currentPostIndex < state.postIds.length - 1,
+          ),
+        );
+        currentPostIndex++;
+      } else if ((showAdvisors && items.length < 2) ||
+          (showMarriageContent && items.length < 5)) {
+        // If we still need to reach injection points but posts are exhausted, add something or just break?
+        // Usually we want to show sections even if feed is empty or short.
+        // But the user said "after 2 posts". If 0 posts, "after 2 posts" is undefined.
+        // We'll just break if no more posts and we are below injection points to avoid infinite loop.
+        break;
+      } else {
+        break;
+      }
+    }
+
+    // Add footer indicators
+    if (state.isLoadingMore) {
+      items.add(const _LoadingMoreIndicator());
+    } else if (state.isShowingCachedData && !state.hasMore) {
+      items.add(const EndOfCachedPosts());
+    } else if (state.isOffline && state.hasMore) {
+      items.add(const EndOfCachedPosts());
+    } else if (state.loadMoreServerFailed) {
+      items.add(_LoadMoreFailedRetry(onRetry: () => homeCubit.retryLoadMore()));
+    } else if (state.isAllCategory) {
+      items.add(const EndOfFeedIndicator());
+    } else {
+      items.add(_EndOfCategoryIndicator(onViewAllTap: _goToAllCategory));
+    }
 
     return SliverList(
       delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          if (index < state.postIds.length) {
-            return _PostItem(
-              key: ValueKey(state.postIds[index]),
-              postId: state.postIds[index],
-              homeCubit: homeCubit,
-              index: index,
-              showGap: index < state.postIds.length - 1,
-            );
-          }
-
-          if (state.isLoadingMore) {
-            return const _LoadingMoreIndicator();
-          }
-
-          if (state.isShowingCachedData && !state.hasMore) {
-            return const EndOfCachedPosts();
-          }
-
-          if (state.isOffline && state.hasMore) {
-            return const EndOfCachedPosts();
-          }
-
-          if (state.loadMoreServerFailed) {
-            return _LoadMoreFailedRetry(
-              onRetry: () => homeCubit.retryLoadMore(),
-            );
-          }
-
-          if (state.isAllCategory) {
-            return const EndOfFeedIndicator();
-          }
-
-          return _EndOfCategoryIndicator(onViewAllTap: _goToAllCategory);
-        },
-        childCount: state.postIds.length + 1,
-        addAutomaticKeepAlives: false, // ✅ CHANGED
+        (context, index) => items[index],
+        childCount: items.length,
+        addAutomaticKeepAlives: false,
         findChildIndexCallback: (key) {
           if (key is ValueKey<String>) {
-            return indexMap[key.value]; // ✅ CHANGED: O(1)
+            // Find which post index this key belongs to
+            final postIndex = state.postIds.indexOf(key.value);
+            if (postIndex != -1) return postIndexToItemIndex[postIndex];
           }
           return null;
         },
@@ -378,6 +461,10 @@ class _FeedState extends Equatable {
   final bool isShowingCachedData;
   final bool loadMoreServerFailed;
 
+  final List<BestAdvisorModel> bestAdvisors;
+  final List<SimilarUserModel> similarUsers;
+  final List<PastMatchModel> pastMatches;
+
   const _FeedState({
     required this.postIds,
     required this.status,
@@ -388,6 +475,9 @@ class _FeedState extends Equatable {
     this.isOffline = false,
     this.isShowingCachedData = false,
     this.loadMoreServerFailed = false,
+    this.bestAdvisors = const [],
+    this.similarUsers = const [],
+    this.pastMatches = const [],
   });
 
   bool get isEmpty => postIds.isEmpty;
@@ -405,6 +495,9 @@ class _FeedState extends Equatable {
     isOffline,
     isShowingCachedData,
     loadMoreServerFailed,
+    bestAdvisors,
+    similarUsers,
+    pastMatches,
   ];
 }
 
@@ -614,7 +707,7 @@ class _PostItemState extends State<_PostItem> {
             );
           },
         ),
-        if (widget.showGap) Gap(12.h),
+        if (widget.showGap) Gap(1.h),
       ],
     );
   }

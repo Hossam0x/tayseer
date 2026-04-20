@@ -11,6 +11,9 @@ import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/models/pagination_model.dart';
 import 'package:tayseer/features/shared/home/model/post_response_model.dart';
 import 'package:tayseer/features/shared/home/model/comments_response_model.dart';
+import 'package:tayseer/features/shared/home/model/best_advisor_model.dart';
+import 'package:tayseer/features/shared/home/model/similar_user_model.dart';
+import 'package:tayseer/features/shared/home/model/past_match_model.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import '../../../../my_import.dart';
 
@@ -632,6 +635,42 @@ class HomeRepositoryImpl implements HomeRepository {
         data: {"postId": postId},
       );
       return Right(response['message'] ?? 'تمت المشاركة في القصة بنجاح');
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, BestAdvisorResponse>> fetchBestAdvisors({
+    int page = 1,
+  }) async {
+    try {
+      final response = await remoteDatasource.fetchBestAdvisors(page: page);
+      return Right(response);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, SimilarUserResponse>> fetchSimilarUsers({
+    int page = 1,
+  }) async {
+    try {
+      final response = await remoteDatasource.fetchSimilarUsers(page: page);
+      return Right(response);
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, PastMatchesResponse>> fetchPastMatches({
+    int page = 1,
+  }) async {
+    try {
+      final response = await remoteDatasource.fetchPastMatches(page: page);
+      return Right(response);
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
     }

@@ -7,6 +7,7 @@ import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
 import 'package:tayseer/features/shared/home/model/image_and_name_model.dart';
+import 'package:tayseer/features/shared/home/model/best_advisor_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/view_model/home_event_bus.dart';
 import 'package:tayseer/features/shared/home/view_model/home_state.dart';
@@ -456,6 +457,9 @@ class HomeCubit extends Cubit<HomeState> {
       fetchNameAndImage(),
       fetchCategories(),
       _fetchPostsForCategory(null),
+      if (isUser) fetchBestAdvisors(),
+      if (isUser) fetchSimilarUsers(),
+      if (isUser) fetchPastMatches(),
     ]);
   }
 
@@ -465,6 +469,9 @@ class HomeCubit extends Cubit<HomeState> {
       fetchNameAndImage(),
       fetchCategories(),
       _fetchPostsForCategory(null),
+      if (isUser) fetchBestAdvisors(),
+      if (isUser) fetchSimilarUsers(),
+      if (isUser) fetchPastMatches(),
     ]);
   }
 
@@ -532,6 +539,200 @@ class HomeCubit extends Cubit<HomeState> {
         ),
       ),
     );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 📦 Best Sections Fetching
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Future<void> fetchBestAdvisors({int page = 1}) async {
+    if (page == 1) {
+      emit(state.copyWith(bestAdvisorsState: CubitStates.loading));
+    } else {
+      emit(state.copyWith(bestAdvisorsIsLoadingMore: true));
+    }
+
+    final result = await homeRepository.fetchBestAdvisors(page: page);
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          bestAdvisorsState: page == 1
+              ? CubitStates.failure
+              : state.bestAdvisorsState,
+          bestAdvisorsErrorMessage: failure.message,
+          bestAdvisorsIsLoadingMore: false,
+        ),
+      ),
+      (response) {
+        final newAdvisors = response.data?.advisors ?? [];
+        final allAdvisors = page == 1
+            ? newAdvisors
+            : [...state.bestAdvisors, ...newAdvisors];
+
+        print(
+          '📊 Best Advisors - Page: $page, New: ${newAdvisors.length}, Total: ${allAdvisors.length}',
+        );
+
+        emit(
+          state.copyWith(
+            bestAdvisorsState: CubitStates.success,
+            bestAdvisors: allAdvisors,
+            bestAdvisorsPagination: response.data?.pagination,
+            bestAdvisorsIsLoadingMore: false,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> loadMoreBestAdvisors() async {
+    if (state.bestAdvisorsIsLoadingMore || state.bestAdvisorsPagination == null)
+      return;
+
+    final currentPage = state.bestAdvisorsPagination!.currentPage;
+    final totalPages = state.bestAdvisorsPagination!.totalPages;
+
+    if (currentPage >= totalPages) return;
+
+    await fetchBestAdvisors(page: currentPage + 1);
+  }
+
+  void toggleFollowBestAdvisor({required String advisorId}) {
+    // Find current follow state
+    final advisorIndex = state.bestAdvisors.indexWhere(
+      (a) => a.id == advisorId,
+    );
+    if (advisorIndex == -1) return;
+
+    final currentAdvisor = state.bestAdvisors[advisorIndex];
+    final isCurrentlyFollowing = currentAdvisor.isFollowing ?? false;
+    final isAdding = !isCurrentlyFollowing;
+
+    // Optimistic update
+    final updatedAdvisors = List<BestAdvisorModel>.from(state.bestAdvisors);
+    updatedAdvisors[advisorIndex] = currentAdvisor.copyWith(
+      isFollowing: isAdding,
+    );
+
+    emit(state.copyWith(bestAdvisors: updatedAdvisors));
+
+    // API Call with rollback on failure
+    homeRepository.followAdvisor(advisorId: advisorId, isAdding: isAdding).then(
+      (result) {
+        result.fold(
+          (failure) {
+            // Rollback
+            final rollbackAdvisors = List<BestAdvisorModel>.from(
+              state.bestAdvisors,
+            );
+            rollbackAdvisors[advisorIndex] = currentAdvisor.copyWith(
+              isFollowing: isCurrentlyFollowing,
+            );
+            if (!isClosed) emit(state.copyWith(bestAdvisors: rollbackAdvisors));
+          },
+          (_) {}, // success — optimistic update already applied
+        );
+      },
+    );
+  }
+
+  Future<void> fetchSimilarUsers({int page = 1}) async {
+    if (page == 1) {
+      emit(state.copyWith(similarUsersState: CubitStates.loading));
+    } else {
+      emit(state.copyWith(similarUsersIsLoadingMore: true));
+    }
+
+    final result = await homeRepository.fetchSimilarUsers(page: page);
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          similarUsersState: page == 1
+              ? CubitStates.failure
+              : state.similarUsersState,
+          similarUsersErrorMessage: failure.message,
+          similarUsersIsLoadingMore: false,
+        ),
+      ),
+      (response) {
+        final newUsers = response.data?.users ?? [];
+        final allUsers = page == 1
+            ? newUsers
+            : [...state.similarUsers, ...newUsers];
+
+        emit(
+          state.copyWith(
+            similarUsersState: CubitStates.success,
+            similarUsers: allUsers,
+            similarUsersPagination: response.data?.pagination,
+            similarUsersIsLoadingMore: false,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> loadMoreSimilarUsers() async {
+    if (state.similarUsersIsLoadingMore || state.similarUsersPagination == null)
+      return;
+
+    final currentPage = state.similarUsersPagination!.currentPage;
+    final totalPages = state.similarUsersPagination!.totalPages;
+
+    if (currentPage >= totalPages) return;
+
+    await fetchSimilarUsers(page: currentPage + 1);
+  }
+
+  Future<void> fetchPastMatches({int page = 1}) async {
+    if (page == 1) {
+      emit(state.copyWith(pastMatchesState: CubitStates.loading));
+    } else {
+      emit(state.copyWith(pastMatchesIsLoadingMore: true));
+    }
+
+    final result = await homeRepository.fetchPastMatches(page: page);
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          pastMatchesState: page == 1
+              ? CubitStates.failure
+              : state.pastMatchesState,
+          pastMatchesErrorMessage: failure.message,
+          pastMatchesIsLoadingMore: false,
+        ),
+      ),
+      (response) {
+        final newMatches = response.data?.data ?? [];
+        final allMatches = page == 1
+            ? newMatches
+            : [...state.pastMatches, ...newMatches];
+
+        emit(
+          state.copyWith(
+            pastMatchesState: CubitStates.success,
+            pastMatches: allMatches,
+            pastMatchesPagination: response.data?.pagination,
+            pastMatchesIsLoadingMore: false,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> loadMorePastMatches() async {
+    if (state.pastMatchesIsLoadingMore || state.pastMatchesPagination == null)
+      return;
+
+    final currentPage = state.pastMatchesPagination!.currentPage;
+    final totalPages = state.pastMatchesPagination!.totalPages;
+
+    if (currentPage >= totalPages) return;
+
+    await fetchPastMatches(page: currentPage + 1);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

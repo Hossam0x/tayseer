@@ -1,4 +1,8 @@
 {
     "cmake.ignoreCMakeListsMissing": true,
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "kiroAgent.configureMCP": "Disabled",
+    "gitProjectManager.baseProjectsFolders": [
+        "/Users/ahmedelshenawy/development"
+    ]
 }

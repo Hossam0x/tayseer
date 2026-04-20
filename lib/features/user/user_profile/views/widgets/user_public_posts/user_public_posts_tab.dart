@@ -190,7 +190,7 @@ class _PostsShimmer extends StatelessWidget {
       itemBuilder: (_, index) => Column(
         children: [
           const PostCardShimmer(),
-          if (index < itemCount - 1) Gap(16.h),
+          if (index < itemCount - 1) Gap(1.h),
         ],
       ),
     );

@@ -116,7 +116,7 @@ class UserPublicPostItem extends StatelessWidget {
             );
           },
         ),
-        if (showGap) Gap(16.h),
+        if (showGap) Gap(1.h),
       ],
     );
   }

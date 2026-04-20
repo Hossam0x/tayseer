@@ -63,7 +63,7 @@ class ArchivedPostItem extends StatelessWidget {
       builder: (context, post) {
         if (post == null) return const SizedBox.shrink();
         return Padding(
-          padding: EdgeInsets.only(bottom: 8.h),
+          padding: EdgeInsets.only(bottom: 1.h),
           child: PostCard(
             isFromProfile: true,
             heroPrefix: 'archived_posts',
