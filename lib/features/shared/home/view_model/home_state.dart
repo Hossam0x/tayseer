@@ -3,6 +3,9 @@ import 'package:tayseer/core/enum/advisor_status.dart';
 import 'package:tayseer/core/models/category_model.dart';
 import 'package:tayseer/features/shared/home/model/image_and_name_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/features/shared/home/model/best_advisor_model.dart';
+import 'package:tayseer/features/shared/home/model/similar_user_model.dart';
+import 'package:tayseer/features/shared/home/model/past_match_model.dart';
 import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
 
 import '../../../../my_import.dart';
@@ -105,6 +108,21 @@ class HomeState extends Equatable {
   final CubitStates pollVoteActionState;
 
   // ─────────────────────────────────────────────────────────────────────────
+  // 📦 Best Sections
+  // ─────────────────────────────────────────────────────────────────────────
+  final CubitStates bestAdvisorsState;
+  final List<BestAdvisorModel> bestAdvisors;
+  final String? bestAdvisorsErrorMessage;
+
+  final CubitStates similarUsersState;
+  final List<SimilarUserModel> similarUsers;
+  final String? similarUsersErrorMessage;
+
+  final CubitStates pastMatchesState;
+  final List<PastMatchModel> pastMatches;
+  final String? pastMatchesErrorMessage;
+
+  // ─────────────────────────────────────────────────────────────────────────
   // 🏗️ Constructor
   // ─────────────────────────────────────────────────────────────────────────
   const HomeState({
@@ -152,6 +170,16 @@ class HomeState extends Equatable {
     // connectivity
     this.isOffline = false,
     this.isShowingCachedData = false,
+    // Best Sections
+    this.bestAdvisorsState = CubitStates.initial,
+    this.bestAdvisors = const [],
+    this.bestAdvisorsErrorMessage,
+    this.similarUsersState = CubitStates.initial,
+    this.similarUsers = const [],
+    this.similarUsersErrorMessage,
+    this.pastMatchesState = CubitStates.initial,
+    this.pastMatches = const [],
+    this.pastMatchesErrorMessage,
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -203,6 +231,16 @@ class HomeState extends Equatable {
     // connectivity
     bool? isOffline,
     bool? isShowingCachedData,
+    // Best Sections
+    CubitStates? bestAdvisorsState,
+    List<BestAdvisorModel>? bestAdvisors,
+    String? bestAdvisorsErrorMessage,
+    CubitStates? similarUsersState,
+    List<SimilarUserModel>? similarUsers,
+    String? similarUsersErrorMessage,
+    CubitStates? pastMatchesState,
+    List<PastMatchModel>? pastMatches,
+    String? pastMatchesErrorMessage,
   }) {
     return HomeState(
       // Posts
@@ -257,6 +295,19 @@ class HomeState extends Equatable {
       // connectivity
       isOffline: isOffline ?? this.isOffline,
       isShowingCachedData: isShowingCachedData ?? this.isShowingCachedData,
+      // Best Sections
+      bestAdvisorsState: bestAdvisorsState ?? this.bestAdvisorsState,
+      bestAdvisors: bestAdvisors ?? this.bestAdvisors,
+      bestAdvisorsErrorMessage:
+          bestAdvisorsErrorMessage ?? this.bestAdvisorsErrorMessage,
+      similarUsersState: similarUsersState ?? this.similarUsersState,
+      similarUsers: similarUsers ?? this.similarUsers,
+      similarUsersErrorMessage:
+          similarUsersErrorMessage ?? this.similarUsersErrorMessage,
+      pastMatchesState: pastMatchesState ?? this.pastMatchesState,
+      pastMatches: pastMatches ?? this.pastMatches,
+      pastMatchesErrorMessage:
+          pastMatchesErrorMessage ?? this.pastMatchesErrorMessage,
     );
   }
 
@@ -377,6 +428,15 @@ class HomeState extends Equatable {
     pollVoteActionState,
     isOffline,
     isShowingCachedData,
+    bestAdvisorsState,
+    bestAdvisors,
+    bestAdvisorsErrorMessage,
+    similarUsersState,
+    similarUsers,
+    similarUsersErrorMessage,
+    pastMatchesState,
+    pastMatches,
+    pastMatchesErrorMessage,
   ];
 }
 

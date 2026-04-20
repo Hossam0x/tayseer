@@ -1,4 +1,4 @@
-﻿{
+{
   "joinUs": "Join US",
   "guest_login_first": "You must login first to use this feature.",
   "login": "Login",
@@ -1984,5 +1984,11 @@
   "enable_sound_effects": "Enable Sound Effects",
   "disable_sound_effects": "Disable Sound Effects",
   "volume": "Volume",
-  "test_sound": "Test Sound"
+  "test_sound": "Test Sound",
+  "best_advisors": "Best Advisors",
+  "similar_users": "Similar Users",
+  "best_matches": "Best Matches",
+  "best_matches_desc": "Compatible with your profile",
+  "similarity": "Similarity",
+  "expert_guidance_for_you": "Expert guidance for you"
 }

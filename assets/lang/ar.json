@@ -1,4 +1,4 @@
-﻿{
+{
   "joinUs": "انضم لنا",
   "guest_login_first": "يجب عليك تسجيل الدخول أولاً للاستفادة من هذه الميزة.",
   "login": "تسجيل الدخول",
@@ -1983,5 +1983,11 @@
   "enable_sound_effects": "تفعيل المؤثرات الصوتية",
   "disable_sound_effects": "إيقاف المؤثرات الصوتية",
   "volume": "مستوى الصوت",
-  "test_sound": "اختبار الصوت"
+  "test_sound": "اختبار الصوت",
+  "best_advisors": "أفضل المستشارين",
+  "similar_users": "أشخاص يشبهونك",
+  "best_matches": "أفضل المطابقات",
+  "best_matches_desc": "متوافقون مع ملفك الشخصي",
+  "similarity": "طابق",
+  "expert_guidance_for_you": "توجيهات الخبراء من أجلك"
 }

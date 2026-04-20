@@ -456,6 +456,9 @@ class HomeCubit extends Cubit<HomeState> {
       fetchNameAndImage(),
       fetchCategories(),
       _fetchPostsForCategory(null),
+      if (isUser) fetchBestAdvisors(),
+      if (isUser) fetchSimilarUsers(),
+      if (isUser) fetchPastMatches(),
     ]);
   }
 
@@ -465,6 +468,9 @@ class HomeCubit extends Cubit<HomeState> {
       fetchNameAndImage(),
       fetchCategories(),
       _fetchPostsForCategory(null),
+      if (isUser) fetchBestAdvisors(),
+      if (isUser) fetchSimilarUsers(),
+      if (isUser) fetchPastMatches(),
     ]);
   }
 
@@ -529,6 +535,73 @@ class HomeCubit extends Cubit<HomeState> {
           name: current.name,
           notifications: count,
           approvalKey: current.approvalKey,
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 📦 Best Sections Fetching
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Future<void> fetchBestAdvisors() async {
+    emit(state.copyWith(bestAdvisorsState: CubitStates.loading));
+
+    final result = await homeRepository.fetchBestAdvisors();
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          bestAdvisorsState: CubitStates.failure,
+          bestAdvisorsErrorMessage: failure.message,
+        ),
+      ),
+      (response) => emit(
+        state.copyWith(
+          bestAdvisorsState: CubitStates.success,
+          bestAdvisors: response.data?.advisors ?? [],
+        ),
+      ),
+    );
+  }
+
+  Future<void> fetchSimilarUsers() async {
+    emit(state.copyWith(similarUsersState: CubitStates.loading));
+
+    final result = await homeRepository.fetchSimilarUsers();
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          similarUsersState: CubitStates.failure,
+          similarUsersErrorMessage: failure.message,
+        ),
+      ),
+      (response) => emit(
+        state.copyWith(
+          similarUsersState: CubitStates.success,
+          similarUsers: response.data?.users ?? [],
+        ),
+      ),
+    );
+  }
+
+  Future<void> fetchPastMatches() async {
+    emit(state.copyWith(pastMatchesState: CubitStates.loading));
+
+    final result = await homeRepository.fetchPastMatches();
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          pastMatchesState: CubitStates.failure,
+          pastMatchesErrorMessage: failure.message,
+        ),
+      ),
+      (response) => emit(
+        state.copyWith(
+          pastMatchesState: CubitStates.success,
+          pastMatches: response.data?.data ?? [],
         ),
       ),
     );

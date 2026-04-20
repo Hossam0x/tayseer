@@ -8,6 +8,9 @@ import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/features/shared/home/model/comments_response_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/model/post_response_model.dart';
+import 'package:tayseer/features/shared/home/model/best_advisor_model.dart';
+import 'package:tayseer/features/shared/home/model/similar_user_model.dart';
+import 'package:tayseer/features/shared/home/model/past_match_model.dart';
 
 abstract class HomeRepository {
   Future<Either<Failure, PostsResponseModel>> fetchPosts({
@@ -105,4 +108,8 @@ abstract class HomeRepository {
   Future<Either<Failure, PostModel>> fetchPostById({required String postId});
 
   Future<Either<Failure, String>> sharePostToStory({required String postId});
+
+  Future<Either<Failure, BestAdvisorResponse>> fetchBestAdvisors();
+  Future<Either<Failure, SimilarUserResponse>> fetchSimilarUsers();
+  Future<Either<Failure, PastMatchesResponse>> fetchPastMatches();
 }
