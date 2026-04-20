@@ -109,7 +109,11 @@ abstract class HomeRepository {
 
   Future<Either<Failure, String>> sharePostToStory({required String postId});
 
-  Future<Either<Failure, BestAdvisorResponse>> fetchBestAdvisors();
-  Future<Either<Failure, SimilarUserResponse>> fetchSimilarUsers();
-  Future<Either<Failure, PastMatchesResponse>> fetchPastMatches();
+  Future<Either<Failure, BestAdvisorResponse>> fetchBestAdvisors({
+    int page = 1,
+  });
+  Future<Either<Failure, SimilarUserResponse>> fetchSimilarUsers({
+    int page = 1,
+  });
+  Future<Either<Failure, PastMatchesResponse>> fetchPastMatches({int page = 1});
 }

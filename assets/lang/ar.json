@@ -1989,5 +1989,17 @@
   "best_matches": "أفضل المطابقات",
   "best_matches_desc": "متوافقون مع ملفك الشخصي",
   "similarity": "طابق",
-  "expert_guidance_for_you": "توجيهات الخبراء من أجلك"
+  "expert_guidance_for_you": "توجيهات الخبراء من أجلك",
+  "family_counselor": "مستشار أسري",
+  "marriage_counselor": "مستشار زواج",
+  "relationship_expert": "خبير علاقات",
+  "life_coach": "مدرب حياة",
+  "psychological_counselor": "مستشار نفسي",
+  "social_counselor": "مستشار اجتماعي",
+  "family_therapist": "معالج أسري",
+  "couples_therapist": "معالج أزواج",
+  "premarital_counselor": "مستشار ما قبل الزواج",
+  "islamic_counselor": "مستشار إسلامي",
+  "available_specializations": "التخصصات المتاحة",
+  "similar_users_desc": "متوافقون مع ملفك الشخصي"
 }

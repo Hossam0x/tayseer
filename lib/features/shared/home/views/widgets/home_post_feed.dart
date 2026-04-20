@@ -323,7 +323,7 @@ class HomePostFeed extends StatelessWidget {
     final Map<int, int> postIndexToItemIndex = {};
 
     // Get feature flags from LayoutState
-    // Note: In this context, "Consultation" is active if isMarriageVisible is false, 
+    // Note: In this context, "Consultation" is active if isMarriageVisible is false,
     // but the user said "لو هو مفعل الاستشارات يظهر" which usually means a separate flag or always for users.
     // We'll use the flags if available or assume true for isUser.
     final layoutState = context.read<LayoutCubit>().state;
@@ -332,30 +332,56 @@ class HomePostFeed extends StatelessWidget {
     // RULE:
     // If Marriage active -> Show All 3.
     // If Only Consultation active -> Show Similar Users & Best Matches (Hide Best Advisor).
-    final bool showAdvisors = isUser && isMarriageVisible && state.bestAdvisors.isNotEmpty;
-    final bool showMarriageContent = isUser && (state.similarUsers.isNotEmpty || state.pastMatches.isNotEmpty); 
+    final bool showAdvisors =
+        isUser && isMarriageVisible && state.bestAdvisors.isNotEmpty;
+    final bool showMarriageContent =
+        isUser &&
+        (state.similarUsers.isNotEmpty || state.pastMatches.isNotEmpty);
     // Always show similar/matches if isUser, because user said they should show even if ONLY consultation active.
 
     int currentPostIndex = 0;
     const int maxItems = 100; // Safety break
     int iterations = 0;
-    
+
     while (iterations < maxItems) {
       iterations++;
-      
+
       // Inject Best Advisors after 2 items (ideally 2 posts)
       if (showAdvisors && items.length == 2) {
-        items.add(BestAdvisorSection(advisors: state.bestAdvisors));
+        items.add(
+          BestAdvisorSection(
+            advisors: state.bestAdvisors,
+            pagination: homeCubit.state.bestAdvisorsPagination,
+            onLoadMore: () => homeCubit.loadMoreBestAdvisors(),
+            onFollowTap: (advisorId) =>
+                homeCubit.toggleFollowBestAdvisor(advisorId: advisorId),
+            isLoadingMore: homeCubit.state.bestAdvisorsIsLoadingMore,
+          ),
+        );
         continue;
       }
 
       // Inject Similar Users & Matches after 5 items
       if (showMarriageContent && items.length == 5) {
         if (state.similarUsers.isNotEmpty) {
-           items.add(SimilarUsersSection(users: state.similarUsers));
+          items.add(
+            SimilarUsersSection(
+              users: state.similarUsers,
+              pagination: homeCubit.state.similarUsersPagination,
+              onLoadMore: () => homeCubit.loadMoreSimilarUsers(),
+              isLoadingMore: homeCubit.state.similarUsersIsLoadingMore,
+            ),
+          );
         }
         if (state.pastMatches.isNotEmpty) {
-           items.add(BestMatchesSection(matches: state.pastMatches));
+          items.add(
+            BestMatchesSection(
+              matches: state.pastMatches,
+              pagination: homeCubit.state.pastMatchesPagination,
+              onLoadMore: () => homeCubit.loadMorePastMatches(),
+              isLoadingMore: homeCubit.state.pastMatchesIsLoadingMore,
+            ),
+          );
         }
         if (state.similarUsers.isNotEmpty || state.pastMatches.isNotEmpty) {
           continue;
@@ -375,7 +401,8 @@ class HomePostFeed extends StatelessWidget {
           ),
         );
         currentPostIndex++;
-      } else if ((showAdvisors && items.length < 2) || (showMarriageContent && items.length < 5)) {
+      } else if ((showAdvisors && items.length < 2) ||
+          (showMarriageContent && items.length < 5)) {
         // If we still need to reach injection points but posts are exhausted, add something or just break?
         // Usually we want to show sections even if feed is empty or short.
         // But the user said "after 2 posts". If 0 posts, "after 2 posts" is undefined.
@@ -468,6 +495,9 @@ class _FeedState extends Equatable {
     isOffline,
     isShowingCachedData,
     loadMoreServerFailed,
+    bestAdvisors,
+    similarUsers,
+    pastMatches,
   ];
 }
 

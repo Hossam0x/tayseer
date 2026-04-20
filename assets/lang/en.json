@@ -1990,5 +1990,17 @@
   "best_matches": "Best Matches",
   "best_matches_desc": "Compatible with your profile",
   "similarity": "Similarity",
-  "expert_guidance_for_you": "Expert guidance for you"
+  "expert_guidance_for_you": "Expert guidance for you",
+  "family_counselor": "Family Counselor",
+  "marriage_counselor": "Marriage Counselor",
+  "relationship_expert": "Relationship Expert",
+  "life_coach": "Life Coach",
+  "psychological_counselor": "Psychological Counselor",
+  "social_counselor": "Social Counselor",
+  "family_therapist": "Family Therapist",
+  "couples_therapist": "Couples Therapist",
+  "premarital_counselor": "Premarital Counselor",
+  "islamic_counselor": "Islamic Counselor",
+  "available_specializations": "Available Specializations",
+  "similar_users_desc" : "Compatible with your profile"
 }

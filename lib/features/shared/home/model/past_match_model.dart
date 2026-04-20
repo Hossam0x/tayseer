@@ -1,3 +1,5 @@
+import 'package:tayseer/core/models/pagination_model.dart';
+
 class PastMatchesResponse {
   final bool? success;
   final String? message;
@@ -9,20 +11,28 @@ class PastMatchesResponse {
     return PastMatchesResponse(
       success: json['success'],
       message: json['message'],
-      data: json['data'] != null ? PastMatchesData.fromJson(json['data']) : null,
+      data: json['data'] != null
+          ? PastMatchesData.fromJson(json['data'])
+          : null,
     );
   }
 }
 
 class PastMatchesData {
   final List<PastMatchModel>? data;
+  final PaginationModel? pagination;
 
-  PastMatchesData({this.data});
+  PastMatchesData({this.data, this.pagination});
 
   factory PastMatchesData.fromJson(Map<String, dynamic> json) {
     return PastMatchesData(
       data: json['data'] != null
-          ? (json['data'] as List).map((i) => PastMatchModel.fromJson(i)).toList()
+          ? (json['data'] as List)
+                .map((i) => PastMatchModel.fromJson(i))
+                .toList()
+          : null,
+      pagination: json['pagination'] != null
+          ? PaginationModel.fromJson(json['pagination'])
           : null,
     );
   }

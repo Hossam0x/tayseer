@@ -1,9 +1,20 @@
+import 'package:tayseer/core/models/pagination_model.dart';
 import 'package:tayseer/features/shared/home/model/past_match_model.dart';
 import 'package:tayseer/my_import.dart';
 
 class BestMatchesSection extends StatefulWidget {
-  const BestMatchesSection({super.key, required this.matches});
+  const BestMatchesSection({
+    super.key,
+    required this.matches,
+    required this.pagination,
+    this.onLoadMore,
+    this.isLoadingMore = false,
+  });
+
   final List<PastMatchModel> matches;
+  final PaginationModel? pagination;
+  final VoidCallback? onLoadMore;
+  final bool isLoadingMore;
 
   @override
   State<BestMatchesSection> createState() => _BestMatchesSectionState();
@@ -16,7 +27,7 @@ class _BestMatchesSectionState extends State<BestMatchesSection> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(viewportFraction: 0.9);
+    _pageController = PageController(viewportFraction: 0.85);
   }
 
   @override
@@ -25,17 +36,34 @@ class _BestMatchesSectionState extends State<BestMatchesSection> {
     super.dispose();
   }
 
+  void _onPageChanged(int index) {
+    setState(() => _currentPage = index);
+
+    if (widget.matches.isNotEmpty &&
+        index >= (widget.matches.length * 0.75).floor() &&
+        widget.onLoadMore != null &&
+        !widget.isLoadingMore &&
+        _hasMoreData()) {
+      widget.onLoadMore!();
+    }
+  }
+
+  bool _hasMoreData() {
+    if (widget.pagination == null) return false;
+    return widget.pagination!.currentPage < widget.pagination!.totalPages;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.matches.isEmpty) return const SizedBox.shrink();
 
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 24.h),
+      margin: EdgeInsets.symmetric(vertical: 20.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -44,69 +72,99 @@ class _BestMatchesSectionState extends State<BestMatchesSection> {
                   children: [
                     Text(
                       context.tr('best_matches'),
-                      style: Styles.textStyle22.copyWith(
-                        fontWeight: FontWeight.w900,
-                        color: Colors.black,
+                      style: Styles.textStyle20.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.kprimaryColor,
+                        letterSpacing: -0.5,
                       ),
                     ),
                     Text(
                       context.tr('best_matches_desc'),
-                      style: Styles.textStyle14.copyWith(
-                        color: Colors.grey.shade500,
+                      style: Styles.textStyle12.copyWith(
+                        color: Colors.grey.shade600,
                       ),
                     ),
                   ],
                 ),
-                // Indicator
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                  decoration: BoxDecoration(
-                    color: AppColors.kprimaryColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Text(
-                    '${_currentPage + 1}/${widget.matches.length}',
-                    style: Styles.textStyle12.copyWith(
-                      color: AppColors.kprimaryColor,
-                      fontWeight: FontWeight.bold,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (widget.pagination != null)
+                      Text(
+                        '${widget.matches.length} / ${widget.pagination!.totalCount}',
+                        style: Styles.textStyle10.copyWith(
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    Gap(4.h),
+                    Row(
+                      children: List.generate(
+                        widget.matches.length.clamp(0, 5),
+                        (index) => AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          margin: EdgeInsets.symmetric(horizontal: 2.w),
+                          height: 4.h,
+                          width: _currentPage == index ? 20.w : 6.w,
+                          decoration: BoxDecoration(
+                            color: _currentPage == index
+                                ? AppColors.kprimaryColor
+                                : AppColors.kprimaryColor.withValues(
+                                    alpha: 0.2,
+                                  ),
+                            borderRadius: BorderRadius.circular(2.r),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),
           ),
           Gap(16.h),
           SizedBox(
-            height: 380.h,
+            height: 200.h,
             child: PageView.builder(
               controller: _pageController,
               itemCount: widget.matches.length,
-              onPageChanged: (index) => setState(() => _currentPage = index),
-              itemBuilder: (context, index) => _MatchPageItem(
+              onPageChanged: _onPageChanged,
+              itemBuilder: (context, index) => _MatchCard(
                 match: widget.matches[index],
                 isSelected: _currentPage == index,
               ),
             ),
           ),
+          if (widget.isLoadingMore)
+            Padding(
+              padding: EdgeInsets.only(top: 12.h),
+              child: Center(
+                child: SizedBox(
+                  width: 20.w,
+                  height: 20.w,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.kprimaryColor,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 }
 
-class _MatchPageItem extends StatelessWidget {
-  const _MatchPageItem({required this.match, required this.isSelected});
+class _MatchCard extends StatelessWidget {
+  const _MatchCard({required this.match, required this.isSelected});
+
   final PastMatchModel match;
   final bool isSelected;
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedPadding(
+    return AnimatedScale(
       duration: const Duration(milliseconds: 400),
-      padding: EdgeInsets.symmetric(
-        horizontal: 8.w,
-        vertical: isSelected ? 0 : 15.h,
-      ),
+      scale: isSelected ? 1.0 : 0.95,
       child: GestureDetector(
         onTap: () {
           context.pushNamed(
@@ -115,76 +173,113 @@ class _MatchPageItem extends StatelessWidget {
           );
         },
         child: Container(
+          margin: EdgeInsets.symmetric(horizontal: 8.w),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(32.r),
-            image: DecorationImage(
-              image: NetworkImage(match.image ?? ''),
-              fit: BoxFit.cover,
-              colorFilter: ColorFilter.mode(
-                Colors.black.withValues(alpha: 0.3),
-                BlendMode.darken,
-              ),
-            ),
+            borderRadius: BorderRadius.circular(24.r),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 15,
-                offset: const Offset(0, 8),
+                color: isSelected
+                    ? Colors.black.withValues(alpha: 0.2)
+                    : Colors.black.withValues(alpha: 0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
             ],
           ),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(32.r),
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withValues(alpha: 0.8),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: const [0.5, 1.0],
-              ),
-            ),
-            padding: EdgeInsets.all(24.w),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.start,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24.r),
+            child: Stack(
+              fit: StackFit.expand,
               children: [
-                // Match Rate Badge
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                  decoration: BoxDecoration(
-                    color: AppColors.kprimaryColor,
-                    borderRadius: BorderRadius.circular(15.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.kprimaryColor.withValues(alpha: 0.4),
-                        blurRadius: 10,
-                      )
-                    ],
+                // Background image
+                if (match.image != null)
+                  Image.network(
+                    match.image!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: AppColors.kprimaryColor.withValues(alpha: 0.1),
+                    ),
+                  )
+                else
+                  Container(
+                    color: AppColors.kprimaryColor.withValues(alpha: 0.1),
+                    child: Icon(
+                      Icons.person,
+                      size: 60,
+                      color: Colors.grey.shade300,
+                    ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.favorite_rounded, color: Colors.white, size: 14.sp),
-                      Gap(6.w),
-                      Text(
-                        '${match.matchRate ?? 90}% Compatible',
-                        style: Styles.textStyle12.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                // Gradient overlay
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.75),
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: const [0.4, 1.0],
+                    ),
                   ),
                 ),
-                Gap(12.h),
-                Text(
-                  match.name ?? '',
-                  style: Styles.textStyle24.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
+                // Content
+                Positioned(
+                  bottom: 16.h,
+                  left: 16.w,
+                  right: 16.w,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          match.name ?? '',
+                          style: Styles.textStyle18.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (match.matchRate != null)
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 10.w,
+                            vertical: 5.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.kprimaryColor,
+                            borderRadius: BorderRadius.circular(12.r),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.kprimaryColor.withValues(
+                                  alpha: 0.4,
+                                ),
+                                blurRadius: 8,
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.favorite_rounded,
+                                color: Colors.white,
+                                size: 12.sp,
+                              ),
+                              Gap(4.w),
+                              Text(
+                                '${match.matchRate}%',
+                                style: Styles.textStyle10.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ],

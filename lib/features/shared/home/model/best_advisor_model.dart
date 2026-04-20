@@ -11,7 +11,9 @@ class BestAdvisorResponse {
     return BestAdvisorResponse(
       success: json['success'],
       message: json['message'],
-      data: json['data'] != null ? BestAdvisorData.fromJson(json['data']) : null,
+      data: json['data'] != null
+          ? BestAdvisorData.fromJson(json['data'])
+          : null,
     );
   }
 }
@@ -26,8 +28,8 @@ class BestAdvisorData {
     return BestAdvisorData(
       advisors: json['advisors'] != null
           ? (json['advisors'] as List)
-              .map((i) => BestAdvisorModel.fromJson(i))
-              .toList()
+                .map((i) => BestAdvisorModel.fromJson(i))
+                .toList()
           : null,
       pagination: json['pagination'] != null
           ? PaginationModel.fromJson(json['pagination'])
@@ -45,6 +47,7 @@ class BestAdvisorModel {
   final int? rateCount;
   final String? yearsOfExperience;
   final List<String>? language;
+  final bool? isFollowing;
 
   BestAdvisorModel({
     this.id,
@@ -55,6 +58,7 @@ class BestAdvisorModel {
     this.rateCount,
     this.yearsOfExperience,
     this.language,
+    this.isFollowing,
   });
 
   factory BestAdvisorModel.fromJson(Map<String, dynamic> json) {
@@ -69,6 +73,31 @@ class BestAdvisorModel {
       language: json['language'] != null
           ? List<String>.from(json['language'])
           : null,
+      isFollowing: json['isFollowing'],
+    );
+  }
+
+  BestAdvisorModel copyWith({
+    String? id,
+    String? name,
+    String? subtitle,
+    String? image,
+    num? rate,
+    int? rateCount,
+    String? yearsOfExperience,
+    List<String>? language,
+    bool? isFollowing,
+  }) {
+    return BestAdvisorModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      subtitle: subtitle ?? this.subtitle,
+      image: image ?? this.image,
+      rate: rate ?? this.rate,
+      rateCount: rateCount ?? this.rateCount,
+      yearsOfExperience: yearsOfExperience ?? this.yearsOfExperience,
+      language: language ?? this.language,
+      isFollowing: isFollowing ?? this.isFollowing,
     );
   }
 }

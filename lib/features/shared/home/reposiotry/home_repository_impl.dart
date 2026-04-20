@@ -641,9 +641,11 @@ class HomeRepositoryImpl implements HomeRepository {
   }
 
   @override
-  Future<Either<Failure, BestAdvisorResponse>> fetchBestAdvisors() async {
+  Future<Either<Failure, BestAdvisorResponse>> fetchBestAdvisors({
+    int page = 1,
+  }) async {
     try {
-      final response = await remoteDatasource.fetchBestAdvisors();
+      final response = await remoteDatasource.fetchBestAdvisors(page: page);
       return Right(response);
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
@@ -651,9 +653,11 @@ class HomeRepositoryImpl implements HomeRepository {
   }
 
   @override
-  Future<Either<Failure, SimilarUserResponse>> fetchSimilarUsers() async {
+  Future<Either<Failure, SimilarUserResponse>> fetchSimilarUsers({
+    int page = 1,
+  }) async {
     try {
-      final response = await remoteDatasource.fetchSimilarUsers();
+      final response = await remoteDatasource.fetchSimilarUsers(page: page);
       return Right(response);
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));
@@ -661,9 +665,11 @@ class HomeRepositoryImpl implements HomeRepository {
   }
 
   @override
-  Future<Either<Failure, PastMatchesResponse>> fetchPastMatches() async {
+  Future<Either<Failure, PastMatchesResponse>> fetchPastMatches({
+    int page = 1,
+  }) async {
     try {
-      final response = await remoteDatasource.fetchPastMatches();
+      final response = await remoteDatasource.fetchPastMatches(page: page);
       return Right(response);
     } on DioException catch (e) {
       return Left(ServerFailure.fromDioError(e));

@@ -28,18 +28,27 @@ class PostsRemoteDatasource {
     return PostsResponseModel.fromJson(response);
   }
 
-  Future<BestAdvisorResponse> fetchBestAdvisors() async {
-    final response = await _apiService.get(endPoint: ApiEndPoint.bestAdvisors);
+  Future<BestAdvisorResponse> fetchBestAdvisors({int page = 1}) async {
+    final response = await _apiService.get(
+      endPoint: ApiEndPoint.bestAdvisors,
+      query: {'page': page},
+    );
     return BestAdvisorResponse.fromJson(response);
   }
 
-  Future<SimilarUserResponse> fetchSimilarUsers() async {
-    final response = await _apiService.get(endPoint: ApiEndPoint.similarUsers);
+  Future<SimilarUserResponse> fetchSimilarUsers({int page = 1}) async {
+    final response = await _apiService.get(
+      endPoint: ApiEndPoint.similarUsers,
+      query: {'page': page},
+    );
     return SimilarUserResponse.fromJson(response);
   }
 
-  Future<PastMatchesResponse> fetchPastMatches() async {
-    final response = await _apiService.get(endPoint: ApiEndPoint.pastMatches);
+  Future<PastMatchesResponse> fetchPastMatches({int page = 1}) async {
+    final response = await _apiService.get(
+      endPoint: ApiEndPoint.pastMatches,
+      query: {'page': page},
+    );
     return PastMatchesResponse.fromJson(response);
   }
 }

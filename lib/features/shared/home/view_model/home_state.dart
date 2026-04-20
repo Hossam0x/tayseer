@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/enum/advisor_status.dart';
 import 'package:tayseer/core/models/category_model.dart';
+import 'package:tayseer/core/models/pagination_model.dart';
 import 'package:tayseer/features/shared/home/model/image_and_name_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/shared/home/model/best_advisor_model.dart';
@@ -113,14 +114,20 @@ class HomeState extends Equatable {
   final CubitStates bestAdvisorsState;
   final List<BestAdvisorModel> bestAdvisors;
   final String? bestAdvisorsErrorMessage;
+  final PaginationModel? bestAdvisorsPagination;
+  final bool bestAdvisorsIsLoadingMore;
 
   final CubitStates similarUsersState;
   final List<SimilarUserModel> similarUsers;
   final String? similarUsersErrorMessage;
+  final PaginationModel? similarUsersPagination;
+  final bool similarUsersIsLoadingMore;
 
   final CubitStates pastMatchesState;
   final List<PastMatchModel> pastMatches;
   final String? pastMatchesErrorMessage;
+  final PaginationModel? pastMatchesPagination;
+  final bool pastMatchesIsLoadingMore;
 
   // ─────────────────────────────────────────────────────────────────────────
   // 🏗️ Constructor
@@ -174,12 +181,18 @@ class HomeState extends Equatable {
     this.bestAdvisorsState = CubitStates.initial,
     this.bestAdvisors = const [],
     this.bestAdvisorsErrorMessage,
+    this.bestAdvisorsPagination,
+    this.bestAdvisorsIsLoadingMore = false,
     this.similarUsersState = CubitStates.initial,
     this.similarUsers = const [],
     this.similarUsersErrorMessage,
+    this.similarUsersPagination,
+    this.similarUsersIsLoadingMore = false,
     this.pastMatchesState = CubitStates.initial,
     this.pastMatches = const [],
     this.pastMatchesErrorMessage,
+    this.pastMatchesPagination,
+    this.pastMatchesIsLoadingMore = false,
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -235,12 +248,18 @@ class HomeState extends Equatable {
     CubitStates? bestAdvisorsState,
     List<BestAdvisorModel>? bestAdvisors,
     String? bestAdvisorsErrorMessage,
+    PaginationModel? bestAdvisorsPagination,
+    bool? bestAdvisorsIsLoadingMore,
     CubitStates? similarUsersState,
     List<SimilarUserModel>? similarUsers,
     String? similarUsersErrorMessage,
+    PaginationModel? similarUsersPagination,
+    bool? similarUsersIsLoadingMore,
     CubitStates? pastMatchesState,
     List<PastMatchModel>? pastMatches,
     String? pastMatchesErrorMessage,
+    PaginationModel? pastMatchesPagination,
+    bool? pastMatchesIsLoadingMore,
   }) {
     return HomeState(
       // Posts
@@ -300,14 +319,26 @@ class HomeState extends Equatable {
       bestAdvisors: bestAdvisors ?? this.bestAdvisors,
       bestAdvisorsErrorMessage:
           bestAdvisorsErrorMessage ?? this.bestAdvisorsErrorMessage,
+      bestAdvisorsPagination:
+          bestAdvisorsPagination ?? this.bestAdvisorsPagination,
+      bestAdvisorsIsLoadingMore:
+          bestAdvisorsIsLoadingMore ?? this.bestAdvisorsIsLoadingMore,
       similarUsersState: similarUsersState ?? this.similarUsersState,
       similarUsers: similarUsers ?? this.similarUsers,
       similarUsersErrorMessage:
           similarUsersErrorMessage ?? this.similarUsersErrorMessage,
+      similarUsersPagination:
+          similarUsersPagination ?? this.similarUsersPagination,
+      similarUsersIsLoadingMore:
+          similarUsersIsLoadingMore ?? this.similarUsersIsLoadingMore,
       pastMatchesState: pastMatchesState ?? this.pastMatchesState,
       pastMatches: pastMatches ?? this.pastMatches,
       pastMatchesErrorMessage:
           pastMatchesErrorMessage ?? this.pastMatchesErrorMessage,
+      pastMatchesPagination:
+          pastMatchesPagination ?? this.pastMatchesPagination,
+      pastMatchesIsLoadingMore:
+          pastMatchesIsLoadingMore ?? this.pastMatchesIsLoadingMore,
     );
   }
 
@@ -431,12 +462,18 @@ class HomeState extends Equatable {
     bestAdvisorsState,
     bestAdvisors,
     bestAdvisorsErrorMessage,
+    bestAdvisorsPagination,
+    bestAdvisorsIsLoadingMore,
     similarUsersState,
     similarUsers,
     similarUsersErrorMessage,
+    similarUsersPagination,
+    similarUsersIsLoadingMore,
     pastMatchesState,
     pastMatches,
     pastMatchesErrorMessage,
+    pastMatchesPagination,
+    pastMatchesIsLoadingMore,
   ];
 }
 
