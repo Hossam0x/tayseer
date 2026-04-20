@@ -58,15 +58,7 @@ class ExplorationState extends State<Exploration> {
             ),
           ),
           SizedBox(height: 32.h),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 48.w),
-            child: CustomBotton(
-              radius: 16,
-              useGradient: true,
-              title: context.tr('retry'),
-              onPressed: _onRefresh,
-            ),
-          ),
+        
         ],
       ),
     );

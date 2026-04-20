@@ -31,6 +31,7 @@ class InteractionsState extends Equatable {
   // Actions
   final CubitStates actionState;
   final String? actionMessage;
+  final int? regardsLeft;
 
   const InteractionsState({
     this.isSubscribed = false,
@@ -49,6 +50,7 @@ class InteractionsState extends Equatable {
     this.historyErrorMessage,
     this.actionState = CubitStates.initial,
     this.actionMessage,
+    this.regardsLeft,
     this.likesNotificationCount = 0,
     this.favoritesNotificationCount = 0,
     this.regardsNotificationCount = 0,
@@ -72,6 +74,7 @@ class InteractionsState extends Equatable {
     String? historyErrorMessage,
     CubitStates? actionState,
     String? actionMessage,
+    int? regardsLeft,
     int? likesNotificationCount,
     int? favoritesNotificationCount,
     int? regardsNotificationCount,
@@ -95,6 +98,7 @@ class InteractionsState extends Equatable {
       historyErrorMessage: historyErrorMessage,
       actionState: actionState ?? this.actionState,
       actionMessage: actionMessage,
+      regardsLeft: regardsLeft ?? this.regardsLeft,
       likesNotificationCount:
           likesNotificationCount ?? this.likesNotificationCount,
       favoritesNotificationCount:
@@ -124,6 +128,7 @@ class InteractionsState extends Equatable {
     historyErrorMessage,
     actionState,
     actionMessage,
+    regardsLeft,
     // ✅ أضف دول
     likesNotificationCount,
     favoritesNotificationCount,

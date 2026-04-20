@@ -244,20 +244,21 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(height: 80.h),
-          AppImage(AssetsData.noSessionHistoryIcon, width: 268.w),
-          SizedBox(height: 24.h),
-          Text(
-            message,
-            style: Styles.textStyle16.copyWith(color: AppColors.secondary400),
-            textAlign: TextAlign.center,
-          ),
-        ],
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 24.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppImage(AssetsData.noSessionHistoryIcon, width: 268.w),
+            SizedBox(height: 24.h),
+            Text(
+              message,
+              style: Styles.textStyle16.copyWith(color: AppColors.secondary400),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

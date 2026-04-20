@@ -77,6 +77,12 @@ class AdditionalImageSection extends StatelessWidget {
                       ),
                       onPressed: () {
                         if (personId == null) return;
+                        final regardsLeft =
+                            context.read<MarriageCubit>().state.regardsLeft;
+                        if (regardsLeft == 0) {
+                          showRegardsPurchaseSheet(context);
+                          return;
+                        }
                         showRegardInputSheet(
                           context,
                           personId: personId!,

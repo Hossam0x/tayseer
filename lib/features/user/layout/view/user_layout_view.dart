@@ -14,15 +14,15 @@ class UserLayoutView extends StatelessWidget {
         child: const UserLayOutViewBody(),
       ),
       // زر اختبار الأصوات - مؤقت للتطوير
-      floatingActionButton: kDebugMode
-          ? FloatingActionButton(
-              onPressed: () {
-                Navigator.pushNamed(context, AppRouter.kAudioTestView);
-              },
-              backgroundColor: Colors.orange,
-              child: const Icon(Icons.volume_up, color: Colors.white),
-            )
-          : null,
+      // floatingActionButton: kDebugMode
+      //     ? FloatingActionButton(
+      //         onPressed: () {
+      //           Navigator.pushNamed(context, AppRouter.kAudioTestView);
+      //         },
+      //         backgroundColor: Colors.orange,
+      //         child: const Icon(Icons.volume_up, color: Colors.white),
+      //       )
+      //     : null,
     );
   }
 }

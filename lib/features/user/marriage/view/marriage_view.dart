@@ -1,3 +1,4 @@
+import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
 import 'package:tayseer/features/user/marriage/view/widget/marriage_body.dart';
@@ -7,13 +8,13 @@ import 'package:tayseer/features/user/questions/presentation/manager/questions_c
 import 'package:tayseer/features/user/questions/presentation/manager/questions_state.dart';
 import 'package:tayseer/my_import.dart';
 
-class MarriageView extends StatelessWidget {
+class MarriageView extends StatefulWidget {
   const MarriageView({
     super.key,
     this.personId,
     this.fromInteractions = false,
     this.initialIsFavorite = false,
-    this.interactionUser, // ✅ اليوزر الكامل من الـ interactions
+    this.interactionUser,
     this.onScroll,
   });
 
@@ -21,7 +22,24 @@ class MarriageView extends StatelessWidget {
   final Function(bool isScrollingDown)? onScroll;
   final bool fromInteractions;
   final bool initialIsFavorite;
-  final InteractionUserModel? interactionUser; // ✅
+  final InteractionUserModel? interactionUser;
+
+  @override
+  State<MarriageView> createState() => _MarriageViewState();
+}
+
+class _MarriageViewState extends State<MarriageView> {
+  @override
+  void initState() {
+    super.initState();
+    FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+  }
+
+  @override
+  void dispose() {
+    FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,19 +49,18 @@ class MarriageView extends StatelessWidget {
           ? MarriageLocationGuard(
               child: BlocProvider(
                 create: (context) => MarriageCubit(
-                  // ✅ نمرر الـ seed للـ cubit مباشرة عند الإنشاء
-                  seedPersonId: personId,
-                  seedIsFavorite: initialIsFavorite,
-                  interactionUser: interactionUser,
+                  seedPersonId: widget.personId,
+                  seedIsFavorite: widget.initialIsFavorite,
+                  interactionUser: widget.interactionUser,
                 ),
                 child: SafeArea(
                   bottom: false,
                   top: false,
                   child: MarriageBody(
-                    personId: personId,
-                    fromInteractions: fromInteractions,
-                    initialIsFavorite: initialIsFavorite,
-                    onScroll: onScroll,
+                    personId: widget.personId,
+                    fromInteractions: widget.fromInteractions,
+                    initialIsFavorite: widget.initialIsFavorite,
+                    onScroll: widget.onScroll,
                   ),
                 ),
               ),

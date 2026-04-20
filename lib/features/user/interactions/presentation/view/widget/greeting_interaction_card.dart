@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
+import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/regards_purchase_sheet.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -41,7 +42,9 @@ class GreetingProfileCard extends StatelessWidget {
             context.read<InteractionsCubit>().resetActionState();
           });
         } else if (state.actionState == CubitStates.failure) {
-          // ❌ شيل الـ snackbar من هنا خالص
+          if (state.regardsLeft == 0) {
+            showRegardsPurchaseSheet(context);
+          }
           context.read<InteractionsCubit>().resetActionState();
         }
       },
@@ -163,6 +166,12 @@ class GreetingProfileCard extends StatelessWidget {
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
+                    final regardsLeft =
+                        context.read<MarriageCubit>().state.regardsLeft;
+                    if (regardsLeft == 0) {
+                      showRegardsPurchaseSheet(context);
+                      return;
+                    }
                     showRegardInputSheet(
                       context,
                       personId: item.userId,

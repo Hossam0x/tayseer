@@ -49,7 +49,16 @@ class _SplashScreenState extends State<SplashScreen>
 
       final socketHelper = getIt<tayseerSocketHelper>();
       final chatSocketService = getIt<ChatSocketService>();
-      final connected = await socketHelper.connect();
+
+      // ✅ لو السوكت connected بالفعل (من _connectSocketForNewUser بعد login)، متعملش connect تاني
+      if (socketHelper.isConnected) {
+        log('✅ Socket already connected, skipping splash init');
+        return;
+      }
+
+      // ✅ لو في authorized token محفوظ (من resetAndConnect)، استخدمه
+      // لو مفيش (بعد logout)، استخدم الـ token من الـ cache
+      final connected = await socketHelper.connect(token: token);
       if (connected) {
         chatSocketService.init();
         log('✅ Socket connected and initialized successfully');

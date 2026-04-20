@@ -76,36 +76,31 @@ class AuthCubit extends Cubit<AuthState> {
 
   /// يُستدعى بعد أي login ناجح لضمان socket نظيف للـ user الجديد.
   /// يضمن الترتيب الصحيح: connect → init (الـ reset بيتعمل في logout)
-  Future<void> _connectSocketForNewUser() async {
-    try {
-      final socketHelper = getIt<tayseerSocketHelper>();
-      final chatSocketService = getIt<ChatSocketService>();
+  Future<void> _connectSocketForNewUser({String? token}) async {
+  try {
+    final socketHelper = getIt<tayseerSocketHelper>();
+    final chatSocketService = getIt<ChatSocketService>();
 
-      // 1. أزل الـ listeners القديمة (احتياطي)
-      chatSocketService.removeListeners();
+    chatSocketService.removeListeners();
 
-      // ✅ delay عشان السيرفر يـ register الـ session الجديدة قبل الـ socket connect
-      await Future.delayed(const Duration(milliseconds: 800));
+    // ✅ Log the token being passed
+    final tokenToUse = token ?? '';
+    debugPrint('🟡 _connectSocketForNewUser — token ${token != null ? "PASSED" : "NULL"}: ${tokenToUse.length > 30 ? "${tokenToUse.substring(0, 30)}..." : tokenToUse}');
+    debugPrint('🟡 _connectSocketForNewUser — token length: ${tokenToUse.length}');
 
-      // 2. connect فقط — الـ socket اتعمل reset بالفعل في logout
-      //    لو لسه موجود (Google/Apple login بدون logout)، نعمل resetAndConnect
-      final bool needsReset = socketHelper.isConnected;
-      final bool connected = needsReset
-          ? await socketHelper.resetAndConnect()
-          : await socketHelper.connect();
+    // ✅ مرر الـ token صراحةً لـ resetAndConnect
+    final bool connected = await socketHelper.resetAndConnect(token: token);
 
-      if (connected) {
-        // 3. بس بعد ما الـ socket اتوصل فعلاً نعمل init للـ listeners
-        chatSocketService.init();
-        debugPrint('✅ Socket connected and initialized for new user');
-      } else {
-        debugPrint('⚠️ Socket connection failed for new user');
-      }
-    } catch (e) {
-      debugPrint('Socket error after login: $e');
+    if (connected) {
+      chatSocketService.init();
+      debugPrint('✅ Socket connected with token length: ${tokenToUse.length}');
+    } else {
+      debugPrint('⚠️ Socket connection failed for new user');
     }
+  } catch (e) {
+    debugPrint('Socket error after login: $e');
   }
-
+}
   // =============================================
   // ★★★ الدوال الجديدة - إدارة الدول والجلسات ★★★
   // =============================================
@@ -671,8 +666,11 @@ class AuthCubit extends Cubit<AuthState> {
             ),
           );
         },
-        (result) async{
+        (result) async {
           setAdvisorStatus(result.data?.approvalKey);
+          // ✅ احصل على الـ token من الـ response
+          final newToken = result.data?.token;
+          
           emit(
             state.copyWith(
               authGoogleState: CubitStates.success,
@@ -682,8 +680,8 @@ class AuthCubit extends Cubit<AuthState> {
               isNew: result.data?.user?.isNew ?? true,
             ),
           );
-          // ✅ استخدام الـ helper بدل الكود المتكرر
-          await _connectSocketForNewUser();
+          // ✅ مرر الـ token صراحةً
+          await _connectSocketForNewUser(token: newToken);
         },
       );
     } catch (e) {
@@ -796,6 +794,9 @@ class AuthCubit extends Cubit<AuthState> {
         },
         (result) async {
           setAdvisorStatus(result.data?.approvalKey);
+          // ✅ احصل على الـ token من الـ response
+          final newToken = result.data?.token;
+          
           emit(
             state.copyWith(
               authAppleState: CubitStates.success,
@@ -805,8 +806,8 @@ class AuthCubit extends Cubit<AuthState> {
               isNew: result.data?.user?.isNew ?? true,
             ),
           );
-          // ✅ استخدام الـ helper بدل الكود المتكرر
-          await _connectSocketForNewUser();
+          // ✅ مرر الـ token صراحةً
+          await _connectSocketForNewUser(token: newToken);
         },
       );
     } catch (e) {
@@ -849,15 +850,27 @@ class AuthCubit extends Cubit<AuthState> {
           );
           emit(state.copyWith(verifyOtpState: CubitStates.initial));
         },
-        (verifyResponse) async{
+        (verifyResponse) async {
+          // ✅ احفظ الـ token أولاً واحصل عليه من الـ response
+          final newToken = verifyResponse.data?.token;
+          
+          // 🔍 TOKEN COMPARISON LOG
+          final cachedToken = CachNetwork.getStringData(key: 'token') ?? '';
+          debugPrint('═══════════════════════════════════════════');
+          debugPrint('🔐 VERIFY OTP — TOKEN COMPARISON:');
+          debugPrint('   📥 Token from verifyOtp response: ${newToken != null ? "${newToken.substring(0, 20)}... (len: ${newToken.length})" : "NULL"}');
+          debugPrint('   💾 Token currently in cache:      ${cachedToken.isNotEmpty ? "${cachedToken.substring(0, 20)}... (len: ${cachedToken.length})" : "EMPTY"}');
+          debugPrint('   ✅ Same token? ${newToken == cachedToken ? "YES ✅" : "NO ❌ — DIFFERENT TOKENS!"}');
+          debugPrint('═══════════════════════════════════════════');
+          
           emit(
             state.copyWith(
               verifyOtpState: CubitStates.success,
               isNew: verifyResponse.data?.user?.isNew ?? true,
             ),
           );
-          // ✅ استخدام الـ helper بدل الكود المتكرر
-          await _connectSocketForNewUser();
+          // ✅ مرر الـ token صراحةً لـ _connectSocketForNewUser
+          await _connectSocketForNewUser(token: newToken);
           emit(state.copyWith(verifyOtpState: CubitStates.initial));
         },
       );
@@ -953,8 +966,16 @@ class AuthCubit extends Cubit<AuthState> {
 
     // Disconnect socket on logout
     try {
-      // ✅ الترتيب الصحيح: listeners أولاً ثم reset
+      // ✅ الترتيب الصحيح:
+      // 1. امسح الـ listeners
+      // 2. امسح الـ authorized token فوراً (قبل أي حاجة تانية)
+      // 3. reset الـ socket
+      // 4. امسح الـ cache
       getIt<ChatSocketService>().removeListeners();
+      // ✅ امسح الـ authorized token قبل الـ reset عشان أي connect() تاني مش يستخدم token قديم
+      getIt<tayseerSocketHelper>().clearAuthorizedToken();
+      final oldToken = CachNetwork.getStringData(key: 'token') ?? '';
+      debugPrint('🔴 LOGOUT — token being cleared: ${oldToken.length > 20 ? "${oldToken.substring(0, 20)}..." : oldToken}');
       getIt<tayseerSocketHelper>().reset();
       debugPrint('Socket reset on logout');
     } catch (e) {

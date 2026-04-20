@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
+import 'package:tayseer/core/errors/failure.dart';
 import 'package:tayseer/features/user/interactions/data/repos/interactions_repository.dart';
 import '../../data/Model/interaction_usermodel .dart';
 import '../../data/Model/history_response_model.dart';
@@ -32,10 +33,12 @@ class InteractionsCubit extends Cubit<InteractionsState> {
 
     result.fold((failure) => null, (response) {
       if (response.isSubscribed != state.isSubscribed) {
-        emit(state.copyWith(
-          isSubscribed: response.isSubscribed,
-          subscriptionType: response.userSubscription,
-        ));
+        emit(
+          state.copyWith(
+            isSubscribed: response.isSubscribed,
+            subscriptionType: response.userSubscription,
+          ),
+        );
       }
     });
   }
@@ -335,10 +338,15 @@ class InteractionsCubit extends Cubit<InteractionsState> {
 
     result.fold((failure) {
       log('Send Compliment Failed: ${failure.message}');
+      final ServerFailure? serverFailure = failure is ServerFailure
+          ? failure as ServerFailure
+          : null;
+      final regardsLeft = serverFailure?.data?['regardsLeft'] as int?;
       emit(
         state.copyWith(
           actionState: CubitStates.failure,
           actionMessage: failure.message,
+          regardsLeft: regardsLeft,
         ),
       );
     }, (_) => emit(state.copyWith(actionState: CubitStates.success)));
@@ -448,22 +456,28 @@ class InteractionsCubit extends Cubit<InteractionsState> {
   }
 
   // ✅ بعد الإصلاح
-Future<void> fetchAndSyncNotificationCount() async {
-  final result = await repository.fetchInteractionNotificationCount();
-  result.fold((_) {}, (model) {
-    if (isClosed) return;
-    emit(
-      state.copyWith(
-        likesNotificationCount: model.likes,
-        favoritesNotificationCount: model.favorites,
-        regardsNotificationCount: model.regards,
-        totalNotificationCount: model.total, // ✅ ده اللي كان ناقص
-      ),
-    );
-  });
-}
+  Future<void> fetchAndSyncNotificationCount() async {
+    final result = await repository.fetchInteractionNotificationCount();
+    result.fold((_) {}, (model) {
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          likesNotificationCount: model.likes,
+          favoritesNotificationCount: model.favorites,
+          regardsNotificationCount: model.regards,
+          totalNotificationCount: model.total, // ✅ ده اللي كان ناقص
+        ),
+      );
+    });
+  }
 
   void resetActionState() {
-    emit(state.copyWith(actionState: CubitStates.initial, actionMessage: null,));
+    emit(
+      state.copyWith(
+        actionState: CubitStates.initial,
+        actionMessage: null,
+        regardsLeft: 0,
+      ),
+    );
   }
 }

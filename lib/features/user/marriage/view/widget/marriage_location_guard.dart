@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/features/user/marriage/repositories/marriage_repository.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_location_cubit.dart';
 import 'package:tayseer/features/user/marriage/view/widget/location_lock_widget.dart';
@@ -56,7 +58,22 @@ class _MarriageLocationGuardState extends State<MarriageLocationGuard>
         builder: (context, state) {
           if (state is MarriageLocationLoading ||
               state is MarriageLocationInitial) {
-            return const Scaffold(body: Center(child: CustomloadingApp()));
+            return Scaffold(
+              body: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(AssetsData.userBGImage, fit: BoxFit.cover),
+                  Container(color: Colors.white.withOpacity(0.55)),
+                  Center(
+                    child: Image.asset(
+                      AssetsData.kGifOverlayLoading,
+                      width: 400.w,
+                      height: 400.w,
+                    ),
+                  ),
+                ],
+              ),
+            );
           }
 
           if (state is MarriageLocationSuccess) {

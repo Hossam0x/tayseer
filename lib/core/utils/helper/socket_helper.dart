@@ -9,6 +9,9 @@ class tayseerSocketHelper {
   bool _isConnected = false;
   bool _isConnecting = false;
   Completer<bool>? _connectionCompleter;
+  // ✅ الـ token المعتمد للـ session الحالية — يُعيَّن في resetAndConnect
+  // يمنع أي connect() تاني من استخدام token قديم من الـ cache
+  String? _authorizedToken;
 
   final Map<String, Map<String, Function(dynamic)>> _listeners = {};
 
@@ -20,7 +23,7 @@ class tayseerSocketHelper {
     onError = callback;
   }
 
-  Future<bool> connect() async {
+  Future<bool> connect({String? token}) async {
     if (_socket != null && _socket!.connected) {
       log('🔁 Already connected');
       _isConnected = true;
@@ -37,11 +40,15 @@ class tayseerSocketHelper {
     _connectionCompleter = Completer<bool>();
     log('🔧 Initializing socket connection...');
 
-    final String? token = CachNetwork.getStringData(key: 'token');
-
-    if (token == null || token.isEmpty) {
-      log('❌ No token found in SharedPreferences');
-      onError?.call('لا يوجد توكين محفوظه');
+    // ✅ الأولوية: token ممرر صراحةً > _authorizedToken > NOTHING
+    // لا نقرأ من الـ cache أبداً — التوكن لازم يجي من الـ caller صراحةً
+    final String? tokenToUse = token ?? _authorizedToken;
+    log(
+      '🔵 SOCKET CONNECT — token ${token != null ? "PASSED" : (_authorizedToken != null ? "from _authorizedToken" : "NONE")}: ${tokenToUse == null ? "NULL" : (tokenToUse.length > 30 ? "${tokenToUse.substring(0, 30)}..." : tokenToUse)}',
+    );
+    log('🔵 SOCKET CONNECT — token length: ${tokenToUse?.length ?? 0}');
+    if (tokenToUse == null || tokenToUse.isEmpty) {
+      log('❌ No authorized token — refusing to connect');
       _isConnecting = false;
       if (!(_connectionCompleter?.isCompleted ?? true)) {
         _connectionCompleter?.complete(false);
@@ -49,13 +56,25 @@ class tayseerSocketHelper {
       return false;
     }
 
+    log(
+      '🔑 Socket connecting with token: ${tokenToUse.length > 20 ? "${tokenToUse.substring(0, 20)}..." : tokenToUse}',
+    );
+    // 🔍 SOCKET TOKEN LOG — compare with cache
+    final cachedToken = CachNetwork.getStringData(key: 'token') ?? '';
+    log('═══════════════════════════════════════════');
+    log('🔌 SOCKET CONNECT — TOKEN COMPARISON:');
+    log('   🔑 Token used for socket:    ${tokenToUse.length > 20 ? "${tokenToUse.substring(0, 20)}..." : tokenToUse} (len: ${tokenToUse.length})');
+    log('   💾 Token in cache:           ${cachedToken.isNotEmpty ? "${cachedToken.substring(0, 20)}..." : "EMPTY"} (len: ${cachedToken.length})');
+    log('   ✅ Same token? ${tokenToUse == cachedToken ? "YES ✅" : "NO ❌ — MISMATCH!"}');
+    log('═══════════════════════════════════════════');
+
     _socket = IO.io(
       'https://tayser-app.net',
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
           .disableReconnection()
-          .setExtraHeaders({'Authorization': 'Bearer $token'})
+          .setExtraHeaders({'Authorization': 'Bearer $tokenToUse'})
           .build(),
     );
 
@@ -81,12 +100,20 @@ class tayseerSocketHelper {
     _listeners['fail'] ??= {};
     _listeners['fail']!['_global_fail_handler'] = (data) {
       log('⚠️ fail: $data');
-      onError?.call(data is Map ? (data['message'] ?? 'فشل غير معروف') : 'فشل غير معروف');
+      onError?.call(
+        data is Map ? (data['message'] ?? 'فشل غير معروف') : 'فشل غير معروف',
+      );
     };
     _socket!.on('fail', (data) {
-      final listeners = Map<String, Function(dynamic)>.from(_listeners['fail'] ?? {});
+      final listeners = Map<String, Function(dynamic)>.from(
+        _listeners['fail'] ?? {},
+      );
       listeners.forEach((id, cb) {
-        try { cb(data); } catch (e) { log('❌ Error in fail listener "$id": $e'); }
+        try {
+          cb(data);
+        } catch (e) {
+          log('❌ Error in fail listener "$id": $e');
+        }
       });
     });
 
@@ -326,15 +353,23 @@ class tayseerSocketHelper {
     _listeners.clear(); // clear our map only (don't touch socket listeners yet)
     _isConnecting = false;
     _connectionCompleter = null;
+    _authorizedToken = null; // ✅ امسح الـ authorized token عند الـ logout
     if (_socket != null) {
       _socket!.disconnect(); // sends disconnect packet → triggers onDisconnect
-      _socket!.destroy();    // stops any reconnection attempts
+      _socket!.destroy(); // stops any reconnection attempts
       _socket!.clearListeners(); // now safe to clear socket-level handlers
       _socket!.dispose();
       _socket = null;
     }
     _isConnected = false;
     log('🔄 Socket helper reset');
+  }
+
+  /// ✅ امسح الـ authorized token فقط (بدون reset كامل)
+  /// يُستدعى قبل الـ logout عشان أي connect() تاني مش يستخدم token قديم
+  void clearAuthorizedToken() {
+    _authorizedToken = null;
+    log('🔑 Authorized token cleared');
   }
 
   /// ✅ تنظيف كل الـ listeners
@@ -345,26 +380,42 @@ class tayseerSocketHelper {
     _listeners.clear();
     log('🧹 Cleared all listeners');
   }
-/// Full reset ثم connect للـ user الجديد
-Future<bool> resetAndConnect() async {
-  // 1. نظف الـ listeners الأقدم أولاً
-  _listeners.clear();
-  _isConnecting = false;
-  _connectionCompleter = null;
 
-  if (_socket != null) {
-    _socket!.clearListeners();
-    _socket!.disconnect();
-    _socket!.destroy();
-    _socket!.dispose();
-    _socket = null;
+  /// Full reset then connect for the new user — token must be passed explicitly
+  Future<bool> resetAndConnect({String? token}) async {
+    // ✅ لو مفيش token صريح → فشل آمن، مش نقرأ من الـ cache
+    if (token == null || token.isEmpty) {
+      log('❌ resetAndConnect called without explicit token — aborting');
+      _authorizedToken = null;
+      return false;
+    }
+
+    _listeners.clear();
+    _isConnecting = false;
+    _connectionCompleter = null;
+    // ✅ احفظ الـ token المعتمد للـ session الجديدة
+    _authorizedToken = token;
+
+    if (_socket != null) {
+      _socket!.clearListeners();
+      _socket!.disconnect();
+      _socket!.destroy();
+      _socket!.dispose();
+      _socket = null;
+    }
+    _isConnected = false;
+    log('🔄 Socket fully reset — connecting for new user...');
+
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    log(
+      '🔵 resetAndConnect — authorized token: ${token.length > 30 ? "${token.substring(0, 30)}..." : token}',
+    );
+    log('🔵 resetAndConnect — token length: ${token.length}');
+
+    return await connect(token: _authorizedToken);
   }
-  _isConnected = false;
-  log('🔄 Socket fully reset — connecting for new user...');
 
-  // 2. connect مباشرة بعد الـ reset
-  return await connect();
-}
   /// ✅ Dispose كامل
   void dispose() {
     clearAllListeners();

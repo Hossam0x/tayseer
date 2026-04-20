@@ -67,6 +67,7 @@ class MarriageBodyState extends State<MarriageBody>
   static const double _scrollThreshold = 20.0;
   Timer? _scrollIdleTimer;
   static const Duration _scrollIdleDelay = Duration(milliseconds: 800);
+  bool _isActionInProgress = false;
 
   bool get _isConsultantViewingProfile =>
       widget.personId != null && selectedUserType == UserTypeEnum.asConsultant;
@@ -157,18 +158,24 @@ class MarriageBodyState extends State<MarriageBody>
 
   String _translateCompatibilityValue(String value, String? category) {
     final v = value.trim().toLowerCase();
+    final cat = category?.toLowerCase(); // ← lowercase مرة واحدة هنا
 
-    // تحويل yes/no/true/false/1/0
     if (v == 'yes' || v == 'true' || v == '1') {
-      return switch (category?.toLowerCase()) {
+      return switch (cat) {
         'smoker' => context.tr('smoking_yes'),
+        'alcohol' ||
+        'drinkalcohol' ||
+        'drinks_alcohol' => context.tr('drinks_alcohol_yes'),
         'children' || 'has_children' => context.tr('has_childrens'),
         _ => context.tr('yes'),
       };
     }
     if (v == 'no' || v == 'false' || v == '0') {
-      return switch (category?.toLowerCase()) {
+      return switch (cat) {
         'smoker' => context.tr('smoking_no'),
+        'alcohol' ||
+        'drinkalcohol' ||
+        'drinks_alcohol' => context.tr('drinks_alcohol_no'),
         'children' || 'has_children' => context.tr('has_no_children'),
         _ => context.tr('no'),
       };
@@ -287,6 +294,7 @@ class MarriageBodyState extends State<MarriageBody>
       SwipeActionType.dislike => context.tr('dislike_action'),
       SwipeActionType.favorite => context.tr('favorite_action'),
       SwipeActionType.regard => context.tr('regard_action'),
+      SwipeActionType.back => 'رجوع',
     };
 
     late OverlayEntry entry;
@@ -302,6 +310,17 @@ class MarriageBodyState extends State<MarriageBody>
     overlay.insert(entry);
     await Future.delayed(const Duration(milliseconds: 1100));
     entry.remove();
+  }
+
+  /// Guard: runs [action] only if no other action is in progress
+  Future<void> _runAction(Future<void> Function() action) async {
+    if (_isActionInProgress) return;
+    _isActionInProgress = true;
+    try {
+      await action();
+    } finally {
+      if (mounted) _isActionInProgress = false;
+    }
   }
 
   void _showRegardInputSheet(
@@ -647,20 +666,8 @@ class MarriageBodyState extends State<MarriageBody>
         // ✅ likes خلصت
         if (state.likesLeft == 0 &&
             state.userInteractionState == CubitStates.failure) {
-          showLimitReachedDialog(
-            context,
-            title: context.tr('reached_free_likes_limit'),
-            subtitle: context.tr('subscribe_to_like_more'),
-            subscribeText: context.tr('subscribe'),
-            laterText: context.tr('later'),
-            onSubscribe: () {
-              context.read<MarriageCubit>().resetState();
-              context.pushNamed(AppRouter.kUserPackagesView);
-            },
-            onLater: () {
-              context.read<MarriageCubit>().resetState();
-            },
-          );
+          showGoldPurchaseSheet(context);
+          context.read<MarriageCubit>().resetState();
           return;
         }
 
@@ -1072,6 +1079,10 @@ class MarriageBodyState extends State<MarriageBody>
       case 'goals':
       case 'marriage_intentions':
         return '💫';
+      case 'alcohol':
+      case 'drinks_alcohol':
+      case 'drinkAlcohol':
+        return '🍷';
       default:
         return '✨';
     }
@@ -1282,7 +1293,7 @@ class MarriageBodyState extends State<MarriageBody>
                         ? nextUser?.subscriptionType
                         : null,
                     onFavoriteTap: canInteract
-                        ? () async {
+                        ? () => _runAction(() async {
                             await _showSwipePopup(
                               context,
                               SwipeActionType.favorite,
@@ -1300,7 +1311,7 @@ class MarriageBodyState extends State<MarriageBody>
                             if (widget.fromInteractions && mounted) {
                               context.pop();
                             }
-                          }
+                          })
                         : null,
                   ),
 
@@ -1663,23 +1674,10 @@ class MarriageBodyState extends State<MarriageBody>
                             const SizedBox.shrink(),
 
                             buildCircleButton(
-                              onTap: () async {
-                                // ✅ لو likesLeft = 0 اعرض dialog مباشرة
+                              onTap: () => _runAction(() async {
+                                // ✅ لو likesLeft = 0 اعرض sheet مباشرة
                                 if (state.likesLeft == 0) {
-                                  showLimitReachedDialog(
-                                    context,
-                                    title: context.tr(
-                                      'reached_free_likes_limit',
-                                    ),
-                                    subtitle: context.tr(
-                                      'subscribe_to_like_more',
-                                    ),
-                                    subscribeText: context.tr('subscribe'),
-                                    laterText: context.tr('later'),
-                                    onSubscribe: () => context.pushNamed(
-                                      AppRouter.kUserPackagesView,
-                                    ),
-                                  );
+                                  showGoldPurchaseSheet(context);
                                   return;
                                 }
                                 await _showSwipePopup(
@@ -1705,14 +1703,14 @@ class MarriageBodyState extends State<MarriageBody>
                                   }
                                   await _syncNotificationAfterInteraction();
                                 }
-                              },
+                              }),
                               Icons.check,
                               AppColors.kprimaryTextColor,
                               HexColor('f8d3da'),
                             ),
 
                             buildCircleButton(
-                              onTap: () async {
+                              onTap: () => _runAction(() async {
                                 // ✅ لو regardsLeft = 0 اعرض purchase sheet مباشرة
                                 if (state.regardsLeft == 0) {
                                   showRegardsPurchaseSheet(context);
@@ -1728,14 +1726,14 @@ class MarriageBodyState extends State<MarriageBody>
                                       !widget.fromInteractions,
                                 );
                                 await _syncNotificationAfterInteraction();
-                              },
+                              }),
                               Icons.star,
                               Colors.white,
                               HexColor('cccab3'),
                             ),
 
                             buildCircleButton(
-                              onTap: () async {
+                              onTap: () => _runAction(() async {
                                 await _showSwipePopup(
                                   context,
                                   SwipeActionType.dislike,
@@ -1758,7 +1756,7 @@ class MarriageBodyState extends State<MarriageBody>
                                     scrollToTop();
                                   }
                                 }
-                              },
+                              }),
                               Icons.close,
                               Colors.white,
                               HexColor('e44e6c'),
@@ -1766,18 +1764,15 @@ class MarriageBodyState extends State<MarriageBody>
 
                             if (state.userHistory.isNotEmpty)
                               buildCircleButton(
-                                onTap: () async {
-                                  final cubit = context.read<MarriageCubit>();
-                                  cubit.emitSwipeLikeDislikeAnimation(
-                                    direction: -1,
-                                  );
-                                  await Future.delayed(
-                                    const Duration(milliseconds: 250),
+                                onTap: () => _runAction(() async {
+                                  await _showSwipePopup(
+                                    context,
+                                    SwipeActionType.back,
                                   );
                                   cubit.goBackToPreviousUser();
                                   _resetScrollTracking();
                                   scrollToTop();
-                                },
+                                }),
                                 isArabic
                                     ? Icons.subdirectory_arrow_left_outlined
                                     : Icons.subdirectory_arrow_right_outlined,

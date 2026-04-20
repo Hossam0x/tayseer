@@ -1984,5 +1984,8 @@
   "enable_sound_effects": "Enable Sound Effects",
   "disable_sound_effects": "Disable Sound Effects",
   "volume": "Volume",
-  "test_sound": "Test Sound"
+  "test_sound": "Test Sound",
+  "drinks_alcohol_yes": "Drinks alcohol",
+"drinks_alcohol_no": "Does not drink alcohol"
+  
 }

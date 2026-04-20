@@ -124,8 +124,7 @@ class SliverProfileHeader extends StatelessWidget {
                 padding: EdgeInsets.only(
                   left: 16.w,
                   right: 16.w,
-                  // ✅ padding من فوق بحجم الـ status bar عشان الأزرار تنزل تحته
-                  // top: statusBarHeight,
+                  top: statusBarHeight,
                 ),
                 child: Stack(
                   alignment: Alignment.center,
@@ -634,7 +633,7 @@ class _InfoCard extends StatelessWidget {
                     city != null && city!.isNotEmpty
                         ? '$location، ( $city )'
                         : location,
-                    style: Styles.textStyle14.copyWith(color: Colors.white70),
+                    style: Styles.textStyle16.copyWith(color: Colors.white70),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -695,12 +694,12 @@ class _InfoCard extends StatelessWidget {
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        color: Colors.white.withOpacity(opacity),
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.2),
+        color: Colors.black.withOpacity(opacity),
+        border: Border.all(color: Colors.black.withOpacity(0.2), width: 1.2),
       ),
       child: Text(
         text,
-        style: Styles.textStyle10.copyWith(color: Colors.white),
+        style: Styles.textStyle12.copyWith(color: Colors.white),
       ),
     );
   }

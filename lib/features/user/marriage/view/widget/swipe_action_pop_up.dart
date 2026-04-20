@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'package:tayseer/my_import.dart';
 
-enum SwipeActionType { like, dislike, favorite, regard }
+enum SwipeActionType { like, dislike, favorite, regard, back }
 
 class SwipeActionPopup extends StatefulWidget {
   final SwipeActionType type;
@@ -140,7 +140,12 @@ class _SwipeActionPopupState extends State<SwipeActionPopup>
           icon: Icons.star,
           color: HexColor('cccab3'),
           iconColor: Colors.white,
-          // label: 'regard_action',
+        );
+      case SwipeActionType.back:
+        return _ActionConfig(
+          icon: Icons.undo_rounded,
+          color: AppColors.primary200,
+          iconColor: Colors.white,
         );
     }
   }

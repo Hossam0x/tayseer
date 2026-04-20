@@ -150,9 +150,16 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   void leaveCurrentChatRoom() {
     if (_currentChatRoomId == null) return;
 
-    _socketHelper.send('leaveChatRoom', {
-      'chatRoomId': _currentChatRoomId,
-    }, null);
+    // ✅ Only send leaveChatRoom if socket is actually connected
+    // (prevents sending stale leave events after logout/socket reset)
+    if (_socketHelper.isConnected) {
+      _socketHelper.send('leaveChatRoom', {
+        'chatRoomId': _currentChatRoomId,
+      }, null);
+      log('👋 Sent leaveChatRoom for $_currentChatRoomId');
+    } else {
+      log('⚠️ Skipped leaveChatRoom — socket not connected (post-logout cleanup)');
+    }
 
     final listenerId = 'ChatMessagesCubit_$_currentChatRoomId';
     _socketHelper.offAllForListener(listenerId);
@@ -465,14 +472,12 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       }
 
       // ✅ FIX: السيرفر بيستخدم targetId لإيجاد room قديم بين نفس الـ users
-      // لو رجع room مختلف، نطلع من الـ room الغلط ونقبل الـ room الصح من السيرفر
+      // لو رجع room مختلف، نقبل الـ room الصح من السيرفر بدون ما نبعت leaveChatRoom
+      // (الـ user مش في الـ room القديم أصلاً، فـ leaveChatRoom هيخلي السيرفر يطلعه من الجديد)
       if (receivedRoomId != null && receivedRoomId != _currentChatRoomId) {
         log('⚠️ chatRoomJoined: server returned different roomId!'
             ' expected: $_currentChatRoomId, got: $receivedRoomId'
-            ' — accepting server room and leaving wrong one');
-
-        // اطلع من الـ room الغلط (اللي طلبناه)
-        _socketHelper.send('leaveChatRoom', {'chatRoomId': _currentChatRoomId}, null);
+            ' — accepting server room WITHOUT sending leaveChatRoom for old room');
 
         // انقل الـ listeners للـ room ID الجديد
         final oldListenerId = 'ChatMessagesCubit_$_currentChatRoomId';
@@ -482,6 +487,9 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         // قبل الـ room اللي السيرفر رجعه
         _currentChatRoomId = receivedRoomId;
         _joinAttempts = 0;
+        // ملاحظة: لا نعمل loadMessages هنا لأن الـ messages المحملة صح
+        // (هي messages الـ room اللي فتحناه من الـ navigation)
+        // الـ room ID الجديد بيُستخدم فقط للـ socket events (newMessage, etc.)
       }
 
       log('✅ chatRoomJoined: blockExists=$blockExists, isMe=$isMe, '
@@ -979,12 +987,9 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
 
   @override
   Future<void> close() {
-    if (_currentChatRoomId != null) {
-      final listenerId = 'ChatMessagesCubit_$_currentChatRoomId';
-      _socketHelper.offAllForListener(listenerId);
-    }
+    // leaveCurrentChatRoom handles both offAllForListener + leaveChatRoom (if connected)
     leaveCurrentChatRoom();
-    _listenersSetup = false; // ✅ FIX 4: Reset on close
+    _listenersSetup = false;
     return super.close();
   }
 

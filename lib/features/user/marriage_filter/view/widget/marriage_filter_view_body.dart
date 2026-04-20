@@ -65,96 +65,117 @@ class MarriageFilterBody extends StatelessWidget {
               ? context.tr(nationalityRaw)
               : null;
 
+          final hasFilters =
+              state.selectedFilters.isNotEmpty ||
+              state.ageRange != const RangeValues(22, 35);
+
           return Directionality(
             textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
-            child: CustomScrollView(
-              slivers: [
-                _buildSliverAppBar(context),
+            child: Stack(
+              children: [
+                CustomScrollView(
+                  slivers: [
+                    _buildSliverAppBar(context),
 
-                SliverToBoxAdapter(
-                  child: CustomAgeAndCountrySection(
-                    ageRange: state.ageRange,
-                    onAgeRangeChanged: (values) {
-                      context.read<MarriageFilterCubit>().updateAgeRange(
-                        values,
-                      );
-                    },
-                    countryValue: countryDisplay,
-                    nationalityValue: nationalityDisplay,
-                    onCountryTap: () => _navigateToSelection(
-                      context,
-                      fieldKey: 'country',
-                      currentValue: countryRaw,
-                    ),
-                    onNationalityTap: () => _navigateToSelection(
-                      context,
-                      fieldKey: 'nationality',
-                      currentValue: nationalityRaw,
-                    ),
-                  ),
-                ),
-
-                SliverToBoxAdapter(
-                  child: CustomDataCard(
-                    sectionTitle: context.tr('data_and_activities'),
-                    items: [
-                      _buildRow(context, state, 'verified_id', 'isVerified'),
-                      _buildRow(context, state, 'new_member', 'isNew'),
-                      _buildRow(context, state, 'photo_status', 'imageBlur'),
-                      _buildRow(context, state, 'gold_account', 'goldAccount'),
-                    ],
-                  ),
-                ),
-
-                SliverToBoxAdapter(
-                  child: CustomDataCard(
-                    sectionTitle: context.tr('personal_data'),
-                    items: [
-                      _buildRow(context, state, 'height', 'height'),
-                      _buildRow(
-                        context,
-                        state,
-                        'marital_status',
-                        'maritalStatus',
+                    SliverToBoxAdapter(
+                      child: CustomAgeAndCountrySection(
+                        ageRange: state.ageRange,
+                        onAgeRangeChanged: (values) {
+                          context.read<MarriageFilterCubit>().updateAgeRange(
+                            values,
+                          );
+                        },
+                        countryValue: countryDisplay,
+                        nationalityValue: nationalityDisplay,
+                        onCountryTap: () => _navigateToSelection(
+                          context,
+                          fieldKey: 'country',
+                          currentValue: countryRaw,
+                        ),
+                        onNationalityTap: () => _navigateToSelection(
+                          context,
+                          fieldKey: 'nationality',
+                          currentValue: nationalityRaw,
+                        ),
                       ),
-                      _buildRow(context, state, 'job', 'job'),
-                      _buildRow(context, state, 'education', 'educationLevel'),
-                      _buildRow(context, state, 'hobbies', 'hobbies'),
-                    ],
-                  ),
-                ),
+                    ),
 
-                SliverToBoxAdapter(
-                  child: CustomDataCard(
-                    sectionTitle: context.tr('goals'),
-                    items: [
-                      _buildRow(context, state, 'marriage', 'goalMarry'),
-                      _buildRow(context, state, 'engagement', 'goalEngagment'),
-                      _buildRow(context, state, 'travel', 'goalTravel'),
-                      _buildRow(context, state, 'family', 'goalChildren'),
-                    ],
-                  ),
-                ),
-
-                SliverToBoxAdapter(
-                  child: CustomDataCard(
-                    sectionTitle: context.tr('religion_and_habits'),
-                    items: [
-                      _buildRow(
-                        context,
-                        state,
-                        'religious_commitment',
-                        'religiousCommitment',
+                    SliverToBoxAdapter(
+                      child: CustomDataCard(
+                        sectionTitle: context.tr('data_and_activities'),
+                        items: [
+                          _buildRow(context, state, 'verified_id', 'isVerified'),
+                          _buildRow(context, state, 'new_member', 'isNew'),
+                          _buildRow(context, state, 'photo_status', 'imageBlur'),
+                        ],
                       ),
-                      _buildRow(context, state, 'smoking', 'smoker'),
-                      _buildRow(context, state, 'hijab', 'wearHijab'),
-                    ],
-                  ),
+                    ),
+
+                    SliverToBoxAdapter(
+                      child: CustomDataCard(
+                        sectionTitle: context.tr('personal_data'),
+                        items: [
+                          _buildRow(context, state, 'height', 'height'),
+                          _buildRow(
+                            context,
+                            state,
+                            'marital_status',
+                            'maritalStatus',
+                          ),
+                          _buildRow(context, state, 'job', 'job'),
+                          _buildRow(context, state, 'education', 'educationLevel'),
+                          _buildRow(context, state, 'hobbies', 'hobbies'),
+                        ],
+                      ),
+                    ),
+
+                    SliverToBoxAdapter(
+                      child: CustomDataCard(
+                        sectionTitle: context.tr('goals'),
+                        items: [
+                          _buildRow(context, state, 'marriage', 'goalMarry'),
+                          _buildRow(context, state, 'engagement', 'goalEngagment'),
+                          _buildRow(context, state, 'travel', 'goalTravel'),
+                          _buildRow(context, state, 'family', 'goalChildren'),
+                        ],
+                      ),
+                    ),
+
+                    SliverToBoxAdapter(
+                      child: CustomDataCard(
+                        sectionTitle: context.tr('religion_and_habits'),
+                        items: [
+                          _buildRow(
+                            context,
+                            state,
+                            'religious_commitment',
+                            'religiousCommitment',
+                          ),
+                          _buildRow(context, state, 'smoking', 'smoker'),
+                          _buildRow(context, state, 'hijab', 'wearHijab'),
+                        ],
+                      ),
+                    ),
+
+                    // ✅ لو مفيش فلاتر: الزر في آخر الـ scroll
+                    // ✅ لو في فلاتر: padding عشان الزر الـ floating ميغطيش المحتوى
+                    if (!hasFilters)
+                      SliverToBoxAdapter(
+                        child: _buildApplyButtonWidget(context, state),
+                      )
+                    else
+                      const SliverPadding(padding: EdgeInsets.only(bottom: 90)),
+                  ],
                 ),
 
-                const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
-
-                _buildApplyButton(context, state),
+                // ✅ الزر الـ floating يظهر بس لما في فلاتر مطبقة
+                if (hasFilters)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: _buildApplyButtonWidget(context, state),
+                  ),
               ],
             ),
           );
@@ -240,37 +261,44 @@ class MarriageFilterBody extends StatelessWidget {
     );
   }
 
-  Widget _buildApplyButton(BuildContext context, MarriageFilterState state) {
+  Widget _buildApplyButtonWidget(BuildContext context, MarriageFilterState state) {
     final hasFilters =
         state.selectedFilters.isNotEmpty ||
         state.ageRange != const RangeValues(22, 35);
 
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: Center(
-          child: CustomBotton(
-            backGroundcolor: AppColors.kgreyColor,
-            useGradient: hasFilters,
-            width: context.width * 0.9,
-            title: context.tr('apply_filters'),
-            onPressed: () async {
-              if (!hasFilters) return;
-              final cachedSub = await UserPackagesCubit.getCachedSubType();
-              final isFree = cachedSub == null;
-              if (!context.mounted) return;
-              if (isFree) {
-                showFiltterLimitDialogs(
-                  context,
-                  onSubscribe: () =>
-                      context.pushNamed(AppRouter.kUserPackagesView),
-                );
-              } else {
-                context.read<MarriageFilterCubit>().sendMarriageFilter();
-              }
-            },
-          ),
-        ),
+    const freeKeys = {'country', 'nationality'};
+    final hasPaidFilters = state.selectedFilters.keys
+        .any((key) => !freeKeys.contains(key));
+
+    return Container(
+      // color: Colors.white.withOpacity(0.95),
+      padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 24.h),
+      child: CustomBotton(
+        backGroundcolor: AppColors.kgreyColor,
+        useGradient: hasFilters,
+        width: double.infinity,
+        title: context.tr('apply_filters'),
+        onPressed: () async {
+          if (!hasFilters) return;
+
+          if (hasPaidFilters) {
+            final cachedSub = await UserPackagesCubit.getCachedSubType();
+            final isFree = cachedSub == null;
+            if (!context.mounted) return;
+            if (isFree) {
+              showFiltterLimitDialogs(
+                context,
+                onSubscribe: () =>
+                    context.pushNamed(AppRouter.kUserPackagesView),
+              );
+              return;
+            }
+          }
+
+          if (context.mounted) {
+            context.read<MarriageFilterCubit>().sendMarriageFilter();
+          }
+        },
       ),
     );
   }

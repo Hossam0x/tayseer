@@ -1,3 +1,4 @@
+import 'package:tayseer/features/shared/view_model/layout_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_state.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/subscription_prompt_overlay.dart';
@@ -26,6 +27,15 @@ class InteractionBodyState extends State<InteractionBody> {
   @override
   void initState() {
     super.initState();
+    _mainScrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    // ✅ لو الـ nav مختفي وعمل scroll → ظهّره
+    final layoutCubit = context.read<LayoutCubit>();
+    if (!layoutCubit.state.isNavVisible) {
+      layoutCubit.setNavVisibility(true);
+    }
   }
 
   @override

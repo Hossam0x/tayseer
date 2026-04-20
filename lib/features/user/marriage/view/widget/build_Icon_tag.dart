@@ -8,6 +8,6 @@ Widget buildIconTag(String text) {
       borderRadius: BorderRadius.circular(20.r),
       border: Border.all(color: Colors.grey.shade200),
     ),
-    child: Text(text, style: Styles.textStyle12),
+    child: Text(text, style: Styles.textStyle14),
   );
 }
