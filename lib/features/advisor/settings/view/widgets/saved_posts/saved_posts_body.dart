@@ -90,7 +90,7 @@ class _SavedPostsShimmer extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 16.h),
       itemCount: 3,
       itemBuilder: (_, i) => Padding(
-        padding: EdgeInsets.only(bottom: 16.h),
+        padding: EdgeInsets.only(bottom: 1.h),
         child: const PostCardShimmer(),
       ),
     );

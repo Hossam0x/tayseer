@@ -182,7 +182,7 @@ class _ArchivedPostsShimmer extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 10.h, horizontal: 16.w),
       itemCount: 3,
       itemBuilder: (_, i) => Padding(
-        padding: EdgeInsets.only(bottom: 16.h),
+        padding: EdgeInsets.only(bottom: 1.h),
         child: const PostCardShimmer(),
       ),
     );

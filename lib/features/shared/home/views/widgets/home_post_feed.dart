@@ -614,7 +614,7 @@ class _PostItemState extends State<_PostItem> {
             );
           },
         ),
-        if (widget.showGap) Gap(12.h),
+        if (widget.showGap) Gap(1.h),
       ],
     );
   }

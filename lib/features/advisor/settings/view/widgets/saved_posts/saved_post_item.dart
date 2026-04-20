@@ -59,7 +59,7 @@ class SavedPostItem extends StatelessWidget {
       builder: (context, post) {
         if (post == null) return const SizedBox.shrink();
         return Padding(
-          padding: EdgeInsets.only(bottom: 16.h),
+          padding: EdgeInsets.only(bottom: 1.h),
           child: PostCard(
             isFromProfile: false,
             heroPrefix: 'saved_posts',
