@@ -629,7 +629,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
           child: DecoratedBox(
             decoration: const BoxDecoration(color: Colors.black),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(0.r),
               child: GestureDetector(
                 onTap: _handleTap,
                 child: Stack(

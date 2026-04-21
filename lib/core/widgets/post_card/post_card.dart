@@ -304,13 +304,15 @@ class _PostCardState extends State<PostCard> {
                           isArchived: widget.isArchived,
                         ),
                 ),
-                Gap(context.responsiveHeight(15)),
-                _PostContent(
-                  content: widget.post.content,
-                  onTap: _navigateToDetails,
-                  onHashtagTap: _handleHashtag,
-                ),
                 Gap(context.responsiveHeight(12)),
+                if (widget.post.content.trim().isNotEmpty) ...[
+                  _PostContent(
+                    content: widget.post.content,
+                    onTap: _navigateToDetails,
+                    onHashtagTap: _handleHashtag,
+                  ),
+                  Gap(context.responsiveHeight(12)),
+                ],
               ],
             ),
           ),
