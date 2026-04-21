@@ -137,6 +137,25 @@ class ConsultantUploadCertificateBody extends StatelessWidget {
                               },
                       ),
 
+                      Gap(context.responsiveHeight(16)),
+
+                      /// Next
+                      CustomBotton(
+                        useGradient: authCubit.certificates.isEmpty
+                            ? false
+                            : true,
+                        backGroundcolor: AppColors.kgreyColor,
+                        width: context.width,
+                        title: context.tr('next'),
+                        onPressed: authCubit.certificates.isEmpty
+                            ? null
+                            : () {
+                                context.pushNamed(
+                                  AppRouter.kUploadNationalidView,
+                                );
+                              },
+                      ),
+
                       /// Certificates List
                       if (authCubit.certificates.isNotEmpty)
                         Padding(
@@ -175,25 +194,6 @@ class ConsultantUploadCertificateBody extends StatelessWidget {
                                 .toList(),
                           ),
                         ),
-
-                      Gap(context.responsiveHeight(32)),
-
-                      /// Next
-                      CustomBotton(
-                        useGradient: authCubit.certificates.isEmpty
-                            ? false
-                            : true,
-                        backGroundcolor: AppColors.kgreyColor,
-                        width: context.width,
-                        title: context.tr('next'),
-                        onPressed: authCubit.certificates.isEmpty
-                            ? null
-                            : () {
-                                context.pushNamed(
-                                  AppRouter.kUploadNationalidView,
-                                );
-                              },
-                      ),
 
                       Gap(context.responsiveHeight(20)),
                     ],
