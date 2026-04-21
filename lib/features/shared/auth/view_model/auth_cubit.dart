@@ -55,6 +55,8 @@ class AuthCubit extends Cubit<AuthState> {
   String? specialization;
   String? jobLevel;
   String? experienceYears;
+  String? selectedNationality;
+  String? selectedCountry;
 
   bool _isVideoLoading = false;
 
