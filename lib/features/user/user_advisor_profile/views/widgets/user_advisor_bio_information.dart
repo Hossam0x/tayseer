@@ -224,9 +224,10 @@ class UserAdvisorBioInformation extends StatelessWidget {
         final room = state.profile?.room;
         final bool isSomeActionLoading =
             isLoadingFollow || isChatLoading || isLoadingBlock;
-        final bool isFollowSmall = isFollowing && !isBlocked;
         final bool showBookSession = !isBlocked && isFollowing && isUser;
-        final bool showChat = !isBlocked && isFollowing;
+        final bool showChat = !isBlocked && isFollowing && isUser;
+        final bool isFollowSmall =
+            isFollowing && !isBlocked && (showBookSession || showChat);
 
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: 10.w),
@@ -366,11 +367,25 @@ class UserAdvisorBioInformation extends StatelessWidget {
                           ),
                         )
                       : isFollowing
-                      ? Icon(
-                          Icons.how_to_reg,
+                      ? Row(
                           key: const ValueKey('followed'),
-                          color: AppColors.primary500,
-                          size: 24.w,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.how_to_reg,
+                              color: AppColors.primary500,
+                              size: 20.w,
+                            ),
+                            if (!isSmall) ...[
+                              Gap(6.w),
+                              Text(
+                                context.tr('following'),
+                                style: Styles.textStyle14SemiBold.copyWith(
+                                  color: AppColors.primary500,
+                                ),
+                              ),
+                            ],
+                          ],
                         ).animate().scale(
                           duration: 400.ms,
                           curve: Curves.easeOutBack,
