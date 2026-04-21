@@ -395,14 +395,14 @@ class _FrontProfileCard extends StatelessWidget {
                 if (activeToday) _buildBadge(
                   icon: Icons.circle,
                   iconColor: const Color(0xFF4CAF50),
-                  label: 'نشط اليوم',
+                  label: context.tr('active_today'),
                   bgColor: Colors.black.withOpacity(0.55),
                 ),
                 if (activeToday && recentlyJoined) SizedBox(height: 8.h),
                 if (recentlyJoined) _buildBadge(
                   icon: Icons.person_add_rounded,
                   iconColor: const Color(0xFFE91E8C),
-                  label: 'انضم مؤخراً',
+                  label: context.tr('recently_joined'),
                   bgColor: Colors.black.withOpacity(0.55),
                 ),
               ],
