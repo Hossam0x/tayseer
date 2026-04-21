@@ -4,6 +4,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
+import android.view.WindowManager
 import com.paymob.paymob_sdk.PaymobSdk
 import com.paymob.paymob_sdk.ui.PaymobSdkListener
 import io.flutter.embedding.android.FlutterActivity
@@ -18,6 +19,10 @@ class MainActivity : FlutterActivity(), MethodCallHandler, PaymobSdkListener {
     private val CHANNEL = "paymob_sdk_flutter"
     private var SDKResult: MethodChannel.Result? = null
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
@@ -25,11 +30,24 @@ class MainActivity : FlutterActivity(), MethodCallHandler, PaymobSdkListener {
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {
-        if (call.method == "payWithPaymob") {
-            SDKResult = result
-            callNativeSDK(call)
-        } else {
-            result.notImplemented()
+        when (call.method) {
+            "payWithPaymob" -> {
+                SDKResult = result
+                callNativeSDK(call)
+            }
+            "setSecure" -> {
+                val enable = call.argument<Boolean>("enable") ?: false
+                if (enable) {
+                    window.setFlags(
+                        WindowManager.LayoutParams.FLAG_SECURE,
+                        WindowManager.LayoutParams.FLAG_SECURE
+                    )
+                } else {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                }
+                result.success(null)
+            }
+            else -> result.notImplemented()
         }
     }
 

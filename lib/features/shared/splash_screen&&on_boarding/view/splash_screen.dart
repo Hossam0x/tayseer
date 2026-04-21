@@ -50,23 +50,31 @@ class _SplashScreenState extends State<SplashScreen>
       final socketHelper = getIt<tayseerSocketHelper>();
       final chatSocketService = getIt<ChatSocketService>();
 
-      // ✅ لو السوكت connected بالفعل (من _connectSocketForNewUser بعد login)، متعملش connect تاني
+      // ✅ FIX 1: لو الـ socket already connected (من _connectSocketForNewUser بعد login)
+      // تأكد بس إن الـ ChatSocketService initialized وارجع
       if (socketHelper.isConnected) {
-        log('✅ Socket already connected, skipping splash init');
+        log(
+          '✅ Splash: Socket already connected, ensuring ChatSocketService is init',
+        );
+        // لو مش initialized، initialize
+        chatSocketService.init();
         return;
       }
 
-      // ✅ لو في authorized token محفوظ (من resetAndConnect)، استخدمه
-      // لو مفيش (بعد logout)، استخدم الـ token من الـ cache
-      final connected = await socketHelper.connect(token: token);
+      // ✅ FIX 2: استخدم resetAndConnect بدل connect مباشرة
+      // عشان يضمن إن _authorizedToken بيتعيَّن صح
+      // وأي reconnect مستقبلي هيستخدم نفس الـ token
+      log('🔄 Splash: Connecting socket via resetAndConnect...');
+      final connected = await socketHelper.resetAndConnect(token: token);
+
       if (connected) {
         chatSocketService.init();
-        log('✅ Socket connected and initialized successfully');
+        log('✅ Splash: Socket connected and ChatSocketService initialized');
       } else {
-        log('⚠️ Socket connection failed, but continuing...');
+        log('⚠️ Splash: Socket connection failed, but continuing app flow...');
       }
     } catch (e) {
-      log('❌ Socket initialization error: $e');
+      log('❌ Splash: Socket initialization error: $e');
     }
   }
 
@@ -82,7 +90,6 @@ class _SplashScreenState extends State<SplashScreen>
       'UserType: $userType, selectedUserType: $selectedUserType',
     );
 
-    // ✅ سحب الـ cold start URI وحفظ الـ IDs قبل أي حاجة
     final coldUri = pendingDeepLinkUri;
     pendingDeepLinkUri = null;
 
@@ -99,7 +106,6 @@ class _SplashScreenState extends State<SplashScreen>
         ? DeepLinkService.extractPostId(coldUri)
         : null;
 
-    // ✅ لو فيه ID من cold start، احفظه
     if (coldPersonId != null) {
       pendingDeepLinkPersonId = coldPersonId;
       log('🔗 Cold start marriage deep link: $coldPersonId');
@@ -117,10 +123,8 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     if (token.isNotEmpty) {
-      // ─── مسجل دخول ───
       _navigateLoggedInUser();
 
-      // ✅ handle pending notification
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.delayed(const Duration(milliseconds: 300), () {
           if (pendingNotificationMessage != null) {
@@ -132,10 +136,7 @@ class _SplashScreenState extends State<SplashScreen>
           }
         });
       });
-      // ✅ الـ deep link هيتفتح تلقائياً من _consumePendingDeepLink في الـ layout body
     } else {
-      // ─── مش مسجل ───
-      // الـ pendingDeepLinkPersonId اتحفظ فوق، هيتستخدم بعد Login
       log('⚠️ No token found, navigating to registration');
       if (!mounted) return;
       context.pushReplacementNamed(AppRouter.kRegisrationView);
