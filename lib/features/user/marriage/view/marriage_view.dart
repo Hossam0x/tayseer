@@ -32,13 +32,29 @@ class _MarriageViewState extends State<MarriageView> {
   @override
   void initState() {
     super.initState();
-    FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+    _setSecureFlag();
   }
 
   @override
   void dispose() {
-    FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
+    _clearSecureFlag();
     super.dispose();
+  }
+
+  Future<void> _setSecureFlag() async {
+    try {
+      await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+    } catch (e) {
+      debugPrint('Could not set secure flag: $e');
+    }
+  }
+
+  Future<void> _clearSecureFlag() async {
+    try {
+      await FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
+    } catch (e) {
+      debugPrint('Could not clear secure flag: $e');
+    }
   }
 
   @override

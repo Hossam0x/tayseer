@@ -683,7 +683,7 @@ class MarriageBodyState extends State<MarriageBody>
         if ((state.sendRegardState == CubitStates.failure ||
                 state.sendRegardTextState == CubitStates.failure) &&
             state.showActionSnackbar &&
-            state.regardsLeft != 0) {
+            (state.regardsLeft == null || state.regardsLeft != 0)) {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,

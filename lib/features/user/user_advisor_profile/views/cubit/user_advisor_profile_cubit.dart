@@ -505,8 +505,15 @@ class UserAdvisorProfileCubit
     if (chatRoomId.isNotEmpty && !isClosed) {
       log('Socket room created: $chatRoomId');
 
+      // ⭐ لو بالفعل navigate حصل، تجاهل الـ event
+      if (state.shouldNavigateToChat) return;
+
       // ⭐ إلغاء الـ timeout
       _chatTimeoutTimer?.cancel();
+
+      // ⭐ تنظيف الـ listeners فوراً عشان ميتشغلش تاني
+      final listenerId = 'UserAdvisorProfileCubit_$advisorId';
+      socketHelper.offAllForListener(listenerId);
 
       // ⭐ تحديث الـ profile بالـ room الجديد
       final updatedProfile = state.profile?.copyWith(
