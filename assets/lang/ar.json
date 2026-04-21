@@ -574,6 +574,7 @@
   "gold_members": "اعضاء ذهبى",
   "new_member": "منضم حديثًا",
   "recently_joined": "انضم حديثًا",
+  "active_today": "نشط اليوم",
   "photo_status": "حالة الصورة",
   "hidden_photo": "اعضاء صورهم غير واضحة",
   "visible_photo": "اعضاء صورهم واضحة",
@@ -2003,5 +2004,10 @@
   "similar_users_desc": "متوافقون مع ملفك الشخصي",
   "test_sound": "اختبار الصوت",
   "drinks_alcohol_yes": "يشرب الخمر",
-"drinks_alcohol_no": "لا يشرب الخمر"
+"drinks_alcohol_no": "لا يشرب الخمر",
+"gold_membership": "عضوية ذهبية",
+"gold_title": "فقط الأعضاء الذهبيون يمكنهم تغيير رأيهم",
+"gold_subtitle": "أصبح عضواً ذهبياً. أعجب بضعف الملفات يومياً، اعرف من أعجب بك، والمزيد!",
+"auto_renew_note": "يتجدد اشتراكك تلقائياً ما لم تقم بإلغائه",
+"best_value": "أفضل قيمة"
 }

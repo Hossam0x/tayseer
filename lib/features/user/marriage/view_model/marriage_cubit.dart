@@ -207,8 +207,18 @@ class MarriageCubit extends Cubit<MarriageState> {
             currentPage: profile.data?.pagination?.currentPage ?? 1,
             totalPages: profile.data?.pagination?.totalPages ?? 1,
             favoritedIds: mergedFavorites,
+            regardsLeft: profile.data?.regardsLeft,
+            likesLeft: profile.data?.likesLeft,
           ),
         );
+
+        // ✅ Sync regardsLeft to InteractionsCubit
+        try {
+          final interactionsCubit = getIt<InteractionsCubit>();
+          interactionsCubit.updateLimits(
+            regardsLeft: profile.data?.regardsLeft,
+          );
+        } catch (_) {}
 
         if (seedPersonId != null) {
           final hasPartial = finalUsers.any(
@@ -413,6 +423,19 @@ class MarriageCubit extends Cubit<MarriageState> {
     required String personId,
     bool countView = false,
   }) async {
+    // ✅ لو regardsLeft = 0 في الـ state، ارجع failure مباشرة
+    if (state.regardsLeft == 0) {
+      emit(
+        state.copyWith(
+          sendRegardState: CubitStates.failure,
+          errorMessage: null,
+          showActionSnackbar: true,
+          regardsLeft: 0,
+        ),
+      );
+      return;
+    }
+
     final result = await _repo.sendRegard(
       personId: personId,
       countView: countView,
@@ -454,6 +477,19 @@ class MarriageCubit extends Cubit<MarriageState> {
     required String text,
     bool countView = false,
   }) async {
+    // ✅ لو regardsLeft = 0 في الـ state، ارجع failure مباشرة بدون API call
+    if (state.regardsLeft == 0) {
+      emit(
+        state.copyWith(
+          sendRegardTextState: CubitStates.failure,
+          errorMessage: null,
+          showActionSnackbar: true,
+          regardsLeft: 0,
+        ),
+      );
+      return;
+    }
+
     emit(
       state.copyWith(
         sendRegardTextState: CubitStates.initial,

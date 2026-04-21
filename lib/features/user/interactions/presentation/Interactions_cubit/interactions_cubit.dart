@@ -480,4 +480,10 @@ class InteractionsCubit extends Cubit<InteractionsState> {
       ),
     );
   }
+
+  void updateLimits({int? regardsLeft}) {
+    if (regardsLeft != null) {
+      emit(state.copyWith(regardsLeft: regardsLeft));
+    }
+  }
 }

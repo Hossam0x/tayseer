@@ -24,9 +24,9 @@ class LayoutCubit extends Cubit<LayoutState> {
     if (state.currentIndex == index) {
       scrollToTop();
     } else {
-      // ✅ لما تدخل marriage tab اخبي الـ nav فوراً
-      // ✅ لما تخرج منه لأي tab تاني ورجّعه
-      final hideNav = index == 1;
+      // ✅ اخبي الـ nav بس لو دخلنا marriage tab فعلاً
+      // ✅ لو الـ tab ده بيعرض consultation (isMarriageVisible = false) خلي الـ nav ظاهر
+      final hideNav = index == 1 && state.isMarriageVisible;
       emit(state.copyWith(currentIndex: index, isNavVisible: !hideNav));
     }
   }
@@ -43,8 +43,8 @@ class LayoutCubit extends Cubit<LayoutState> {
   }
 
   void onScroll(bool isScrollingDown) {
-    // ✅ الـ nav hide/show بيشتغل بس في marriage tab
-    if (state.currentIndex != 1) return;
+    // ✅ الـ nav hide/show بيشتغل في marriage tab (index 1) وفي home tab (index 0)
+    if (state.currentIndex != 1 && state.currentIndex != 0) return;
     if (isScrollingDown && state.isNavVisible) {
       setNavVisibility(false);
     } else if (!isScrollingDown && !state.isNavVisible) {

@@ -48,6 +48,10 @@ class SliverProfileHeader extends StatelessWidget {
   final String? subscriptionType;
   final String? nextSubscriptionType;
 
+  // badges
+  final bool recentlyJoined;
+  final bool activeToday;
+
   const SliverProfileHeader({
     super.key,
     required this.images,
@@ -83,6 +87,8 @@ class SliverProfileHeader extends StatelessWidget {
     this.leftWidget,
     this.subscriptionType,
     this.nextSubscriptionType,
+    this.recentlyJoined = false,
+    this.activeToday = false,
   });
 
   bool get _isAnimating => swipeProgress > 0.01;
@@ -213,6 +219,8 @@ class SliverProfileHeader extends StatelessWidget {
                     shouldBlur: shouldBlur,
                     isVerified: isVerified,
                     subscriptionType: subscriptionType,
+                    recentlyJoined: recentlyJoined,
+                    activeToday: activeToday,
                   ),
                 ),
               ),
@@ -248,6 +256,8 @@ class _FrontProfileCard extends StatelessWidget {
   final bool shouldBlur;
   final bool isVerified;
   final String? subscriptionType;
+  final bool recentlyJoined;
+  final bool activeToday;
 
   const _FrontProfileCard({
     required this.images,
@@ -270,6 +280,8 @@ class _FrontProfileCard extends StatelessWidget {
     this.city,
     this.distanceKm,
     this.subscriptionType,
+    this.recentlyJoined = false,
+    this.activeToday = false,
   });
 
   bool get _hasImage => coverImage.isNotEmpty;
@@ -349,9 +361,9 @@ class _FrontProfileCard extends StatelessWidget {
         ),
 
         Positioned(
-          bottom: 60.h,
-          right: 16.w,
-          left: 16.w,
+          bottom: 0.h,
+          right: 0.w,
+          left: 0.w,
           child: _InfoCard(
             name: name,
             age: age,
@@ -371,12 +383,66 @@ class _FrontProfileCard extends StatelessWidget {
             subscriptionType: subscriptionType,
           ),
         ),
+
+        // ✅ Badges: activeToday & recentlyJoined
+        if (activeToday || recentlyJoined)
+          Positioned(
+            top: 150.h,
+            right: 16.w,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (activeToday) _buildBadge(
+                  icon: Icons.circle,
+                  iconColor: const Color(0xFF4CAF50),
+                  label: context.tr('active_today'),
+                  bgColor: Colors.black.withOpacity(0.55),
+                ),
+                if (activeToday && recentlyJoined) SizedBox(height: 8.h),
+                if (recentlyJoined) _buildBadge(
+                  icon: Icons.person_add_rounded,
+                  iconColor: const Color(0xFFE91E8C),
+                  label: context.tr('recently_joined'),
+                  bgColor: Colors.black.withOpacity(0.55),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
 
-  Widget _buildPlaceholder() {
+  Widget _buildBadge({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required Color bgColor,
+  }) {
     return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: iconColor, size: 10.r),
+          SizedBox(width: 5.w),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder() {    return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -712,7 +778,7 @@ class _InfoCard extends StatelessWidget {
     double paddingAll = 0.0,
   }) {
     final decoration = BoxDecoration(
-      borderRadius: BorderRadius.circular(borderRadius),
+    
       gradient: LinearGradient(
         colors: [
           Colors.white.withOpacity(opacity),
@@ -726,7 +792,7 @@ class _InfoCard extends StatelessWidget {
 
     if (blur <= 0) {
       return ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius),
+      
         child: Container(
           padding: EdgeInsets.all(paddingAll),
           decoration: decoration,
@@ -736,7 +802,7 @@ class _InfoCard extends StatelessWidget {
     }
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius),
+    
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
         child: Container(
