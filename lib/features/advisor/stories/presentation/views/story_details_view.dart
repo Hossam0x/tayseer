@@ -119,7 +119,7 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
 
   Widget _buildBody(double opacity) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.black,
       body: Listener(
         onPointerMove: (e) {
           if (!_isDragging && e.delta.dx.abs() > e.delta.dy.abs()) return;
