@@ -9,6 +9,7 @@ import 'package:tayseer/features/advisor/membership/presentation/widgets/members
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/membership/data/models/my_subscription_model.dart';
+import 'package:tayseer/features/user/user_profile/presentation/view_model/user_membership_cubit.dart';
 
 class MembershipManagementView extends StatelessWidget {
   const MembershipManagementView({super.key});
@@ -224,14 +225,18 @@ class _NoSubscriptionBody extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                 ),
-                onPressed: () =>
-                    Navigator.pushNamed(context, AppRouter.kPackagesView).then((
-                      _,
-                    ) {
-                      if (context.mounted) {
-                        context.read<MembershipCubit>().loadMembership();
-                      }
-                    }),
+                onPressed: () {
+                  final isUserMembership =
+                      context.read<MembershipCubit>() is UserMembershipCubit;
+                  final packagesRoute = isUserMembership
+                      ? AppRouter.kUserPackagesView
+                      : AppRouter.kPackagesView;
+                  Navigator.pushNamed(context, packagesRoute).then((_) {
+                    if (context.mounted) {
+                      context.read<MembershipCubit>().loadMembership();
+                    }
+                  });
+                },
                 child: Text(
                   context.tr('browse_packages'),
                   style: Styles.textStyle16SemiBold.copyWith(
