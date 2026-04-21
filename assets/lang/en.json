@@ -2004,6 +2004,12 @@
   "available_specializations": "Available Specializations",
   "similar_users_desc" : "Compatible with your profile",
   "drinks_alcohol_yes": "Drinks alcohol",
-"drinks_alcohol_no": "Does not drink alcohol"
+"drinks_alcohol_no": "Does not drink alcohol",
+"gold_membership": "Gold Membership",
+"gold_title": "Only Gold members can change their mind",
+"gold_subtitle": "Become a Gold member. Like 2x more profiles a day, see who likes you, and more!",
+"auto_renew_note": "Your subscription renews automatically unless cancelled",
+"best_value": "Best value"
+
   
 }

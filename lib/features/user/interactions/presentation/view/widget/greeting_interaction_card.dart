@@ -166,8 +166,14 @@ class GreetingProfileCard extends StatelessWidget {
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () {
-                    final regardsLeft =
-                        context.read<MarriageCubit>().state.regardsLeft;
+                    // ✅ اقرأ regardsLeft من InteractionsCubit أو MarriageCubit
+                    int? regardsLeft;
+                    try {
+                      regardsLeft = context.read<MarriageCubit>().state.regardsLeft;
+                    } catch (_) {}
+                    // fallback: InteractionsCubit
+                    regardsLeft ??= context.read<InteractionsCubit>().state.regardsLeft;
+
                     if (regardsLeft == 0) {
                       showRegardsPurchaseSheet(context);
                       return;

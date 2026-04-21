@@ -22,8 +22,10 @@ class UsersMarriageResponse {
 class UsersData {
   List<UserItem>? users;
   Pagination? pagination;
+  int? regardsLeft;
+  int? likesLeft;
 
-  UsersData({this.users, this.pagination});
+  UsersData({this.users, this.pagination, this.regardsLeft, this.likesLeft});
 
   factory UsersData.fromJson(Map<String, dynamic> json) => UsersData(
     users: json["users"] != null
@@ -32,11 +34,15 @@ class UsersData {
     pagination: json["pagination"] != null
         ? Pagination.fromJson(json["pagination"])
         : null,
+    regardsLeft: json["regardsLeft"] as int?,
+    likesLeft: json["likesLeft"] as int?,
   );
 
   Map<String, dynamic> toJson() => {
     "users": users?.map((x) => x.toJson()).toList(),
     "pagination": pagination?.toJson(),
+    "regardsLeft": regardsLeft,
+    "likesLeft": likesLeft,
   };
 }
 
@@ -84,6 +90,8 @@ class User {
   String? city;
   double? distanceKm;
   String? subscriptionType;
+  bool? recentlyJoined;
+  bool? activeToday;
 
   User({
     this.id,
@@ -103,6 +111,8 @@ class User {
     this.city,
     this.distanceKm,
     this.subscriptionType,
+    this.recentlyJoined,
+    this.activeToday,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
@@ -129,6 +139,8 @@ class User {
             ? (json["distanceKm"] as num).toDouble()
             : null,
         subscriptionType: json["subscriptionType"] as String?,
+        recentlyJoined: json["recentlyJoined"] as bool?,
+        activeToday: json["activeToday"] as bool?,
       );
 
   Map<String, dynamic> toJson() => {
@@ -148,6 +160,8 @@ class User {
         "isBlocked": isBlocked,
         "city": city,
         "distanceKm": distanceKm,
+        "recentlyJoined": recentlyJoined,
+        "activeToday": activeToday,
       };
 }
 class UserAbout {

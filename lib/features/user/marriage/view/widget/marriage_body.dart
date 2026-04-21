@@ -4,6 +4,7 @@ import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/enum/report_type.dart';
+import 'package:tayseer/features/shared/view_model/layout_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_state.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/animated_history_button.dart';
@@ -660,7 +661,9 @@ class MarriageBodyState extends State<MarriageBody>
           previous.activeFilters != current.activeFilters ||
           previous.interactionsNotificationCount !=
               current.interactionsNotificationCount ||
-          previous.likesNotificationCount != current.likesNotificationCount,
+          previous.likesNotificationCount != current.likesNotificationCount ||
+          previous.regardsLeft != current.regardsLeft ||
+          previous.likesLeft != current.likesLeft,
 
       listener: (context, state) {
         // ✅ likes خلصت
@@ -738,6 +741,11 @@ class MarriageBodyState extends State<MarriageBody>
         if (state.marriageProfileState == CubitStates.loading) {
           return _buildShimmerScreen();
         } else if (state.marriageProfileState == CubitStates.failure) {
+          // ✅ error state — ظهّر الـ nav
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            context.read<LayoutCubit>().setNavVisibility(true);
+          });
           return _isConsultantViewingProfile
               ? _buildConsultantErrorScreen(state.errorMessage)
               : _buildWithAppBar(
@@ -788,6 +796,12 @@ class MarriageBodyState extends State<MarriageBody>
 
         if (users.isEmpty) {
           if (state.isMarriageTab) {
+            // ✅ مفيش scroll — ظهّر الـ nav bar
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              context.read<LayoutCubit>().setNavVisibility(true);
+            });
+
             final subscriptionType =
                 _interactionsCubit?.state.subscriptionType ?? 'free';
             final isFree = subscriptionType == 'free';
@@ -825,6 +839,11 @@ class MarriageBodyState extends State<MarriageBody>
         }
 
         if (state.isMarriageTab) {
+          // ✅ في users — اخبي الـ nav bar (الـ scroll هيظهره)
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            context.read<LayoutCubit>().setNavVisibility(false);
+          });
           return _buildMarriageContent(
             personId: widget.personId ?? "",
             key: const ValueKey('marriage'),
@@ -1292,8 +1311,11 @@ class MarriageBodyState extends State<MarriageBody>
                     nextSubscriptionType: hasNext
                         ? nextUser?.subscriptionType
                         : null,
+                    recentlyJoined: user?.recentlyJoined ?? false,
+                    activeToday: user?.activeToday ?? false,
                     onFavoriteTap: canInteract
                         ? () => _runAction(() async {
+                      
                             await _showSwipePopup(
                               context,
                               SwipeActionType.favorite,
@@ -1675,6 +1697,7 @@ class MarriageBodyState extends State<MarriageBody>
 
                             buildCircleButton(
                               onTap: () => _runAction(() async {
+                              
                                 // ✅ لو likesLeft = 0 اعرض sheet مباشرة
                                 if (state.likesLeft == 0) {
                                   showGoldPurchaseSheet(context);
@@ -1711,6 +1734,7 @@ class MarriageBodyState extends State<MarriageBody>
 
                             buildCircleButton(
                               onTap: () => _runAction(() async {
+                              
                                 // ✅ لو regardsLeft = 0 اعرض purchase sheet مباشرة
                                 if (state.regardsLeft == 0) {
                                   showRegardsPurchaseSheet(context);

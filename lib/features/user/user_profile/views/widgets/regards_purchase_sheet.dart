@@ -24,7 +24,7 @@ class PurchasePackage {
   final bool isMostPopular;
   final bool hasDiscount;
   final int? discountPercent;
-  final String? label; // used for gold: 'أسبوعي' / 'شهري'
+  final String? label;
 
   const PurchasePackage({
     required this.id,
@@ -75,6 +75,7 @@ class PurchasePackage {
       final i = e.key;
       final sub = e.value;
       final isMid = i == 1 && gold.length >= 3;
+      final isBest = i == 2 && gold.length >= 3;
       final labelKey = sub.isMonthly
           ? 'monthly'
           : sub.isWeekly
@@ -87,8 +88,8 @@ class PurchasePackage {
         price: (sub.price ?? 0).toDouble(),
         currency: sub.currency ?? 'EGP',
         isMostPopular: isMid,
-        hasDiscount: isMid,
-        discountPercent: isMid ? 20 : null,
+        hasDiscount: isMid || isBest,
+        discountPercent: isMid ? 66 : isBest ? 73 : null,
         label: context.tr(labelKey),
       );
     }).toList();
@@ -155,9 +156,8 @@ void showGoldPurchaseSheet(BuildContext context) {
   );
 }
 
-
 // ═══════════════════════════════════════
-// SHEET
+// SHEET WIDGET
 // ═══════════════════════════════════════
 class _PurchaseSheet extends StatefulWidget {
   final PurchaseType type;
@@ -172,13 +172,18 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
   bool _useWallet = true;
   late Timer _timer;
   int _remainingSeconds = 0;
-
-  // ✅ countdown لإظهار زر الإغلاق
   int _closeCountdown = 5;
   bool _canClose = false;
 
   bool get _isRegards => widget.type == PurchaseType.regards;
   bool get _isGold => widget.type == PurchaseType.gold;
+
+  // ── ألوان الذهب ──
+  static const _goldDark = Color(0xFF8B6914);
+  static const _goldMid = Color(0xFFB8860B);
+  static const _goldBg = Color(0xFFF5F3EE);
+  static const _goldSelected = Color(0xFFF0E8D0);
+  static const _goldCircle = Color(0xFFE8E4DA);
 
   @override
   void initState() {
@@ -191,9 +196,11 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
       }
     });
 
-    // ✅ countdown لزر الإغلاق
     Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) { t.cancel(); return; }
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
       if (_closeCountdown > 0) {
         setState(() => _closeCountdown--);
       } else {
@@ -244,11 +251,12 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     context.read<UserSubscriptionCubit>().purchaseSubscription(allSubs);
   }
 
+  // ════════════════════════════════════
+  // BUILD
+  // ════════════════════════════════════
   @override
   Widget build(BuildContext context) {
-    if (_isGold) {
-      return _buildGoldSheet(context);
-    }
+    if (_isGold) return _buildGoldSheet(context);
 
     return BlocListener<RegardsPackagePurchaseCubit, RegardsPackagePurchaseState>(
       listener: (context, state) {
@@ -257,7 +265,8 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(context, text: context.tr('purchase_success'), isSuccess: true),
           );
-        } else if (state.status == RegardsPackagePurchaseStatus.error && state.error != null) {
+        } else if (state.status == RegardsPackagePurchaseStatus.error &&
+            state.error != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(context, text: state.error!, isError: true),
           );
@@ -287,18 +296,23 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                   );
                 },
               )
-            : _buildContent(context, packages: [], isLoading: false, onPay: () {}),
+            : _buildContent(
+                context, packages: [], isLoading: false, onPay: () {}),
       ),
     );
   }
 
+  // ════════════════════════════════════
+  // GOLD SHEET (التصميم الجديد)
+  // ════════════════════════════════════
   Widget _buildGoldSheet(BuildContext context) {
     return BlocConsumer<UserSubscriptionCubit, UserSubscriptionState>(
       listener: (context, state) {
         if (state.status == UserSubStatus.success) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: context.tr('purchase_success'), isSuccess: true),
+            CustomSnackBar(
+                context, text: context.tr('purchase_success'), isSuccess: true),
           );
         } else if (state.status == UserSubStatus.error && state.error != null) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -318,19 +332,169 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                 ? <PurchasePackage>[]
                 : PurchasePackage.fromGoldSubs(allSubs, context);
             final isPurchasing = subState.status == UserSubStatus.purchasing;
+            final selectedPkg = packages.isNotEmpty
+                ? packages[_selectedIndex.clamp(0, packages.length - 1)]
+                : null;
 
             return Container(
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+                color: _goldBg,
+                borderRadius:
+                    BorderRadius.vertical(top: Radius.circular(24.r)),
               ),
               padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 32.h),
-              child: _buildContent(
-                context,
-                packages: packages,
-                isLoading: isLoading,
-                isPurchasing: isPurchasing,
-                onPay: () => _onPayGold(context, allSubs),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ── زر الإغلاق ──
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 36.w,
+                      height: 36.w,
+                      child: _canClose
+                          ? GestureDetector(
+                              onTap: () => Navigator.pop(context),
+                              child: Icon(Icons.close,
+                                  size: 22.w, color: Colors.black54),
+                            )
+                          : Container(
+                              decoration: BoxDecoration(
+                                color: _goldCircle,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '$_closeCountdown',
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ),
+                            ),
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+
+                  // ── Crown Badge ──
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 20.w, vertical: 10.h),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('👑',
+                            style: TextStyle(fontSize: 18.sp)),
+                        SizedBox(width: 6.w),
+                        Text(
+                          context.tr('gold_membership'),
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w700,
+                            color: _goldDark,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 18.h),
+
+                  // ── Title ──
+                  Text(
+                    context.tr('gold_title'),
+                    style: TextStyle(
+                      fontSize: 22.sp,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black,
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 10.h),
+
+                  // ── Subtitle ذهبي ──
+                  Text(
+                    context.tr('gold_subtitle'),
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w500,
+                      color: _goldMid,
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 24.h),
+
+                  // ── الباقات ──
+                  if (isLoading)
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24.h),
+                      child: const CircularProgressIndicator(
+                          color: _goldMid),
+                    )
+                  else
+                    ...packages.asMap().entries.map(
+                          (e) => Padding(
+                            padding: EdgeInsets.only(bottom: 10.h),
+                            child: _buildGoldPackageCard(e.key, e.value),
+                          ),
+                        ),
+
+                  SizedBox(height: 16.h),
+
+                  // ── زر الاشتراك ──
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54.h,
+                    child: ElevatedButton(
+                      onPressed: isPurchasing || packages.isEmpty
+                          ? null
+                          : () => _onPayGold(context, allSubs),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _goldDark,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28.r),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: isPurchasing
+                          ? const CircularProgressIndicator(
+                              color: Colors.white)
+                          : Text(
+                              selectedPkg != null
+                                  ? '${context.tr('subscribe')} - ${selectedPkg.price.toStringAsFixed(2)} ${selectedPkg.currency} ${context.tr('total')}'
+                                  : context.tr('subscribe'),
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                    ),
+                  ),
+                  SizedBox(height: 10.h),
+
+                  // ── تجديد تلقائي ──
+                  Text(
+                    context.tr('auto_renew_note'),
+                    style: TextStyle(
+                        fontSize: 11.sp, color: Colors.black38),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             );
           },
@@ -339,6 +503,140 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     );
   }
 
+  // ── كارد الباقة الذهبية ──
+  Widget _buildGoldPackageCard(int index, PurchasePackage pkg) {
+    final isSelected = _selectedIndex == index;
+    final isMostPopular = pkg.isMostPopular;
+    final isBestValue = index == 2;
+
+    return GestureDetector(
+      onTap: () => setState(() => _selectedIndex = index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+        decoration: BoxDecoration(
+          color: isSelected ? _goldSelected : Colors.white,
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(
+            color: isSelected ? _goldMid : Colors.grey.shade200,
+            width: isSelected ? 1.8 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            // ── الرقم (أسبوع=1، شهر=1، 3 أشهر=3) ──
+            Text(
+              _goldDurationNumber(pkg.label ?? ''),
+              style: TextStyle(
+                fontSize: 32.sp,
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
+              ),
+            ),
+            SizedBox(width: 12.w),
+
+            // ── الاسم + السعر ──
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    pkg.label ?? '',
+                    style: TextStyle(
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 3.h),
+                  Text(
+                    '${pkg.price.toStringAsFixed(2)} ${pkg.currency}',
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── يمين: label + badge + check ──
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (isMostPopular)
+                  Text(
+                    context.tr('most_popular'),
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: _goldMid,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                if (isBestValue && !isMostPopular)
+                  Text(
+                    context.tr('best_value'),
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: _goldMid,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                if (pkg.discountPercent != null) ...[
+                  SizedBox(height: 4.h),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 10.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: _goldDark,
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Text(
+                      context
+                          .tr('save_percent')
+                          .replaceAll(
+                              '{percent}', '${pkg.discountPercent}'),
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+                SizedBox(height: 6.h),
+                Container(
+                  width: 22.w,
+                  height: 22.w,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected ? _goldDark : Colors.white,
+                    border: Border.all(
+                      color: isSelected ? _goldDark : Colors.grey.shade300,
+                      width: 2,
+                    ),
+                  ),
+                  child: isSelected
+                      ? Icon(Icons.check, size: 13.w, color: Colors.white)
+                      : null,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── helper: رقم المدة ──
+  String _goldDurationNumber(String label) {
+    if (label.contains('3') || label.toLowerCase().contains('three')) return '3';
+    return '1';
+  }
+
+  // ════════════════════════════════════
+  // REGARDS / LIKES CONTENT (القديم)
+  // ════════════════════════════════════
   Widget _buildContent(
     BuildContext context, {
     required List<PurchasePackage> packages,
@@ -349,10 +647,8 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // ✅ Handle + زر الإغلاق
         Row(
           children: [
-            // زر الإغلاق أو العداد
             SizedBox(
               width: 36.w,
               height: 36.w,
@@ -364,7 +660,8 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                           color: AppColors.secondary100,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(Icons.close, size: 18.w, color: AppColors.secondary600),
+                        child: Icon(Icons.close,
+                            size: 18.w, color: AppColors.secondary600),
                       ),
                     )
                   : Container(
@@ -395,18 +692,14 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                 ),
               ),
             ),
-            SizedBox(width: 36.w), // balance
+            SizedBox(width: 36.w),
           ],
         ),
         SizedBox(height: 16.h),
-
-        // Title
         Text(
           _isRegards
               ? context.tr('regards_balance_finished')
-              : _isGold
-                  ? context.tr('likes_balance_finished')
-                  : context.tr('likes_balance_finished'),
+              : context.tr('likes_balance_finished'),
           style: Styles.textStyle20Meduim.copyWith(
             color: AppColors.kscandryTextColor,
             fontWeight: FontWeight.w700,
@@ -417,33 +710,28 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
         Text(
           _isRegards
               ? context.tr('regards_balance_finished_desc')
-              : _isGold
-                  ? context.tr('likes_balance_finished_desc')
-                  : context.tr('likes_balance_finished_desc'),
-          style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
+              : context.tr('likes_balance_finished_desc'),
+          style:
+              Styles.textStyle14.copyWith(color: AppColors.secondary400),
           textAlign: TextAlign.center,
         ),
         SizedBox(height: 20.h),
-
         if (_remainingSeconds > 0) ...[
           _buildCountdown(),
           SizedBox(height: 20.h),
         ],
-
         if (isLoading)
           Padding(
             padding: EdgeInsets.symmetric(vertical: 24.h),
             child: const CircularProgressIndicator(),
           )
-        else ...[
+        else
           ...packages.asMap().entries.map(
-            (e) => Padding(
-              padding: EdgeInsets.only(bottom: 10.h),
-              child: _buildPackageCard(e.key, e.value),
-            ),
-          ),
-        ],
-
+                (e) => Padding(
+                  padding: EdgeInsets.only(bottom: 10.h),
+                  child: _buildPackageCard(e.key, e.value),
+                ),
+              ),
         SizedBox(height: 12.h),
         SizedBox(height: 20.h),
         CustomBotton(
@@ -482,7 +770,8 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
       ),
       child: Text(
         value,
-        style: Styles.textStyle24SemiBold.copyWith(color: AppColors.kscandryTextColor),
+        style: Styles.textStyle24SemiBold
+            .copyWith(color: AppColors.kscandryTextColor),
       ),
     );
   }
@@ -492,7 +781,8 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
       padding: EdgeInsets.symmetric(horizontal: 6.w),
       child: Text(
         ':',
-        style: Styles.textStyle24SemiBold.copyWith(color: AppColors.kscandryTextColor),
+        style: Styles.textStyle24SemiBold
+            .copyWith(color: AppColors.kscandryTextColor),
       ),
     );
   }
@@ -501,9 +791,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     final isSelected = _selectedIndex == index;
     final String itemLabel = _isRegards
         ? context.tr('regard')
-        : _isGold
-            ? (pkg.label ?? context.tr('gold_package'))
-            : context.tr('like');
+        : context.tr('like');
 
     return GestureDetector(
       onTap: () => setState(() => _selectedIndex = index),
@@ -515,34 +803,40 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               margin: EdgeInsets.only(
-                top: (pkg.hasDiscount && pkg.discountPercent != null) ? 14.h : 0,
+                top: (pkg.hasDiscount && pkg.discountPercent != null)
+                    ? 14.h
+                    : 0,
               ),
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+              padding: EdgeInsets.symmetric(
+                  horizontal: 16.w, vertical: 14.h),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary50 : Colors.white,
+                color:
+                    isSelected ? AppColors.primary50 : Colors.white,
                 borderRadius: BorderRadius.circular(14.r),
                 border: Border.all(
-                  color: isSelected ? AppColors.primary300 : AppColors.secondary100,
+                  color: isSelected
+                      ? AppColors.primary300
+                      : AppColors.secondary100,
                   width: isSelected ? 1.5 : 1,
                 ),
               ),
               child: Row(
                 children: [
-                  if (!_isGold)
-                    Text(
-                      '${pkg.count} ',
-                      style: Styles.textStyle32Meduim.copyWith(
-                        color: AppColors.kscandryTextColor,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  Text(
+                    '${pkg.count} ',
+                    style: Styles.textStyle32Meduim.copyWith(
+                      color: AppColors.kscandryTextColor,
+                      fontWeight: FontWeight.w600,
                     ),
+                  ),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           itemLabel,
-                          style: Styles.textStyle14.copyWith(color: AppColors.secondary600),
+                          style: Styles.textStyle14
+                              .copyWith(color: AppColors.secondary600),
                         ),
                         SizedBox(height: 4.h),
                         Directionality(
@@ -575,13 +869,18 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isSelected ? AppColors.primary400 : AppColors.secondary300,
+                            color: isSelected
+                                ? AppColors.primary400
+                                : AppColors.secondary300,
                             width: 2,
                           ),
-                          color: isSelected ? AppColors.primary400 : Colors.white,
+                          color: isSelected
+                              ? AppColors.primary400
+                              : Colors.white,
                         ),
                         child: isSelected
-                            ? Icon(Icons.check, size: 14.w, color: Colors.white)
+                            ? Icon(Icons.check,
+                                size: 14.w, color: Colors.white)
                             : null,
                       ),
                     ],
@@ -594,10 +893,14 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                 top: 0,
                 right: 12.w,
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: 14.w, vertical: 6.h),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFFEB7A91), Color.fromRGBO(245, 192, 3, 1)],
+                      colors: [
+                        Color(0xFFEB7A91),
+                        Color.fromRGBO(245, 192, 3, 1),
+                      ],
                       begin: Alignment.centerRight,
                       end: Alignment.centerLeft,
                     ),
@@ -616,8 +919,12 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                     ],
                   ),
                   child: Text(
-                    context.tr('save_percent').replaceAll('{percent}', '${pkg.discountPercent}'),
-                    style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w700, color: Colors.white),
+                    context.tr('save_percent').replaceAll(
+                        '{percent}', '${pkg.discountPercent}'),
+                    style: TextStyle(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white),
                   ),
                 ),
               ),
@@ -626,7 +933,6 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
       ),
     );
   }
-
 }
 
 // ═══════════════════════════════════════
@@ -671,7 +977,8 @@ void showRegardInputSheet(
                 fillColor: HexColor('f9f8ec'),
                 filled: true,
                 hintText: context.tr('type_your_message'),
-                hintStyle: Styles.textStyle12.copyWith(color: Colors.grey),
+                hintStyle:
+                    Styles.textStyle12.copyWith(color: Colors.grey),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16.r),
                   borderSide: BorderSide.none,
