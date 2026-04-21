@@ -33,20 +33,6 @@ class _LanguageSelectionViewBodyState
   final Map<String, String> _nativeLanguageNames = const {
     'ar': 'العربية',
     'en': 'English',
-    'fa': 'فارسی',
-    'ru': 'Русский',
-    'fr': 'Français',
-    'es': 'Español',
-    'de': 'Deutsch',
-    'tr': 'Türkçe',
-    'ur': 'اردو',
-    'hi': 'हिन्दी',
-    'bn': 'বাংলা',
-    'pt': 'Português',
-    'it': 'Italiano',
-    'ja': '日本語',
-    'ko': '한국어',
-    'zh': '中文',
   };
 
   @override

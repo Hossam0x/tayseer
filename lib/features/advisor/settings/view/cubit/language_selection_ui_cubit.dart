@@ -42,20 +42,6 @@ class LanguageSelectionUiCubit extends Cubit<LanguageSelectionState> {
   static const List<AppLanguage> allLanguages = [
     AppLanguage(code: 'ar', title: 'العربية'),
     AppLanguage(code: 'en', title: 'الإنجليزية'),
-    AppLanguage(code: 'fa', title: 'الفارسية'),
-    AppLanguage(code: 'ru', title: 'الروسية'),
-    AppLanguage(code: 'fr', title: 'الفرنسية'),
-    AppLanguage(code: 'es', title: 'الإسبانية'),
-    AppLanguage(code: 'de', title: 'الألمانية'),
-    AppLanguage(code: 'tr', title: 'التركية'),
-    AppLanguage(code: 'ur', title: 'الأردية'),
-    AppLanguage(code: 'hi', title: 'الهندية'),
-    AppLanguage(code: 'bn', title: 'البنغالية'),
-    AppLanguage(code: 'pt', title: 'البرتغالية'),
-    AppLanguage(code: 'it', title: 'الإيطالية'),
-    AppLanguage(code: 'ja', title: 'اليابانية'),
-    AppLanguage(code: 'ko', title: 'الكورية'),
-    AppLanguage(code: 'zh', title: 'الصينية'),
   ];
 
   Future<void> loadSavedLanguage() async {
