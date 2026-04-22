@@ -10,7 +10,6 @@ abstract class AssetsData {
   static const String eliteIcon = "assets/icons/Elite.png";
   static const String emptyBoxImage = "assets/images/EmptyBox.png";
   static const String emptyChatImage = "assets/images/empty_chat.png";
-  static const String emptynotification = "assets/icons/empty_notification.png";
   static const String errorIcon = "assets/icons/error.png";
   static const String goldIcon = "assets/icons/goldicon.png";
   static const String guestLockImage = "assets/images/guest_lock.png";
@@ -66,7 +65,6 @@ abstract class AssetsData {
   static const String vodacasheIcon = "assets/icons/voda.png";
   static const String vodafoneCash = "assets/images/vodafoneCash.png";
   static const String kblurImage = "assets/images/blur_image.png";
-
 
   // ==================== SVG Icons ====================
   static const String addCertificateImage =
@@ -235,6 +233,7 @@ abstract class AssetsData {
   static const String widthrawSend = "assets/icons/widthrawSend.svg";
   static const String youCanSeeWhoLiked = "assets/icons/youCanSeeWhoLiked.svg";
   static const String youNotSeeWhoLiked = "assets/icons/youNotSeeWhoLiked.svg";
+  static const String emptynotification = "assets/icons/empty_notification.svg";
 
   // ==================== GIF Animations ====================
   static const String kAppLogoGif = "assets/images/appl_logo_gif.gif";
@@ -249,5 +248,4 @@ abstract class AssetsData {
       "assets/animations/loading_animations.json";
   static const String kSuccessMarriageAnimationsLottie =
       "assets/animations/success_marriage.json";
-
 }
