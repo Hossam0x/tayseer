@@ -19,10 +19,6 @@ abstract class AssetsData {
   static const String instaPay = "assets/images/instaPay.png";
   static const String kAccountActivationPendingImage =
       "assets/images/account_activation_pending_image.png";
-  static const String kAccountActivationSuccessImage =
-      "assets/icons/activation_success_image.svg";
-  static const String kAccountReviewImage =
-      "assets/icons/account_review_image.svg";
   static const String kAppLogo = "assets/images/topAppLogo.png";
   static const String kAppLogotayseerImage = "assets/images/app_logo_t.png";
   static const String kBackgroundtayseerImage =
@@ -234,6 +230,10 @@ abstract class AssetsData {
   static const String youNotSeeWhoLiked = "assets/icons/youNotSeeWhoLiked.svg";
   static const String emptynotification = "assets/icons/empty_notification.svg";
   static const String lockIcon = "assets/icons/lock.svg";
+  static const String kAccountActivationSuccessImage =
+      "assets/icons/activation_success_image.svg";
+  static const String kAccountReviewImage =
+      "assets/icons/account_review_image.svg";
 
   // ==================== GIF Animations ====================
   static const String kAppLogoGif = "assets/images/appl_logo_gif.gif";
