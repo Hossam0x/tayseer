@@ -332,8 +332,14 @@ class MySpaceRepo {
       );
       return Right(PaymentIntentionModel.fromJson(response));
     } on DioException catch (e) {
-      final message =
-          e.response?.data?['message'] ?? e.message ?? 'فشل في بدء الدفع';
+      // ✅ لو الـ backend رجّع phoneRequired: true نرجع كود خاص
+      final data = e.response?.data;
+      if (data != null &&
+          data['data'] != null &&
+          data['data']['phoneRequired'] == true) {
+        return Left(ServerFailure('profileIncomplete'));
+      }
+      final message = data?['message'] ?? e.message ?? 'فشل في بدء الدفع';
       return Left(ServerFailure(message));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
