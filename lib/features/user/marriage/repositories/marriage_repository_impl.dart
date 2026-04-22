@@ -68,7 +68,7 @@ class MarriageRepositoryImpl implements MarriageRepository {
   }
 
   @override
-  Future<Either<Failure, void>> sendRegard({
+  Future<Either<Failure, int?>> sendRegard({
     required String personId,
     String? text,
     bool countView = false,
@@ -84,7 +84,8 @@ class MarriageRepositoryImpl implements MarriageRepository {
       );
 
       if (response['success'] == true) {
-        return const Right(null);
+        final regardsLeft = response['data']?['regardsLeft'] as int?;
+        return Right(regardsLeft);
       } else {
         return Left(ServerFailure(response['message'] ?? 'فشل ارسال التحيه'));
       }

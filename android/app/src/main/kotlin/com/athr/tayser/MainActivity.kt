@@ -9,7 +9,6 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
-import android.view.WindowManager
 import com.paymob.paymob_sdk.PaymobSdk
 import com.paymob.paymob_sdk.ui.PaymobSdkListener
 import io.flutter.embedding.android.FlutterActivity
@@ -38,6 +37,11 @@ class MainActivity : FlutterActivity(), MethodCallHandler, PaymobSdkListener {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler(this)
+
+        // ✅ تسجيل الـ SecureImageView factory
+        flutterEngine.platformViewsController
+            .registry
+            .registerViewFactory("secure_image_view", SecureImageFactory())
 
         EventChannel(flutterEngine.dartExecutor.binaryMessenger, SCREENSHOT_EVENT_CHANNEL)
             .setStreamHandler(object : EventChannel.StreamHandler {
@@ -82,18 +86,6 @@ class MainActivity : FlutterActivity(), MethodCallHandler, PaymobSdkListener {
             "payWithPaymob" -> {
                 SDKResult = result
                 callNativeSDK(call)
-            }
-            "setSecure" -> {
-                val enable = call.argument<Boolean>("enable") ?: false
-                if (enable) {
-                    window.setFlags(
-                        WindowManager.LayoutParams.FLAG_SECURE,
-                        WindowManager.LayoutParams.FLAG_SECURE
-                    )
-                } else {
-                    window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                }
-                result.success(null)
             }
             else -> result.notImplemented()
         }

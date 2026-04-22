@@ -14,6 +14,7 @@ import 'package:tayseer/core/functions/set_advisor_status.dart';
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/shared/auth/model/day_time_range_model.dart';
 import 'package:tayseer/features/shared/auth/model/summar_session_model.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
@@ -960,6 +961,8 @@ class AuthCubit extends Cubit<AuthState> {
       // ✅ امسح الـ authorized token قبل الـ reset عشان أي connect() تاني مش يستخدم token قديم
       getIt<tayseerSocketHelper>().clearAuthorizedToken();
       getIt<tayseerSocketHelper>().reset();
+      // ✅ reset InteractionsCubit state عشان بعد login جديد يجيب subscription صح
+      getIt<InteractionsCubit>().resetState();
     } catch (e) {
       debugPrint('Socket disconnect error: $e');
     }

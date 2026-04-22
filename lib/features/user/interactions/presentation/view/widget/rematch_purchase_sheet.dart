@@ -31,7 +31,7 @@ class _PurchaseCubit extends Cubit<_PurchaseState> {
 
   void reset() => emit(const _PurchaseState());
 
-  Future<void> purchase(ChatDurationPackageModel package) async {
+  Future<void> purchase(ChatDurationPackageModel package, {required String chatRoomId}) async {
     final productId = package.appleProductId;
     if (productId.isEmpty) {
       emit(state.copyWith(
@@ -52,7 +52,8 @@ class _PurchaseCubit extends Cubit<_PurchaseState> {
         data: {
           'productId': productId,
           'platform': platform,
-          'packageId': package.id,
+          // 'packageId': package.id,
+          if (chatRoomId.isNotEmpty) 'chatRoomId': chatRoomId,
         },
       );
 
@@ -84,6 +85,7 @@ void showRematchPurchaseSheet(
   BuildContext context, {
   required String userName,
   required String userImage,
+  required String chatRoomId,
   required VoidCallback onSuccess,
 }) {
   showModalBottomSheet(
@@ -102,6 +104,7 @@ void showRematchPurchaseSheet(
       child: _RematchSheet(
         userName: userName,
         userImage: userImage,
+        chatRoomId: chatRoomId,
         onSuccess: onSuccess,
       ),
     ),
@@ -113,11 +116,13 @@ void showRematchPurchaseSheet(
 class _RematchSheet extends StatefulWidget {
   final String userName;
   final String userImage;
+  final String chatRoomId;
   final VoidCallback onSuccess;
 
   const _RematchSheet({
     required this.userName,
     required this.userImage,
+    required this.chatRoomId,
     required this.onSuccess,
   });
 
@@ -131,7 +136,7 @@ class _RematchSheetState extends State<_RematchSheet> {
   void _onPay(BuildContext context, List<ChatDurationPackageModel> packages) {
     if (packages.isEmpty) return;
     final idx = _selectedIndex.clamp(0, packages.length - 1);
-    context.read<_PurchaseCubit>().purchase(packages[idx]);
+    context.read<_PurchaseCubit>().purchase(packages[idx], chatRoomId: widget.chatRoomId);
   }
 
   @override

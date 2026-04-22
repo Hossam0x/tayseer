@@ -61,13 +61,13 @@ class _PastMatchesViewState extends State<PastMatchesView> {
                       child: Column(
                         children: [
                           Text(
-                            'التوافقات السابقة',
+                            context.tr('past_matches_title'),
                             style: Styles.textStyle22Bold,
                             textAlign: TextAlign.center,
                           ),
                           Gap(4.h),
                           Text(
-                            'تظهر التوافقات منتهية هنا ويبقى امامك فرصة حتي تعيد الارسال مره أخرى',
+                            context.tr('past_matches_subtitle'),
                             style: Styles.textStyle14.copyWith(
                               color: AppColors.secondary600,
                             ),
@@ -96,7 +96,7 @@ class _PastMatchesViewState extends State<PastMatchesView> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'حدث خطأ أثناء تحميل التوافقات السابقة',
+                                context.tr('past_matches_error'),
                                 style: Styles.textStyle16.copyWith(
                                   color: AppColors.secondary800,
                                 ),
@@ -104,7 +104,7 @@ class _PastMatchesViewState extends State<PastMatchesView> {
                               ),
                               Gap(16.h),
                               CustomBotton(
-                                title: 'أعد المحاولة',
+                                title: context.tr('retry'),
                                 onPressed: () {
                                   setState(() {
                                     _pastMatchesFuture = _loadPastMatches();
@@ -120,7 +120,7 @@ class _PastMatchesViewState extends State<PastMatchesView> {
                     final items = snapshot.data?.items ?? [];
                     if (items.isEmpty) {
                       return _EmptyState(
-                        message: 'لا توجد توافقات سابقة حتى الآن.',
+                        message: context.tr('no_past_matches'),
                       );
                     }
 
@@ -157,8 +157,9 @@ class _PastMatchesViewState extends State<PastMatchesView> {
                                       context,
                                       userName: item.name.isNotEmpty
                                           ? item.name
-                                          : 'مستخدم سابق',
+                                          : context.tr('previous_user'),
                                       userImage: item.image,
+                                      chatRoomId: item.chatRoomId,
                                       onSuccess: () {
                                         setState(() {
                                           _pastMatchesFuture =
@@ -181,7 +182,7 @@ class _PastMatchesViewState extends State<PastMatchesView> {
                                     ),
                                   ),
                                   child: Text(
-                                    'اعادة التوافق',
+                                    context.tr('rematch_button'),
                                     style: Styles.textStyle12.copyWith(
                                       color: AppColors.primary400,
                                     ),

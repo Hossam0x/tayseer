@@ -15,7 +15,7 @@ abstract class MarriageRepository {
     bool countView = false,
   });
 
-  Future<Either<Failure, void>> sendRegard({
+  Future<Either<Failure, int?>> sendRegard({
     required String personId,
     String? text,
     bool countView = false,

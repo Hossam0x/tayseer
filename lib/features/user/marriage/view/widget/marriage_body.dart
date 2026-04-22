@@ -69,6 +69,8 @@ class MarriageBodyState extends State<MarriageBody>
   Timer? _scrollIdleTimer;
   static const Duration _scrollIdleDelay = Duration(milliseconds: 800);
   bool _isActionInProgress = false;
+  bool _navHiddenByMarriage = false;
+  StreamSubscription? _layoutSubscription;
 
   bool get _isConsultantViewingProfile =>
       widget.personId != null && selectedUserType == UserTypeEnum.asConsultant;
@@ -118,6 +120,21 @@ class MarriageBodyState extends State<MarriageBody>
     }
 
     cubit.initAnimation(this);
+
+    // ✅ لما المستخدم يغير الـ tab ويرجع للـ marriage، reset الـ flag عشان يخبي الـ nav تاني
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _layoutSubscription = context.read<LayoutCubit>().stream.listen((s) {
+        if (!mounted) return;
+        if (s.currentIndex != 1) {
+          // خرج من الـ marriage tab → reset الـ flag
+          _navHiddenByMarriage = false;
+        } else if (s.currentIndex == 1 && !_navHiddenByMarriage) {
+          // رجع للـ marriage tab → اخبي الـ nav لو في users
+          _hideNavOnce();
+        }
+      });
+    });
 
     if (_isConsultantViewingProfile) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -188,11 +205,31 @@ class MarriageBodyState extends State<MarriageBody>
   @override
   void dispose() {
     _scrollIdleTimer?.cancel();
+    _layoutSubscription?.cancel();
     _mainScrollController.removeListener(_scrollListener);
     _mainScrollController.dispose();
     super.dispose();
   }
 
+  void _hideNavOnce() {
+    if (_navHiddenByMarriage) return;
+    final layoutCubit = context.read<LayoutCubit>();
+    if (layoutCubit.state.currentIndex != 1) return;
+    // ✅ اخبي الـ nav بس لو في users فعلاً
+    final marriageState = context.read<MarriageCubit>().state;
+    final hasUsers = marriageState.allUsers.isNotEmpty &&
+        marriageState.isMarriageTab &&
+        marriageState.marriageProfileState != CubitStates.loading;
+    if (!hasUsers) return;
+    _navHiddenByMarriage = true;
+    layoutCubit.setNavVisibility(false);
+  }
+
+  void _showNav() {
+    if (!_navHiddenByMarriage) return;
+    _navHiddenByMarriage = false;
+    if (mounted) context.read<LayoutCubit>().setNavVisibility(true);
+  }
   void _scrollListener() {
     final currentOffset = _mainScrollController.offset;
     final delta = currentOffset - _lastOffset;
@@ -227,7 +264,8 @@ class MarriageBodyState extends State<MarriageBody>
         cubit.setScrollingDown(false);
         widget.onScroll?.call(false);
       }
-      context.read<LayoutCubit>().setNavVisibility(true);
+      // ✅ لما يوقف الـ scroll، ظهّر الـ nav
+      _showNav();
     });
   }
 
@@ -636,6 +674,8 @@ class MarriageBodyState extends State<MarriageBody>
           (previous.likesLeft != current.likesLeft && current.likesLeft == 0) ||
           (previous.regardsLeft != current.regardsLeft &&
               current.regardsLeft == 0) ||
+          (previous.requiresSubscription != current.requiresSubscription &&
+              current.requiresSubscription) ||
           (previous.sendRegardTextState != current.sendRegardTextState &&
               current.sendRegardTextState == CubitStates.failure &&
               current.regardsLeft == 0),
@@ -659,9 +699,17 @@ class MarriageBodyState extends State<MarriageBody>
               current.interactionsNotificationCount ||
           previous.likesNotificationCount != current.likesNotificationCount ||
           previous.regardsLeft != current.regardsLeft ||
-          previous.likesLeft != current.likesLeft,
+          previous.likesLeft != current.likesLeft ||
+          previous.requiresSubscription != current.requiresSubscription,
 
       listener: (context, state) {
+        // ✅ لو requiresSubscription = true → اعرض sheet الاشتراك فوراً
+        if (state.requiresSubscription) {
+          showGoldPurchaseSheet(context);
+          context.read<MarriageCubit>().resetState();
+          return;
+        }
+
         // ✅ لو regardsLeft وصل 0 من regard failure
         if (state.regardsLeft == 0 &&
             (state.sendRegardState == CubitStates.failure ||
@@ -742,10 +790,6 @@ class MarriageBodyState extends State<MarriageBody>
         if (state.marriageProfileState == CubitStates.loading) {
           return _buildShimmerScreen();
         } else if (state.marriageProfileState == CubitStates.failure) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            context.read<LayoutCubit>().setNavVisibility(true);
-          });
           return _isConsultantViewingProfile
               ? _buildConsultantErrorScreen(state.errorMessage)
               : _buildWithAppBar(
@@ -796,14 +840,9 @@ class MarriageBodyState extends State<MarriageBody>
 
         if (users.isEmpty) {
           if (state.isMarriageTab) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (!mounted) return;
-              context.read<LayoutCubit>().setNavVisibility(true);
-            });
-
             final subscriptionType =
-                _interactionsCubit?.state.subscriptionType ?? 'free';
-            final isFree = subscriptionType == 'free';
+                (_interactionsCubit ?? getIt<InteractionsCubit>()).state.subscriptionType;
+            final isFree = subscriptionType == 'free' || subscriptionType.isEmpty;
 
             return _buildWithAppBar(
               key: const ValueKey('empty_marriage'),
@@ -838,6 +877,11 @@ class MarriageBodyState extends State<MarriageBody>
         }
 
         if (state.isMarriageTab) {
+          // ✅ اخبي الـ nav مرة واحدة بس لما يدخل الـ marriage tab ويلاقي users
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            _hideNavOnce();
+          });
           return _buildMarriageContent(
             personId: widget.personId ?? "",
             key: const ValueKey('marriage'),
@@ -1691,7 +1735,7 @@ class MarriageBodyState extends State<MarriageBody>
 
                             buildCircleButton(
                               onTap: () => _runAction(() async {
-                                if (state.likesLeft == 0) {
+                                if (state.requiresSubscription || state.likesLeft == 0) {
                                   showGoldPurchaseSheet(context);
                                   return;
                                 }
@@ -1726,6 +1770,10 @@ class MarriageBodyState extends State<MarriageBody>
 
                             buildCircleButton(
                               onTap: () => _runAction(() async {
+                                if (state.requiresSubscription) {
+                                  showGoldPurchaseSheet(context);
+                                  return;
+                                }
                                 if (state.regardsLeft == 0) {
                                   showRegardsPurchaseSheet(context);
                                   return;
@@ -1748,6 +1796,10 @@ class MarriageBodyState extends State<MarriageBody>
 
                             buildCircleButton(
                               onTap: () => _runAction(() async {
+                                if (state.requiresSubscription) {
+                                  showGoldPurchaseSheet(context);
+                                  return;
+                                }
                                 await _showSwipePopup(
                                   context,
                                   SwipeActionType.dislike,

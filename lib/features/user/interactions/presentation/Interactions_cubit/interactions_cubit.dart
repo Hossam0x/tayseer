@@ -486,4 +486,12 @@ class InteractionsCubit extends Cubit<InteractionsState> {
       emit(state.copyWith(regardsLeft: regardsLeft));
     }
   }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // RESET STATE (called on logout)
+  // ═══════════════════════════════════════════════════════════════════
+
+  void resetState() {
+    emit(const InteractionsState());
+  }
 }
