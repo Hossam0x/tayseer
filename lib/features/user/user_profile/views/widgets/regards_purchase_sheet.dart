@@ -396,8 +396,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('👑',
-                            style: TextStyle(fontSize: 18.sp)),
+                        AppImage(AssetsData.goldIcon, width: 33.w, height: 33.w),
                         SizedBox(width: 6.w),
                         Text(
                           context.tr('gold_membership'),

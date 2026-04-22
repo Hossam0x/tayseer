@@ -100,4 +100,5 @@ class ApiEndPoint {
   static const String pastMatches = '/user/past-matches';
   static const String bestAdvisors = '/advisor/best';
   static const String similarUsers = '/user/similar-users';
+  static const String chatDurationExtensions = '/chat-duration-extension';
 }

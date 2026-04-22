@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/status_ribbon_widget.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/regards_purchase_sheet.dart';
 
 import '../../../../../../my_import.dart';
 import '../../Interactions_cubit/interactions_cubit.dart';
@@ -50,6 +51,12 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
   }
 
   void _navigateToProfile() {
+    // لو مش مشترك — اعرض sheet الاشتراك
+    final isSubscribed = context.read<InteractionsCubit>().state.isSubscribed;
+    if (!isSubscribed) {
+      showGoldPurchaseSheet(context);
+      return;
+    }
     context.pushNamed(
       AppRouter.kMarriageView,
       arguments: {

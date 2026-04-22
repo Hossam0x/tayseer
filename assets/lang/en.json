@@ -567,6 +567,8 @@
   "apply_filters": "Apply Filters",
   "clear_filters": "Clear All",
   "filter_profiles": "Filter",
+  "advanced_filters": "Advanced filters",
+  "profile_and_activity": "Profile & Activity",
   "no_preference": "No Preference",
   "has_full_cv": "Complete Bio",
   "cv_status": "Bio",

@@ -43,10 +43,6 @@ class tayseerSocketHelper {
     // ✅ الأولوية: token ممرر صراحةً > _authorizedToken > NOTHING
     // لا نقرأ من الـ cache أبداً — التوكن لازم يجي من الـ caller صراحةً
     final String? tokenToUse = token ?? _authorizedToken;
-    log(
-      '🔵 SOCKET CONNECT — token ${token != null ? "PASSED" : (_authorizedToken != null ? "from _authorizedToken" : "NONE")}: ${tokenToUse == null ? "NULL" : (tokenToUse.length > 30 ? "${tokenToUse.substring(0, 30)}..." : tokenToUse)}',
-    );
-    log('🔵 SOCKET CONNECT — token length: ${tokenToUse?.length ?? 0}');
     if (tokenToUse == null || tokenToUse.isEmpty) {
       log('❌ No authorized token — refusing to connect');
       _isConnecting = false;
@@ -56,24 +52,13 @@ class tayseerSocketHelper {
       return false;
     }
 
-    log(
-      '🔑 Socket connecting with token: ${tokenToUse.length > 20 ? "${tokenToUse.substring(0, 20)}..." : tokenToUse}',
-    );
-    // 🔍 SOCKET TOKEN LOG — compare with cache
-    final cachedToken = CachNetwork.getStringData(key: 'token') ?? '';
-    log('═══════════════════════════════════════════');
-    log('🔌 SOCKET CONNECT — TOKEN COMPARISON:');
-    log('   🔑 Token used for socket:    ${tokenToUse.length > 20 ? "${tokenToUse.substring(0, 20)}..." : tokenToUse} (len: ${tokenToUse.length})');
-    log('   💾 Token in cache:           ${cachedToken.isNotEmpty ? "${cachedToken.substring(0, 20)}..." : "EMPTY"} (len: ${cachedToken.length})');
-    log('   ✅ Same token? ${tokenToUse == cachedToken ? "YES ✅" : "NO ❌ — MISMATCH!"}');
-    log('═══════════════════════════════════════════');
-
     _socket = IO.io(
       'https://tayser-app.net',
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
           .disableReconnection()
+          .enableForceNew()
           .setExtraHeaders({'Authorization': 'Bearer $tokenToUse'})
           .build(),
     );
@@ -407,11 +392,6 @@ class tayseerSocketHelper {
     log('🔄 Socket fully reset — connecting for new user...');
 
     await Future.delayed(const Duration(milliseconds: 500));
-
-    log(
-      '🔵 resetAndConnect — authorized token: ${token.length > 30 ? "${token.substring(0, 30)}..." : token}',
-    );
-    log('🔵 resetAndConnect — token length: ${token.length}');
 
     return await connect(token: _authorizedToken);
   }

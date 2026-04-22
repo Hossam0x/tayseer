@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/guest_lock_widget.dart';
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
@@ -42,18 +43,24 @@ class _MarriageViewState extends State<MarriageView> {
   }
 
   Future<void> _setSecureFlag() async {
-    try {
-      await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
-    } catch (e) {
-      debugPrint('Could not set secure flag: $e');
+    // Android: FLAG_SECURE — الـ screenshot بيطلع أسود في الـ marriage screen
+    // iOS: الحماية بتتم عبر ScreenshotProtectedImage (الصورة بتختفي بس)
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      try {
+        await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+      } catch (e) {
+        debugPrint('Could not set secure flag: $e');
+      }
     }
   }
 
   Future<void> _clearSecureFlag() async {
-    try {
-      await FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
-    } catch (e) {
-      debugPrint('Could not clear secure flag: $e');
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      try {
+        await FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
+      } catch (e) {
+        debugPrint('Could not clear secure flag: $e');
+      }
     }
   }
 

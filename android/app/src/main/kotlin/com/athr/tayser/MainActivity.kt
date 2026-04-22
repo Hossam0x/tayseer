@@ -1,14 +1,20 @@
 package com.athr.tayser
 
 import android.content.Intent
+import android.database.ContentObserver
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.provider.MediaStore
 import android.util.Log
 import android.view.WindowManager
 import com.paymob.paymob_sdk.PaymobSdk
 import com.paymob.paymob_sdk.ui.PaymobSdkListener
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -17,7 +23,12 @@ import io.flutter.plugin.common.MethodChannel.Result
 class MainActivity : FlutterActivity(), MethodCallHandler, PaymobSdkListener {
 
     private val CHANNEL = "paymob_sdk_flutter"
+    private val SCREENSHOT_EVENT_CHANNEL = "com.athr.tayser/screenshot_events"
     private var SDKResult: MethodChannel.Result? = null
+
+    private var eventSink: EventChannel.EventSink? = null
+    private var contentObserver: ContentObserver? = null
+    private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,6 +38,43 @@ class MainActivity : FlutterActivity(), MethodCallHandler, PaymobSdkListener {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler(this)
+
+        EventChannel(flutterEngine.dartExecutor.binaryMessenger, SCREENSHOT_EVENT_CHANNEL)
+            .setStreamHandler(object : EventChannel.StreamHandler {
+                override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                    eventSink = events
+                    startWatchingScreenshots()
+                }
+                override fun onCancel(arguments: Any?) {
+                    stopWatchingScreenshots()
+                    eventSink = null
+                }
+            })
+    }
+
+    private fun startWatchingScreenshots() {
+        contentObserver = object : ContentObserver(handler) {
+            override fun onChange(selfChange: Boolean, uri: Uri?) {
+                super.onChange(selfChange, uri)
+                uri?.let {
+                    val path = it.toString().lowercase()
+                    if (path.contains("screenshot") || path.contains("screenshots")) {
+                        eventSink?.success(true)
+                        handler.postDelayed({ eventSink?.success(false) }, 1500)
+                    }
+                }
+            }
+        }
+        contentResolver.registerContentObserver(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            true,
+            contentObserver!!
+        )
+    }
+
+    private fun stopWatchingScreenshots() {
+        contentObserver?.let { contentResolver.unregisterContentObserver(it) }
+        contentObserver = null
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {

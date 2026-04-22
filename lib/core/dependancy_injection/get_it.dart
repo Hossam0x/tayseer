@@ -7,6 +7,7 @@ import 'package:tayseer/core/cache/chat_cache_service.dart';
 import 'package:tayseer/core/utils/hive_service.dart';
 import 'package:tayseer/features/advisor/notification/data/repo/NotificationRepo.dart';
 import 'package:tayseer/features/user/marriage/view_model/regards_packages_cubit.dart';
+import 'package:tayseer/features/user/interactions/view_model/chat_duration_packages_cubit.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_remote_datasource.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository.dart';
@@ -593,6 +594,9 @@ Future<void> setupGetIt() async {
   );
   getIt.registerFactory<RegardsPackagePurchaseCubit>(
     () => RegardsPackagePurchaseCubit(getIt<IAPService>(), getIt<ApiService>()),
+  );
+  getIt.registerFactory<ChatDurationPackagesCubit>(
+    () => ChatDurationPackagesCubit(getIt<ApiService>()),
   );
 }
 

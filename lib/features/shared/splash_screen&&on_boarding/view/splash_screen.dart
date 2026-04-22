@@ -50,26 +50,19 @@ class _SplashScreenState extends State<SplashScreen>
       final socketHelper = getIt<tayseerSocketHelper>();
       final chatSocketService = getIt<ChatSocketService>();
 
-      // ✅ FIX 1: لو الـ socket already connected (من _connectSocketForNewUser بعد login)
+      // ✅ لو الـ socket already connected (من _connectSocketForNewUser بعد login)
       // تأكد بس إن الـ ChatSocketService initialized وارجع
       if (socketHelper.isConnected) {
-        log(
-          '✅ Splash: Socket already connected, ensuring ChatSocketService is init',
-        );
-        // لو مش initialized، initialize
         chatSocketService.init();
         return;
       }
 
-      // ✅ FIX 2: استخدم resetAndConnect بدل connect مباشرة
+      // ✅ استخدم resetAndConnect بدل connect مباشرة
       // عشان يضمن إن _authorizedToken بيتعيَّن صح
-      // وأي reconnect مستقبلي هيستخدم نفس الـ token
-      log('🔄 Splash: Connecting socket via resetAndConnect...');
       final connected = await socketHelper.resetAndConnect(token: token);
 
       if (connected) {
         chatSocketService.init();
-        log('✅ Splash: Socket connected and ChatSocketService initialized');
       } else {
         log('⚠️ Splash: Socket connection failed, but continuing app flow...');
       }

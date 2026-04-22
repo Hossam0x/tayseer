@@ -1,8 +1,11 @@
 import 'dart:ui';
 import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/my_import.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/regards_purchase_sheet.dart';
 import '../../../data/Model/interaction_usermodel .dart';
 
+import '../../Interactions_cubit/interactions_cubit.dart';
+import '../../Interactions_cubit/interactions_state.dart';
 class RecentlyJoined extends StatelessWidget {
   final InteractionUserModel item;
   final bool forceBlur;
@@ -21,6 +24,12 @@ class RecentlyJoined extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
+        // لو مش مشترك — اعرض sheet الاشتراك
+        final isSubscribed = context.read<InteractionsCubit>().state.isSubscribed;
+        if (!isSubscribed) {
+          showGoldPurchaseSheet(context);
+          return;
+        }
         context.pushNamed(
           AppRouter.kMarriageView,
           arguments: {

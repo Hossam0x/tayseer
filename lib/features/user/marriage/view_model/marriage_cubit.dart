@@ -446,7 +446,10 @@ class MarriageCubit extends Cubit<MarriageState> {
       (failure) {
         final data = failure is ServerFailure ? failure.data : null;
         final likesLeft = data?['likesLeft'] as int?;
-        final regardsLeft = data?['regardsLeft'] as int?;
+        // ✅ لو الـ data فيه regardsLeft استخدمه، لو لأ وفيه "No regards left" في الـ message → 0
+        final regardsLeftFromData = data?['regardsLeft'] as int?;
+        final regardsLeft = regardsLeftFromData ??
+            (failure.message?.toLowerCase().contains('no regards') == true ? 0 : null);
         emit(
           state.copyWith(
             sendRegardState: CubitStates.failure,
@@ -507,7 +510,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     result.fold(
       (failure) {
         final data = failure is ServerFailure ? failure.data : null;
-        final regardsLeft = data?['regardsLeft'] as int?;
+        final regardsLeftFromData = data?['regardsLeft'] as int?;
+        final regardsLeft = regardsLeftFromData ??
+            (failure.message?.toLowerCase().contains('no regards') == true ? 0 : null);
         emit(
           state.copyWith(
             sendRegardTextState: CubitStates.failure,

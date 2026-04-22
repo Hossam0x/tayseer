@@ -100,6 +100,11 @@ class MarriageFilterBody extends StatelessWidget {
                       ),
                     ),
 
+                    // ✅ Advanced Filters Header
+                    SliverToBoxAdapter(
+                      child: _buildAdvancedFiltersHeader(context),
+                    ),
+
                     SliverToBoxAdapter(
                       child: CustomDataCard(
                         sectionTitle: context.tr('data_and_activities'),
@@ -230,6 +235,39 @@ class MarriageFilterBody extends StatelessWidget {
         context,
         fieldKey: fieldKey,
         currentValue: value,
+      ),
+    );
+  }
+
+  Widget _buildAdvancedFiltersHeader(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(top: 8.h),
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F0E8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              AppImage(AssetsData.goldIcon, width: 24.w),
+              SizedBox(width: 8.w),
+              Text(
+                context.tr('advanced_filters'),
+                style: Styles.textStyle18Bold,
+              ),
+            ],
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            context.tr('profile_and_activity'),
+            style: Styles.textStyle14.copyWith(
+              color: AppColors.kprimaryColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -19,6 +19,12 @@ class GreetingProfileCard extends StatelessWidget {
   });
 
   void _navigateToProfile(BuildContext context) {
+    // لو مش مشترك — اعرض sheet الاشتراك
+    final isSubscribed = context.read<InteractionsCubit>().state.isSubscribed;
+    if (!isSubscribed) {
+      showGoldPurchaseSheet(context);
+      return;
+    }
     context.pushNamed(
       AppRouter.kMarriageView,
       arguments: {

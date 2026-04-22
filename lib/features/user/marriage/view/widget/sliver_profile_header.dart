@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'dart:math' as math;
 import 'package:tayseer/core/constant/marriage_constants.dart';
+import 'package:tayseer/core/widgets/screenshot_protected_image.dart';
 import 'package:tayseer/features/user/marriage/view/widget/animated_be_first_button.dart';
 import 'package:tayseer/features/user/marriage/view/widget/image_viewer_gallery.dart';
 import 'package:tayseer/my_import.dart';
@@ -318,23 +319,13 @@ class _FrontProfileCard extends StatelessWidget {
               children: [
                 if (!_hasImage)
                   _buildPlaceholder()
-                else if (shouldBlur)
-                  ImageFiltered(
-                    imageFilter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                    child: isAnimating
-                        ? AppImage(coverImage, fit: BoxFit.cover)
-                        : Hero(
-                            tag: coverImage,
-                            child: AppImage(coverImage, fit: BoxFit.cover),
-                          ),
-                  )
                 else
-                  isAnimating
-                      ? AppImage(coverImage, fit: BoxFit.cover)
-                      : Hero(
-                          tag: coverImage,
-                          child: AppImage(coverImage, fit: BoxFit.cover),
-                        ),
+                  ScreenshotProtectedImage(
+                    imageUrl: coverImage,
+                    fit: BoxFit.cover,
+                    isAnimating: isAnimating,
+                    shouldBlur: shouldBlur,
+                  ),
 
                 Positioned.fill(
                   child: DecoratedBox(
@@ -390,7 +381,7 @@ class _FrontProfileCard extends StatelessWidget {
             top: 150.h,
             right: 16.w,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: isArabic ? CrossAxisAlignment.start : CrossAxisAlignment.end,
               children: [
                 if (activeToday) _buildBadge(
                   icon: Icons.circle,

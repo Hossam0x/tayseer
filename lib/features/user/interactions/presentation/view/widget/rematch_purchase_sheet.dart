@@ -1,9 +1,84 @@
-import 'package:tayseer/features/user/marriage/model/regards_package_model.dart';
-import 'package:tayseer/features/user/marriage/view_model/regards_packages_cubit.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/regards_package_cubit/regards_package_cubit.dart';
-import 'package:tayseer/features/user/user_profile/views/cubit/regards_package_cubit/regards_package_state.dart';
-import 'package:tayseer/features/user/user_profile/views/widgets/regards_purchase_sheet.dart';
+import 'dart:async';
+
+import 'package:tayseer/core/services/iap_service.dart';
+import 'package:tayseer/features/user/interactions/data/model/chat_duration_package_model.dart';
+import 'package:tayseer/features/user/interactions/view_model/chat_duration_packages_cubit.dart';
 import 'package:tayseer/my_import.dart';
+
+// ─── Purchase state ──────────────────────────────────────────────────────────
+
+enum _PurchaseStatus { initial, purchasing, success, canceled, error }
+
+class _PurchaseState {
+  final _PurchaseStatus status;
+  final String? error;
+
+  const _PurchaseState({
+    this.status = _PurchaseStatus.initial,
+    this.error,
+  });
+
+  _PurchaseState copyWith({_PurchaseStatus? status, String? error}) =>
+      _PurchaseState(status: status ?? this.status, error: error);
+}
+
+class _PurchaseCubit extends Cubit<_PurchaseState> {
+  final IAPService _iapService;
+  final ApiService _apiService;
+
+  _PurchaseCubit(this._iapService, this._apiService)
+      : super(const _PurchaseState());
+
+  void reset() => emit(const _PurchaseState());
+
+  Future<void> purchase(ChatDurationPackageModel package) async {
+    final productId = package.appleProductId;
+    if (productId.isEmpty) {
+      emit(state.copyWith(
+        status: _PurchaseStatus.error,
+        error: 'معرف المنتج غير متوفر',
+      ));
+      return;
+    }
+
+    emit(state.copyWith(status: _PurchaseStatus.purchasing));
+    unawaited(_iapService.init());
+
+    final platform = Platform.isIOS ? 'ios' : 'android';
+
+    try {
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.initiatePurchase,
+        data: {
+          'productId': productId,
+          'platform': platform,
+          'packageId': package.id,
+        },
+      );
+
+      if (response['success'] != true) {
+        emit(state.copyWith(
+          status: _PurchaseStatus.error,
+          error: response['message']?.toString() ?? 'فشل بدء عملية الشراء',
+        ));
+        return;
+      }
+
+      final pendingId = response['data']?['pendingId'] as String? ?? '';
+      await _iapService.buyProduct(productId, uniqueNumber: pendingId);
+
+      emit(state.copyWith(status: _PurchaseStatus.success));
+    } catch (e) {
+      final err = IAPErrorHandler.handle(e);
+      emit(state.copyWith(
+        status: err.isCanceled ? _PurchaseStatus.canceled : _PurchaseStatus.error,
+        error: err.isCanceled ? null : err.message,
+      ));
+    }
+  }
+}
+
+// ─── Public entry point ───────────────────────────────────────────────────────
 
 void showRematchPurchaseSheet(
   BuildContext context, {
@@ -18,9 +93,11 @@ void showRematchPurchaseSheet(
     builder: (_) => MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (_) => getIt<RegardsPackagesCubit>()..fetchPackages(),
+          create: (_) => getIt<ChatDurationPackagesCubit>()..fetchPackages(),
         ),
-        BlocProvider(create: (_) => getIt<RegardsPackagePurchaseCubit>()),
+        BlocProvider(
+          create: (_) => _PurchaseCubit(getIt<IAPService>(), getIt<ApiService>()),
+        ),
       ],
       child: _RematchSheet(
         userName: userName,
@@ -30,6 +107,8 @@ void showRematchPurchaseSheet(
     ),
   );
 }
+
+// ─── Sheet widget ─────────────────────────────────────────────────────────────
 
 class _RematchSheet extends StatefulWidget {
   final String userName;
@@ -47,38 +126,34 @@ class _RematchSheet extends StatefulWidget {
 }
 
 class _RematchSheetState extends State<_RematchSheet> {
-  int _selectedIndex = 1;
+  int _selectedIndex = 0;
 
-  void _onPay(BuildContext context, List<PurchasePackage> packages) {
+  void _onPay(BuildContext context, List<ChatDurationPackageModel> packages) {
     if (packages.isEmpty) return;
     final idx = _selectedIndex.clamp(0, packages.length - 1);
-    final selected = packages[idx];
-    final rawPackage = RegardsPackageModel(
-      id: selected.id,
-      appleProductId: selected.appleProductId,
-      amount: selected.count,
-      price: selected.price,
-      currency: selected.currency,
-      priceForOne: selected.priceForOne,
-    );
-    context.read<RegardsPackagePurchaseCubit>().purchasePackage(rawPackage);
+    context.read<_PurchaseCubit>().purchase(packages[idx]);
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<RegardsPackagePurchaseCubit, RegardsPackagePurchaseState>(
+    return BlocListener<_PurchaseCubit, _PurchaseState>(
       listener: (context, state) {
-        if (state.status == RegardsPackagePurchaseStatus.success) {
+        if (state.status == _PurchaseStatus.success) {
           Navigator.pop(context);
           widget.onSuccess();
           ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: 'تمت إعادة التوافق بنجاح', isSuccess: true),
+            CustomSnackBar(
+              context,
+              text: 'تمت إعادة التوافق بنجاح',
+              isSuccess: true,
+            ),
           );
-        } else if (state.status == RegardsPackagePurchaseStatus.error && state.error != null) {
+        } else if (state.status == _PurchaseStatus.error &&
+            state.error != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(context, text: state.error!, isError: true),
           );
-          context.read<RegardsPackagePurchaseCubit>().resetStatus();
+          context.read<_PurchaseCubit>().reset();
         }
       },
       child: Container(
@@ -87,16 +162,18 @@ class _RematchSheetState extends State<_RematchSheet> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         ),
         padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 32.h),
-        child: BlocBuilder<RegardsPackagesCubit, RegardsPackagesState>(
+        child: BlocBuilder<ChatDurationPackagesCubit, ChatDurationPackagesState>(
           builder: (context, pkgState) {
             final packages = pkgState.status == CubitStates.success
-                ? PurchasePackage.fromApiPackages(pkgState.packages)
-                : <PurchasePackage>[];
+                ? pkgState.packages
+                : <ChatDurationPackageModel>[];
             final isLoading = pkgState.status == CubitStates.loading;
 
-            return BlocBuilder<RegardsPackagePurchaseCubit, RegardsPackagePurchaseState>(
+            return BlocBuilder<_PurchaseCubit, _PurchaseState>(
               builder: (context, purchaseState) {
-                final isPurchasing = purchaseState.status == RegardsPackagePurchaseStatus.purchasing;
+                final isPurchasing =
+                    purchaseState.status == _PurchaseStatus.purchasing;
+
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -111,7 +188,7 @@ class _RematchSheetState extends State<_RematchSheet> {
                     ),
                     SizedBox(height: 20.h),
 
-                    // User avatar + name
+                    // Avatar
                     CircleAvatar(
                       radius: 36.r,
                       backgroundImage: widget.userImage.isNotEmpty
@@ -119,10 +196,12 @@ class _RematchSheetState extends State<_RematchSheet> {
                           : null,
                       backgroundColor: AppColors.secondary100,
                       child: widget.userImage.isEmpty
-                          ? Icon(Icons.person, color: AppColors.secondary400, size: 32.w)
+                          ? Icon(Icons.person,
+                              color: AppColors.secondary400, size: 32.w)
                           : null,
                     ),
                     SizedBox(height: 12.h),
+
                     Text(
                       'إعادة التوافق مع ${widget.userName}',
                       style: Styles.textStyle20Meduim.copyWith(
@@ -133,8 +212,9 @@ class _RematchSheetState extends State<_RematchSheet> {
                     ),
                     SizedBox(height: 8.h),
                     Text(
-                      'اختر باقة التحيات لإعادة التواصل مع هذا الشخص',
-                      style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
+                      'اختر مدة تمديد التوافق مع هذا الشخص',
+                      style: Styles.textStyle14
+                          .copyWith(color: AppColors.secondary400),
                       textAlign: TextAlign.center,
                     ),
                     SizedBox(height: 20.h),
@@ -146,11 +226,11 @@ class _RematchSheetState extends State<_RematchSheet> {
                       )
                     else
                       ...packages.asMap().entries.map(
-                        (e) => Padding(
-                          padding: EdgeInsets.only(bottom: 10.h),
-                          child: _buildPackageCard(context, e.key, e.value),
-                        ),
-                      ),
+                            (e) => Padding(
+                              padding: EdgeInsets.only(bottom: 10.h),
+                              child: _buildPackageCard(e.key, e.value),
+                            ),
+                          ),
 
                     SizedBox(height: 20.h),
                     CustomBotton(
@@ -173,101 +253,68 @@ class _RematchSheetState extends State<_RematchSheet> {
     );
   }
 
-  Widget _buildPackageCard(BuildContext context, int index, PurchasePackage pkg) {
+  Widget _buildPackageCard(int index, ChatDurationPackageModel pkg) {
     final isSelected = _selectedIndex == index;
+
+    final daysLabel = pkg.durationInDays == 1
+        ? 'يوم واحد'
+        : pkg.durationInDays == 2
+            ? 'يومان'
+            : '${pkg.durationInDays} أيام';
+
     return GestureDetector(
       onTap: () => setState(() => _selectedIndex = index),
       child: Directionality(
         textDirection: TextDirection.rtl,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: EdgeInsets.only(
-                top: (pkg.hasDiscount && pkg.discountPercent != null) ? 14.h : 0,
-              ),
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary50 : Colors.white,
-                borderRadius: BorderRadius.circular(14.r),
-                border: Border.all(
-                  color: isSelected ? AppColors.primary300 : AppColors.secondary100,
-                  width: isSelected ? 1.5 : 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    '${pkg.count} ',
-                    style: Styles.textStyle32Meduim.copyWith(
-                      color: AppColors.kscandryTextColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'تحية',
-                          style: Styles.textStyle14.copyWith(color: AppColors.secondary600),
-                        ),
-                        SizedBox(height: 4.h),
-                        Directionality(
-                          textDirection: TextDirection.ltr,
-                          child: Text(
-                            '${pkg.price.toStringAsFixed(0)} ${pkg.currency}',
-                            style: Styles.textStyle12SemiBold.copyWith(color: AppColors.secondary400),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    width: 24.w,
-                    height: 24.w,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected ? AppColors.primary400 : AppColors.secondary300,
-                        width: 2,
-                      ),
-                      color: isSelected ? AppColors.primary400 : Colors.white,
-                    ),
-                    child: isSelected
-                        ? Icon(Icons.check, size: 14.w, color: Colors.white)
-                        : null,
-                  ),
-                ],
-              ),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary50 : Colors.white,
+            borderRadius: BorderRadius.circular(14.r),
+            border: Border.all(
+              color:
+                  isSelected ? AppColors.primary300 : AppColors.secondary100,
+              width: isSelected ? 1.5 : 1,
             ),
-            if (pkg.hasDiscount && pkg.discountPercent != null)
-              Positioned(
-                top: 0,
-                right: 12.w,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFEB7A91), Color.fromRGBO(245, 192, 3, 1)],
-                      begin: Alignment.centerRight,
-                      end: Alignment.centerLeft,
-                    ),
-                    borderRadius: BorderRadius.only(
-                      topRight: Radius.circular(20.r),
-                      topLeft: Radius.circular(6.r),
-                      bottomRight: Radius.circular(6.r),
-                      bottomLeft: Radius.circular(20.r),
-                    ),
-                  ),
-                  child: Text(
-                    'وفر ${pkg.discountPercent}%',
-                    style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w700, color: Colors.white),
-                  ),
+          ),
+          child: Row(
+            children: [
+              Text(
+                daysLabel,
+                style: Styles.textStyle16SemiBold.copyWith(
+                  color: AppColors.kscandryTextColor,
                 ),
               ),
-          ],
+              const Spacer(),
+              Directionality(
+                textDirection: TextDirection.ltr,
+                child: Text(
+                  '${pkg.price.toStringAsFixed(0)} ${pkg.currency}',
+                  style: Styles.textStyle14
+                      .copyWith(color: AppColors.secondary400),
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Container(
+                width: 24.w,
+                height: 24.w,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.primary400
+                        : AppColors.secondary300,
+                    width: 2,
+                  ),
+                  color: isSelected ? AppColors.primary400 : Colors.white,
+                ),
+                child: isSelected
+                    ? Icon(Icons.check, size: 14.w, color: Colors.white)
+                    : null,
+              ),
+            ],
+          ),
         ),
       ),
     );

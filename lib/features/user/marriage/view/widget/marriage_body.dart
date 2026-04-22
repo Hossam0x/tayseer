@@ -159,7 +159,7 @@ class MarriageBodyState extends State<MarriageBody>
 
   String _translateCompatibilityValue(String value, String? category) {
     final v = value.trim().toLowerCase();
-    final cat = category?.toLowerCase(); // ← lowercase مرة واحدة هنا
+    final cat = category?.toLowerCase();
 
     if (v == 'yes' || v == 'true' || v == '1') {
       return switch (cat) {
@@ -167,7 +167,7 @@ class MarriageBodyState extends State<MarriageBody>
         'alcohol' ||
         'drinkalcohol' ||
         'drinks_alcohol' => context.tr('drinks_alcohol_yes'),
-        'children' || 'has_children' => context.tr('has_childrens'),
+        'children' || 'has_children' || 'haschildren' => context.tr('has_childrens'),
         _ => context.tr('yes'),
       };
     }
@@ -177,7 +177,7 @@ class MarriageBodyState extends State<MarriageBody>
         'alcohol' ||
         'drinkalcohol' ||
         'drinks_alcohol' => context.tr('drinks_alcohol_no'),
-        'children' || 'has_children' => context.tr('has_no_children'),
+        'children' || 'has_children' || 'haschildren' => context.tr('has_no_children'),
         _ => context.tr('no'),
       };
     }
@@ -227,17 +227,15 @@ class MarriageBodyState extends State<MarriageBody>
         cubit.setScrollingDown(false);
         widget.onScroll?.call(false);
       }
+      context.read<LayoutCubit>().setNavVisibility(true);
     });
   }
 
   Future<void> _syncNotificationAfterInteraction() async {
-    // ✅ جلب الإشعارات من API عبر InteractionsCubit
     await interactionsCubit.fetchAndSyncNotificationCount();
 
     if (!mounted) return;
 
-    // ✅ نقل البيانات من InteractionsCubit إلى MarriageCubit
-    // لتجنب مشكلة الـ states المنفصلة
     final interactionsState = interactionsCubit.state;
     context.read<MarriageCubit>().syncNotificationCountFromInteractions(
       interactionsState.totalNotificationCount,
@@ -247,7 +245,6 @@ class MarriageBodyState extends State<MarriageBody>
     );
   }
 
-  // ✅ بيبني الـ AnimatedHistoryButton المتصل بالـ InteractionsCubit
   Widget _buildHistoryButton({bool forMarriageTab = false}) {
     return BlocBuilder<InteractionsCubit, InteractionsState>(
       bloc: interactionsCubit,
@@ -313,7 +310,6 @@ class MarriageBodyState extends State<MarriageBody>
     entry.remove();
   }
 
-  /// Guard: runs [action] only if no other action is in progress
   Future<void> _runAction(Future<void> Function() action) async {
     if (_isActionInProgress) return;
     _isActionInProgress = true;
@@ -666,20 +662,25 @@ class MarriageBodyState extends State<MarriageBody>
           previous.likesLeft != current.likesLeft,
 
       listener: (context, state) {
-        // ✅ likes خلصت
-        if (state.likesLeft == 0 &&
-            state.userInteractionState == CubitStates.failure) {
-          showGoldPurchaseSheet(context);
-          context.read<MarriageCubit>().resetState();
-          return;
-        }
-
-        // ✅ regards خلصت
+        // ✅ لو regardsLeft وصل 0 من regard failure
         if (state.regardsLeft == 0 &&
             (state.sendRegardState == CubitStates.failure ||
                 state.sendRegardTextState == CubitStates.failure)) {
           showRegardsPurchaseSheet(context);
           context.read<MarriageCubit>().resetState();
+          return;
+        }
+
+        if (state.likesLeft == 0 &&
+            state.userInteractionState == CubitStates.failure) {
+          // ✅ لو الـ like فشل وفيه regardsLeft = 0 كمان، احفظه قبل الـ reset
+          final regardsLeft = state.regardsLeft;
+          showGoldPurchaseSheet(context);
+          context.read<MarriageCubit>().resetState();
+          // ✅ لو regardsLeft = 0 جه مع الـ like failure، حدّث الـ state
+          if (regardsLeft == 0) {
+            context.read<MarriageCubit>().updateLimits(regardsLeft: 0);
+          }
           return;
         }
 
@@ -741,7 +742,6 @@ class MarriageBodyState extends State<MarriageBody>
         if (state.marriageProfileState == CubitStates.loading) {
           return _buildShimmerScreen();
         } else if (state.marriageProfileState == CubitStates.failure) {
-          // ✅ error state — ظهّر الـ nav
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             context.read<LayoutCubit>().setNavVisibility(true);
@@ -796,7 +796,6 @@ class MarriageBodyState extends State<MarriageBody>
 
         if (users.isEmpty) {
           if (state.isMarriageTab) {
-            // ✅ مفيش scroll — ظهّر الـ nav bar
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!mounted) return;
               context.read<LayoutCubit>().setNavVisibility(true);
@@ -839,11 +838,6 @@ class MarriageBodyState extends State<MarriageBody>
         }
 
         if (state.isMarriageTab) {
-          // ✅ في users — اخبي الـ nav bar (الـ scroll هيظهره)
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            context.read<LayoutCubit>().setNavVisibility(false);
-          });
           return _buildMarriageContent(
             personId: widget.personId ?? "",
             key: const ValueKey('marriage'),
@@ -949,10 +943,13 @@ class MarriageBodyState extends State<MarriageBody>
     );
   }
 
-  Widget _buildVerifiedCard(String? subscriptionType) {
+  Widget _buildVerifiedCard(String? subscriptionType, bool isVerified) {
     final bool isGold = subscriptionType == 'gold';
     final bool isUltra = subscriptionType == 'ultra';
     final bool isPremium = isGold || isUltra;
+
+    // ✅ الكارت الـ free (verified_profile) يظهر بس لو المستخدم verified
+    if (!isPremium && !isVerified) return const SizedBox.shrink();
 
     final Color borderColor = isUltra
         ? const Color(0xFF6284FF).withOpacity(0.5)
@@ -1085,7 +1082,8 @@ class MarriageBodyState extends State<MarriageBody>
       case 'marital_status':
         return '💍';
       case 'children':
-      case 'family':
+      case 'has_children':
+      case 'haschildren':
         return '👶';
       case 'height':
         return '📏';
@@ -1110,10 +1108,22 @@ class MarriageBodyState extends State<MarriageBody>
   List<String> _buildCompatibilityTags(List<MatchingTag>? matchingTags) {
     if (matchingTags == null) return [];
 
+    // ✅ التعديل: شيلنا children و has_children من هنا
+    // عشان يتعرضوا في الـ CompatibilitySection بشكل صح زي AboutMeSection
+    const excludedCategories = {
+      'social_status',
+      'socialstatus',
+      'health_status',
+      'healthstatus',
+    };
+
     final List<String> result = [];
 
     for (final tag in matchingTags) {
       if (tag.value == null || tag.value!.trim().isEmpty) continue;
+
+      final cat = tag.category?.toLowerCase().replaceAll('_', '') ?? '';
+      if (excludedCategories.any((e) => e.replaceAll('_', '') == cat)) continue;
 
       final values = tag.value!
           .split(',')
@@ -1126,7 +1136,7 @@ class MarriageBodyState extends State<MarriageBody>
           final emoji = MarriageConstants.getEmoji(value);
           result.add('$emoji ${_tr(value)}');
         } else {
-          // ← التغيير هنا: بدل _tr(value) استخدم الدالة الجديدة
+          // ✅ _translateCompatibilityValue بتتعامل مع children/has_children صح
           final translated = _translateCompatibilityValue(value, tag.category);
           result.add('${_getTagEmoji(tag.category, value)} $translated');
         }
@@ -1191,7 +1201,6 @@ class MarriageBodyState extends State<MarriageBody>
               : [if (nextMainImage != null) nextMainImage, ...nextValidImages])
         : (nextMainImage != null ? [nextMainImage] : []);
 
-    // ✅ Pre-cache next profile images so they're ready when the user swipes
     if (nextImages.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -1315,7 +1324,6 @@ class MarriageBodyState extends State<MarriageBody>
                     activeToday: user?.activeToday ?? false,
                     onFavoriteTap: canInteract
                         ? () => _runAction(() async {
-                      
                             await _showSwipePopup(
                               context,
                               SwipeActionType.favorite,
@@ -1590,19 +1598,6 @@ class MarriageBodyState extends State<MarriageBody>
                     ),
                   ),
 
-                  // if (!_isConsultantViewingProfile)
-                  //   SliverPadding(
-                  //     padding: EdgeInsets.symmetric(
-                  //       horizontal: 16.w,
-                  //       vertical: 10.h,
-                  //     ),
-                  //     sliver: SliverToBoxAdapter(
-                  //       child: MessageInputSection(
-                  //         name: user?.name ?? '',
-                  //         personId: user?.id ?? '',
-                  //       ),
-                  //     ),
-                  //   ),
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -1631,7 +1626,6 @@ class MarriageBodyState extends State<MarriageBody>
                               if (!mounted) return;
 
                               if (widget.fromInteractions) {
-                                // ✅ ارجع للتفاعلات زي ما بيحصل مع like/dislike
                                 context.pop();
                               } else if (widget.personId == null) {
                                 _resetScrollTracking();
@@ -1662,7 +1656,7 @@ class MarriageBodyState extends State<MarriageBody>
                       vertical: 20.h,
                     ),
                     sliver: SliverToBoxAdapter(
-                      child: _buildVerifiedCard(user?.subscriptionType),
+                      child: _buildVerifiedCard(user?.subscriptionType, isVerifiedUser),
                     ),
                   ),
 
@@ -1697,8 +1691,6 @@ class MarriageBodyState extends State<MarriageBody>
 
                             buildCircleButton(
                               onTap: () => _runAction(() async {
-                              
-                                // ✅ لو likesLeft = 0 اعرض sheet مباشرة
                                 if (state.likesLeft == 0) {
                                   showGoldPurchaseSheet(context);
                                   return;
@@ -1734,8 +1726,6 @@ class MarriageBodyState extends State<MarriageBody>
 
                             buildCircleButton(
                               onTap: () => _runAction(() async {
-                              
-                                // ✅ لو regardsLeft = 0 اعرض purchase sheet مباشرة
                                 if (state.regardsLeft == 0) {
                                   showRegardsPurchaseSheet(context);
                                   return;
@@ -1789,6 +1779,12 @@ class MarriageBodyState extends State<MarriageBody>
                             if (state.userHistory.isNotEmpty)
                               buildCircleButton(
                                 onTap: () => _runAction(() async {
+                                  // لو مش مشترك — اعرض sheet الاشتراك
+                                  final isSubscribed = _interactionsCubit?.state.isSubscribed ?? false;
+                                  if (!isSubscribed) {
+                                    showGoldPurchaseSheet(context);
+                                    return;
+                                  }
                                   await _showSwipePopup(
                                     context,
                                     SwipeActionType.back,
