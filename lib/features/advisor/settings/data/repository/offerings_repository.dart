@@ -17,7 +17,7 @@ class OfferingsRepositoryImpl implements OfferingsRepository {
   @override
   Future<Either<Failure, OfferingsResponse>> getOfferings() async {
     try {
-      final response = await _apiService.get(endPoint: '/advisor/offerings');
+      final response = await _apiService.get(endPoint: '/advisor/my-offerings');
 
       if (response['success'] == true) {
         return Right(OfferingsResponse.fromJson(response));

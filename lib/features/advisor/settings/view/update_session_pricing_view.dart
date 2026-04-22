@@ -70,6 +70,12 @@ class UpdateSessionPricingView extends StatelessWidget {
                                 ? () => context
                                       .read<UpdateOfferingsCubit>()
                                       .goBackToCountrySelection()
+                                : state.step ==
+                                          UpdateOfferingsStep.selectCountry &&
+                                      state.hasSummaryData
+                                ? () => context
+                                      .read<UpdateOfferingsCubit>()
+                                      .goBackToSummary()
                                 : null,
                           ),
                           Gap(16.h),

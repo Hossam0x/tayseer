@@ -88,6 +88,16 @@ class UpdateOfferingsCubit extends Cubit<UpdateOfferingsState> {
     );
   }
 
+  void goBackToSummary() {
+    emit(
+      state.copyWith(
+        step: UpdateOfferingsStep.summary,
+        clearSelectedCountry: true,
+        currentOfferings: [],
+      ),
+    );
+  }
+
   // ─────────────────────────────────────────────
   // Step 2: Add Sessions
   // ─────────────────────────────────────────────

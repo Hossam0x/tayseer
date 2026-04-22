@@ -9,7 +9,6 @@ abstract class AssetsData {
   static const String eliteBackgroundPng = "assets/images/eliteBackground.png";
   static const String eliteIcon = "assets/icons/Elite.png";
   static const String emptyBoxImage = "assets/images/EmptyBox.png";
-  static const String emptyChatIcon = "assets/icons/empty_chat.svg";
   static const String errorIcon = "assets/icons/error.png";
   static const String goldIcon = "assets/icons/goldicon.png";
   static const String homeBackgroundImage = "assets/images/home_background.png";
@@ -234,6 +233,7 @@ abstract class AssetsData {
       "assets/icons/activation_success_image.svg";
   static const String kAccountReviewImage =
       "assets/icons/account_review_image.svg";
+  static const String emptyChatIcon = "assets/icons/empty_chat.svg";
 
   // ==================== GIF Animations ====================
   static const String kAppLogoGif = "assets/images/appl_logo_gif.gif";

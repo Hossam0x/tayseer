@@ -85,7 +85,16 @@ class OfferingsResponse {
   factory OfferingsResponse.fromJson(Map<String, dynamic> json) {
     final Map<String, List<OfferingItemModel>> data = {};
     final rawData = json['data'];
-    if (rawData is Map) {
+
+    if (rawData is List) {
+      // Flat array — group by country field
+      for (final e in rawData) {
+        final item = OfferingItemModel.fromJson(e as Map<String, dynamic>);
+        final key = item.country ?? 'unknown';
+        data.putIfAbsent(key, () => []).add(item);
+      }
+    } else if (rawData is Map) {
+      // Legacy grouped format
       rawData.forEach((key, value) {
         if (value is List) {
           data[key.toString()] = value
@@ -94,6 +103,7 @@ class OfferingsResponse {
         }
       });
     }
+
     return OfferingsResponse(
       success: json['success'] as bool? ?? false,
       message: json['message']?.toString() ?? '',
