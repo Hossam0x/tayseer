@@ -20,10 +20,10 @@ abstract class AssetsData {
   static const String kAccountActivationPendingImage =
       "assets/images/account_activation_pending_image.png";
   static const String kAccountActivationSuccessImage =
-      "assets/images/activation_success_image.png";
+      "assets/icons/activation_success_image.svg";
   static const String kAccountReviewImage =
       "assets/images/account_review_image.png";
-  static const String kAppLogo = "assets/images/app_logo.png";
+  static const String kAppLogo = "assets/images/topAppLogo.png";
   static const String kAppLogotayseerImage = "assets/images/app_logo_t.png";
   static const String kBackgroundtayseerImage =
       "assets/images/background_tayser_Image.png";

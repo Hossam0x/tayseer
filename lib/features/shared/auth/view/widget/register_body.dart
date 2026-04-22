@@ -82,8 +82,8 @@ class RegisterBody extends StatelessWidget {
                   SizedBox(height: context.height * 0.01),
                   AppImage(
                     AssetsData.kAppLogo,
-                    width: context.width * 0.5,
-                    height: context.height * 0.1,
+                    width: context.width * 0.65,
+                    height: context.height * 0.14,
                   ),
                   SizedBox(height: context.height * 0.03),
                   Text(
