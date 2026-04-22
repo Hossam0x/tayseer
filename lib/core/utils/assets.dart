@@ -22,7 +22,7 @@ abstract class AssetsData {
   static const String kAccountActivationSuccessImage =
       "assets/icons/activation_success_image.svg";
   static const String kAccountReviewImage =
-      "assets/images/account_review_image.png";
+      "assets/icons/account_review_image.svg";
   static const String kAppLogo = "assets/images/topAppLogo.png";
   static const String kAppLogotayseerImage = "assets/images/app_logo_t.png";
   static const String kBackgroundtayseerImage =
