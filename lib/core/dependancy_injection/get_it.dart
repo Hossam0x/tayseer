@@ -70,6 +70,7 @@ import 'package:tayseer/features/advisor/settings/view/cubit/story_visibility/st
 import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo_impl.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
+import 'package:flutter/foundation.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:tayseer/features/shared/reports/data/repo/reports_repo.dart';
 import 'package:tayseer/features/shared/reports/data/repo/reports_repo_impl.dart';
@@ -124,17 +125,19 @@ Future<void> setupGetIt() async {
   getIt.registerLazySingleton<Dio>(() {
     final dio = Dio();
 
-    dio.interceptors.add(
-      PrettyDioLogger(
-        requestHeader: true,
-        requestBody: true,
-        responseHeader: false,
-        responseBody: true,
-        error: true,
-        compact: true,
-        maxWidth: 120,
-      ),
-    );
+    if (kDebugMode) {
+      dio.interceptors.add(
+        PrettyDioLogger(
+          requestHeader: true,
+          requestBody: true,
+          responseHeader: false,
+          responseBody: true,
+          error: true,
+          compact: true,
+          maxWidth: 120,
+        ),
+      );
+    }
 
     return dio;
   });
