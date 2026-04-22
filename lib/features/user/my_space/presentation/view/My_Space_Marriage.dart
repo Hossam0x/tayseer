@@ -16,7 +16,7 @@ class MySpaceMarriageContent extends StatelessWidget {
         isDataCompleted = userState.userProfile?.dataCompleted ?? false;
       }
     } catch (_) {}
-  // ✅ لو البيانات مكتملة، ما نعرضش شاشة الاستكمال
+    // ✅ لو البيانات مكتملة، ما نعرضش شاشة الاستكمال
     if (!isDataCompleted) {
       return _buildIncompleteProfile(context);
     }
@@ -42,7 +42,7 @@ class MySpaceMarriageContent extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  AppImage(AssetsData.guestLockImage, width: 228.w),
+                  AppImage(AssetsData.lockIcon, width: 228.w),
                   SizedBox(height: 24.w),
                   Text(
                     context.tr('complete_your_profile'),

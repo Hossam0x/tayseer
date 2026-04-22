@@ -44,7 +44,7 @@ class GuestLockWidget extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  AppImage(AssetsData.guestLockImage, width: 228),
+                  AppImage(AssetsData.lockIcon, width: 228),
                   const SizedBox(height: 24),
                   Text(
                     message,

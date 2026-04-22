@@ -12,7 +12,6 @@ abstract class AssetsData {
   static const String emptyChatImage = "assets/images/empty_chat.png";
   static const String errorIcon = "assets/icons/error.png";
   static const String goldIcon = "assets/icons/goldicon.png";
-  static const String guestLockImage = "assets/images/guest_lock.png";
   static const String homeBackgroundImage = "assets/images/home_background.png";
   static const String homeBarBackgroundImage =
       "assets/images/home_bar_background.png";
@@ -53,7 +52,7 @@ abstract class AssetsData {
   static const String ksuccessTrueImage =
       "assets/images/success_true_image.png";
   static const String kWoriningImage = "assets/images/worining_image.png";
-  static const String lockImage = "assets/images/lock.png";
+
   static const String noInternet = "assets/images/no_internet_image.png";
   static const String noPersonsBlocked = "assets/images/noPersonsBlocked.png";
   static const String noPosts = "assets/images/no_posts.png";
@@ -234,6 +233,7 @@ abstract class AssetsData {
   static const String youCanSeeWhoLiked = "assets/icons/youCanSeeWhoLiked.svg";
   static const String youNotSeeWhoLiked = "assets/icons/youNotSeeWhoLiked.svg";
   static const String emptynotification = "assets/icons/empty_notification.svg";
+  static const String lockIcon = "assets/icons/lock.svg";
 
   // ==================== GIF Animations ====================
   static const String kAppLogoGif = "assets/images/appl_logo_gif.gif";

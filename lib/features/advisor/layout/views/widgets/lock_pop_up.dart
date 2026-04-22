@@ -20,7 +20,7 @@ class LockPopUp extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
         child: Column(
           children: [
-            AppImage(AssetsData.guestLockImage, width: 107),
+            AppImage(AssetsData.lockIcon, width: 107),
             SizedBox(height: 13),
             Text(
               'تفاعل أكتر مع المحتوى',
