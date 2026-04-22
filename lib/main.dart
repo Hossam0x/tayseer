@@ -57,6 +57,14 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.black,
+      statusBarIconBrightness: Brightness.light, // Android: white icons
+      statusBarBrightness: Brightness.dark, // iOS: white icons
+    ),
+  );
+
   await dotenv.load(fileName: '.env');
   await Hive.initFlutter();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
