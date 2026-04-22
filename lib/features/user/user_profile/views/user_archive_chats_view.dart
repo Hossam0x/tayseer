@@ -245,7 +245,7 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image.asset(AssetsData.emptyChatImage, width: 150.w, height: 150.w),
+          AppImage(AssetsData.emptyChatIcon, width: 150.w, height: 150.w),
           Gap(20.h),
           Text(
             context.tr('no_archived_chats'),

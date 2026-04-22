@@ -19,7 +19,7 @@ class SharedEmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          AppImage(AssetsData.emptyChatImage, width: imageWidth),
+          AppImage(AssetsData.emptyChatIcon, width: imageWidth),
 
           SizedBox(height: spacing1),
 
