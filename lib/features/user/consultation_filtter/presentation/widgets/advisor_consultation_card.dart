@@ -57,14 +57,14 @@ class AdvisorConsultationCard extends StatelessWidget {
                               height: 66.w,
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => AppImage(
-                                AssetsData.kUserImage,
+                                AssetsData.defaultProfileImage,
                                 width: 66.w,
                                 height: 66.w,
                                 fit: BoxFit.cover,
                               ),
                             )
                           : AppImage(
-                              AssetsData.kUserImage,
+                              AssetsData.defaultProfileImage,
                               width: 66.w,
                               height: 66.w,
                               fit: BoxFit.cover,

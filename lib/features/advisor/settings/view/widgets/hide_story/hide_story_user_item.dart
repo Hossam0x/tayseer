@@ -19,7 +19,7 @@ class HideStoryUserItem extends StatelessWidget {
               backgroundColor: Colors.grey.shade200,
               backgroundImage: user.image != null && user.image!.isNotEmpty
                   ? NetworkImage(user.image!) as ImageProvider
-                  : AssetImage(AssetsData.avatarImage),
+                  : AssetImage(AssetsData.defaultProfileImage),
               child: user.image == null || user.image!.isEmpty
                   ? Icon(Icons.person, color: Colors.grey.shade400, size: 24.sp)
                   : null,

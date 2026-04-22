@@ -25,13 +25,14 @@ class AppVideo extends StatefulWidget {
   State<AppVideo> createState() => _AppVideoState();
 }
 
-class _AppVideoState extends State<AppVideo> {
+class _AppVideoState extends State<AppVideo> with WidgetsBindingObserver {
   late VideoPlayerController _controller;
   bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeVideo();
   }
 
@@ -55,10 +56,22 @@ class _AppVideoState extends State<AppVideo> {
       });
   }
 
+  // Pause video when app goes to background to prevent audio leaking
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      if (_controller.value.isPlaying) {
+        _controller.pause();
+      }
+    }
+  }
+
   @override
   void dispose() {
-    // ملحوظة: لو الكنترولر هيدار من الخارج يفضل عدم عمل dispose هنا
-    // لكن في حالتنا هنا الـ Widget هو اللي خلقه فهنعمله dispose عادي
+    WidgetsBinding.instance.removeObserver(this);
+    // Pause before dispose to immediately stop audio output
+    _controller.pause();
     _controller.dispose();
     super.dispose();
   }

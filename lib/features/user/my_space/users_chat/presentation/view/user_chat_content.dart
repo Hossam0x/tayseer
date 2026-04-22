@@ -293,7 +293,7 @@ class _UserChatBody extends StatelessWidget {
       lastUpdate: room.lastMessage?.sentAt,
       unreadCount: room.unreadCount,
       isBlocked: room.blockExists,
-      fallbackAsset: AssetsData.kUserImage,
+      fallbackAsset: AssetsData.defaultProfileImage,
       onTap: () {
         context
             .pushNamed(

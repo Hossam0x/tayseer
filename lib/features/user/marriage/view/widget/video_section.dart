@@ -277,6 +277,15 @@ class _VideoSectionState extends State<VideoSection> {
 
   @override
   void dispose() {
+    // Critical: Pause and dispose controller to prevent audio leaking
+    if (_controller != null) {
+      try {
+        _controller!.pause();
+        _controller!.dispose();
+      } catch (e) {
+        debugPrint('⚠️ Error disposing video controller: $e');
+      }
+    }
     _controller = null;
     super.dispose();
   }

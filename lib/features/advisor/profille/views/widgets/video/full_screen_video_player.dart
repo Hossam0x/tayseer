@@ -79,6 +79,8 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
   @override
   void dispose() {
     _controller.removeListener(_videoListener);
+    // Pause before dispose to immediately stop audio output
+    _controller.pause();
     _controller.dispose();
     _cubit.close();
     super.dispose();

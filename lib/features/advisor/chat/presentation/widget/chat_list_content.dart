@@ -60,7 +60,7 @@ class ChatListContent extends StatelessWidget {
       lastUpdate: chatRoom.lastMessage?.sentAt,
       unreadCount: chatRoom.unreadCount,
       isBlocked: chatRoom.isBlocked,
-      fallbackAsset: AssetsData.avatarImage,
+      fallbackAsset: AssetsData.defaultProfileImage,
       onTap: () => _handleTap(context, chatRoom, otherUser),
       onArchive: () => _handleArchive(context, chatRoom),
       onDelete: () => _handleDelete(context, chatRoom),

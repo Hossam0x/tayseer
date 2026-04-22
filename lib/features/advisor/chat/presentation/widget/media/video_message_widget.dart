@@ -85,6 +85,8 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget>
 
   @override
   void dispose() {
+    // Pause before dispose to immediately stop audio output
+    _controller?.pause();
     _controller?.dispose();
     super.dispose();
   }
@@ -323,6 +325,8 @@ class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
   @override
   void dispose() {
     _controller?.removeListener(_videoListener);
+    // Pause before dispose to immediately stop audio output
+    _controller?.pause();
     _controller?.dispose();
     super.dispose();
   }

@@ -262,7 +262,7 @@ class CommentModel {
 //         id: "21",
 //         name: "tayseer Admin",
 //         userName: "@tayseer_app",
-//         avatar: AssetsData.avatarImage, // صورة الآدمن
+//         avatar: AssetsData.defaultProfileImage, // صورة الآدمن
 //         isVerified: true,
 //         timeAgo: "الآن",
 //         content:

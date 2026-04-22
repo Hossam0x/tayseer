@@ -256,7 +256,7 @@ class _NotificationItemState extends State<NotificationItem>
               backgroundColor: Colors.grey[200],
               backgroundImage: widget.notification.senderImage != null
                   ? NetworkImage(widget.notification.senderImage!)
-                  : const AssetImage(AssetsData.kUserImage) as ImageProvider,
+                  : const AssetImage(AssetsData.defaultProfileImage) as ImageProvider,
             ),
           ),
           Align(

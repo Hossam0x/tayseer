@@ -226,7 +226,12 @@ class _ProfileFullscreenVideoPlayerState
     if (_useGlobalMute)
       _muteManager.isMuted.removeListener(_onGlobalMuteChanged);
     _controller?.removeListener(_videoListener);
-    if (widget.controller == null) _controller?.dispose();
+    // Pause before dispose to immediately stop audio output
+    // Only dispose if we own the controller (not shared from parent)
+    if (widget.controller == null) {
+      _controller?.pause();
+      _controller?.dispose();
+    }
     super.dispose();
   }
 

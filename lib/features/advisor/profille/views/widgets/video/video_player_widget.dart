@@ -81,6 +81,14 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
   void dispose() {
     _isDisposed = true;
     _savePosition();
+    // Pause to stop audio immediately — controller is cached, not disposed here
+    if (_controller != null) {
+      try {
+        if (_controller!.value.isPlaying) _controller!.pause();
+      } catch (e) {
+        debugPrint('⚠️ Cannot pause cached controller on dispose: $e');
+      }
+    }
     VideoManager.instance.currentlyPlayingPostId.removeListener(
       _videoManagerListener,
     );

@@ -22,7 +22,7 @@ class CustomSliverAppBar extends StatelessWidget {
           onTap: () {
             Scaffold.of(context).openEndDrawer();
           },
-          child: AppImage(AssetsData.kArroBackIcon, width: 40, height: 40),
+          child: AppImage(AssetsData.backArrow, width: 40, height: 40),
         ),
       ],
       title: _buildTitle(context),

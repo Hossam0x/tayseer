@@ -319,7 +319,7 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
                             lastUpdate: room.lastMessage?.sentAt,
                             unreadCount: room.unreadCount,
                             isBlocked: room.blockExists,
-                            fallbackAsset: AssetsData.kUserImage,
+                            fallbackAsset: AssetsData.defaultProfileImage,
                             onTap: () => _onRoomTap(context, room, data),
                             onDelete: () {},
                             onReport: () {},

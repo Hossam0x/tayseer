@@ -105,7 +105,7 @@ class ImageGuidelinesBottomSheet extends StatelessWidget {
         Expanded(
           child: _buildImageCard(
             context: context,
-            imagePath: AssetsData.kCorrectImage1,
+            imagePath: AssetsData.defaultProfileImage,
             label: 'show_yourself_only',
             isCorrect: true,
           ),
@@ -114,7 +114,7 @@ class ImageGuidelinesBottomSheet extends StatelessWidget {
         Expanded(
           child: _buildImageCard(
             context: context,
-            imagePath: AssetsData.kCorrectImage1,
+            imagePath: AssetsData.defaultProfileImage,
             label: 'clear_face',
             isCorrect: true,
           ),
@@ -132,7 +132,7 @@ class ImageGuidelinesBottomSheet extends StatelessWidget {
             Expanded(
               child: _buildImageCard(
                 context: context,
-                imagePath: AssetsData.kWrongImageNotPerson,
+                imagePath: AssetsData.defaultProfileImage,
                 label: 'not_a_person',
                 isCorrect: false,
               ),
@@ -141,7 +141,7 @@ class ImageGuidelinesBottomSheet extends StatelessWidget {
             Expanded(
               child: _buildImageCard(
                 context: context,
-                imagePath: AssetsData.kWrongImageAI,
+                imagePath: AssetsData.defaultProfileImage,
                 label: 'ai_generated_photo',
                 isCorrect: false,
               ),
@@ -155,7 +155,7 @@ class ImageGuidelinesBottomSheet extends StatelessWidget {
             Expanded(
               child: _buildImageCard(
                 context: context,
-                imagePath: AssetsData.kWrongImageCovered,
+                imagePath: AssetsData.defaultProfileImage,
                 label: 'face_covered',
                 isCorrect: false,
               ),
@@ -164,7 +164,7 @@ class ImageGuidelinesBottomSheet extends StatelessWidget {
             Expanded(
               child: _buildImageCard(
                 context: context,
-                imagePath: AssetsData.kWrongImageFar,
+                imagePath: AssetsData.defaultProfileImage,
                 label: 'too_far',
                 isCorrect: false,
               ),

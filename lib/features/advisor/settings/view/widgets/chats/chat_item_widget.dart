@@ -337,7 +337,7 @@ class ChatItemWidget extends StatelessWidget {
         imageUrl,
         fit: BoxFit.cover,
         errorBuilder: (_, __, ___) =>
-            Image.asset(AssetsData.avatarImage, fit: BoxFit.cover),
+            Image.asset(AssetsData.defaultProfileImage, fit: BoxFit.cover),
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
           return Shimmer.fromColors(
@@ -355,7 +355,7 @@ class ChatItemWidget extends StatelessWidget {
         },
       );
     }
-    return Image.asset(AssetsData.avatarImage, fit: BoxFit.cover);
+    return Image.asset(AssetsData.defaultProfileImage, fit: BoxFit.cover);
   }
 
   Widget _buildActionButton(

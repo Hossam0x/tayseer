@@ -98,7 +98,7 @@ class UpdatePostBody extends StatelessWidget {
                     name: kCurrentUserData?.name ?? 'user',
                     initialSubtitle: _getCategoryName(state),
                     isVerified: false,
-                    imageUrl: kCurrentUserData?.image ?? AssetsData.kUserImage,
+                    imageUrl: kCurrentUserData?.image ?? AssetsData.defaultProfileImage,
                     groups: state.categories,
                     onGroupSelectedId: cubit.setSelectedCategoryId,
                   ),
