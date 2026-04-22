@@ -576,13 +576,14 @@ class _PersonalInfoAsConsultantBodyState
             _selectedMonth != null &&
             _selectedDay != null)
         ? DateTime(_selectedYear!, _selectedMonth!, _selectedDay!)
-        : DateTime(now.year - 18, now.month, now.day);
+        : DateTime(now.year - 30, now.month, now.day);
 
+    final lastDate = DateTime(now.year - 30, now.month, now.day);
     final picked = await showDatePicker(
       context: context,
-      initialDate: initialDate,
+      initialDate: initialDate.isAfter(lastDate) ? lastDate : initialDate,
       firstDate: DateTime(now.year - 100),
-      lastDate: DateTime(now.year - 18),
+      lastDate: lastDate,
       builder: (ctx, child) {
         return Theme(
           data: Theme.of(ctx).copyWith(
