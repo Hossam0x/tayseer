@@ -1985,6 +1985,13 @@ class HomeCubit extends Cubit<HomeState> {
 
   final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
 
+  // ✅ markPostAsRead — يبعت event للـ socket لما البوست يبقى مرئي
+  void markPostAsRead(String postId) {
+    if (!socketHelper.isConnected) return;
+    log('📤 [HomeCubit] markPostAsRead: $postId');
+    socketHelper.send('markPostAsRead', {'postId': postId}, null);
+  }
+
   // ✅ جديد
   void sessionStart() {
     log('📡 Setting up Session Start Listener');

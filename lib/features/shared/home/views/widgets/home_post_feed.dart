@@ -525,11 +525,20 @@ class _PostItem extends StatefulWidget {
 
 class _PostItemState extends State<_PostItem> {
   late final PostCallbacks _callbacks;
+  bool _markedAsRead = false;
 
   @override
   void initState() {
     super.initState();
     _initializeCallbacks();
+  }
+
+  void _onVisibilityChanged(VisibilityInfo info) {
+    if (_markedAsRead) return;
+    if (info.visibleFraction >= 0.5) {
+      _markedAsRead = true;
+      widget.homeCubit.markPostAsRead(widget.postId);
+    }
   }
 
   void _initializeCallbacks() {
@@ -699,11 +708,15 @@ class _PostItemState extends State<_PostItem> {
           selector: (state) => state.postsMap[widget.postId],
           builder: (context, post) {
             if (post == null) return const SizedBox.shrink();
-            return PostCard(
-              isFromProfile: false,
-              post: post,
-              callbacks: _callbacks,
-              onNavigateToDetails: _onNavigateToDetails,
+            return VisibilityDetector(
+              key: Key('post_read_${widget.postId}'),
+              onVisibilityChanged: _onVisibilityChanged,
+              child: PostCard(
+                isFromProfile: false,
+                post: post,
+                callbacks: _callbacks,
+                onNavigateToDetails: _onNavigateToDetails,
+              ),
             );
           },
         ),
