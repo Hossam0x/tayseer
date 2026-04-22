@@ -12,7 +12,7 @@ class PastMatchesView extends StatefulWidget {
 }
 
 class _PastMatchesViewState extends State<PastMatchesView> {
-  late final Future<PastMatchesResponse> _pastMatchesFuture;
+  late Future<PastMatchesResponse> _pastMatchesFuture;
 
   @override
   void initState() {
@@ -68,7 +68,9 @@ class _PastMatchesViewState extends State<PastMatchesView> {
                           Gap(4.h),
                           Text(
                             'تظهر التوافقات منتهية هنا ويبقى امامك فرصة حتي تعيد الارسال مره أخرى',
-                            style: Styles.textStyle14.copyWith(color: AppColors.secondary600),
+                            style: Styles.textStyle14.copyWith(
+                              color: AppColors.secondary600,
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -117,116 +119,128 @@ class _PastMatchesViewState extends State<PastMatchesView> {
 
                     final items = snapshot.data?.items ?? [];
                     if (items.isEmpty) {
-                      return _EmptyState(message: 'لا توجد توافقات سابقة حتى الآن.');
+                      return _EmptyState(
+                        message: 'لا توجد توافقات سابقة حتى الآن.',
+                      );
                     }
 
                     return Directionality(
                       textDirection: TextDirection.rtl,
                       child: ListView.separated(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 18.w,
-                        vertical: 12.h,
-                      ),
-                      itemCount: items.length,
-                      separatorBuilder: (_, __) => SizedBox(height: 16.h),
-                      itemBuilder: (context, index) {
-                        final item = items[index];
-                        return Container(
-                          padding: EdgeInsets.all(14.w),
-                          decoration: BoxDecoration(
-                            color: AppColors.kWhiteColor.withOpacity(0.96),
-                            borderRadius: BorderRadius.circular(18.r),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              // Re-match button (left side in RTL)
-                              OutlinedButton(
-                                onPressed: () {
-                                  showRematchPurchaseSheet(
-                                    context,
-                                    userName: item.name.isNotEmpty ? item.name : 'مستخدم سابق',
-                                    userImage: item.image,
-                                    onSuccess: () {
-                                      setState(() {
-                                        _pastMatchesFuture = _loadPastMatches();
-                                      });
-                                    },
-                                  );
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppColors.primary400,
-                                  side: BorderSide(color: AppColors.primary400),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12.r),
-                                  ),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 10.w,
-                                    vertical: 8.h,
-                                  ),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 18.w,
+                          vertical: 12.h,
+                        ),
+                        itemCount: items.length,
+                        separatorBuilder: (_, __) => SizedBox(height: 16.h),
+                        itemBuilder: (context, index) {
+                          final item = items[index];
+                          return Container(
+                            padding: EdgeInsets.all(14.w),
+                            decoration: BoxDecoration(
+                              color: AppColors.kWhiteColor.withOpacity(0.96),
+                              borderRadius: BorderRadius.circular(18.r),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
                                 ),
-                                child: Text(
-                                  'اعادة التوافق',
-                                  style: Styles.textStyle12.copyWith(
-                                    color: AppColors.primary400,
-                                  ),
-                                ),
-                              ),
-                              Gap(12.w),
-                              // Name + reason (center)
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      item.name.isNotEmpty ? item.name : 'مستخدم سابق',
-                                      style: Styles.textStyle16SemiBold,
-                                      textAlign: TextAlign.end,
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                // Re-match button (left side in RTL)
+                                OutlinedButton(
+                                  onPressed: () {
+                                    showRematchPurchaseSheet(
+                                      context,
+                                      userName: item.name.isNotEmpty
+                                          ? item.name
+                                          : 'مستخدم سابق',
+                                      userImage: item.image,
+                                      onSuccess: () {
+                                        setState(() {
+                                          _pastMatchesFuture =
+                                              _loadPastMatches();
+                                        });
+                                      },
+                                    );
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.primary400,
+                                    side: BorderSide(
+                                      color: AppColors.primary400,
                                     ),
-                                    Gap(4.h),
-                                    Text(
-                                      item.reason,
-                                      style: Styles.textStyle12.copyWith(
-                                        color: AppColors.secondary600,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12.r),
+                                    ),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 10.w,
+                                      vertical: 8.h,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'اعادة التوافق',
+                                    style: Styles.textStyle12.copyWith(
+                                      color: AppColors.primary400,
+                                    ),
+                                  ),
+                                ),
+                                Gap(12.w),
+                                // Name + reason (center)
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        item.name.isNotEmpty
+                                            ? item.name
+                                            : 'مستخدم سابق',
+                                        style: Styles.textStyle16SemiBold,
+                                        textAlign: TextAlign.end,
                                       ),
-                                      textAlign: TextAlign.end,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Gap(12.w),
-                              // Avatar (right side in RTL)
-                              Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: AppColors.primary300,
-                                    width: 2,
+                                      Gap(4.h),
+                                      Text(
+                                        item.reason,
+                                        style: Styles.textStyle12.copyWith(
+                                          color: AppColors.secondary600,
+                                        ),
+                                        textAlign: TextAlign.end,
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                child: CircleAvatar(
-                                  radius: 28.r,
-                                  backgroundImage: item.image.isNotEmpty
-                                      ? NetworkImage(item.image)
-                                      : null,
-                                  backgroundColor: AppColors.secondary100,
-                                  child: item.image.isEmpty
-                                      ? Icon(Icons.person, color: AppColors.secondary400)
-                                      : null,
+                                Gap(12.w),
+                                // Avatar (right side in RTL)
+                                Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: AppColors.primary300,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 28.r,
+                                    backgroundImage: item.image.isNotEmpty
+                                        ? NetworkImage(item.image)
+                                        : null,
+                                    backgroundColor: AppColors.secondary100,
+                                    child: item.image.isEmpty
+                                        ? Icon(
+                                            Icons.person,
+                                            color: AppColors.secondary400,
+                                          )
+                                        : null,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                    );  // close Directionality
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ); // close Directionality
                   },
                 ),
               ),
