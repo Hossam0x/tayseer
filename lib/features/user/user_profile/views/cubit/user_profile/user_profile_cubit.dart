@@ -6,6 +6,7 @@ import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/core/utils/profile_event_bus.dart';
 import 'package:tayseer/features/shared/settings/models/setting_item_model.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/profile/profile_cubit.dart';
@@ -857,6 +858,10 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         getIt<ChatSocketService>().removeListeners();
       }
       getIt<tayseerSocketHelper>().reset();
+      // ✅ reset InteractionsCubit state عشان بعد login جديد يجيب subscription صح
+      if (getIt.isRegistered<InteractionsCubit>()) {
+        getIt<InteractionsCubit>().resetState();
+      }
 
       // ✅ ريسيت الـ Singletons عشان يتعملوا instance جديد بعد اللوجن الجديد
       if (getIt.isRegistered<HomeCubit>()) {

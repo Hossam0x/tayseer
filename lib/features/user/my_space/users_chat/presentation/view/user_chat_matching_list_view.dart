@@ -146,7 +146,7 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
                                 ),
                             const SizedBox(height: 20),
                             Text(
-                              'إضافة ${room.otherUser.name} للمحادثات؟',
+                              context.tr('add_to_conversations_title').replaceAll('{name}', room.otherUser.name),
                               style: Styles.textStyle16.copyWith(
                                 color: const Color(0xFF2D2D2D),
                                 fontWeight: FontWeight.bold,
@@ -159,7 +159,9 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
                                 .slideY(begin: 0.5, end: 0, delay: 200.ms, duration: 400.ms, curve: Curves.easeOutCubic),
                             const SizedBox(height: 10),
                             Text(
-                              'لديك ${data.slotLimit - data.activeCount} مكان متاح من أصل ${data.slotLimit}',
+                              context.tr('available_slots')
+                                  .replaceAll('{available}', '${data.slotLimit - data.activeCount}')
+                                  .replaceAll('{total}', '${data.slotLimit}'),
                               style: Styles.textStyle12.copyWith(
                                 color: const Color(0xFF6B6B6B),
                                 height: 1.5,
@@ -174,7 +176,7 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
                               children: [
                                 Expanded(
                                   child: showLimitReachedGradientButton(
-                                    text: 'إضافة',
+                                    text: context.tr('add_to_chat'),
                                     onPressed: () async {
                                       Navigator.of(ctx).pop();
                                       await _activateRoom(context, room);
@@ -185,7 +187,7 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: showLimitReachedOutlinedButton(
-                                    text: 'إلغاء',
+                                    text: context.tr('cancel_button'),
                                     onPressed: () => Navigator.of(ctx).pop(),
                                     delay: 500.ms,
                                   ),
@@ -209,10 +211,10 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
   void _showUpgradeDialog(BuildContext context) {
     showLimitReachedDialog(
       context,
-      title: 'المحادثات ممتلئة',
-      subtitle: 'لقد وصلت للحد الأقصى من المحادثات. اشترك لزيادة عدد المحادثات والاستمتاع بتجربة كاملة.',
-      subscribeText: 'اشترك الآن',
-      laterText: 'لاحقاً',
+      title: context.tr('upgrade_dialog_title'),
+      subtitle: context.tr('upgrade_dialog_subtitle'),
+      subscribeText: context.tr('subscribe_now'),
+      laterText: context.tr('later'),
       onSubscribe: () => context.pushNamed(AppRouter.kUserPackagesView),
     );
   }
@@ -224,7 +226,7 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
     result.fold(
       (failure) => AppToast.error(context, failure.message),
       (_) {
-        AppToast.success(context, 'تمت إضافة ${room.otherUser.name} للمحادثات');
+        AppToast.success(context, context.tr('activate_room_success').replaceAll('{name}', room.otherUser.name));
         _refresh();
       },
     );
@@ -259,7 +261,7 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
                     ),
                     Expanded(
                       child: Text(
-                        'التوافقات',
+                        context.tr('matches_title'),
                         style: Styles.textStyle22Bold,
                         textAlign: TextAlign.center,
                       ),
@@ -286,7 +288,7 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
                               padding: EdgeInsets.symmetric(vertical: 64.h),
                               child: Center(
                                 child: Text(
-                                  'حدث خطأ، حاول مرة أخرى',
+                                  context.tr('error_try_again'),
                                   style: Styles.textStyle14.copyWith(
                                       color: AppColors.secondary400),
                                 ),
@@ -300,7 +302,7 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
 
                       if (data.matchingRooms.isEmpty) {
                         return Center(
-                          child: _EmptyState(message: 'لا توجد مطابقات حتى الآن'),
+                          child: _EmptyState(message: context.tr('no_matches_yet')),
                         );
                       }
 
@@ -324,7 +326,7 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
                             onDelete: () {},
                             onReport: () {},
                             onBlock: () {},
-                            blockLabel: room.blockExists ? 'إلغاء الحظر' : 'حظر',
+                            blockLabel: room.blockExists ? context.tr('unblock_label') : context.tr('block_label'),
                           );
                         },
                         separatorBuilder: (_, __) => SizedBox(height: 12.h),

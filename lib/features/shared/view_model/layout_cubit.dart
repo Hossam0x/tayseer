@@ -20,14 +20,12 @@ class LayoutCubit extends Cubit<LayoutState> {
   }
 
   void changeIndex(int index) {
-    // لو المستخدم بالفعل في نفس الصفحة وضغط عليها تاني (زي فيسبوك)
     if (state.currentIndex == index) {
       scrollToTop();
     } else {
-      // ✅ اخبي الـ nav بس لو دخلنا marriage tab فعلاً
-      // ✅ لو الـ tab ده بيعرض consultation (isMarriageVisible = false) خلي الـ nav ظاهر
-      final hideNav = index == 1 && state.isMarriageVisible;
-      emit(state.copyWith(currentIndex: index, isNavVisible: !hideNav));
+      // ✅ دايماً ظهّر الـ nav عند تغيير الـ tab
+      // marriage_body.dart هو اللي بيخبيه لو في users
+      emit(state.copyWith(currentIndex: index, isNavVisible: true));
     }
   }
 
@@ -43,8 +41,8 @@ class LayoutCubit extends Cubit<LayoutState> {
   }
 
   void onScroll(bool isScrollingDown) {
-    // ✅ الـ nav hide/show بيشتغل في marriage tab (index 1) وفي home tab (index 0)
-    if (state.currentIndex != 1 && state.currentIndex != 0) return;
+    // ✅ home (0) و marriage (1) بس
+    if (state.currentIndex != 0 && state.currentIndex != 1) return;
     if (isScrollingDown && state.isNavVisible) {
       setNavVisibility(false);
     } else if (!isScrollingDown && !state.isNavVisible) {

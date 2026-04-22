@@ -66,21 +66,21 @@ class _UserChatBody extends StatelessWidget {
               // ✅ Requests section
               if (state.requests.isNotEmpty) ...[
                 SliverToBoxAdapter(
-                  child: _buildSectionHeader(
+                child: _buildSectionHeader(
+                  context,
+                  title: context.tr('requests_section'),
+                  showViewAll: state.requests.length > 1,
+                  onViewAll: () => Navigator.push(
                     context,
-                    title: 'الطلبات',
-                    showViewAll: state.requests.length > 1,
-                    onViewAll: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => BlocProvider.value(
-                          value: context.read<UserChatCubit>(),
-                          child: const _AllRequestsPage(),
-                        ),
+                    MaterialPageRoute(
+                      builder: (_) => BlocProvider.value(
+                        value: context.read<UserChatCubit>(),
+                        child: const _AllRequestsPage(),
                       ),
                     ),
                   ),
                 ),
+              ),
                 // ✅ يظهر أول طلب بس
                 SliverToBoxAdapter(
                   child: _RequestItem(
@@ -97,7 +97,7 @@ class _UserChatBody extends StatelessWidget {
 
               // ✅ Conversations section
               SliverToBoxAdapter(
-                child: _buildSectionHeader(context, title: 'المحادثات'),
+                child: _buildSectionHeader(context, title: context.tr('conversations_section')),
               ),
 
               if (state.chatRooms.isEmpty)
@@ -115,7 +115,7 @@ class _UserChatBody extends StatelessWidget {
                           ),
                           SizedBox(height: 20.h),
                           Text(
-                            'لا توجد محادثات بعد',
+                            context.tr('no_conversations_yet'),
                             style: Styles.textStyle14.copyWith(
                               color: AppColors.secondary400,
                             ),
@@ -126,7 +126,7 @@ class _UserChatBody extends StatelessWidget {
                     ),
                   ),
                 )
-              else
+      else
                 SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) =>
@@ -150,6 +150,9 @@ class _UserChatBody extends StatelessWidget {
 
   Widget _buildMatchingBanner(BuildContext context, UserChatState state) {
     final available = state.slotLimit - state.chatRooms.length;
+    final personWord = available == 1
+        ? context.tr('person_singular')
+        : context.tr('person_plural');
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
@@ -183,13 +186,15 @@ class _UserChatBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'لديك ${state.matchingCount} توافق في الانتظار',
+                    context.tr('matches_waiting').replaceAll('{count}', '${state.matchingCount}'),
                     style: Styles.textStyle14Bold.copyWith(
                         color: AppColors.kscandryTextColor),
                   ),
                   SizedBox(height: 2.h),
                   Text(
-                    'يمكنك إضافة $available ${available == 1 ? 'شخص' : 'أشخاص'} للمحادثات',
+                    context.tr('can_add_people')
+                        .replaceAll('{count}', '$available')
+                        .replaceAll('{person}', personWord),
                     style: Styles.textStyle12.copyWith(
                         color: AppColors.secondary400),
                   ),
@@ -207,7 +212,7 @@ class _UserChatBody extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20.r),
               ),
               child: Text(
-                'إضافة',
+                context.tr('add_to_chat'),
                 style: Styles.textStyle12SemiBold.copyWith(color: Colors.white),
               ),
             ),
@@ -217,7 +222,8 @@ class _UserChatBody extends StatelessWidget {
     );
   }
 
-  Widget _buildBanner(BuildContext context, int slotLimit) {    return Container(
+  Widget _buildBanner(BuildContext context, int slotLimit) {
+    return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       padding: EdgeInsets.all(14.w),
       child: RichText(
@@ -229,8 +235,7 @@ class _UserChatBody extends StatelessWidget {
           ),
           children: [
             TextSpan(
-              text:
-                  'يمكنك حاليًا محادثة $slotLimit أشخاص فقط. إذا كنت بحاجة لإضافة المزيد، ',
+              text: context.tr('chat_slot_banner_prefix').replaceAll('{count}', '$slotLimit'),
             ),
             WidgetSpan(
               alignment: PlaceholderAlignment.middle,
@@ -239,7 +244,7 @@ class _UserChatBody extends StatelessWidget {
                   context.pushNamed(AppRouter.kUserPackagesView);
                 },
                 child: Text(
-                  'اشترك',
+                  context.tr('subscribe_link'),
                   style: Styles.textStyle16.copyWith(
                     color: AppColors.primary400,
                     fontWeight: FontWeight.bold,
@@ -250,7 +255,7 @@ class _UserChatBody extends StatelessWidget {
               ),
             ),
             TextSpan(
-              text: ' لتوسيع التفاعل والدردشة الجماعية. نحن هنا للمساعدة!',
+              text: context.tr('chat_slot_banner_suffix'),
             ),
           ],
         ),
@@ -274,7 +279,7 @@ class _UserChatBody extends StatelessWidget {
             GestureDetector(
               onTap: onViewAll,
               child: Text(
-                'عرض الكل',
+                context.tr('view_all'),
                 style: Styles.textStyle14.copyWith(color: AppColors.primary400),
               ),
             ),
@@ -306,8 +311,19 @@ class _UserChatBody extends StatelessWidget {
                 'receiverid': room.otherUser.userId,
               },
             )
-            .then((_) {
-              if (context.mounted) {
+            .then((result) {
+              if (!context.mounted) return;
+              // لو رجع بآخر رسالة، حدّث بدون reload كامل
+              if (result is Map<String, dynamic> &&
+                  result['lastMessage'] != null) {
+                context.read<UserChatCubit>().updateLastMessage(
+                  chatRoomId: room.id,
+                  content: result['lastMessage'] as String,
+                  sentAt: result['sentAt'] as DateTime? ?? DateTime.now(),
+                  status: result['status'] as String?,
+                );
+              } else {
+                // fallback: reload كامل
                 context.read<UserChatCubit>().loadAll();
               }
             });
@@ -320,6 +336,17 @@ class _UserChatBody extends StatelessWidget {
         context: context,
         onConfirm: () {},
       ),
+      onArchive: () async {
+        final cubit = context.read<UserChatCubit>();
+        final success = await cubit.archiveChatRoom(room.id);
+        if (context.mounted) {
+          if (success) {
+            AppToast.success(context, context.tr('chat_archived_success'));
+          } else {
+            AppToast.error(context, context.tr('chat_archive_failed'));
+          }
+        }
+      },
       onBlock: () {
         if (room.blockExists) {
           ChatRoomDialogHelper.showUnblockDialog(
@@ -333,7 +360,7 @@ class _UserChatBody extends StatelessWidget {
           );
         }
       },
-      blockLabel: room.blockExists ? 'إلغاء الحظر' : 'حظر',
+      blockLabel: room.blockExists ? context.tr('unblock_label') : context.tr('block_label'),
     );
   }
 }
@@ -372,7 +399,7 @@ class _RequestItem extends StatelessWidget {
           // Message
           Expanded(
             child: Text(
-              'أرسل لك ${request.sender.name} تحية',
+              context.tr('sent_you_greeting').replaceAll('{name}', request.sender.name),
               style: Styles.textStyle14Bold,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -454,7 +481,7 @@ class _AllRequestsPage extends StatelessWidget {
                     ),
                     Expanded(
                       child: Text(
-                        'الطلبات',
+                        context.tr('all_requests_title'),
                         style: Styles.textStyle22Bold,
                         textAlign: TextAlign.center,
                       ),

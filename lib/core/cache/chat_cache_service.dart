@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 import 'package:tayseer/features/user/my_space/data/model/advisor_chat_model.dart';
+import 'package:tayseer/features/user/my_space/users_chat/data/model/user_chat_room_model.dart';
 
 /// نظام كاش بسيط للشات باستخدام Hive
 class ChatCacheService {
@@ -82,6 +83,77 @@ class ChatCacheService {
       return jsonList
           .map((json) => AdvisorChatRoomModel.fromJson(json as Map<String, dynamic>))
           .toList();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// حفظ قائمة الشاتات البسيطة (للـ user chat - UserChatRoomModel)
+  Future<void> saveUserChatRoomsSimple({
+    required String userId,
+    required List<UserChatRoomModel> chatRooms,
+    int? slotLimit,
+  }) async {
+    if (_chatRoomsBox == null) return;
+
+    final key = 'user_chat_rooms_simple_$userId';
+    final jsonList = chatRooms.map((room) => {
+      'id': room.id,
+      'otherUser': {
+        'userId': room.otherUser.userId,
+        'name': room.otherUser.name,
+        'image': room.otherUser.image,
+        'imageBlur': room.otherUser.imageBlur,
+      },
+      'otherUserType': room.otherUserType,
+      'lastMessage': room.lastMessage != null ? {
+        'content': room.lastMessage!.content,
+        'sentAt': room.lastMessage!.sentAt?.toIso8601String(),
+        'status': room.lastMessage!.status,
+      } : null,
+      'otherUserOnlineStatus': room.otherUserOnlineStatus,
+      'unreadCount': room.unreadCount,
+      'blockExists': room.blockExists,
+    }).toList();
+
+    final wrapper = {
+      'slotLimit': slotLimit,
+      'rooms': jsonList,
+    };
+    final jsonString = jsonEncode(wrapper);
+
+    await _chatRoomsBox!.put(key, jsonString);
+  }
+
+  /// جلب قائمة الشاتات البسيطة من الكاش (للـ user chat)
+  /// يرجع map فيه 'rooms' و 'slotLimit'
+  Map<String, dynamic>? getCachedUserChatRoomsSimple({required String userId}) {
+    if (_chatRoomsBox == null) return null;
+
+    final key = 'user_chat_rooms_simple_$userId';
+    final jsonString = _chatRoomsBox!.get(key);
+
+    if (jsonString == null) return null;
+
+    try {
+      final decoded = jsonDecode(jsonString);
+
+      // backward compat: لو الكاش القديم كان list مباشرة
+      if (decoded is List) {
+        final rooms = decoded
+            .map((json) => UserChatRoomModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+        return {'rooms': rooms, 'slotLimit': null};
+      }
+
+      final wrapper = decoded as Map<String, dynamic>;
+      final roomsList = (wrapper['rooms'] as List)
+          .map((json) => UserChatRoomModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+      return {
+        'rooms': roomsList,
+        'slotLimit': wrapper['slotLimit'] as int?,
+      };
     } catch (e) {
       return null;
     }

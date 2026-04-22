@@ -157,11 +157,11 @@ class _UserChatContentState extends State<_UserChatContent> {
         data: {'chatRoomId': widget.chatRoomId},
       );
       if (mounted) {
-        AppToast.success(context, 'تم إلغاء التوافق');
+        AppToast.success(context, context.tr('match_cancelled_success'));
         Navigator.pop(context);
       }
     } catch (e) {
-      if (mounted) AppToast.error(context, 'فشل إلغاء التوافق');
+      if (mounted) AppToast.error(context, context.tr('match_cancel_failed'));
     }
   }
 
@@ -259,22 +259,20 @@ class _UserChatContentState extends State<_UserChatContent> {
         final minutes = diff.inMinutes % 60;
 
         final parts = <String>[];
-        if (days > 0) parts.add('${days}يوم');
-        if (hours > 0) parts.add('${hours}س');
-        if (minutes > 0) parts.add('${minutes}د');
+        if (days > 0) parts.add(context.tr('expiry_days').replaceAll('{n}', '$days'));
+        if (hours > 0) parts.add(context.tr('expiry_hours').replaceAll('{n}', '$hours'));
+        if (minutes > 0) parts.add(context.tr('expiry_minutes').replaceAll('{n}', '$minutes'));
         final timeStr = parts.join(' ');
 
         return Container(
           width: double.infinity,
           padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 16.w),
           decoration: BoxDecoration(
-          
             borderRadius: BorderRadius.circular(8.r),
             color: AppColors.primary50,
           ),
-          // margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
           child: Text(
-            'ينتهى هذا التوافق في $timeStr',
+            context.tr('match_expiry_banner').replaceAll('{time}', timeStr),
             style: Styles.textStyle14.copyWith(
               color: AppColors.primary400,
               fontWeight: FontWeight.bold,
@@ -373,7 +371,7 @@ class _UserChatContentState extends State<_UserChatContent> {
                     child: Row(children: [
                       const Icon(Icons.cancel_outlined, size: 20),
                       SizedBox(width: 8.w),
-                      Text('إلغاء التوافق', style: TextStyle(fontSize: 14.sp)),
+                      Text(context.tr('cancel_match_menu'), style: TextStyle(fontSize: 14.sp)),
                     ]),
                   ),
                   PopupMenuItem(
@@ -381,7 +379,7 @@ class _UserChatContentState extends State<_UserChatContent> {
                     child: Row(children: [
                       const Icon(Icons.info_outline, size: 20),
                       SizedBox(width: 8.w),
-                      Text('ابلاغ', style: TextStyle(fontSize: 14.sp)),
+                      Text(context.tr('report_menu'), style: TextStyle(fontSize: 14.sp)),
                     ]),
                   ),
                   PopupMenuItem(
@@ -390,7 +388,7 @@ class _UserChatContentState extends State<_UserChatContent> {
                       const Icon(Icons.block_outlined, size: 20),
                       SizedBox(width: 8.w),
                       Text(
-                        chatState.isBlocked ? 'إلغاء الحظر' : 'حظر',
+                        chatState.isBlocked ? context.tr('unblock_label') : context.tr('block_label'),
                         style: TextStyle(fontSize: 14.sp),
                       ),
                     ]),
@@ -409,15 +407,15 @@ class _UserChatContentState extends State<_UserChatContent> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-        title: Text('إلغاء التوافق', style: Styles.textStyle18Bold),
+        title: Text(context.tr('cancel_match_title'), style: Styles.textStyle18Bold),
         content: Text(
-          'هل أنت متأكد من إلغاء التوافق مع ${widget.username}؟',
+          context.tr('cancel_match_confirm').replaceAll('{name}', widget.username ?? ''),
           style: Styles.textStyle14,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('إلغاء', style: TextStyle(color: AppColors.secondary400)),
+            child: Text(context.tr('cancel_button'), style: TextStyle(color: AppColors.secondary400)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -428,7 +426,7 @@ class _UserChatContentState extends State<_UserChatContent> {
               backgroundColor: AppColors.primary400,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
             ),
-            child: const Text('تأكيد', style: TextStyle(color: Colors.white)),
+            child: Text(context.tr('confirm_button'), style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),

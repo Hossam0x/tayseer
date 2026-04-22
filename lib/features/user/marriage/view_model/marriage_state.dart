@@ -35,6 +35,7 @@ class MarriageState extends Equatable {
   final int regardsNotificationCount;
   final int? likesLeft;
   final int? regardsLeft;
+  final bool requiresSubscription;
 
   const MarriageState({
     this.marriageProfileState = CubitStates.initial,
@@ -67,6 +68,7 @@ class MarriageState extends Equatable {
     this.regardsNotificationCount = 0,
     this.likesLeft,
     this.regardsLeft,
+    this.requiresSubscription = false,
   });
 
   MarriageState copyWith({
@@ -100,6 +102,7 @@ class MarriageState extends Equatable {
     int? regardsNotificationCount,
     int? likesLeft,
     int? regardsLeft,
+    bool? requiresSubscription,
   }) {
     return MarriageState(
       marriageProfileState: marriageProfileState ?? this.marriageProfileState,
@@ -141,6 +144,7 @@ class MarriageState extends Equatable {
           regardsNotificationCount ?? this.regardsNotificationCount,
       likesLeft: likesLeft ?? this.likesLeft,
       regardsLeft: regardsLeft ?? this.regardsLeft,
+      requiresSubscription: requiresSubscription ?? this.requiresSubscription,
     );
   }
 
@@ -176,5 +180,6 @@ class MarriageState extends Equatable {
     regardsNotificationCount,
     likesLeft,
     regardsLeft,
+    requiresSubscription,
   ];
 }

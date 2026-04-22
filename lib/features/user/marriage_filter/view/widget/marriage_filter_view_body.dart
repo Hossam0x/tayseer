@@ -109,9 +109,19 @@ class MarriageFilterBody extends StatelessWidget {
                       child: CustomDataCard(
                         sectionTitle: context.tr('data_and_activities'),
                         items: [
-                          _buildRow(context, state, 'verified_id', 'isVerified'),
+                          _buildRow(
+                            context,
+                            state,
+                            'verified_id',
+                            'isVerified',
+                          ),
                           _buildRow(context, state, 'new_member', 'isNew'),
-                          _buildRow(context, state, 'photo_status', 'imageBlur'),
+                          _buildRow(
+                            context,
+                            state,
+                            'photo_status',
+                            'imageBlur',
+                          ),
                         ],
                       ),
                     ),
@@ -128,7 +138,12 @@ class MarriageFilterBody extends StatelessWidget {
                             'maritalStatus',
                           ),
                           _buildRow(context, state, 'job', 'job'),
-                          _buildRow(context, state, 'education', 'educationLevel'),
+                          _buildRow(
+                            context,
+                            state,
+                            'education',
+                            'educationLevel',
+                          ),
                           _buildRow(context, state, 'hobbies', 'hobbies'),
                         ],
                       ),
@@ -139,7 +154,12 @@ class MarriageFilterBody extends StatelessWidget {
                         sectionTitle: context.tr('goals'),
                         items: [
                           _buildRow(context, state, 'marriage', 'goalMarry'),
-                          _buildRow(context, state, 'engagement', 'goalEngagment'),
+                          _buildRow(
+                            context,
+                            state,
+                            'engagement',
+                            'goalEngagment',
+                          ),
                           _buildRow(context, state, 'travel', 'goalTravel'),
                           _buildRow(context, state, 'family', 'goalChildren'),
                         ],
@@ -243,29 +263,33 @@ class MarriageFilterBody extends StatelessWidget {
     return Container(
       margin: EdgeInsets.only(top: 8.h),
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F0E8),
-      ),
+      decoration: BoxDecoration(color: const Color(0xFFF5F0E8)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              AppImage(AssetsData.goldIcon, width: 24.w),
+              AppImage(AssetsData.goldIcon, width: 33.w),
               SizedBox(width: 8.w),
-              Text(
-                context.tr('advanced_filters'),
-                style: Styles.textStyle18Bold,
+
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.tr('advanced_filters'),
+                    style: Styles.textStyle18Bold,
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    context.tr('profile_and_activity'),
+                    style: Styles.textStyle14.copyWith(
+                      color: AppColors.kprimaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ],
-          ),
-          SizedBox(height: 4.h),
-          Text(
-            context.tr('profile_and_activity'),
-            style: Styles.textStyle14.copyWith(
-              color: AppColors.kprimaryColor,
-              fontWeight: FontWeight.w600,
-            ),
           ),
         ],
       ),
@@ -299,14 +323,18 @@ class MarriageFilterBody extends StatelessWidget {
     );
   }
 
-  Widget _buildApplyButtonWidget(BuildContext context, MarriageFilterState state) {
+  Widget _buildApplyButtonWidget(
+    BuildContext context,
+    MarriageFilterState state,
+  ) {
     final hasFilters =
         state.selectedFilters.isNotEmpty ||
         state.ageRange != const RangeValues(22, 35);
 
     const freeKeys = {'country', 'nationality'};
-    final hasPaidFilters = state.selectedFilters.keys
-        .any((key) => !freeKeys.contains(key));
+    final hasPaidFilters = state.selectedFilters.keys.any(
+      (key) => !freeKeys.contains(key),
+    );
 
     return Container(
       // color: Colors.white.withOpacity(0.95),

@@ -19,6 +19,15 @@ import PaymobSDK
 
         GeneratedPluginRegistrant.register(with: self)
 
+        // ✅ تسجيل الـ SecureImageView للحماية من الـ screenshot
+        if let controller = window?.rootViewController as? FlutterViewController,
+           let registry = controller.engine?.platformViewsController {
+            registry.register(
+                SecureImageFactory(),
+                withId: "secure_image_view"
+            )
+        }
+
         // ✅ Force Universal Links to stay in app
         if #available(iOS 14.0, *) {
             // Prevent iOS from opening Universal Links in Safari

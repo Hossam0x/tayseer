@@ -382,6 +382,16 @@ class MarriageCubit extends Cubit<MarriageState> {
     required String interactionType,
     bool countView = false,
   }) async {
+    // ✅ لو requiresSubscription = true في الـ state، اعرض sheet الاشتراك مباشرة
+    if (state.requiresSubscription) {
+      emit(state.copyWith(
+        userInteractionState: CubitStates.failure,
+        requiresSubscription: true,
+        showActionSnackbar: false,
+      ));
+      return;
+    }
+
     final result = await _repo.userInteraction(
       personId: personId,
       interactionType: interactionType,
@@ -394,6 +404,7 @@ class MarriageCubit extends Cubit<MarriageState> {
         final data = failure is ServerFailure ? failure.data : null;
         final likesLeft = data?['likesLeft'] as int?;
         final regardsLeft = data?['regardsLeft'] as int?;
+        final requiresSubscription = data?['requiresSubscription'] as bool? ?? false;
         emit(
           state.copyWith(
             userInteractionState: CubitStates.failure,
@@ -401,6 +412,7 @@ class MarriageCubit extends Cubit<MarriageState> {
             showActionSnackbar: false,
             likesLeft: likesLeft,
             regardsLeft: regardsLeft,
+            requiresSubscription: requiresSubscription,
           ),
         );
       },
@@ -423,6 +435,15 @@ class MarriageCubit extends Cubit<MarriageState> {
     required String personId,
     bool countView = false,
   }) async {
+    // ✅ لو requiresSubscription = true في الـ state، اعرض sheet الاشتراك مباشرة
+    if (state.requiresSubscription) {
+      emit(state.copyWith(
+        sendRegardState: CubitStates.failure,
+        requiresSubscription: true,
+        showActionSnackbar: true,
+      ));
+      return;
+    }
     // ✅ لو regardsLeft = 0 في الـ state، ارجع failure مباشرة
     if (state.regardsLeft == 0) {
       emit(
@@ -446,10 +467,10 @@ class MarriageCubit extends Cubit<MarriageState> {
       (failure) {
         final data = failure is ServerFailure ? failure.data : null;
         final likesLeft = data?['likesLeft'] as int?;
-        // ✅ لو الـ data فيه regardsLeft استخدمه، لو لأ وفيه "No regards left" في الـ message → 0
         final regardsLeftFromData = data?['regardsLeft'] as int?;
         final regardsLeft = regardsLeftFromData ??
             (failure.message?.toLowerCase().contains('no regards') == true ? 0 : null);
+        final requiresSubscription = data?['requiresSubscription'] as bool? ?? false;
         emit(
           state.copyWith(
             sendRegardState: CubitStates.failure,
@@ -457,14 +478,16 @@ class MarriageCubit extends Cubit<MarriageState> {
             showActionSnackbar: true,
             likesLeft: likesLeft,
             regardsLeft: regardsLeft,
+            requiresSubscription: requiresSubscription,
           ),
         );
       },
-      (_) {
+      (regardsLeft) {
         emit(
           state.copyWith(
             sendRegardState: CubitStates.success,
             showActionSnackbar: true,
+            regardsLeft: regardsLeft,
           ),
         );
         fetchNotificationCount();
@@ -480,6 +503,15 @@ class MarriageCubit extends Cubit<MarriageState> {
     required String text,
     bool countView = false,
   }) async {
+    // ✅ لو requiresSubscription = true في الـ state، اعرض sheet الاشتراك مباشرة
+    if (state.requiresSubscription) {
+      emit(state.copyWith(
+        sendRegardTextState: CubitStates.failure,
+        requiresSubscription: true,
+        showActionSnackbar: true,
+      ));
+      return;
+    }
     // ✅ لو regardsLeft = 0 في الـ state، ارجع failure مباشرة بدون API call
     if (state.regardsLeft == 0) {
       emit(
@@ -513,19 +545,22 @@ class MarriageCubit extends Cubit<MarriageState> {
         final regardsLeftFromData = data?['regardsLeft'] as int?;
         final regardsLeft = regardsLeftFromData ??
             (failure.message?.toLowerCase().contains('no regards') == true ? 0 : null);
+        final requiresSubscription = data?['requiresSubscription'] as bool? ?? false;
         emit(
           state.copyWith(
             sendRegardTextState: CubitStates.failure,
             errorMessage: failure.message,
             showActionSnackbar: true,
             regardsLeft: regardsLeft,
+            requiresSubscription: requiresSubscription,
           ),
         );
       },
-      (_) => emit(
+      (regardsLeft) => emit(
         state.copyWith(
           sendRegardTextState: CubitStates.success,
           showActionSnackbar: true,
+          regardsLeft: regardsLeft,
         ),
       ),
     );

@@ -87,8 +87,8 @@ class _MySpaceConsultationContentState
 
           if (chatRooms.isEmpty) {
             return EmptySessionsState(
-              title: 'لا يوجد استشارات',
-              subtitle: 'احجز جلسه لتتمكن من حل مشاكلك النفسيه',
+              title: context.tr('no_consultations'),
+              subtitle: context.tr('no_consultations_subtitle'),
             );
           }
 
@@ -152,12 +152,9 @@ class _MySpaceConsultationContentState
                         final success = await cubit.archiveChatRoom(chatRoom.id);
                         if (context.mounted) {
                           if (success) {
-                            AppToast.success(context, 'تم أرشفة الاستشارة بنجاح');
+                            AppToast.success(context, context.tr('consultation_archived_success'));
                           } else {
-                            AppToast.error(
-                              context,
-                              'فشل في أرشفة المحادثة، حاول مرة أخرى',
-                            );
+                            AppToast.error(context, context.tr('consultation_archive_failed'));
                           }
                         }
                       },
@@ -171,12 +168,9 @@ class _MySpaceConsultationContentState
                         final success = await cubit.deleteChatRoom(chatRoom.id);
                         if (context.mounted) {
                           if (success) {
-                            AppToast.success(context, 'تم حذف المحادثة بنجاح');
+                            AppToast.success(context, context.tr('chat_deleted_success'));
                           } else {
-                            AppToast.error(
-                              context,
-                              'فشل في حذف المحادثة، حاول مرة أخرى',
-                            );
+                            AppToast.error(context, context.tr('chat_delete_failed'));
                           }
                         }
                       },
@@ -207,7 +201,7 @@ class _MySpaceConsultationContentState
                       );
                     }
                   },
-                  blockLabel: chatRoom.isBlocked ? 'إلغاء الحظر' : 'حظر',
+                  blockLabel: chatRoom.isBlocked ? context.tr('unblock_label') : context.tr('block_label'),
                 );
               },
             ),

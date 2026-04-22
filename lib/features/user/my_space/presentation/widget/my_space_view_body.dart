@@ -32,7 +32,6 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody>
     _loadMarriageStatus();
     _loadMatchingCount();
 
-    // ✅ استمع لتغييرات حالة الزواج فوراً
     _marriageStatusSub = UserProfileCubit.marriageStatusStream.stream.listen((
       value,
     ) {
@@ -75,8 +74,8 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody>
   Widget build(BuildContext context) {
     final isMarriageHidden = _isMarriageDeactivated;
     final options = isMarriageHidden
-        ? ['الاستشارات']
-        : ['الزواج', 'الاستشارات'];
+        ? [context.tr('consultations_tab')]
+        : [context.tr('marriage_tab'), context.tr('consultations_tab')];
 
     return BlocProvider.value(
       value: _userProfileCubit,
@@ -92,7 +91,7 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody>
                     alignment: Alignment.center,
                     children: [
                       Center(
-                        child: Text('مساحتى', style: Styles.textStyle22Bold),
+                        child: Text(context.tr('my_space_title'), style: Styles.textStyle22Bold),
                       ),
                       if (!isMarriageHidden && selectedIndex == 0)
                         Positioned.fill(
@@ -113,8 +112,8 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody>
                                   clipBehavior: Clip.none,
                                   children: [
                                     Container(
-                                      padding:  EdgeInsets.all(8.w),
-                                      margin:  EdgeInsets.only(right: 12.w),
+                                      padding: EdgeInsets.all(8.w),
+                                      margin: EdgeInsets.only(right: 12.w, left: 12.w),
                                       decoration: BoxDecoration(
                                         color: HexColor('eb7a91').withOpacity(0.2),
                                         borderRadius: BorderRadius.circular(16.r),
@@ -130,18 +129,18 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody>
                                         top: -2.w,
                                         right: 13.w,
                                         child: Container(
-                                          padding:  EdgeInsets.all(4.w),
-                                          decoration:  BoxDecoration(
+                                          padding: EdgeInsets.all(4.w),
+                                          decoration: BoxDecoration(
                                             color: Colors.red[400],
                                             shape: BoxShape.circle,
                                           ),
-                                          constraints:  BoxConstraints(
+                                          constraints: BoxConstraints(
                                             minWidth: 18.w,
                                             minHeight: 18.w,
                                           ),
                                           child: Text(
                                             _matchingCount > 99 ? '99+' : '$_matchingCount',
-                                            style:  TextStyle(
+                                            style: TextStyle(
                                               color: Colors.white,
                                               fontSize: 10.sp,
                                               fontWeight: FontWeight.bold,
@@ -154,7 +153,7 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody>
                                 ),
                               ),
                               Padding(
-                                padding:  EdgeInsets.symmetric(horizontal:  8.w),
+                                padding: EdgeInsets.symmetric(horizontal: 8.w),
                                 child: IconButton(
                                   onPressed: () {
                                     Navigator.push(
@@ -171,9 +170,7 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody>
                                   ),
                                 ),
                               ),
-                              
                             ],
-                            
                           ),
                         ),
                     ],
