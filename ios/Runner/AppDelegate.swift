@@ -4,6 +4,38 @@ import GoogleMaps
 import AVFoundation
 import PaymobSDK
 
+// MARK: - Secure Image Platform View (prevents screenshots)
+class SecureImageView: NSObject, FlutterPlatformView {
+    private let secureContainer: UIView
+
+    init(frame: CGRect) {
+        let textField = UITextField()
+        textField.isSecureTextEntry = true
+        textField.frame = frame
+        secureContainer = textField.subviews.first ?? UIView(frame: frame)
+        secureContainer.frame = frame
+        secureContainer.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        secureContainer.isUserInteractionEnabled = false
+        super.init()
+    }
+
+    func view() -> UIView { secureContainer }
+}
+
+class SecureImageFactory: NSObject, FlutterPlatformViewFactory {
+    func create(
+        withFrame frame: CGRect,
+        viewIdentifier viewId: Int64,
+        arguments args: Any?
+    ) -> FlutterPlatformView {
+        return SecureImageView(frame: frame)
+    }
+
+    func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol {
+        return FlutterStandardMessageCodec.sharedInstance()
+    }
+}
+
 @main
 @objc class AppDelegate: FlutterAppDelegate {
 
@@ -20,13 +52,11 @@ import PaymobSDK
         GeneratedPluginRegistrant.register(with: self)
 
         // ✅ تسجيل الـ SecureImageView للحماية من الـ screenshot
-        if let controller = window?.rootViewController as? FlutterViewController,
-           let registry = controller.engine?.platformViewsController {
-            registry.register(
-                SecureImageFactory(),
-                withId: "secure_image_view"
-            )
-        }
+        let registrar = self.registrar(forPlugin: "SecureImagePlugin")
+        registrar?.register(
+            SecureImageFactory(),
+            withId: "secure_image_view"
+        )
 
         // ✅ Force Universal Links to stay in app
         if #available(iOS 14.0, *) {
