@@ -53,13 +53,24 @@ class _UserPackagesViewContent extends StatefulWidget {
       _UserPackagesViewContentState();
 }
 
-class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
+class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
+    with TickerProviderStateMixin {
   late PageController _pageController;
   final _getPackageData = GetPackageDisplayData();
 
   bool _initialPageSet = false;
-  StreamSubscription?
-  _subscriptionSubscription; // ✅ للاستماع للتغييرات في الاشتراك
+  StreamSubscription? _subscriptionSubscription;
+
+  // Animation controllers for balloon effect on tab buttons
+  late AnimationController _basicScaleController;
+  late AnimationController _proScaleController;
+  late Animation<double> _basicScaleAnim;
+  late Animation<double> _proScaleAnim;
+
+  // Entrance animation for auto-scroll to Pro
+  late AnimationController _entranceController;
+  late Animation<double> _entranceFadeAnim;
+  late Animation<Offset> _entranceSlideAnim;
 
   @override
   void initState() {
@@ -69,16 +80,58 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
       viewportFraction: 1.0,
       keepPage: true,
     );
-    // Jump to cached sub page immediately before API responds
+
+    // Balloon scale animations
+    _basicScaleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _proScaleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _basicScaleAnim =
+        TweenSequence([
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.25), weight: 50),
+          TweenSequenceItem(tween: Tween(begin: 1.25, end: 1.0), weight: 50),
+        ]).animate(
+          CurvedAnimation(
+            parent: _basicScaleController,
+            curve: Curves.easeInOut,
+          ),
+        );
+    _proScaleAnim =
+        TweenSequence([
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.25), weight: 50),
+          TweenSequenceItem(tween: Tween(begin: 1.25, end: 1.0), weight: 50),
+        ]).animate(
+          CurvedAnimation(parent: _proScaleController, curve: Curves.easeInOut),
+        );
+
+    // Entrance animation
+    _entranceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _entranceFadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _entranceController, curve: Curves.easeOut),
+    );
+    _entranceSlideAnim =
+        Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _entranceController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
+    _entranceController.forward();
     _jumpToCachedPage();
 
-    // ✅ استمع للتغييرات في الاشتراك
     _subscriptionSubscription = SubscriptionEventBus
         .instance
         .onSubscriptionChanged
         .listen((_) {
           if (!mounted) return;
-          // ✅ حدّث البيانات عند تغيير الاشتراك
           context.read<UserPackagesCubit>().getPackages();
         });
   }
@@ -86,7 +139,7 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
   Future<void> _jumpToCachedPage() async {
     final cached = await UserPackagesCubit.getCachedSubType();
     if (cached != null && mounted) {
-      const packages = [PackageType.basic, PackageType.pro]; // ✅ إزالة elite
+      const packages = [PackageType.basic, PackageType.pro];
       final index = packages.indexOf(cached);
       if (index != -1) {
         context.read<PackageSelectionCubit>().selectPackage(cached);
@@ -94,6 +147,14 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
           _pageController.jumpToPage(index);
         }
       }
+    }
+  }
+
+  void _triggerBalloonFor(PackageType pkg) {
+    if (pkg == PackageType.basic) {
+      _basicScaleController.forward(from: 0);
+    } else if (pkg == PackageType.pro) {
+      _proScaleController.forward(from: 0);
     }
   }
 
@@ -105,8 +166,11 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
 
   @override
   void dispose() {
-    _subscriptionSubscription?.cancel(); // ✅ إلغاء الاستماع
+    _subscriptionSubscription?.cancel();
     _pageController.dispose();
+    _basicScaleController.dispose();
+    _proScaleController.dispose();
+    _entranceController.dispose();
     super.dispose();
   }
 
@@ -127,18 +191,34 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
             final cubit = context.read<UserPackagesCubit>();
             final currentPkg = cubit.currentSubscribedPackage;
             if (currentPkg != null && currentPkg != PackageType.elite) {
-              // ✅ تجاهل elite
-              const packages = [
-                PackageType.basic,
-                PackageType.pro,
-              ]; // ✅ إزالة elite
+              const packages = [PackageType.basic, PackageType.pro];
               final index = packages.indexOf(currentPkg);
               if (index != -1) {
                 context.read<PackageSelectionCubit>().selectPackage(currentPkg);
                 if (_pageController.hasClients) {
-                  _pageController.jumpToPage(index);
+                  _pageController.animateToPage(
+                    index,
+                    duration: const Duration(milliseconds: 450),
+                    curve: Curves.easeInOutCubic,
+                  );
                 }
               }
+            } else if (currentPkg == null) {
+              // Not subscribed → animate to Pro (gold) page
+              Future.delayed(const Duration(milliseconds: 400), () {
+                if (!mounted) return;
+                context.read<PackageSelectionCubit>().selectPackage(
+                  PackageType.pro,
+                );
+                if (_pageController.hasClients) {
+                  _pageController.animateToPage(
+                    1,
+                    duration: const Duration(milliseconds: 600),
+                    curve: Curves.easeInOutCubic,
+                  );
+                }
+                _triggerBalloonFor(PackageType.pro);
+              });
             }
           },
         ),
@@ -201,33 +281,37 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
   Widget _buildContent() {
     return Positioned.fill(
       child: SafeArea(
-        child:
-            BlocSelector<
-              PackageSelectionCubit,
-              PackageSelectionState,
-              PackageType
-            >(
-              selector: (state) => state.selectedPackage,
-              builder: (context, selectedPackage) {
-                final isBasic = selectedPackage == PackageType.basic;
-
-                return Column(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(flex: 6, child: _buildPageView()),
-                    const Spacer(),
-                    _buildTabSelector(),
-                    if (isBasic) Gap(65.h) else Gap(10.h),
-                    _buildActionButton(),
-                    Gap(20.h),
-                    _buildViewAllBenefitsButton(),
-                    Gap(20.h),
-                  ],
-                );
-              },
-            ),
+        child: FadeTransition(
+          opacity: _entranceFadeAnim,
+          child: SlideTransition(
+            position: _entranceSlideAnim,
+            child:
+                BlocSelector<
+                  PackageSelectionCubit,
+                  PackageSelectionState,
+                  PackageType
+                >(
+                  selector: (state) => state.selectedPackage,
+                  builder: (context, selectedPackage) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(flex: 6, child: _buildPageView()),
+                        const Spacer(),
+                        _buildTabSelector(),
+                        Gap(20.h),
+                        _buildActionButton(),
+                        Gap(20.h),
+                        _buildViewAllBenefitsButton(),
+                        Gap(20.h),
+                      ],
+                    );
+                  },
+                ),
+          ),
+        ),
       ),
     );
   }
@@ -565,7 +649,7 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
           height: 50.h,
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final sectionWidth = constraints.maxWidth / 2; // ✅ قسمين فقط
+              final sectionWidth = constraints.maxWidth / 2;
               const barColor = Color(0xFFD9D9D9);
 
               return Stack(
@@ -591,7 +675,7 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
                       ),
                     ],
                   ),
-                  // Selected indicator
+                  // Selected indicator with balloon scale
                   _buildSelectedIndicator(sectionWidth, selectedPackage),
                   // Clickable overlays
                   Row(
@@ -606,7 +690,7 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
           ),
         ),
         Gap(10.h),
-        // Tab labels
+        // Tab labels with balloon scale
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -637,48 +721,55 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
     final visualIndex = isArabic ? (1 - config.index) : config.index;
     final centerX = sectionWidth * (visualIndex + 0.5);
 
+    final scaleAnim = selectedPackage == PackageType.basic
+        ? _basicScaleAnim
+        : _proScaleAnim;
+
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOutCubic,
       left: centerX - 36.w,
       top: 0,
-      child: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: config.colors,
-                begin: config.isVertical
-                    ? Alignment.topCenter
-                    : Alignment.centerRight,
-                end: config.isVertical
-                    ? Alignment.bottomCenter
-                    : Alignment.centerLeft,
-              ),
-              borderRadius: BorderRadius.circular(6.r),
-              boxShadow: [
-                BoxShadow(
-                  color: config.colors.last.withOpacity(0.3),
-                  blurRadius: 12,
-                  spreadRadius: 2,
-                  offset: const Offset(0, 3),
+      child: ScaleTransition(
+        scale: scaleAnim,
+        child: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: config.colors,
+                  begin: config.isVertical
+                      ? Alignment.topCenter
+                      : Alignment.centerRight,
+                  end: config.isVertical
+                      ? Alignment.bottomCenter
+                      : Alignment.centerLeft,
                 ),
-              ],
+                borderRadius: BorderRadius.circular(6.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: config.colors.last.withOpacity(0.3),
+                    blurRadius: 12,
+                    spreadRadius: 2,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Text(
+                config.label,
+                style: Styles.textStyle16SemiBold.copyWith(color: Colors.white),
+              ),
             ),
-            child: Text(
-              config.label,
-              style: Styles.textStyle16SemiBold.copyWith(color: Colors.white),
+            CustomPaint(
+              size: Size(15.w, 10.h),
+              painter: _TrianglePainter(
+                colors: config.colors,
+                isVertical: config.isVertical,
+              ),
             ),
-          ),
-          CustomPaint(
-            size: Size(15.w, 10.h),
-            painter: _TrianglePainter(
-              colors: config.colors,
-              isVertical: config.isVertical,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -798,24 +889,27 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
   }
 
   void _onPageChanged(int index) {
-    // ✅ Same order for all languages: Basic (0) -> Pro (1)
     const packages = [PackageType.basic, PackageType.pro];
-    context.read<PackageSelectionCubit>().selectPackage(packages[index]);
+    final pkg = packages[index];
+    context.read<PackageSelectionCubit>().selectPackage(pkg);
+    _triggerBalloonFor(pkg);
   }
 
   void _onPackageSelectionChanged(
     BuildContext context,
     PackageSelectionState state,
   ) {
-    // ✅ Same order for all languages: Basic (0) -> Pro (1)
     const packages = [PackageType.basic, PackageType.pro];
     final index = packages.indexOf(state.selectedPackage);
 
     if (_pageController.hasClients && _pageController.page?.round() != index) {
-      // Use jumpToPage for instant transition without animation
-      // This prevents the eye strain from seeing intermediate pages
-      _pageController.jumpToPage(index);
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOutCubic,
+      );
     }
+    _triggerBalloonFor(state.selectedPackage);
   }
 
   void _onActionButtonPressed(BuildContext context, PackageType packageType) {
