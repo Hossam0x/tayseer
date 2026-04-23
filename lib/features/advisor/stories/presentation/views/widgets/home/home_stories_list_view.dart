@@ -45,6 +45,17 @@ class _HomeStoriesListViewState extends State<HomeStoriesListView> {
         _scrollController.position.maxScrollExtent * 0.9;
   }
 
+  void _prefetchIfNeeded(int index) {
+    // Prefetch next page when reaching item 10 (half of the 20-item page)
+    if (index == 9) {
+      context.read<StoriesCubit>().fetchStories(
+        loadMore: true,
+        isSpecial: false,
+        context: context,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocSelector<StoriesCubit, StoriesState, String>(
@@ -72,6 +83,8 @@ class _HomeStoriesListViewState extends State<HomeStoriesListView> {
                 ),
               ...List.generate(userIds.length, (index) {
                 final userId = userIds[index];
+                // Prefetch next page when reaching item 10 (half of the 20-item page)
+                _prefetchIfNeeded(index);
                 return Padding(
                   key: ValueKey(userId),
                   padding: EdgeInsetsDirectional.only(

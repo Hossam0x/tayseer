@@ -9,7 +9,7 @@ import 'package:tayseer/my_import.dart';
 
 class StoriesCubit extends Cubit<StoriesState> {
   final StoriesRepository storiesRepository;
-  final int pageSize = 10;
+  final int pageSize = 20;
 
   StreamSubscription? _myStoriesSub;
   StreamSubscription? _uploadSub;

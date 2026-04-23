@@ -49,6 +49,18 @@ class _StoriesListViewState extends State<StoriesListView> {
         _scrollController.position.maxScrollExtent * 0.9;
   }
 
+  void _prefetchIfNeeded(int index) {
+    // Prefetch next page when reaching item 10 (half of the 20-item page)
+    if (index == 9) {
+      context.read<StoriesCubit>().fetchStories(
+        loadMore: true,
+        isSpecial: true,
+        advisorId: widget.advisorId,
+        context: context,
+      );
+    }
+  }
+
   List<MapEntry<UserStoriesModel, StoryModel>> get _flatStories => [
     for (final userStory in widget.stories)
       for (final story in userStory.stories) MapEntry(userStory, story),
@@ -65,6 +77,8 @@ class _StoriesListViewState extends State<StoriesListView> {
         child: const StoriesLoadingShimmer(count: 1),
       );
     }
+    // Prefetch next page when reaching item 10 (half of the 20-item page)
+    _prefetchIfNeeded(index);
     final parentUserStory = flatStories[index].key;
     final story = flatStories[index].value;
     return Padding(
