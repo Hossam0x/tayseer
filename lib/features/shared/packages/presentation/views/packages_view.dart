@@ -43,10 +43,24 @@ class _PackagesViewContent extends StatefulWidget {
   State<_PackagesViewContent> createState() => _PackagesViewContentState();
 }
 
-class _PackagesViewContentState extends State<_PackagesViewContent> {
+class _PackagesViewContentState extends State<_PackagesViewContent>
+    with TickerProviderStateMixin {
   late PageController _pageController;
   final _getPackageData = GetPackageDisplayData();
   bool _initialPageSet = false;
+
+  // Balloon scale animations
+  late AnimationController _basicScaleController;
+  late AnimationController _proScaleController;
+  late AnimationController _eliteScaleController;
+  late Animation<double> _basicScaleAnim;
+  late Animation<double> _proScaleAnim;
+  late Animation<double> _eliteScaleAnim;
+
+  // Entrance animation
+  late AnimationController _entranceController;
+  late Animation<double> _entranceFadeAnim;
+  late Animation<Offset> _entranceSlideAnim;
 
   @override
   void initState() {
@@ -56,6 +70,75 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
       viewportFraction: 1.0,
       keepPage: true,
     );
+
+    // Balloon scale animations
+    _basicScaleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _proScaleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _eliteScaleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _basicScaleAnim =
+        TweenSequence([
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.25), weight: 50),
+          TweenSequenceItem(tween: Tween(begin: 1.25, end: 1.0), weight: 50),
+        ]).animate(
+          CurvedAnimation(
+            parent: _basicScaleController,
+            curve: Curves.easeInOut,
+          ),
+        );
+    _proScaleAnim =
+        TweenSequence([
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.25), weight: 50),
+          TweenSequenceItem(tween: Tween(begin: 1.25, end: 1.0), weight: 50),
+        ]).animate(
+          CurvedAnimation(parent: _proScaleController, curve: Curves.easeInOut),
+        );
+    _eliteScaleAnim =
+        TweenSequence([
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.25), weight: 50),
+          TweenSequenceItem(tween: Tween(begin: 1.25, end: 1.0), weight: 50),
+        ]).animate(
+          CurvedAnimation(
+            parent: _eliteScaleController,
+            curve: Curves.easeInOut,
+          ),
+        );
+
+    // Entrance animation
+    _entranceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _entranceFadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _entranceController, curve: Curves.easeOut),
+    );
+    _entranceSlideAnim =
+        Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _entranceController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
+    _entranceController.forward();
+  }
+
+  void _triggerBalloonFor(PackageType pkg) {
+    if (pkg == PackageType.basic) {
+      _basicScaleController.forward(from: 0);
+    } else if (pkg == PackageType.pro) {
+      _proScaleController.forward(from: 0);
+    } else if (pkg == PackageType.elite) {
+      _eliteScaleController.forward(from: 0);
+    }
   }
 
   @override
@@ -67,6 +150,10 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
   @override
   void dispose() {
     _pageController.dispose();
+    _basicScaleController.dispose();
+    _proScaleController.dispose();
+    _eliteScaleController.dispose();
+    _entranceController.dispose();
     super.dispose();
   }
 
@@ -95,7 +182,11 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
                 packages[widget.initialPage!],
               );
               if (_pageController.hasClients) {
-                _pageController.jumpToPage(widget.initialPage!);
+                _pageController.animateToPage(
+                  widget.initialPage!,
+                  duration: const Duration(milliseconds: 450),
+                  curve: Curves.easeInOutCubic,
+                );
               }
               return;
             }
@@ -110,8 +201,28 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
               final index = packages.indexOf(currentPkg);
               context.read<PackageSelectionCubit>().selectPackage(currentPkg);
               if (_pageController.hasClients) {
-                _pageController.jumpToPage(index);
+                _pageController.animateToPage(
+                  index,
+                  duration: const Duration(milliseconds: 450),
+                  curve: Curves.easeInOutCubic,
+                );
               }
+            } else {
+              // Not subscribed → animate to Pro (gold) page
+              Future.delayed(const Duration(milliseconds: 400), () {
+                if (!mounted) return;
+                context.read<PackageSelectionCubit>().selectPackage(
+                  PackageType.pro,
+                );
+                if (_pageController.hasClients) {
+                  _pageController.animateToPage(
+                    1,
+                    duration: const Duration(milliseconds: 600),
+                    curve: Curves.easeInOutCubic,
+                  );
+                }
+                _triggerBalloonFor(PackageType.pro);
+              });
             }
           },
         ),
@@ -164,14 +275,20 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
   Widget _buildContent() {
     return Positioned.fill(
       child: SafeArea(
-        child: Column(
-          children: [
-            Expanded(child: _buildPageView()),
-            _buildTabSelector(),
-            Gap(110.h),
-            _buildActionButton(),
-            Gap(20.h),
-          ],
+        child: FadeTransition(
+          opacity: _entranceFadeAnim,
+          child: SlideTransition(
+            position: _entranceSlideAnim,
+            child: Column(
+              children: [
+                Expanded(child: _buildPageView()),
+                _buildTabSelector(),
+                Gap(110.h),
+                _buildActionButton(),
+                Gap(20.h),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -226,6 +343,9 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
           selectedPackage: selectedPackage,
           onSelected: (pkg) =>
               context.read<PackageSelectionCubit>().selectPackage(pkg),
+          basicScaleAnim: _basicScaleAnim,
+          proScaleAnim: _proScaleAnim,
+          eliteScaleAnim: _eliteScaleAnim,
         );
       },
     );
@@ -279,7 +399,9 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
   void _onPageChanged(int index) {
     // Same order for all languages: Basic (0) -> Pro (1) -> Elite (2)
     const packages = [PackageType.basic, PackageType.pro, PackageType.elite];
-    context.read<PackageSelectionCubit>().selectPackage(packages[index]);
+    final pkg = packages[index];
+    context.read<PackageSelectionCubit>().selectPackage(pkg);
+    _triggerBalloonFor(pkg);
   }
 
   void _onPackageSelectionChanged(
@@ -289,12 +411,29 @@ class _PackagesViewContentState extends State<_PackagesViewContent> {
     // Same order for all languages: Basic (0) -> Pro (1) -> Elite (2)
     const packages = [PackageType.basic, PackageType.pro, PackageType.elite];
     final index = packages.indexOf(state.selectedPackage);
+    final currentIndex = _pageController.page?.round() ?? 0;
 
-    if (_pageController.hasClients && _pageController.page?.round() != index) {
-      // Use jumpToPage for instant transition without animation
-      // This prevents the eye strain from seeing intermediate pages
-      _pageController.jumpToPage(index);
+    if (_pageController.hasClients && currentIndex != index) {
+      // If skipping over a page (e.g. Basic → Elite), jump instantly to avoid
+      // the eye-straining intermediate page flash
+      if ((currentIndex - index).abs() > 1) {
+        // Jump to adjacent page first (no animation), then animate the last step
+        final intermediateIndex = index > currentIndex ? index - 1 : index + 1;
+        _pageController.jumpToPage(intermediateIndex);
+        _pageController.animateToPage(
+          index,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOutCubic,
+        );
+      } else {
+        _pageController.animateToPage(
+          index,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOutCubic,
+        );
+      }
     }
+    _triggerBalloonFor(state.selectedPackage);
   }
 
   void _onActionButtonPressed(BuildContext context, PackageType packageType) {

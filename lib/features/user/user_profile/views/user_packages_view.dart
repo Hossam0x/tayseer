@@ -285,31 +285,19 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
           opacity: _entranceFadeAnim,
           child: SlideTransition(
             position: _entranceSlideAnim,
-            child:
-                BlocSelector<
-                  PackageSelectionCubit,
-                  PackageSelectionState,
-                  PackageType
-                >(
-                  selector: (state) => state.selectedPackage,
-                  builder: (context, selectedPackage) {
-                    return Column(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(flex: 6, child: _buildPageView()),
-                        const Spacer(),
-                        _buildTabSelector(),
-                        Gap(20.h),
-                        _buildActionButton(),
-                        Gap(20.h),
-                        _buildViewAllBenefitsButton(),
-                        Gap(20.h),
-                      ],
-                    );
-                  },
-                ),
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                Expanded(flex: 6, child: _buildPageView()),
+                const Spacer(),
+                _buildTabSelector(),
+                Gap(20.h),
+                _buildActionButton(),
+                Gap(20.h),
+                _buildViewAllBenefitsButton(),
+                Gap(20.h),
+              ],
+            ),
           ),
         ),
       ),
@@ -317,63 +305,39 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
   }
 
   Widget _buildPageView() {
-    return BlocBuilder<PackageSelectionCubit, PackageSelectionState>(
-      builder: (context, state) {
-        return Column(
-          children: [
-            Gap(20.h),
-            // ✅ عنوان الباقة فقط
-            SizedBox(
-              height: 80.h,
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: _onPageChanged,
-                physics: const BouncingScrollPhysics(),
-                reverse: false,
-                pageSnapping: true,
-                itemCount: 2, // ✅ فقط Basic و Pro
-                itemBuilder: (context, index) {
-                  // ✅ Same order for all languages: Basic -> Pro
-                  final packageTypes = [PackageType.basic, PackageType.pro];
-                  return _buildPage(packageTypes[index]);
-                },
-              ),
-            ),
-            Gap(20.h),
-            // ✅ المحتوى يأخذ باقي المساحة
-            Expanded(child: _buildContentSection(context)),
-          ],
-        );
+    return PageView.builder(
+      controller: _pageController,
+      onPageChanged: _onPageChanged,
+      physics: const BouncingScrollPhysics(),
+      reverse: false,
+      pageSnapping: true,
+      itemCount: 2,
+      itemBuilder: (context, index) {
+        final packageTypes = [PackageType.basic, PackageType.pro];
+        return _buildPage(packageTypes[index]);
       },
     );
   }
 
-  Widget _buildContentSection(BuildContext context) {
-    return BlocBuilder<PackageSelectionCubit, PackageSelectionState>(
-      builder: (context, state) {
-        final selectedPackage = state.selectedPackage;
+  Widget _buildContentSection(
+    BuildContext context,
+    PackageType selectedPackage,
+    UserPackagesState packagesState,
+  ) {
+    // ✅ لو Basic، اعرض الـ benefits القديمة
+    if (selectedPackage == PackageType.basic) {
+      return _buildBenefitsSection(context, selectedPackage);
+    }
 
-        // ✅ لو Basic، اعرض الـ benefits القديمة
-        if (selectedPackage == PackageType.basic) {
-          return _buildBenefitsSection(context, selectedPackage);
-        }
+    // ✅ لو Pro، اعرض محتوى صفحة "كل المزايا" بدون جملة "استمتع بمزايا أكثر"
+    final subs = packagesState.subscriptions
+        .where((s) => s.subscriptionType == 'gold')
+        .toList();
+    final sub = subs.where((s) => s.isMonthly).firstOrNull ?? subs.firstOrNull;
 
-        // ✅ لو Pro، اعرض محتوى صفحة "كل المزايا" بدون جملة "استمتع بمزايا أكثر"
-        return BlocBuilder<UserPackagesCubit, UserPackagesState>(
-          builder: (context, packagesState) {
-            final subs = packagesState.subscriptions
-                .where((s) => s.subscriptionType == 'gold')
-                .toList();
-            final sub =
-                subs.where((s) => s.isMonthly).firstOrNull ?? subs.firstOrNull;
-
-            return SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
-              child: _buildFeaturesList(context, sub),
-            );
-          },
-        );
-      },
+    return SingleChildScrollView(
+      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
+      child: _buildFeaturesList(context, sub),
     );
   }
 
@@ -581,24 +545,22 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
               .map((s) => s.toAdvisorSubModel())
               .toList(),
         );
-        // Show only the title without the feature grid
-        return _buildSimplePackageContent(packageData, packageType);
+        return RepaintBoundary(
+          child: Column(
+            children: [
+              Gap(20.h),
+              SizedBox(
+                height: 80.h,
+                child: _buildPackageTitle(packageData, packageType),
+              ),
+              Gap(20.h),
+              Expanded(
+                child: _buildContentSection(context, packageType, state),
+              ),
+            ],
+          ),
+        );
       },
-    );
-  }
-
-  Widget _buildSimplePackageContent(
-    PackageDisplayModel package,
-    PackageType packageType,
-  ) {
-    return RepaintBoundary(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 24.w),
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: [_buildPackageTitle(package, packageType), Gap(40.h)],
-        ),
-      ),
     );
   }
 

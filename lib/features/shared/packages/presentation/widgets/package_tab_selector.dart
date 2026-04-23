@@ -9,11 +9,17 @@ import 'package:tayseer/features/shared/packages/domain/entities/package_type.da
 class PackageTabSelector extends StatelessWidget {
   final PackageType selectedPackage;
   final ValueChanged<PackageType> onSelected;
+  final Animation<double>? basicScaleAnim;
+  final Animation<double>? proScaleAnim;
+  final Animation<double>? eliteScaleAnim;
 
   const PackageTabSelector({
     super.key,
     required this.selectedPackage,
     required this.onSelected,
+    this.basicScaleAnim,
+    this.proScaleAnim,
+    this.eliteScaleAnim,
   });
 
   @override
@@ -91,23 +97,42 @@ class PackageTabSelector extends StatelessWidget {
     final visualIndex = isArabic ? (2 - config.index) : config.index;
     final centerX = sectionWidth * (visualIndex + 0.5);
 
+    Animation<double>? scaleAnim;
+    switch (selectedPackage) {
+      case PackageType.basic:
+        scaleAnim = basicScaleAnim;
+        break;
+      case PackageType.pro:
+        scaleAnim = proScaleAnim;
+        break;
+      case PackageType.elite:
+        scaleAnim = eliteScaleAnim;
+        break;
+    }
+
+    Widget indicator = Column(
+      children: [
+        _buildBubble(config),
+        CustomPaint(
+          size: Size(15.w, 10.h),
+          painter: _TrianglePainter(
+            colors: config.colors,
+            isVertical: config.isVertical,
+          ),
+        ),
+      ],
+    );
+
+    if (scaleAnim != null) {
+      indicator = ScaleTransition(scale: scaleAnim, child: indicator);
+    }
+
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOutCubic,
       left: centerX - 36.w,
       top: 0,
-      child: Column(
-        children: [
-          _buildBubble(config),
-          CustomPaint(
-            size: Size(15.w, 10.h),
-            painter: _TrianglePainter(
-              colors: config.colors,
-              isVertical: config.isVertical,
-            ),
-          ),
-        ],
-      ),
+      child: indicator,
     );
   }
 
