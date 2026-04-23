@@ -227,19 +227,6 @@ class _PurposeCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-
-            const SizedBox(height: 10),
-
-            /// Indicator dot
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              width: isSelected ? 8 : 0,
-              height: isSelected ? 8 : 0,
-              decoration: BoxDecoration(
-                color: activeColor,
-                shape: BoxShape.circle,
-              ),
-            ),
           ],
         ),
       ),
