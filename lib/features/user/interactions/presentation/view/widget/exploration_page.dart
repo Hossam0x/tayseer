@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_state.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/get_dummy_interaction.dart';
@@ -19,12 +21,34 @@ class Exploration extends StatefulWidget {
 }
 
 class ExplorationState extends State<Exploration> {
+  StreamSubscription?
+  _subscriptionSubscription; // ✅ للاستماع للتغييرات في الاشتراك
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<InteractionsCubit>().fetchExploration(category: "all");
     });
+
+    // ✅ استمع للتغييرات في الاشتراك
+    _subscriptionSubscription = SubscriptionEventBus
+        .instance
+        .onSubscriptionChanged
+        .listen((_) {
+          if (!mounted) return;
+          // ✅ حدّث البيانات عند تغيير الاشتراك
+          context.read<InteractionsCubit>().fetchExploration(
+            category: "all",
+            forceRefresh: true,
+          );
+        });
+  }
+
+  @override
+  void dispose() {
+    _subscriptionSubscription?.cancel(); // ✅ إلغاء الاستماع
+    super.dispose();
   }
 
   Widget _buildNoResultsView(BuildContext context) {
@@ -34,9 +58,7 @@ class ExplorationState extends State<Exploration> {
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           SizedBox(height: MediaQuery.of(context).size.height * 0.12),
-          Center(
-            child: AppImage(AssetsData.noPersonsBlocked, width: 180.w),
-          ),
+          Center(child: AppImage(AssetsData.noPersonsBlocked, width: 180.w)),
           SizedBox(height: 24.h),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 32.w),
@@ -58,13 +80,13 @@ class ExplorationState extends State<Exploration> {
             ),
           ),
           SizedBox(height: 32.h),
-        
         ],
       ),
     );
   }
 
-  Future<void> _onRefresh() async {    await context.read<InteractionsCubit>().fetchExploration(
+  Future<void> _onRefresh() async {
+    await context.read<InteractionsCubit>().fetchExploration(
       category: "all",
       forceRefresh: true,
     );
@@ -503,7 +525,7 @@ class ExplorationState extends State<Exploration> {
           ),
         SizedBox(height: 16.h),
         SizedBox(
-          height:isTablet ? 320.0 : 260.0,
+          height: isTablet ? 320.0 : 260.0,
           child: Directionality(
             textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
             child: ListView.builder(

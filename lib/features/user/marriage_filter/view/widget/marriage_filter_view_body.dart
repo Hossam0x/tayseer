@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'package:tayseer/core/widgets/custom_build_age_and_country_section.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
+import 'package:tayseer/core/utils/subscription_event_bus.dart';
+import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
 import 'package:tayseer/features/user/user_profile/presentation/view_model/user_packages_cubit.dart';
 import 'package:tayseer/features/user/marriage_filter/view/widget/custom_data_card.dart';
 import 'package:tayseer/features/user/marriage_filter/view/widget/filter_selection_body.dart';
@@ -7,10 +10,51 @@ import 'package:tayseer/features/user/marriage_filter/view_models/marriage_filte
 import 'package:tayseer/features/user/marriage_filter/view_models/marriage_filter_state.dart';
 import 'package:tayseer/my_import.dart';
 
-class MarriageFilterBody extends StatelessWidget {
+class MarriageFilterBody extends StatefulWidget {
   const MarriageFilterBody({super.key, this.onBackPressed});
 
   final VoidCallback? onBackPressed;
+
+  @override
+  State<MarriageFilterBody> createState() => _MarriageFilterBodyState();
+}
+
+class _MarriageFilterBodyState extends State<MarriageFilterBody> {
+  StreamSubscription?
+  _subscriptionSubscription; // ✅ للاستماع للتغييرات في الاشتراك
+  PackageType? _cachedSubType; // ✅ نخزن الـ cache محلياً
+
+  @override
+  void initState() {
+    super.initState();
+    // ✅ اقرأ الـ cache عند البداية
+    _loadCachedSubType();
+
+    // ✅ استمع للتغييرات في الاشتراك
+    _subscriptionSubscription = SubscriptionEventBus
+        .instance
+        .onSubscriptionChanged
+        .listen((_) async {
+          if (!mounted) return;
+          // ✅ حدّث الـ cache عند تغيير الاشتراك
+          await _loadCachedSubType();
+        });
+  }
+
+  Future<void> _loadCachedSubType() async {
+    final cached = await UserPackagesCubit.getCachedSubType();
+    if (mounted) {
+      setState(() {
+        _cachedSubType = cached;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _subscriptionSubscription?.cancel(); // ✅ إلغاء الاستماع
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -306,7 +350,8 @@ class MarriageFilterBody extends StatelessWidget {
       leading: IconButton(
         icon: const Icon(Icons.close, color: Colors.grey),
         onPressed:
-            onBackPressed ?? () => context.pop(), // ✅ استخدم الـ callback
+            widget.onBackPressed ??
+            () => context.pop(), // ✅ استخدم الـ callback
       ),
       actions: [
         TextButton(
@@ -348,9 +393,8 @@ class MarriageFilterBody extends StatelessWidget {
           if (!hasFilters) return;
 
           if (hasPaidFilters) {
-            final cachedSub = await UserPackagesCubit.getCachedSubType();
-            final isFree = cachedSub == null;
-            if (!context.mounted) return;
+            // ✅ استخدم الـ cache المحلي بدلاً من قراءة من SharedPreferences
+            final isFree = _cachedSubType == null;
             if (isFree) {
               showFiltterLimitDialogs(
                 context,

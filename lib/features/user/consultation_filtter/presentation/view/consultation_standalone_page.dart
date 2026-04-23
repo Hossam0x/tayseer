@@ -2,6 +2,8 @@
 //
 // ✅ الصفحة الرئيسية للاستشارة — تعرض المستشارين وتستقبل نتيجة الفلتر
 
+import 'dart:async';
+import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/filter/data/models/advisor_filter_request_model.dart';
 import 'package:tayseer/features/filter/presentation/view/advisor_filter_view.dart';
 import 'package:tayseer/features/user/consultation_filtter/data/consultation_repo/consultation_repo.dart';
@@ -36,6 +38,8 @@ class ConsultationView extends StatefulWidget {
 
 class _ConsultationViewState extends State<ConsultationView> {
   final ScrollController _scrollController = ScrollController();
+  StreamSubscription?
+  _subscriptionSubscription; // ✅ للاستماع للتغييرات في الاشتراك
 
   @override
   void initState() {
@@ -49,6 +53,18 @@ class _ConsultationViewState extends State<ConsultationView> {
       }
     });
     _scrollController.addListener(_onScroll);
+
+    // ✅ استمع للتغييرات في الاشتراك
+    _subscriptionSubscription = SubscriptionEventBus
+        .instance
+        .onSubscriptionChanged
+        .listen((_) {
+          if (!mounted) return;
+          // ✅ حدّث البيانات عند تغيير الاشتراك
+          context.read<ConsultationCubit>().applyFilter(
+            const AdvisorFilterRequestModel(page: 1),
+          );
+        });
   }
 
   void _onScroll() {
@@ -60,6 +76,7 @@ class _ConsultationViewState extends State<ConsultationView> {
 
   @override
   void dispose() {
+    _subscriptionSubscription?.cancel(); // ✅ إلغاء الاستماع
     _scrollController.dispose();
     super.dispose();
   }

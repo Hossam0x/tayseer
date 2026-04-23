@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
 import 'package:tayseer/features/user/user_profile/data/models/new_user_sub_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_packages_repository.dart';
@@ -32,8 +34,27 @@ class UserPackagesState {
 
 class UserPackagesCubit extends Cubit<UserPackagesState> {
   final UserPackagesRepository _repository;
+  StreamSubscription? _subscriptionSubscription;
 
-  UserPackagesCubit(this._repository) : super(UserPackagesState());
+  UserPackagesCubit(this._repository) : super(UserPackagesState()) {
+    // ✅ استمع للتغييرات في الاشتراك لتحديث الـ cache
+    _subscriptionSubscription = SubscriptionEventBus
+        .instance
+        .onSubscriptionChanged
+        .listen((event) {
+          if (isClosed) return;
+          // ✅ حدّث الـ cache فوراً
+          updateCachedSubType(event.subscriptionType);
+          // ✅ حدّث البيانات من الـ API
+          getPackages();
+        });
+  }
+
+  @override
+  Future<void> close() {
+    _subscriptionSubscription?.cancel();
+    return super.close();
+  }
 
   Future<void> getPackages() async {
     emit(state.copyWith(isLoading: true, errorMessage: null));

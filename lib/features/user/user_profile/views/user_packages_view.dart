@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -9,6 +10,7 @@ import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/utils/router/app_router.dart';
 import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/core/utils/styles.dart';
+import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
 import 'package:tayseer/features/shared/packages/domain/use_cases/get_package_display_data.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/package_selection_cubit.dart';
@@ -55,6 +57,8 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
   final _getPackageData = GetPackageDisplayData();
 
   bool _initialPageSet = false;
+  StreamSubscription?
+  _subscriptionSubscription; // ✅ للاستماع للتغييرات في الاشتراك
 
   @override
   void initState() {
@@ -66,16 +70,28 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
     );
     // Jump to cached sub page immediately before API responds
     _jumpToCachedPage();
+
+    // ✅ استمع للتغييرات في الاشتراك
+    _subscriptionSubscription = SubscriptionEventBus
+        .instance
+        .onSubscriptionChanged
+        .listen((_) {
+          if (!mounted) return;
+          // ✅ حدّث البيانات عند تغيير الاشتراك
+          context.read<UserPackagesCubit>().getPackages();
+        });
   }
 
   Future<void> _jumpToCachedPage() async {
     final cached = await UserPackagesCubit.getCachedSubType();
     if (cached != null && mounted) {
-      const packages = [PackageType.basic, PackageType.pro, PackageType.elite];
+      const packages = [PackageType.basic, PackageType.pro]; // ✅ إزالة elite
       final index = packages.indexOf(cached);
-      context.read<PackageSelectionCubit>().selectPackage(cached);
-      if (_pageController.hasClients) {
-        _pageController.jumpToPage(index);
+      if (index != -1) {
+        context.read<PackageSelectionCubit>().selectPackage(cached);
+        if (_pageController.hasClients) {
+          _pageController.jumpToPage(index);
+        }
       }
     }
   }
@@ -88,6 +104,7 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
 
   @override
   void dispose() {
+    _subscriptionSubscription?.cancel(); // ✅ إلغاء الاستماع
     _pageController.dispose();
     super.dispose();
   }
@@ -108,16 +125,18 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
             _initialPageSet = true;
             final cubit = context.read<UserPackagesCubit>();
             final currentPkg = cubit.currentSubscribedPackage;
-            if (currentPkg != null) {
+            if (currentPkg != null && currentPkg != PackageType.elite) {
+              // ✅ تجاهل elite
               const packages = [
                 PackageType.basic,
                 PackageType.pro,
-                PackageType.elite,
-              ];
+              ]; // ✅ إزالة elite
               final index = packages.indexOf(currentPkg);
-              context.read<PackageSelectionCubit>().selectPackage(currentPkg);
-              if (_pageController.hasClients) {
-                _pageController.jumpToPage(index);
+              if (index != -1) {
+                context.read<PackageSelectionCubit>().selectPackage(currentPkg);
+                if (_pageController.hasClients) {
+                  _pageController.jumpToPage(index);
+                }
               }
             }
           },
@@ -149,14 +168,14 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
           >(
             selector: (state) => state.selectedPackage,
             builder: (context, selectedPackage) {
-              final isElite = selectedPackage == PackageType.elite;
+              // ✅ لا يوجد elite بعد الآن، كل الألوان سوداء
               return IconButton(
                 icon: Transform.flip(
                   flipX: !isArabic,
                   child: SvgPicture.asset(
                     AssetsData.backArrow,
-                    colorFilter: ColorFilter.mode(
-                      isElite ? Colors.white : Colors.black,
+                    colorFilter: const ColorFilter.mode(
+                      Colors.black,
                       BlendMode.srcIn,
                     ),
                   ),
@@ -223,14 +242,10 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
                 physics: const BouncingScrollPhysics(),
                 reverse: false,
                 pageSnapping: true,
-                itemCount: 3,
+                itemCount: 2, // ✅ فقط Basic و Pro
                 itemBuilder: (context, index) {
-                  // Same order for all languages: Basic -> Pro -> Elite
-                  final packageTypes = [
-                    PackageType.basic,
-                    PackageType.pro,
-                    PackageType.elite,
-                  ];
+                  // ✅ Same order for all languages: Basic -> Pro
+                  final packageTypes = [PackageType.basic, PackageType.pro];
                   return _buildPage(packageTypes[index]);
                 },
               ),
@@ -287,7 +302,6 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
           },
         ];
       case PackageType.pro:
-      case PackageType.elite:
         return [
           {
             'icon': AssetsData.youCanSeeWhoLiked,
@@ -302,6 +316,8 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
             'title': 'unlimited_number_of_likes',
           },
         ];
+      case PackageType.elite: // ✅ لن يتم الوصول إليه أبداً
+        return [];
     }
   }
 
@@ -317,8 +333,7 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
     >(
       selector: (state) => state.selectedPackage,
       builder: (context, selectedPackage) {
-        final isElite = selectedPackage == PackageType.elite;
-
+        // ✅ لا يوجد elite بعد الآن، كل النصوص سوداء
         return Expanded(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -331,9 +346,7 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Styles.textStyle14.copyWith(
-                    color: isElite ? Colors.white : Colors.black87,
-                  ),
+                  style: Styles.textStyle14.copyWith(color: Colors.black87),
                 ),
               ),
             ],
@@ -380,20 +393,6 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
     PackageType packageType,
   ) {
     switch (packageType) {
-      case PackageType.elite:
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: Text(
-                package.packageTitle,
-                textAlign: TextAlign.center,
-                style: Styles.textStyle24Meduim.copyWith(color: Colors.white),
-              ),
-            ),
-          ],
-        );
-
       case PackageType.pro:
         return Text(
           package.packageTitle,
@@ -409,6 +408,9 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
             color: const Color(0xFFE91E63),
           ),
         );
+
+      case PackageType.elite: // ✅ لن يتم الوصول إليه أبداً
+        return const SizedBox.shrink();
     }
   }
 
@@ -543,8 +545,8 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
   }
 
   void _onPageChanged(int index) {
-    // Same order for all languages: Basic (0) -> Pro (1) -> Elite (2)
-    const packages = [PackageType.basic, PackageType.pro, PackageType.elite];
+    // ✅ Same order for all languages: Basic (0) -> Pro (1)
+    const packages = [PackageType.basic, PackageType.pro];
     context.read<PackageSelectionCubit>().selectPackage(packages[index]);
   }
 
@@ -552,8 +554,8 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
     BuildContext context,
     PackageSelectionState state,
   ) {
-    // Same order for all languages: Basic (0) -> Pro (1) -> Elite (2)
-    const packages = [PackageType.basic, PackageType.pro, PackageType.elite];
+    // ✅ Same order for all languages: Basic (0) -> Pro (1)
+    const packages = [PackageType.basic, PackageType.pro];
     final index = packages.indexOf(state.selectedPackage);
 
     if (_pageController.hasClients && _pageController.page?.round() != index) {
@@ -589,7 +591,7 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
         return SelectedPackage.basic;
       case PackageType.pro:
         return SelectedPackage.pro;
-      case PackageType.elite:
+      case PackageType.elite: // ✅ لن يتم الوصول إليه أبداً
         return SelectedPackage.elite;
     }
   }

@@ -4,6 +4,7 @@ import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/enum/report_type.dart';
+import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/shared/view_model/layout_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_state.dart';
@@ -28,7 +29,6 @@ import 'package:tayseer/features/user/marriage/view/widget/compatibility.dart';
 import 'package:tayseer/features/user/marriage/view/widget/education.dart';
 import 'package:tayseer/features/user/marriage/view/widget/interests_section.dart';
 import 'package:tayseer/core/constant/marriage_constants.dart';
-import 'package:tayseer/features/user/marriage/view/widget/message_input_section.dart';
 import 'package:tayseer/features/user/marriage/view/widget/religious.dart';
 import 'package:tayseer/features/user/marriage/view/widget/sliver_profile_header.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
@@ -71,6 +71,8 @@ class MarriageBodyState extends State<MarriageBody>
   bool _isActionInProgress = false;
   bool _navHiddenByMarriage = false;
   StreamSubscription? _layoutSubscription;
+  StreamSubscription?
+  _subscriptionSubscription; // ✅ للاستماع للتغييرات في الاشتراك
 
   bool get _isConsultantViewingProfile =>
       widget.personId != null && selectedUserType == UserTypeEnum.asConsultant;
@@ -120,6 +122,16 @@ class MarriageBodyState extends State<MarriageBody>
     }
 
     cubit.initAnimation(this);
+
+    // ✅ استمع للتغييرات في الاشتراك
+    _subscriptionSubscription = SubscriptionEventBus
+        .instance
+        .onSubscriptionChanged
+        .listen((_) {
+          if (!mounted) return;
+          // ✅ حدّث البيانات عند تغيير الاشتراك
+          cubit.refreshProfile();
+        });
 
     // ✅ لما المستخدم يغير الـ tab ويرجع للـ marriage، reset الـ flag عشان يخبي الـ nav تاني
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -184,7 +196,9 @@ class MarriageBodyState extends State<MarriageBody>
         'alcohol' ||
         'drinkalcohol' ||
         'drinks_alcohol' => context.tr('drinks_alcohol_yes'),
-        'children' || 'has_children' || 'haschildren' => context.tr('has_childrens'),
+        'children' ||
+        'has_children' ||
+        'haschildren' => context.tr('has_childrens'),
         _ => context.tr('yes'),
       };
     }
@@ -194,7 +208,9 @@ class MarriageBodyState extends State<MarriageBody>
         'alcohol' ||
         'drinkalcohol' ||
         'drinks_alcohol' => context.tr('drinks_alcohol_no'),
-        'children' || 'has_children' || 'haschildren' => context.tr('has_no_children'),
+        'children' ||
+        'has_children' ||
+        'haschildren' => context.tr('has_no_children'),
         _ => context.tr('no'),
       };
     }
@@ -206,6 +222,7 @@ class MarriageBodyState extends State<MarriageBody>
   void dispose() {
     _scrollIdleTimer?.cancel();
     _layoutSubscription?.cancel();
+    _subscriptionSubscription?.cancel(); // ✅ إلغاء الاستماع
     _mainScrollController.removeListener(_scrollListener);
     _mainScrollController.dispose();
     super.dispose();
@@ -217,7 +234,8 @@ class MarriageBodyState extends State<MarriageBody>
     if (layoutCubit.state.currentIndex != 1) return;
     // ✅ اخبي الـ nav بس لو في users فعلاً
     final marriageState = context.read<MarriageCubit>().state;
-    final hasUsers = marriageState.allUsers.isNotEmpty &&
+    final hasUsers =
+        marriageState.allUsers.isNotEmpty &&
         marriageState.isMarriageTab &&
         marriageState.marriageProfileState != CubitStates.loading;
     if (!hasUsers) return;
@@ -230,6 +248,7 @@ class MarriageBodyState extends State<MarriageBody>
     _navHiddenByMarriage = false;
     if (mounted) context.read<LayoutCubit>().setNavVisibility(true);
   }
+
   void _scrollListener() {
     final currentOffset = _mainScrollController.offset;
     final delta = currentOffset - _lastOffset;
@@ -841,8 +860,11 @@ class MarriageBodyState extends State<MarriageBody>
         if (users.isEmpty) {
           if (state.isMarriageTab) {
             final subscriptionType =
-                (_interactionsCubit ?? getIt<InteractionsCubit>()).state.subscriptionType;
-            final isFree = subscriptionType == 'free' || subscriptionType.isEmpty;
+                (_interactionsCubit ?? getIt<InteractionsCubit>())
+                    .state
+                    .subscriptionType;
+            final isFree =
+                subscriptionType == 'free' || subscriptionType.isEmpty;
 
             return _buildWithAppBar(
               key: const ValueKey('empty_marriage'),
@@ -1700,7 +1722,10 @@ class MarriageBodyState extends State<MarriageBody>
                       vertical: 20.h,
                     ),
                     sliver: SliverToBoxAdapter(
-                      child: _buildVerifiedCard(user?.subscriptionType, isVerifiedUser),
+                      child: _buildVerifiedCard(
+                        user?.subscriptionType,
+                        isVerifiedUser,
+                      ),
                     ),
                   ),
 
@@ -1735,7 +1760,8 @@ class MarriageBodyState extends State<MarriageBody>
 
                             buildCircleButton(
                               onTap: () => _runAction(() async {
-                                if (state.requiresSubscription || state.likesLeft == 0) {
+                                if (state.requiresSubscription ||
+                                    state.likesLeft == 0) {
                                   showGoldPurchaseSheet(context);
                                   return;
                                 }
@@ -1832,7 +1858,9 @@ class MarriageBodyState extends State<MarriageBody>
                               buildCircleButton(
                                 onTap: () => _runAction(() async {
                                   // لو مش مشترك — اعرض sheet الاشتراك
-                                  final isSubscribed = _interactionsCubit?.state.isSubscribed ?? false;
+                                  final isSubscribed =
+                                      _interactionsCubit?.state.isSubscribed ??
+                                      false;
                                   if (!isSubscribed) {
                                     showGoldPurchaseSheet(context);
                                     return;

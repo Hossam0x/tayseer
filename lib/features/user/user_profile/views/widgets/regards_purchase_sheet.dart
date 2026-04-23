@@ -68,8 +68,9 @@ class PurchasePackage {
     final gold = subs.where((s) => s.subscriptionType == 'gold').toList();
     gold.sort((a, b) {
       const order = {'weekly': 0, 'monthly': 1, 'threemonths': 2};
-      return (order[a.subscriptionDurationType] ?? 3)
-          .compareTo(order[b.subscriptionDurationType] ?? 3);
+      return (order[a.subscriptionDurationType] ?? 3).compareTo(
+        order[b.subscriptionDurationType] ?? 3,
+      );
     });
     return gold.asMap().entries.map((e) {
       final i = e.key;
@@ -79,8 +80,8 @@ class PurchasePackage {
       final labelKey = sub.isMonthly
           ? 'monthly'
           : sub.isWeekly
-              ? 'weekly'
-              : 'three_months';
+          ? 'weekly'
+          : 'three_months';
       return PurchasePackage(
         id: sub.id,
         appleProductId: sub.appleProductId,
@@ -89,7 +90,11 @@ class PurchasePackage {
         currency: sub.currency ?? 'EGP',
         isMostPopular: isMid,
         hasDiscount: isMid || isBest,
-        discountPercent: isMid ? 66 : isBest ? 73 : null,
+        discountPercent: isMid
+            ? 66
+            : isBest
+            ? 73
+            : null,
         label: context.tr(labelKey),
       );
     }).toList();
@@ -147,9 +152,7 @@ void showGoldPurchaseSheet(BuildContext context) {
             getIt<ApiService>(),
           ),
         ),
-        BlocProvider(
-          create: (_) => getIt<UserPackagesCubit>()..getPackages(),
-        ),
+        BlocProvider(create: (_) => getIt<UserPackagesCubit>()..getPackages()),
       ],
       child: const _PurchaseSheet(type: PurchaseType.gold),
     ),
@@ -248,7 +251,10 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
   }
 
   void _onPayGold(BuildContext context, List<NewUserSubModel> allSubs) {
-    context.read<UserSubscriptionCubit>().purchaseSubscription(allSubs);
+    final cubit = context.read<UserSubscriptionCubit>();
+    // ✅ Set the selected duration index before purchasing
+    cubit.selectDuration(_selectedIndex, allSubs);
+    cubit.purchaseSubscription(allSubs);
   }
 
   // ════════════════════════════════════
@@ -258,12 +264,19 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
   Widget build(BuildContext context) {
     if (_isGold) return _buildGoldSheet(context);
 
-    return BlocListener<RegardsPackagePurchaseCubit, RegardsPackagePurchaseState>(
+    return BlocListener<
+      RegardsPackagePurchaseCubit,
+      RegardsPackagePurchaseState
+    >(
       listener: (context, state) {
         if (state.status == RegardsPackagePurchaseStatus.success) {
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: context.tr('purchase_success'), isSuccess: true),
+            CustomSnackBar(
+              context,
+              text: context.tr('purchase_success'),
+              isSuccess: true,
+            ),
           );
         } else if (state.status == RegardsPackagePurchaseStatus.error &&
             state.error != null) {
@@ -297,7 +310,11 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                 },
               )
             : _buildContent(
-                context, packages: [], isLoading: false, onPay: () {}),
+                context,
+                packages: [],
+                isLoading: false,
+                onPay: () {},
+              ),
       ),
     );
   }
@@ -310,9 +327,14 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
       listener: (context, state) {
         if (state.status == UserSubStatus.success) {
           Navigator.pop(context);
+          // ✅ لا حاجة لاستدعاء getPackages هنا
+          // ✅ الصفحات الأخرى تستمع لـ SubscriptionEventBus وتحدث نفسها تلقائياً
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
-                context, text: context.tr('purchase_success'), isSuccess: true),
+              context,
+              text: context.tr('purchase_success'),
+              isSuccess: true,
+            ),
           );
         } else if (state.status == UserSubStatus.error && state.error != null) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -339,8 +361,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
             return Container(
               decoration: BoxDecoration(
                 color: _goldBg,
-                borderRadius:
-                    BorderRadius.vertical(top: Radius.circular(24.r)),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
               ),
               padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 32.h),
               child: Column(
@@ -355,8 +376,11 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                       child: _canClose
                           ? GestureDetector(
                               onTap: () => Navigator.pop(context),
-                              child: Icon(Icons.close,
-                                  size: 22.w, color: Colors.black54),
+                              child: Icon(
+                                Icons.close,
+                                size: 22.w,
+                                color: Colors.black54,
+                              ),
                             )
                           : Container(
                               decoration: BoxDecoration(
@@ -381,7 +405,9 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                   // ── Crown Badge ──
                   Container(
                     padding: EdgeInsets.symmetric(
-                        horizontal: 20.w, vertical: 10.h),
+                      horizontal: 20.w,
+                      vertical: 10.h,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(14.r),
@@ -396,7 +422,11 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        AppImage(AssetsData.goldIcon, width: 33.w, height: 33.w),
+                        AppImage(
+                          AssetsData.goldIcon,
+                          width: 33.w,
+                          height: 33.w,
+                        ),
                         SizedBox(width: 6.w),
                         Text(
                           context.tr('gold_membership'),
@@ -441,16 +471,15 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                   if (isLoading)
                     Padding(
                       padding: EdgeInsets.symmetric(vertical: 24.h),
-                      child: const CircularProgressIndicator(
-                          color: _goldMid),
+                      child: const CircularProgressIndicator(color: _goldMid),
                     )
                   else
                     ...packages.asMap().entries.map(
-                          (e) => Padding(
-                            padding: EdgeInsets.only(bottom: 10.h),
-                            child: _buildGoldPackageCard(e.key, e.value),
-                          ),
-                        ),
+                      (e) => Padding(
+                        padding: EdgeInsets.only(bottom: 10.h),
+                        child: _buildGoldPackageCard(e.key, e.value),
+                      ),
+                    ),
 
                   SizedBox(height: 16.h),
 
@@ -471,8 +500,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                         elevation: 0,
                       ),
                       child: isPurchasing
-                          ? const CircularProgressIndicator(
-                              color: Colors.white)
+                          ? const CircularProgressIndicator(color: Colors.white)
                           : Text(
                               selectedPkg != null
                                   ? '${context.tr('subscribe')} - ${selectedPkg.price.toStringAsFixed(2)} ${selectedPkg.currency} ${context.tr('total')}'
@@ -489,8 +517,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                   // ── تجديد تلقائي ──
                   Text(
                     context.tr('auto_renew_note'),
-                    style: TextStyle(
-                        fontSize: 11.sp, color: Colors.black38),
+                    style: TextStyle(fontSize: 11.sp, color: Colors.black38),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -550,10 +577,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                   SizedBox(height: 3.h),
                   Text(
                     '${pkg.price.toStringAsFixed(2)} ${pkg.currency}',
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      color: Colors.black54,
-                    ),
+                    style: TextStyle(fontSize: 13.sp, color: Colors.black54),
                   ),
                 ],
               ),
@@ -585,7 +609,9 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                   SizedBox(height: 4.h),
                   Container(
                     padding: EdgeInsets.symmetric(
-                        horizontal: 10.w, vertical: 4.h),
+                      horizontal: 10.w,
+                      vertical: 4.h,
+                    ),
                     decoration: BoxDecoration(
                       color: _goldDark,
                       borderRadius: BorderRadius.circular(20.r),
@@ -593,8 +619,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                     child: Text(
                       context
                           .tr('save_percent')
-                          .replaceAll(
-                              '{percent}', '${pkg.discountPercent}'),
+                          .replaceAll('{percent}', '${pkg.discountPercent}'),
                       style: TextStyle(
                         fontSize: 11.sp,
                         color: Colors.white,
@@ -629,7 +654,8 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
 
   // ── helper: رقم المدة ──
   String _goldDurationNumber(String label) {
-    if (label.contains('3') || label.toLowerCase().contains('three')) return '3';
+    if (label.contains('3') || label.toLowerCase().contains('three'))
+      return '3';
     return '1';
   }
 
@@ -659,8 +685,11 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                           color: AppColors.secondary100,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(Icons.close,
-                            size: 18.w, color: AppColors.secondary600),
+                        child: Icon(
+                          Icons.close,
+                          size: 18.w,
+                          color: AppColors.secondary600,
+                        ),
                       ),
                     )
                   : Container(
@@ -710,8 +739,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
           _isRegards
               ? context.tr('regards_balance_finished_desc')
               : context.tr('likes_balance_finished_desc'),
-          style:
-              Styles.textStyle14.copyWith(color: AppColors.secondary400),
+          style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
           textAlign: TextAlign.center,
         ),
         SizedBox(height: 20.h),
@@ -726,11 +754,11 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
           )
         else
           ...packages.asMap().entries.map(
-                (e) => Padding(
-                  padding: EdgeInsets.only(bottom: 10.h),
-                  child: _buildPackageCard(e.key, e.value),
-                ),
-              ),
+            (e) => Padding(
+              padding: EdgeInsets.only(bottom: 10.h),
+              child: _buildPackageCard(e.key, e.value),
+            ),
+          ),
         SizedBox(height: 12.h),
         SizedBox(height: 20.h),
         CustomBotton(
@@ -769,8 +797,9 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
       ),
       child: Text(
         value,
-        style: Styles.textStyle24SemiBold
-            .copyWith(color: AppColors.kscandryTextColor),
+        style: Styles.textStyle24SemiBold.copyWith(
+          color: AppColors.kscandryTextColor,
+        ),
       ),
     );
   }
@@ -780,8 +809,9 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
       padding: EdgeInsets.symmetric(horizontal: 6.w),
       child: Text(
         ':',
-        style: Styles.textStyle24SemiBold
-            .copyWith(color: AppColors.kscandryTextColor),
+        style: Styles.textStyle24SemiBold.copyWith(
+          color: AppColors.kscandryTextColor,
+        ),
       ),
     );
   }
@@ -806,11 +836,9 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                     ? 14.h
                     : 0,
               ),
-              padding: EdgeInsets.symmetric(
-                  horizontal: 16.w, vertical: 14.h),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
               decoration: BoxDecoration(
-                color:
-                    isSelected ? AppColors.primary50 : Colors.white,
+                color: isSelected ? AppColors.primary50 : Colors.white,
                 borderRadius: BorderRadius.circular(14.r),
                 border: Border.all(
                   color: isSelected
@@ -834,8 +862,9 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                       children: [
                         Text(
                           itemLabel,
-                          style: Styles.textStyle14
-                              .copyWith(color: AppColors.secondary600),
+                          style: Styles.textStyle14.copyWith(
+                            color: AppColors.secondary600,
+                          ),
                         ),
                         SizedBox(height: 4.h),
                         Directionality(
@@ -878,8 +907,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                               : Colors.white,
                         ),
                         child: isSelected
-                            ? Icon(Icons.check,
-                                size: 14.w, color: Colors.white)
+                            ? Icon(Icons.check, size: 14.w, color: Colors.white)
                             : null,
                       ),
                     ],
@@ -893,7 +921,9 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                 right: 12.w,
                 child: Container(
                   padding: EdgeInsets.symmetric(
-                      horizontal: 14.w, vertical: 6.h),
+                    horizontal: 14.w,
+                    vertical: 6.h,
+                  ),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [
@@ -918,12 +948,14 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                     ],
                   ),
                   child: Text(
-                    context.tr('save_percent').replaceAll(
-                        '{percent}', '${pkg.discountPercent}'),
+                    context
+                        .tr('save_percent')
+                        .replaceAll('{percent}', '${pkg.discountPercent}'),
                     style: TextStyle(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white),
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -976,8 +1008,7 @@ void showRegardInputSheet(
                 fillColor: HexColor('f9f8ec'),
                 filled: true,
                 hintText: context.tr('type_your_message'),
-                hintStyle:
-                    Styles.textStyle12.copyWith(color: Colors.grey),
+                hintStyle: Styles.textStyle12.copyWith(color: Colors.grey),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16.r),
                   borderSide: BorderSide.none,

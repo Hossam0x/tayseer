@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/shared/view_model/layout_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_state.dart';
@@ -23,11 +25,31 @@ class InteractionBodyState extends State<InteractionBody> {
   final GlobalKey<HistorypageState> _historyKey = GlobalKey<HistorypageState>();
 
   final ScrollController _mainScrollController = ScrollController();
+  StreamSubscription?
+  _subscriptionSubscription; // ✅ للاستماع للتغييرات في الاشتراك
 
   @override
   void initState() {
     super.initState();
     _mainScrollController.addListener(_onScroll);
+
+    // ✅ استمع للتغييرات في الاشتراك
+    _subscriptionSubscription = SubscriptionEventBus
+        .instance
+        .onSubscriptionChanged
+        .listen((_) {
+          if (!mounted) return;
+          // ✅ حدّث البيانات عند تغيير الاشتراك
+          context.read<InteractionsCubit>().fetchExploration(
+            category: "all",
+            forceRefresh: true,
+          );
+          // ✅ حدّث التاريخ لكل الفلاتر
+          context.read<InteractionsCubit>().fetchHistory(
+            filter: "liked_you",
+            forceRefresh: true,
+          );
+        });
   }
 
   void _onScroll() {
@@ -64,6 +86,7 @@ class InteractionBodyState extends State<InteractionBody> {
 
   @override
   void dispose() {
+    _subscriptionSubscription?.cancel(); // ✅ إلغاء الاستماع
     _mainScrollController.dispose();
     super.dispose();
   }
@@ -84,7 +107,8 @@ class InteractionBodyState extends State<InteractionBody> {
   Widget build(BuildContext context) {
     return BlocListener<InteractionsCubit, InteractionsState>(
       listener: (context, state) {
-        if (state.actionState == CubitStates.success && state.actionMessage != null) {
+        if (state.actionState == CubitStates.success &&
+            state.actionMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
