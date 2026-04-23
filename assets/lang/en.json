@@ -1589,7 +1589,12 @@
   "purpose_title": "What is your purpose for using the app?",
   "purpose_subtitle": "Choose the option that suits you",
   "purpose_consultation": "Consultations",
+  "purpose_consultation_desc": "Book a session with a certified advisor",
   "purpose_marriage": "Marriage",
+  "purpose_find_wife": "Find a Wife",
+  "purpose_find_wife_desc": "Browse marriage profiles and find your life partner",
+  "purpose_find_husband": "Find a Husband",
+  "purpose_find_husband_desc": "Browse marriage profiles and find your life partner",
   "select_category": "Select Category",
   "offline_no_connection": "You are offline",
   "offline_connect_to_view": "Connect to the internet to view posts",
@@ -2005,15 +2010,14 @@
   "premarital_counselor": "Premarital Counselor",
   "islamic_counselor": "Islamic Counselor",
   "available_specializations": "Available Specializations",
-  "similar_users_desc" : "Compatible with your profile",
+  "similar_users_desc": "Compatible with your profile",
   "drinks_alcohol_yes": "Drinks alcohol",
-"drinks_alcohol_no": "Does not drink alcohol",
-"gold_membership": "Gold Membership",
-"gold_title": "Only Gold members can change their mind",
-"gold_subtitle": "Become a Gold member. Like 2x more profiles a day, see who likes you, and more!",
-"auto_renew_note": "Your subscription renews automatically unless cancelled",
-"best_value": "Best value",
-
+  "drinks_alcohol_no": "Does not drink alcohol",
+  "gold_membership": "Gold Membership",
+  "gold_title": "Only Gold members can change their mind",
+  "gold_subtitle": "Become a Gold member. Like 2x more profiles a day, see who likes you, and more!",
+  "auto_renew_note": "Your subscription renews automatically unless cancelled",
+  "best_value": "Best value",
   "my_space_title": "My Space",
   "consultations_tab": "Consultations",
   "requests_section": "Requests",
@@ -2053,7 +2057,6 @@
   "confirm_button": "Confirm",
   "match_cancelled_success": "Match cancelled successfully",
   "match_cancel_failed": "Failed to cancel match",
-
   "past_matches_title": "Past Matches",
   "past_matches_subtitle": "Expired matches appear here and you still have a chance to reconnect",
   "past_matches_error": "An error occurred while loading past matches",
@@ -2061,17 +2064,13 @@
   "rematch_button": "Rematch",
   "previous_user": "Previous User",
   "match_expired_reason": "The match period between you has ended",
-
   "upgrade_dialog_title": "Chats Full",
   "upgrade_dialog_subtitle": "You have reached the maximum number of chats. Subscribe to increase the number of chats and enjoy a full experience.",
   "activate_room_success": "{name} added to conversations",
-
   "no_consultations": "No consultations",
   "no_consultations_subtitle": "Book a session to solve your psychological problems",
   "consultation_archived_success": "Consultation archived successfully",
   "consultation_archive_failed": "Failed to archive chat, please try again",
   "chat_deleted_success": "Chat deleted successfully",
   "chat_delete_failed": "Failed to delete chat, please try again"
-
-  
 }
