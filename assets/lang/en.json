@@ -1698,7 +1698,7 @@
   "limited_number_of_likes": "Limited number of likes",
   "you_can_see_who_liked": "You can see who liked you",
   "two_free_boosts_every_week": "Two free boosts every week",
-  "unlimited_number_of_likes": "Unlimited number of likes",
+  "unlimited_number_of_likes": "likes",
   "enjoy_more_benefits_title": "To enjoy more benefits",
   "view_all_benefits": "View all benefits",
   "interest_singing": "Singing",
@@ -2057,7 +2057,6 @@
   "past_matches_title": "Past Matches",
   "past_matches_subtitle": "Expired matches appear here and you still have a chance to reconnect",
   "past_matches_error": "An error occurred while loading past matches",
-  "retry": "Retry",
   "no_past_matches": "No past matches yet.",
   "rematch_button": "Rematch",
   "previous_user": "Previous User",
@@ -2065,8 +2064,6 @@
 
   "upgrade_dialog_title": "Chats Full",
   "upgrade_dialog_subtitle": "You have reached the maximum number of chats. Subscribe to increase the number of chats and enjoy a full experience.",
-  "subscribe_now": "Subscribe Now",
-  "later": "Later",
   "activate_room_success": "{name} added to conversations",
 
   "no_consultations": "No consultations",

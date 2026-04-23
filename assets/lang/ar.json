@@ -1678,7 +1678,7 @@
   "limited_number_of_likes": "عدد محدود من الإعجابات",
   "you_can_see_who_liked": "يمكنك مشاهدة من أعجب بك",
   "two_free_boosts_every_week": "تعزيزين مجاناً كل أسبوع",
-  "unlimited_number_of_likes": "عدد لا محدود من الإعجابات",
+  "unlimited_number_of_likes": " من الإعجابات",
   "enjoy_more_benefits_title": "للاستمتاع بمزايا أكثر",
   "view_all_benefits": "عرض كل المزايا",
   "interest_singing": "الغناء",
@@ -2056,7 +2056,6 @@
   "past_matches_title": "التوافقات السابقة",
   "past_matches_subtitle": "تظهر التوافقات منتهية هنا ويبقى امامك فرصة حتي تعيد الارسال مره أخرى",
   "past_matches_error": "حدث خطأ أثناء تحميل التوافقات السابقة",
-  "retry": "أعد المحاولة",
   "no_past_matches": "لا توجد توافقات سابقة حتى الآن.",
   "rematch_button": "اعادة التوافق",
   "previous_user": "مستخدم سابق",
@@ -2064,8 +2063,6 @@
 
   "upgrade_dialog_title": "المحادثات ممتلئة",
   "upgrade_dialog_subtitle": "لقد وصلت للحد الأقصى من المحادثات. اشترك لزيادة عدد المحادثات والاستمتاع بتجربة كاملة.",
-  "subscribe_now": "اشترك الآن",
-  "later": "لاحقاً",
   "activate_room_success": "تمت إضافة {name} للمحادثات",
 
   "no_consultations": "لا يوجد استشارات",

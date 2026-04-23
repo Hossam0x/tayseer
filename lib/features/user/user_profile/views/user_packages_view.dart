@@ -11,14 +11,15 @@ import 'package:tayseer/core/utils/router/app_router.dart';
 import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/core/utils/styles.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
+import 'package:tayseer/core/utils/colors.dart';
 import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
 import 'package:tayseer/features/shared/packages/domain/use_cases/get_package_display_data.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/package_selection_cubit.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/package_background.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/package_king_icon.dart';
-import 'package:tayseer/features/shared/packages/presentation/widgets/package_tab_selector.dart';
 import 'package:tayseer/features/shared/packages/data/models/package_display_model.dart';
+import 'package:tayseer/features/user/user_profile/data/models/new_user_sub_model.dart';
 import 'package:tayseer/features/user/user_profile/presentation/view_model/user_packages_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/user_package_action_button.dart';
 
@@ -211,8 +212,11 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
                 final isBasic = selectedPackage == PackageType.basic;
 
                 return Column(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Expanded(child: _buildPageView()),
+                    Expanded(flex: 6, child: _buildPageView()),
                     const Spacer(),
                     _buildTabSelector(),
                     if (isBasic) Gap(65.h) else Gap(10.h),
@@ -234,8 +238,9 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
         return Column(
           children: [
             Gap(20.h),
-            Expanded(
-              flex: 1,
+            // ✅ عنوان الباقة فقط
+            SizedBox(
+              height: 80.h,
               child: PageView.builder(
                 controller: _pageController,
                 onPageChanged: _onPageChanged,
@@ -250,15 +255,140 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
                 },
               ),
             ),
-            Expanded(
-              flex: 2,
-              child: _buildBenefitsSection(context, state.selectedPackage),
-            ),
-            Gap(40.h),
+            Gap(20.h),
+            // ✅ المحتوى يأخذ باقي المساحة
+            Expanded(child: _buildContentSection(context)),
           ],
         );
       },
     );
+  }
+
+  Widget _buildContentSection(BuildContext context) {
+    return BlocBuilder<PackageSelectionCubit, PackageSelectionState>(
+      builder: (context, state) {
+        final selectedPackage = state.selectedPackage;
+
+        // ✅ لو Basic، اعرض الـ benefits القديمة
+        if (selectedPackage == PackageType.basic) {
+          return _buildBenefitsSection(context, selectedPackage);
+        }
+
+        // ✅ لو Pro، اعرض محتوى صفحة "كل المزايا" بدون جملة "استمتع بمزايا أكثر"
+        return BlocBuilder<UserPackagesCubit, UserPackagesState>(
+          builder: (context, packagesState) {
+            final subs = packagesState.subscriptions
+                .where((s) => s.subscriptionType == 'gold')
+                .toList();
+            final sub =
+                subs.where((s) => s.isMonthly).firstOrNull ?? subs.firstOrNull;
+
+            return SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
+              child: _buildFeaturesList(context, sub),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildFeaturesList(BuildContext context, NewUserSubModel? sub) {
+    final features = _buildFeatures(context, sub);
+    return Column(
+      children: features
+          .map(
+            (f) => Padding(
+              padding: EdgeInsets.only(bottom: 16.h),
+              child: _buildFeatureItem(context, f['title']!, f['desc']!),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  Widget _buildFeatureItem(
+    BuildContext context,
+    String title,
+    String description,
+  ) {
+    const checkColors = [Color(0xFFBD8F14), Color(0xFFF5C003)];
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: checkColors,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ).createShader(bounds),
+          child: SvgPicture.asset(
+            AssetsData.checkPackageItems,
+            width: 24.w,
+            height: 24.h,
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          ),
+        ),
+        Gap(12.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Styles.textStyle14.copyWith(
+                  color: AppColors.secondary800,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (description.isNotEmpty) ...[
+                Gap(4.h),
+                Text(
+                  description,
+                  style: Styles.textStyle12.copyWith(
+                    color: AppColors.secondary600,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<Map<String, String>> _buildFeatures(
+    BuildContext context,
+    NewUserSubModel? sub,
+  ) {
+    final likes = sub?.numberOfLikes ?? 0;
+    final chatRooms = sub?.numberOfChatRooms ?? 0;
+    final chatMins = sub?.numberOfChatRoomMins ?? 0;
+    final greetings = sub?.numberOfDailyGreetings ?? 0;
+    final reinforcements = sub?.numberOfFreeWeeklyReinforcements ?? 0;
+    final renables = sub?.numberOfFreeMatchingRenables ?? 0;
+
+    return [
+      {
+        'title': '$likes ${context.tr('unlimited_number_of_likes')}',
+        'desc': context.tr('you_can_see_who_liked'),
+      },
+      {
+        'title': '$chatRooms ${context.tr('chat_rooms')}',
+        'desc': '$chatMins ${context.tr('minutes')}',
+      },
+      {'title': '$greetings ${context.tr('daily_greetings')}', 'desc': ''},
+      {
+        'title': '$reinforcements ${context.tr('free_weekly_reinforcements')}',
+        'desc': '',
+      },
+      {
+        'title': '$renables ${context.tr('free_matching_renables')}',
+        'desc': '',
+      },
+    ];
   }
 
   Widget _buildBenefitsSection(
@@ -422,13 +552,190 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
     >(
       selector: (state) => state.selectedPackage,
       builder: (context, selectedPackage) {
-        return PackageTabSelector(
-          selectedPackage: selectedPackage,
-          onSelected: (pkg) =>
-              context.read<PackageSelectionCubit>().selectPackage(pkg),
-        );
+        // ✅ Custom tab selector لـ Basic و Pro فقط
+        return _buildCustomTabSelector(selectedPackage);
       },
     );
+  }
+
+  Widget _buildCustomTabSelector(PackageType selectedPackage) {
+    return Column(
+      children: [
+        SizedBox(
+          height: 50.h,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final sectionWidth = constraints.maxWidth / 2; // ✅ قسمين فقط
+              const barColor = Color(0xFFD9D9D9);
+
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // Horizontal line
+                  Positioned(
+                    top: 35.h,
+                    left: 0,
+                    right: 0,
+                    child: Container(height: 5.h, color: barColor),
+                  ),
+                  // Static triangles
+                  Stack(
+                    children: [
+                      _buildTriangleAt(
+                        isArabic ? sectionWidth * 0.48 : sectionWidth * 0.52,
+                        barColor,
+                      ),
+                      _buildTriangleAt(
+                        isArabic ? sectionWidth * 1.52 : sectionWidth * 1.48,
+                        barColor,
+                      ),
+                    ],
+                  ),
+                  // Selected indicator
+                  _buildSelectedIndicator(sectionWidth, selectedPackage),
+                  // Clickable overlays
+                  Row(
+                    children: [
+                      _buildClickOverlay(PackageType.basic),
+                      _buildClickOverlay(PackageType.pro),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+        Gap(10.h),
+        // Tab labels
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildTabText('Basic', PackageType.basic),
+            _buildTabText('Pro', PackageType.pro),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTriangleAt(double centerX, Color color) {
+    return Positioned(
+      left: centerX - 10.w,
+      top: 35.h,
+      child: CustomPaint(
+        size: Size(20.w, 15.h),
+        painter: _TrianglePainter(color: color),
+      ),
+    );
+  }
+
+  Widget _buildSelectedIndicator(
+    double sectionWidth,
+    PackageType selectedPackage,
+  ) {
+    final config = _getPackageConfig(selectedPackage);
+    final visualIndex = isArabic ? (1 - config.index) : config.index;
+    final centerX = sectionWidth * (visualIndex + 0.5);
+
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+      left: centerX - 36.w,
+      top: 0,
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: config.colors,
+                begin: config.isVertical
+                    ? Alignment.topCenter
+                    : Alignment.centerRight,
+                end: config.isVertical
+                    ? Alignment.bottomCenter
+                    : Alignment.centerLeft,
+              ),
+              borderRadius: BorderRadius.circular(6.r),
+              boxShadow: [
+                BoxShadow(
+                  color: config.colors.last.withOpacity(0.3),
+                  blurRadius: 12,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Text(
+              config.label,
+              style: Styles.textStyle16SemiBold.copyWith(color: Colors.white),
+            ),
+          ),
+          CustomPaint(
+            size: Size(15.w, 10.h),
+            painter: _TrianglePainter(
+              colors: config.colors,
+              isVertical: config.isVertical,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildClickOverlay(PackageType packageType) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () =>
+            context.read<PackageSelectionCubit>().selectPackage(packageType),
+        behavior: HitTestBehavior.opaque,
+        child: const SizedBox.expand(),
+      ),
+    );
+  }
+
+  Widget _buildTabText(String text, PackageType packageType) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () =>
+            context.read<PackageSelectionCubit>().selectPackage(packageType),
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          alignment: Alignment.center,
+          padding: EdgeInsets.symmetric(vertical: 20.h),
+          child: Text(
+            text,
+            style: Styles.textStyle16.copyWith(color: Colors.black),
+          ),
+        ),
+      ),
+    );
+  }
+
+  _PackageConfig _getPackageConfig(PackageType packageType) {
+    switch (packageType) {
+      case PackageType.basic:
+        return _PackageConfig(
+          index: 0,
+          colors: [AppColors.primary300, AppColors.primary500],
+          label: "أساسية",
+          isVertical: true,
+        );
+      case PackageType.pro:
+        return _PackageConfig(
+          index: 1,
+          colors: const [Color(0xFFBD8F14), Color(0xFFF5C003)],
+          label: "ذهبية",
+          isVertical: false,
+        );
+      case PackageType.elite:
+        return _PackageConfig(
+          index: 2,
+          colors: const [Color(0xFF4BB8F9), Color(0xFF6284FF)],
+          label: "مميزة",
+          isVertical: true,
+        );
+    }
   }
 
   Widget _buildViewAllBenefitsButton() {
@@ -439,62 +746,8 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
     >(
       selector: (state) => state.selectedPackage,
       builder: (context, selectedPackage) {
-        // Only show for Pro and Elite packages
-        if (selectedPackage == PackageType.basic) {
-          return const SizedBox.shrink();
-        }
-
-        const gradientColors = [Color(0xFFBD8F14), Color(0xFFF5C003)];
-
-        return Center(
-          child: Container(
-            width: 360.w,
-            height: 55.h,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(11.r),
-              gradient: const LinearGradient(
-                colors: gradientColors,
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
-            ),
-            child: Container(
-              margin: EdgeInsets.all(1.5.w),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(9.5.r),
-              ),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white.withOpacity(0.6),
-                  shadowColor: Colors.transparent.withOpacity(0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(9.5.r),
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.pushNamed(
-                    context,
-                    AppRouter.kUserPackageDetailsView,
-                    arguments: selectedPackage,
-                  );
-                },
-                child: ShaderMask(
-                  shaderCallback: (bounds) => const LinearGradient(
-                    colors: gradientColors,
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ).createShader(bounds),
-                  child: Text(
-                    context.tr('view_all_benefits'),
-                    style: Styles.textStyle18SemiBold.copyWith(
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
+        // ✅ اخفي الزر لأن المحتوى موجود بالفعل
+        return const SizedBox.shrink();
       },
     );
   }
@@ -594,5 +847,69 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent> {
       case PackageType.elite: // ✅ لن يتم الوصول إليه أبداً
         return SelectedPackage.elite;
     }
+  }
+}
+
+class _PackageConfig {
+  final int index;
+  final List<Color> colors;
+  final String label;
+  final bool isVertical;
+
+  _PackageConfig({
+    required this.index,
+    required this.colors,
+    required this.label,
+    required this.isVertical,
+  });
+}
+
+class _TrianglePainter extends CustomPainter {
+  final List<Color>? colors;
+  final Color? color;
+  final bool isVertical;
+
+  _TrianglePainter({this.colors, this.color, this.isVertical = true});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..style = PaintingStyle.fill;
+
+    if (colors != null) {
+      paint.shader = LinearGradient(
+        colors: colors!,
+        begin: isVertical ? Alignment.topCenter : Alignment.centerRight,
+        end: isVertical ? Alignment.bottomCenter : Alignment.centerLeft,
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    } else if (color != null) {
+      paint.color = color!;
+    }
+
+    final path = Path();
+    const radius = 2.0;
+
+    path.moveTo(radius, 0);
+    path.lineTo(size.width - radius, 0);
+    path.arcToPoint(
+      Offset(size.width, radius),
+      radius: const Radius.circular(radius),
+    );
+    path.lineTo(size.width / 2 + radius, size.height - radius);
+    path.arcToPoint(
+      Offset(size.width / 2 - radius, size.height - radius),
+      radius: const Radius.circular(radius),
+    );
+    path.lineTo(0, radius);
+    path.arcToPoint(Offset(radius, 0), radius: const Radius.circular(radius));
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _TrianglePainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.isVertical != isVertical ||
+        oldDelegate.colors != colors;
   }
 }
