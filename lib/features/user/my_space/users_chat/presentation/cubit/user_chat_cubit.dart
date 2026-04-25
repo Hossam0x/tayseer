@@ -137,6 +137,27 @@ class UserChatCubit extends Cubit<UserChatState> {
     return super.close();
   }
 
+  /// reset الـ unreadCount لغرفة معينة فوراً (بدون API call)
+  void resetUnreadCount(String chatRoomId) {
+    if (isClosed) return;
+    final updatedRooms = state.chatRooms.map((room) {
+      if (room.id == chatRoomId && room.unreadCount > 0) {
+        return UserChatRoomModel(
+          id: room.id,
+          otherUser: room.otherUser,
+          otherUserType: room.otherUserType,
+          lastMessage: room.lastMessage,
+          otherUserOnlineStatus: room.otherUserOnlineStatus,
+          unreadCount: 0,
+          blockExists: room.blockExists,
+        );
+      }
+      return room;
+    }).toList();
+    emit(state.copyWith(chatRooms: updatedRooms));
+    _saveCacheFromCurrentState(updatedRooms);
+  }
+
   /// تحديث آخر رسالة لغرفة معينة بدون إعادة تحميل كامل
   void updateLastMessage({
     required String chatRoomId,
@@ -254,9 +275,13 @@ class UserChatCubit extends Cubit<UserChatState> {
       matchingCount: matchingCount,
     ));
 
-    // ✅ حفظ في الكاش
-    if (userId != null && rooms.isNotEmpty) {
-      _saveCacheFromCurrentState(rooms);
+    // ✅ حفظ في الكاش دايماً بعد الـ API (حتى لو فاضي عشان يمسح الـ cache القديم)
+    if (userId != null) {
+      _cacheService.saveUserChatRoomsSimple(
+        userId: userId,
+        chatRooms: rooms,
+        slotLimit: slotLimit,
+      );
     }
   }
 

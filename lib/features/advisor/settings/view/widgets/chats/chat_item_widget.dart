@@ -70,8 +70,17 @@ class ChatItemWidget extends StatelessWidget {
         extentRatio: 0.25,
         children: [
           CustomSlidableAction(
-            onPressed: (context) =>
-                context.read<ArchivedChatsCubit>().unarchiveChat(chatRoom.id),
+            onPressed: (context) {
+              Slidable.of(context)?.close();
+              showConfirmationDialog(
+                context: context,
+                imagePath: AssetsData.chatArchiveIcon,
+                title: context.tr('unarchive_chat_title'),
+                subtitle: context.tr('unarchive_chat_subtitle'),
+                onConfirm: () =>
+                    context.read<ArchivedChatsCubit>().unarchiveChat(chatRoom.id),
+              );
+            },
             backgroundColor: Colors.transparent,
             foregroundColor: AppColors.kprimaryColor,
             autoClose: true,
@@ -96,7 +105,16 @@ class ChatItemWidget extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => _openArchivedChat(context, otherUser),
+          onTap: () {
+            showConfirmationDialog(
+              context: context,
+              imagePath: AssetsData.chatArchiveIcon,
+              title: context.tr('unarchive_chat_title'),
+              subtitle: context.tr('unarchive_chat_subtitle'),
+              onConfirm: () =>
+                  context.read<ArchivedChatsCubit>().unarchiveChat(chatRoom.id),
+            );
+          },
           borderRadius: BorderRadius.circular(12.r),
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: 12.h),

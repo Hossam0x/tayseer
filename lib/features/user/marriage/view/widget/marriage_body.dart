@@ -71,6 +71,8 @@ class MarriageBodyState extends State<MarriageBody>
   bool _isActionInProgress = false;
   bool _navHiddenByMarriage = false;
   StreamSubscription? _layoutSubscription;
+  bool _isInLayout = false;
+  bool _isShowingGoldSheet = false; // ✅ true لو الـ widget جوه الـ UserLayout
   StreamSubscription?
   _subscriptionSubscription; // ✅ للاستماع للتغييرات في الاشتراك
 
@@ -129,23 +131,29 @@ class MarriageBodyState extends State<MarriageBody>
         .onSubscriptionChanged
         .listen((_) {
           if (!mounted) return;
-          // ✅ حدّث البيانات عند تغيير الاشتراك
           cubit.refreshProfile();
         });
 
-    // ✅ لما المستخدم يغير الـ tab ويرجع للـ marriage، reset الـ flag عشان يخبي الـ nav تاني
+    // ✅ لما المستخدم يغير الـ tab ويرجع للـ marriage، reset الـ flag
+    // بس لو الـ widget جوه الـ UserLayout (مش route مستقل من التفاعلات)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _layoutSubscription = context.read<LayoutCubit>().stream.listen((s) {
-        if (!mounted) return;
-        if (s.currentIndex != 1) {
-          // خرج من الـ marriage tab → reset الـ flag
-          _navHiddenByMarriage = false;
-        } else if (s.currentIndex == 1 && !_navHiddenByMarriage) {
-          // رجع للـ marriage tab → اخبي الـ nav لو في users
-          _hideNavOnce();
-        }
-      });
+      // تحقق إن LayoutCubit موجود في الـ context
+      try {
+        final layoutCubit = context.read<LayoutCubit>();
+        _isInLayout = true;
+        _layoutSubscription = layoutCubit.stream.listen((s) {
+          if (!mounted) return;
+          if (s.currentIndex != 1) {
+            _navHiddenByMarriage = false;
+          } else if (s.currentIndex == 1 && !_navHiddenByMarriage) {
+            _hideNavOnce();
+          }
+        });
+      } catch (_) {
+        // LayoutCubit مش موجود — الـ widget مفتوح كـ route مستقل
+        _isInLayout = false;
+      }
     });
 
     if (_isConsultantViewingProfile) {
@@ -229,10 +237,10 @@ class MarriageBodyState extends State<MarriageBody>
   }
 
   void _hideNavOnce() {
+    if (!_isInLayout) return;
     if (_navHiddenByMarriage) return;
     final layoutCubit = context.read<LayoutCubit>();
     if (layoutCubit.state.currentIndex != 1) return;
-    // ✅ اخبي الـ nav بس لو في users فعلاً
     final marriageState = context.read<MarriageCubit>().state;
     final hasUsers =
         marriageState.allUsers.isNotEmpty &&
@@ -244,6 +252,7 @@ class MarriageBodyState extends State<MarriageBody>
   }
 
   void _showNav() {
+    if (!_isInLayout) return;
     if (!_navHiddenByMarriage) return;
     _navHiddenByMarriage = false;
     if (mounted) context.read<LayoutCubit>().setNavVisibility(true);
@@ -722,10 +731,15 @@ class MarriageBodyState extends State<MarriageBody>
           previous.requiresSubscription != current.requiresSubscription,
 
       listener: (context, state) {
-        // ✅ لو requiresSubscription = true → اعرض sheet الاشتراك فوراً
+        // ✅ لو requiresSubscription = true → اعرض sheet الحد الأقصى من المشاهدات (مرة واحدة بس)
         if (state.requiresSubscription) {
-          showGoldPurchaseSheet(context);
-          context.read<MarriageCubit>().resetState();
+          if (!_isShowingGoldSheet) {
+            _isShowingGoldSheet = true;
+            showViewLimitPurchaseSheet(context, onDismiss: () {
+              _isShowingGoldSheet = false;
+            });
+            context.read<MarriageCubit>().resetState();
+          }
           return;
         }
 
@@ -740,13 +754,16 @@ class MarriageBodyState extends State<MarriageBody>
 
         if (state.likesLeft == 0 &&
             state.userInteractionState == CubitStates.failure) {
-          // ✅ لو الـ like فشل وفيه regardsLeft = 0 كمان، احفظه قبل الـ reset
           final regardsLeft = state.regardsLeft;
-          showGoldPurchaseSheet(context);
-          context.read<MarriageCubit>().resetState();
-          // ✅ لو regardsLeft = 0 جه مع الـ like failure، حدّث الـ state
-          if (regardsLeft == 0) {
-            context.read<MarriageCubit>().updateLimits(regardsLeft: 0);
+          if (!_isShowingGoldSheet) {
+            _isShowingGoldSheet = true;
+            showGoldPurchaseSheet(context, onDismiss: () {
+              _isShowingGoldSheet = false;
+            });
+            context.read<MarriageCubit>().resetState();
+            if (regardsLeft == 0) {
+              context.read<MarriageCubit>().updateLimits(regardsLeft: 0);
+            }
           }
           return;
         }
@@ -1390,6 +1407,10 @@ class MarriageBodyState extends State<MarriageBody>
                     activeToday: user?.activeToday ?? false,
                     onFavoriteTap: canInteract
                         ? () => _runAction(() async {
+                            if (state.requiresSubscription) {
+                              showViewLimitPurchaseSheet(context);
+                              return;
+                            }
                             await _showSwipePopup(
                               context,
                               SwipeActionType.favorite,
@@ -1762,7 +1783,7 @@ class MarriageBodyState extends State<MarriageBody>
                               onTap: () => _runAction(() async {
                                 if (state.requiresSubscription ||
                                     state.likesLeft == 0) {
-                                  showGoldPurchaseSheet(context);
+                                  showViewLimitPurchaseSheet(context);
                                   return;
                                 }
                                 await _showSwipePopup(
@@ -1797,7 +1818,7 @@ class MarriageBodyState extends State<MarriageBody>
                             buildCircleButton(
                               onTap: () => _runAction(() async {
                                 if (state.requiresSubscription) {
-                                  showGoldPurchaseSheet(context);
+                                  showViewLimitPurchaseSheet(context);
                                   return;
                                 }
                                 if (state.regardsLeft == 0) {
@@ -1823,7 +1844,7 @@ class MarriageBodyState extends State<MarriageBody>
                             buildCircleButton(
                               onTap: () => _runAction(() async {
                                 if (state.requiresSubscription) {
-                                  showGoldPurchaseSheet(context);
+                                  showViewLimitPurchaseSheet(context);
                                   return;
                                 }
                                 await _showSwipePopup(

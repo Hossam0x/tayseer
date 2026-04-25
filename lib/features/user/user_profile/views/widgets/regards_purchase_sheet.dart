@@ -136,7 +136,7 @@ void showLikesPurchaseSheet(BuildContext context) {
   );
 }
 
-void showGoldPurchaseSheet(BuildContext context) {
+void showGoldPurchaseSheet(BuildContext context, {VoidCallback? onDismiss}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -156,7 +156,35 @@ void showGoldPurchaseSheet(BuildContext context) {
       ],
       child: const _PurchaseSheet(type: PurchaseType.gold),
     ),
-  );
+  ).whenComplete(() => onDismiss?.call());
+}
+
+/// نفس الـ gold sheet بس بعنوان مختلف — يظهر لما يوصل للحد الأقصى من المشاهدات
+void showViewLimitPurchaseSheet(BuildContext context, {VoidCallback? onDismiss}) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    isDismissible: false,
+    enableDrag: false,
+    backgroundColor: Colors.transparent,
+    builder: (_) => MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => UserSubscriptionCubit(
+            SelectedPackage.pro,
+            getIt<IAPService>(),
+            getIt<ApiService>(),
+          ),
+        ),
+        BlocProvider(create: (_) => getIt<UserPackagesCubit>()..getPackages()),
+      ],
+      child: const _PurchaseSheet(
+        type: PurchaseType.gold,
+        titleKey: 'view_limit_title',
+        subtitleKey: 'view_limit_subtitle',
+      ),
+    ),
+  ).whenComplete(() => onDismiss?.call());
 }
 
 // ═══════════════════════════════════════
@@ -164,7 +192,14 @@ void showGoldPurchaseSheet(BuildContext context) {
 // ═══════════════════════════════════════
 class _PurchaseSheet extends StatefulWidget {
   final PurchaseType type;
-  const _PurchaseSheet({required this.type});
+  final String? titleKey;
+  final String? subtitleKey;
+
+  const _PurchaseSheet({
+    required this.type,
+    this.titleKey,
+    this.subtitleKey,
+  });
 
   @override
   State<_PurchaseSheet> createState() => _PurchaseSheetState();
@@ -443,7 +478,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
 
                   // ── Title ──
                   Text(
-                    context.tr('gold_title'),
+                    context.tr(widget.titleKey ?? 'gold_title'),
                     style: TextStyle(
                       fontSize: 22.sp,
                       fontWeight: FontWeight.w800,
@@ -456,7 +491,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
 
                   // ── Subtitle ذهبي ──
                   Text(
-                    context.tr('gold_subtitle'),
+                    context.tr(widget.subtitleKey ?? 'gold_subtitle'),
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w500,

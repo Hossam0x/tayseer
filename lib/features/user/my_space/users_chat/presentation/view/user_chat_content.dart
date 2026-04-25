@@ -313,6 +313,8 @@ class _UserChatBody extends StatelessWidget {
             )
             .then((result) {
               if (!context.mounted) return;
+              // ✅ reset الـ unreadCount فوراً عشان مش يظهر الـ badge
+              context.read<UserChatCubit>().resetUnreadCount(room.id);
               // لو رجع بآخر رسالة، حدّث بدون reload كامل
               if (result is Map<String, dynamic> &&
                   result['lastMessage'] != null) {
@@ -336,16 +338,23 @@ class _UserChatBody extends StatelessWidget {
         context: context,
         onConfirm: () {},
       ),
-      onArchive: () async {
-        final cubit = context.read<UserChatCubit>();
-        final success = await cubit.archiveChatRoom(room.id);
-        if (context.mounted) {
-          if (success) {
-            AppToast.success(context, context.tr('chat_archived_success'));
-          } else {
-            AppToast.error(context, context.tr('chat_archive_failed'));
-          }
-        }
+      onArchive: () {
+        ChatRoomDialogHelper.showArchiveDialog(
+          context: context,
+          title: context.tr('archive_chat_title'),
+          subtitle: context.tr('archive_chat_subtitle'),
+          onConfirm: () async {
+            final cubit = context.read<UserChatCubit>();
+            final success = await cubit.archiveChatRoom(room.id);
+            if (context.mounted) {
+              if (success) {
+                AppToast.success(context, context.tr('chat_archived_success'));
+              } else {
+                AppToast.error(context, context.tr('chat_archive_failed'));
+              }
+            }
+          },
+        );
       },
       onBlock: () {
         if (room.blockExists) {

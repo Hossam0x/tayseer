@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
+import 'package:tayseer/core/widgets/chat_room_list_item/helpers/chat_room_dialog_helper.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/message_actions_handler.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/overlay_manager.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/scroll_behavior_handler.dart';
@@ -343,26 +344,55 @@ class _UserChatContentState extends State<_UserChatContent> {
                 onSelected: (value) async {
                   switch (value) {
                     case 'cancel_match':
-                      _showCancelMatchDialog(context);
+                      ChatRoomDialogHelper.showCancelMatchDialog(
+                        context: context,
+                        title: context.tr('cancel_match_title'),
+                        subtitle: context.tr('cancel_match_confirm')
+                            .replaceAll('{name}', widget.username ?? ''),
+                        onConfirm: _cancelMatch,
+                      );
                       break;
                     case 'report':
-                      context.pushNamed(
-                        AppRouter.kReportsView,
-                        arguments: {'type': ReportType.user, 'id': widget.receiverId ?? ''},
+                      ChatRoomDialogHelper.showReportDialog(
+                        context: context,
+                        title: context.tr('report_menu'),
+                        subtitle: context.tr('report_confirm_subtitle'),
+                        onConfirm: () {
+                          context.pushNamed(
+                            AppRouter.kReportsView,
+                            arguments: {
+                              'type': ReportType.user,
+                              'id': widget.receiverId ?? '',
+                            },
+                          );
+                        },
                       );
                       break;
                     case 'block':
                       if (chatState.isBlocked) {
-                        await context.read<ChatMessagesCubit>().unblockUser(
-                          blockedId: widget.receiverId!,
+                        ChatRoomDialogHelper.showUnblockDialog(
+                          context: context,
+                          title: context.tr('unblock_label'),
+                          subtitle: context.tr('unblock_confirm_subtitle'),
+                          onConfirm: () async {
+                            await context.read<ChatMessagesCubit>().unblockUser(
+                              blockedId: widget.receiverId!,
+                            );
+                          },
                         );
                       } else {
-                        await context.read<ChatMessagesCubit>().blockUser(
-                          blockedId: widget.receiverId!,
+                        ChatRoomDialogHelper.showBlockDialog(
+                          context: context,
+                          title: context.tr('block_label'),
+                          subtitle: context.tr('block_confirm_subtitle'),
+                          onConfirm: () async {
+                            await context.read<ChatMessagesCubit>().blockUser(
+                              blockedId: widget.receiverId!,
+                            );
+                          },
                         );
                       }
                       break;
-                      
                   }
                 },
                 itemBuilder: (_) => [
@@ -402,34 +432,4 @@ class _UserChatContentState extends State<_UserChatContent> {
     );
   }
 
-  void _showCancelMatchDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-        title: Text(context.tr('cancel_match_title'), style: Styles.textStyle18Bold),
-        content: Text(
-          context.tr('cancel_match_confirm').replaceAll('{name}', widget.username ?? ''),
-          style: Styles.textStyle14,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(context.tr('cancel_button'), style: TextStyle(color: AppColors.secondary400)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _cancelMatch();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary400,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
-            ),
-            child: Text(context.tr('confirm_button'), style: const TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
 }

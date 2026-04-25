@@ -490,7 +490,15 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
-            _openArchivedChat(context, chatRoom, otherUser);
+            showConfirmationDialog(
+              context: context,
+              imagePath: AssetsData.chatArchiveIcon,
+              title: context.tr('unarchive_chat_title'),
+              subtitle: context.tr('unarchive_chat_subtitle'),
+              onConfirm: () {
+                context.read<ArchivedChatsCubit>().unarchiveChat(chatRoom.id);
+              },
+            );
           },
           borderRadius: BorderRadius.circular(12.r),
           child: Padding(

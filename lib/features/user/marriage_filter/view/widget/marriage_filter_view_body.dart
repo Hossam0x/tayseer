@@ -3,6 +3,7 @@ import 'package:tayseer/core/widgets/custom_build_age_and_country_section.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
+import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/user_profile/presentation/view_model/user_packages_cubit.dart';
 import 'package:tayseer/features/user/marriage_filter/view/widget/custom_data_card.dart';
 import 'package:tayseer/features/user/marriage_filter/view/widget/filter_selection_body.dart';
@@ -48,6 +49,28 @@ class _MarriageFilterBodyState extends State<MarriageFilterBody> {
         _cachedSubType = cached;
       });
     }
+  }
+
+  /// تحقق إن المستخدم free — cache أولاً، ثم InteractionsCubit كـ fallback
+  Future<bool> _isUserFree() async {
+    // 1. لو الـ cache محمّل واضح إنه مشترك
+    if (_cachedSubType != null) return false;
+
+    // 2. تحقق من InteractionsCubit (بيجيب subscriptionType من الـ API)
+    try {
+      final interactionsCubit = getIt<InteractionsCubit>();
+      final subType = interactionsCubit.state.subscriptionType;
+      if (subType == 'gold' || subType == 'ultra') return false;
+    } catch (_) {}
+
+    // 3. تحقق من SharedPreferences مباشرة كـ fallback أخير
+    final cached = await UserPackagesCubit.getCachedSubType();
+    if (cached != null) {
+      if (mounted) setState(() => _cachedSubType = cached);
+      return false;
+    }
+
+    return true;
   }
 
   @override
@@ -393,8 +416,8 @@ class _MarriageFilterBodyState extends State<MarriageFilterBody> {
           if (!hasFilters) return;
 
           if (hasPaidFilters) {
-            // ✅ استخدم الـ cache المحلي بدلاً من قراءة من SharedPreferences
-            final isFree = _cachedSubType == null;
+            // ✅ تحقق من الاشتراك: cache أولاً، ثم InteractionsCubit كـ fallback
+            final isFree = await _isUserFree();
             if (isFree) {
               showFiltterLimitDialogs(
                 context,

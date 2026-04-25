@@ -85,6 +85,22 @@ class ChatRoomDialogHelper {
     );
   }
 
+  /// عرض dialog تأكيد إلغاء التوافق
+  static void showCancelMatchDialog({
+    required BuildContext context,
+    required VoidCallback onConfirm,
+    String? title,
+    String? subtitle,
+  }) {
+    _showConfirmationDialog(
+      context: context,
+      imagePath: AssetsData.kWoriningImage,
+      title: title ?? 'إلغاء التوافق',
+      subtitle: subtitle ?? 'هل أنت متأكد من إلغاء التوافق؟',
+      onConfirm: onConfirm,
+    );
+  }
+
   /// Dialog موحد بنفس تصميم show_confirmation_dialog
   static void _showConfirmationDialog({
     required BuildContext context,
