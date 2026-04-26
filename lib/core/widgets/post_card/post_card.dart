@@ -37,6 +37,9 @@ class PostCard extends StatefulWidget {
   /// Initial image index for the carousel (used in details view)
   final int initialImageIndex;
 
+  /// Called when the carousel page changes — passes current index
+  final void Function(int index)? onImageIndexChanged;
+
   const PostCard({
     super.key,
     required this.post,
@@ -51,6 +54,7 @@ class PostCard extends StatefulWidget {
     this.hideHeaderMeta = false,
     this.mediaMaxHeight,
     this.initialImageIndex = 0,
+    this.onImageIndexChanged,
   });
 
   @override
@@ -327,7 +331,10 @@ class _PostCardState extends State<PostCard> {
             heroPrefix: widget.heroPrefix,
             mediaMaxHeight: widget.mediaMaxHeight,
             onNavigateToDetails: _navigateToDetails,
-            onImageIndexChanged: (index) => _currentImageIndex = index,
+            onImageIndexChanged: (index) {
+              _currentImageIndex = index;
+              widget.onImageIndexChanged?.call(index);
+            },
             initialImageIndex: widget.initialImageIndex,
           ),
           // Actions with horizontal padding

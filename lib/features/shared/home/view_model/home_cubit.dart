@@ -27,6 +27,9 @@ class HomeCubit extends Cubit<HomeState> {
   // ✅ flag — لو البيانات اتحملت من الـ Splash مش محتاجين نحملها تاني في الهوم
   bool isInitializedFromSplash = false;
 
+  // ✅ يحفظ آخر index للصور في كل post عشان لما يرجع يلاقيه في نفس المكان
+  final Map<String, int> postImageIndexCache = {};
+
   // تتبع حالة الاتصال للتحكم في التصفح
   bool _isPaginationEnabled = true;
   StreamSubscription? _connectivitySubscription;

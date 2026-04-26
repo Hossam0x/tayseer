@@ -709,6 +709,8 @@ class _PostItemState extends State<_PostItem> {
           selector: (state) => state.postsMap[widget.postId],
           builder: (context, post) {
             if (post == null) return const SizedBox.shrink();
+            final savedIndex =
+                widget.homeCubit.postImageIndexCache[widget.postId] ?? 0;
             return VisibilityDetector(
               key: Key('post_read_${widget.postId}'),
               onVisibilityChanged: _onVisibilityChanged,
@@ -717,6 +719,10 @@ class _PostItemState extends State<_PostItem> {
                 post: post,
                 callbacks: _callbacks,
                 onNavigateToDetails: _onNavigateToDetails,
+                initialImageIndex: savedIndex,
+                onImageIndexChanged: (index) {
+                  widget.homeCubit.postImageIndexCache[widget.postId] = index;
+                },
               ),
             );
           },

@@ -77,6 +77,17 @@ class _PostImagesGridState extends State<PostImagesGrid>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Preload all carousel images so they're ready before the user swipes
+    if (widget.images.length > 1) {
+      for (final img in widget.images) {
+        precacheImage(CachedNetworkImageProvider(img.image), context);
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _pageController.dispose();
     _liftController.dispose();
@@ -131,7 +142,8 @@ class _PostImagesGridState extends State<PostImagesGrid>
     final heroTag =
         '${widget.heroPrefix ?? (widget.isFromProfile ? 'profile' : 'home')}_post_${widget.postId}_img_${image.image}';
 
-    final bool hasAncestorHero = context.findAncestorWidgetOfExactType<Hero>() != null;
+    final bool hasAncestorHero =
+        context.findAncestorWidgetOfExactType<Hero>() != null;
     Widget content = Container(
       width: double.infinity,
       constraints: BoxConstraints(maxHeight: maxAllowedHeight),
@@ -146,16 +158,10 @@ class _PostImagesGridState extends State<PostImagesGrid>
     );
 
     if (!hasAncestorHero) {
-      content = Hero(
-        tag: heroTag,
-        child: content,
-      );
+      content = Hero(tag: heroTag, child: content);
     }
 
-    return GestureDetector(
-      onTap: () => _openGallery(0),
-      child: content,
-    );
+    return GestureDetector(onTap: () => _openGallery(0), child: content);
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -178,7 +184,10 @@ class _PostImagesGridState extends State<PostImagesGrid>
         if (availableHeight.isFinite && widget.images.length > 1) {
           final dotsSpace = 12.h + 30.h; // Gap + dots/counter height
           if (adjustedCarouselHeight + dotsSpace > availableHeight) {
-            adjustedCarouselHeight = (availableHeight - dotsSpace).clamp(100.h, 500.h);
+            adjustedCarouselHeight = (availableHeight - dotsSpace).clamp(
+              100.h,
+              500.h,
+            );
           }
         }
 
@@ -195,7 +204,8 @@ class _PostImagesGridState extends State<PostImagesGrid>
                   setState(() => _currentIndex = index);
                   widget.onImageIndexChanged?.call(index);
                 },
-                itemBuilder: (context, index) => _buildCarouselItem(context, index),
+                itemBuilder: (context, index) =>
+                    _buildCarouselItem(context, index),
               ),
             ),
             const SizedBox(height: 8),
@@ -211,7 +221,8 @@ class _PostImagesGridState extends State<PostImagesGrid>
     final heroTag =
         '${widget.heroPrefix ?? (widget.isFromProfile ? 'profile' : 'home')}_post_${widget.postId}_img_${image.image}';
 
-    final bool hasAncestorHero = context.findAncestorWidgetOfExactType<Hero>() != null;
+    final bool hasAncestorHero =
+        context.findAncestorWidgetOfExactType<Hero>() != null;
 
     Widget content = ConnectivityCachedImage(
       imageUrl: image.image,
@@ -222,16 +233,10 @@ class _PostImagesGridState extends State<PostImagesGrid>
     );
 
     if (!hasAncestorHero) {
-      content = Hero(
-        tag: heroTag,
-        child: content,
-      );
+      content = Hero(tag: heroTag, child: content);
     }
 
-    return GestureDetector(
-      onTap: () => _openGallery(index),
-      child: content,
-    );
+    return GestureDetector(onTap: () => _openGallery(index), child: content);
   }
 
   // ══════════════════════════════════════════════════════════════════════════
