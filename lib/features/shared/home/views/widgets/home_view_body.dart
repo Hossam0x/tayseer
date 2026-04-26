@@ -46,7 +46,18 @@ class HomeViewBodyState extends State<HomeViewBody> {
     super.initState();
     _scrollController = ScrollController()..addListener(_scrollListener);
     _filterScrollController = ScrollController();
-    // ✅ تم نقل initHome() و Stories إلى الـ Splash — البيانات جاهزة بالفعل
+
+    // ✅ لو البيانات اتحملت من الـ Splash، مش محتاجين نحملها تاني
+    // لو جاي من صفحة تانية غير الـ Splash، نحمل البيانات هنا
+    if (!homeCubit.isInitializedFromSplash) {
+      storiesCubit.fetchStories(context: context);
+      if (isAdvisor) storiesCubit.fetchMyStories();
+      homeCubit.initHome();
+    } else {
+      // ✅ reset الـ flag عشان لو اتعمل logout وlogin تاني يحمل من الهوم
+      homeCubit.isInitializedFromSplash = false;
+    }
+
     homeCubit.sessionStart();
   }
 

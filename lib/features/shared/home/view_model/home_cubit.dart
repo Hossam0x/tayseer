@@ -24,6 +24,9 @@ class HomeCubit extends Cubit<HomeState> {
   final PostsLocalDatasource localDatasource;
   static const int _pageSize = 5;
 
+  // ✅ flag — لو البيانات اتحملت من الـ Splash مش محتاجين نحملها تاني في الهوم
+  bool isInitializedFromSplash = false;
+
   // تتبع حالة الاتصال للتحكم في التصفح
   bool _isPaginationEnabled = true;
   StreamSubscription? _connectivitySubscription;

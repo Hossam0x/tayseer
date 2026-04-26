@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/services/deep_link_service.dart';
@@ -735,9 +736,12 @@ class MarriageBodyState extends State<MarriageBody>
         if (state.requiresSubscription) {
           if (!_isShowingGoldSheet) {
             _isShowingGoldSheet = true;
-            showViewLimitPurchaseSheet(context, onDismiss: () {
-              _isShowingGoldSheet = false;
-            });
+            showViewLimitPurchaseSheet(
+              context,
+              onDismiss: () {
+                _isShowingGoldSheet = false;
+              },
+            );
             context.read<MarriageCubit>().resetState();
           }
           return;
@@ -757,9 +761,12 @@ class MarriageBodyState extends State<MarriageBody>
           final regardsLeft = state.regardsLeft;
           if (!_isShowingGoldSheet) {
             _isShowingGoldSheet = true;
-            showGoldPurchaseSheet(context, onDismiss: () {
-              _isShowingGoldSheet = false;
-            });
+            showGoldPurchaseSheet(
+              context,
+              onDismiss: () {
+                _isShowingGoldSheet = false;
+              },
+            );
             context.read<MarriageCubit>().resetState();
             if (regardsLeft == 0) {
               context.read<MarriageCubit>().updateLimits(regardsLeft: 0);
@@ -1721,7 +1728,7 @@ class MarriageBodyState extends State<MarriageBody>
                             },
                             showCancelButton: true,
                             cancelText: context.tr(AppStrings.no),
-                            onCancel: () => Navigator.pop(context),
+                            onCancel: () {},
                           );
                         },
                         onReport: () {

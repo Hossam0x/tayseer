@@ -34,21 +34,26 @@ class _SplashScreenState extends State<SplashScreen>
       final token = CachNetwork.getStringData(key: ktoken);
       final userType = CachNetwork.getStringData(key: kUserType);
 
-      // فقط لو اليوزر مسجل دخول
-      if (token.isNotEmpty && userType != UserTypeEnum.guest.name) {
-        final homeCubit = getIt<HomeCubit>();
-        final storiesCubit = getIt<StoriesCubit>();
-
-        // تحميل بيانات الهوم والـ Stories بالتوازي
-        await Future.wait([
-          homeCubit.initHome(),
-          storiesCubit.fetchStories(context: context),
-          if (selectedUserType == UserTypeEnum.asConsultant)
-            storiesCubit.fetchMyStories(),
-        ]);
-
-        log('✅ Home data and stories initialized in splash');
+      // ✅ فقط لو اليوزر مسجل دخول وليس guest
+      if (token.isEmpty || userType == UserTypeEnum.guest.name) {
+        log('⏭️ Splash: skipping home init — not logged in');
+        return;
       }
+
+      final homeCubit = getIt<HomeCubit>();
+      final storiesCubit = getIt<StoriesCubit>();
+
+      // تحميل بيانات الهوم والـ Stories بالتوازي
+      await Future.wait([
+        homeCubit.initHome(),
+        storiesCubit.fetchStories(context: context),
+        if (selectedUserType == UserTypeEnum.asConsultant)
+          storiesCubit.fetchMyStories(),
+      ]);
+
+      // ✅ ضع الـ flag بعد نجاح التحميل
+      homeCubit.isInitializedFromSplash = true;
+      log('✅ Home data and stories initialized in splash');
     } catch (e) {
       log('⚠️ Failed to initialize home data in splash: $e');
     }
