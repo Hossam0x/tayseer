@@ -5,6 +5,8 @@ import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
+import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/main.dart';
 import '../../../../my_import.dart';
 
@@ -21,8 +23,35 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
     _initializeSocket();
+    _initializeHomeData();
     _navigateBasedOnToken();
     _playSoundAfterHalfAnimation();
+  }
+
+  /// تحميل بيانات الهوم والـ Stories مسبقاً في الـ Splash
+  Future<void> _initializeHomeData() async {
+    try {
+      final token = CachNetwork.getStringData(key: ktoken);
+      final userType = CachNetwork.getStringData(key: kUserType);
+
+      // فقط لو اليوزر مسجل دخول
+      if (token.isNotEmpty && userType != UserTypeEnum.guest.name) {
+        final homeCubit = getIt<HomeCubit>();
+        final storiesCubit = getIt<StoriesCubit>();
+
+        // تحميل بيانات الهوم والـ Stories بالتوازي
+        await Future.wait([
+          homeCubit.initHome(),
+          storiesCubit.fetchStories(context: context),
+          if (selectedUserType == UserTypeEnum.asConsultant)
+            storiesCubit.fetchMyStories(),
+        ]);
+
+        log('✅ Home data and stories initialized in splash');
+      }
+    } catch (e) {
+      log('⚠️ Failed to initialize home data in splash: $e');
+    }
   }
 
   Future<void> _playSoundAfterHalfAnimation() async {

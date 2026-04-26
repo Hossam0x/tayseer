@@ -46,9 +46,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
     super.initState();
     _scrollController = ScrollController()..addListener(_scrollListener);
     _filterScrollController = ScrollController();
-    storiesCubit.fetchStories(context: context);
-    if (isAdvisor) storiesCubit.fetchMyStories();
-    homeCubit.initHome();
+    // ✅ تم نقل initHome() و Stories إلى الـ Splash — البيانات جاهزة بالفعل
     homeCubit.sessionStart();
   }
 
