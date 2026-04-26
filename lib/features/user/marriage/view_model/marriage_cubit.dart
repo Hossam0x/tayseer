@@ -832,9 +832,9 @@ class MarriageCubit extends Cubit<MarriageState> {
       interactionType: 'like',
       countView: !hasSinglePerson,
     );
-    // ✅ لو فشل بسبب likesLeft = 0 → ارجع بدون ما تشيل اليوزر
+    // ✅ لو فشل بسبب likesLeft = 0 أو requiresSubscription → ارجع بدون ما تشيل اليوزر
     if (state.userInteractionState == CubitStates.failure &&
-        state.likesLeft == 0) {
+        (state.likesLeft == 0 || state.requiresSubscription)) {
       emit(state.copyWith(
         swipeDirection: 0,
         swipeProgress: 0,
