@@ -209,6 +209,8 @@ class MarriageCubit extends Cubit<MarriageState> {
             favoritedIds: mergedFavorites,
             regardsLeft: profile.data?.regardsLeft,
             likesLeft: profile.data?.likesLeft,
+            // ✅ اقرأ requiresSubscription من users-for-marry مباشرة
+            requiresSubscription: profile.data?.requiresSubscription ?? false,
           ),
         );
 
@@ -1095,6 +1097,7 @@ class MarriageCubit extends Cubit<MarriageState> {
         blockMessage: null,
         errorMessage: null,
         showActionSnackbar: false,
+        requiresSubscription: false, // ✅ reset بعد ما نعرض الـ sheet
       ),
     );
   }

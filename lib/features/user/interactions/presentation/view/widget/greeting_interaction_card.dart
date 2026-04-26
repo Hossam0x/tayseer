@@ -50,6 +50,15 @@ class GreetingProfileCard extends StatelessWidget {
         } else if (state.actionState == CubitStates.failure) {
           if (state.regardsLeft == 0) {
             showRegardsPurchaseSheet(context);
+          } else {
+            // ✅ أي failure تاني يظهر snackbar عادي
+            ScaffoldMessenger.of(context).showSnackBar(
+              CustomSnackBar(
+                context,
+                text: state.actionMessage ?? context.tr('error_occurred'),
+                isError: true,
+              ),
+            );
           }
           context.read<InteractionsCubit>().resetActionState();
         }

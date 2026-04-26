@@ -24,8 +24,15 @@ class UsersData {
   Pagination? pagination;
   int? regardsLeft;
   int? likesLeft;
+  bool requiresSubscription;
 
-  UsersData({this.users, this.pagination, this.regardsLeft, this.likesLeft});
+  UsersData({
+    this.users,
+    this.pagination,
+    this.regardsLeft,
+    this.likesLeft,
+    this.requiresSubscription = false,
+  });
 
   factory UsersData.fromJson(Map<String, dynamic> json) => UsersData(
     users: json["users"] != null
@@ -36,6 +43,7 @@ class UsersData {
         : null,
     regardsLeft: json["regardsLeft"] as int?,
     likesLeft: json["likesLeft"] as int?,
+    requiresSubscription: json["requiresSubscription"] as bool? ?? false,
   );
 
   Map<String, dynamic> toJson() => {
@@ -43,6 +51,7 @@ class UsersData {
     "pagination": pagination?.toJson(),
     "regardsLeft": regardsLeft,
     "likesLeft": likesLeft,
+    "requiresSubscription": requiresSubscription,
   };
 }
 

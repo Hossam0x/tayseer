@@ -735,21 +735,33 @@ class MarriageBodyState extends State<MarriageBody>
         if (state.requiresSubscription) {
           if (!_isShowingGoldSheet) {
             _isShowingGoldSheet = true;
-            showViewLimitPurchaseSheet(context, onDismiss: () {
-              _isShowingGoldSheet = false;
-            });
+            showViewLimitPurchaseSheet(
+              context,
+              onDismiss: () {
+                _isShowingGoldSheet = false;
+              },
+            );
             context.read<MarriageCubit>().resetState();
           }
           return;
         }
 
-        // ✅ لو regardsLeft وصل 0 من regard failure
-        if (state.regardsLeft == 0 &&
-            (state.sendRegardState == CubitStates.failure ||
-                state.sendRegardTextState == CubitStates.failure)) {
-          showRegardsPurchaseSheet(context);
-          context.read<MarriageCubit>().resetState();
-          return;
+        // ✅ لو regardsLeft وصل 0 — سواء من users-for-marry أو من regard failure
+        if (state.regardsLeft == 0) {
+          // لو جاي من action failure
+          if (state.sendRegardState == CubitStates.failure ||
+              state.sendRegardTextState == CubitStates.failure) {
+            showRegardsPurchaseSheet(context);
+            context.read<MarriageCubit>().resetState();
+            return;
+          }
+          // لو جاي من users-for-marry (marriageProfileState == success بدون failure)
+          if (state.marriageProfileState == CubitStates.success &&
+              state.sendRegardState != CubitStates.failure &&
+              state.sendRegardTextState != CubitStates.failure) {
+            // مش بنعرضه فوراً — بس بنخلي الزرار يعرضه لما يضغط
+            // (الـ check في onTap هيتكفل بده)
+          }
         }
 
         if (state.likesLeft == 0 &&
@@ -757,9 +769,12 @@ class MarriageBodyState extends State<MarriageBody>
           final regardsLeft = state.regardsLeft;
           if (!_isShowingGoldSheet) {
             _isShowingGoldSheet = true;
-            showGoldPurchaseSheet(context, onDismiss: () {
-              _isShowingGoldSheet = false;
-            });
+            showGoldPurchaseSheet(
+              context,
+              onDismiss: () {
+                _isShowingGoldSheet = false;
+              },
+            );
             context.read<MarriageCubit>().resetState();
             if (regardsLeft == 0) {
               context.read<MarriageCubit>().updateLimits(regardsLeft: 0);
@@ -1721,7 +1736,7 @@ class MarriageBodyState extends State<MarriageBody>
                             },
                             showCancelButton: true,
                             cancelText: context.tr(AppStrings.no),
-                            onCancel: () => Navigator.pop(context),
+                            onCancel: () {},
                           );
                         },
                         onReport: () {
@@ -1763,151 +1778,30 @@ class MarriageBodyState extends State<MarriageBody>
             ),
 
             if (!_isConsultantViewingProfile)
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOutCubic,
-                bottom: state.isScrollingDown ? 30.h : 130.h,
-                left: 0,
-                right: 0,
-                child: canInteract
-                    ? IgnorePointer(
-                        ignoring: state.isAnimating,
-                        child: Row(
-                          mainAxisAlignment: state.userHistory.isEmpty
-                              ? MainAxisAlignment.spaceAround
-                              : MainAxisAlignment.spaceEvenly,
-                          children: [
-                            const SizedBox.shrink(),
-
-                            buildCircleButton(
-                              onTap: () => _runAction(() async {
-                                if (state.requiresSubscription ||
-                                    state.likesLeft == 0) {
-                                  showViewLimitPurchaseSheet(context);
-                                  return;
-                                }
-                                await _showSwipePopup(
-                                  context,
-                                  SwipeActionType.like,
-                                );
-                                if (widget.fromInteractions) {
-                                  await cubit.userInteraction(
-                                    personId: profile.user?.id ?? '',
-                                    interactionType: 'like',
-                                  );
-                                  await _syncNotificationAfterInteraction();
-                                  if (mounted) context.pop();
-                                } else {
-                                  await cubit.swipeLike(
-                                    personId: profile.user?.id ?? '',
-                                    usersLength: users.length,
-                                    hasSinglePerson: widget.personId != null,
-                                  );
-                                  if (widget.personId == null && mounted) {
-                                    _resetScrollTracking();
-                                    scrollToTop();
-                                  }
-                                  await _syncNotificationAfterInteraction();
-                                }
-                              }),
-                              Icons.check,
-                              AppColors.kprimaryTextColor,
-                              HexColor('f8d3da'),
-                            ),
-
-                            buildCircleButton(
-                              onTap: () => _runAction(() async {
-                                if (state.requiresSubscription) {
-                                  showViewLimitPurchaseSheet(context);
-                                  return;
-                                }
-                                if (state.regardsLeft == 0) {
-                                  showRegardsPurchaseSheet(context);
-                                  return;
-                                }
-                                _showRegardInputSheet(
-                                  context,
-                                  cubit: cubit,
-                                  personId: profile.user?.id ?? '',
-                                  personName: profile.user?.name ?? '',
-                                  countView:
-                                      widget.personId == null &&
-                                      !widget.fromInteractions,
-                                );
-                                await _syncNotificationAfterInteraction();
-                              }),
-                              Icons.star,
-                              Colors.white,
-                              HexColor('cccab3'),
-                            ),
-
-                            buildCircleButton(
-                              onTap: () => _runAction(() async {
-                                if (state.requiresSubscription) {
-                                  showViewLimitPurchaseSheet(context);
-                                  return;
-                                }
-                                await _showSwipePopup(
-                                  context,
-                                  SwipeActionType.dislike,
-                                );
-                                if (widget.fromInteractions) {
-                                  await cubit.userInteraction(
-                                    personId: profile.user?.id ?? '',
-                                    interactionType: 'dislike',
-                                  );
-                                  await _syncNotificationAfterInteraction();
-                                  if (mounted) context.pop();
-                                } else {
-                                  await cubit.swipeDislike(
-                                    personId: profile.user?.id ?? '',
-                                    usersLength: users.length,
-                                    hasSinglePerson: widget.personId != null,
-                                  );
-                                  if (widget.personId == null && mounted) {
-                                    _resetScrollTracking();
-                                    scrollToTop();
-                                  }
-                                }
-                              }),
-                              Icons.close,
-                              Colors.white,
-                              HexColor('e44e6c'),
-                            ),
-
-                            if (state.userHistory.isNotEmpty)
-                              buildCircleButton(
-                                onTap: () => _runAction(() async {
-                                  // لو مش مشترك — اعرض sheet الاشتراك
-                                  final isSubscribed =
-                                      _interactionsCubit?.state.isSubscribed ??
-                                      false;
-                                  if (!isSubscribed) {
-                                    showGoldPurchaseSheet(context);
-                                    return;
-                                  }
-                                  await _showSwipePopup(
-                                    context,
-                                    SwipeActionType.back,
-                                  );
-                                  cubit.goBackToPreviousUser();
-                                  _resetScrollTracking();
-                                  scrollToTop();
-                                }),
-                                isArabic
-                                    ? Icons.subdirectory_arrow_left_outlined
-                                    : Icons.subdirectory_arrow_right_outlined,
-                                Colors.white,
-                                flipVertical: true,
-                                AppColors.primary200,
-                              )
-                            else
-                              const SizedBox.shrink(),
-                          ],
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
+              _isInLayout
+                  ? BlocBuilder<LayoutCubit, LayoutState>(
+                      buildWhen: (p, c) => p.isNavVisible != c.isNavVisible,
+                      builder: (context, layoutState) {
+                        return _buildButtonsRow(
+                          context: context,
+                          state: state,
+                          cubit: cubit,
+                          users: users,
+                          profile: profile,
+                          canInteract: canInteract,
+                          bottom: layoutState.isNavVisible ? 130.h : 30.h,
+                        );
+                      },
+                    )
+                  : _buildButtonsRow(
+                      context: context,
+                      state: state,
+                      cubit: cubit,
+                      users: users,
+                      profile: profile,
+                      canInteract: canInteract,
+                      bottom: 30.h,
+                    ),
           ],
         ),
       ),
@@ -2028,6 +1922,150 @@ class MarriageBodyState extends State<MarriageBody>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildButtonsRow({
+    required BuildContext context,
+    required MarriageState state,
+    required MarriageCubit cubit,
+    required List<UserItem> users,
+    required UserItem profile,
+    required bool canInteract,
+    required double bottom,
+  }) {
+    final user = profile.user;
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+      bottom: bottom,
+      left: 0,
+      right: 0,
+      child: canInteract
+          ? IgnorePointer(
+              ignoring: state.isAnimating,
+              child: Row(
+                mainAxisAlignment: state.userHistory.isEmpty
+                    ? MainAxisAlignment.spaceAround
+                    : MainAxisAlignment.spaceEvenly,
+                children: [
+                  const SizedBox.shrink(),
+                  // ✅ Like button
+                  buildCircleButton(
+                    onTap: () => _runAction(() async {
+                      if (state.requiresSubscription || state.likesLeft == 0) {
+                        showViewLimitPurchaseSheet(context);
+                        return;
+                      }
+                      await _showSwipePopup(context, SwipeActionType.like);
+                      if (widget.fromInteractions) {
+                        await cubit.userInteraction(
+                          personId: user?.id ?? '',
+                          interactionType: 'like',
+                        );
+                        await _syncNotificationAfterInteraction();
+                        if (mounted) context.pop();
+                      } else {
+                        await cubit.swipeLike(
+                          personId: user?.id ?? '',
+                          usersLength: users.length,
+                          hasSinglePerson: widget.personId != null,
+                        );
+                        if (widget.personId == null && mounted) {
+                          _resetScrollTracking();
+                          scrollToTop();
+                        }
+                        await _syncNotificationAfterInteraction();
+                      }
+                    }),
+                    Icons.check,
+                    AppColors.kprimaryTextColor,
+                    HexColor('f8d3da'),
+                  ),
+                  // ✅ Regard button
+                  buildCircleButton(
+                    onTap: () => _runAction(() async {
+                      if (state.requiresSubscription) {
+                        showViewLimitPurchaseSheet(context);
+                        return;
+                      }
+                      if (state.regardsLeft == 0) {
+                        showRegardsPurchaseSheet(context);
+                        return;
+                      }
+                      _showRegardInputSheet(
+                        context,
+                        cubit: cubit,
+                        personId: user?.id ?? '',
+                        personName: user?.name ?? '',
+                        countView:
+                            widget.personId == null && !widget.fromInteractions,
+                      );
+                      await _syncNotificationAfterInteraction();
+                    }),
+                    Icons.star,
+                    Colors.white,
+                    HexColor('cccab3'),
+                  ),
+                  // ✅ Dislike button
+                  buildCircleButton(
+                    onTap: () => _runAction(() async {
+                      if (state.requiresSubscription) {
+                        showViewLimitPurchaseSheet(context);
+                        return;
+                      }
+                      await _showSwipePopup(context, SwipeActionType.dislike);
+                      if (widget.fromInteractions) {
+                        await cubit.userInteraction(
+                          personId: user?.id ?? '',
+                          interactionType: 'dislike',
+                        );
+                        await _syncNotificationAfterInteraction();
+                        if (mounted) context.pop();
+                      } else {
+                        await cubit.swipeDislike(
+                          personId: user?.id ?? '',
+                          usersLength: users.length,
+                          hasSinglePerson: widget.personId != null,
+                        );
+                        if (widget.personId == null && mounted) {
+                          _resetScrollTracking();
+                          scrollToTop();
+                        }
+                      }
+                    }),
+                    Icons.close,
+                    Colors.white,
+                    HexColor('e44e6c'),
+                  ),
+                  // ✅ Back button (only if history exists)
+                  if (state.userHistory.isNotEmpty)
+                    buildCircleButton(
+                      onTap: () => _runAction(() async {
+                        final isSubscribed =
+                            _interactionsCubit?.state.isSubscribed ?? false;
+                        if (!isSubscribed) {
+                          showGoldPurchaseSheet(context);
+                          return;
+                        }
+                        await _showSwipePopup(context, SwipeActionType.back);
+                        cubit.goBackToPreviousUser();
+                        _resetScrollTracking();
+                        scrollToTop();
+                      }),
+                      isArabic
+                          ? Icons.subdirectory_arrow_left_outlined
+                          : Icons.subdirectory_arrow_right_outlined,
+                      Colors.white,
+                      flipVertical: true,
+                      AppColors.primary200,
+                    )
+                  else
+                    const SizedBox.shrink(),
+                ],
+              ),
+            )
+          : const SizedBox.shrink(),
     );
   }
 

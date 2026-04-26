@@ -8,15 +8,18 @@ class MySpaceMarriageContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ نقرأ من الـ cubit لو موجود
+    final userState = context.watch<UserProfileCubit>().state;
+
+    // ✅ لو لسه بيتحمل، اعرض shimmer بدل ما تعرض incomplete profile
+    if (userState is SettingsInitial || userState is SettingsLoading) {
+      return const _LoadingShimmer();
+    }
+
     bool isDataCompleted = false;
-    try {
-      final userState = context.watch<UserProfileCubit>().state;
-      if (userState is SettingsLoaded) {
-        isDataCompleted = userState.userProfile?.dataCompleted ?? false;
-      }
-    } catch (_) {}
-    // ✅ لو البيانات مكتملة، ما نعرضش شاشة الاستكمال
+    if (userState is SettingsLoaded) {
+      isDataCompleted = userState.userProfile?.dataCompleted ?? false;
+    }
+
     if (!isDataCompleted) {
       return _buildIncompleteProfile(context);
     }
@@ -77,6 +80,30 @@ class MySpaceMarriageContent extends StatelessWidget {
           ),
           SizedBox(height: 90.h),
         ],
+      ),
+    );
+  }
+}
+
+class _LoadingShimmer extends StatelessWidget {
+  const _LoadingShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey.shade300,
+      highlightColor: Colors.grey.shade100,
+      child: ListView.builder(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+        itemCount: 6,
+        itemBuilder: (_, __) => Container(
+          margin: EdgeInsets.only(bottom: 12.h),
+          height: 80.h,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade300,
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+        ),
       ),
     );
   }
