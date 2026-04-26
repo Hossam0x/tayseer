@@ -117,6 +117,21 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     _disposeDelayTimer?.cancel();
     _savePosition();
 
+    // ✅ iOS fix: إيقاف الصوت والفيديو قبل dispose
+    final controller = _controller;
+    if (controller != null && widget.videoController == null) {
+      try {
+        if (controller.value.isInitialized) {
+          controller.setVolume(0.0);
+          if (controller.value.isPlaying) {
+            controller.pause();
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error stopping in dispose: $e');
+      }
+    }
+
     if (_initCompleter != null && !_initCompleter!.isCompleted) {
       _initCompleter!.complete();
     }
@@ -171,7 +186,11 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
 
       final controller = _controller;
 
-      if (controller != null && _isInitialized && !_hasError && shouldResume) {
+      if (controller != null &&
+          _isInitialized &&
+          !_hasError &&
+          shouldResume &&
+          !VideoManager.instance.isRefreshing) {
         VideoManager.instance.playVideo(widget.postId);
 
         _restorePosition().then((_) {
@@ -202,7 +221,10 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
       return;
     }
     try {
-      controller.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
+      // ✅ استخدام synchronous setVolume
+      final volume = _muteManager.isMuted.value ? 0.0 : 1.0;
+      controller.setVolume(volume);
+      debugPrint('🔊 Volume changed to $volume for ${widget.postId}');
     } catch (e) {
       debugPrint('⚠️ Cannot change volume: $e');
     }
@@ -216,7 +238,10 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
       try {
         if (controller.value.isPlaying) {
           _savePosition();
+          // ✅ إيقاف الصوت والفيديو (synchronous)
+          controller.setVolume(0.0);
           controller.pause();
+          debugPrint('⏸️ Paused by VideoManager: ${widget.postId}');
           _scheduleSetState(() {});
         }
       } catch (e) {
@@ -235,7 +260,10 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     try {
       if (controller.value.isPlaying) {
         _savePosition();
+        // ✅ إيقاف الصوت والفيديو (synchronous)
+        controller.setVolume(0.0);
         controller.pause();
+        debugPrint('⏸️ Paused and muted ${widget.postId}');
       }
     } catch (e) {
       debugPrint('⚠️ Cannot pause, controller disposed');
@@ -287,21 +315,31 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
   // Controller Lifecycle — ✅ FIXED
   // ═══════════════════════════════════════════════════════════════════
 
-  // ✅ FIXED: شيلنا controller.pause() للـ shared controller
-  // الـ owner (Home) هو اللي يتحكم في play/pause
+  // ✅ FIXED: Controller Lifecycle
   void _disposeLocalController() {
     final controller = _controller;
-    if (controller != null) {
-      controller.removeListener(_videoListener);
-      if (widget.videoController == null) {
-        controller.dispose();
-      }
-      // ✅ FIXED: مبقيناش نعمل pause للـ shared controller هنا
-      // عشان ده كان بيوقف الفيديو بعد ما الهوم يشغله في didPopNext
-    }
     _controller = null;
     _isInitialized = false;
     _isBuffering = false;
+
+    if (controller == null) return;
+
+    controller.removeListener(_videoListener);
+
+    if (widget.videoController != null) return; // shared — مش بنعمله dispose
+
+    try {
+      if (controller.value.isInitialized) {
+        controller.setVolume(0.0);
+        if (controller.value.isPlaying) {
+          controller.pause();
+        }
+      }
+      controller.dispose();
+      debugPrint('🗑️ Disposed local controller for ${widget.postId}');
+    } catch (e) {
+      debugPrint('⚠️ Error disposing controller: $e');
+    }
   }
 
   Future<void> _initializeVideo() async {
@@ -313,18 +351,24 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
 
     if (_controller != null && _isInitialized) return;
 
+    // ✅ إعادة تعيين الـ completer دايماً
     _initCompleter = Completer<void>();
+    final completer = _initCompleter!;
+
+    void safeComplete() {
+      if (!completer.isCompleted) completer.complete();
+    }
 
     try {
       if (widget.videoController != null) {
         _controller = widget.videoController;
         _setupController();
-        _initCompleter?.complete();
+        safeComplete();
         return;
       }
 
       if (widget.videoUrl.isEmpty) {
-        _initCompleter?.complete();
+        safeComplete();
         return;
       }
 
@@ -332,12 +376,18 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
         widget.videoUrl,
       );
       if (!mounted || _isDisposed) {
-        _initCompleter?.complete();
+        safeComplete();
         return;
       }
 
       _controller = cachedFile != null
-          ? VideoPlayerController.file(cachedFile)
+          ? VideoPlayerController.file(
+              cachedFile,
+              videoPlayerOptions: VideoPlayerOptions(
+                mixWithOthers: false,
+                allowBackgroundPlayback: false,
+              ),
+            )
           : VideoPlayerController.networkUrl(
               Uri.parse(widget.videoUrl),
               videoPlayerOptions: VideoPlayerOptions(
@@ -352,14 +402,17 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
 
       await _controller!.initialize();
       if (!mounted || _isDisposed) {
-        _controller?.dispose();
+        try {
+          _controller?.dispose();
+        } catch (_) {}
         _controller = null;
-        _initCompleter?.complete();
+        safeComplete();
         return;
       }
 
       await _controller!.setLooping(true);
-      _controller!.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
+      await _controller!.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
+
       _setupController();
       widget.onControllerCreated?.call(_controller!);
       await _restorePosition();
@@ -373,11 +426,11 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
         _controller!.play();
       }
 
-      _initCompleter?.complete();
+      safeComplete();
     } catch (e) {
       debugPrint("❌ Error initializing video: $e");
       if (!mounted || _isDisposed) {
-        _initCompleter?.complete();
+        safeComplete();
         return;
       }
 
@@ -390,7 +443,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
       if (_retryCount < _maxRetries && _stateManager.canRetry(widget.postId)) {
         _retryCount++;
         _stateManager.recordError(widget.postId);
-        _initCompleter?.complete();
+        safeComplete();
 
         final delay = Duration(milliseconds: 800 * _retryCount);
         _autoRetryTimer?.cancel();
@@ -401,7 +454,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
         });
       } else {
         _scheduleSetState(() => _hasError = true);
-        _initCompleter?.complete();
+        safeComplete();
       }
     }
   }
@@ -417,7 +470,12 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
       _isBuffering = value.isBuffering;
       controller.removeListener(_videoListener); // منع double-attach
       controller.addListener(_videoListener);
-      controller.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
+
+      // ✅ تعيين volume بشكل synchronous
+      final volume = _muteManager.isMuted.value ? 0.0 : 1.0;
+      controller.setVolume(volume);
+      debugPrint('🔊 Initial volume set to $volume for ${widget.postId}');
+
       if (mounted && !_isDisposed) setState(() {});
     } catch (e) {
       debugPrint('⚠️ Controller disposed during setup: $e');
@@ -520,11 +578,14 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
       if (!_isInPlayZone) {
         _isInPlayZone = true;
 
-        if (!_isPageActive) return;
+        // ✅ لا تشغل أثناء الـ refresh
+        if (!_isPageActive || VideoManager.instance.isRefreshing) return;
 
         if (_controller == null && !_hasError) {
           _initializeVideo().then((_) {
-            if (_canPlay && _isInitialized) {
+            if (_canPlay &&
+                _isInitialized &&
+                !VideoManager.instance.isRefreshing) {
               VideoManager.instance.playVideo(widget.postId);
               _controller?.play();
             }
@@ -534,7 +595,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
             !_isEnded &&
             !_hasError) {
           try {
-            if (_isPageActive) {
+            if (_isPageActive && !VideoManager.instance.isRefreshing) {
               VideoManager.instance.playVideo(widget.postId);
               if (!_controller!.value.isPlaying) {
                 _controller!.play();
@@ -551,12 +612,15 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
       _disposeDelayTimer = null;
       _pauseAndSave();
     } else {
+      // ✅ الفيديو خرج من الشاشة تماماً
       _isInPlayZone = false;
       _pauseAndSave();
+
+      // ✅ تدمير فوري للـ controller عشان نمنع تراكم الأصوات
       _disposeDelayTimer?.cancel();
-      _disposeDelayTimer = Timer(const Duration(seconds: 2), () {
+      _disposeDelayTimer = Timer(const Duration(milliseconds: 500), () {
         if (mounted && !_isDisposed && _controller != null) {
-          debugPrint('♻️ Delayed dispose for ${widget.postId}');
+          debugPrint('♻️ Immediate dispose for ${widget.postId}');
           _savePosition();
           _disposeLocalController();
           _initCompleter = null;
@@ -589,6 +653,8 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
       try {
         if (_controller!.value.isPlaying) {
           _savePosition();
+          // ✅ iOS fix: إيقاف الصوت قبل pause
+          _controller!.setVolume(0.0);
           _controller!.pause();
         }
       } catch (_) {}
@@ -643,9 +709,9 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
                         child: CachedNetworkImage(
                           imageUrl: thumbnail,
                           fit: BoxFit.cover,
-                          placeholder: (_, __) =>
+                          placeholder: (context, url) =>
                               const ColoredBox(color: Colors.black),
-                          errorWidget: (_, __, ___) =>
+                          errorWidget: (context, url, error) =>
                               const ColoredBox(color: Colors.black),
                         ),
                       ),

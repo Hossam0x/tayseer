@@ -50,7 +50,13 @@ class AdvisorVideoCache {
     try {
       final cachedFile = await _videoCacheManager.getCachedFile(url);
       if (cachedFile != null) {
-        _controller = VideoPlayerController.file(cachedFile);
+        _controller = VideoPlayerController.file(
+          cachedFile,
+          videoPlayerOptions: VideoPlayerOptions(
+            mixWithOthers: false,
+            allowBackgroundPlayback: false,
+          ),
+        );
       } else {
         _controller = VideoPlayerController.networkUrl(
           Uri.parse(url),

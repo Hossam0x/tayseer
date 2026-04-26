@@ -147,7 +147,13 @@ class VideoPlayerWidgetState extends State<VideoPlayerWidget>
       if (!mounted || _isDisposed) return;
 
       _controller = cachedFile != null
-          ? VideoPlayerController.file(cachedFile)
+          ? VideoPlayerController.file(
+              cachedFile,
+              videoPlayerOptions: VideoPlayerOptions(
+                mixWithOthers: false,
+                allowBackgroundPlayback: false,
+              ),
+            )
           : VideoPlayerController.networkUrl(
               Uri.parse(widget.videoUrl),
               videoPlayerOptions: VideoPlayerOptions(

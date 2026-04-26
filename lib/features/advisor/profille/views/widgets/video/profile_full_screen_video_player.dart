@@ -90,7 +90,13 @@ class _ProfileFullscreenVideoPlayerState
       if (!mounted) return;
 
       _controller = cachedFile != null
-          ? VideoPlayerController.file(cachedFile)
+          ? VideoPlayerController.file(
+              cachedFile,
+              videoPlayerOptions: VideoPlayerOptions(
+                mixWithOthers: false,
+                allowBackgroundPlayback: false,
+              ),
+            )
           : VideoPlayerController.networkUrl(
               Uri.parse(widget.videoUrl),
               videoPlayerOptions: VideoPlayerOptions(

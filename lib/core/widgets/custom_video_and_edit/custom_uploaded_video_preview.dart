@@ -39,15 +39,22 @@ class _CustomUploadedVideoPreviewState extends State<CustomUploadedVideoPreview>
   void initState() {
     super.initState();
 
-    _controller = VideoPlayerController.file(File(widget.video.path))
-      ..initialize().then((_) {
-        if (mounted) {
-          setState(() {
-            _isInitialized = true;
+    _controller =
+        VideoPlayerController.file(
+            File(widget.video.path),
+            videoPlayerOptions: VideoPlayerOptions(
+              mixWithOthers: false,
+              allowBackgroundPlayback: false,
+            ),
+          )
+          ..initialize().then((_) {
+            if (mounted) {
+              setState(() {
+                _isInitialized = true;
+              });
+              widget.onInitialized();
+            }
           });
-          widget.onInitialized();
-        }
-      });
 
     // ✅ Listen للتغييرات في الـ controller
     _controller.addListener(_videoListener);
@@ -136,14 +143,21 @@ class _CustomUploadedVideoPreviewState extends State<CustomUploadedVideoPreview>
         await _controller.pause();
         await _controller.dispose();
 
-        _controller = VideoPlayerController.file(File(editedFile.path))
-          ..initialize().then((_) {
-            if (mounted) {
-              setState(() {
-                _isInitialized = true;
+        _controller =
+            VideoPlayerController.file(
+                File(editedFile.path),
+                videoPlayerOptions: VideoPlayerOptions(
+                  mixWithOthers: false,
+                  allowBackgroundPlayback: false,
+                ),
+              )
+              ..initialize().then((_) {
+                if (mounted) {
+                  setState(() {
+                    _isInitialized = true;
+                  });
+                }
               });
-            }
-          });
         _controller.addListener(_videoListener);
       } catch (e) {
         debugPrint('✏️ [Preview] failed to reinit controller: $e');

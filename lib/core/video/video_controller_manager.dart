@@ -192,7 +192,11 @@ class VideoControllerManager {
       }
 
       await controller.initialize();
-      controller.setLooping(true);
+
+      // ✅ تعيين looping قبل setVolume
+      await controller.setLooping(true);
+
+      // ✅ تعيين volume بعد initialize مباشرة
       await controller.setVolume(1.0);
 
       return controller;
@@ -260,9 +264,16 @@ class VideoControllerManager {
   Future<void> _pauseAndDisposeActive() async {
     if (_activeController != null) {
       try {
+        // ✅ iOS fix: إيقاف الصوت أولاً بشكل قوي
+        await _activeController!.setVolume(0.0);
+
         if (_activeController!.value.isPlaying) {
           await _activeController!.pause();
         }
+
+        // ✅ iOS fix: انتظار قليل قبل dispose
+        await Future.delayed(const Duration(milliseconds: 50));
+
         await _activeController!.dispose();
       } catch (e) {
         debugPrint('⚠️ Error disposing controller: $e');
@@ -331,6 +342,60 @@ class VideoControllerManager {
   void pauseAll() {
     pauseCurrent();
     currentlyPlayingVideoId.value = null;
+  }
+
+  /// إيقاف وتدمير كل الـ controllers (للـ refresh)
+  Future<void> disposeAll() async {
+    debugPrint('🧹 Disposing all video controllers...');
+
+    // حفظ موضع الفيديو الحالي
+    _saveCurrentVideoPosition();
+
+    // ✅ iOS fix: إيقاف الصوت أولاً لكل الـ controllers
+    if (_activeController != null) {
+      try {
+        await _activeController!.setVolume(0.0);
+        if (_activeController!.value.isPlaying) {
+          await _activeController!.pause();
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error stopping active controller: $e');
+      }
+    }
+
+    for (var entry in _preloadedControllers.entries) {
+      try {
+        await entry.value.controller.setVolume(0.0);
+        if (entry.value.controller.value.isPlaying) {
+          await entry.value.controller.pause();
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error stopping preloaded ${entry.key}: $e');
+      }
+    }
+
+    // ✅ iOS fix: انتظار قليل قبل dispose
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    // تدمير الـ active controller
+    await _pauseAndDisposeActive();
+
+    // تدمير كل الـ preloaded controllers
+    for (var entry in _preloadedControllers.entries) {
+      try {
+        await entry.value.controller.dispose();
+        debugPrint('🗑️ Disposed preloaded: ${entry.key}');
+      } catch (e) {
+        debugPrint('⚠️ Error disposing preloaded ${entry.key}: $e');
+      }
+    }
+    _preloadedControllers.clear();
+
+    // إعادة تعيين الحالة
+    currentlyPlayingVideoId.value = null;
+    _retryDepth = 0;
+
+    debugPrint('✅ All video controllers disposed');
   }
 
   /// إيقاف فيديو معين بناءً على الـ ID

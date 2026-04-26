@@ -90,12 +90,18 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
       if (!mounted) return;
 
       if (cachedFile != null) {
-        _controller = VideoPlayerController.file(cachedFile);
+        _controller = VideoPlayerController.file(
+          cachedFile,
+          videoPlayerOptions: VideoPlayerOptions(
+            mixWithOthers: false,
+            allowBackgroundPlayback: false,
+          ),
+        );
       } else {
         _controller = VideoPlayerController.networkUrl(
           Uri.parse(widget.videoUrl),
           videoPlayerOptions: VideoPlayerOptions(
-            mixWithOthers: true,
+            mixWithOthers: false,
             allowBackgroundPlayback: false,
           ),
         );

@@ -34,7 +34,13 @@ class _VideoEditorViewState extends State<VideoEditorView> {
 
   Future<void> _initializeVideo() async {
     try {
-      _videoController = VideoPlayerController.file(widget.videoFile);
+      _videoController = VideoPlayerController.file(
+        widget.videoFile,
+        videoPlayerOptions: VideoPlayerOptions(
+          mixWithOthers: false,
+          allowBackgroundPlayback: false,
+        ),
+      );
       await _videoController!.initialize();
       await _videoController!.setLooping(false);
       await _videoController!.setVolume(100);

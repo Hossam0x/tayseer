@@ -37,23 +37,30 @@ class _AppVideoState extends State<AppVideo> with WidgetsBindingObserver {
   }
 
   void _initializeVideo() {
-    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url))
-      ..initialize().then((_) {
-        if (mounted) {
-          setState(() => _isInitialized = true);
-          _controller.setLooping(widget.looping);
-          _controller.setVolume(widget.muted ? 0 : 1);
+    _controller =
+        VideoPlayerController.networkUrl(
+            Uri.parse(widget.url),
+            videoPlayerOptions: VideoPlayerOptions(
+              mixWithOthers: false,
+              allowBackgroundPlayback: false,
+            ),
+          )
+          ..initialize().then((_) {
+            if (mounted) {
+              setState(() => _isInitialized = true);
+              _controller.setLooping(widget.looping);
+              _controller.setVolume(widget.muted ? 0 : 1);
 
-          if (widget.autoPlay) {
-            _controller.play();
-          }
+              if (widget.autoPlay) {
+                _controller.play();
+              }
 
-          // نرسل الكنترولر للأب بمجرد ما يجهز
-          if (widget.onControllerReady != null) {
-            widget.onControllerReady!(_controller);
-          }
-        }
-      });
+              // نرسل الكنترولر للأب بمجرد ما يجهز
+              if (widget.onControllerReady != null) {
+                widget.onControllerReady!(_controller);
+              }
+            }
+          });
   }
 
   // Pause video when app goes to background to prevent audio leaking

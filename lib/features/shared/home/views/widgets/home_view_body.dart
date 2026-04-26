@@ -110,7 +110,13 @@ class HomeViewBodyState extends State<HomeViewBody> {
   Future<void> scrollToTopAndRefresh() async {
     if (getIt<ConnectivityCubit>().isOffline) return;
     scrollToTop();
-    VideoManager.instance.stopAll();
+
+    // ✅ إيقاف وتدمير كل الفيديوهات قبل الـ refresh
+    await VideoManager.instance.stopAll();
+
+    // ✅ حفظ context قبل async gap
+    if (!mounted) return;
+
     await Future.wait([
       storiesCubit.fetchStories(context: context),
       homeCubit.refreshHome(),
@@ -140,7 +146,13 @@ class HomeViewBodyState extends State<HomeViewBody> {
           onRefresh: () async {
             if (getIt<ConnectivityCubit>().isOffline) return;
             AudioService.instance.playRefreshSound();
-            VideoManager.instance.stopAll();
+
+            // ✅ إيقاف وتدمير كل الفيديوهات قبل الـ refresh
+            await VideoManager.instance.stopAll();
+
+            // ✅ حفظ context قبل async gap
+            if (!context.mounted) return;
+
             await Future.wait([
               storiesCubit.fetchStories(context: context),
               if (isAdvisor) storiesCubit.fetchMyStories(),
@@ -200,7 +212,10 @@ class HomeViewBodyState extends State<HomeViewBody> {
   void dispose() {
     _scrollController.dispose();
     _filterScrollController.dispose();
+
+    // ✅ تدمير كل الفيديوهات عند الخروج من الـ home
     VideoManager.instance.stopAll();
+
     super.dispose();
   }
 }
