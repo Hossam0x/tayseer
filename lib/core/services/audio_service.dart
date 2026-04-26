@@ -1,5 +1,6 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// AudioService - Singleton service for managing sound effects throughout the app
@@ -449,6 +450,7 @@ class AudioService {
 
   /// Play refresh sound
   Future<void> playRefreshSound() async {
+    HapticFeedback.mediumImpact();
     await playSound(refreshSound);
   }
 
