@@ -38,10 +38,14 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
   bool _isDragging = false;
   bool _isPopping = false;
 
+  // Live list that grows as the cubit loads more stories
+  late List<UserStoriesModel> _usersStories;
+
   @override
   void initState() {
     super.initState();
     _current = widget.initialUserIndex;
+    _usersStories = List.from(widget.usersStories);
     _page = PageController(initialPage: widget.initialUserIndex);
   }
 
@@ -73,7 +77,28 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
   @override
   Widget build(BuildContext context) {
     final opacity = (1.0 - (_vOffset / 400)).clamp(0.0, 1.0);
-    final body = _buildBody(opacity);
+
+    // Keep _usersStories in sync with the cubit's storiesList (home feed only)
+    final body = widget.isArchive
+        ? _buildBody(opacity)
+        : BlocListener<StoriesCubit, StoriesState>(
+            listenWhen: (prev, curr) => prev.storiesList != curr.storiesList,
+            listener: (ctx, state) {
+              if (!mounted) return;
+              final myUserId = kCurrentUserData?.id;
+              final updated = state.storiesList
+                  .where((us) => us.userId != myUserId)
+                  .map(
+                    (us) => us.copyWith(stories: us.stories.reversed.toList()),
+                  )
+                  .toList();
+              if (updated.length > _usersStories.length) {
+                setState(() => _usersStories = updated);
+              }
+            },
+            child: _buildBody(opacity),
+          );
+
     if (!widget.isArchive) return body;
 
     return MultiBlocListener(
@@ -154,10 +179,20 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
               borderRadius: BorderRadius.circular(_isDragging ? 20.r : 0),
               child: PageView.builder(
                 controller: _page,
-                itemCount: widget.usersStories.length,
-                onPageChanged: (i) => setState(() => _current = i),
+                itemCount: _usersStories.length,
+                onPageChanged: (i) {
+                  setState(() => _current = i);
+                  // Prefetch next page when reaching the last 3 users
+                  if (!widget.isArchive && i >= _usersStories.length - 3) {
+                    context.read<StoriesCubit>().fetchStories(
+                      loadMore: true,
+                      isSpecial: false,
+                      context: context,
+                    );
+                  }
+                },
                 itemBuilder: (_, i) => UserStoryPage(
-                  userStories: widget.usersStories[i],
+                  userStories: _usersStories[i],
                   isArchive: widget.isArchive,
                   heroTag: i == widget.initialUserIndex ? widget.heroTag : null,
                   initialStoryId: i == widget.initialUserIndex
@@ -167,7 +202,7 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
                   isDragging: _isDragging,
                   newestFirst: widget.newestFirst,
                   onAllStoriesComplete: () {
-                    if (_current < widget.usersStories.length - 1) {
+                    if (_current < _usersStories.length - 1) {
                       _page.nextPage(
                         duration: const Duration(milliseconds: 400),
                         curve: Curves.easeInOut,
