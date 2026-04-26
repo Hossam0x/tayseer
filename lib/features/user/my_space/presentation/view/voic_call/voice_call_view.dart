@@ -102,9 +102,9 @@ class _CallView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ZegoUIKitPrebuiltCall(
-      appID: 735715950,
+      appID: 1096376707,
       appSign:
-          'c8c12ef18db02cdc1d880efdc0cbdde63f7362ff7068473ba7cb21240829ea6d',
+          'bdd8e431ea191cfbf6b43e7842d78601aa8325f8e2259fd9ed85680a768dcef7',
       userID: userID,
       userName: userName,
       callID: callID,
