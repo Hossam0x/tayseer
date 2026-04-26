@@ -23,7 +23,9 @@ class HomeFilterSection extends StatelessWidget {
               previous.categoriesIsLoadingMore !=
                   current.categoriesIsLoadingMore,
           builder: (context, state) {
-            if (state.categoriesState == CubitStates.loading) {
+            // ✅ لا نظهر shimmer إذا كان هناك محتوى قديم - فقط عند التحميل الأول
+            if (state.categoriesState == CubitStates.loading &&
+                state.categories.isEmpty) {
               return const _ShimmerLoading();
             }
 

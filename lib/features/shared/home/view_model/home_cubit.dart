@@ -444,14 +444,12 @@ class HomeCubit extends Cubit<HomeState> {
     }
   }
 
-  /// ريفريش كامل للصفحة - يعيد كل شيء للقيم الأولية ويحمل من جديد
+  /// ريفريش كامل للصفحة - يحمل البيانات الجديدة بدون إظهار shimmer
   Future<void> refreshHome() async {
     // لو أوفلاين → لا تحدث، ابقي على البيانات الحالية
     if (connectivityCubit.isOffline) return;
 
-    // إعادة تعيين كل شيء للقيم الأولية (مع الحفاظ على بيانات اليوزر المخزنة)
-    emit(state.reset());
-
+    // ✅ لا نعمل reset للـ state - نحتفظ بالمحتوى القديم ونحدثه فقط
     // تحميل كل البيانات من جديد بالتوازي
     await Future.wait([
       fetchNameAndImage(),
@@ -547,6 +545,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> fetchBestAdvisors({int page = 1}) async {
     if (page == 1) {
+      // ✅ لا نمسح البيانات القديمة - فقط نحدث الحالة
       emit(state.copyWith(bestAdvisorsState: CubitStates.loading));
     } else {
       emit(state.copyWith(bestAdvisorsIsLoadingMore: true));
@@ -566,6 +565,7 @@ class HomeCubit extends Cubit<HomeState> {
       ),
       (response) {
         final newAdvisors = response.data?.advisors ?? [];
+        // ✅ عند page == 1، نستبدل البيانات القديمة بالجديدة فقط عند نجاح الطلب
         final allAdvisors = page == 1
             ? newAdvisors
             : [...state.bestAdvisors, ...newAdvisors];
@@ -639,6 +639,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> fetchSimilarUsers({int page = 1}) async {
     if (page == 1) {
+      // ✅ لا نمسح البيانات القديمة - فقط نحدث الحالة
       emit(state.copyWith(similarUsersState: CubitStates.loading));
     } else {
       emit(state.copyWith(similarUsersIsLoadingMore: true));
@@ -658,6 +659,7 @@ class HomeCubit extends Cubit<HomeState> {
       ),
       (response) {
         final newUsers = response.data?.users ?? [];
+        // ✅ عند page == 1، نستبدل البيانات القديمة بالجديدة فقط عند نجاح الطلب
         final allUsers = page == 1
             ? newUsers
             : [...state.similarUsers, ...newUsers];
@@ -688,6 +690,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   Future<void> fetchPastMatches({int page = 1}) async {
     if (page == 1) {
+      // ✅ لا نمسح البيانات القديمة - فقط نحدث الحالة
       emit(state.copyWith(pastMatchesState: CubitStates.loading));
     } else {
       emit(state.copyWith(pastMatchesIsLoadingMore: true));
@@ -707,6 +710,7 @@ class HomeCubit extends Cubit<HomeState> {
       ),
       (response) {
         final newMatches = response.data?.data ?? [];
+        // ✅ عند page == 1، نستبدل البيانات القديمة بالجديدة فقط عند نجاح الطلب
         final allMatches = page == 1
             ? newMatches
             : [...state.pastMatches, ...newMatches];
@@ -751,7 +755,7 @@ class HomeCubit extends Cubit<HomeState> {
     emit(
       state.copyWith(
         categoriesState: CubitStates.loading,
-        categories: [],
+        // ✅ نحتفظ بالقائمة القديمة بدلاً من مسحها
         categoriesCurrentPage: 1,
         categoriesHasMore: true,
       ),
@@ -1032,13 +1036,18 @@ class HomeCubit extends Cubit<HomeState> {
 
   /// تحميل البوستات لكاتيجوري معينة (داخلي)
   Future<void> _fetchPostsForCategory(String? categoryId) async {
-    // تحديث حالة الـ loading
+    // ✅ لا نعيد تعيين البوستات - نحتفظ بالمحتوى القديم أثناء التحميل
+    // فقط نحدث الحالة إلى loading بدون مسح البوستات
+    final currentData =
+        state.categoryPostsMap[categoryId] ?? const CategoryPostsData();
+    final currentPosts = currentData.posts;
+
     emit(
       state.updateCategoryPosts(
         categoryId,
         (data) => data.copyWith(
           state: CubitStates.loading,
-          posts: [],
+          posts: currentPosts, // ✅ نحتفظ بالبوستات القديمة
           currentLocalPage: 0,
           currentServerPage: 0,
           hasMoreLocal: true,

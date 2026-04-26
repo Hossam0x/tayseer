@@ -281,6 +281,7 @@ class HomePostFeed extends StatelessWidget {
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _buildContent(BuildContext context, _FeedState state) {
+    // ✅ لا نظهر shimmer عند الـ refresh - فقط عند التحميل الأول
     if (state.isLoading && state.isEmpty) return _buildShimmerList();
     if (state.isError && state.isEmpty && state.isOffline) {
       return const OfflineEmptyState();

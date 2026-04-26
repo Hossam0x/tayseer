@@ -230,7 +230,7 @@ class StoriesCubit extends Cubit<StoriesState> {
               mySpecialStoriesState: CubitStates.loading,
               mySpecialCurrentPage: 1,
               mySpecialHasMore: true,
-              mySpecialStories: const [],
+              // ✅ نحتفظ بالقائمة القديمة بدلاً من مسحها
               isSpecial: true,
               advisorId: null,
             ),
@@ -241,7 +241,7 @@ class StoriesCubit extends Cubit<StoriesState> {
               advisorSpecialStoriesState: CubitStates.loading,
               advisorSpecialCurrentPage: 1,
               advisorSpecialHasMore: true,
-              advisorSpecialStories: const [],
+              // ✅ نحتفظ بالقائمة القديمة بدلاً من مسحها
               isSpecial: true,
               advisorId: effectiveAdvisorId,
               activeAdvisorId: effectiveAdvisorId,
@@ -253,7 +253,7 @@ class StoriesCubit extends Cubit<StoriesState> {
               storiesState: CubitStates.loading,
               currentPage: 1,
               hasMore: true,
-              storiesList: const [],
+              // ✅ نحتفظ بالقائمة القديمة بدلاً من مسحها
               isSpecial: false,
               advisorId: effectiveAdvisorId,
             ),

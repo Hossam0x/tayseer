@@ -29,7 +29,11 @@ class StoriesSection extends StatelessWidget {
   Widget _buildContent(StoriesState state) {
     switch (state.storiesState) {
       case CubitStates.loading:
-        return const StoriesLoadingShimmer();
+        // ✅ لا نظهر shimmer إذا كان هناك محتوى قديم - فقط عند التحميل الأول
+        if (state.storiesList.isEmpty) {
+          return const StoriesLoadingShimmer();
+        }
+        return const HomeStoriesListView();
       case CubitStates.failure:
         if (state.storiesList.isEmpty) return const SizedBox.shrink();
         return const HomeStoriesListView();
