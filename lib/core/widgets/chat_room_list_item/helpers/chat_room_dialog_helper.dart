@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:tayseer/core/utils/assets.dart';
+import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/my_import.dart';
 
 /// Helper class للـ dialogs المشتركة في chat rooms
-/// يستخدم نفس تصميم show_confirmation_dialog
+/// يستخدم CustomshowDialogWithImage
 class ChatRoomDialogHelper {
   /// عرض dialog تأكيد الحذف
   static void showDeleteDialog({
@@ -12,12 +13,16 @@ class ChatRoomDialogHelper {
     String? title,
     String? subtitle,
   }) {
-    _showConfirmationDialog(
-      context: context,
-      imagePath: AssetsData.deleteIcon,
-      title: title ?? 'حذف المحادثة',
-      subtitle: subtitle ?? 'هل أنت متأكد من حذف هذه المحادثة؟',
-      onConfirm: onConfirm,
+    CustomshowDialogWithImage(
+      context,
+      imageUrl: AssetsData.deleteIcon,
+      title: title ?? context.tr('delete_chat'),
+      supTitle: subtitle ?? context.tr('delete_chat_confirm'),
+      bottonText: context.tr('yes'),
+      showCancelButton: true,
+      cancelText: context.tr('no'),
+      onPressed: onConfirm,
+      onCancel: () {},
     );
   }
 
@@ -28,12 +33,16 @@ class ChatRoomDialogHelper {
     String? title,
     String? subtitle,
   }) {
-    _showConfirmationDialog(
-      context: context,
-      imagePath: AssetsData.chatArchiveIcon,
-      title: title ?? 'أرشفة المحادثة',
-      subtitle: subtitle ?? 'هل أنت متأكد من أرشفة هذه المحادثة؟',
-      onConfirm: onConfirm,
+    CustomshowDialogWithImage(
+      context,
+      imageUrl: AssetsData.chatArchiveIcon,
+      title: title ?? context.tr('archive_chat'),
+      supTitle: subtitle ?? context.tr('archive_chat_confirm'),
+      bottonText: context.tr('yes'),
+      showCancelButton: true,
+      cancelText: context.tr('no'),
+      onPressed: onConfirm,
+      onCancel: () {},
     );
   }
 
@@ -44,12 +53,16 @@ class ChatRoomDialogHelper {
     String? title,
     String? subtitle,
   }) {
-    _showConfirmationDialog(
-      context: context,
-      imagePath: AssetsData.reportIcon,
-      title: title ?? 'إبلاغ',
-      subtitle: subtitle ?? 'هل تريد الإبلاغ عن هذه المحادثة؟',
-      onConfirm: onConfirm,
+    CustomshowDialogWithImage(
+      context,
+      imageUrl: AssetsData.reportIcon,
+      title: title ?? context.tr('report_menu'),
+      supTitle: subtitle ?? context.tr('report_confirm_subtitle'),
+      bottonText: context.tr('yes'),
+      showCancelButton: true,
+      cancelText: context.tr('no'),
+      onPressed: onConfirm,
+      onCancel: () {},
     );
   }
 
@@ -60,12 +73,18 @@ class ChatRoomDialogHelper {
     String? title,
     String? subtitle,
   }) {
-    _showConfirmationDialog(
-      context: context,
-      imagePath: AssetsData.deleteIcon,
-      title: title ?? 'حظر المستخدم',
-      subtitle: subtitle ?? 'هل أنت متأكد من حظر هذا المستخدم؟',
-      onConfirm: onConfirm,
+    CustomshowDialogWithImage(
+      context,
+      icon: Icons.block_outlined,
+      iconColor: Colors.red,
+      iconBackgroundColor: Colors.red.withOpacity(0.1),
+      title: title ?? context.tr('block_label'),
+      supTitle: subtitle ?? context.tr('block_confirm_subtitle'),
+      bottonText: context.tr('yes'),
+      showCancelButton: true,
+      cancelText: context.tr('no'),
+      onPressed: onConfirm,
+      onCancel: () {},
     );
   }
 
@@ -76,12 +95,18 @@ class ChatRoomDialogHelper {
     String? title,
     String? subtitle,
   }) {
-    _showConfirmationDialog(
-      context: context,
-      imagePath: AssetsData.deleteIcon,
-      title: title ?? 'إلغاء حظر المستخدم',
-      subtitle: subtitle ?? 'هل أنت متأكد من إلغاء حظر هذا المستخدم؟',
-      onConfirm: onConfirm,
+    CustomshowDialogWithImage(
+      context,
+      icon: Icons.lock_open_outlined,
+      iconColor: Colors.green,
+      iconBackgroundColor: Colors.green.withOpacity(0.1),
+      title: title ?? context.tr('unblock_label'),
+      supTitle: subtitle ?? context.tr('unblock_confirm_subtitle'),
+      bottonText: context.tr('yes'),
+      showCancelButton: true,
+      cancelText: context.tr('no'),
+      onPressed: onConfirm,
+      onCancel: () {},
     );
   }
 
@@ -92,138 +117,16 @@ class ChatRoomDialogHelper {
     String? title,
     String? subtitle,
   }) {
-    _showConfirmationDialog(
-      context: context,
-      imagePath: AssetsData.kWoriningImage,
-      title: title ?? 'إلغاء التوافق',
-      subtitle: subtitle ?? 'هل أنت متأكد من إلغاء التوافق؟',
-      onConfirm: onConfirm,
-    );
-  }
-
-  /// Dialog موحد بنفس تصميم show_confirmation_dialog
-  static void _showConfirmationDialog({
-    required BuildContext context,
-    required String imagePath,
-    required String title,
-    required String subtitle,
-    required VoidCallback onConfirm,
-  }) {
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'confirmation',
-      barrierColor: Colors.black.withOpacity(0.4),
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (_, __, ___) {
-        return const SizedBox.shrink();
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curvedAnimation = CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOutBack,
-        );
-
-        return ScaleTransition(
-          scale: curvedAnimation,
-          child: FadeTransition(
-            opacity: animation,
-            child: Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Container(
-                width: 396,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: Colors.white,
-                  image: DecorationImage(
-                    image: AssetImage(AssetsData.homeBackgroundImage),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 16),
-                    AppImage(imagePath, width: 76, fit: BoxFit.cover),
-                    const SizedBox(height: 16),
-                    Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      subtitle,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-                    ),
-                    const SizedBox(height: 32),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              onConfirm();
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2ECC71),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: Text(
-                              context.tr('yes'),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFE74C3C),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: Text(
-                              context.tr('no'),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
+    CustomshowDialogWithImage(
+      context,
+      imageUrl: AssetsData.kWoriningImage,
+      title: title ?? context.tr('cancel_match_title'),
+      supTitle: subtitle ?? context.tr('cancel_match_confirm'),
+      bottonText: context.tr('yes'),
+      showCancelButton: true,
+      cancelText: context.tr('no'),
+      onPressed: onConfirm,
+      onCancel: () {},
     );
   }
 }

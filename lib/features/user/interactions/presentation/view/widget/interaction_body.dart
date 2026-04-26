@@ -155,6 +155,12 @@ class InteractionBodyState extends State<InteractionBody> {
 
   Widget _buildExplorationContent() {
     return BlocBuilder<InteractionsCubit, InteractionsState>(
+      buildWhen: (prev, curr) {
+        // ✅ rebuild بس لما حالة الـ overlay تتغير
+        final prevOverlay = _shouldShowSubscriptionOverlay(prev);
+        final currOverlay = _shouldShowSubscriptionOverlay(curr);
+        return prevOverlay != currOverlay;
+      },
       builder: (context, state) {
         final bool shouldShowOverlay = _shouldShowSubscriptionOverlay(state);
         return Stack(

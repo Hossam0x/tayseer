@@ -2080,5 +2080,9 @@
   "consultation_archived_success": "تم أرشفة الاستشارة بنجاح",
   "consultation_archive_failed": "فشل في أرشفة المحادثة، حاول مرة أخرى",
   "chat_deleted_success": "تم حذف المحادثة بنجاح",
-  "chat_delete_failed": "فشل في حذف المحادثة، حاول مرة أخرى"
+  "chat_delete_failed": "فشل في حذف المحادثة، حاول مرة أخرى",
+  "delete_chat": "حذف المحادثة",
+  "delete_chat_confirm": "هل أنت متأكد من حذف هذه المحادثة؟",
+  "archive_chat": "أرشفة المحادثة",
+  "archive_chat_confirm": "هل أنت متأكد من أرشفة هذه المحادثة؟"
 }

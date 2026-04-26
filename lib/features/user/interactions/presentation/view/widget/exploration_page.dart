@@ -116,8 +116,8 @@ class ExplorationState extends State<Exploration> {
     return BlocBuilder<InteractionsCubit, InteractionsState>(
       builder: (context, state) {
         final isLoading =
-            state.explorationState == CubitStates.loading &&
-            state.explorationData.isEmpty;
+            state.explorationState == CubitStates.loading ||
+            state.explorationState == CubitStates.initial;
 
         if (isLoading) {
           return _buildSkeletonLoading();
@@ -157,7 +157,7 @@ class ExplorationState extends State<Exploration> {
           (list) => list.isNotEmpty,
         );
         if (!hasData) {
-          return _buildNoResultsView(context);
+          return const EmptyExploration();
         }
 
         return RefreshIndicator.adaptive(
