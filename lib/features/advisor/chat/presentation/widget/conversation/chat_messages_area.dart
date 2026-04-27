@@ -11,6 +11,7 @@ import 'package:tayseer/features/advisor/chat/presentation/manager/typing/typing
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/message_shimmer.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/selectable_message_list_view.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/typing_indicator.dart';
+import 'package:tayseer/my_import.dart';
 class ChatMessagesArea extends StatelessWidget {
   final bool isMobile;
   final ScrollController scrollController;
@@ -18,6 +19,7 @@ class ChatMessagesArea extends StatelessWidget {
   final OverlayManager overlayManager;
   final VoidCallback onStateChanged;
   final bool showFreeChatBanner;
+  final String? advisorId;
 
   const ChatMessagesArea({
     super.key,
@@ -27,6 +29,7 @@ class ChatMessagesArea extends StatelessWidget {
     required this.overlayManager,
     required this.onStateChanged,
     this.showFreeChatBanner = true,
+    this.advisorId,
   });
 
   @override
@@ -54,9 +57,9 @@ class ChatMessagesArea extends StatelessWidget {
             state.messages.isNotEmpty) {
           return Column(
             children: [
-              if (!state.isOnline) _buildOfflineIndicator(),
+              if (!state.isOnline) _buildOfflineIndicator(context),
               if (showFreeChatBanner && state.freeChatMinutes != null && state.freeChatMinutes! > 0)
-                _FreeChatBanner(minutes: state.freeChatMinutes!),
+                _FreeChatBanner(minutes: state.freeChatMinutes!, advisorId: advisorId),
               Expanded(
                 child: NotificationListener<ScrollNotification>(
                   onNotification: (notification) {
@@ -109,15 +112,15 @@ class ChatMessagesArea extends StatelessWidget {
     );
   }
 
-  Widget _buildOfflineIndicator() {
+  Widget _buildOfflineIndicator(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 4),
       color: Colors.orange.shade100,
-      child: const Text(
-        'أنت غير متصل - سيتم إرسال الرسائل عند الاتصال',
+      child: Text(
+        context.tr('offline_indicator'),
         textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 12, color: Colors.orange),
+        style: const TextStyle(fontSize: 12, color: Colors.orange),
       ),
     );
   }
@@ -136,8 +139,9 @@ class ChatMessagesArea extends StatelessWidget {
 
 class _FreeChatBanner extends StatelessWidget {
   final int minutes;
+  final String? advisorId;
 
-  const _FreeChatBanner({required this.minutes});
+  const _FreeChatBanner({required this.minutes, this.advisorId});
 
   @override
   Widget build(BuildContext context) {
@@ -156,8 +160,7 @@ class _FreeChatBanner extends StatelessWidget {
         TextSpan(
           children: [
             TextSpan(
-              text:
-                  'لديك $minutes دقيقة الآن لإرسال استفسارك ، وستحصل على إجابة مجانية من المستشار!\n',
+              text: context.tr('free_chat_banner_text').replaceAll('{minutes}', '$minutes'),
               style: const TextStyle(
                 fontSize: 14,
                 color: Colors.black87,
@@ -167,11 +170,17 @@ class _FreeChatBanner extends StatelessWidget {
             WidgetSpan(
               child: GestureDetector(
                 onTap: () {
-                  Navigator.pushNamed(context, AppRouter.userticketSessionView);
+                  context.pushNamed(
+                    AppRouter.kChooseSessionView,
+                    arguments: {
+                      "title": context.tr('book_session'),
+                      "advisorId": advisorId ?? '',
+                    },
+                  );
                 },
-                child: const Text(
-                  'احجز جلسة',
-                  style: TextStyle(
+                child: Text(
+                  context.tr('book_session'),
+                  style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xffa94442),
                     fontWeight: FontWeight.bold,
@@ -180,9 +189,9 @@ class _FreeChatBanner extends StatelessWidget {
                 ),
               ),
             ),
-            const TextSpan(
-              text: ' للحصول على المزيد من الاستشارات .',
-              style: TextStyle(
+            TextSpan(
+              text: context.tr('free_chat_banner_suffix'),
+              style: const TextStyle(
                 fontSize: 14,
                 color: Colors.black87,
               ),
@@ -209,7 +218,7 @@ class _ChatErrorState extends StatelessWidget {
           const Icon(Icons.error_outline, color: Colors.red, size: 48),
           const SizedBox(height: 16),
           Text(
-            errorMessage ?? 'حدث خطأ ما',
+            errorMessage ?? context.tr('error_occurred'),
             style: const TextStyle(color: Colors.red, fontSize: 16),
           ),
           const SizedBox(height: 16),
@@ -219,7 +228,7 @@ class _ChatErrorState extends StatelessWidget {
                     context.read<ChatMessagesCubit>().state.messages.first.chatRoomId,
                   );
             },
-            child: const Text('إعادة المحاولة'),
+            child: Text(context.tr('retry')),
           ),
         ],
       ),

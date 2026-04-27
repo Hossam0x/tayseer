@@ -384,16 +384,6 @@ class MarriageCubit extends Cubit<MarriageState> {
     required String interactionType,
     bool countView = false,
   }) async {
-    // ✅ لو requiresSubscription = true في الـ state، اعرض sheet الاشتراك مباشرة
-    if (state.requiresSubscription) {
-      emit(state.copyWith(
-        userInteractionState: CubitStates.failure,
-        requiresSubscription: true,
-        showActionSnackbar: false,
-      ));
-      return;
-    }
-
     final result = await _repo.userInteraction(
       personId: personId,
       interactionType: interactionType,
@@ -437,15 +427,6 @@ class MarriageCubit extends Cubit<MarriageState> {
     required String personId,
     bool countView = false,
   }) async {
-    // ✅ لو requiresSubscription = true في الـ state، اعرض sheet الاشتراك مباشرة
-    if (state.requiresSubscription) {
-      emit(state.copyWith(
-        sendRegardState: CubitStates.failure,
-        requiresSubscription: true,
-        showActionSnackbar: true,
-      ));
-      return;
-    }
     // ✅ لو regardsLeft = 0 في الـ state، ارجع failure مباشرة
     if (state.regardsLeft == 0) {
       emit(
@@ -505,15 +486,6 @@ class MarriageCubit extends Cubit<MarriageState> {
     required String text,
     bool countView = false,
   }) async {
-    // ✅ لو requiresSubscription = true في الـ state، اعرض sheet الاشتراك مباشرة
-    if (state.requiresSubscription) {
-      emit(state.copyWith(
-        sendRegardTextState: CubitStates.failure,
-        requiresSubscription: true,
-        showActionSnackbar: true,
-      ));
-      return;
-    }
     // ✅ لو regardsLeft = 0 في الـ state، ارجع failure مباشرة بدون API call
     if (state.regardsLeft == 0) {
       emit(
@@ -754,9 +726,58 @@ class MarriageCubit extends Cubit<MarriageState> {
   }
 
   // ═══════════════════════════════════════════════════════════════
+  // PRELOAD NEXT BATCH (background refresh + append to current list)
+  // ═══════════════════════════════════════════════════════════════
+  bool _isPreloading = false;
+
+  Future<void> _preloadNextBatch() async {
+    if (_isPreloading) return;
+    _isPreloading = true;
+
+    try {
+      final result = await _repo.getMarriageProfile(
+        "1",
+        filters: state.activeFilters,
+      );
+
+      result.fold((_) {}, (profile) {
+        if (isClosed) return;
+        final newUsers = profile.data?.users ?? [];
+        if (newUsers.isEmpty) return;
+
+        // ✅ أضف الـ users الجدد على الـ list الحالية بدون ما تبدلها
+        final existingIds = state.allUsers.map((u) => u.user?.id).toSet();
+        final uniqueNewUsers = newUsers
+            .where((u) => !existingIds.contains(u.user?.id))
+            .toList();
+
+        if (uniqueNewUsers.isEmpty) return;
+
+        emit(
+          state.copyWith(
+            allUsers: [...state.allUsers, ...uniqueNewUsers],
+            currentPage: profile.data?.pagination?.currentPage ?? 1,
+            totalPages: profile.data?.pagination?.totalPages ?? 1,
+            regardsLeft: profile.data?.regardsLeft,
+            likesLeft: profile.data?.likesLeft,
+            requiresSubscription: profile.data?.requiresSubscription ?? false,
+          ),
+        );
+      });
+    } finally {
+      _isPreloading = false;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   // REFRESH SILENTLY
   // ═══════════════════════════════════════════════════════════════
-  Future<void> refreshProfileSilently() async {
+  Future<void> refreshProfileSilently({bool showLoadingIfEmpty = false}) async {
+    // ✅ لو الـ list فاضية وطلبنا loading، اعرض shimmer
+    if (showLoadingIfEmpty && state.allUsers.isEmpty) {
+      emit(state.copyWith(marriageProfileState: CubitStates.loading));
+    }
+
     final results = await Future.wait([
       _repo.getMarriageProfile("1", filters: state.activeFilters),
       _repo.getFavoriteIds(),
@@ -770,22 +791,34 @@ class MarriageCubit extends Cubit<MarriageState> {
       (ids) => ids.toSet(),
     );
 
-    profileResult.fold((_) {}, (profile) {
-      if (isClosed) return;
-      final mergedFavorites = {...state.favoritedIds, ...fetchedFavoriteIds};
-      emit(
-        state.copyWith(
-          marriageProfileState: CubitStates.success,
-          profile: profile,
-          currentIndex: 0,
-          allUsers: profile.data?.users ?? [],
-          userHistory: [],
-          currentPage: profile.data?.pagination?.currentPage ?? 1,
-          totalPages: profile.data?.pagination?.totalPages ?? 1,
-          favoritedIds: mergedFavorites,
-        ),
-      );
-    });
+    profileResult.fold(
+      (failure) {
+        if (isClosed) return;
+        // ✅ لو فشل وكنا في loading، ارجع للـ empty state
+        if (showLoadingIfEmpty) {
+          emit(state.copyWith(marriageProfileState: CubitStates.success));
+        }
+      },
+      (profile) {
+        if (isClosed) return;
+        final mergedFavorites = {...state.favoritedIds, ...fetchedFavoriteIds};
+        emit(
+          state.copyWith(
+            marriageProfileState: CubitStates.success,
+            profile: profile,
+            currentIndex: 0,
+            allUsers: profile.data?.users ?? [],
+            userHistory: [],
+            currentPage: profile.data?.pagination?.currentPage ?? 1,
+            totalPages: profile.data?.pagination?.totalPages ?? 1,
+            favoritedIds: mergedFavorites,
+            regardsLeft: profile.data?.regardsLeft,
+            likesLeft: profile.data?.likesLeft,
+            requiresSubscription: profile.data?.requiresSubscription ?? false,
+          ),
+        );
+      },
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -826,15 +859,27 @@ class MarriageCubit extends Cubit<MarriageState> {
     required bool hasSinglePerson,
   }) async {
     if (state.isAnimating || _cardController == null) return;
+
+    // ✅ تحقق قبل أي شيء
+    if ((state.likesLeft != null && state.likesLeft! <= 0) ||
+        state.requiresSubscription) {
+      emit(state.copyWith(
+        userInteractionState: CubitStates.failure,
+        likesLeft: 0,
+      ));
+      return;
+    }
+
     emit(state.copyWith(swipeDirection: 1, isAnimating: true));
     await userInteraction(
       personId: personId,
       interactionType: 'like',
       countView: !hasSinglePerson,
     );
-    // ✅ لو فشل بسبب likesLeft = 0 أو requiresSubscription → ارجع بدون ما تشيل اليوزر
+
+    // ✅ لو فشل بسبب likesLeft = 0 من الـ API response → ارجع بدون ما تشيل اليوزر
     if (state.userInteractionState == CubitStates.failure &&
-        (state.likesLeft == 0 || state.requiresSubscription)) {
+        state.likesLeft == 0) {
       emit(state.copyWith(
         swipeDirection: 0,
         swipeProgress: 0,
@@ -842,6 +887,12 @@ class MarriageCubit extends Cubit<MarriageState> {
       ));
       return;
     }
+
+    // ✅ نقّص الـ likesLeft locally بدون ما تستنى السيرفر
+    if (state.likesLeft != null && state.likesLeft! > 0) {
+      emit(state.copyWith(likesLeft: state.likesLeft! - 1));
+    }
+
     await _cardController!.forward(from: 0);
     _onSwipeComplete(personId: personId, hasSinglePerson: hasSinglePerson);
   }
@@ -887,6 +938,10 @@ class MarriageCubit extends Cubit<MarriageState> {
       final newLength = updatedUsers.length;
 
       if (newLength <= 5) loadMoreUsers();
+      // ✅ لو الـ list خلصت تماماً، اعمل silent refresh مع shimmer
+      if (newLength == 0) refreshProfileSilently(showLoadingIfEmpty: true);
+      // ✅ لو تبقى يوزرين أو أقل، جيب الـ batch الجديد في الـ background
+      if (newLength > 0 && newLength <= 2) _preloadNextBatch();
 
       int newIndex = state.currentIndex;
       if (newIndex >= newLength) {
@@ -972,7 +1027,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     );
 
     if (newLength <= 5) loadMoreUsers();
-    if (newLength == 0) refreshProfileSilently();
+    if (newLength == 0) refreshProfileSilently(showLoadingIfEmpty: true);
+    // ✅ لو تبقى يوزرين أو أقل، جيب الـ batch الجديد في الـ background
+    if (newLength > 0 && newLength <= 2) _preloadNextBatch();
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -983,6 +1040,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     bool removeFromList = false,
     bool countView = false,
   }) async {
+    // ✅ لو requiresSubscription = true، ارجع بدون ما تشيل اليوزر أو تعمل API call
+    if (state.requiresSubscription) return;
+
     final isCurrentlyFavorited = state.favoritedIds.contains(userId);
     final updatedFavorites = Set<String>.from(state.favoritedIds);
 
@@ -992,11 +1052,18 @@ class MarriageCubit extends Cubit<MarriageState> {
       updatedFavorites.add(userId);
     }
 
+    // ✅ احفظ اليوزر المحذوف عشان نرجعه لو الـ API فشل
+    UserItem? removedUserForRevert;
+    int? removedIndexForRevert;
+
     if (removeFromList) {
       final removedUser = state.allUsers.firstWhere(
         (u) => u.user?.id == userId,
         orElse: () => UserItem(user: User(id: userId), answers: null),
       );
+      removedUserForRevert = removedUser;
+      removedIndexForRevert = state.currentIndex;
+
       final updatedHistory = [...state.userHistory, removedUser];
 
       final updatedUsers = state.allUsers
@@ -1017,6 +1084,10 @@ class MarriageCubit extends Cubit<MarriageState> {
         ),
       );
       if (newLength <= 5) loadMoreUsers();
+      // ✅ لو الـ list خلصت تماماً، اعمل silent refresh مع shimmer
+      if (newLength == 0) refreshProfileSilently(showLoadingIfEmpty: true);
+      // ✅ لو تبقى يوزرين أو أقل، جيب الـ batch الجديد في الـ background
+      if (newLength > 0 && newLength <= 2) _preloadNextBatch();
     } else {
       emit(state.copyWith(favoritedIds: updatedFavorites));
     }
@@ -1030,13 +1101,42 @@ class MarriageCubit extends Cubit<MarriageState> {
     result.fold(
       (failure) {
         if (isClosed) return;
+        // ✅ revert الـ favorites
         final revertFavorites = Set<String>.from(state.favoritedIds);
         if (isCurrentlyFavorited) {
           revertFavorites.add(userId);
         } else {
           revertFavorites.remove(userId);
         }
-        emit(state.copyWith(favoritedIds: revertFavorites));
+
+        // ✅ لو كان removeFromList وفشل الـ API، ارجع اليوزر للـ list
+        if (removeFromList && removedUserForRevert != null) {
+          final revertedUsers = [
+            removedUserForRevert!,
+            ...state.allUsers,
+          ];
+          final revertedHistory = state.userHistory.isNotEmpty
+              ? state.userHistory.sublist(0, state.userHistory.length - 1)
+              : <UserItem>[];
+          emit(
+            state.copyWith(
+              favoritedIds: revertFavorites,
+              allUsers: revertedUsers,
+              userHistory: revertedHistory,
+              currentIndex: removedIndexForRevert ?? 0,
+            ),
+          );
+
+          // ✅ لو الـ failure بسبب requiresSubscription، حدّث الـ state
+          final data = failure is ServerFailure ? failure.data : null;
+          final requiresSubscription =
+              data?['requiresSubscription'] as bool? ?? false;
+          if (requiresSubscription) {
+            emit(state.copyWith(requiresSubscription: true));
+          }
+        } else {
+          emit(state.copyWith(favoritedIds: revertFavorites));
+        }
       },
       (_) {
         fetchNotificationCount();

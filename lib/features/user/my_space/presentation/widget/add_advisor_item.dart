@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tayseer/core/utils/colors.dart';
 import 'package:tayseer/core/utils/router/app_router.dart';
 import 'package:tayseer/core/utils/styles.dart';
+import 'package:tayseer/my_import.dart';
 
 /// Widget لعرض زرار "مستشار جديد" في قائمة المحادثات
 class AddAdvisorItem extends StatelessWidget {
@@ -27,7 +28,7 @@ class AddAdvisorItem extends StatelessWidget {
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
-                  'مستشار جديد',
+                  context.tr('new_advisor'),
                   style: Styles.textStyle16SemiBold.copyWith(
                     color: AppColors.secondary600,
                   ),

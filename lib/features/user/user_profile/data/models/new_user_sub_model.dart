@@ -15,6 +15,7 @@ class NewUserSubModel {
   final int numberOfFreeMatchingRenables;
   final num? price;
   final String? currency;
+  final int? savePercentage;
 
   NewUserSubModel({
     required this.id,
@@ -31,6 +32,7 @@ class NewUserSubModel {
     required this.numberOfFreeMatchingRenables,
     this.price,
     this.currency,
+    this.savePercentage,
   });
 
   factory NewUserSubModel.fromJson(Map<String, dynamic> json) {
@@ -54,6 +56,7 @@ class NewUserSubModel {
       numberOfFreeMatchingRenables: json['numberOfFreeMatchingRenables'] ?? 0,
       price: json['price'],
       currency: json['currency'],
+      savePercentage: json['savePercentage'],
     );
   }
 

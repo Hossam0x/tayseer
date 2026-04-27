@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:tayseer/core/enum/report_type.dart';
+import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class ImageViewerGallery extends StatefulWidget {
@@ -50,8 +51,10 @@ class _ImageViewerGalleryState extends State<ImageViewerGallery> {
               });
             },
             itemBuilder: (context, index) {
-              // تم استبدال InteractiveViewer بهذا الويدجت المخصص
-              return _ZoomableImage(imageUrl: widget.images[index]);
+              return FullScreenImageView(
+                imageUrl: widget.images[index],
+                heroTag: 'gallery_${index}_${widget.personId}',
+              );
             },
           ),
 
@@ -158,108 +161,6 @@ class _ImageViewerGalleryState extends State<ImageViewerGallery> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
         child: Container(color: Colors.black.withOpacity(0.3), child: child),
-      ),
-    );
-  }
-}
-
-// ==========================================
-// الويدجت الجديد الخاص بالزوم والـ Double Tap
-// ==========================================
-
-class _ZoomableImage extends StatefulWidget {
-  final String imageUrl;
-
-  const _ZoomableImage({required this.imageUrl});
-
-  @override
-  State<_ZoomableImage> createState() => _ZoomableImageState();
-}
-
-class _ZoomableImageState extends State<_ZoomableImage>
-    with SingleTickerProviderStateMixin {
-  late TransformationController _transformationController;
-  late AnimationController _animationController;
-  Animation<Matrix4>? _animation;
-  TapDownDetails? _doubleTapDetails;
-
-  @override
-  void initState() {
-    super.initState();
-    _transformationController = TransformationController();
-    _animationController =
-        AnimationController(
-          vsync: this,
-          duration: const Duration(milliseconds: 300), // سرعة حركة الزوم
-        )..addListener(() {
-          _transformationController.value = _animation!.value;
-        });
-  }
-
-  @override
-  void dispose() {
-    _transformationController.dispose();
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  void _handleDoubleTapDown(TapDownDetails details) {
-    // تحديد مكان إصبع المستخدم عند الضغط
-    _doubleTapDetails = details;
-  }
-
-  void _handleDoubleTap() {
-    final position = _doubleTapDetails!.localPosition;
-    const double scale = 3.0; // مقدار الزوم عند الضغط مرتين
-
-    // حساب إحداثيات التركيز على مكان الضغطة
-    final x = -position.dx * (scale - 1);
-    final y = -position.dy * (scale - 1);
-
-    Matrix4 endMatrix;
-
-    // إذا كانت الصورة بحجمها الطبيعي -> اعمل زوم ان في مكان الضغطة
-    if (_transformationController.value.isIdentity()) {
-      endMatrix = Matrix4.identity()
-        ..translate(x, y)
-        ..scale(scale);
-    }
-    // إذا كانت الصورة معملها زوم مسبقاً -> ارجع للحجم الطبيعي
-    else {
-      endMatrix = Matrix4.identity();
-    }
-
-    // تشغيل الأنيميشن لجعل الزوم سلس
-    _animation =
-        Matrix4Tween(
-          begin: _transformationController.value,
-          end: endMatrix,
-        ).animate(
-          CurveTween(curve: Curves.easeInOut).animate(_animationController),
-        );
-
-    _animationController.forward(from: 0);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onDoubleTapDown: _handleDoubleTapDown,
-      onDoubleTap: _handleDoubleTap,
-      child: InteractiveViewer(
-        transformationController: _transformationController,
-        minScale: 1.0,
-        maxScale: 5.0,
-        panEnabled: true,
-        scaleEnabled: true,
-        clipBehavior: Clip.none,
-        child: SizedBox.expand(
-          // ← بدل Center
-          child: AppImage(
-            widget.imageUrl,
-            fit: BoxFit.contain, // ← من غير width/height
-          ),
-        ),
       ),
     );
   }

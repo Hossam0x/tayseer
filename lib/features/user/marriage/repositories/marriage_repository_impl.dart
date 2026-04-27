@@ -57,10 +57,30 @@ class MarriageRepositoryImpl implements MarriageRepository {
         return const Right(null);
       } else {
         return Left(
-          ServerFailure(response['message'] ?? 'فشل التفاعل مع المستخدم'),
+          ServerFailure(
+            response['message'] ?? 'فشل التفاعل مع المستخدم',
+            data: response['data'] is Map<String, dynamic>
+                ? response['data']
+                : null,
+          ),
         );
       }
     } on DioException catch (e) {
+      final responseData = e.response?.data;
+      final data = responseData is Map<String, dynamic>
+          ? responseData['data'] is Map<String, dynamic>
+              ? responseData['data']
+              : null
+          : null;
+      
+      if (e.response != null && data != null) {
+        return Left(
+          ServerFailure(
+            e.response!.data?['message'] ?? 'خطأ في التفاعل',
+            data: data,
+          ),
+        );
+      }
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
       return Left(ServerFailure(e.toString()));

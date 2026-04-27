@@ -73,7 +73,7 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
               onPressed: () => Navigator.pop(context),
             ),
             title: Text(
-              "بيانات المستشار",
+              context.tr('advisor_data'),
               style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.bold,
@@ -141,7 +141,7 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
           Icon(Icons.error_outline, size: 60.sp, color: Colors.red[300]),
           SizedBox(height: 16.h),
           Text(
-            'حدث خطأ في تحميل البيانات',
+            context.tr('data_load_error'),
             style: TextStyle(fontSize: 16.sp, color: Colors.grey[700]),
           ),
           SizedBox(height: 16.h),
@@ -152,7 +152,7 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
               );
             },
             icon: const Icon(Icons.refresh),
-            label: const Text('إعادة المحاولة'),
+            label: Text(context.tr('retry')),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFD65A73),
               foregroundColor: Colors.white,
@@ -238,7 +238,7 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "سجل الجلسات",
+                context.tr('sessions_history'),
                 style: TextStyle(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.bold,
@@ -253,7 +253,7 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
                   );
                 },
                 child: Text(
-                  "عرض الكل",
+                  context.tr('view_all'),
                   style: TextStyle(color: Colors.grey[600], fontSize: 14.sp),
                 ),
               ),
@@ -265,9 +265,9 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
           Expanded(
             child: allSessions.isNotEmpty
                 ? _buildAnimatedSessionsList(allSessions)
-                : const EmptySessionsState(
-                    title: "لا يوجد جلسات حتى الان",
-                    subtitle: "احجز جلسة لتتمكن من حل مشاكلك النفسية",
+                : EmptySessionsState(
+                    title: context.tr('no_sessions_yet'),
+                    subtitle: context.tr('book_session_to_solve_problems'),
                     showAnimation: true,
                   ),
           ),
@@ -281,22 +281,22 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
       {
         'icon': AssetsData.rateIcon,
         'value': "${advisor?.rate ?? 0}",
-        'label': "التقييم",
+        'label': context.tr('rating'),
       },
       {
         'icon': AssetsData.conversitionIcon,
         'value': "${advisor?.sessions ?? 0}",
-        'label': "الاستشارات",
+        'label': context.tr('consultations'),
       },
       {
         'icon': AssetsData.experienceIcon,
         'value': "${context.tr(advisor?.yearsOfExperience) ?? 0}",
-        'label': "سنوات الخبرة",
+        'label': context.tr('years_of_experience'),
       },
       {
         'icon': AssetsData.lname,
         'value': "${advisor?.followers ?? 0}",
-        'label': "المتابعين",
+        'label': context.tr('followers'),
       },
     ];
 
@@ -341,16 +341,16 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
 
         if (session.isNow) {
           style = SessionCardStyle.active;
-          buttonText = "انضم";
+          buttonText = context.tr('join');
         } else if (session.isUpcoming) {
           style = SessionCardStyle.outlined;
-          buttonText = "قادمة";
+          buttonText = context.tr('upcoming');
         } else if (session.isDone) {
           style = SessionCardStyle.white;
-          buttonText = "التفاصيل";
+          buttonText = context.tr('details');
         } else {
           style = SessionCardStyle.outlined;
-          buttonText = "التفاصيل";
+          buttonText = context.tr('details');
         }
 
         return TweenAnimationBuilder<double>(
@@ -435,11 +435,11 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
         height: 55.h,
         child: CustomBotton(
           useGradient: true,
-          title: 'حجز إستشارة',
+          title: context.tr('book_consultation'),
           onPressed: () {
             context.pushNamed(
               AppRouter.kChooseSessionView,
-              arguments: {"title": "حجز جلسه", "advisorId": widget.userid},
+              arguments: {"title": context.tr('book_session'), "advisorId": widget.userid},
             );
           },
         ),

@@ -157,14 +157,10 @@ Widget build(BuildContext context) {
   if (isUpdatingNow && !_wasUpdating) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        final statusBar = MediaQuery.of(context).padding.top;
-        // ✅ نفس الحساب زي _appBarOffset في MarriagefilePage
-        final appBarHeight = 10.h + 56.h + 5.h + 46.h + 10.h;
         showGifOverlay(
           context,
           repeatCount: 10,
           gifDuration: const Duration(milliseconds: 900),
-          topOffset: statusBar + appBarHeight,
         );
       }
     });

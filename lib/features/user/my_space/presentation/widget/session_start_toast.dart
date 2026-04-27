@@ -96,7 +96,7 @@ class _SessionToastWidgetState extends State<SessionToastWidget>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          "بدأت الجلسة الآن",
+                          context.tr('session_started_now'),
                           style: TextStyle(
                             color: AppColors.kprimaryTextColor,
                             fontWeight: FontWeight.bold,
@@ -119,7 +119,7 @@ class _SessionToastWidgetState extends State<SessionToastWidget>
                   SizedBox(width: 8.w),
                   CustomBotton(
                     width: 120.w,
-                    title: 'انضم',
+                    title: context.tr('join'),
                     onPressed: () {
                       widget.onJoinTap();
                       _dismiss();
