@@ -8,14 +8,14 @@ class LocationLockWidget extends StatelessWidget {
     required this.message,
     required this.description,
     this.onTap,
-    this.titleBott = 'فتح الإعدادات',
+    this.titleBott,
     this.showBackgroundImage = true,
   });
 
   final String message;
   final String description;
   final VoidCallback? onTap;
-  final String titleBott;
+  final String? titleBott;
   final bool showBackgroundImage;
 
   @override
@@ -91,7 +91,7 @@ class LocationLockWidget extends StatelessWidget {
                   CustomBotton(
                     radius: 16,
                     useGradient: true,
-                    title: titleBott,
+                    title: titleBott ?? context.tr('open_settings'),
                     onPressed: onTap ?? () => Geolocator.openAppSettings(),
                   ),
                 ],

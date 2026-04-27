@@ -47,6 +47,7 @@ class PurchasePackage {
       final i = e.key;
       final pkg = e.value;
       final isMid = i == 1 && sorted.length >= 3;
+      final hasDiscount = pkg.savePercentage != null;
       return PurchasePackage(
         id: pkg.id,
         appleProductId: pkg.appleProductId,
@@ -55,8 +56,8 @@ class PurchasePackage {
         priceForOne: pkg.priceForOne,
         currency: pkg.currency,
         isMostPopular: isMid,
-        hasDiscount: isMid,
-        discountPercent: isMid ? 20 : null,
+        hasDiscount: hasDiscount,
+        discountPercent: pkg.savePercentage,
       );
     }).toList();
   }
@@ -76,12 +77,12 @@ class PurchasePackage {
       final i = e.key;
       final sub = e.value;
       final isMid = i == 1 && gold.length >= 3;
-      final isBest = i == 2 && gold.length >= 3;
       final labelKey = sub.isMonthly
           ? 'monthly'
           : sub.isWeekly
           ? 'weekly'
           : 'three_months';
+      final discount = sub.savePercentage;
       return PurchasePackage(
         id: sub.id,
         appleProductId: sub.appleProductId,
@@ -89,12 +90,8 @@ class PurchasePackage {
         price: (sub.price ?? 0).toDouble(),
         currency: sub.currency ?? 'EGP',
         isMostPopular: isMid,
-        hasDiscount: isMid || isBest,
-        discountPercent: isMid
-            ? 66
-            : isBest
-            ? 73
-            : null,
+        hasDiscount: discount != null,
+        discountPercent: discount,
         label: context.tr(labelKey),
       );
     }).toList();

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/core/utils/router/app_router.dart';
 import 'package:tayseer/core/widgets/custom_button.dart';
 import 'package:tayseer/core/widgets/custom_outline_button.dart';
@@ -40,7 +41,7 @@ class ActionButtons extends StatelessWidget {
       width: double.infinity,
       child: CustomBotton(
         useGradient: true,
-        title: "انضمام للجلسة",
+        title: context.tr('join_session'),
         onPressed:
             onJoinSession ??
             () {
@@ -55,7 +56,7 @@ class ActionButtons extends StatelessWidget {
       width: double.infinity,
       child: CustomBotton(
         useGradient: true,
-        title: "تقييم الاستشاري",
+        title: context.tr('rate_advisor'),
         onPressed:
             onRateAdvisor ??
             () {
@@ -72,14 +73,14 @@ class ActionButtons extends StatelessWidget {
         CustomBotton(
           width: double.infinity,
           useGradient: true,
-          title: "إعادة جدولة",
+          title: context.tr('reschedule'),
           onPressed: onReschedule ?? () => _handleReschedule(context),
         ),
         SizedBox(height: 10.h),
         CustomOutlineButton(
           height: 50,
           width: double.infinity,
-          text: "إلغاء الحجز",
+          text: context.tr('cancel_booking'),
           onTap: onCancel ?? () => null,
         ),
       ],
@@ -89,7 +90,7 @@ class ActionButtons extends StatelessWidget {
   void _handleReschedule(BuildContext context) {
     final oldBookingData = BookingData(
       day: sessionData.date.day,
-      duration: "${sessionData.duration} دقيقة",
+      duration: "${sessionData.duration} ${context.tr('minutes')}",
       time: sessionData.timeRange.from,
       paymentMethodIndex: 1,
     );
@@ -99,7 +100,7 @@ class ActionButtons extends StatelessWidget {
       AppRouter.kChooseSessionView,
       arguments: {
         "oldBookingData": oldBookingData,
-        "title": "اعاده جدوله",
+        "title": context.tr('reschedule'),
         "advisorId": sessionData.sessionId,
       },
     );

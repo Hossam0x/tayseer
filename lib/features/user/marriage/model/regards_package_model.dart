@@ -5,6 +5,7 @@ class RegardsPackageModel {
   final double price;
   final String currency;
   final double priceForOne;
+  final int? savePercentage;
 
   const RegardsPackageModel({
     required this.id,
@@ -13,6 +14,7 @@ class RegardsPackageModel {
     required this.price,
     required this.currency,
     required this.priceForOne,
+    this.savePercentage,
   });
 
   factory RegardsPackageModel.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class RegardsPackageModel {
       price: (json['price'] as num?)?.toDouble() ?? 0,
       currency: json['currency'] as String? ?? 'EGP',
       priceForOne: double.tryParse(json['priceForOne']?.toString() ?? '0') ?? 0,
+      savePercentage: json['savePercentage'] as int?,
     );
   }
 }

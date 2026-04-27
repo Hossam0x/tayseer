@@ -703,10 +703,6 @@ class MarriageBodyState extends State<MarriageBody>
           (previous.likesLeft != current.likesLeft && current.likesLeft == 0) ||
           (previous.regardsLeft != current.regardsLeft &&
               current.regardsLeft == 0) ||
-          // ✅ requiresSubscription يشتغل بس لما يجي من action failure مش من fetch
-          (previous.requiresSubscription != current.requiresSubscription &&
-              current.requiresSubscription &&
-              current.userInteractionState == CubitStates.failure) ||
           (previous.sendRegardTextState != current.sendRegardTextState &&
               current.sendRegardTextState == CubitStates.failure &&
               current.regardsLeft == 0),
@@ -733,37 +729,13 @@ class MarriageBodyState extends State<MarriageBody>
           previous.likesLeft != current.likesLeft,
 
       listener: (context, state) {
-        // ✅ لو requiresSubscription = true جاي من action failure بس (مش من fetch)
-        if (state.requiresSubscription &&
-            state.userInteractionState == CubitStates.failure) {
-          if (!_isShowingGoldSheet) {
-            _isShowingGoldSheet = true;
-            showViewLimitPurchaseSheet(
-              context,
-              onDismiss: () {
-                _isShowingGoldSheet = false;
-              },
-            );
-            context.read<MarriageCubit>().resetState();
-          }
-          return;
-        }
-
-        // ✅ لو regardsLeft وصل 0 — سواء من users-for-marry أو من regard failure
+        // ✅ لو regardsLeft وصل 0 — من regard failure فقط
         if (state.regardsLeft == 0) {
-          // لو جاي من action failure
           if (state.sendRegardState == CubitStates.failure ||
               state.sendRegardTextState == CubitStates.failure) {
             showRegardsPurchaseSheet(context);
             context.read<MarriageCubit>().resetState();
             return;
-          }
-          // لو جاي من users-for-marry (marriageProfileState == success بدون failure)
-          if (state.marriageProfileState == CubitStates.success &&
-              state.sendRegardState != CubitStates.failure &&
-              state.sendRegardTextState != CubitStates.failure) {
-            // مش بنعرضه فوراً — بس بنخلي الزرار يعرضه لما يضغط
-            // (الـ check في onTap هيتكفل بده)
           }
         }
 
@@ -1447,6 +1419,11 @@ class MarriageBodyState extends State<MarriageBody>
                                   widget.personId == null &&
                                   !widget.fromInteractions,
                             );
+                            // ✅ لو الـ API فشل بسبب requiresSubscription، اعرض الـ sheet
+                            if (mounted && cubit.state.requiresSubscription) {
+                              showViewLimitPurchaseSheet(context);
+                              return;
+                            }
                             await _syncNotificationAfterInteraction();
                             if (widget.fromInteractions && mounted) {
                               context.pop();
@@ -1941,8 +1918,12 @@ class MarriageBodyState extends State<MarriageBody>
                   // ✅ Like button
                   buildCircleButton(
                     onTap: () => _runAction(() async {
-                      if (state.requiresSubscription || state.likesLeft == 0) {
+                      if (state.requiresSubscription) {
                         showViewLimitPurchaseSheet(context);
+                        return;
+                      }
+                      if (state.likesLeft == 0) {
+                        showGoldPurchaseSheet(context);
                         return;
                       }
                       await _showSwipePopup(context, SwipeActionType.like);

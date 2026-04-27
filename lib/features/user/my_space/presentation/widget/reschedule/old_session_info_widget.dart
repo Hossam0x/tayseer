@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/session_detailes_model.dart';
+import 'package:tayseer/my_import.dart';
 
 class OldSessionInfoWidget extends StatelessWidget {
   final SessionDetailsDataResponse oldSession;
@@ -47,7 +48,7 @@ class OldSessionInfoWidget extends StatelessWidget {
           // التاريخ
           _buildInfoRow(
             icon: Icons.calendar_today,
-            label: 'التاريخ',
+            label: context.tr('date'),
             value: oldSession.displayDate,
             isAvailable: true,
           ),
@@ -56,7 +57,7 @@ class OldSessionInfoWidget extends StatelessWidget {
           // الوقت
           _buildInfoRow(
             icon: Icons.access_time,
-            label: 'الوقت',
+            label: context.tr('time'),
             value: oldSession.displayTime,
             isAvailable: oldSession.hasTimeInfo,
           ),
@@ -65,8 +66,8 @@ class OldSessionInfoWidget extends StatelessWidget {
           // المدة
           _buildInfoRow(
             icon: Icons.timelapse,
-            label: 'المدة',
-            value: '${oldSession.duration} دقيقة',
+            label: context.tr('duration'),
+            value: '${oldSession.duration} ${context.tr('minutes')}',
             isAvailable: oldSession.duration > 0,
           ),
 
@@ -75,7 +76,7 @@ class OldSessionInfoWidget extends StatelessWidget {
             // طريقة الدفع
             _buildInfoRow(
               icon: Icons.payment,
-              label: 'الدفع',
+              label: context.tr('payment'),
               value: oldSession.paymentMethodDisplayName,
               isAvailable: oldSession.paymentMethods.isNotEmpty,
             ),
@@ -85,8 +86,8 @@ class OldSessionInfoWidget extends StatelessWidget {
               icon: oldSession.isAnonymous
                   ? Icons.visibility_off
                   : Icons.person,
-              label: 'الهوية',
-              value: oldSession.isAnonymous ? 'مجهول' : 'معروف',
+              label: context.tr('identity'),
+              value: oldSession.isAnonymous ? context.tr('anonymous') : context.tr('known'),
               isAvailable: true,
             ),
           ],

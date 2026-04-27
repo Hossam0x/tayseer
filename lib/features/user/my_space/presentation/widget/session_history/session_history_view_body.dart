@@ -49,7 +49,7 @@ class _SessionHistoryViewBodyState extends State<SessionHistoryViewBody> {
               onPressed: () => Navigator.pop(context),
             ),
             title: Text(
-              "سجل الجلسات",
+              context.tr('sessions_history'),
               style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.bold,
@@ -71,10 +71,10 @@ class _SessionHistoryViewBodyState extends State<SessionHistoryViewBody> {
                   upcomingSessions.isEmpty && expiredSessions.isEmpty;
 
               if (hasNoSessions) {
-                return const Center(
+                return Center(
                   child: EmptySessionsState(
-                    title: "لا يوجد سجل جلسات",
-                    subtitle: "جلساتك السابقة والقادمة ستظهر هنا",
+                    title: context.tr('no_sessions_history'),
+                    subtitle: context.tr('sessions_will_appear_here'),
                     showAnimation: true,
                     isCompact: false,
                   ),
@@ -119,7 +119,7 @@ class _SessionHistoryViewBodyState extends State<SessionHistoryViewBody> {
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
             child: Text(
-              "القادمة",
+              context.tr('upcoming'),
               style: TextStyle(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.bold,
@@ -157,10 +157,10 @@ class _SessionHistoryViewBodyState extends State<SessionHistoryViewBody> {
               ),
             ),
         ] else
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: EmptySessionsState(
-              title: "لا توجد جلسات قادمة",
-              subtitle: "جلساتك القادمة ستظهر هنا",
+              title: context.tr('no_upcoming_sessions'),
+              subtitle: context.tr('upcoming_sessions_will_appear_here'),
               showAnimation: true,
               isCompact: true,
             ),
@@ -172,7 +172,7 @@ class _SessionHistoryViewBodyState extends State<SessionHistoryViewBody> {
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
             child: Text(
-              "الجلسات السابقة",
+              context.tr('past_sessions'),
               style: TextStyle(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.bold,
@@ -210,10 +210,10 @@ class _SessionHistoryViewBodyState extends State<SessionHistoryViewBody> {
               ),
             ),
         ] else
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: EmptySessionsState(
-              title: "لا توجد جلسات سابقة",
-              subtitle: "جلساتك السابقة ستظهر هنا",
+              title: context.tr('no_past_sessions'),
+              subtitle: context.tr('past_sessions_will_appear_here'),
               showAnimation: true,
               isCompact: true,
             ),
@@ -242,8 +242,8 @@ class _SessionHistoryViewBodyState extends State<SessionHistoryViewBody> {
         name: session.advisor.name,
         handle: session.advisor.userName,
         buttonText: isCancelled
-            ? "التفاصيل"
-            : (session.isNow ? "الانضمام" : "التفاصيل"),
+            ? context.tr('details')
+            : (session.isNow ? context.tr('join') : context.tr('details')),
         onTapDetails: () {
           context.pushNamed(
             AppRouter.incommingsessiondetails,
@@ -287,7 +287,7 @@ class _SessionHistoryViewBodyState extends State<SessionHistoryViewBody> {
         style: SessionCardStyle.white,
         name: session.advisor.name,
         handle: session.advisor.userName,
-        buttonText: "التفاصيل",
+        buttonText: context.tr('details'),
         onTapDetails: () {
           context.pushNamed(
             AppRouter.incommingsessiondetails,

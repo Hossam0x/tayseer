@@ -5,6 +5,6 @@ class MySpaceEventContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text('محتوى مساحتى - الاحداث'));
+    return Center(child: Text(context.tr('my_space_events_placeholder')));
   }
 }

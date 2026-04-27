@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/session_detailes_model.dart';
+import 'package:tayseer/my_import.dart';
 
 class PriceDetailsCard extends StatelessWidget {
   final PricingModelResponse pricing;
@@ -23,19 +24,17 @@ class PriceDetailsCard extends StatelessWidget {
       child: Column(
         children: [
           _PriceRow(
-            label: "سعر الجلسة",
+            label: context.tr('session_price'),
             value: "${pricing.sessionPrice} $currency",
           ),
-          _PriceRow(label: "الضرائب", value: "${pricing.taxes} $currency"),
-
-          // _PriceRow(label: "الرسوم", value: "${pricing.fees} $currency"),
+          _PriceRow(label: context.tr('taxes'), value: "${pricing.taxes} $currency"),
           _PriceRow(
-            label: "الخصم",
+            label: context.tr('discount'),
             value: "-${pricing.discount} $currency",
             isDiscount: true,
           ),
           _buildDivider(),
-          _buildTotalRow(),
+          _buildTotalRow(context),
         ],
       ),
     );
@@ -45,12 +44,12 @@ class PriceDetailsCard extends StatelessWidget {
     return Divider(height: 30.h, color: Colors.grey[300]);
   }
 
-  Widget _buildTotalRow() {
+  Widget _buildTotalRow(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          "الإجمالي",
+          context.tr('total'),
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
         ),
         Text(

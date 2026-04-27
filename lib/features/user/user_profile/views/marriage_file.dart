@@ -196,7 +196,6 @@ class _MarriagefilePageState extends State<MarriagefilePage>
                           context,
                           repeatCount: 99,
                           gifDuration: const Duration(milliseconds: 900),
-                          topOffset: _appBarOffset(context),
                         );
                       }
 
@@ -209,7 +208,6 @@ class _MarriagefilePageState extends State<MarriagefilePage>
                           context,
                           repeatCount: 1,
                           gifDuration: const Duration(milliseconds: 900),
-                          topOffset: _appBarOffset(context),
                         );
                       }
 
@@ -287,7 +285,6 @@ class _MarriagefilePageState extends State<MarriagefilePage>
                                             gifDuration: const Duration(
                                               milliseconds: 900,
                                             ),
-                                            topOffset: _appBarOffset(context),
                                           );
                                         }
                                       },

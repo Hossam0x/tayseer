@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/utils/colors.dart';
 import 'package:tayseer/core/widgets/custom_app_image.dart';
+import 'package:tayseer/my_import.dart';
 
 class SessionDataCard extends StatelessWidget {
   final String date;
@@ -38,13 +39,13 @@ class SessionDataCard extends StatelessWidget {
           SizedBox(height: 10.h),
           _SessionDataRow(
             icon: AssetsData.videoIcon,
-            text: sessionType ?? "مكالمة فيديو",
+            text: sessionType ?? context.tr('video_call'),
           ),
           if (isAnonymous) ...[
             SizedBox(height: 10.h),
             _SessionDataRow(
               icon: AssetsData.anonIcon,
-              text: "جلسة مجهولة الهوية",
+              text: context.tr('anonymous_session'),
             ),
           ],
         ],

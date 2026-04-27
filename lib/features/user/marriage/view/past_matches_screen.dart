@@ -60,12 +60,12 @@ class _PastMatchesScreenState extends State<PastMatchesScreen> {
                   Column(
                     children: [
                       Text(
-                        'التوافقات السابقة',
+                        context.tr('past_matches'),
                         style: Styles.textStyle18SemiBold,
                       ),
                       SizedBox(height: 4.h),
                       Text(
-                        'تظهر التوافقات منتهية هنا ويبقى امامك فرصة حتي تعيد الارسال مره أخرى',
+                        context.tr('past_matches_subtitle'),
                         style: Styles.textStyle12.copyWith(
                           color: AppColors.secondary600,
                         ),
@@ -96,7 +96,7 @@ class _PastMatchesScreenState extends State<PastMatchesScreen> {
             SizedBox(height: 12.h),
             ElevatedButton(
               onPressed: _load,
-              child: const Text('إعادة المحاولة'),
+              child: Text(context.tr('retry')),
             ),
           ],
         ),
@@ -105,7 +105,7 @@ class _PastMatchesScreenState extends State<PastMatchesScreen> {
     if (_items.isEmpty) {
       return Center(
         child: Text(
-          'لا توجد توافقات سابقة',
+          context.tr('no_past_matches'),
           style: Styles.textStyle16.copyWith(color: AppColors.secondary600),
         ),
       );
@@ -126,11 +126,11 @@ class _PastMatchCard extends StatelessWidget {
   final PastMatchItem item;
   const _PastMatchCard({required this.item});
 
-  String _reason() {
+  String _reason(BuildContext context) {
     if (item.expiredAt != null) {
-      return 'انتهي مدة التوافق بينكم';
+      return context.tr('match_expired_duration');
     }
-    return 'انتهي التوافق بينكم';
+    return context.tr('match_ended');
   }
 
   @override
@@ -164,7 +164,7 @@ class _PastMatchCard extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
             ),
             child: Text(
-              'اعادة التوافق',
+              context.tr('rematch'),
               style: Styles.textStyle12.copyWith(color: AppColors.primary400),
             ),
           ),
@@ -181,7 +181,7 @@ class _PastMatchCard extends StatelessWidget {
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  _reason(),
+                  _reason(context),
                   style: Styles.textStyle12.copyWith(
                     color: AppColors.secondary600,
                   ),

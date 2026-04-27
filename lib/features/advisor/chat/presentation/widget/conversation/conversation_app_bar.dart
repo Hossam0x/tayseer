@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/core/utils/router/app_router.dart';
 import 'package:tayseer/core/utils/assets.dart';
-import 'package:tayseer/features/advisor/chat/presentation/widget/show_confirmation_dialog.dart';
+import 'package:tayseer/core/widgets/chat_room_list_item/helpers/chat_room_dialog_helper.dart';
 import 'package:tayseer/features/shared/home/view_model/home_event_bus.dart';
 import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
+import 'package:tayseer/my_import.dart';
 
 class ConversationAppBar extends StatefulWidget {
   final String phoneIcon;
@@ -183,15 +185,20 @@ class _ConversationAppBarState extends State<ConversationAppBar> {
                   ),
                   onSelected: (value) {
                     if (value == 'report') {
-                      print("تم اختيار ابلاغ");
+                      if (widget.receiverId != null) {
+                        context.pushNamed(
+                          AppRouter.kReportsView,
+                          arguments: {
+                            'type': ReportType.user,
+                            'id': widget.receiverId!,
+                          },
+                        );
+                      }
                     } else if (value == 'block') {
                       if (widget.receiverId != null &&
                           widget.onBlockUser != null) {
-                        showConfirmationDialog(
+                        ChatRoomDialogHelper.showBlockDialog(
                           context: context,
-                          imagePath: AssetsData.deleteIcon,
-                          title: context.tr('confirm_block_user'),
-                          subtitle: context.tr('confirm_block_user_message'),
                           onConfirm: () {
                             widget.onBlockUser!(widget.receiverId!);
                           },
@@ -200,11 +207,8 @@ class _ConversationAppBarState extends State<ConversationAppBar> {
                     } else if (value == 'unblock') {
                       if (widget.receiverId != null &&
                           widget.onUnblockUser != null) {
-                        showConfirmationDialog(
+                        ChatRoomDialogHelper.showUnblockDialog(
                           context: context,
-                          imagePath: AssetsData.deleteIcon,
-                          title: context.tr('confirm_unblock_user'),
-                          subtitle: context.tr('confirm_unblock_user_message'),
                           onConfirm: () {
                             widget.onUnblockUser!(widget.receiverId!);
                           },
