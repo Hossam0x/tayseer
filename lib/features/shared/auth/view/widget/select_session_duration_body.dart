@@ -557,7 +557,10 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
                   '${item.duration}${context.tr('minute_shortcut')}',
                 ),
                 const SizedBox(width: 4),
-                _buildSmallChip(item.type, isPink: true),
+                _buildSmallChip(
+                  context.tr('session_type_${item.type}'),
+                  isPink: true,
+                ),
               ],
             ),
           ),
