@@ -326,6 +326,7 @@
   "from": "From",
   "to": "To",
   "uploadCertificateImageSubTitle": "You can add more than one certificate",
+  "addAnotherCertificate": "Add Another Certificate",
   "30_minutes": "30 minutes",
   "60_minutes": "60 minutes",
   "session_price": "Session Price",
@@ -2086,7 +2087,6 @@
   "delete_chat_confirm": "Are you sure you want to delete this chat?",
   "archive_chat": "Archive Chat",
   "archive_chat_confirm": "Are you sure you want to archive this chat?",
-
   "my_space_events_placeholder": "My Space - Events",
   "session_started_now": "Session has started",
   "join": "Join",
@@ -2137,7 +2137,6 @@
   "identity": "Identity",
   "anonymous": "Anonymous",
   "known": "Known",
-
   "new_advisor": "New Advisor",
   "offline_indicator": "You are offline - messages will be sent when connected",
   "free_chat_banner_text": "You have {minutes} minutes now to send your inquiry, and you will get a free answer from the advisor!\n",

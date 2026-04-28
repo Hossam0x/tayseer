@@ -311,6 +311,7 @@
   "from": "من",
   "to": "إلى",
   "uploadCertificateImageSubTitle": "يمكنك إضافة أكثر من شهادة",
+  "addAnotherCertificate": "إضافة شهادة أخرى",
   "30_minutes": "30 دقيقة",
   "60_minutes": "60 دقيقة",
   "session_price": "سعر الجلسة",
@@ -2085,7 +2086,6 @@
   "delete_chat_confirm": "هل أنت متأكد من حذف هذه المحادثة؟",
   "archive_chat": "أرشفة المحادثة",
   "archive_chat_confirm": "هل أنت متأكد من أرشفة هذه المحادثة؟",
-
   "my_space_events_placeholder": "محتوى مساحتى - الاحداث",
   "session_started_now": "بدأت الجلسة الآن",
   "join": "انضم",
@@ -2136,7 +2136,6 @@
   "identity": "الهوية",
   "anonymous": "مجهول",
   "known": "معروف",
-
   "new_advisor": "مستشار جديد",
   "offline_indicator": "أنت غير متصل - سيتم إرسال الرسائل عند الاتصال",
   "free_chat_banner_text": "لديك {minutes} دقيقة الآن لإرسال استفسارك ، وستحصل على إجابة مجانية من المستشار!\n",
