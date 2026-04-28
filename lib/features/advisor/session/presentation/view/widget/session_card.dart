@@ -1,7 +1,7 @@
-import 'dart:ui';
-
 import 'package:tayseer/core/enum/session_card_style.dart';
 import 'package:tayseer/core/widgets/custom_outline_button.dart';
+import 'package:tayseer/core/widgets/full_screen_image_view.dart';
+import 'package:tayseer/core/widgets/my_profile_Image.dart';
 import 'package:tayseer/my_import.dart';
 
 class SessionCard extends StatelessWidget {
@@ -74,18 +74,17 @@ class SessionCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              ClipOval(
-                child: ImageFiltered(
-                  imageFilter: ImageFilter.blur(
-                    sigmaX: isBlur ? 5 : 0,
-                    sigmaY: isBlur ? 5 : 0,
-                  ),
-                  child: AppImage(
-                    imageUrl,
-                    width: 50.r,
-                    height: 50.r,
-                    fit: BoxFit.cover,
-                  ),
+              GestureDetector(
+                onTap: () => FullScreenImageView.show(
+                  context,
+                  imageUrl: imageUrl,
+                  heroTag:
+                      'session_card_image_${imageUrl}_${DateTime.now().microsecondsSinceEpoch}',
+                ),
+                child: MyProfileImage(
+                  width: 60.r,
+                  imageUrl: imageUrl,
+                  isBlur: isBlur,
                 ),
               ),
               SizedBox(width: 12.w),
