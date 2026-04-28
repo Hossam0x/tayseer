@@ -1,8 +1,9 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:async';
+
 import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/core/utils/router/app_router.dart';
-import 'package:tayseer/features/shared/packages/data/models/new_advisor_sub_model.dart';
-import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
+import 'package:tayseer/core/utils/subscription_event_bus.dart';
+import 'package:tayseer/features/advisor/settings/data/repository/offerings_repository.dart';
 import 'package:tayseer/my_import.dart';
 
 /// بيانات تُمرَّر للصفحة عند الانتقال إليها
@@ -13,23 +14,83 @@ class AdvisorTermsArgs {
   const AdvisorTermsArgs({required this.onAccept});
 }
 
-class AdvisorTermsView extends StatelessWidget {
+// ─────────────────────────────────────────────
+// State بسيط للصفحة
+// ─────────────────────────────────────────────
+class _TermsData {
+  final double commission;
+  final String subscriptionType;
+  final bool isLoading;
+
+  const _TermsData({
+    this.commission = 25.0,
+    this.subscriptionType = 'free',
+    this.isLoading = true,
+  });
+}
+
+// ─────────────────────────────────────────────
+class AdvisorTermsView extends StatefulWidget {
   final AdvisorTermsArgs args;
   const AdvisorTermsView({super.key, required this.args});
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => getIt<PackagesCubit>()..getPackages(),
-      child: _AdvisorTermsBody(onAccept: args.onAccept),
-    );
-  }
+  State<AdvisorTermsView> createState() => _AdvisorTermsViewState();
 }
 
-// ─────────────────────────────────────────────
-class _AdvisorTermsBody extends StatelessWidget {
-  final VoidCallback onAccept;
-  const _AdvisorTermsBody({required this.onAccept});
+class _AdvisorTermsViewState extends State<AdvisorTermsView> {
+  final _repo = getIt<OfferingsRepository>();
+  StreamSubscription<SubscriptionChangedEvent>? _subEventSub;
+
+  _TermsData _data = const _TermsData();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+
+    // لما يحصل اشتراك → نعيد الجلب عشان تتحدث العمولة والزرار
+    _subEventSub = SubscriptionEventBus.instance.onSubscriptionChanged.listen(
+      (_) => _fetchData(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _subEventSub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchData() async {
+    if (!mounted) return;
+    setState(
+      () => _data = _TermsData(
+        commission: _data.commission,
+        subscriptionType: _data.subscriptionType,
+        isLoading: true,
+      ),
+    );
+
+    final result = await _repo.getOfferings();
+    if (!mounted) return;
+
+    result.fold(
+      (_) => setState(
+        () => _data = _TermsData(
+          commission: _data.commission,
+          subscriptionType: _data.subscriptionType,
+          isLoading: false,
+        ),
+      ),
+      (response) => setState(
+        () => _data = _TermsData(
+          commission: response.sessionsAppInterestPercentage,
+          subscriptionType: response.subscriptionType,
+          isLoading: false,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,44 +115,28 @@ class _AdvisorTermsBody extends StatelessWidget {
             SafeArea(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: BlocBuilder<PackagesCubit, PackagesState>(
-                  builder: (context, state) {
-                    // استخرج بيانات الاشتراك الحالي
-                    final currentSub = state.subscriptions
-                        .where((s) => s.isCurrentSub)
-                        .firstOrNull;
-
-                    final subscriptionType =
-                        currentSub?.subscriptionType ?? 'free';
-                    final commission = _resolveCommission(
-                      currentSub,
-                      state.subscriptions,
-                    );
-
-                    return Column(
-                      children: [
-                        Gap(16.h),
-                        const _TermsAppBar(),
-                        Gap(20.h),
-                        Expanded(
-                          child: _TermsContent(
-                            appInterestPercentage: commission,
-                            subscriptionType: subscriptionType,
-                            isLoading: state.isLoading,
-                          ),
-                        ),
-                        Gap(12.h),
-                        _TermsActions(
-                          subscriptionType: subscriptionType,
-                          onAccept: () {
-                            Navigator.pop(context);
-                            onAccept();
-                          },
-                        ),
-                        Gap(24.h),
-                      ],
-                    );
-                  },
+                child: Column(
+                  children: [
+                    Gap(16.h),
+                    const _TermsAppBar(),
+                    Gap(20.h),
+                    Expanded(
+                      child: _TermsContent(
+                        appInterestPercentage: _data.commission,
+                        subscriptionType: _data.subscriptionType,
+                        isLoading: _data.isLoading,
+                      ),
+                    ),
+                    Gap(12.h),
+                    _TermsActions(
+                      subscriptionType: _data.subscriptionType,
+                      onAccept: () {
+                        Navigator.pop(context);
+                        widget.args.onAccept();
+                      },
+                    ),
+                    Gap(24.h),
+                  ],
                 ),
               ),
             ),
@@ -99,25 +144,6 @@ class _AdvisorTermsBody extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  /// يحسب العمولة المناسبة:
-  /// - لو مشترك → sessionsAppInterestPercentage بتاع الباقة الحالية
-  /// - لو مش مشترك → sessionsAppInterestPercentage بتاع أرخص باقة (free/basic)
-  double _resolveCommission(
-    NewAdvisorSubModel? currentSub,
-    List<NewAdvisorSubModel> all,
-  ) {
-    if (currentSub != null) {
-      return currentSub.sessionsAppInterestPercentage.toDouble();
-    }
-    // مش مشترك — نعرض العمولة الافتراضية (أعلى قيمة = free)
-    // لو الـ API مرجعتش حاجة نرجع 25 كـ fallback
-    if (all.isEmpty) return 25.0;
-    // نرجع أعلى عمولة (الـ free عادةً أعلى)
-    return all
-        .map((s) => s.sessionsAppInterestPercentage.toDouble())
-        .reduce((a, b) => a > b ? a : b);
   }
 }
 
@@ -131,9 +157,20 @@ class _TermsAppBar extends StatelessWidget {
       children: [
         GestureDetector(
           onTap: () => Navigator.pop(context),
-          child: Transform.flip(
-            flipX: !isArabic,
-            child: Icon(Icons.arrow_back_ios, size: 16),
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
+              shape: BoxShape.circle,
+            ),
+            child: Transform.flip(
+              flipX: !isArabic,
+              child: Icon(
+                Icons.arrow_back_ios,
+                size: 16,
+                color: AppColors.kprimaryColor,
+              ),
+            ),
           ),
         ),
         const Spacer(),
@@ -170,15 +207,12 @@ class _TermsContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── بانر العمولة ──
           _CommissionBanner(
             percentage: appInterestPercentage,
             canReduce: canReduce,
             isLoading: isLoading,
           ),
           Gap(20.h),
-
-          // ── البنود ──
           _TermItem(
             number: '١',
             title: context.tr('terms_commission_title'),
@@ -336,7 +370,7 @@ class _TermItem extends StatelessWidget {
         ],
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.all(8),
@@ -349,7 +383,9 @@ class _TermItem extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: isArabic
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
@@ -395,14 +431,12 @@ class _TermsActions extends StatelessWidget {
           GestureDetector(
             onTap: () {
               if (_isGold) {
-                // مشترك gold → روح على Elite مباشرة
                 Navigator.pushNamed(
                   context,
                   AppRouter.kPackagesView,
                   arguments: {'initialPage': 2},
                 );
               } else {
-                // مش مشترك → روح على صفحة الباقات (Pro افتراضي)
                 Navigator.pushNamed(context, AppRouter.kPackagesView);
               }
             },
@@ -441,7 +475,6 @@ class _TermsActions extends StatelessWidget {
           Gap(10.h),
         ],
 
-        // زرار الموافقة
         CustomBotton(
           width: double.infinity,
           height: 54.h,
