@@ -222,10 +222,23 @@ class _NationalIdUploadBox extends StatelessWidget {
                     color: AppColors.kprimaryColor.withOpacity(.6),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    label,
-                    style: Styles.textStyle12.copyWith(
-                      fontWeight: FontWeight.w600,
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: 'اضغط ',
+                          style: Styles.textStyle12.copyWith(
+                            color: AppColors.kBlueColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        TextSpan(
+                          text: 'لرفع $label',
+                          style: Styles.textStyle12.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                     textAlign: TextAlign.center,
                   ),
