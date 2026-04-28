@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
 import 'package:tayseer/my_import.dart';
@@ -7,6 +5,18 @@ import 'package:tayseer/core/utils/helper/image_picker_helper.dart';
 
 class UploadNationalIdBody extends StatelessWidget {
   const UploadNationalIdBody({super.key});
+
+  Future<void> _pickImage(AuthCubit cubit, int slot) async {
+    try {
+      final helper = ImagePickerHelper();
+      final xfile = await helper.pickFromGallery();
+      if (xfile != null) {
+        cubit.setNationalIdSlot(slot, File(xfile.path));
+      }
+    } catch (e) {
+      debugPrint('UploadNationalId: pick error: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +41,9 @@ class UploadNationalIdBody extends StatelessWidget {
               }
             },
             builder: (context, state) {
-              final images = authCubit.pickedNationalIds;
+              final frontImage = authCubit.nationalIdFront;
+              final backImage = authCubit.nationalIdBack;
+              final bothPicked = frontImage != null && backImage != null;
 
               return SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -69,99 +81,30 @@ class UploadNationalIdBody extends StatelessWidget {
 
                     const SizedBox(height: 28),
 
-                    /// Upload Box
-                    GestureDetector(
-                      onTap: () async {
-                        try {
-                          debugPrint('UploadNationalId: opening picker');
-                          final helper = ImagePickerHelper();
-                          final xfile = await helper.pickFromGallery();
-                          debugPrint(
-                            'UploadNationalId: picker returned -> $xfile',
-                          );
-                          if (xfile != null) {
-                            authCubit.addNationalId(File(xfile.path));
-                            debugPrint('UploadNationalId: added national id');
-                          }
-                        } catch (e, st) {
-                          debugPrint('UploadNationalId: pick error: $e');
-                          debugPrint('$st');
-                        }
-                      },
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 32),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.kprimaryColor.withOpacity(.3),
+                    /// Front & Back upload boxes
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _NationalIdUploadBox(
+                            label: 'الوجه الأمامي',
+                            image: frontImage,
+                            onTap: () => _pickImage(authCubit, 0),
+                            onRemove: () =>
+                                authCubit.setNationalIdSlot(0, null),
                           ),
                         ),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.cloud_upload_outlined,
-                              size: 32,
-                              color: AppColors.kprimaryColor.withOpacity(.6),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              context.tr('uploadNationalId'),
-                              style: Styles.textStyle14,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              context.tr('fileFormats'),
-                              style: Styles.textStyle10.copyWith(
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _NationalIdUploadBox(
+                            label: 'الوجه الخلفي',
+                            image: backImage,
+                            onTap: () => _pickImage(authCubit, 1),
+                            onRemove: () =>
+                                authCubit.setNationalIdSlot(1, null),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-
-                    /// Images Grid
-                    if (images.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16),
-                        child: GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: images.length,
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                mainAxisSpacing: 12,
-                                crossAxisSpacing: 12,
-                              ),
-                          itemBuilder: (context, index) {
-                            final image = images[index];
-
-                            return TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 0.8, end: 1),
-                              duration: const Duration(milliseconds: 350),
-                              curve: Curves.easeOutCubic,
-                              builder: (context, value, child) {
-                                return Opacity(
-                                  opacity: value,
-                                  child: Transform.scale(
-                                    scale: value,
-                                    child: child,
-                                  ),
-                                );
-                              },
-                              child: _NationalIdImageCard(
-                                image: image,
-                                onRemove: () {
-                                  authCubit.removeNationalId(index);
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                      ),
 
                     const SizedBox(height: 24),
 
@@ -171,9 +114,9 @@ class UploadNationalIdBody extends StatelessWidget {
                       title: state.addNationalImageState == CubitStates.loading
                           ? context.tr('loading')
                           : context.tr('attach'),
-                      useGradient: images.isNotEmpty,
+                      useGradient: bothPicked,
                       backGroundcolor: AppColors.kgreyColor,
-                      onPressed: images.isEmpty
+                      onPressed: !bothPicked
                           ? null
                           : () {
                               if (state.addNationalImageState !=
@@ -241,47 +184,87 @@ class UploadNationalIdBody extends StatelessWidget {
   }
 }
 
-class _NationalIdImageCard extends StatelessWidget {
-  final File image;
+class _NationalIdUploadBox extends StatelessWidget {
+  final String label;
+  final File? image;
+  final VoidCallback onTap;
   final VoidCallback onRemove;
 
-  const _NationalIdImageCard({required this.image, required this.onRemove});
+  const _NationalIdUploadBox({
+    required this.label,
+    required this.image,
+    required this.onTap,
+    required this.onRemove,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.kBlueColor.withOpacity(.4)),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.file(
-              image,
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: double.infinity,
-            ),
+    return GestureDetector(
+      onTap: image == null ? onTap : null,
+      child: Container(
+        height: 150,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: image != null
+                ? AppColors.kBlueColor.withOpacity(.5)
+                : AppColors.kprimaryColor.withOpacity(.3),
           ),
         ),
-        Positioned(
-          top: 6,
-          right: 6,
-          child: GestureDetector(
-            onTap: onRemove,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
+        child: image == null
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.cloud_upload_outlined,
+                    size: 28,
+                    color: AppColors.kprimaryColor.withOpacity(.6),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    label,
+                    style: Styles.textStyle12.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'JPG, PNG',
+                    style: Styles.textStyle10.copyWith(color: Colors.grey),
+                  ),
+                ],
+              )
+            : Stack(
+                fit: StackFit.expand,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: Image.file(image!, fit: BoxFit.cover),
+                  ),
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: GestureDetector(
+                      onTap: onRemove,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          size: 16,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              child: const Icon(Icons.close, size: 16, color: Colors.red),
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

@@ -47,8 +47,15 @@ class AuthCubit extends Cubit<AuthState> {
   XFile? pickedCertificate;
   DateTime? obtainDate;
   final List<CertificateModel> certificates = [];
-  // National ID images (front/back or multiple files)
-  final List<File> pickedNationalIds = [];
+  // National ID images (front/back)
+  File? nationalIdFront;
+  File? nationalIdBack;
+
+  // Keep for backward compat — derived from front/back
+  List<File> get pickedNationalIds => [
+    if (nationalIdFront != null) nationalIdFront!,
+    if (nationalIdBack != null) nationalIdBack!,
+  ];
   String? selectedGender;
   XFile? pickedImage;
   XFile? pickedVideo;
@@ -558,8 +565,9 @@ class AuthCubit extends Cubit<AuthState> {
           );
         },
         (_) {
-          // success -> clear local list
-          pickedNationalIds.clear();
+          // success -> clear front/back
+          nationalIdFront = null;
+          nationalIdBack = null;
           emit(state.copyWith(addNationalImageState: CubitStates.success));
         },
       );
@@ -1051,18 +1059,28 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   // National ID helpers
+  void setNationalIdSlot(int slot, File? image) {
+    if (slot == 0) {
+      nationalIdFront = image;
+    } else {
+      nationalIdBack = image;
+    }
+    emit(state.copyWith());
+  }
+
   void addNationalId(File image) {
-    debugPrint('AuthCubit.addNationalId: adding image ${image.path}');
-    pickedNationalIds.add(image);
+    if (nationalIdFront == null) {
+      nationalIdFront = image;
+    } else {
+      nationalIdBack = image;
+    }
     emit(state.copyWith());
   }
 
   void removeNationalId(int index) {
-    if (index >= 0 && index < pickedNationalIds.length) {
-      debugPrint('AuthCubit.removeNationalId: removing index $index');
-      pickedNationalIds.removeAt(index);
-      emit(state.copyWith());
-    }
+    if (index == 0) nationalIdFront = null;
+    if (index == 1) nationalIdBack = null;
+    emit(state.copyWith());
   }
 
   void setObtainDate(DateTime? date) {
@@ -1370,7 +1388,8 @@ class AuthCubit extends Cubit<AuthState> {
     pickedCertificate = null;
     pickedImage = null;
     pickedVideo = null;
-    pickedNationalIds.clear();
+    nationalIdFront = null;
+    nationalIdBack = null;
 
     // 3. مسح التواريخ
     obtainDate = null;

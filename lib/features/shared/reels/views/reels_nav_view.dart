@@ -64,6 +64,11 @@ class _ReelsNavContentState extends State<_ReelsNavContent> {
     setState(() => _currentIndex = index);
     _preloadNextVideos(reels, index);
     _checkLoadMore(index, reels.length);
+
+    // ✅ Mark current reel as seen (نفس منطق الـ home posts)
+    if (index < reels.length) {
+      context.read<ReelsCubit>().markReelAsRead(reels[index].postId);
+    }
   }
 
   void _checkLoadMore(int currentIndex, int totalReels) {

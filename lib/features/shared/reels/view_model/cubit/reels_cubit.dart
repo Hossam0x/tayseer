@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/core/utils/post_event_bus.dart';
 import 'package:tayseer/core/utils/post_event_listener_mixin.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
@@ -445,6 +446,19 @@ class ReelsCubit extends Cubit<ReelsState>
   /// ✅ الحصول على كل ريلز الـ Advisor
   List<PostModel> getReelsByAdvisor(String advisorId) {
     return state.reels.where((reel) => reel.advisorId == advisorId).toList();
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 📌 MARK REEL AS READ (Socket Event)
+  // ═══════════════════════════════════════════════════════════
+
+  final tayseerSocketHelper _socketHelper = getIt.get<tayseerSocketHelper>();
+
+  /// ✅ يبعت event للـ socket لما الـ reel يبقى مرئي (نفس منطق الـ home posts)
+  void markReelAsRead(String postId) {
+    if (!_socketHelper.isConnected) return;
+    log('📤 [ReelsCubit] markReelAsRead: $postId');
+    _socketHelper.send('markPostAsRead', {'postId': postId}, null);
   }
   // ═══════════════════════════════════════════════════════════
   // 💬 UPDATE COMMENT COUNT (من الـ Comments Bottom Sheet)
