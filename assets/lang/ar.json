@@ -1483,7 +1483,6 @@
   "tax": "الضريبة",
   "discount": "الخصم",
   "total": "الإجمالي",
-  "error_occurred": "حدث خطأ",
   "ticket_my": "تذكرتي",
   "no_tickets": "لا يوجد تذاكر حالياً",
   "add_caption_optional": "إضافة تعليق (اختياري)",
@@ -2158,7 +2157,6 @@
   "new_advisor": "مستشار جديد",
   "offline_indicator": "أنت غير متصل - سيتم إرسال الرسائل عند الاتصال",
   "free_chat_banner_text": "لديك {minutes} دقيقة الآن لإرسال استفسارك ، وستحصل على إجابة مجانية من المستشار!\n",
-  "free_chat_banner_suffix": " للحصول على المزيد من الاستشارات .",
   "error_occurred": "حدث خطأ ما",
   "currency_egp": "ج.م",
   "currency_aed": "د.إ",
@@ -2179,6 +2177,6 @@
   "session_type_session": "فردية",
   "session_type_package": "باقة",
   "accountActivationPendingHint": "شكراً لانضمامك! حسابك قيد المراجعة من قِبل فريقنا، وسيتم إعلامك فور اكتمال عملية التفعيل.",
-  "guest_login_failed": "فشل تسجيل الدخول كزائر، يرجى المحاولة مرة أخرى."
+  "guest_login_failed": "فشل تسجيل الدخول كزائر، يرجى المحاولة مرة أخرى.",
   "free_chat_banner_suffix": " للحصول على المزيد من الاستشارات ."
 }
