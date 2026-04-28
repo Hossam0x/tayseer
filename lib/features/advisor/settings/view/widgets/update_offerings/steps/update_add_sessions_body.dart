@@ -22,11 +22,14 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
+  final TextEditingController _numberOfSessionsController =
+      TextEditingController();
 
   @override
   void dispose() {
     _nameController.dispose();
     _priceController.dispose();
+    _numberOfSessionsController.dispose();
     super.dispose();
   }
 
@@ -58,6 +61,10 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
       );
       return;
     }
+    if (isPackage && _numberOfSessionsController.text.isEmpty) {
+      _showError(context.tr('please_enter_number_of_sessions'));
+      return;
+    }
 
     cubit.addOffering(
       OfferingItemModel(
@@ -66,11 +73,15 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
         currency: CurrencyHelper.getCurrencyCodeByCountryKey(countryKey),
         duration: _selectedDuration!,
         type: isPackage ? 'package' : 'session',
+        numberOfSessions: isPackage
+            ? int.tryParse(_numberOfSessionsController.text)
+            : null,
       ),
     );
 
     _nameController.clear();
     _priceController.clear();
+    _numberOfSessionsController.clear();
     setState(() => _selectedDuration = null);
   }
 
@@ -146,20 +157,10 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
                 children: [
                   Center(
                     child: Text(
-                      context.tr('select_session_package'),
+                      context.tr('select_type'),
                       style: Styles.textStyle18.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.kscandryTextColor,
-                      ),
-                    ),
-                  ),
-                  Gap(4.h),
-                  Center(
-                    child: Text(
-                      context.tr('share_availability_hint'),
-                      textAlign: TextAlign.center,
-                      style: Styles.textStyle12.copyWith(
-                        color: Colors.grey.shade500,
                       ),
                     ),
                   ),
@@ -195,6 +196,39 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
                     ],
                   ),
 
+                  if (_isPackageSelected) ...[
+                    Gap(8.h),
+                    Center(
+                      child: Text(
+                        context.tr('select_session_package'),
+                        style: Styles.textStyle18.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.kscandryTextColor,
+                        ),
+                      ),
+                    ),
+                    Gap(4.h),
+                    Center(
+                      child: Text(
+                        context.tr('share_availability_hint'),
+                        textAlign: TextAlign.center,
+                        style: Styles.textStyle12.copyWith(
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ),
+                    Gap(4.h),
+                    Center(
+                      child: Text(
+                        context.tr('share_availability_hint2'),
+                        textAlign: TextAlign.center,
+                        style: Styles.textStyle12Bold.copyWith(
+                          color: Colors.red,
+                        ),
+                      ),
+                    ),
+                  ],
+
                   Gap(16.h),
 
                   AnimatedCrossFade(
@@ -209,6 +243,7 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
                       currencySymbol: currencySymbol,
                       nameController: _nameController,
                       priceController: _priceController,
+                      numberOfSessionsController: _numberOfSessionsController,
                       cubit: cubit,
                       countryKey: countryKey,
                       onDurationSelected: (d) =>

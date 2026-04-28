@@ -11,6 +11,7 @@ class AddSessionsForm extends StatelessWidget {
     required this.currencySymbol,
     required this.nameController,
     required this.priceController,
+    required this.numberOfSessionsController,
     required this.cubit,
     required this.countryKey,
     required this.onDurationSelected,
@@ -22,6 +23,7 @@ class AddSessionsForm extends StatelessWidget {
   final String currencySymbol;
   final TextEditingController nameController;
   final TextEditingController priceController;
+  final TextEditingController numberOfSessionsController;
   final UpdateOfferingsCubit cubit;
   final String countryKey;
   final ValueChanged<String> onDurationSelected;
@@ -40,6 +42,24 @@ class AddSessionsForm extends StatelessWidget {
               ? context.tr('enter_package_name')
               : context.tr('enter_session_name'),
         ),
+        if (isPackage) ...[
+          Gap(14.h),
+          Row(
+            children: [
+              Text(context.tr('number_of_sessions'), style: Styles.textStyle14),
+              const SizedBox(width: 12),
+              Expanded(
+                child: CustomTextFormField(
+                  controller: numberOfSessionsController,
+                  hintText: '0',
+                  isNumber: true,
+                  maxLength: 3,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                ),
+              ),
+            ],
+          ),
+        ],
         Gap(14.h),
         Row(
           mainAxisAlignment: !isArabic
@@ -105,6 +125,7 @@ class AddSessionsForm extends StatelessWidget {
             ),
           ],
         ),
+
         Gap(14.h),
         Center(
           child: CustomBotton(

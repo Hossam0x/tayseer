@@ -1,4 +1,5 @@
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
+import 'package:tayseer/features/advisor/settings/view/advisor_terms_view.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/service_provider/service_provider_cubits.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/service_provider/service_provider_states.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/session_pricing/session_pricing_skeleton.dart';
@@ -121,10 +122,14 @@ class _PricingList extends StatelessWidget {
           initialPrice: session.price.toString(),
           initialStatus: session.isEnabled,
           currency: session.currency,
+          isPackage: session.isPackage,
+          initialNumberOfSessions: session.numberOfSessions,
           onPriceChanged: (price) =>
               cubit.updateSessionPrice(sessionKey, int.tryParse(price) ?? 0),
           onStatusChanged: (isActive) =>
               cubit.toggleSessionStatus(sessionKey, isActive),
+          onNumberOfSessionsChanged: (count) =>
+              cubit.updateSessionNumberOfSessions(sessionKey, count),
         );
       },
     );
@@ -149,7 +154,11 @@ class _SaveButton extends StatelessWidget {
           : context.tr('no_changes'),
       onPressed: state.isSaving || !state.hasChanges
           ? null
-          : () => cubit.saveChanges(),
+          : () => Navigator.pushNamed(
+              context,
+              AppRouter.kAdvisorTermsView,
+              arguments: AdvisorTermsArgs(onAccept: () => cubit.saveChanges()),
+            ),
       backGroundcolor: state.hasChanges ? null : AppColors.inactiveColor,
     );
   }

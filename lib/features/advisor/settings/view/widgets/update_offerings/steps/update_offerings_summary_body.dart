@@ -1,3 +1,4 @@
+import 'package:tayseer/features/advisor/settings/view/advisor_terms_view.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/offerings/update_offerings_cubit.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/offerings/update_offerings_state.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/update_offerings/steps/widgets/summary_country_card.dart';
@@ -73,7 +74,13 @@ class UpdateOfferingsSummaryBody extends StatelessWidget {
                   ? null
                   : AppColors.inactiveColor,
               onPressed: summaryData.isNotEmpty && !state.isSaving
-                  ? () => cubit.submitOfferings()
+                  ? () => Navigator.pushNamed(
+                      context,
+                      AppRouter.kAdvisorTermsView,
+                      arguments: AdvisorTermsArgs(
+                        onAccept: () => cubit.submitOfferings(),
+                      ),
+                    )
                   : null,
             ),
             Gap(20.h),

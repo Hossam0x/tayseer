@@ -56,6 +56,11 @@ class AddSessionsAddedCard extends StatelessWidget {
               OfferingsItemChip(
                 text: '${item.duration}${context.tr('minute_shortcut')}',
               ),
+              if (item.type == 'package' && item.numberOfSessions != null)
+                OfferingsItemChip(
+                  text:
+                      '${item.numberOfSessions} ${context.tr('sessions_count')}',
+                ),
               OfferingsItemChip(
                 text: context.tr('session_type_${item.type}'),
                 isPink: true,

@@ -40,6 +40,9 @@ class UpdateOfferingsCubit extends Cubit<UpdateOfferingsState> {
           state.copyWith(
             loadState: CubitStates.success,
             summaryList: summaryList,
+            subscriptionType: response.subscriptionType,
+            sessionsAppInterestPercentage:
+                response.sessionsAppInterestPercentage,
             step: summaryList.isNotEmpty
                 ? UpdateOfferingsStep.summary
                 : UpdateOfferingsStep.selectCountry,
