@@ -30,8 +30,8 @@ class CustomTextFormField extends StatefulWidget {
     this.onChanged,
     this.onTap,
     this.readOnly = false,
-
     this.maxLength, // ✅ الجديد
+    this.autofillHints, // ✅ keyboard suggestions
   });
 
   final bool isName;
@@ -65,6 +65,9 @@ class CustomTextFormField extends StatefulWidget {
   /// ✅ الحد الأقصى للحروف
   final int? maxLength;
 
+  /// ✅ autofill hints للـ keyboard suggestions
+  final Iterable<String>? autofillHints;
+
   @override
   State<CustomTextFormField> createState() => _CustomTextFormFieldState();
 }
@@ -96,10 +99,24 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
     return TextInputType.text;
   }
 
+  Iterable<String> _resolveAutofillHints() {
+    if (widget.autofillHints != null) return widget.autofillHints!;
+    if (widget.isMail) return [AutofillHints.email];
+    if (widget.isName) return [AutofillHints.name];
+    if (widget.isAccountName) return [AutofillHints.username];
+    if (widget.isPhone || widget.isPhoneWithCountryCode) {
+      return [AutofillHints.telephoneNumber];
+    }
+    if (widget.isPasswordFiled) return [AutofillHints.password];
+    if (widget.isConfirmPasswordFiled) return [AutofillHints.newPassword];
+    return [];
+  }
+
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       autovalidateMode: widget.autovalidateMode ?? AutovalidateMode.disabled,
+      autofillHints: _resolveAutofillHints(),
 
       /// ✅ دمج formatter القديم + منع تجاوز الحد
       inputFormatters: widget.maxLength != null

@@ -86,7 +86,7 @@ class UploadNationalIdBody extends StatelessWidget {
                       children: [
                         Expanded(
                           child: _NationalIdUploadBox(
-                            label: 'الوجه الأمامي',
+                            label: context.tr('nationalIdFront'),
                             image: frontImage,
                             onTap: () => _pickImage(authCubit, 0),
                             onRemove: () =>
@@ -96,7 +96,7 @@ class UploadNationalIdBody extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: _NationalIdUploadBox(
-                            label: 'الوجه الخلفي',
+                            label: context.tr('nationalIdBack'),
                             image: backImage,
                             onTap: () => _pickImage(authCubit, 1),
                             onRemove: () =>
@@ -226,14 +226,14 @@ class _NationalIdUploadBox extends StatelessWidget {
                     TextSpan(
                       children: [
                         TextSpan(
-                          text: 'اضغط ',
+                          text: '${context.tr('tapToUpload')} ',
                           style: Styles.textStyle12.copyWith(
                             color: AppColors.kBlueColor,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         TextSpan(
-                          text: 'لرفع $label',
+                          text: '${context.tr('toUpload')} $label',
                           style: Styles.textStyle12.copyWith(
                             fontWeight: FontWeight.w600,
                           ),

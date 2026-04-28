@@ -1,11 +1,11 @@
 import 'package:flutter/services.dart';
-import 'package:tayseer/core/utils/helper/currency_helper.dart';
 import 'package:tayseer/my_import.dart';
 
 class SessionPriceItem extends StatefulWidget {
   final String duration;
   final String initialPrice;
   final bool initialStatus;
+  final String currency;
   final ValueChanged<String>? onPriceChanged;
   final ValueChanged<bool>? onStatusChanged;
 
@@ -14,6 +14,7 @@ class SessionPriceItem extends StatefulWidget {
     required this.duration,
     required this.initialPrice,
     required this.initialStatus,
+    this.currency = 'SAR',
     this.onPriceChanged,
     this.onStatusChanged,
   });
@@ -128,8 +129,8 @@ class _SessionPriceItemState extends State<SessionPriceItem> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                CurrencyHelper.getCurrencySymbolFromContext(
-                                  context,
+                                context.tr(
+                                  'currency_${widget.currency.toLowerCase()}',
                                 ),
                                 style: Styles.textStyle14Bold.copyWith(
                                   color: Colors.grey,
@@ -189,10 +190,7 @@ class _SessionPriceItemState extends State<SessionPriceItem> {
                             ),
                           ),
                           Text(
-                            CurrencyHelper.formatPriceFromContext(
-                              context,
-                              finalPrice,
-                            ),
+                            '$finalPrice ${context.tr('currency_${widget.currency.toLowerCase()}')}',
                             style: Styles.textStyle16.copyWith(
                               color: AppColors.kprimaryColor,
                               fontWeight: FontWeight.bold,

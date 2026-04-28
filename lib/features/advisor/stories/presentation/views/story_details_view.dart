@@ -78,8 +78,14 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
   Widget build(BuildContext context) {
     final opacity = (1.0 - (_vOffset / 400)).clamp(0.0, 1.0);
 
-    // Keep _usersStories in sync with the cubit's storiesList (home feed only)
-    final body = widget.isArchive
+    // Keep _usersStories in sync with the cubit's storiesList (home feed only).
+    // Skip live updates when opened for a single user (e.g. My Story / Profile)
+    // to prevent the feed list from overriding the intended stories.
+    final isSingleUserView =
+        widget.usersStories.length == 1 &&
+        widget.usersStories.first.userId == kCurrentUserData?.id;
+
+    final body = widget.isArchive || isSingleUserView
         ? _buildBody(opacity)
         : BlocListener<StoriesCubit, StoriesState>(
             listenWhen: (prev, curr) => prev.storiesList != curr.storiesList,

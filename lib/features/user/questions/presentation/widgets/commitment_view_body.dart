@@ -170,19 +170,21 @@ class _CommitmentViewBodyState extends State<CommitmentViewBody> {
             ),
             child: Form(
               key: _formKey,
-              child: Column(
-                children: [
-                  _buildTitle(context),
-                  SizedBox(height: context.height * 0.025),
-                  _buildCommitments(context),
-                  SizedBox(height: context.height * 0.035),
-                  _buildNameInput(context),
-                  SizedBox(height: context.height * 0.025),
-                  _buildSubmitButton(context),
-                  SizedBox(height: context.height * 0.015),
-                  AgreementText(),
-                  SizedBox(height: context.height * 0.02),
-                ],
+              child: AutofillGroup(
+                child: Column(
+                  children: [
+                    _buildTitle(context),
+                    SizedBox(height: context.height * 0.025),
+                    _buildCommitments(context),
+                    SizedBox(height: context.height * 0.035),
+                    _buildNameInput(context),
+                    SizedBox(height: context.height * 0.025),
+                    _buildSubmitButton(context),
+                    SizedBox(height: context.height * 0.015),
+                    AgreementText(),
+                    SizedBox(height: context.height * 0.02),
+                  ],
+                ),
               ),
             ),
           ),

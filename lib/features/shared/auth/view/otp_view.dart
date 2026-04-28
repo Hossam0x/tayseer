@@ -7,6 +7,9 @@ class OtpView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: CustomBackground(child: OtpViewBody()));
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      body: CustomBackground(child: OtpViewBody()),
+    );
   }
 }

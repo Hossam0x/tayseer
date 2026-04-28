@@ -49,16 +49,15 @@ class AddSessionsAddedCard extends StatelessWidget {
             spacing: 4,
             children: [
               OfferingsItemChip(
-                text: '${item.price} ${item.currency}',
+                text:
+                    '${item.price} ${context.tr('currency_${item.currency.toLowerCase()}')}',
                 isGreen: true,
               ),
               OfferingsItemChip(
                 text: '${item.duration}${context.tr('minute_shortcut')}',
               ),
               OfferingsItemChip(
-                text: item.type == 'package'
-                    ? context.tr('package_type')
-                    : context.tr('individual_type'),
+                text: context.tr('session_type_${item.type}'),
                 isPink: true,
               ),
             ],

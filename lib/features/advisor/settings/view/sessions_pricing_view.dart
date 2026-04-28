@@ -120,6 +120,7 @@ class _PricingList extends StatelessWidget {
           duration: session.durationText,
           initialPrice: session.price.toString(),
           initialStatus: session.isEnabled,
+          currency: session.currency,
           onPriceChanged: (price) =>
               cubit.updateSessionPrice(sessionKey, int.tryParse(price) ?? 0),
           onStatusChanged: (isActive) =>

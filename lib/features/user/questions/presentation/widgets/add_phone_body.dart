@@ -45,59 +45,61 @@ class AddPhoneBody extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Form(
                 key: cubit.phoneFormKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Gap(context.height * 0.02),
+                child: AutofillGroup(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Gap(context.height * 0.02),
 
-                    // زر الرجوع
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.black87,
-                          size: 25,
+                      // زر الرجوع
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.black87,
+                            size: 25,
+                          ),
                         ),
                       ),
-                    ),
 
-                    Gap(context.height * 0.02),
+                      Gap(context.height * 0.02),
 
-                    // العنوان
-                    Text(
-                      context.tr("add_phone"),
-                      style: Styles.textStyle20Bold.copyWith(
-                        color: AppColors.kscandryTextColor,
+                      // العنوان
+                      Text(
+                        context.tr("add_phone"),
+                        style: Styles.textStyle20Bold.copyWith(
+                          color: AppColors.kscandryTextColor,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    Gap(context.height * 0.02),
-                    Text(
-                      context.tr("add_phone_desc"),
-                      style: Styles.textStyle12Bold.copyWith(
-                        color: AppColors.kgreyColor,
+                      Gap(context.height * 0.02),
+                      Text(
+                        context.tr("add_phone_desc"),
+                        style: Styles.textStyle12Bold.copyWith(
+                          color: AppColors.kgreyColor,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    Gap(context.height * 0.05),
+                      Gap(context.height * 0.05),
 
-                    CustomTextFormField(
-                      isPhoneWithCountryCode: true,
-                      controller: cubit.phoneController,
-                      countryCodeController: cubit.countryCodeController,
-                    ),
-                    Gap(context.height * 0.08),
+                      CustomTextFormField(
+                        isPhoneWithCountryCode: true,
+                        controller: cubit.phoneController,
+                        countryCodeController: cubit.countryCodeController,
+                      ),
+                      Gap(context.height * 0.08),
 
-                    CustomBotton(
-                      useGradient: true,
-                      title: context.tr('next'),
-                      onPressed: () {
-                        cubit.sendPhoneNumber();
-                      },
-                    ),
-                  ],
+                      CustomBotton(
+                        useGradient: true,
+                        title: context.tr('next'),
+                        onPressed: () {
+                          cubit.sendPhoneNumber();
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

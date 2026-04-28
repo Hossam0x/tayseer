@@ -82,6 +82,14 @@ class _UpdateSelectCountryBodyState extends State<UpdateSelectCountryBody> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // Subtitle
+            Text(
+              context.tr('select_one_country_max'),
+              textAlign: TextAlign.center,
+              style: Styles.textStyle12.copyWith(color: Colors.grey.shade600),
+            ),
+            Gap(12.h),
+
             // Search bar
             Container(
               height: 48.h,
