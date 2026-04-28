@@ -23,6 +23,10 @@ class UpdateOfferingsState extends Equatable {
   // الملخص النهائي (كل الدول)
   final List<CountryOfferingsModel> summaryList;
 
+  // بيانات الاشتراك من الـ GET
+  final String subscriptionType;
+  final double sessionsAppInterestPercentage;
+
   const UpdateOfferingsState({
     this.loadState = CubitStates.initial,
     this.saveState = CubitStates.initial,
@@ -33,6 +37,8 @@ class UpdateOfferingsState extends Equatable {
     this.selectedCountryFlag,
     this.currentOfferings = const [],
     this.summaryList = const [],
+    this.subscriptionType = 'free',
+    this.sessionsAppInterestPercentage = 25.0,
   });
 
   bool get isSaving => saveState == CubitStates.loading;
@@ -52,6 +58,8 @@ class UpdateOfferingsState extends Equatable {
     String? selectedCountryFlag,
     List<OfferingItemModel>? currentOfferings,
     List<CountryOfferingsModel>? summaryList,
+    String? subscriptionType,
+    double? sessionsAppInterestPercentage,
     bool clearError = false,
     bool clearSuccess = false,
     bool clearSelectedCountry = false,
@@ -72,6 +80,9 @@ class UpdateOfferingsState extends Equatable {
           : (selectedCountryFlag ?? this.selectedCountryFlag),
       currentOfferings: currentOfferings ?? this.currentOfferings,
       summaryList: summaryList ?? this.summaryList,
+      subscriptionType: subscriptionType ?? this.subscriptionType,
+      sessionsAppInterestPercentage:
+          sessionsAppInterestPercentage ?? this.sessionsAppInterestPercentage,
     );
   }
 
@@ -86,5 +97,7 @@ class UpdateOfferingsState extends Equatable {
     selectedCountryFlag,
     currentOfferings,
     summaryList,
+    subscriptionType,
+    sessionsAppInterestPercentage,
   ];
 }

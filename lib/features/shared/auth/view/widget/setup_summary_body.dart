@@ -1,3 +1,4 @@
+import 'package:tayseer/features/advisor/settings/view/advisor_terms_view.dart';
 import 'package:tayseer/features/shared/auth/model/summar_session_model.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
@@ -139,10 +140,13 @@ class SetupSummaryBody extends StatelessWidget {
                         onPressed:
                             summaryData.isNotEmpty &&
                                 state.setOfferingsState != CubitStates.loading
-                            ? () {
-                                // ★ إرسال offerings
-                                authCubit.submitOfferings();
-                              }
+                            ? () => Navigator.pushNamed(
+                                context,
+                                AppRouter.kAdvisorTermsView,
+                                arguments: AdvisorTermsArgs(
+                                  onAccept: () => authCubit.submitOfferings(),
+                                ),
+                              )
                             : null,
                       ),
                     ],

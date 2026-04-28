@@ -101,12 +101,16 @@ class SessionTypeModel extends Equatable {
   final int price;
   final String currency;
   final bool isEnabled;
+  final int? numberOfSessions; // only for packages
+  final String type; // 'session' or 'package'
 
   const SessionTypeModel({
     required this.duration,
     required this.price,
     required this.currency,
     required this.isEnabled,
+    this.numberOfSessions,
+    this.type = 'session',
   });
 
   factory SessionTypeModel.fromJson(Map<String, dynamic> json) {
@@ -115,17 +119,28 @@ class SessionTypeModel extends Equatable {
       price: (json['price'] as num?)?.toInt() ?? 0,
       currency: json['currency']?.toString() ?? 'SAR',
       isEnabled: json['isEnabled'] as bool? ?? true,
+      numberOfSessions: json['numberOfSessions'] != null
+          ? int.tryParse(json['numberOfSessions'].toString())
+          : null,
+      type: json['type']?.toString() ?? 'session',
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final map = <String, dynamic>{
       'duration': duration,
       'price': price,
       'currency': currency,
       'isEnabled': isEnabled,
+      'type': type,
     };
+    if (type == 'package' && numberOfSessions != null) {
+      map['numberOfSessions'] = numberOfSessions;
+    }
+    return map;
   }
+
+  bool get isPackage => type == 'package';
 
   // الحصول على المدة بشكل نصي
   String get durationText {
@@ -135,7 +150,14 @@ class SessionTypeModel extends Equatable {
   }
 
   @override
-  List<Object?> get props => [duration, price, currency, isEnabled];
+  List<Object?> get props => [
+    duration,
+    price,
+    currency,
+    isEnabled,
+    numberOfSessions,
+    type,
+  ];
 }
 
 // ============================================

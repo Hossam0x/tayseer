@@ -6,8 +6,11 @@ class SessionPriceItem extends StatefulWidget {
   final String initialPrice;
   final bool initialStatus;
   final String currency;
+  final bool isPackage;
+  final int? initialNumberOfSessions;
   final ValueChanged<String>? onPriceChanged;
   final ValueChanged<bool>? onStatusChanged;
+  final ValueChanged<int?>? onNumberOfSessionsChanged;
 
   const SessionPriceItem({
     super.key,
@@ -15,8 +18,11 @@ class SessionPriceItem extends StatefulWidget {
     required this.initialPrice,
     required this.initialStatus,
     this.currency = 'SAR',
+    this.isPackage = false,
+    this.initialNumberOfSessions,
     this.onPriceChanged,
     this.onStatusChanged,
+    this.onNumberOfSessionsChanged,
   });
 
   @override
@@ -25,12 +31,16 @@ class SessionPriceItem extends StatefulWidget {
 
 class _SessionPriceItemState extends State<SessionPriceItem> {
   late TextEditingController priceController;
+  late TextEditingController numberOfSessionsController;
 
   @override
   void initState() {
     super.initState();
     priceController = TextEditingController(
       text: widget.initialPrice == '0' ? '' : widget.initialPrice,
+    );
+    numberOfSessionsController = TextEditingController(
+      text: widget.initialNumberOfSessions?.toString() ?? '',
     );
   }
 
@@ -43,11 +53,18 @@ class _SessionPriceItemState extends State<SessionPriceItem> {
         priceController.text = widget.initialPrice;
       }
     }
+    if (oldWidget.initialNumberOfSessions != widget.initialNumberOfSessions) {
+      final newVal = widget.initialNumberOfSessions?.toString() ?? '';
+      if (numberOfSessionsController.text != newVal) {
+        numberOfSessionsController.text = newVal;
+      }
+    }
   }
 
   @override
   void dispose() {
     priceController.dispose();
+    numberOfSessionsController.dispose();
     super.dispose();
   }
 
@@ -144,6 +161,53 @@ class _SessionPriceItemState extends State<SessionPriceItem> {
                     ),
                   ],
                 ),
+
+                if (widget.isPackage) ...[
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Text(
+                      context.tr('select_session_package'),
+                      style: Styles.textStyle18.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.kscandryTextColor,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Center(
+                    child: Text(
+                      context.tr('share_availability_hint'),
+                      textAlign: TextAlign.center,
+                      style: Styles.textStyle12.copyWith(
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Text(
+                        context.tr('number_of_sessions'),
+                        style: Styles.textStyle14,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: CustomTextFormField(
+                          controller: numberOfSessionsController,
+                          hintText: '0',
+                          isNumber: true,
+                          maxLength: 3,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(3),
+                          ],
+                          onChanged: (v) => widget.onNumberOfSessionsChanged
+                              ?.call(int.tryParse(v)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
 
                 const SizedBox(height: 8),
 

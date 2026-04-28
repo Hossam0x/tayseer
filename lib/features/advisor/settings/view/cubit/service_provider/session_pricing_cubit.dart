@@ -61,6 +61,8 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
       price: price,
       currency: old.currency,
       isEnabled: old.isEnabled,
+      numberOfSessions: old.numberOfSessions,
+      type: old.type,
     );
 
     emit(
@@ -83,6 +85,32 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
       price: old.price,
       currency: old.currency,
       isEnabled: isEnabled,
+      numberOfSessions: old.numberOfSessions,
+      type: old.type,
+    );
+
+    emit(
+      state.copyWith(
+        sessionTypes: updatedSessionTypes,
+        hasChanges: _hasSessionTypesChanged(updatedSessionTypes),
+      ),
+    );
+  }
+
+  void updateSessionNumberOfSessions(String sessionKey, int? count) {
+    final updatedSessionTypes = Map<String, SessionTypeModel>.from(
+      state.sessionTypes,
+    );
+    if (!updatedSessionTypes.containsKey(sessionKey)) return;
+
+    final old = updatedSessionTypes[sessionKey]!;
+    updatedSessionTypes[sessionKey] = SessionTypeModel(
+      duration: old.duration,
+      price: old.price,
+      currency: old.currency,
+      isEnabled: old.isEnabled,
+      numberOfSessions: count,
+      type: old.type,
     );
 
     emit(
@@ -102,6 +130,7 @@ class SessionPricingCubit extends Cubit<SessionPricingState> {
       if (original == null) return true;
       if (current!.price != original.price) return true;
       if (current.isEnabled != original.isEnabled) return true;
+      if (current.numberOfSessions != original.numberOfSessions) return true;
     }
     return false;
   }

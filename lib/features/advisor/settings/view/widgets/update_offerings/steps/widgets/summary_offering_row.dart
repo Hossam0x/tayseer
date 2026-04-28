@@ -45,6 +45,12 @@ class SummaryOfferingRow extends StatelessWidget {
               OfferingsItemChip(
                 text: '${offering.duration}${context.tr('minute_shortcut')}',
               ),
+              if (offering.type == 'package' &&
+                  offering.numberOfSessions != null)
+                OfferingsItemChip(
+                  text:
+                      '${offering.numberOfSessions} ${context.tr('sessions_count')}',
+                ),
               OfferingsItemChip(
                 text: offering.type == 'package'
                     ? context.tr('package_type')
