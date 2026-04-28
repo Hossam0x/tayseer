@@ -294,6 +294,32 @@ class QuestionsData {
   ];
 
   // ─────────────────────────────────────────────────────
+  // Gender-aware key helper
+  // Returns the gender-specific translation key if available
+  // ─────────────────────────────────────────────────────
+  static String genderedKey(String key) {
+    const genderedKeys = {
+      'are_you_smoker',
+      'religious_strict',
+      'religiosity_not_committed',
+      'religiosity_committed',
+      'religion_full',
+      'religion_partial',
+      'job_student',
+      'job_teacher',
+      'job_engineer',
+      'job_doctor',
+      'job_nurse',
+      'job_driver',
+      'job_business',
+      'job_unemployed',
+    };
+    if (!genderedKeys.contains(key)) return key;
+    final isFemale = kCurrentUserData?.gender == 'female';
+    return isFemale ? '${key}_female' : '${key}_male';
+  }
+
+  // ─────────────────────────────────────────────────────
   // Employers
   // ─────────────────────────────────────────────────────
 

@@ -144,8 +144,8 @@ class PastMatchItem {
     this.expiredAt,
   });
 
-  /// Human-readable reason derived from expiredAt
-  String get reason => 'انتهي مدة التوافق بينكم';
+  /// Translation key for the reason — use context.tr(reasonKey) in the UI
+  String get reasonKey => 'match_expired_reason';
 
   factory PastMatchItem.fromJson(Map<String, dynamic> json) {
     final user = json['user'] as Map<String, dynamic>? ?? {};

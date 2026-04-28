@@ -14,6 +14,7 @@ class NewUserSubModel {
   final int numberOfFreeWeeklyReinforcements;
   final int numberOfFreeMatchingRenables;
   final num? price;
+  final num? pricePerMonth;
   final String? currency;
   final int? savePercentage;
 
@@ -31,6 +32,7 @@ class NewUserSubModel {
     required this.numberOfFreeWeeklyReinforcements,
     required this.numberOfFreeMatchingRenables,
     this.price,
+    this.pricePerMonth,
     this.currency,
     this.savePercentage,
   });
@@ -55,6 +57,9 @@ class NewUserSubModel {
           json['numberOfFreeWeeklyReinforcements'] ?? 0,
       numberOfFreeMatchingRenables: json['numberOfFreeMatchingRenables'] ?? 0,
       price: json['price'],
+      pricePerMonth: json['pricePerMonth'] != null
+          ? num.tryParse(json['pricePerMonth'].toString())
+          : null,
       currency: json['currency'],
       savePercentage: json['savePercentage'],
     );

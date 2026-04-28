@@ -197,13 +197,13 @@ class _PastMatchesViewState extends State<PastMatchesView> {
                                       Text(
                                         item.name.isNotEmpty
                                             ? item.name
-                                            : 'مستخدم سابق',
+                                            : context.tr('previous_user'),
                                         style: Styles.textStyle16SemiBold,
                                         textAlign: TextAlign.end,
                                       ),
                                       Gap(4.h),
                                       Text(
-                                        item.reason,
+                                        context.tr(item.reasonKey),
                                         style: Styles.textStyle12.copyWith(
                                           color: AppColors.secondary600,
                                         ),

@@ -2,6 +2,7 @@
 // ⭐⭐⭐ COMPLETE FIXED VERSION WITH FULL TRANSLATION SUPPORT
 
 import 'package:tayseer/core/constant/marriage_constants.dart';
+import 'package:tayseer/features/user/questions/data/models/questions_data.dart';
 import 'package:tayseer/features/user/questions/presentation/widgets/categorized_multi_select_widget.dart';
 import 'package:tayseer/features/user/questions/presentation/widgets/custom_ios_picker.dart';
 import 'package:tayseer/features/user/questions/presentation/widgets/custom_selectable_list.dart';
@@ -277,6 +278,7 @@ class _MarriageFieldSelectionViewState
           initialSelectedKey:
               _selectedValue ?? initialSelectedKey, // ✅ يعكس الاختيار الحالي
           primaryColor: AppColors.kprimaryColor,
+          displayKeyMapper: fieldData['displayKeyMapper'] as String Function(String)?,
           onChanged: (key, translatedValue) {
             setState(() {
               _selectedValue = key;
@@ -468,6 +470,7 @@ class _MarriageFieldSelectionViewState
             'religion_none',
           ],
           'showSearch': false,
+          'displayKeyMapper': QuestionsData.genderedKey,
         };
 
       case 'smoker':
@@ -495,6 +498,7 @@ class _MarriageFieldSelectionViewState
           ],
           'showSearch': true,
           'searchHint': 'search_occupation',
+          'displayKeyMapper': QuestionsData.genderedKey,
         };
 
       case 'education_level':

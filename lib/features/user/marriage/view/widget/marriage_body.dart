@@ -1438,12 +1438,23 @@ class MarriageBodyState extends State<MarriageBody>
                       vertical: 20.h,
                     ),
                     sliver: SliverToBoxAdapter(
-                      child: CompatibilitySection(
-                        title: context.tr('compatibility_profile'),
-                        subtitle: user?.similarity != null
-                            ? '${user!.similarity}%'
-                            : '',
-                        tags: _buildCompatibilityTags(user?.matchingTags),
+                      child: Builder(
+                        builder: (context) {
+                          final subType =
+                              (_interactionsCubit ?? getIt<InteractionsCubit>())
+                                  .state
+                                  .subscriptionType;
+                          final isFree =
+                              subType == 'free' || subType.isEmpty;
+                          return CompatibilitySection(
+                            title: context.tr('compatibility_profile'),
+                            subtitle: user?.similarity != null
+                                ? '${user!.similarity}%'
+                                : '',
+                            tags: _buildCompatibilityTags(user?.matchingTags),
+                            isBlurred: isFree,
+                          );
+                        },
                       ),
                     ),
                   ),

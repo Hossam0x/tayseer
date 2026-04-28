@@ -10,6 +10,8 @@ class SelectableListWidget extends StatefulWidget {
   final String? selectedKey; // ⭐ Controlled by parent
   final String? initialSelectedKey; // ⭐ Optional for first init
   final Color primaryColor;
+  // ⭐ Optional: override the display key for each item (key → display key)
+  final String Function(String key)? displayKeyMapper;
 
   const SelectableListWidget({
     super.key,
@@ -20,6 +22,7 @@ class SelectableListWidget extends StatefulWidget {
     this.selectedKey,
     this.initialSelectedKey,
     this.primaryColor = Colors.pink,
+    this.displayKeyMapper,
   });
 
   @override
@@ -35,7 +38,8 @@ class _SelectableListWidgetState extends State<SelectableListWidget> {
 
     // Filtered list based on search
     final filteredList = widget.items.where((key) {
-      final translatedText = context.tr(key).toLowerCase();
+      final displayKey = widget.displayKeyMapper?.call(key) ?? key;
+      final translatedText = context.tr(displayKey).toLowerCase();
       return translatedText.contains(_search.toLowerCase());
     }).toList();
 
@@ -69,7 +73,8 @@ class _SelectableListWidgetState extends State<SelectableListWidget> {
             itemBuilder: (context, index) {
               final itemKey = filteredList[index];
               final isSelected = currentSelectedKey == itemKey;
-              final translatedValue = context.tr(itemKey);
+              final displayKey = widget.displayKeyMapper?.call(itemKey) ?? itemKey;
+              final translatedValue = context.tr(displayKey);
 
               return GestureDetector(
                 onTap: () => widget.onChanged?.call(itemKey, translatedValue),

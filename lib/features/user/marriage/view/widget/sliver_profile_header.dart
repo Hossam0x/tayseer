@@ -639,17 +639,17 @@ class _InfoCard extends StatelessWidget {
                     Flexible(
                       child: Text(
                         name,
-                        style: Styles.textStyle18Bold.copyWith(
+                        style: Styles.textStyle28.copyWith(
                           color: Colors.white,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Gap(5.w),
+                    Gap(2.w),
                     if (age.isNotEmpty)
                       Text(
-                        "$age ${context.tr("age")}",
-                        style: Styles.textStyle14.copyWith(color: Colors.white),
+                        "$age",
+                        style: Styles.textStyle32Meduim.copyWith(color: Colors.white),
                       ),
                     if (isVerified) ...[
                       Gap(8.w),

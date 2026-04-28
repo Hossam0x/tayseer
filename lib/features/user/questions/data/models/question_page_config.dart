@@ -42,6 +42,10 @@ class QuestionPageConfig {
   final String? dependsOnQuestion;
   final String? requiredAnswer;
 
+  /// Optional: maps each item key to a gender-aware display key.
+  /// Used with [SelectableListWidget.displayKeyMapper].
+  final String Function(String key)? displayKeyMapper;
+
   const QuestionPageConfig({
     required this.titleKey,
     this.subtitleKey,
@@ -59,5 +63,6 @@ class QuestionPageConfig {
     this.categorizedItems,
     this.dependsOnQuestion,
     this.requiredAnswer,
+    this.displayKeyMapper,
   });
 }

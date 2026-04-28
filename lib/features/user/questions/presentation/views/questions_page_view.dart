@@ -127,7 +127,7 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
         type: QuestionType.selectableList,
       ),
       QuestionPageConfig(
-        titleKey: 'are_you_smoker',
+        titleKey: QuestionsData.genderedKey('are_you_smoker'),
         questionNumber: 9,
         questionCategoryEnum: 'smoker',
         items: QuestionsData.yesNo,
@@ -139,6 +139,7 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
         questionCategoryEnum: 'religiousCommitment',
         items: QuestionsData.religiousCommitments,
         type: QuestionType.selectableList,
+        displayKeyMapper: QuestionsData.genderedKey,
       ),
       if (!kCurrentUserData!.isSingle )
         QuestionPageConfig(
@@ -185,6 +186,7 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
         type: QuestionType.selectableList,
         showSearch: true,
         searchHintKey: 'search_job',
+        displayKeyMapper: QuestionsData.genderedKey,
       ),
       QuestionPageConfig(
         titleKey: 'choose_employer',

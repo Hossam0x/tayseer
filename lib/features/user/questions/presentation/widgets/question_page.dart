@@ -82,6 +82,7 @@ class _QuestionPageState extends State<QuestionPage> {
               showSearch: widget.config.showSearch,
               searchHintKey: widget.config.searchHintKey,
               primaryColor: AppColors.kprimaryColor,
+              displayKeyMapper: widget.config.displayKeyMapper,
               onChanged: (key, value) {
                 _selectedValue.value = {'key': key, 'value': value};
               },

@@ -5,6 +5,7 @@ import 'package:tayseer/core/widgets/custom_video_and_edit/custom_uploaded_video
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/gif_overlay.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
+import 'package:tayseer/features/user/questions/data/models/questions_data.dart';
 import 'package:tayseer/features/user/questions/presentation/widgets/image_guidelines_bottom_sheet.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_cubit.dart';
@@ -140,6 +141,17 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView>
     return translated;
   }
 
+  /// Like [_translateValue] but applies gender-aware key mapping first.
+  String _genderedTranslate(String value, BuildContext context) {
+    if (value.isEmpty || value == 'اختر' || value == 'select') {
+      return context.tr('select');
+    }
+    final displayKey = QuestionsData.genderedKey(value);
+    final translated = context.tr(displayKey);
+    if (translated == displayKey && !displayKey.contains(' ')) return value;
+    return translated;
+  }
+
   void _openFullScreen(BuildContext context, String imageUrl, String heroTag) {
     FullScreenImageView.show(
       context,
@@ -153,28 +165,34 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView>
 Widget build(BuildContext context) {
   super.build(context);
 
-  final isUpdatingNow = widget.state.isUpdating;
-  if (isUpdatingNow && !_wasUpdating) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        showGifOverlay(
-          context,
-          repeatCount: 10,
-          gifDuration: const Duration(milliseconds: 900),
-        );
+  return BlocBuilder<MarriageProfileCubit, MarriageProfileState>(
+    bloc: widget.cubit,
+    builder: (context, state) {
+      final isUpdatingNow = state.isUpdating;
+      if (isUpdatingNow && !_wasUpdating) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            showGifOverlay(
+              context,
+              repeatCount: 10,
+              gifDuration: const Duration(milliseconds: 900),
+            );
+          }
+        });
       }
-    });
-  }
-  _wasUpdating = isUpdatingNow;
+      _wasUpdating = isUpdatingNow;
 
-  return _buildScrollContent(context);
+      // ✅ استخدم state.profile المحدّث من الـ Cubit
+      return _buildScrollContent(context, state.profile ?? widget.profile);
+    },
+  );
 }
   // ════════════════════════════════════════════════════════════════
   // SCROLL CONTENT
   // ✅ ClampingScrollPhysics = scroll يشتغل فوراً بدون ما ينتظر
   //    الصور تتحمل — ده الفرق الجوهري عن BouncingScrollPhysics
   // ════════════════════════════════════════════════════════════════
-  Widget _buildScrollContent(BuildContext context) {
+  Widget _buildScrollContent(BuildContext context, MarriageUserProfileModel profile) {
     return CustomScrollView(
       controller: _scrollController,
       cacheExtent: 5000,
@@ -190,7 +208,7 @@ Widget build(BuildContext context) {
                 _buildPersonalInfoSection(
                   context,
                   widget.cubit,
-                  widget.profile,
+                  profile,
                 ),
                 Gap(20.h),
                 Container(
@@ -198,14 +216,14 @@ Widget build(BuildContext context) {
                   child: _buildImagesSection(
                     context,
                     widget.cubit,
-                    widget.profile,
+                    profile,
                   ),
                 ),
                 Gap(24.h),
                 _buildProfessionalInfoSection(
                   context,
                   widget.cubit,
-                  widget.profile,
+                  profile,
                 ),
                 Gap(24.h),
                 Container(key: _videoKey, child: _buildVideoSection(context)),
@@ -215,15 +233,15 @@ Widget build(BuildContext context) {
                 _buildFamilyAndPreferencesSection(
                   context,
                   widget.cubit,
-                  widget.profile,
+                  profile,
                 ),
                 Gap(24.h),
-                _buildGoalsSection(context, widget.cubit, widget.profile),
+                _buildGoalsSection(context, widget.cubit, profile),
                 Gap(24.h),
                 _buildKnowMeMoreSection(
                   context,
                   widget.cubit,
-                  widget.profile,
+                  profile,
                 ),
                 Gap(32.h),
                 _buildSaveButton(context, widget.cubit, widget.state),
@@ -1509,7 +1527,7 @@ Widget build(BuildContext context) {
           ),
           _buildInfoRow(
             context.tr('commitment_to_religion'),
-            _translateValue(profile.aboutMe?.religiousCommitment ?? '', context),
+            _genderedTranslate(profile.aboutMe?.religiousCommitment ?? '', context),
             () => _navigateToFieldSelection(
               context, cubit, 'religiousCommitment',
               profile.aboutMe?.religiousCommitment,
@@ -1517,7 +1535,7 @@ Widget build(BuildContext context) {
           ),
           _buildInfoRow(
             context.tr('smoking'),
-            _translateValue(profile.aboutMe?.smoker ?? '', context),
+            _genderedTranslate(profile.aboutMe?.smoker ?? '', context),
             () => _navigateToFieldSelection(
               context, cubit, 'smoker', profile.aboutMe?.smoker,
             ),
@@ -1562,7 +1580,7 @@ Widget build(BuildContext context) {
           Gap(12.h),
           _buildInfoRow(
             context.tr('job'),
-            _translateValue(profile.professionalLife?.job ?? '', context),
+            _genderedTranslate(profile.professionalLife?.job ?? '', context),
             () => _navigateToFieldSelection(
               context, cubit, 'choose_job', profile.professionalLife?.job,
             ),
@@ -1889,7 +1907,11 @@ Widget build(BuildContext context) {
         builder: (context) => MarriageFieldSelectionView(
           fieldName: fieldKey,
           currentValue: currentValue,
-          onValueSelected: (value) => cubit.updateField(fieldKey, value),
+          onValueSelected: (value) {
+            cubit.updateField(fieldKey, value);
+            // Force rebuild after returning to reflect the new value
+            if (mounted) setState(() {});
+          },
         ),
       ),
     );

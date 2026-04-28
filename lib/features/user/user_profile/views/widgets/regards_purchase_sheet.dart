@@ -19,6 +19,7 @@ class PurchasePackage {
   final String appleProductId;
   final int count;
   final double price;
+  final double? pricePerMonth;
   final double priceForOne;
   final String currency;
   final bool isMostPopular;
@@ -31,6 +32,7 @@ class PurchasePackage {
     required this.appleProductId,
     required this.count,
     required this.price,
+    this.pricePerMonth,
     this.priceForOne = 0,
     this.currency = 'EGP',
     this.isMostPopular = false,
@@ -88,6 +90,12 @@ class PurchasePackage {
         appleProductId: sub.appleProductId,
         count: sub.numberOfLikes,
         price: (sub.price ?? 0).toDouble(),
+        pricePerMonth: sub.pricePerMonth?.toDouble() ??
+            (sub.isThreeMonths
+                ? (sub.price ?? 0).toDouble() / 3
+                : sub.isMonthly
+                    ? (sub.price ?? 0).toDouble()
+                    : null),
         currency: sub.currency ?? 'EGP',
         isMostPopular: isMid,
         hasDiscount: discount != null,
@@ -607,10 +615,31 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                     ),
                   ),
                   SizedBox(height: 3.h),
-                  Text(
-                    '${pkg.price.toStringAsFixed(2)} ${pkg.currency}',
-                    style: TextStyle(fontSize: 13.sp, color: Colors.black54),
-                  ),
+                  // لو pricePerMonth موجود → اعرض "سعر الشهر: X EGP"
+                  // لو مش موجود → اعرض السعر الكلي
+                  if (pkg.pricePerMonth != null) ...[
+                    Text(
+                      '${context.tr('price_per_month')}: ${pkg.pricePerMonth!.toStringAsFixed(2)} ${pkg.currency}',
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: _goldMid,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      '${context.tr('total')}: ${pkg.price.toStringAsFixed(2)} ${pkg.currency}',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ] else
+                    Text(
+                      '${pkg.price.toStringAsFixed(2)} ${pkg.currency}',
+                      style: TextStyle(fontSize: 13.sp, color: Colors.black54),
+                    ),
                 ],
               ),
             ),
