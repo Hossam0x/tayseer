@@ -111,6 +111,7 @@ class WithdrawView extends StatelessWidget {
                 child: TextFormField(
                   textAlign: isArabic ? TextAlign.right : TextAlign.left,
                   keyboardType: TextInputType.number,
+                  autofillHints: const [AutofillHints.transactionAmount],
                   style: Styles.textStyle20Bold.copyWith(
                     color: AppColors.primaryText,
                   ),

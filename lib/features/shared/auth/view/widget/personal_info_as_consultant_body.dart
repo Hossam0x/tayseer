@@ -51,6 +51,7 @@ class _PersonalInfoAsConsultantBodyState
   Widget build(BuildContext context) {
     final authCubit = getIt<AuthCubit>();
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.transparent,
       body: CustomBackground(
         child: SafeArea(
@@ -59,249 +60,251 @@ class _PersonalInfoAsConsultantBodyState
               // ── المحتوى القابل للتمرير ──
               SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 90),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Align(
-                        alignment: isArabic
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: IconButton(
-                          onPressed: () => context.pop(),
-                          icon: const Icon(Icons.arrow_back),
+                child: AutofillGroup(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Align(
+                          alignment: isArabic
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: IconButton(
+                            onPressed: () => context.pop(),
+                            icon: const Icon(Icons.arrow_back),
+                          ),
                         ),
-                      ),
 
-                      Text(
-                        context.tr('enterPersonalInfo'),
-                        style: Styles.textStyle20Bold.copyWith(
-                          color: AppColors.kscandryTextColor,
+                        Text(
+                          context.tr('enterPersonalInfo'),
+                          style: Styles.textStyle20Bold.copyWith(
+                            color: AppColors.kscandryTextColor,
+                          ),
                         ),
-                      ),
 
-                      SizedBox(height: context.height * 0.009),
+                        SizedBox(height: context.height * 0.009),
 
-                      Text(
-                        textAlign: TextAlign.center,
-                        context.tr('personalInfoHint'),
-                        style: Styles.textStyle12,
-                      ),
-                      SizedBox(height: context.height * 0.02),
-                      Text(
-                        context.tr('upload_Photo'),
-                        style: Styles.textStyle14,
-                      ),
-                      SizedBox(height: context.height * 0.02),
-                      Center(
-                        child: UploadImageFormField(
-                          initialValue: authCubit.pickedImage,
-                          isShowImage: true,
-                          onImagePicked: (image) {
-                            authCubit.pickedImage = image;
-                          },
-                          validator: (v) =>
-                              v == null ? context.tr('required_images') : null,
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      Center(
-                        child: Text(
+                        Text(
                           textAlign: TextAlign.center,
-                          context.tr('uploadClearPhoto'),
-                          style: Styles.textStyle12.copyWith(
-                            color: Colors.grey,
+                          context.tr('personalInfoHint'),
+                          style: Styles.textStyle12,
+                        ),
+                        SizedBox(height: context.height * 0.02),
+                        Text(
+                          context.tr('upload_Photo'),
+                          style: Styles.textStyle14,
+                        ),
+                        SizedBox(height: context.height * 0.02),
+                        Center(
+                          child: UploadImageFormField(
+                            initialValue: authCubit.pickedImage,
+                            isShowImage: true,
+                            onImagePicked: (image) {
+                              authCubit.pickedImage = image;
+                            },
+                            validator: (v) => v == null
+                                ? context.tr('required_images')
+                                : null,
                           ),
                         ),
-                      ),
 
-                      const SizedBox(height: 30),
+                        const SizedBox(height: 8),
 
-                      CustomTextFormField(
-                        controller: authCubit.nameAsConsultantController,
-                        isName: true,
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      CustomDropdownFormField<String>(
-                        hint: context.tr('gender'),
-                        value: authCubit.selectedGender,
-                        items: [
-                          DropdownMenuItem(
-                            value: 'male',
-                            child: Text(
-                              context.tr('male'),
-                              style: Styles.textStyle12,
+                        Center(
+                          child: Text(
+                            textAlign: TextAlign.center,
+                            context.tr('uploadClearPhoto'),
+                            style: Styles.textStyle12.copyWith(
+                              color: Colors.grey,
                             ),
                           ),
-                          DropdownMenuItem(
-                            value: 'female',
-                            child: Text(
-                              context.tr('female'),
-                              style: Styles.textStyle12,
+                        ),
+
+                        const SizedBox(height: 30),
+
+                        CustomTextFormField(
+                          controller: authCubit.nameAsConsultantController,
+                          isName: true,
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        CustomDropdownFormField<String>(
+                          hint: context.tr('gender'),
+                          value: authCubit.selectedGender,
+                          items: [
+                            DropdownMenuItem(
+                              value: 'male',
+                              child: Text(
+                                context.tr('male'),
+                                style: Styles.textStyle12,
+                              ),
                             ),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          authCubit.selectedGender = value;
-                        },
-                        validator: (value) {
-                          if (value == null) {
-                            return context.tr('completeAllData');
-                          }
-                          return null;
-                        },
-                      ),
+                            DropdownMenuItem(
+                              value: 'female',
+                              child: Text(
+                                context.tr('female'),
+                                style: Styles.textStyle12,
+                              ),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            authCubit.selectedGender = value;
+                          },
+                          validator: (value) {
+                            if (value == null) {
+                              return context.tr('completeAllData');
+                            }
+                            return null;
+                          },
+                        ),
 
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                      // Date of Birth Field with iOS Pickers
-                      FormField<DateTime>(
-                        initialValue: null,
-                        validator: (value) {
-                          if (_selectedDay == null ||
-                              _selectedMonth == null ||
-                              _selectedYear == null) {
-                            return context.tr('required');
-                          }
-                          return null;
-                        },
-                        builder: (field) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  _showDatePickerModal(context, field);
-                                },
-                                child: Container(
-                                  width: double.infinity,
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: 16,
-                                    horizontal: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.kWhiteColor,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: field.hasError
-                                          ? Colors.red
-                                          : AppColors.kprimaryColor.withValues(
-                                              alpha: 0.5,
-                                            ),
-                                      width: 0.8,
+                        // Date of Birth Field with iOS Pickers
+                        FormField<DateTime>(
+                          initialValue: null,
+                          validator: (value) {
+                            if (_selectedDay == null ||
+                                _selectedMonth == null ||
+                                _selectedYear == null) {
+                              return context.tr('required');
+                            }
+                            return null;
+                          },
+                          builder: (field) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    _showDatePickerModal(context, field);
+                                  },
+                                  child: Container(
+                                    width: double.infinity,
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 16,
+                                      horizontal: 12,
                                     ),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        _selectedDay != null &&
-                                                _selectedMonth != null &&
-                                                _selectedYear != null
-                                            ? '$_selectedDay / $_selectedMonth / $_selectedYear'
-                                            : context.tr('birthDate'),
-                                        style: Styles.textStyle12.copyWith(
-                                          color: _selectedDay != null
-                                              ? AppColors.blackColor
-                                              : AppColors.kprimaryColor
-                                                    .withValues(alpha: 0.5),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.kWhiteColor,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: field.hasError
+                                            ? Colors.red
+                                            : AppColors.kprimaryColor
+                                                  .withValues(alpha: 0.5),
+                                        width: 0.8,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          _selectedDay != null &&
+                                                  _selectedMonth != null &&
+                                                  _selectedYear != null
+                                              ? '$_selectedDay / $_selectedMonth / $_selectedYear'
+                                              : context.tr('birthDate'),
+                                          style: Styles.textStyle12.copyWith(
+                                            color: _selectedDay != null
+                                                ? AppColors.blackColor
+                                                : AppColors.kprimaryColor
+                                                      .withValues(alpha: 0.5),
+                                          ),
                                         ),
-                                      ),
-                                      Icon(
-                                        Icons.calendar_today,
-                                        color: AppColors.kprimaryColor
-                                            .withValues(alpha: 0.5),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              if (field.hasError)
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                    top: 4,
-                                    right: 12,
-                                  ),
-                                  child: Text(
-                                    field.errorText!,
-                                    style: Styles.textStyle10.copyWith(
-                                      color: Colors.red,
+                                        Icon(
+                                          Icons.calendar_today,
+                                          color: AppColors.kprimaryColor
+                                              .withValues(alpha: 0.5),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
-                            ],
-                          );
-                        },
-                      ),
+                                if (field.hasError)
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      top: 4,
+                                      right: 12,
+                                    ),
+                                    child: Text(
+                                      field.errorText!,
+                                      style: Styles.textStyle10.copyWith(
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
 
-                      SizedBox(height: context.height * 0.02),
+                        SizedBox(height: context.height * 0.02),
 
-                      // Nationality Dropdown
-                      CustomDropdownFormField<String>(
-                        hint: context.tr('choose_nationality'),
-                        value: _selectedNationality,
-                        items: _nationalityKeys
-                            .map(
-                              (key) => DropdownMenuItem(
-                                value: key,
-                                child: Text(
-                                  context.tr(key),
-                                  style: Styles.textStyle12,
+                        // Nationality Dropdown
+                        CustomDropdownFormField<String>(
+                          hint: context.tr('choose_nationality'),
+                          value: _selectedNationality,
+                          items: _nationalityKeys
+                              .map(
+                                (key) => DropdownMenuItem(
+                                  value: key,
+                                  child: Text(
+                                    context.tr(key),
+                                    style: Styles.textStyle12,
+                                  ),
                                 ),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedNationality = value;
-                          });
-                        },
-                        validator: (value) {
-                          if (value == null) {
-                            return context.tr('completeAllData');
-                          }
-                          return null;
-                        },
-                      ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedNationality = value;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null) {
+                              return context.tr('completeAllData');
+                            }
+                            return null;
+                          },
+                        ),
 
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                      // Country Dropdown
-                      CustomDropdownFormField<String>(
-                        hint: context.tr('choose_country'),
-                        value: _selectedCountry,
-                        items: _countryKeys
-                            .map(
-                              (key) => DropdownMenuItem(
-                                value: key,
-                                child: Text(
-                                  context.tr(key),
-                                  style: Styles.textStyle12,
+                        // Country Dropdown
+                        CustomDropdownFormField<String>(
+                          hint: context.tr('choose_country'),
+                          value: _selectedCountry,
+                          items: _countryKeys
+                              .map(
+                                (key) => DropdownMenuItem(
+                                  value: key,
+                                  child: Text(
+                                    context.tr(key),
+                                    style: Styles.textStyle12,
+                                  ),
                                 ),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedCountry = value;
-                          });
-                        },
-                        validator: (value) {
-                          if (value == null) {
-                            return context.tr('completeAllData');
-                          }
-                          return null;
-                        },
-                      ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedCountry = value;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null) {
+                              return context.tr('completeAllData');
+                            }
+                            return null;
+                          },
+                        ),
 
-                      SizedBox(height: context.height * 0.03),
-                    ],
+                        SizedBox(height: context.height * 0.03),
+                      ],
+                    ),
                   ),
                 ),
               ),

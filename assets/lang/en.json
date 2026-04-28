@@ -1862,13 +1862,13 @@
   "minutes_word": "Minutes",
   "add_session_to_list": "Add Session to List",
   "minute_shortcut": "m",
-  "choose_country_title": "اختر الدولة",
-  "choose_country_subtitle": "حدد الدولة التي ستقدم فيها خدماتك",
+  "choose_country_title": "Choose Country",
+  "choose_country_subtitle": "Select the country where you will provide your services",
   "select_one_country_max": "You can select only one country at most",
-  "country_word": "دولة",
-  "available_countries": "الدول المتاحة",
-  "most_requested": "الأكثر طلباً",
-  "all_countries": "جميع الدول",
+  "country_word": "countries",
+  "available_countries": "Available Countries",
+  "most_requested": "Most Requested",
+  "all_countries": "All Countries",
   "setup_summary_title": "Setup Summary",
   "sessions_ready": "Your sessions are ready!",
   "countries_word": "Countries",
@@ -2164,5 +2164,7 @@
   "currency_MAD": "MAD",
   "currency_TND": "TND",
   "session_type_session": "Individual",
-  "session_type_package": "Package"
+  "session_type_package": "Package",
+  "accountActivationPendingHint": "Thank you for joining! Your account is under review by our team, and you will be notified once the activation process is complete.",
+  "guest_login_failed": "Guest login failed, please try again."
 }

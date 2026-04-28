@@ -368,7 +368,7 @@
   "select_location_on_map": "اختار مكان الحدث",
   "please_select_location_on_map": "الرجاء اختيار مكان الحدث",
   "confirm_location": "اختيار",
-  "enter_email": "Example: name@example.com",
+  "enter_email": "مثال: name@example.com",
   "enter_name": "ادخل اسمك هنا",
   "enter_account_name": "ادخل اسم الحساب",
   "password": "كلمة المرور",
@@ -2163,5 +2163,7 @@
   "currency_MAD": "د.م",
   "currency_TND": "د.ت",
   "session_type_session": "فردية",
-  "session_type_package": "باقة"
+  "session_type_package": "باقة",
+  "accountActivationPendingHint": "شكراً لانضمامك! حسابك قيد المراجعة من قِبل فريقنا، وسيتم إعلامك فور اكتمال عملية التفعيل.",
+  "guest_login_failed": "فشل تسجيل الدخول كزائر، يرجى المحاولة مرة أخرى."
 }

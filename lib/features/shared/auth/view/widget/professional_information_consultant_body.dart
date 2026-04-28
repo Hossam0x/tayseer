@@ -52,6 +52,7 @@ class _ProfessionalInformationAsConsultantBodyState
     final authCubit = getIt<AuthCubit>();
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.transparent,
       body: CustomBackground(
         child: SafeArea(
@@ -60,168 +61,170 @@ class _ProfessionalInformationAsConsultantBodyState
               // ── المحتوى القابل للتمرير ──
               SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 90),
-                child: Form(
-                  key: _formKey,
-                  child: BlocBuilder<AuthCubit, AuthState>(
-                    builder: (context, state) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          /// ➜ Back
-                          Align(
-                            alignment: isArabic
-                                ? Alignment.centerRight
-                                : Alignment.centerLeft,
-                            child: IconButton(
-                              onPressed: () => context.pop(),
-                              icon: const Icon(Icons.arrow_back),
-                            ),
-                          ),
-
-                          /// ➜ Title
-                          Text(
-                            context.tr('enterProfessionalInfo'),
-                            style: Styles.textStyle20Bold.copyWith(
-                              color: AppColors.kscandryTextColor,
-                            ),
-                          ),
-
-                          const SizedBox(height: 6),
-
-                          Text(
-                            context.tr('professionalInfoHint'),
-                            style: Styles.textStyle12.copyWith(
-                              color: AppColors.kgreyColor,
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          /// ➜ Specialization
-                          CustomDropdownFormField<String>(
-                            hint: context.tr('specialization'),
-                            value: authCubit.specialization,
-                            items: specializationKeys.map((key) {
-                              final translated = context.tr(key);
-                              return DropdownMenuItem(
-                                value: key,
-                                child: Text(
-                                  translated,
-                                  style: Styles.textStyle14,
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: authCubit.setSpecialization,
-                            validator: (value) =>
-                                value == null ? context.tr('required') : null,
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          /// ➜ Job Level
-                          CustomDropdownFormField<String>(
-                            hint: context.tr('jobLevel'),
-                            value: authCubit.jobLevel,
-                            items: jobLevelKeys.map((key) {
-                              final translated = context.tr(key);
-                              return DropdownMenuItem(
-                                value: key,
-                                child: Text(
-                                  translated,
-                                  style: Styles.textStyle14,
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: authCubit.setJobLevel,
-                            validator: (value) =>
-                                value == null ? context.tr('required') : null,
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          /// ➜ Experience Years
-                          CustomDropdownFormField<String>(
-                            hint: context.tr('experienceYears'),
-                            value: authCubit.experienceYears,
-                            items: experienceYearsKeys.map((key) {
-                              final translated = context.tr(key);
-                              return DropdownMenuItem(
-                                value: key,
-                                child: Text(
-                                  translated,
-                                  style: Styles.textStyle14,
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: authCubit.setExperienceYears,
-                            validator: (value) =>
-                                value == null ? context.tr('required') : null,
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          /// ➜ Bio
-                          CustomTextFormField(
-                            controller: authCubit.bioController,
-                            onChanged: authCubit.updateText,
-                            hintText: context.tr('bio'),
-                            maxLines: 8,
-                          ),
-                          const SizedBox(height: 16),
-
-                          /// ➜ AI Content Generation Button
-                          CusttomGlassButton(
-                            text: context.tr('generate_ai_content'),
-                            showIcon: state.isAiState == CubitStates.loading,
-                            onTap: () {
-                              authCubit.enhanceTextWithGemini(context);
-                            },
-                          ),
-                          const SizedBox(height: 24),
-
-                          /// ➜ Upload Video
-                          UploadVideoWidget(
-                            onTap: () async {
-                              final video = await _videoPicker
-                                  .pickFromGallery();
-                              if (video != null) {
-                                authCubit.setPickedVideo(video);
-                              }
-                            },
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          /// ➜ Video Preview
-                          if (authCubit.pickedVideo != null)
+                child: AutofillGroup(
+                  child: Form(
+                    key: _formKey,
+                    child: BlocBuilder<AuthCubit, AuthState>(
+                      builder: (context, state) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            /// ➜ Back
                             Align(
-                              alignment: Alignment.centerRight,
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  CustomUploadedVideoPreview(
-                                    video: authCubit.pickedVideo!,
-                                    onRemove: authCubit.removePickedVideo,
-                                    onInitialized: () =>
-                                        authCubit.setVideoLoaded(),
-                                  ),
-                                  if (authCubit.isVideoLoading)
-                                    Positioned.fill(
-                                      child: Container(
-                                        color: Colors.black.withOpacity(0.35),
-                                        child: const Center(
-                                          child: CustomloadingApp(),
-                                        ),
-                                      ),
-                                    ),
-                                ],
+                              alignment: isArabic
+                                  ? Alignment.centerRight
+                                  : Alignment.centerLeft,
+                              child: IconButton(
+                                onPressed: () => context.pop(),
+                                icon: const Icon(Icons.arrow_back),
                               ),
                             ),
 
-                          const SizedBox(height: 20),
-                        ],
-                      );
-                    },
+                            /// ➜ Title
+                            Text(
+                              context.tr('enterProfessionalInfo'),
+                              style: Styles.textStyle20Bold.copyWith(
+                                color: AppColors.kscandryTextColor,
+                              ),
+                            ),
+
+                            const SizedBox(height: 6),
+
+                            Text(
+                              context.tr('professionalInfoHint'),
+                              style: Styles.textStyle12.copyWith(
+                                color: AppColors.kgreyColor,
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            /// ➜ Specialization
+                            CustomDropdownFormField<String>(
+                              hint: context.tr('specialization'),
+                              value: authCubit.specialization,
+                              items: specializationKeys.map((key) {
+                                final translated = context.tr(key);
+                                return DropdownMenuItem(
+                                  value: key,
+                                  child: Text(
+                                    translated,
+                                    style: Styles.textStyle14,
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: authCubit.setSpecialization,
+                              validator: (value) =>
+                                  value == null ? context.tr('required') : null,
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            /// ➜ Job Level
+                            CustomDropdownFormField<String>(
+                              hint: context.tr('jobLevel'),
+                              value: authCubit.jobLevel,
+                              items: jobLevelKeys.map((key) {
+                                final translated = context.tr(key);
+                                return DropdownMenuItem(
+                                  value: key,
+                                  child: Text(
+                                    translated,
+                                    style: Styles.textStyle14,
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: authCubit.setJobLevel,
+                              validator: (value) =>
+                                  value == null ? context.tr('required') : null,
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            /// ➜ Experience Years
+                            CustomDropdownFormField<String>(
+                              hint: context.tr('experienceYears'),
+                              value: authCubit.experienceYears,
+                              items: experienceYearsKeys.map((key) {
+                                final translated = context.tr(key);
+                                return DropdownMenuItem(
+                                  value: key,
+                                  child: Text(
+                                    translated,
+                                    style: Styles.textStyle14,
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: authCubit.setExperienceYears,
+                              validator: (value) =>
+                                  value == null ? context.tr('required') : null,
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            /// ➜ Bio
+                            CustomTextFormField(
+                              controller: authCubit.bioController,
+                              onChanged: authCubit.updateText,
+                              hintText: context.tr('bio'),
+                              maxLines: 8,
+                            ),
+                            const SizedBox(height: 16),
+
+                            /// ➜ AI Content Generation Button
+                            CusttomGlassButton(
+                              text: context.tr('generate_ai_content'),
+                              showIcon: state.isAiState == CubitStates.loading,
+                              onTap: () {
+                                authCubit.enhanceTextWithGemini(context);
+                              },
+                            ),
+                            const SizedBox(height: 24),
+
+                            /// ➜ Upload Video
+                            UploadVideoWidget(
+                              onTap: () async {
+                                final video = await _videoPicker
+                                    .pickFromGallery();
+                                if (video != null) {
+                                  authCubit.setPickedVideo(video);
+                                }
+                              },
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            /// ➜ Video Preview
+                            if (authCubit.pickedVideo != null)
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    CustomUploadedVideoPreview(
+                                      video: authCubit.pickedVideo!,
+                                      onRemove: authCubit.removePickedVideo,
+                                      onInitialized: () =>
+                                          authCubit.setVideoLoaded(),
+                                    ),
+                                    if (authCubit.isVideoLoading)
+                                      Positioned.fill(
+                                        child: Container(
+                                          color: Colors.black.withOpacity(0.35),
+                                          child: const Center(
+                                            child: CustomloadingApp(),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+
+                            const SizedBox(height: 20),
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),

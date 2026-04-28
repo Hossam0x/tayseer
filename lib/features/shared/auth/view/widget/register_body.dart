@@ -54,74 +54,79 @@ class RegisterBody extends StatelessWidget {
         }
       },
       child: SingleChildScrollView(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
         child: CustomBackground(
-          child: Form(
-            key: authCubit.registerFormKey,
-            child: Padding(
-              padding: const EdgeInsets.all(15.0),
-              child: Column(
-                children: [
-                  SizedBox(height: context.height * 0.05),
-                  Align(
-                    alignment: isArabic
-                        ? Alignment.centerRight
-                        : Alignment.centerLeft,
-                    child: IconButton(
-                      onPressed: () async {
-                        context.pop();
-                        await CachNetwork.removeData(key: 'user_type');
-                        selectedUserType = UserTypeEnum.user;
-                      },
-                      icon: Icon(
-                        Icons.arrow_back,
-                        color: Colors.black,
-                        size: 25,
+          child: AutofillGroup(
+            child: Form(
+              key: authCubit.registerFormKey,
+              child: Padding(
+                padding: const EdgeInsets.all(15.0),
+                child: Column(
+                  children: [
+                    SizedBox(height: context.height * 0.05),
+                    Align(
+                      alignment: isArabic
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: IconButton(
+                        onPressed: () async {
+                          context.pop();
+                          await CachNetwork.removeData(key: 'user_type');
+                          selectedUserType = UserTypeEnum.user;
+                        },
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: Colors.black,
+                          size: 25,
+                        ),
                       ),
                     ),
-                  ),
-                  SizedBox(height: context.height * 0.01),
-                  AppImage(
-                    AssetsData.kAppLogo,
-                    width: context.width * 0.65,
-                    height: context.height * 0.14,
-                  ),
-                  SizedBox(height: context.height * 0.03),
-                  Text(
-                    context.tr('email_title'),
-                    style: Styles.textStyle20.copyWith(
-                      color: HexColor('590d1c'),
+                    SizedBox(height: context.height * 0.01),
+                    AppImage(
+                      AssetsData.kAppLogo,
+                      width: context.width * 0.65,
+                      height: context.height * 0.14,
                     ),
-                  ),
-                  SizedBox(height: context.height * 0.01),
-
-                  Text(
-                    context.tr('email_sub_title'),
-                    style: Styles.textStyle14.copyWith(
-                      color: HexColor('4d4d4d'),
+                    SizedBox(height: context.height * 0.03),
+                    Text(
+                      context.tr('email_title'),
+                      style: Styles.textStyle20.copyWith(
+                        color: HexColor('590d1c'),
+                      ),
                     ),
-                  ),
-                  SizedBox(height: context.height * 0.05),
+                    SizedBox(height: context.height * 0.01),
 
-                  /// 🔹 البريد الإلكتروني
-                  CustomTextFFieldTitle(
-                    title: '',
-                    controller: authCubit.emailController,
-                    isMail: true,
-                  ),
-                  SizedBox(height: context.height * 0.05),
+                    Text(
+                      context.tr('email_sub_title'),
+                      style: Styles.textStyle14.copyWith(
+                        color: HexColor('4d4d4d'),
+                      ),
+                    ),
+                    SizedBox(height: context.height * 0.05),
 
-                  /// 🔹 زر التسجيل
-                  CustomBotton(
-                    useGradient: true,
-                    width: context.width,
-                    title: context.tr('log_In'),
-                    onPressed: () {
-                      authCubit.logInUser(fromRegistrationScreen: true);
-                    },
-                  ),
+                    /// 🔹 البريد الإلكتروني
+                    CustomTextFFieldTitle(
+                      title: '',
+                      controller: authCubit.emailController,
+                      isMail: true,
+                    ),
+                    SizedBox(height: context.height * 0.05),
 
-                  SizedBox(height: context.height * 0.03),
-                ],
+                    /// 🔹 زر التسجيل
+                    CustomBotton(
+                      useGradient: true,
+                      width: context.width,
+                      title: context.tr('log_In'),
+                      onPressed: () {
+                        authCubit.logInUser(fromRegistrationScreen: true);
+                      },
+                    ),
+
+                    SizedBox(height: context.height * 0.03),
+                  ],
+                ),
               ),
             ),
           ),
