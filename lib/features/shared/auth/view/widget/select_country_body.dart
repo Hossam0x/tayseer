@@ -86,7 +86,7 @@ class _SelectCountryBodyState extends State<SelectCountryBody> {
               ),
               Gap(context.responsiveHeight(6)),
               Text(
-                context.tr('choose_country_subtitle'),
+                context.tr('select_one_country_max'),
                 textAlign: TextAlign.center,
                 style: Styles.textStyle12.copyWith(color: Colors.grey.shade600),
               ),

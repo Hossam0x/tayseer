@@ -1864,6 +1864,7 @@
   "minute_shortcut": "m",
   "choose_country_title": "اختر الدولة",
   "choose_country_subtitle": "حدد الدولة التي ستقدم فيها خدماتك",
+  "select_one_country_max": "You can select only one country at most",
   "country_word": "دولة",
   "available_countries": "الدول المتاحة",
   "most_requested": "الأكثر طلباً",

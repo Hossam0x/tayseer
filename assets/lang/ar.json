@@ -1785,6 +1785,7 @@
   "minute_shortcut": "د",
   "choose_country_title": "اختر الدولة",
   "choose_country_subtitle": "حدد الدولة التي ستقدم فيها خدماتك",
+  "select_one_country_max": "يمكنك اختيار دولة واحدة فقط على الأكثر",
   "country_word": "دولة",
   "available_countries": "الدول المتاحة",
   "most_requested": "الأكثر طلباً",
