@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/enum/session_card_style.dart';
 import 'package:tayseer/features/advisor/session/presentation/manager/advisor_session_cubit.dart';
 import 'package:tayseer/features/advisor/session/presentation/manager/advisor_session_state.dart';
@@ -69,7 +67,7 @@ class _SessionViewBodyState extends State<SessionViewBody> {
               padding: const EdgeInsets.symmetric(vertical: 40),
               child: EmptySessionsState(
                 title: "لا يوجد جلسات حتى الان",
-                subtitle: "احجز جلسة لتتمكن من حل مشاكلك النفسية",
+                subtitle: "",
                 showAnimation: true,
               ),
             ),

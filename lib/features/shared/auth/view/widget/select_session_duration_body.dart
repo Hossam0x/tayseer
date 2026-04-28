@@ -320,6 +320,7 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
                               index,
                               context,
                               authCubit,
+                              selectedCurrencySymbol,
                             );
                           }),
                         ],
@@ -515,12 +516,10 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
     int index,
     BuildContext context,
     AuthCubit authCubit,
+    String currencySymbol,
   ) {
     double parsedPrice = double.tryParse(item.price) ?? 0.0;
-    String formattedPrice = CurrencyHelper.formatPriceFromContext(
-      context,
-      parsedPrice,
-    );
+    String formattedPrice = '$parsedPrice $currencySymbol';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
