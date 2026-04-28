@@ -294,6 +294,7 @@ class _FrontProfileCard extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
+        // ✅ الصورة فقط داخل SecureImageWrapper — محمية من screenshot
         GestureDetector(
           onTap: () {
             if (images.isNotEmpty && !shouldBlur) {
@@ -314,43 +315,52 @@ class _FrontProfileCard extends StatelessWidget {
               bottomLeft: Radius.circular(bottomRadius),
               bottomRight: Radius.circular(bottomRadius),
             ),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                if (!_hasImage)
-                  _buildPlaceholder()
-                else
-                  ScreenshotProtectedImage(
+            child: !_hasImage
+                ? _buildPlaceholder()
+                : ScreenshotProtectedImage(
                     imageUrl: coverImage,
                     fit: BoxFit.cover,
                     isAnimating: isAnimating,
                     shouldBlur: shouldBlur,
                   ),
+          ),
+        ),
 
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.2),
-                          Colors.black.withOpacity(0.65),
-                        ],
-                        stops: const [0.0, 0.45, 0.72, 1.0],
-                      ),
-                    ),
+        // ✅ الـ gradient خارج الـ SecureImageWrapper — يظهر في screenshot
+        Positioned.fill(
+          child: IgnorePointer(
+            child: ClipRRect(
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(bottomRadius),
+                bottomRight: Radius.circular(bottomRadius),
+              ),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.2),
+                      Colors.black.withOpacity(0.65),
+                    ],
+                    stops: const [0.0, 0.45, 0.72, 1.0],
                   ),
                 ),
-
-                if (shouldBlur) Container(color: Colors.black.withOpacity(0.2)),
-              ],
+              ),
             ),
           ),
         ),
 
+        if (shouldBlur)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Container(color: Colors.black.withOpacity(0.2)),
+            ),
+          ),
+
+        // ✅ المعلومات خارج الـ SecureImageWrapper — تظهر في screenshot
         Positioned(
           bottom: 0.h,
           right: 0.w,
