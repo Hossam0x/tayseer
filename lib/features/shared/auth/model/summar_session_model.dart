@@ -19,7 +19,8 @@ class SessionItemModel {
   final String type; // 'session' أو 'package'
   final String duration; // '45' أو '90'
   final String price;
-  final String currency; // ★ جديد: 'SAR', 'EGP', etc.
+  final String currency; // 'SAR', 'EGP', etc.
+  final int? numberOfSessions; // للباقات فقط
 
   SessionItemModel({
     required this.name,
@@ -27,6 +28,7 @@ class SessionItemModel {
     required this.duration,
     required this.price,
     required this.currency,
+    this.numberOfSessions,
   });
 
   /// تحويل لـ JSON مطابق للـ API
@@ -36,6 +38,7 @@ class SessionItemModel {
     'currency': currency,
     'duration': duration,
     'type': type,
+    if (numberOfSessions != null) 'numberOfSessions': numberOfSessions,
   };
 }
 

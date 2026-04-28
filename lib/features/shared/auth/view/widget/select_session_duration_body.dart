@@ -1,5 +1,9 @@
 import 'package:flutter/services.dart';
 import 'package:tayseer/core/utils/helper/currency_helper.dart';
+import 'package:tayseer/core/widgets/simple_app_bar.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/update_offerings/shared/offerings_duration_radio.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/update_offerings/shared/offerings_session_type_card.dart';
+import 'package:tayseer/features/advisor/settings/view/widgets/update_offerings/steps/widgets/add_sessions_empty_state.dart';
 import 'package:tayseer/features/shared/auth/model/summar_session_model.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
@@ -14,19 +18,20 @@ class SelectSessionDurationBody extends StatefulWidget {
 }
 
 class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
-  // --- متغيرات محلية فقط (مش محتاجة تكون في الكيوبت) ---
-  bool isIndividualSelected = false;
-  bool isPackageSelected = false;
+  bool _isIndividualSelected = false;
+  bool _isPackageSelected = false;
+  String? _selectedDuration;
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
-
-  String? selectedDuration;
+  final TextEditingController _numberOfSessionsController =
+      TextEditingController();
 
   @override
   void dispose() {
     _nameController.dispose();
     _priceController.dispose();
+    _numberOfSessionsController.dispose();
     super.dispose();
   }
 
@@ -35,11 +40,9 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
       context,
     ).showSnackBar(CustomSnackBar(context, isError: true, text: message));
   }
-  // ★ في دالة _addToList()
 
-  void _addToList() {
-    final authCubit = getIt<AuthCubit>();
-    bool isPackage = isPackageSelected;
+  void _addToList(AuthCubit authCubit, String countryKey) {
+    final isPackage = _isPackageSelected;
 
     if (_nameController.text.isEmpty) {
       _showError(
@@ -49,12 +52,10 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
       );
       return;
     }
-
-    if (selectedDuration == null) {
+    if (_selectedDuration == null) {
       _showError(context.tr('please_select_duration_single'));
       return;
     }
-
     if (_priceController.text.isEmpty) {
       _showError(
         isPackage
@@ -63,345 +64,313 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
       );
       return;
     }
+    if (isPackage && _numberOfSessionsController.text.isEmpty) {
+      _showError(context.tr('please_enter_number_of_sessions'));
+      return;
+    }
 
-    // ★ النوع بالإنجليزي للـ API (session أو package)
-    String itemType = isPackage ? 'package' : 'session';
-
-    // ★ العملة تلقائية بناءً على الدولة المختارة
-    final authState = authCubit.state;
-    String currency = CurrencyHelper.getCurrencyCodeByCountryKey(
-      authState.selectedCountryKey ?? '',
-    );
+    final currency = CurrencyHelper.getCurrencyCodeByCountryKey(countryKey);
 
     authCubit.addSessionToCurrentList(
       SessionItemModel(
-        name: _nameController.text,
-        type: itemType,
-        duration: selectedDuration!,
+        name: _nameController.text.trim(),
+        type: isPackage ? 'package' : 'session',
+        duration: _selectedDuration!,
         price: _priceController.text,
-        currency: currency, // ★ جديد
+        currency: currency,
+        numberOfSessions: isPackage
+            ? int.tryParse(_numberOfSessionsController.text)
+            : null,
       ),
     );
 
     _nameController.clear();
     _priceController.clear();
-    setState(() => selectedDuration = null);
+    _numberOfSessionsController.clear();
+    setState(() => _selectedDuration = null);
   }
 
   @override
   Widget build(BuildContext context) {
     final authCubit = getIt<AuthCubit>();
-    bool showForm = isIndividualSelected || isPackageSelected;
 
     return Scaffold(
-      body: CustomBackground(
-        child: SafeArea(
-          // ★ BlocBuilder يلف كل الشاشة
-          child: BlocConsumer<AuthCubit, AuthState>(
-            listener: (context, state) {},
-            builder: (context, state) {
-              // ★ قراءة الداتا من الكيوبت
-              final addedItemsList = state.currentSessionsList;
-              final selectedCountryKey = state.selectedCountryKey ?? '';
-              final selectedCountryFlag = state.selectedCountryFlag ?? '';
-              final selectedCurrencySymbol = selectedCountryKey.isNotEmpty
-                  ? CurrencyHelper.getCurrencySymbolByCountryKey(
-                      selectedCountryKey,
-                    )
-                  : CurrencyHelper.getCurrencySymbolFromContext(context);
-
-              return Column(
-                children: [
-                  // --- 1. الـ App Bar العلوي ---
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 8.0,
-                    ),
-                    child: Row(
-                      children: [
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: IconButton(
-                            icon: const Icon(Icons.arrow_back),
-                            onPressed: () => context.pop(),
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          context.tr('add_sessions_title'),
-                          textAlign: TextAlign.center,
-                          style: Styles.textStyle16.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const Spacer(),
-                      ],
-                    ),
+      body: AdvisorBackground(
+        child: Stack(
+          children: [
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 105.h,
+              child: Container(
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(AssetsData.homeBarBackgroundImage),
+                    fit: BoxFit.fill,
                   ),
+                ),
+              ),
+            ),
+            SafeArea(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                child: BlocBuilder<AuthCubit, AuthState>(
+                  builder: (context, state) {
+                    final addedList = state.currentSessionsList;
+                    final countryKey = state.selectedCountryKey ?? '';
+                    final countryFlag = state.selectedCountryFlag ?? '';
+                    final currencySymbol = countryKey.isNotEmpty
+                        ? CurrencyHelper.getCurrencySymbolByCountryKey(
+                            countryKey,
+                          )
+                        : CurrencyHelper.getCurrencySymbolFromContext(context);
+                    final bool showForm =
+                        _isIndividualSelected || _isPackageSelected;
 
-                  // --- 2. كارد الدولة (★ ديناميكي من الكيوبت) ---
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 12.0,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(
-                          color: Colors.grey.shade200,
-                          width: 2,
+                    return Column(
+                      children: [
+                        Gap(16.h),
+                        SimpleAppBar(
+                          title: context.tr('add_sessions_title'),
+                          onBack: () => context.pop(),
                         ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppColors.kprimaryColor.withOpacity(0.08),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.language,
-                              color: AppColors.kprimaryColor,
-                              size: 20,
-                            ),
+                        Gap(16.h),
+
+                        // كارد الدولة
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 14.w,
+                            vertical: 10.h,
                           ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: isArabic
-                                ? CrossAxisAlignment.end
-                                : CrossAxisAlignment.start,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14.r),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: Row(
                             children: [
-                              Text(
-                                context.tr('adding_sessions_for'),
-                                style: Styles.textStyle10.copyWith(
-                                  color: Colors.grey.shade500,
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.kprimaryColor.withOpacity(
+                                    0.08,
+                                  ),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.language,
+                                  color: AppColors.kprimaryColor,
+                                  size: 18,
                                 ),
                               ),
-                              const SizedBox(height: 2),
-                              // ★ اسم الدولة ديناميكي من الكيوبت
+                              const SizedBox(width: 10),
+                              Column(
+                                crossAxisAlignment: isArabic
+                                    ? CrossAxisAlignment.end
+                                    : CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    context.tr('adding_sessions_for'),
+                                    style: Styles.textStyle10.copyWith(
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                  Text(
+                                    context.tr(countryKey),
+                                    style: Styles.textStyle12.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Spacer(),
                               Text(
-                                context.tr(selectedCountryKey),
-                                style: Styles.textStyle12.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
+                                countryFlag,
+                                style: const TextStyle(fontSize: 24),
                               ),
                             ],
                           ),
-                          const Spacer(),
-                          // ★ العلم ديناميكي من الكيوبت
-                          Text(
-                            selectedCountryFlag,
-                            style: const TextStyle(fontSize: 26),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  Gap(context.responsiveHeight(24)),
-
-                  // --- 3. العناوين ---
-                  Text(
-                    context.tr('select_session_package'),
-                    style: Styles.textStyle22Bold.copyWith(
-                      color: AppColors.kscandryTextColor,
-                    ),
-                  ),
-                  Gap(context.responsiveHeight(6)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Text(
-                      context.tr('share_availability_hint'),
-                      textAlign: TextAlign.center,
-                      style: Styles.textStyle12Bold.copyWith(
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                  Gap(context.responsiveHeight(6)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Text(
-                      context.tr('share_availability_hint2'),
-                      textAlign: TextAlign.center,
-                      style: Styles.textStyle12Bold.copyWith(color: Colors.red),
-                    ),
-                  ),
-                  Gap(context.responsiveHeight(20)),
-
-                  // --- 4. محتوى الشاشة (قابل للتمرير) ---
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      children: [
-                        // -- الكروت (جلسة فردية / باقة) --
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _SessionTypeCard(
-                                title: context.tr('individual_session'),
-                                icon: AssetsData.kpersonOutlineIcon,
-                                isSelected: isIndividualSelected,
-                                onTap: () {
-                                  setState(() {
-                                    isIndividualSelected = true;
-                                    isPackageSelected = false;
-                                    selectedDuration = null;
-                                  });
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _SessionTypeCard(
-                                title: context.tr('package_sessions'),
-                                icon: AssetsData.kSinventoryOutlinedIcon,
-                                isSelected: isPackageSelected,
-                                onTap: () {
-                                  setState(() {
-                                    isPackageSelected = true;
-                                    isIndividualSelected = false;
-                                    selectedDuration = null;
-                                  });
-                                },
-                              ),
-                            ),
-                          ],
                         ),
 
-                        Gap(context.responsiveHeight(20)),
+                        Gap(16.h),
 
-                        // -- إظهار الفورم أو الشكل الفارغ --
-                        Center(
-                          child: AnimatedCrossFade(
-                            crossFadeState: showForm
-                                ? CrossFadeState.showSecond
-                                : CrossFadeState.showFirst,
-                            duration: const Duration(milliseconds: 300),
-                            firstChild: _buildEmptyStateSelection(context),
-                            secondChild: _buildSessionForm(
-                              context,
-                              selectedCurrencySymbol,
-                            ),
-                          ),
-                        ),
-
-                        Gap(context.responsiveHeight(16)),
-
-                        // -- ★ قائمة العناصر المضافة (من الكيوبت) --
-                        if (addedItemsList.isNotEmpty) ...[
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        Expanded(
+                          child: ListView(
                             children: [
-                              Text(
-                                '${addedItemsList.length} ${context.tr('added_items_count')}',
-                                style: Styles.textStyle10.copyWith(
-                                  color: Colors.grey,
+                              Center(
+                                child: Text(
+                                  context.tr('select_type'),
+                                  style: Styles.textStyle18.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.kscandryTextColor,
+                                  ),
                                 ),
                               ),
-                              Text(
-                                context.tr('added_sessions'),
-                                style: Styles.textStyle12.copyWith(
-                                  fontWeight: FontWeight.bold,
+                              Gap(16.h),
+
+                              // كروت نوع الجلسة
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: OfferingsSessionTypeCard(
+                                      title: context.tr('individual_session'),
+                                      icon: AssetsData.kpersonOutlineIcon,
+                                      isSelected: _isIndividualSelected,
+                                      onTap: () => setState(() {
+                                        _isIndividualSelected = true;
+                                        _isPackageSelected = false;
+                                        _selectedDuration = null;
+                                      }),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: OfferingsSessionTypeCard(
+                                      title: context.tr('package_sessions'),
+                                      icon: AssetsData.kSinventoryOutlinedIcon,
+                                      isSelected: _isPackageSelected,
+                                      onTap: () => setState(() {
+                                        _isPackageSelected = true;
+                                        _isIndividualSelected = false;
+                                        _selectedDuration = null;
+                                      }),
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              if (_isPackageSelected) ...[
+                                Gap(8.h),
+                                Center(
+                                  child: Text(
+                                    context.tr('select_session_package'),
+                                    style: Styles.textStyle18.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.kscandryTextColor,
+                                    ),
+                                  ),
+                                ),
+                                Gap(4.h),
+                                Center(
+                                  child: Text(
+                                    context.tr('share_availability_hint'),
+                                    textAlign: TextAlign.center,
+                                    style: Styles.textStyle12.copyWith(
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                ),
+                                Gap(4.h),
+                                Center(
+                                  child: Text(
+                                    context.tr('share_availability_hint2'),
+                                    textAlign: TextAlign.center,
+                                    style: Styles.textStyle12Bold.copyWith(
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                ),
+                              ],
+
+                              Gap(16.h),
+
+                              // الفورم أو الـ empty state
+                              AnimatedCrossFade(
+                                crossFadeState: showForm
+                                    ? CrossFadeState.showSecond
+                                    : CrossFadeState.showFirst,
+                                duration: const Duration(milliseconds: 300),
+                                firstChild: const AddSessionsEmptyState(),
+                                secondChild: _buildForm(
+                                  context,
+                                  currencySymbol,
+                                  authCubit,
+                                  countryKey,
                                 ),
                               ),
+
+                              Gap(16.h),
+
+                              // قائمة العناصر المضافة
+                              if (addedList.isNotEmpty) ...[
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      '${addedList.length} ${context.tr('added_items_count')}',
+                                      style: Styles.textStyle10.copyWith(
+                                        color: Colors.grey.shade500,
+                                      ),
+                                    ),
+                                    Text(
+                                      context.tr('added_sessions'),
+                                      style: Styles.textStyle12.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Gap(8.h),
+                                ...List.generate(
+                                  addedList.length,
+                                  (i) => _AuthAddedCard(
+                                    item: addedList[i],
+                                    index: i,
+                                    authCubit: authCubit,
+                                    currencySymbol: currencySymbol,
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
-                          const SizedBox(height: 8),
-                          ...List.generate(addedItemsList.length, (index) {
-                            return _buildAddedItemCard(
-                              addedItemsList[index],
-                              index,
-                              context,
-                              authCubit,
-                              selectedCurrencySymbol,
-                            );
-                          }),
-                        ],
+                        ),
+
+                        Gap(12.h),
+                        CustomBotton(
+                          width: double.infinity,
+                          title:
+                              '${context.tr('done_save')} ${addedList.length} ${context.tr('added_items_count')} ${context.tr('for_country')} $countryFlag',
+                          useGradient: addedList.isNotEmpty,
+                          backGroundcolor: AppColors.kgreyColor,
+                          onPressed: addedList.isNotEmpty
+                              ? () {
+                                  authCubit.saveCurrentSessionsToSummary();
+                                  context.pushReplacementNamed(
+                                    AppRouter.kSetupSummaryView,
+                                  );
+                                }
+                              : null,
+                        ),
+                        Gap(20.h),
                       ],
-                    ),
-                  ),
-
-                  // --- 5. ★ زر "حفظ والانتقال للملخص" ---
-                  CustomBotton(
-                    width: context.width * .9,
-                    title:
-                        '${context.tr('done_save')} ${addedItemsList.length} ${context.tr('added_items_count')} ${context.tr('for_country')} $selectedCountryFlag',
-                    useGradient: addedItemsList.isNotEmpty,
-                    backGroundcolor: AppColors.kgreyColor,
-                    onPressed: addedItemsList.isNotEmpty
-                        ? () {
-                            // ★ حفظ الجلسات في الملخص
-                            authCubit.saveCurrentSessionsToSummary();
-
-                            // ★ الانتقال لشاشة الملخص
-                            context.pushReplacementNamed(
-                              AppRouter.kSetupSummaryView,
-                            );
-                          }
-                        : null,
-                  ),
-
-                  Gap(context.responsiveHeight(20)),
-                ],
-              );
-            },
-          ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // ==== دوال مساعدة ====
-
-  Widget _buildEmptyStateSelection(BuildContext context) {
-    return Column(
-      children: [
-        Gap(context.responsiveHeight(40)),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.pink.shade100, width: 2),
-          ),
-          child: Icon(
-            Icons.check_box_outlined,
-            color: Colors.pink.shade200,
-            size: 40,
-          ),
-        ),
-        Gap(context.responsiveHeight(12)),
-        Text(
-          context.tr('choose_session_type_first'),
-          style: Styles.textStyle14.copyWith(color: AppColors.kprimaryColor),
-        ),
-        Text(
-          context.tr('can_choose_one_or_both'),
-          style: Styles.textStyle10.copyWith(color: Colors.grey),
-        ),
-        Gap(context.responsiveHeight(40)),
-      ],
-    );
-  }
-
-  Widget _buildSessionForm(
+  Widget _buildForm(
     BuildContext context,
-    String selectedCurrencySymbol,
+    String currencySymbol,
+    AuthCubit authCubit,
+    String countryKey,
   ) {
-    bool isPackage = isPackageSelected;
+    final isPackage = _isPackageSelected;
 
     return Column(
       crossAxisAlignment: isArabic
           ? CrossAxisAlignment.end
           : CrossAxisAlignment.start,
       children: [
-        // 1. اسم الجلسة / الباقة
+        // اسم الجلسة / الباقة
         CustomTextFormField(
           controller: _nameController,
           hintText: isPackage
@@ -409,9 +378,27 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
               : context.tr('enter_session_name'),
         ),
 
-        Gap(context.responsiveHeight(16)),
+        // عدد الجلسات (للباقة فقط)
+        if (isPackage) ...[
+          Gap(14.h),
+          Row(
+            children: [
+              Text(context.tr('number_of_sessions'), style: Styles.textStyle14),
+              const SizedBox(width: 12),
+              Expanded(
+                child: CustomTextFormField(
+                  controller: _numberOfSessionsController,
+                  hintText: '0',
+                  isNumber: true,
+                  maxLength: 3,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                ),
+              ),
+            ],
+          ),
+        ],
 
-        // 2. عنوان مدة الجلسة / الباقة
+        Gap(14.h),
         Row(
           mainAxisAlignment: !isArabic
               ? MainAxisAlignment.end
@@ -425,37 +412,22 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
-
-        // 3. خيارات المدة - 45 دقيقة
-        _DurationCardRadio(
+        Gap(10.h),
+        OfferingsDurationRadio(
           title: '45 ${context.tr('minutes_word')}',
           subtitle: context.tr('medium_session'),
-          isSelected: selectedDuration == '45',
-          onTap: () {
-            setState(() {
-              selectedDuration = '45';
-            });
-          },
+          isSelected: _selectedDuration == '45',
+          onTap: () => setState(() => _selectedDuration = '45'),
         ),
-
-        const SizedBox(height: 12),
-
-        // 90 دقيقة
-        _DurationCardRadio(
+        Gap(8.h),
+        OfferingsDurationRadio(
           title: '90 ${context.tr('minutes_word')}',
           subtitle: context.tr('long_session'),
-          isSelected: selectedDuration == '90',
-          onTap: () {
-            setState(() {
-              selectedDuration = '90';
-            });
-          },
+          isSelected: _selectedDuration == '90',
+          onTap: () => setState(() => _selectedDuration = '90'),
         ),
 
-        Gap(context.responsiveHeight(16)),
-
-        // 4. السعر
+        Gap(14.h),
         Row(
           children: [
             Text(
@@ -475,7 +447,7 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
                 prefixIcon: Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: Text(
-                    selectedCurrencySymbol,
+                    currencySymbol,
                     style: const TextStyle(color: Colors.grey),
                   ),
                 ),
@@ -493,47 +465,51 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
           ],
         ),
 
-        Gap(context.responsiveHeight(16)),
-
-        // 5. زر إضافة للقائمة
+        Gap(14.h),
         Center(
           child: CustomBotton(
             useGradient: true,
-            width: context.width * .9,
+            width: double.infinity,
             title: isPackage
                 ? context.tr('add_package_to_list')
                 : context.tr('add_session_to_list'),
-            onPressed: _addToList,
+            onPressed: () => _addToList(authCubit, countryKey),
           ),
         ),
       ],
     );
   }
+}
 
-  // ★ كارد العنصر المضاف (الحذف عبر الكيوبت)
-  Widget _buildAddedItemCard(
-    SessionItemModel item,
-    int index,
-    BuildContext context,
-    AuthCubit authCubit,
-    String currencySymbol,
-  ) {
-    double parsedPrice = double.tryParse(item.price) ?? 0.0;
-    String formattedPrice = '$parsedPrice $currencySymbol';
+// ─────────────────────────────────────────────
+// كارد العنصر المضاف (auth flow)
+// ─────────────────────────────────────────────
+class _AuthAddedCard extends StatelessWidget {
+  const _AuthAddedCard({
+    required this.item,
+    required this.index,
+    required this.authCubit,
+    required this.currencySymbol,
+  });
 
+  final SessionItemModel item;
+  final int index;
+  final AuthCubit authCubit;
+  final String currencySymbol;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(15),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           InkWell(
-            // ★ حذف عبر الكيوبت
             onTap: () => authCubit.removeSessionFromCurrentList(index),
             child: Container(
               padding: const EdgeInsets.all(4),
@@ -541,226 +517,65 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
                 color: Colors.red.shade50,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.close, size: 16, color: Colors.red.shade400),
+              child: Icon(Icons.close, size: 14, color: Colors.red.shade400),
             ),
           ),
+          const SizedBox(width: 10),
           Expanded(
-            child: Row(
-              mainAxisAlignment: isArabic
-                  ? MainAxisAlignment.end
-                  : MainAxisAlignment.start,
-              children: [
-                _buildSmallChip(formattedPrice, isGreen: true),
-                const SizedBox(width: 4),
-                _buildSmallChip(
-                  '${item.duration}${context.tr('minute_shortcut')}',
-                ),
-                const SizedBox(width: 4),
-                _buildSmallChip(
-                  context.tr('session_type_${item.type}'),
-                  isPink: true,
-                ),
-              ],
+            child: Text(
+              item.name,
+              style: Styles.textStyle14.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
-          const SizedBox(width: 12),
-          Text(
-            item.name,
-            style: Styles.textStyle14.copyWith(fontWeight: FontWeight.bold),
+          Wrap(
+            spacing: 4,
+            children: [
+              _Chip(text: '${item.price} $currencySymbol', isGreen: true),
+              _Chip(text: '${item.duration}${context.tr('minute_shortcut')}'),
+              if (item.type == 'package' && item.numberOfSessions != null)
+                _Chip(
+                  text:
+                      '${item.numberOfSessions} ${context.tr('sessions_count')}',
+                ),
+              _Chip(
+                text: context.tr('session_type_${item.type}'),
+                isPink: true,
+              ),
+            ],
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildSmallChip(
-    String text, {
-    bool isPink = false,
-    bool isGreen = false,
-  }) {
-    Color bgColor = Colors.grey.shade100;
-    Color textColor = Colors.grey.shade700;
+class _Chip extends StatelessWidget {
+  const _Chip({required this.text, this.isPink = false, this.isGreen = false});
+
+  final String text;
+  final bool isPink;
+  final bool isGreen;
+
+  @override
+  Widget build(BuildContext context) {
+    Color bg = Colors.grey.shade100;
+    Color fg = Colors.grey.shade700;
     if (isPink) {
-      bgColor = Colors.pink.shade50;
-      textColor = AppColors.kprimaryColor;
+      bg = Colors.pink.shade50;
+      fg = AppColors.kprimaryColor;
     } else if (isGreen) {
-      bgColor = Colors.green.shade50;
-      textColor = Colors.green.shade700;
+      bg = Colors.green.shade50;
+      fg = Colors.green.shade700;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: bgColor,
+        color: bg,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 10,
-          color: textColor,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-}
-
-// ==========================================
-// Widgets مخصصة للشاشة (بدون تغيير)
-// ==========================================
-
-class _DurationCardRadio extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _DurationCardRadio({
-    required this.title,
-    required this.subtitle,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? Colors.pink.shade50.withOpacity(0.2)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.kprimaryColor : Colors.grey.shade300,
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Column(
-              crossAxisAlignment: isArabic
-                  ? CrossAxisAlignment.start
-                  : CrossAxisAlignment.end,
-              children: [
-                Text(
-                  title,
-                  style: Styles.textStyle14.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isSelected
-                        ? AppColors.kprimaryColor
-                        : Colors.black87,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: Styles.textStyle10.copyWith(
-                    color: Colors.grey.shade500,
-                  ),
-                ),
-              ],
-            ),
-            const Spacer(),
-            Container(
-              width: 22,
-              height: 22,
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.kprimaryColor
-                      : Colors.grey.shade400,
-                  width: 2,
-                ),
-              ),
-              child: isSelected
-                  ? Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.kprimaryColor,
-                        shape: BoxShape.circle,
-                      ),
-                    )
-                  : null,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SessionTypeCard extends StatelessWidget {
-  final String title;
-  final String icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _SessionTypeCard({
-    required this.title,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        height: context.height * .15,
-        decoration: BoxDecoration(
-          color: isSelected
-              ? Colors.pink.shade50.withOpacity(0.3)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.kprimaryColor : Colors.grey.shade300,
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Icon(
-                isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                color: isSelected
-                    ? AppColors.kprimaryColor
-                    : Colors.grey.shade400,
-              ),
-            ),
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  AppImage(
-                    icon,
-                    width: context.width * 0.1,
-                    height: context.height * 0.05,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    title,
-                    style: Styles.textStyle14.copyWith(
-                      color: isSelected
-                          ? AppColors.kprimaryColor
-                          : Colors.black87,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        style: TextStyle(fontSize: 10, color: fg, fontWeight: FontWeight.bold),
       ),
     );
   }
