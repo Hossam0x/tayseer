@@ -719,7 +719,7 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
                 ],
               ),
               child: Text(
-                config.label,
+                context.tr(config.label),
                 style: Styles.textStyle16SemiBold.copyWith(color: Colors.white),
               ),
             ),
@@ -771,21 +771,21 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
         return _PackageConfig(
           index: 0,
           colors: [AppColors.primary300, AppColors.primary500],
-          label: "أساسية",
+          label: "basic_package",
           isVertical: true,
         );
       case PackageType.pro:
         return _PackageConfig(
           index: 1,
           colors: const [Color(0xFFBD8F14), Color(0xFFF5C003)],
-          label: "ذهبية",
+          label: "gold_package",
           isVertical: false,
         );
       case PackageType.elite:
         return _PackageConfig(
           index: 2,
           colors: const [Color(0xFF4BB8F9), Color(0xFF6284FF)],
-          label: "مميزة",
+          label: "elite_package",
           isVertical: true,
         );
     }

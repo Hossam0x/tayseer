@@ -277,7 +277,7 @@ class _AdvisorVideoPlayerWidgetState extends State<AdvisorVideoPlayerWidget> {
             Icon(Icons.error_outline, color: Colors.red, size: 40.w),
             SizedBox(height: 10.h),
             Text(
-              'فشل تحميل الفيديو',
+              context.tr('retry'),
               style: TextStyle(color: Colors.white, fontSize: 14.sp),
             ),
             SizedBox(height: 10.h),
@@ -289,7 +289,7 @@ class _AdvisorVideoPlayerWidgetState extends State<AdvisorVideoPlayerWidget> {
                 });
                 _initVideo(_activeUrl);
               },
-              child: const Text('إعادة المحاولة'),
+              child: Text(context.tr('retry')),
             ),
           ],
         ),

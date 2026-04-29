@@ -1,6 +1,5 @@
 import 'package:tayseer/my_import.dart';
 
-
 // ════════════════════════════════════════════════════════════════
 // Video Section Classes (same as before - no changes needed)
 // ════════════════════════════════════════════════════════════════
@@ -400,7 +399,7 @@ class _VideoSectionState extends State<VideoSection> {
             ElevatedButton.icon(
               onPressed: widget.onUpload,
               icon: const Icon(Icons.upload),
-              label: const Text('رفع فيديو'),
+              label: Text(context.tr('upload_video_btn')),
               style: ElevatedButton.styleFrom(
                 padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
                 shape: RoundedRectangleBorder(
@@ -460,7 +459,7 @@ class _VideoSectionState extends State<VideoSection> {
               _initializeVideo();
             },
             icon: const Icon(Icons.refresh),
-            label: const Text('إعادة المحاولة'),
+            label: Text(context.tr('retry')),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade400,
               foregroundColor: Colors.white,
@@ -581,16 +580,19 @@ class _VideoSectionState extends State<VideoSection> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16.r),
               ),
-              title: const Text('تأكيد الحذف'),
-              content: const Text('هل تريد حذف هذا الفيديو؟'),
+              title: Text(context.tr('confirm_delete_title')),
+              content: Text(context.tr('delete_video_confirmation')),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child:  Text(context.tr("cancel")),
+                  child: Text(context.tr("cancel")),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child:  Text(context.tr("delete"), style: TextStyle(color: Colors.red)),
+                  child: Text(
+                    context.tr("delete"),
+                    style: TextStyle(color: Colors.red),
+                  ),
                 ),
               ],
             ),

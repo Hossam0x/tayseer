@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 
 class ContextMenuOption {
   final IconData icon;
@@ -40,11 +41,11 @@ class ConversationContextMenu extends StatelessWidget {
     this.onReact, // ✅ زر التفاعل
   });
 
-  List<ContextMenuOption> _getMenuOptions() {
+  List<ContextMenuOption> _getMenuOptions(BuildContext context) {
     return [
       ContextMenuOption(
         icon: Icons.reply,
-        label: "رد",
+        label: context.tr('reply'),
         hasBorder: true,
         onTap: onReply,
       ),
@@ -52,33 +53,33 @@ class ConversationContextMenu extends StatelessWidget {
       if (messageType == 'text')
         ContextMenuOption(
           icon: Icons.copy_rounded,
-          label: "نسخ",
+          label: context.tr('copy_text'),
           hasBorder: true,
           onTap: onCopy,
         ),
       // ✅ زر التفاعل
       ContextMenuOption(
         icon: Icons.add_reaction_outlined,
-        label: "تفاعل",
+        label: context.tr('react_text'),
         hasBorder: true,
         onTap: onReact,
       ),
       if (isMyMessage)
         ContextMenuOption(
           icon: Icons.info_outline,
-          label: "التفاصيل",
+          label: context.tr('details'),
           hasBorder: true,
           onTap: onDetails,
         ),
       ContextMenuOption(
         icon: Icons.check_box_outlined,
-        label: "تحديد",
+        label: context.tr('select'),
         hasBorder: true,
         onTap: onSelect,
       ),
       ContextMenuOption(
         icon: Icons.delete_outline,
-        label: "حذف لديّ",
+        label: context.tr('delete_for_me'),
         color: Colors.red,
         hasBorder: isMyMessage,
         onTap: onDeleteForMe,
@@ -86,7 +87,7 @@ class ConversationContextMenu extends StatelessWidget {
       if (isMyMessage)
         ContextMenuOption(
           icon: Icons.delete_forever_outlined,
-          label: "حذف لدى الجميع",
+          label: context.tr('delete_for_all'),
           color: Colors.red,
           hasBorder: false,
           onTap: onDeleteForAll,
@@ -100,7 +101,7 @@ class ConversationContextMenu extends StatelessWidget {
     final isMobile = screenSize.width < 600;
     final containerWidth = isMobile ? 180.0 : 220.0;
 
-    final options = _getMenuOptions();
+    final options = _getMenuOptions(context);
 
     return Container(
       width: containerWidth,

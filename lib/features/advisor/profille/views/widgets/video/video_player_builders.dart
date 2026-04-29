@@ -28,13 +28,13 @@ class VideoLoadingState extends StatelessWidget {
                   Icon(Icons.error_outline, color: Colors.red, size: 40.w),
                   SizedBox(height: 10.h),
                   Text(
-                    'فشل تحميل الفيديو',
+                    context.tr('retry'),
                     style: Styles.textStyle14.copyWith(color: Colors.white),
                   ),
                   SizedBox(height: 10.h),
                   ElevatedButton(
                     onPressed: onRetry,
-                    child: const Text('إعادة المحاولة'),
+                    child: Text(context.tr('retry')),
                   ),
                 ],
               )

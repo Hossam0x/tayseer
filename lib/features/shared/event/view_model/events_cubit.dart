@@ -148,7 +148,7 @@ class EventsCubit extends Cubit<EventsState> {
     if (!serviceEnabled) {
       return LocationPermissionResult(
         granted: false,
-        message: 'خدمة الموقع غير مفعلة، يرجى تفعيلها',
+        message: 'location_disabled',
       );
     }
 
@@ -158,7 +158,7 @@ class EventsCubit extends Cubit<EventsState> {
       if (permission == LocationPermission.denied) {
         return LocationPermissionResult(
           granted: false,
-          message: 'تم رفض إذن الموقع',
+          message: 'location_denied',
         );
       }
     }
@@ -166,7 +166,7 @@ class EventsCubit extends Cubit<EventsState> {
     if (permission == LocationPermission.deniedForever) {
       return LocationPermissionResult(
         granted: false,
-        message: 'إذن الموقع مرفوض نهائياً، يرجى تفعيله من الإعدادات',
+        message: 'location_permanently_denied',
       );
     }
 
@@ -224,7 +224,7 @@ class EventsCubit extends Cubit<EventsState> {
       emit(
         state.copyWith(
           isLoadingLocation: false,
-          errorMessage: 'حدث خطأ في جلب الموقع',
+          errorMessage: 'location_fetch_error',
         ),
       );
     }

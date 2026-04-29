@@ -17,41 +17,43 @@ class OrderSessionBody extends StatelessWidget {
       children: [
         Column(
           children: [
-            const CustomAppBar(title: "الطلبات"),
+            CustomAppBar(title: context.tr('orders_title')),
             Expanded(
               child: Directionality(
                 textDirection: TextDirection.rtl,
-                child: BlocSelector<
-                    PendingSessionCubit,
-                    PendingSessionState,
-                    ({
-                    CubitStates state,
-                    PendingSessionData? data,
-                    String? error,
-                    })>(
-                  selector: (state) => (
-                  state: state.getpendingsessionState,
-                  data: state.pendingSessionData,
-                  error: state.errormessage,
-                  ),
-                  builder: (context, record) {
-                    if (record.state == CubitStates.loading) {
-                      return _buildShimmerLoading();
-                    }
+                child:
+                    BlocSelector<
+                      PendingSessionCubit,
+                      PendingSessionState,
+                      ({
+                        CubitStates state,
+                        PendingSessionData? data,
+                        String? error,
+                      })
+                    >(
+                      selector: (state) => (
+                        state: state.getpendingsessionState,
+                        data: state.pendingSessionData,
+                        error: state.errormessage,
+                      ),
+                      builder: (context, record) {
+                        if (record.state == CubitStates.loading) {
+                          return _buildShimmerLoading();
+                        }
 
-                    if (record.state == CubitStates.failure) {
-                      return _buildErrorWidget(context, record.error);
-                    }
+                        if (record.state == CubitStates.failure) {
+                          return _buildErrorWidget(context, record.error);
+                        }
 
-                    final sessions = record.data?.pendingSessions;
+                        final sessions = record.data?.pendingSessions;
 
-                    if (sessions == null || sessions.isEmpty) {
-                      return _buildEmptyWidget();
-                    }
+                        if (sessions == null || sessions.isEmpty) {
+                          return _buildEmptyWidget(context);
+                        }
 
-                    return AnimatedSessionList(sessions: sessions);
-                  },
-                ),
+                        return AnimatedSessionList(sessions: sessions);
+                      },
+                    ),
               ),
             ),
           ],
@@ -60,11 +62,7 @@ class OrderSessionBody extends StatelessWidget {
         const AcceptOrDeclineSessionListener(),
 
         /// 🔴 Floating Warning Button Bottom
-        const Positioned(
-          bottom: 24,
-          left: 20,
-          child: FloatingWarningIcon(),
-        ),
+        const Positioned(bottom: 24, left: 20, child: FloatingWarningIcon()),
       ],
     );
   }
@@ -79,7 +77,7 @@ class OrderSessionBody extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyWidget() {
+  Widget _buildEmptyWidget(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -87,13 +85,13 @@ class OrderSessionBody extends StatelessWidget {
           AppImage(AssetsData.kisEmptySesessionImage, width: 120.w),
           const SizedBox(height: 16),
           Text(
-            "لا توجد جلسات اليوم",
+            context.tr("no_sessions_today"),
             style: Styles.textStyle18Meduim,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
-            "ستظهر هنا الجلسات بمجرد أن يقوم المرضى بحجز مواعيد\n في جدولك المتاح لهذا اليوم.",
+            context.tr("sessions_appear_when_booked"),
             style: Styles.textStyle16.copyWith(color: AppColors.kGrey666),
             textAlign: TextAlign.center,
           ),
@@ -110,7 +108,7 @@ class OrderSessionBody extends StatelessWidget {
           Icon(Icons.error_outline, size: 80, color: Colors.red.shade400),
           const SizedBox(height: 16),
           Text(
-            error ?? "حدث خطأ ما",
+            error ?? context.tr("error_occurred"),
             style: TextStyle(
               fontSize: 16,
               color: Colors.grey.shade600,
@@ -124,9 +122,9 @@ class OrderSessionBody extends StatelessWidget {
               context.read<PendingSessionCubit>().getPendingSession();
             },
             icon: const Icon(Icons.refresh),
-            label: const Text(
-              "إعادة المحاولة",
-              style: TextStyle(fontFamily: 'Cairo'),
+            label: Text(
+              context.tr("retry"),
+              style: const TextStyle(fontFamily: 'Cairo'),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFD64D65),

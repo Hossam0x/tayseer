@@ -53,7 +53,7 @@ class _AudioTestWidgetState extends State<AudioTestWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('🔊 اختبار الأصوات'),
+        title: Text(context.tr('audio_test_title')),
         backgroundColor: AppColors.kprimaryColor,
         foregroundColor: Colors.white,
       ),
@@ -239,7 +239,7 @@ class _AudioTestWidgetState extends State<AudioTestWidget> {
                     child: ElevatedButton.icon(
                       onPressed: _reinitialize,
                       icon: const Icon(Icons.refresh),
-                      label: const Text('إعادة تهيئة'),
+                      label: Text(context.tr('reinitialize')),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.kprimaryColor,
                         foregroundColor: Colors.white,

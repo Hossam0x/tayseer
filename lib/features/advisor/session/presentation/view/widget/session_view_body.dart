@@ -70,7 +70,7 @@ class _SessionViewBodyState extends State<SessionViewBody> {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 40),
               child: EmptySessionsState(
-                title: "لا يوجد جلسات حتى الان",
+                title: context.tr('no_sessions_yet'),
                 subtitle: "",
                 showAnimation: true,
               ),
@@ -103,7 +103,7 @@ class _SessionViewBodyState extends State<SessionViewBody> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 40),
                     child: EmptySessionsState(
-                      title: "لا يوجد جلسات قادمة",
+                      title: context.tr('no_upcoming_sessions'),
                       subtitle: "",
                       showAnimation: false,
                     ),
@@ -155,7 +155,9 @@ class _SessionViewBodyState extends State<SessionViewBody> {
                           : SessionCardStyle.outlined,
                       name: otherUserName,
                       handle: '@$otherUserName',
-                      buttonText: session.advisorIsNow ? "انضمام" : "التفاصيل",
+                      buttonText: session.advisorIsNow
+                          ? context.tr('join_btn')
+                          : context.tr('details'),
                       onTapDetails: () {
                         context.pushNamed(
                           AppRouter.kSessionDetailsView,
@@ -212,7 +214,7 @@ class _SessionViewBodyState extends State<SessionViewBody> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 40),
                     child: EmptySessionsState(
-                      title: "لا يوجد جلسات سابقة",
+                      title: context.tr('no_past_sessions'),
                       subtitle: "",
                       showAnimation: false,
                     ),
@@ -243,7 +245,7 @@ class _SessionViewBodyState extends State<SessionViewBody> {
                       style: SessionCardStyle.white,
                       name: otherUserName,
                       handle: '@$otherUserName',
-                      buttonText: "التفاصيل",
+                      buttonText: context.tr('details'),
                       onTapDetails: () {
                         context.pushNamed(
                           AppRouter.kSessionDetailsView,

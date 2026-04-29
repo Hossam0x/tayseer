@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:tayseer/core/constant/constans.dart';
 import 'package:tayseer/core/utils/colors.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/core/utils/styles.dart';
 import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
 
@@ -41,7 +42,7 @@ class PackageTabSelector extends StatelessWidget {
                 children: [
                   _buildHorizontalLine(barColor),
                   _buildStaticTriangles(sectionWidth, barColor),
-                  _buildSelectedIndicator(sectionWidth),
+                  _buildSelectedIndicator(context, sectionWidth),
                   _buildClickableOverlays(),
                 ],
               );
@@ -90,7 +91,7 @@ class PackageTabSelector extends StatelessWidget {
     );
   }
 
-  Widget _buildSelectedIndicator(double sectionWidth) {
+  Widget _buildSelectedIndicator(BuildContext context, double sectionWidth) {
     final config = _getPackageConfig(selectedPackage);
     // Same visual order for all languages: Basic (2) -> Pro (1) -> Elite (0)
     // In RTL, the visual position is reversed but the index stays the same
@@ -112,7 +113,7 @@ class PackageTabSelector extends StatelessWidget {
 
     Widget indicator = Column(
       children: [
-        _buildBubble(config),
+        _buildBubble(context, config),
         CustomPaint(
           size: Size(15.w, 10.h),
           painter: _TrianglePainter(
@@ -136,7 +137,7 @@ class PackageTabSelector extends StatelessWidget {
     );
   }
 
-  Widget _buildBubble(_PackageConfig config) {
+  Widget _buildBubble(BuildContext context, _PackageConfig config) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
       decoration: BoxDecoration(
@@ -160,7 +161,7 @@ class PackageTabSelector extends StatelessWidget {
         ],
       ),
       child: Text(
-        config.label,
+        context.tr(config.label),
         style: Styles.textStyle16SemiBold.copyWith(color: Colors.white),
       ),
     );
@@ -223,21 +224,21 @@ class PackageTabSelector extends StatelessWidget {
         return _PackageConfig(
           index: 0,
           colors: [AppColors.primary300, AppColors.primary500],
-          label: "أساسية",
+          label: "basic_package",
           isVertical: true,
         );
       case PackageType.pro:
         return _PackageConfig(
           index: 1,
           colors: const [Color(0xFFBD8F14), Color(0xFFF5C003)],
-          label: "ذهبية",
+          label: "gold_package",
           isVertical: false,
         );
       case PackageType.elite:
         return _PackageConfig(
           index: 2,
           colors: const [Color(0xFF4BB8F9), Color(0xFF6284FF)],
-          label: "مميزة",
+          label: "elite_package",
           isVertical: true,
         );
     }

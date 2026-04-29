@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit_simple.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/selection/message_selection_cubit.dart';
@@ -22,16 +23,16 @@ class MessageActionsHandler {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('حذف الرسالة'),
+        title: Text(context.tr('delete_message_title')),
         content: Text(
           deleteType == 'me'
-              ? 'هل أنت متأكد من حذف هذه الرسالة لديك؟'
-              : 'هل أنت متأكد من حذف هذه الرسالة لدى الجميع؟',
+              ? context.tr('delete_message_for_me_confirm')
+              : context.tr('delete_message_for_all_confirm'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child: Text(context.tr('cancel')),
           ),
           TextButton(
             onPressed: () {
@@ -41,7 +42,10 @@ class MessageActionsHandler {
                 deleteType: deleteType,
               );
             },
-            child: const Text('حذف', style: TextStyle(color: Colors.red)),
+            child: Text(
+              context.tr('delete'),
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -57,16 +61,16 @@ class MessageActionsHandler {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('حذف الرسائل'),
+        title: Text(context.tr('delete_messages_title')),
         content: Text(
           deleteType == 'me'
-              ? 'هل أنت متأكد من حذف الرسائل المحددة لديك؟'
-              : 'هل أنت متأكد من حذف الرسائل المحددة لدى الجميع؟',
+              ? context.tr('delete_selected_for_me_confirm')
+              : context.tr('delete_selected_for_all_confirm'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child: Text(context.tr('cancel')),
           ),
           TextButton(
             onPressed: () {
@@ -77,7 +81,10 @@ class MessageActionsHandler {
               );
               selectionCubit.exitSelectionMode();
             },
-            child: const Text('حذف', style: TextStyle(color: Colors.red)),
+            child: Text(
+              context.tr('delete'),
+              style: const TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
