@@ -56,6 +56,7 @@ class ChatRoomListItem extends StatelessWidget {
         key: ValueKey('chat_room_$id'),
         startActionPane: onArchive != null
             ? ChatRoomSlidableActions.buildArchiveAction(
+                context: context,
                 onArchive: onArchive!,
               )
             : null,
@@ -72,10 +73,7 @@ class ChatRoomListItem extends StatelessWidget {
             onTap: onTap,
             borderRadius: BorderRadius.circular(12),
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: 12,
-                horizontal: 16,
-              ),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               child: Row(
                 children: [
                   ChatRoomAvatar(

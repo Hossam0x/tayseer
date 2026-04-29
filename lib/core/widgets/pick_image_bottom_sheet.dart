@@ -41,7 +41,11 @@ class _CustomGallerySheetState extends State<CustomGallerySheet> {
       if (!success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("الحد الأقصى ${widget.config.maxCount} عناصر"),
+            content: Text(
+              context
+                  .tr('max_items_error')
+                  .replaceAll('{count}', '${widget.config.maxCount}'),
+            ),
             duration: const Duration(milliseconds: 1000),
           ),
         );
@@ -154,10 +158,10 @@ class _CustomGallerySheetState extends State<CustomGallerySheet> {
                 }
 
                 if (_controller.assets.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
-                      "لا توجد ميديا",
-                      style: TextStyle(color: Colors.grey),
+                      context.tr('no_media_available'),
+                      style: const TextStyle(color: Colors.grey),
                     ),
                   );
                 }

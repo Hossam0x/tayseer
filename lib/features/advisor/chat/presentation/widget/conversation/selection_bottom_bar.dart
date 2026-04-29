@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/selection/message_selection_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/selection/message_selection_state.dart';
 
@@ -52,7 +53,7 @@ class SelectionBottomBar extends StatelessWidget {
               const SizedBox(width: 8),
               // Selection count
               Text(
-                '${state.selectionCount} محدد',
+                '${state.selectionCount} ${context.tr('select')}',
                 style: const TextStyle(
                   fontFamily: 'Cairo',
                   fontWeight: FontWeight.w600,
@@ -62,7 +63,7 @@ class SelectionBottomBar extends StatelessWidget {
               const Spacer(),
               // Delete for me button
               _DeleteButton(
-                label: 'حذف لديّ',
+                label: context.tr('delete_for_me'),
                 onTap: onDeleteForMe,
                 isDestructive: true,
               ),
@@ -70,7 +71,7 @@ class SelectionBottomBar extends StatelessWidget {
               if (state.canDeleteForAll) ...[
                 const SizedBox(width: 8),
                 _DeleteButton(
-                  label: 'حذف للجميع',
+                  label: context.tr('delete_for_all'),
                   onTap: onDeleteForAll,
                   isDestructive: true,
                   isFilled: true,

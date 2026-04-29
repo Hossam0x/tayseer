@@ -90,16 +90,16 @@ class _VerificationWebViewScreenState extends State<VerificationWebViewScreen> {
         children: [
           const Icon(Icons.camera_alt_outlined, size: 64, color: Colors.grey),
           const SizedBox(height: 16),
-          const Text(
-            'الوصول إلى الكاميرا مطلوب',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          Text(
+            context.tr('camera_access_required'),
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
-          const Text(
-            'يرجى السماح بالوصول إلى الكاميرا من إعدادات الهاتف لإكمال عملية التحقق.',
+          Text(
+            context.tr('camera_access_desc'),
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey),
+            style: const TextStyle(color: Colors.grey),
           ),
           const SizedBox(height: 24),
           ElevatedButton(
@@ -114,15 +114,18 @@ class _VerificationWebViewScreenState extends State<VerificationWebViewScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text(
-              'فتح الإعدادات',
-              style: TextStyle(color: Colors.white, fontSize: 16),
+            child: Text(
+              context.tr('open_settings'),
+              style: const TextStyle(color: Colors.white, fontSize: 16),
             ),
           ),
           const SizedBox(height: 12),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('رجوع', style: TextStyle(color: Colors.grey)),
+            child: Text(
+              context.tr('go_back'),
+              style: const TextStyle(color: Colors.grey),
+            ),
           ),
         ],
       ),
@@ -133,7 +136,7 @@ class _VerificationWebViewScreenState extends State<VerificationWebViewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("التحقق"),
+        title: Text(context.tr('verification_title')),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),

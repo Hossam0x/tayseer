@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 
 class PickTimeResult {
   final TimeOfDay? time;
@@ -37,9 +38,7 @@ Future<PickTimeResult> pickTime(
       final nowMinutes = nowTime.hour * 60 + nowTime.minute;
       if (pickedMinutes < nowMinutes) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('الرجاء اختيار وقت لاحق من الوقت الحالي'),
-          ),
+          SnackBar(content: Text(context.tr('select_time_after_current'))),
         );
         return PickTimeResult(time: null, wasInvalid: true);
       }

@@ -208,7 +208,7 @@ class SessionCard extends StatelessWidget {
         height: 44.h,
         width: 100.w,
         onPressed: onTapJoin,
-        title: "انضم",
+        title: context.tr('join_btn'),
       );
     }
 

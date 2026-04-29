@@ -341,28 +341,26 @@ class IAPErrorHandler {
         s.contains('تم إلغاء') ||
         s.contains('إلغاء')) {
       return const IAPErrorResult(
-        message: 'تم إلغاء عملية الشراء',
+        message: 'purchase_cancelled',
         isCanceled: true,
       );
     }
     if (s.contains('network') ||
         s.contains('connection') ||
         s.contains('internet')) {
-      return const IAPErrorResult(
-        message: 'تحقق من اتصالك بالإنترنت وحاول مرة أخرى',
-      );
+      return const IAPErrorResult(message: 'check_internet_connection');
     }
     if (s.contains('timeout') ||
         s.contains('مهلة') ||
         s.contains('timed out')) {
-      return const IAPErrorResult(message: 'انتهت مهلة العملية. حاول مرة أخرى');
+      return const IAPErrorResult(message: 'operation_timeout');
     }
     if (s.contains('already in progress') || s.contains('جارية')) {
-      return const IAPErrorResult(message: 'يوجد عملية شراء جارية بالفعل');
+      return const IAPErrorResult(message: 'purchase_in_progress');
     }
     if (s.contains('غير موجود') || s.contains('not found')) {
-      return const IAPErrorResult(message: 'المنتج غير متوفر في المتجر حالياً');
+      return const IAPErrorResult(message: 'product_unavailable');
     }
-    return const IAPErrorResult(message: 'حدث خطأ غير متوقع. حاول مرة أخرى');
+    return const IAPErrorResult(message: 'unexpected_error');
   }
 }

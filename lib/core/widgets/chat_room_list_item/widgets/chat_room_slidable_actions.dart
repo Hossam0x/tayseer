@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/utils/colors.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/core/widgets/chat_room_list_item/widgets/glass_panel.dart';
 import 'package:tayseer/core/widgets/chat_room_list_item/widgets/slidable_action_button.dart';
 
@@ -9,6 +10,7 @@ import 'package:tayseer/core/widgets/chat_room_list_item/widgets/slidable_action
 class ChatRoomSlidableActions {
   /// Archive action (start pane)
   static ActionPane buildArchiveAction({
+    required BuildContext context,
     required VoidCallback onArchive,
   }) {
     return ActionPane(
@@ -33,7 +35,7 @@ class ChatRoomSlidableActions {
                 ),
                 const SizedBox(height: 2),
                 SlidableActionButton.buildLabel(
-                  label: 'أرشيف',
+                  label: context.tr('archive'),
                   color: AppColors.kprimaryColor,
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
@@ -75,7 +77,7 @@ class ChatRoomSlidableActions {
               children: [
                 SlidableActionButton(
                   svgIcon: AssetsData.deleteIcon,
-                  label: 'حذف',
+                  label: context.tr('delete'),
                   color: AppColors.kRedColor,
                   onTap: () {
                     Slidable.of(context)?.close();
@@ -85,7 +87,7 @@ class ChatRoomSlidableActions {
                 const _VerticalDivider(),
                 SlidableActionButton(
                   svgIcon: AssetsData.reportIcon,
-                  label: 'إبلاغ',
+                  label: context.tr('report'),
                   color: Colors.orange,
                   onTap: () {
                     Slidable.of(context)?.close();
@@ -119,10 +121,6 @@ class _VerticalDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 1,
-      height: 25,
-      color: AppColors.secondary200,
-    );
+    return Container(width: 1, height: 25, color: AppColors.secondary200);
   }
 }

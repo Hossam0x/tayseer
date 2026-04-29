@@ -9,7 +9,7 @@ class SoundSettingsDemoView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('🔊 إعدادات الأصوات'),
+        title: Text(context.tr('sound_settings_title')),
         backgroundColor: AppColors.kprimaryColor,
         foregroundColor: Colors.white,
       ),

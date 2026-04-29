@@ -18,14 +18,14 @@ class GlassLanguagePicker extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: const Text('العربية'),
+              title: Text(context.tr('arabic')),
               onTap: () {
                 cubit.setLanguage('ar', context, navigate: false);
                 Navigator.pop(context);
               },
             ),
             ListTile(
-              title: const Text('English'),
+              title: Text(context.tr('english')),
               onTap: () {
                 cubit.setLanguage('en', context, navigate: false);
                 Navigator.pop(context);
@@ -67,7 +67,9 @@ class GlassLanguagePicker extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      selectedLanguage == 'ar' ? 'العربية' : 'English',
+                      selectedLanguage == 'ar'
+                          ? context.tr('arabic')
+                          : context.tr('english'),
                       style: const TextStyle(color: Colors.white),
                     ),
                     const SizedBox(width: 10),

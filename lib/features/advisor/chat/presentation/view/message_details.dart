@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/message_model.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/bubble/message_bubble.dart';
@@ -181,9 +182,8 @@ class MessageDetailsScreen extends StatelessWidget {
                   children: [
                     _buildStatusRow(
                       icon: deliveredMessageIcon,
-                      label: 'تم الاستلام',
+                      label: context.tr('delivered_status'),
                       time: _formatDateTime(deliveredAt),
-                      // isActive: true, // لم نعد بحاجة إليها للستايل
                     ),
                     const SizedBox(height: 24),
                     Divider(
@@ -194,9 +194,8 @@ class MessageDetailsScreen extends StatelessWidget {
                     const SizedBox(height: 24),
                     _buildStatusRow(
                       icon: readMessageIcon,
-                      label: 'قراءة',
+                      label: context.tr('read_status'),
                       time: isRead ? _formatDateTime(readAt) : '---',
-                      // isActive: isRead, // لم نعد بحاجة إليها للستايل
                     ),
                     const SizedBox(height: 20),
                   ],

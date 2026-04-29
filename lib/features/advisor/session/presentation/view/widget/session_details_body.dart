@@ -16,19 +16,21 @@ class SessionDetailsBody extends StatelessWidget {
     >(
       builder: (context, state) {
         if (state.isLoading) {
-          return const CustomScrollView(
+          return CustomScrollView(
             slivers: [
               CustomSliverAppBarSession(
-                title: "تفاصيل الجلسة",
+                title: context.tr('session_details_title'),
                 showBackButton: true,
               ),
-              SliverToBoxAdapter(child: SessionDetailsShimmer()),
+              const SliverToBoxAdapter(child: SessionDetailsShimmer()),
             ],
           );
         }
 
         if (state.isFailure) {
-          return Center(child: Text(state.errorMessage ?? "حدث خطأ ما"));
+          return Center(
+            child: Text(state.errorMessage ?? context.tr('error_occurred')),
+          );
         }
 
         final data = state.sessionDetails;
@@ -42,8 +44,8 @@ class SessionDetailsBody extends StatelessWidget {
             ),
 
             // ---------- بيانات الشخص ----------
-            const SliverToBoxAdapter(
-              child: SectionTitle(title: 'بيانات الشخص'),
+            SliverToBoxAdapter(
+              child: SectionTitle(title: context.tr('personal_data_section')),
             ),
             SliverToBoxAdapter(
               child: PersonalInfoCard(
@@ -54,8 +56,8 @@ class SessionDetailsBody extends StatelessWidget {
             ),
 
             // ---------- بيانات الجلسة ----------
-            const SliverToBoxAdapter(
-              child: SectionTitle(title: 'بيانات الجلسة'),
+            SliverToBoxAdapter(
+              child: SectionTitle(title: context.tr('session_data_section')),
             ),
             SliverToBoxAdapter(
               child: SessionInfoCard(
@@ -66,32 +68,30 @@ class SessionDetailsBody extends StatelessWidget {
             ),
 
             // ---------- بيانات السعر ----------
-            const SliverToBoxAdapter(
-              child: SectionTitle(title: 'بيانات السعر'),
+            SliverToBoxAdapter(
+              child: SectionTitle(title: context.tr('price_data_section')),
             ),
             SliverToBoxAdapter(
               child: PriceInfoCard(
                 rows: [
                   PriceRow(
-                    label: 'سعر الجلسة',
-                    value: '${data.pricing.sessionPrice} ر.س',
+                    label: context.tr('session_price_detail'),
+                    value:
+                        '${data.pricing.sessionPrice} ${context.tr('currency_rs')}',
                   ),
-                  // PriceRow(label: 'الرسوم', value: '${data.pricing.fees} ر.س'),
                   PriceRow(
-                    label: 'ضريبة القيمة المضافة',
-                    value: '${data.pricing.vat} ر.س',
+                    label: context.tr('vat'),
+                    value: '${data.pricing.vat} ${context.tr('currency_rs')}',
                   ),
-                  // PriceRow(
-                  //   label: 'رسوم التطبيق',
-                  //   value: '${data.pricing.appFees} ر.س',
-                  // ),
                   PriceRow(
-                    label: 'الخصم',
-                    value: '${data.pricing.discount} ر.س',
+                    label: context.tr('discount'),
+                    value:
+                        '${data.pricing.discount} ${context.tr('currency_rs')}',
                   ),
                 ],
-                totalLabel: 'الإجمالي',
-                totalValue: '${data.pricing.total} ر.س',
+                totalLabel: context.tr('total'),
+                totalValue:
+                    '${data.pricing.total} ${context.tr('currency_rs')}',
               ),
             ),
 

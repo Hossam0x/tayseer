@@ -42,7 +42,7 @@ class LockPopUp extends StatelessWidget {
               children: [
                 Expanded(
                   child: CustomBotton(
-                    title: 'إنشاء حساب',
+                    title: context.tr('create_account_btn'),
                     onPressed: () {},
                     useGradient: true,
                   ),
