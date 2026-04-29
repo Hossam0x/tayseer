@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/core/services/secure_window_service.dart';
 import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/offline_banner.dart';
 import 'package:tayseer/features/shared/reels/views/reels_nav_view.dart';
@@ -169,6 +170,13 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
         listener: (context, state) {
           // وقف كل الفيديوهات لما تتغير الـ tab
           VideoManager.instance.stopAll();
+
+          // ✅ فعّل FLAG_SECURE لما تدخل تاب الزواج (index 1)، وشيله لما تخرج
+          if (state.currentIndex == 1) {
+            SecureWindowService.enable();
+          } else {
+            SecureWindowService.disable();
+          }
         },
         // ✅ Only rebuild for visual changes — not scroll/trigger state
         buildWhen: (prev, curr) =>

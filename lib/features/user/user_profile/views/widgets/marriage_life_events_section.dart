@@ -87,26 +87,25 @@ class MarriageLifeEventsSection extends StatelessWidget {
       children: [
         // ── Time label ──
         SizedBox(
-          height: 36.h,
+          height: 40.h,
           child: Center(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                timeLabel,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                style: Styles.textStyle12.copyWith(
-                  color: Colors.grey.shade700,
-                  fontWeight: FontWeight.w500,
-                  height: 1.3,
-                ),
+            child: Text(
+              timeLabel,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Styles.textStyle12.copyWith(
+                color: Colors.grey.shade700,
+                fontWeight: FontWeight.w500,
+                height: 1.3,
+                fontSize: 12.sp,
               ),
             ),
           ),
         ),
         Gap(6.h),
 
-        // ── Connector: line + arrowhead pointing to dot ──
+        // ── Connector ──
         CustomPaint(
           size: Size(2.w, 14.h),
           painter: _ArrowConnectorPainter(color: _pink),
@@ -132,11 +131,11 @@ class MarriageLifeEventsSection extends StatelessWidget {
 
         Gap(6.h),
 
-        // ── Goal bubble ──
+        // ── Goal bubble — FittedBox يصغر الـ font لو الكلمة طويلة ──
         Container(
-          margin: EdgeInsets.symmetric(horizontal: 4.w),
-          padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 6.w),
-          constraints: BoxConstraints(minHeight: 40.h),
+          height: 36.h,
+          margin: EdgeInsets.symmetric(horizontal: 1.w),
+          padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 2.w),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.92),
             borderRadius: BorderRadius.circular(20.r),
@@ -154,10 +153,11 @@ class MarriageLifeEventsSection extends StatelessWidget {
               child: Text(
                 _getGoalDisplayName(goalType, context),
                 textAlign: TextAlign.center,
-                maxLines: 2,
+                maxLines: 1,
                 style: Styles.textStyle12Bold.copyWith(
                   color: _pinkDark,
-                  height: 1.3,
+                  height: 1.0,
+                  fontSize: 11.sp,
                 ),
               ),
             ),

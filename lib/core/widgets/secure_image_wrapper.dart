@@ -4,50 +4,69 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 
-/// Wraps any widget with a native secure layer that makes it appear black
-/// in screenshots on both Android and iOS.
-///
-/// - Android: SurfaceView with setSecure(true) — image shows as black in screenshot
-/// - iOS: UITextField with isSecureTextEntry = true — OS-level screenshot protection
+/// Wraps an image URL with a native secure layer.
+/// The image is loaded INSIDE the native secure SurfaceView (Android)
+/// or UITextField secure container (iOS).
 class SecureImageWrapper extends StatelessWidget {
+  final String? imageUrl;
   final Widget child;
 
-  const SecureImageWrapper({super.key, required this.child});
+  const SecureImageWrapper({
+    super.key,
+    required this.child,
+    this.imageUrl,
+  });
 
   @override
   Widget build(BuildContext context) {
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return Stack(
-        fit: StackFit.passthrough,
-        children: [
-          // ✅ الـ Native Secure Surface في الخلف — بيخلي الـ OS يرسم أسود هنا في الـ screenshot
-          const AndroidView(
-            viewType: 'secure_image_view',
-            layoutDirection: TextDirection.ltr,
-            creationParamsCodec: StandardMessageCodec(),
-          ),
-          // ✅ صورتك فوقيه — بتظهر عادي على الشاشة، أسود في الـ screenshot
-          child,
-        ],
-      );
-    }
+    if (imageUrl != null && imageUrl!.isNotEmpty) {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        return _AndroidSecureImage(imageUrl: imageUrl!);
+      }
 
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return Stack(
-        fit: StackFit.passthrough,
-        children: [
-          // ✅ الـ Native Secure Container في الخلف
-          const UiKitView(
-            viewType: 'secure_image_view',
-            layoutDirection: TextDirection.ltr,
-            creationParamsCodec: StandardMessageCodec(),
-          ),
-          // ✅ صورتك فوقيه
-          child,
-        ],
-      );
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        return UiKitView(
+          viewType: 'secure_image_view',
+          layoutDirection: TextDirection.ltr,
+          creationParams: {'url': imageUrl},
+          creationParamsCodec: const StandardMessageCodec(),
+        );
+      }
     }
 
     return child;
+  }
+}
+
+/// Android: uses Hybrid Composition so SurfaceView renders correctly
+class _AndroidSecureImage extends StatelessWidget {
+  final String imageUrl;
+
+  const _AndroidSecureImage({required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return PlatformViewLink(
+      viewType: 'secure_image_view',
+      surfaceFactory: (context, controller) {
+        return AndroidViewSurface(
+          controller: controller as AndroidViewController,
+          gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{},
+          hitTestBehavior: PlatformViewHitTestBehavior.opaque,
+        );
+      },
+      onCreatePlatformView: (params) {
+        return PlatformViewsService.initSurfaceAndroidView(
+          id: params.id,
+          viewType: 'secure_image_view',
+          layoutDirection: TextDirection.ltr,
+          creationParams: {'url': imageUrl},
+          creationParamsCodec: const StandardMessageCodec(),
+          onFocus: () => params.onFocusChanged(true),
+        )
+          ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
+          ..create();
+      },
+    );
   }
 }
