@@ -47,9 +47,7 @@ class TermItem extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Column(
-              crossAxisAlignment: isArabic
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
+              crossAxisAlignment:CrossAxisAlignment.start,
               children: [
                 Text(
                   title,

@@ -1,16 +1,27 @@
 import 'package:tayseer/my_import.dart';
 
 class SubscriptionPurchasingButton extends StatelessWidget {
-  const SubscriptionPurchasingButton({super.key});
+  final Color? backgroundColor;
+  final double? borderRadius;
+
+  const SubscriptionPurchasingButton({
+    super.key,
+    this.backgroundColor,
+    this.borderRadius,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final radius = borderRadius ?? 28.r;
+    final bgColor = backgroundColor;
+
     return Container(
       height: 54.h,
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: AppColors.defaultGradient,
-        borderRadius: BorderRadius.circular(12.r),
+        color: bgColor,
+        gradient: bgColor == null ? AppColors.defaultGradient : null,
+        borderRadius: BorderRadius.circular(radius),
       ),
       child: Center(
         child: SizedBox(

@@ -9,6 +9,14 @@ import 'package:tayseer/features/shared/packages/presentation/widgets/subscripti
 import 'package:tayseer/features/shared/packages/presentation/widgets/upgrade_sub_card.dart';
 import 'package:tayseer/my_import.dart';
 
+// ── ألوان Gold ──
+const _goldDark = Color(0xFF8B6914);
+const _goldBg2 = Color(0xFFD4A017);
+
+// ── ألوان Elite ──
+const _eliteDark = Color(0xFF4A1A8C);
+const _eliteBg2 = Color(0xFF6A1FC2);
+
 class AdvisorSubscriptionView extends StatelessWidget {
   const AdvisorSubscriptionView({super.key});
 
@@ -46,9 +54,15 @@ class AdvisorSubscriptionView extends StatelessWidget {
       builder: (context, subState) {
         final cubit = context.read<AdvisorSubscriptionCubit>();
         final isPurchasing = subState.status == AdvisorSubStatus.purchasing;
-        final packageTypeName = subState.packageType == SelectedPackage.elite
+        final isElite = subState.packageType == SelectedPackage.elite;
+        final isGold = !isElite;
+        final packageTypeName = isElite
             ? context.tr('elite_package')
             : context.tr('pro_package');
+
+        // ألوان حسب النوع
+        final accentDark = isGold ? _goldDark : _eliteDark;
+        final gradientBg2 = isGold ? _goldBg2 : _eliteBg2;
 
         return BlocConsumer<PackagesCubit, PackagesState>(
           listenWhen: (p, c) => p.isLoading && !c.isLoading,
@@ -70,12 +84,14 @@ class AdvisorSubscriptionView extends StatelessWidget {
             return Scaffold(
               body: Stack(
                 children: [
+                  // ── خلفية الصورة ──
                   Positioned.fill(
                     child: Image.asset(
                       AssetsData.boostBackground,
                       fit: BoxFit.fill,
                     ),
                   ),
+                  // ── gradient حسب النوع ──
                   Positioned.fill(
                     child: Container(
                       decoration: BoxDecoration(
@@ -83,11 +99,11 @@ class AdvisorSubscriptionView extends StatelessWidget {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Colors.transparent,
-                            AppColors.primaryPink.withOpacity(0.7),
-                            AppColors.primary100,
+                            gradientBg2.withOpacity(0.55),
+                            gradientBg2.withOpacity(0.80),
+                            gradientBg2,
                           ],
-                          stops: const [0.0, 0.4, 0.65],
+                          stops: const [0.0, 0.45, 0.70],
                         ),
                       ),
                     ),
@@ -95,6 +111,7 @@ class AdvisorSubscriptionView extends StatelessWidget {
                   SafeArea(
                     child: Column(
                       children: [
+                        // ── زر الإغلاق ──
                         Padding(
                           padding: EdgeInsets.only(top: 10.h, right: 10.w),
                           child: Align(
@@ -103,7 +120,7 @@ class AdvisorSubscriptionView extends StatelessWidget {
                               onPressed: () => Navigator.pop(context),
                               icon: Icon(
                                 Icons.close,
-                                color: AppColors.kWhiteColor,
+                                color: Colors.white,
                                 size: 24.w,
                               ),
                             ),
@@ -115,26 +132,26 @@ class AdvisorSubscriptionView extends StatelessWidget {
                             child: Column(
                               children: [
                                 Gap(10.h),
-                                AppImage(
-                                  AssetsData.logoIcon,
-                                  width: 190.h,
-                                  color: AppColors.primary100,
-                                ),
-                                Gap(40.h),
+                                // ── أيقونة حسب النوع ──
+                                _buildTypeIcon(isGold, accentDark),
+                                Gap(20.h),
                                 Text(
                                   hasCurrentSub
                                       ? context.tr('change_subscription')
                                       : '${context.tr('subscribe_in')} $packageTypeName',
-                                  style: Styles.textStyle24Bold.copyWith(
-                                    color: AppColors.secondary800,
+                                  style: TextStyle(
+                                    fontSize: 22.sp,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
                                 Gap(8.h),
                                 Text(
                                   context.tr('subscribe_with_us_opportunity'),
-                                  style: Styles.textStyle16.copyWith(
-                                    color: AppColors.secondary800,
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    color: Colors.white.withOpacity(0.85),
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
@@ -168,6 +185,11 @@ class AdvisorSubscriptionView extends StatelessWidget {
                                                   !isLoading &&
                                                   subState.selectedDurationIndex ==
                                                       i,
+                                              index: i,
+                                              totalCount: isLoading
+                                                  ? 2
+                                                  : subs.length,
+                                              isGoldTheme: isGold,
                                               onTap: isLoading
                                                   ? null
                                                   : () => cubit.selectDuration(
@@ -183,27 +205,56 @@ class AdvisorSubscriptionView extends StatelessWidget {
                                   ),
                                 Gap(30.h),
                                 if (isPurchasing)
-                                  const SubscriptionPurchasingButton()
+                                  SubscriptionPurchasingButton(
+                                    backgroundColor: accentDark,
+                                    borderRadius: 28.r,
+                                  )
                                 else if (!(hasCurrentSub && upgradeSub == null))
-                                  CustomBotton(
-                                    height: 54.h,
+                                  SizedBox(
                                     width: double.infinity,
-                                    title: _buttonLabel(
-                                      context,
-                                      hasCurrentSub,
-                                      upgradeSub,
-                                      subState,
-                                      subs,
-                                    ),
-                                    onPressed:
-                                        (isLoading ||
-                                            (!hasCurrentSub && subs.isEmpty))
-                                        ? null
-                                        : () => cubit.purchaseSubscription(
-                                            packagesState.subscriptions,
+                                    height: 54.h,
+                                    child: ElevatedButton(
+                                      onPressed:
+                                          (isLoading ||
+                                              (!hasCurrentSub && subs.isEmpty))
+                                          ? null
+                                          : () => cubit.purchaseSubscription(
+                                              packagesState.subscriptions,
+                                            ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: accentDark,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            28.r,
                                           ),
-                                    useGradient: true,
+                                        ),
+                                        elevation: 0,
+                                      ),
+                                      child: Text(
+                                        _buttonLabel(
+                                          context,
+                                          hasCurrentSub,
+                                          upgradeSub,
+                                          subState,
+                                          subs,
+                                        ),
+                                        style: TextStyle(
+                                          fontSize: 16.sp,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
                                   ),
+                                Gap(12.h),
+                                Text(
+                                  context.tr('auto_renew_note'),
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    color: Colors.black,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
                                 Gap(30.h),
                               ],
                             ),
@@ -218,6 +269,36 @@ class AdvisorSubscriptionView extends StatelessWidget {
           },
         );
       },
+    );
+  }
+
+  Widget _buildTypeIcon(bool isGold, Color accentDark) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: Colors.white24),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppImage(
+            isGold ? AssetsData.goldIcon : AssetsData.eliteIcon,
+            width: 32.w,
+            height: 32.w,
+          ),
+          SizedBox(width: 8.w),
+          Text(
+            isGold ? 'Gold' : 'Elite',
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

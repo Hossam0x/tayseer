@@ -14,7 +14,9 @@ class NewAdvisorSubModel {
   final int numberOfMonthlyEvents;
   final int eventsAppInterestPercentage;
   final num? price;
+  final num? pricePerMonth;
   final String? currency;
+  final int? savePercentage;
 
   NewAdvisorSubModel({
     required this.id,
@@ -32,7 +34,9 @@ class NewAdvisorSubModel {
     required this.numberOfMonthlyEvents,
     required this.eventsAppInterestPercentage,
     this.price,
+    this.pricePerMonth,
     this.currency,
+    this.savePercentage,
   });
 
   factory NewAdvisorSubModel.fromJson(Map<String, dynamic> json) {
@@ -56,7 +60,11 @@ class NewAdvisorSubModel {
       numberOfMonthlyEvents: json['numberOfMonthlyEvents'] ?? 0,
       eventsAppInterestPercentage: json['eventsAppInterestPercentage'] ?? 0,
       price: json['price'],
+      pricePerMonth: json['pricePerMonth'] != null
+          ? num.tryParse(json['pricePerMonth'].toString())
+          : null,
       currency: json['currency'],
+      savePercentage: json['savePercentage'] as int?,
     );
   }
 

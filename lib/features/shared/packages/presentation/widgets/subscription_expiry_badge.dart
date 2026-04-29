@@ -2,7 +2,15 @@ import 'package:tayseer/my_import.dart';
 
 class SubscriptionExpiryBadge extends StatelessWidget {
   final String expiresAt;
-  const SubscriptionExpiryBadge({super.key, required this.expiresAt});
+
+  /// لو true → الـ badge على خلفية ملونة (أبيض)، لو false → الألوان العادية
+  final bool onColoredBackground;
+
+  const SubscriptionExpiryBadge({
+    super.key,
+    required this.expiresAt,
+    this.onColoredBackground = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -34,21 +42,30 @@ class SubscriptionExpiryBadge extends StatelessWidget {
     final month = expiry.month.toString().padLeft(2, '0');
     final dateStr = '$day/$month/${expiry.year}';
 
+    // على خلفية ملونة → أبيض شفاف
+    final effectiveColor = onColoredBackground ? Colors.white : badgeColor;
+    final bgColor = onColoredBackground
+        ? Colors.white.withOpacity(0.2)
+        : badgeColor.withOpacity(0.12);
+    final borderColor = onColoredBackground
+        ? Colors.white.withOpacity(0.4)
+        : badgeColor.withOpacity(0.4);
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
       decoration: BoxDecoration(
-        color: badgeColor.withOpacity(0.12),
+        color: bgColor,
         borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: badgeColor.withOpacity(0.4)),
+        border: Border.all(color: borderColor),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.access_time_rounded, size: 14.sp, color: badgeColor),
+          Icon(Icons.access_time_rounded, size: 14.sp, color: effectiveColor),
           Gap(6.w),
           Text(
             '$timeText  •  $dateStr',
-            style: Styles.textStyle12SemiBold.copyWith(color: badgeColor),
+            style: Styles.textStyle12SemiBold.copyWith(color: effectiveColor),
           ),
         ],
       ),

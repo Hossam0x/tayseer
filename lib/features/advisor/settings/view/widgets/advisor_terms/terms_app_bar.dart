@@ -12,14 +12,13 @@ class TermsAppBar extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.9),
               shape: BoxShape.circle,
             ),
             child: Transform.flip(
               flipX: !isArabic,
               child: Icon(
                 Icons.arrow_back_ios,
-                size: 16,
+                size: 18,
                 color: AppColors.kprimaryColor,
               ),
             ),

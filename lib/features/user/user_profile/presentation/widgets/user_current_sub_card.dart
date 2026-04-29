@@ -20,9 +20,8 @@ class UserCurrentSubCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.primary500.withOpacity(0.15),
+        color: AppColors.primary500,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColors.primary500, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -38,7 +37,7 @@ class UserCurrentSubCard extends StatelessWidget {
                         Text(
                           durationLabel,
                           style: Styles.textStyle16SemiBold.copyWith(
-                            color: AppColors.primary600,
+                            color: Colors.white,
                           ),
                         ),
                         Gap(8.w),
@@ -48,7 +47,7 @@ class UserCurrentSubCard extends StatelessWidget {
                             vertical: 2.h,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.primary500,
+                            color: Colors.white.withOpacity(0.25),
                             borderRadius: BorderRadius.circular(20.r),
                           ),
                           child: Text(
@@ -65,7 +64,7 @@ class UserCurrentSubCard extends StatelessWidget {
                       Text(
                         priceText,
                         style: Styles.textStyle14.copyWith(
-                          color: AppColors.primary600,
+                          color: Colors.white.withOpacity(0.85),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -75,14 +74,17 @@ class UserCurrentSubCard extends StatelessWidget {
               ),
               Icon(
                 Icons.check_circle_rounded,
-                color: AppColors.primary500,
+                color: Colors.white,
                 size: 22.sp,
               ),
             ],
           ),
           if (sub.subscriptionExpiresAt != null) ...[
             Gap(10.h),
-            SubscriptionExpiryBadge(expiresAt: sub.subscriptionExpiresAt!),
+            SubscriptionExpiryBadge(
+              expiresAt: sub.subscriptionExpiresAt!,
+              onColoredBackground: true,
+            ),
           ],
         ],
       ),
