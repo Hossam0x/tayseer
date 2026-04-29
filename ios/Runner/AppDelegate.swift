@@ -7,16 +7,44 @@ import PaymobSDK
 // MARK: - Secure Image Platform View (prevents screenshots)
 class SecureImageView: NSObject, FlutterPlatformView {
     private let secureContainer: UIView
+    private let imageView: UIImageView
 
-    init(frame: CGRect) {
+    init(frame: CGRect, args: Any?) {
         let textField = UITextField()
         textField.isSecureTextEntry = true
         textField.frame = frame
-        secureContainer = textField.subviews.first ?? UIView(frame: frame)
-        secureContainer.frame = frame
-        secureContainer.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        secureContainer.isUserInteractionEnabled = false
+
+        // ✅ الـ secure container هو الـ subview الأول للـ UITextField
+        let container = textField.subviews.first ?? UIView(frame: frame)
+        container.frame = frame
+        container.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        container.isUserInteractionEnabled = false
+        secureContainer = container
+
+        // ✅ ImageView جوه الـ secure container مباشرة
+        imageView = UIImageView(frame: container.bounds)
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        container.addSubview(imageView)
+
         super.init()
+
+        // ✅ حمّل الصورة من الـ args
+        if let argsDict = args as? [String: Any],
+           let urlString = argsDict["url"] as? String,
+           let url = URL(string: urlString) {
+            loadImage(from: url)
+        }
+    }
+
+    private func loadImage(from url: URL) {
+        URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
+            guard let data = data, let image = UIImage(data: data) else { return }
+            DispatchQueue.main.async {
+                self?.imageView.image = image
+            }
+        }.resume()
     }
 
     func view() -> UIView { secureContainer }
@@ -28,7 +56,7 @@ class SecureImageFactory: NSObject, FlutterPlatformViewFactory {
         viewIdentifier viewId: Int64,
         arguments args: Any?
     ) -> FlutterPlatformView {
-        return SecureImageView(frame: frame)
+        return SecureImageView(frame: frame, args: args)
     }
 
     func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol {

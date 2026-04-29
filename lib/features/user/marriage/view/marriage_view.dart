@@ -5,6 +5,7 @@ import 'package:tayseer/features/user/marriage/view/widget/marriage_location_gua
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
 import 'package:tayseer/features/user/questions/presentation/manager/questions_cubit.dart';
 import 'package:tayseer/features/user/questions/presentation/manager/questions_state.dart';
+import 'package:tayseer/core/services/secure_window_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class MarriageView extends StatefulWidget {

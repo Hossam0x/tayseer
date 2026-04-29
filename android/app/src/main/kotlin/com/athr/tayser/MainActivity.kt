@@ -9,6 +9,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
+import android.view.WindowManager
 import com.paymob.paymob_sdk.PaymobSdk
 import com.paymob.paymob_sdk.ui.PaymobSdkListener
 import io.flutter.embedding.android.FlutterActivity
@@ -23,6 +24,7 @@ class MainActivity : FlutterActivity(), MethodCallHandler, PaymobSdkListener {
 
     private val CHANNEL = "paymob_sdk_flutter"
     private val SCREENSHOT_EVENT_CHANNEL = "com.athr.tayser/screenshot_events"
+    private val SECURE_CHANNEL = "com.athr.tayser/secure_window"
     private var SDKResult: MethodChannel.Result? = null
 
     private var eventSink: EventChannel.EventSink? = null
@@ -38,10 +40,21 @@ class MainActivity : FlutterActivity(), MethodCallHandler, PaymobSdkListener {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler(this)
 
-        // ✅ تسجيل الـ SecureImageView factory
-        flutterEngine.platformViewsController
-            .registry
-            .registerViewFactory("secure_image_view", SecureImageFactory())
+        // ✅ FLAG_SECURE channel — لحماية شاشة الزواج من الـ screenshot
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SECURE_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "enableSecure" -> {
+                        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        result.success(null)
+                    }
+                    "disableSecure" -> {
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
 
         EventChannel(flutterEngine.dartExecutor.binaryMessenger, SCREENSHOT_EVENT_CHANNEL)
             .setStreamHandler(object : EventChannel.StreamHandler {
