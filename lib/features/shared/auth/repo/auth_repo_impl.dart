@@ -618,6 +618,31 @@ class AuthRepoImpl implements AuthRepo {
   }
 
   @override
+  Future<Either<Failure, void>> setSocialStatus({
+    required String socialStatus,
+  }) async {
+    try {
+      final response = await apiService.post(
+        endPoint: ApiEndPoint.setSocialStatus,
+        data: {'socialStatus': socialStatus},
+        isAuth: true,
+      );
+      final success = response['success'] ?? false;
+      if (success) {
+        return right(null);
+      } else {
+        return left(ServerFailure(response['message'] ?? 'فشل تحديث الحالة'));
+      }
+    } on DioException catch (error) {
+      return left(
+        ServerFailure(error.response?.data['message'] ?? 'خطأ في الاتصال'),
+      );
+    } catch (error) {
+      return left(ServerFailure('حدث خطأ غير متوقع: $error'));
+    }
+  }
+
+  @override
   Future<Either<Failure, RegisterResponse>> setCountryOfferings({
     required Map<String, dynamic> body,
   }) async {

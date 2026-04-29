@@ -176,13 +176,16 @@ class UserProfileCubit extends Cubit<UserProfileState> {
           iconAsset: AssetsData.icManagementSettings,
           routeName: '',
         ),
-      SettingItemModel(
-        id: 'deactivate_the_marriage_section',
-        title: 'deactivate_the_marriage_section',
-        iconAsset: AssetsData.ringIcon,
-        routeName: '',
-        hasSwitch: true,
-      ),
+      // ✅ أخفي زر تغيير الوضع لو أنثى ومتزوجة
+      if (!(kCurrentUserData?.gender == 'female' &&
+          kCurrentUserData?.socialStatus == 'F_social_married'))
+        SettingItemModel(
+          id: 'deactivate_the_marriage_section',
+          title: 'deactivate_the_marriage_section',
+          iconAsset: AssetsData.ringIcon,
+          routeName: '',
+          hasSwitch: true,
+        ),
       SettingItemModel(
         id: 'settings',
         title: 'general_settings',
@@ -682,6 +685,11 @@ class UserProfileCubit extends Cubit<UserProfileState> {
   // ════════════════════════════════════════════════════════════════
 
   Future<bool> _getMarriageSectionDeactivated() async {
+    // ✅ لو أنثى ومتزوجة → الزواج مخفي دايماً بغض النظر عن الـ cache
+    if (kCurrentUserData?.gender == 'female' &&
+        kCurrentUserData?.socialStatus == 'F_social_married') {
+      return true;
+    }
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(kMarriageSectionDeactivatedKey) ?? false;
   }

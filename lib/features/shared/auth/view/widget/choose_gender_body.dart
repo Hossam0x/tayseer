@@ -138,12 +138,10 @@ class ChooseGenderBody extends StatelessWidget {
               previous.setGenderState != current.setGenderState,
           listener: (context, state) {
             if (state.setGenderState == CubitStates.success) {
-              // ✅ بيروح PurposeSelectionView — الـ deep link هيتنفذ في نهاية الـ onboarding
-              context.pushReplacementNamed(AppRouter.kPurposeSelectionView);
+              // ✅ بيروح ChooseSocialStatusView أولاً
               kCurrentUserData = kCurrentUserData?.copyWith(
                 gender: gender?.name,
               );
-
               CachNetwork.setData(
                 key: kuserData,
                 value: jsonEncode(kCurrentUserData?.toJson() ?? {}),
@@ -151,7 +149,7 @@ class ChooseGenderBody extends StatelessWidget {
               log(
                 '>>>>>>>>>>>>>>>>>>>.Gender set successfully ${kCurrentUserData?.gender}',
               );
-              // ✅ لو Guest - روح مباشرة
+              context.pushReplacementNamed(AppRouter.kSocialStatusView);
             } else if (state.setGenderState == CubitStates.failure) {
               ScaffoldMessenger.of(context).showSnackBar(
                 CustomSnackBar(

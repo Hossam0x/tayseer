@@ -55,6 +55,14 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody>
   }
 
   Future<void> _loadMarriageStatus() async {
+    // ✅ لو أنثى ومتزوجة → الزواج مخفي دايماً
+    if (kCurrentUserData?.gender == 'female' &&
+        kCurrentUserData?.socialStatus == 'F_social_married') {
+      if (mounted && !_isMarriageDeactivated) {
+        setState(() => _isMarriageDeactivated = true);
+      }
+      return;
+    }
     final prefs = await SharedPreferences.getInstance();
     final value = prefs.getBool(kMarriageSectionDeactivatedKey) ?? false;
     if (mounted && _isMarriageDeactivated != value) {

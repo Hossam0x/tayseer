@@ -533,14 +533,7 @@ class _MarriageFieldSelectionViewState
       case 'maritalStatus':
         return {
           'titleKey': 'select_marital_status_title',
-          'items': kCurrentUserData?.gender == 'male'
-              ? [
-                  'social_single',
-                  'social_married',
-                  'social_divorced',
-                  'social_widowed',
-                ]
-              : ['F_social_single', 'F_social_divorced', 'F_social_widowed'],
+          'items': QuestionsData.socialStatusesForQuestions,
           'showSearch': false,
         };
       case 'previouslyMarried':

@@ -98,6 +98,7 @@ class ApiEndPoint {
   static const String userChatCancelMatch = '/user-chat/rooms/cancel';
   static const String sharePostToStory = '/stories/share-post';
   static const String pastMatches = '/user/past-matches';
+  static const String setSocialStatus = '/user/set-social-status';
   static const String bestAdvisors = '/advisor/best';
   static const String similarUsers = '/user/similar-users';
   static const String chatDurationExtensions = '/chat-duration-extension';

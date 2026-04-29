@@ -627,14 +627,14 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                       ),
                     ),
                     SizedBox(height: 2.h),
-                    Text(
-                      '${context.tr('total')}: ${pkg.price.toStringAsFixed(2)} ${pkg.currency}',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: Colors.black54,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    // Text(
+                    //   '${context.tr('total')}: ${pkg.price.toStringAsFixed(2)} ${pkg.currency}',
+                    //   style: TextStyle(
+                    //     fontSize: 12.sp,
+                    //     color: Colors.black54,
+                    //     fontWeight: FontWeight.w500,
+                    //   ),
+                    // ),
                   ] else
                     Text(
                       '${pkg.price.toStringAsFixed(2)} ${pkg.currency}',

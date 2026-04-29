@@ -214,7 +214,27 @@ class QuestionsData {
           'social_divorced',
           'social_widowed',
         ]
-      : const ['F_social_single', 'F_social_divorced', 'F_social_widowed'];
+      : const [
+          'F_social_single',
+          'F_social_married',
+          'F_social_divorced',
+          'F_social_widowed',
+        ];
+
+  /// نفس الـ socialStatuses بس بدون F_social_married — للأسئلة وصفحة التعديل
+  static List<String> get socialStatusesForQuestions =>
+      kCurrentUserData?.gender == 'male'
+          ? const [
+              'social_single',
+              'social_married',
+              'social_divorced',
+              'social_widowed',
+            ]
+          : const [
+              'F_social_single',
+              'F_social_divorced',
+              'F_social_widowed',
+            ];
 
   // ─────────────────────────────────────────────────────
   // Skin Colors

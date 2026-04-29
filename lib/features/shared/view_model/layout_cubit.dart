@@ -8,6 +8,14 @@ class LayoutCubit extends Cubit<LayoutState> {
     _loadMarriageVisibility();
   }
   Future<void> _loadMarriageVisibility() async {
+    // ✅ لو أنثى ومتزوجة → الزواج مخفي دايماً بغض النظر عن الـ cache
+    if (kCurrentUserData?.gender == 'female' &&
+        kCurrentUserData?.socialStatus == 'F_social_married') {
+      if (state.isMarriageVisible) {
+        emit(state.copyWith(isMarriageVisible: false));
+      }
+      return;
+    }
     final prefs = await SharedPreferences.getInstance();
     final isDeactivated =
         prefs.getBool('marriage_section_deactivated') ?? false;

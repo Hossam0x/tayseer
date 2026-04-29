@@ -1319,6 +1319,26 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
+  Future<void> setSocialStatus({required String socialStatus}) async {
+    emit(state.copyWith(setSocialStatusState: CubitStates.loading));
+
+    final response = await _repo.setSocialStatus(socialStatus: socialStatus);
+
+    response.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            setSocialStatusState: CubitStates.failure,
+            errorMessage: failure.message,
+          ),
+        );
+      },
+      (_) {
+        emit(state.copyWith(setSocialStatusState: CubitStates.success));
+      },
+    );
+  }
+
   ///// clear//////
   void clearControllers() {
     emailController.clear();

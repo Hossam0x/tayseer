@@ -42,6 +42,7 @@ import 'package:tayseer/features/advisor/update_posts/view/update_post_view.dart
 import 'package:tayseer/features/advisor/membership/presentation/cubit/membership_cubit.dart';
 import 'package:tayseer/features/advisor/membership/presentation/views/membership_management_view.dart';
 import 'package:tayseer/features/shared/auth/view/purpose_selection_view.dart';
+import 'package:tayseer/features/shared/auth/view/choose_social_status_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_country_view.dart';
 import 'package:tayseer/features/shared/auth/view/setup_summary_view.dart';
 import 'package:tayseer/features/shared/packages/presentation/views/advisor_subscription_view.dart';
@@ -649,6 +650,15 @@ abstract class AppRouter {
         );
       case AppRouter.kPurposeSelectionView:
         return MaterialPageRoute(builder: (_) => const PurposeSelectionView());
+
+      case AppRouter.kSocialStatusView:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => BlocProvider.value(
+            value: getIt<AuthCubit>(),
+            child: const ChooseSocialStatusView(),
+          ),
+        );
 
       case kOtpView:
         return MaterialPageRoute(

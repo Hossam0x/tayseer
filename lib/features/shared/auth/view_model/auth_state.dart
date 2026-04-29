@@ -23,6 +23,7 @@ class AuthState {
   final CubitStates addLanguageState;
   final CubitStates isAiState;
   final CubitStates setGenderState;
+  final CubitStates setSocialStatusState;
   final CubitStates setOfferingsState;
 
   final LastLoginResponse? lastLoginResponse;
@@ -86,6 +87,7 @@ class AuthState {
     this.addLanguageState = CubitStates.initial,
     this.isAiState = CubitStates.initial,
     this.setGenderState = CubitStates.initial,
+    this.setSocialStatusState = CubitStates.initial,
     this.setOfferingsState = CubitStates.initial,
 
     this.lastLoginResponse,
@@ -136,6 +138,7 @@ class AuthState {
     CubitStates? addLanguageState,
     CubitStates? isAiState,
     CubitStates? setGenderState,
+    CubitStates? setSocialStatusState,
     CubitStates? setOfferingsState,
     LastLoginResponse? lastLoginResponse,
     bool? verify,
@@ -188,6 +191,7 @@ class AuthState {
       setOfferingsState: setOfferingsState ?? this.setOfferingsState,
       isAiState: isAiState ?? this.isAiState,
       setGenderState: setGenderState ?? this.setGenderState,
+      setSocialStatusState: setSocialStatusState ?? this.setSocialStatusState,
       lastLoginResponse: lastLoginResponse ?? this.lastLoginResponse,
       errorMessage: errorMessage ?? this.errorMessage,
       lastLoginBy: lastLoginBy ?? this.lastLoginBy,

@@ -96,7 +96,7 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
         titleKey: 'choose_social_status',
         questionNumber: 5,
         questionCategoryEnum: 'socialStatus',
-        items: QuestionsData.socialStatuses,
+        items: QuestionsData.socialStatusesForQuestions,
         type: QuestionType.selectableList,
       ),
       QuestionPageConfig(
