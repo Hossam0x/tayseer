@@ -29,6 +29,8 @@ abstract class AuthRepo {
     required String aboutYou,
     required XFile? image,
     required XFile? video,
+    required String nationality,
+    required String country,
   });
 
   Future<Either<Failure, void>> addCertificateAsConsultant({

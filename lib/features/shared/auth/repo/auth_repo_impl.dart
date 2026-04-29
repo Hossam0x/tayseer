@@ -358,6 +358,8 @@ class AuthRepoImpl implements AuthRepo {
     required String aboutYou,
     required XFile? image,
     required XFile? video,
+    required String nationality,
+    required String country,
   }) async {
     try {
       // prepare multipart files by awaiting the helper functions
@@ -379,6 +381,8 @@ class AuthRepoImpl implements AuthRepo {
           "JobGrade": jobGrade,
           "yearsOfExperience": yearsOfExperience,
           "aboutYou": aboutYou,
+          "nationality": nationality,
+          "country": country,
           "image": uploadedImage,
           if (uploadedVideo != null) "video": uploadedVideo,
         },

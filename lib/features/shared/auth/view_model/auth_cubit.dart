@@ -364,6 +364,8 @@ class AuthCubit extends Cubit<AuthState> {
       aboutYou: bioController.text,
       image: pickedImage,
       video: pickedVideo,
+      nationality: selectedNationality ?? '',
+      country: selectedCountry ?? '',
     );
 
     response.fold(
