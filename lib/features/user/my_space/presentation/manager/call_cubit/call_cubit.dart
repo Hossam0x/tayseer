@@ -1,4 +1,3 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/user/my_space/data/model/session_cancel_model.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/call_cubit/session_call_cancel_event_bus.dart';
@@ -66,6 +65,10 @@ class CallCubit extends Cubit<CallState> {
         ),
       );
     });
+  }
+
+  void updateCallDuration(int seconds) {
+    emit(state.copyWith(callDurationSeconds: seconds));
   }
 
   void resetState() {

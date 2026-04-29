@@ -39,6 +39,10 @@ class _SessionViewBodyState extends State<SessionViewBody> {
         'currentUserID': advisorId,
         'currentUserName': advisorName,
         'currentUserAvatarUrl': advisorImage,
+        'advisorId': advisorId,
+        'advisorName': advisorName,
+        'advisorAvatarUrl': advisorImage,
+        'isUserSide': false, // الـ advisor ما يشوفش التقييم
         'participants': [
           {
             'userID': visitorId,

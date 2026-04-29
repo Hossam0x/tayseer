@@ -41,6 +41,10 @@ class SessionStartedListener extends StatelessWidget {
                 'currentUserID': sessionData.id,
                 'currentUserName': currentUserName,
                 'currentUserAvatarUrl': sessionData.imageUrl,
+                'advisorId': sessionData.otherUser.id,
+                'advisorName': otherUserName,
+                'advisorAvatarUrl': sessionData.otherUser.imageUrl,
+                'isUserSide': true,
                 'participants': [
                   {
                     'id': sessionData.otherUser.id,

@@ -261,6 +261,10 @@ class _SessionHistoryViewBodyState extends State<SessionHistoryViewBody> {
                       'currentUserID': session.otherUser!.id,
                       'currentUserName': session.otherUser!.name,
                       'currentUserAvatarUrl': session.otherUser!.imageUrl,
+                      'advisorId': session.advisor.id,
+                      'advisorName': session.advisor.name,
+                      'advisorAvatarUrl': session.advisor.image,
+                      'isUserSide': true,
                       'participants': [
                         {
                           'id': session.advisor.id,

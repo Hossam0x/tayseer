@@ -955,6 +955,10 @@ abstract class AppRouter {
         final currentUserName = args['currentUserName'] as String? ?? 'User';
         final currentUserAvatarUrl =
             args['currentUserAvatarUrl'] as String? ?? '';
+        final advisorId = args['advisorId'] as String? ?? '';
+        final advisorName = args['advisorName'] as String? ?? '';
+        final advisorAvatarUrl = args['advisorAvatarUrl'] as String? ?? '';
+        final isUserSide = args['isUserSide'] as bool? ?? true;
 
         final rawParticipants = args['participants'] as List<dynamic>? ?? [];
         final participants = rawParticipants
@@ -969,6 +973,10 @@ abstract class AppRouter {
             userName: currentUserName,
             avatarUrl: currentUserAvatarUrl,
             participants: participants,
+            advisorId: advisorId,
+            advisorName: advisorName,
+            advisorAvatarUrl: advisorAvatarUrl,
+            isUserSide: isUserSide,
           ),
         );
 

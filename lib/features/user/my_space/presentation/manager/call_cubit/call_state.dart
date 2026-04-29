@@ -6,6 +6,7 @@ class CallState {
   final bool isSessionEnd;
   final String sessionId;
   final String sessionEndMessage;
+  final int callDurationSeconds;
 
   const CallState({
     this.avatarsCache = const {},
@@ -13,6 +14,7 @@ class CallState {
     this.isSessionEnd = false,
     this.sessionId = '',
     this.sessionEndMessage = '',
+    this.callDurationSeconds = 0,
   });
 
   CallState copyWith({
@@ -21,6 +23,7 @@ class CallState {
     bool? isSessionEnd,
     String? sessionId,
     String? sessionEndMessage,
+    int? callDurationSeconds,
   }) {
     return CallState(
       avatarsCache: avatarsCache ?? this.avatarsCache,
@@ -29,6 +32,7 @@ class CallState {
       isSessionEnd: isSessionEnd ?? this.isSessionEnd,
       sessionId: sessionId ?? this.sessionId,
       sessionEndMessage: sessionEndMessage ?? this.sessionEndMessage,
+      callDurationSeconds: callDurationSeconds ?? this.callDurationSeconds,
     );
   }
 

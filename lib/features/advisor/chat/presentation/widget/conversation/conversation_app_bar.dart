@@ -1,10 +1,5 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tayseer/core/enum/report_type.dart';
-import 'package:tayseer/core/utils/extensions/extensions.dart';
-import 'package:tayseer/core/utils/router/app_router.dart';
-import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/widgets/chat_room_list_item/helpers/chat_room_dialog_helper.dart';
 import 'package:tayseer/features/shared/home/view_model/home_event_bus.dart';
 import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
@@ -147,6 +142,10 @@ class _ConversationAppBarState extends State<ConversationAppBar> {
                             'currentUserID': sessiondata?.id,
                             'currentUserName': widget.username ?? 'User',
                             'currentUserAvatarUrl': sessiondata?.imageUrl,
+                            'advisorId': sessiondata?.id ?? '',
+                            'advisorName': widget.username ?? 'User',
+                            'advisorAvatarUrl': sessiondata?.imageUrl ?? '',
+                            'isUserSide': false, // من الـ advisor chat
                             'participants': [
                               {
                                 'id': sessiondata?.otherUser.id,

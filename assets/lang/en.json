@@ -2212,5 +2212,6 @@
   "session_type_package": "Package",
   "accountActivationPendingHint": "Thank you for joining! Your account is under review by our team, and you will be notified once the activation process is complete.",
   "guest_login_failed": "Guest login failed, please try again.",
-  "upgrade_to_reduce_commission": "Upgrade to Reduce Commission"
+  "upgrade_to_reduce_commission": "Upgrade to Reduce Commission",
+  "call_ended": "Call Ended"
 }

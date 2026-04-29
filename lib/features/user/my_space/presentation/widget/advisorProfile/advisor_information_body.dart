@@ -390,6 +390,10 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
                       'currentUserID': session.otherUser!.id,
                       'currentUserName': session.otherUser!.name,
                       'currentUserAvatarUrl': session.otherUser!.imageUrl,
+                      'advisorId': session.advisor.id,
+                      'advisorName': session.advisor.name,
+                      'advisorAvatarUrl': session.advisor.image,
+                      'isUserSide': true,
                       'participants': [
                         {
                           'id': session.advisor.id,
@@ -439,7 +443,10 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
           onPressed: () {
             context.pushNamed(
               AppRouter.kChooseSessionView,
-              arguments: {"title": context.tr('book_session'), "advisorId": widget.userid},
+              arguments: {
+                "title": context.tr('book_session'),
+                "advisorId": widget.userid,
+              },
             );
           },
         ),

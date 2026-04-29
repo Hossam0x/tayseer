@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:async';
+import 'package:tayseer/features/user/my_space/presentation/view/voic_call/call_summary_page.dart';
 import 'package:zego_uikit/zego_uikit.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/call_cubit/call_cubit.dart';
@@ -13,6 +13,10 @@ class CallPage extends StatelessWidget {
     required this.userName,
     required this.avatarUrl,
     required this.participants,
+    required this.advisorId,
+    required this.advisorName,
+    required this.advisorAvatarUrl,
+    required this.isUserSide,
   });
 
   final String callID;
@@ -20,6 +24,15 @@ class CallPage extends StatelessWidget {
   final String userName;
   final String avatarUrl;
   final List<Map<String, dynamic>> participants;
+
+  /// معرف الـ advisor — لازم يتمرر عشان شاشة الملخص
+  final String advisorId;
+  final String advisorName;
+  final String advisorAvatarUrl;
+
+  /// true = المستخدم العادي (يشوف التقييم والإبلاغ)
+  /// false = الـ advisor (ما يشوفش التقييم)
+  final bool isUserSide;
 
   @override
   Widget build(BuildContext context) {
@@ -35,25 +48,13 @@ class CallPage extends StatelessWidget {
         ..listenToSessionEnd(),
       child: MultiBlocListener(
         listeners: [
-          BlocListener<CallCubit, CallState>(
-            listenWhen: (previous, current) =>
-                previous.sessionCancelledModel !=
-                    current.sessionCancelledModel &&
-                current.sessionCancelledModel != null,
-            listener: (context, state) {
-              _handleSessionEnd(
-                context,
-                state.sessionCancelledModel?.reason ?? "تم إلغاء الجلسة",
-              );
-            },
-          ),
-          // ✅ Listener للـ Session End
+          // انتهت مدة الجلسة فقط — sessionCancelled لا يقفل المكالمة
           BlocListener<CallCubit, CallState>(
             listenWhen: (previous, current) =>
                 previous.isSessionEnd != current.isSessionEnd &&
                 current.isSessionEnd == true,
             listener: (context, state) {
-              _handleSessionEnd(context, state.sessionEndMessage);
+              _handleSessionExpired(context, state.sessionEndMessage);
             },
           ),
         ],
@@ -63,34 +64,67 @@ class CallPage extends StatelessWidget {
           userName: userName,
           avatarUrl: avatarUrl,
           participants: participants,
+          advisorId: advisorId,
+          advisorName: advisorName,
+          advisorAvatarUrl: advisorAvatarUrl,
+          isUserSide: isUserSide,
         ),
       ),
     );
   }
 
-  void _handleSessionEnd(BuildContext context, String message) async {
-    // 1. اقفل المكالمة
+  /// انتهت مدة الجلسة (sessionEnd) — نقفل المكالمة ونروح لشاشة الملخص
+  void _handleSessionExpired(BuildContext context, String message) async {
+    final cubit = context.read<CallCubit>();
+    final durationSeconds = cubit.state.callDurationSeconds;
+
     try {
       await ZegoUIKitPrebuiltCallController().hangUp(context);
     } catch (e) {
       debugPrint('Error hanging up: $e');
     }
+
     if (context.mounted) {
-      AppToast.warning(context, message);
+      cubit.resetState();
+      _navigateToSummary(context, message, durationSeconds);
     }
-    if (context.mounted) {
-      context.read<CallCubit>().resetState();
-    }
+  }
+
+  void _navigateToSummary(
+    BuildContext context,
+    String endReason,
+    int durationSeconds,
+  ) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => CallSummaryPage(
+          advisorId: advisorId,
+          advisorName: advisorName,
+          advisorAvatarUrl: advisorAvatarUrl,
+          durationSeconds: durationSeconds,
+          endReason: endReason,
+          isUserSide: isUserSide,
+        ),
+      ),
+    );
   }
 }
 
-class _CallView extends StatelessWidget {
+// ─────────────────────────────────────────────────────────────────────────────
+// _CallView — الـ Zego widget مع تتبع مدة المكالمة
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CallView extends StatefulWidget {
   const _CallView({
     required this.callID,
     required this.userID,
     required this.userName,
     required this.avatarUrl,
     required this.participants,
+    required this.advisorId,
+    required this.advisorName,
+    required this.advisorAvatarUrl,
+    required this.isUserSide,
   });
 
   final String callID;
@@ -98,6 +132,39 @@ class _CallView extends StatelessWidget {
   final String userName;
   final String avatarUrl;
   final List<Map<String, dynamic>> participants;
+  final String advisorId;
+  final String advisorName;
+  final String advisorAvatarUrl;
+  final bool isUserSide;
+
+  @override
+  State<_CallView> createState() => _CallViewState();
+}
+
+class _CallViewState extends State<_CallView> {
+  Timer? _durationTimer;
+  int _elapsedSeconds = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _durationTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      _elapsedSeconds++;
+      if (mounted) {
+        context.read<CallCubit>().updateCallDuration(_elapsedSeconds);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _durationTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,10 +172,44 @@ class _CallView extends StatelessWidget {
       appID: 1096376707,
       appSign:
           'bdd8e431ea191cfbf6b43e7842d78601aa8325f8e2259fd9ed85680a768dcef7',
-      userID: userID,
-      userName: userName,
-      callID: callID,
+      userID: widget.userID,
+      userName: widget.userName,
+      callID: widget.callID,
       config: _buildCallConfig(context),
+      events: _buildCallEvents(context),
+    );
+  }
+
+  ZegoUIKitPrebuiltCallEvents _buildCallEvents(BuildContext context) {
+    final cubit = context.read<CallCubit>();
+    return ZegoUIKitPrebuiltCallEvents(
+      onCallEnd: (event, defaultAction) {
+        // remoteHangUp = الطرف الثاني خرج — نتجاهله ونخلي المكالمة مستمرة
+        // المكالمة تتقفل بس لما المستخدم نفسه يضغط زر الإنهاء (localHangUp)
+        // أو لما السيرفر يبعث sessionEnd
+        if (event.reason == ZegoCallEndReason.remoteHangUp) {
+          debugPrint('🔕 Remote user left — keeping call alive');
+          return; // لا تعمل defaultAction ولا تروح للـ summary
+        }
+
+        // localHangUp أو kickOut أو abandoned → روح للـ summary
+        final durationSeconds = cubit.state.callDurationSeconds;
+        cubit.resetState();
+        if (context.mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => CallSummaryPage(
+                advisorId: widget.advisorId,
+                advisorName: widget.advisorName,
+                advisorAvatarUrl: widget.advisorAvatarUrl,
+                durationSeconds: durationSeconds,
+                endReason: '',
+                isUserSide: widget.isUserSide,
+              ),
+            ),
+          );
+        }
+      },
     );
   }
 
@@ -116,6 +217,7 @@ class _CallView extends StatelessWidget {
     final cubit = context.read<CallCubit>();
     final config = ZegoUIKitPrebuiltCallConfig.groupVoiceCall();
 
+    // ─── Background ───────────────────────────────────────────
     config.background = Container(
       decoration: BoxDecoration(
         image: DecorationImage(
@@ -125,8 +227,9 @@ class _CallView extends StatelessWidget {
       ),
     );
 
+    // ─── Avatar builder ───────────────────────────────────────
     config.audioVideoView.backgroundBuilder =
-        (BuildContext context, Size size, ZegoUIKitUser? user, Map extraInfo) {
+        (BuildContext ctx, Size size, ZegoUIKitUser? user, Map extraInfo) {
           if (user == null) return const SizedBox.shrink();
           final avatar = cubit.getAvatar(user.id);
           return Container(
@@ -195,6 +298,10 @@ class _CallView extends StatelessWidget {
     return config;
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _UserAvatar
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _UserAvatar extends StatelessWidget {
   const _UserAvatar({this.avatar});

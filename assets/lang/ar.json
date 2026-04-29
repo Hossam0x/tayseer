@@ -2199,5 +2199,6 @@
   "accountActivationPendingHint": "شكراً لانضمامك! حسابك قيد المراجعة من قِبل فريقنا، وسيتم إعلامك فور اكتمال عملية التفعيل.",
   "guest_login_failed": "فشل تسجيل الدخول كزائر، يرجى المحاولة مرة أخرى.",
   "upgrade_to_reduce_commission": "ترقية لتخفيض العمولة",
-  "free_chat_banner_suffix": " للحصول على المزيد من الاستشارات ."
+  "free_chat_banner_suffix": " للحصول على المزيد من الاستشارات .",
+  "call_ended": "انتهت المكالمة"
 }
