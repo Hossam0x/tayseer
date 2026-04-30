@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayseer/core/constant/constans.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 import 'chat_input_state.dart';
 
@@ -12,7 +13,7 @@ class ChatInputCubit extends Cubit<ChatInputState> {
   final VoidCallback? onTypingStop;
 
   ChatInputCubit({this.onTypingStart, this.onTypingStop})
-    : super(const ChatInputState());
+    : super(ChatInputState());
 
   void _safeEmit(ChatInputState newState) {
     if (!isClosed) {
@@ -69,8 +70,13 @@ class ChatInputCubit extends Cubit<ChatInputState> {
         }
       });
     } else {
-      if (state.textDirection != TextDirection.rtl) {
-        _safeEmit(state.copyWith(textDirection: TextDirection.rtl));
+      if (state.textDirection !=
+          (isArabic ? TextDirection.rtl : TextDirection.ltr)) {
+        _safeEmit(
+          state.copyWith(
+            textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+          ),
+        );
       }
       if (_isTyping) {
         _isTyping = false;
@@ -89,14 +95,14 @@ class ChatInputCubit extends Cubit<ChatInputState> {
     }
     _safeEmit(
       state.copyWith(
-        textDirection: TextDirection.rtl,
+        textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
         clearReplyingToMessage: true,
       ),
     );
   }
 
   TextDirection _getTextDirection(String text) {
-    if (text.isEmpty) return TextDirection.rtl;
+    if (text.isEmpty) return isArabic ? TextDirection.rtl : TextDirection.ltr;
 
     for (int i = 0; i < text.length; i++) {
       final char = text[i];
@@ -112,10 +118,10 @@ class ChatInputCubit extends Cubit<ChatInputState> {
         return TextDirection.rtl;
       }
 
-      return TextDirection.ltr;
+      return isArabic ? TextDirection.rtl : TextDirection.ltr;
     }
 
-    return TextDirection.rtl;
+    return isArabic ? TextDirection.rtl : TextDirection.ltr;
   }
 
   @override

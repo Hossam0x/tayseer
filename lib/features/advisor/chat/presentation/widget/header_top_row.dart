@@ -19,7 +19,7 @@ class HeaderTopRow extends StatelessWidget {
     final spacing = isMobile ? 30.0 : 40.0;
 
     return Directionality(
-      textDirection: TextDirection.ltr,
+      textDirection: isArabic ? TextDirection.ltr : TextDirection.rtl,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -43,7 +43,8 @@ class HeaderTopRow extends StatelessWidget {
                     ? BlocSelector<ChatListCubit, ChatListState, int>(
                         selector: (state) {
                           return state.maybeWhen(
-                            loaded: (_, pendingRequestsCount) => pendingRequestsCount,
+                            loaded: (_, pendingRequestsCount) =>
+                                pendingRequestsCount,
                             orElse: () => 0,
                           );
                         },
@@ -67,7 +68,9 @@ class HeaderTopRow extends StatelessWidget {
             ),
           ),
           Text(
-            isChatsSelected ? "محادثاتك" : "جلساتك",
+            isChatsSelected
+                ? context.tr('your_chats')
+                : context.tr('your_sessions'),
             style: TextStyle(
               fontSize: fontSize,
               fontWeight: FontWeight.bold,

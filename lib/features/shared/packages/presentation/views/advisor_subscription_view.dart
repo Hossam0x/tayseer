@@ -251,7 +251,7 @@ class AdvisorSubscriptionView extends StatelessWidget {
                                   context.tr('auto_renew_note'),
                                   style: TextStyle(
                                     fontSize: 12.sp,
-                                    color: Colors.black,
+                                    color: Colors.white,
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
@@ -310,9 +310,14 @@ class AdvisorSubscriptionView extends StatelessWidget {
     List<NewAdvisorSubModel> subs,
   ) {
     if (hasCurrentSub && upgradeSub != null) {
-      final label = upgradeSub.isMonthly
-          ? context.tr('monthly')
-          : context.tr('weekly');
+      final String label;
+      if (upgradeSub.isWeekly) {
+        label = context.tr('weekly');
+      } else if (upgradeSub.isMonthly) {
+        label = context.tr('monthly');
+      } else {
+        label = context.tr('three_months');
+      }
       return '${context.tr('change_to')} $label';
     }
     return context.tr('pay');

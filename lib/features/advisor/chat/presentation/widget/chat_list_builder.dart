@@ -41,16 +41,18 @@ class ChatListBuilder extends StatelessWidget {
   }
 
   Widget _buildEmptyState(bool isMobile) {
-    return SharedEmptyState(
-      title: "لا توجد محادثات حتى الآن",
-      subTitleWidget: Text(
-        "ابدأ محادثة جديدة الآن",
-        style: TextStyle(
-          color: Colors.grey,
-          fontFamily: 'Cairo',
-          fontSize: isMobile ? 12 : 14,
+    return Builder(
+      builder: (context) => SharedEmptyState(
+        title: context.tr('no_chats_yet'),
+        subTitleWidget: Text(
+          context.tr('start_new_chat'),
+          style: TextStyle(
+            color: Colors.grey,
+            fontFamily: 'Cairo',
+            fontSize: isMobile ? 12 : 14,
+          ),
+          textAlign: TextAlign.center,
         ),
-        textAlign: TextAlign.center,
       ),
     );
   }

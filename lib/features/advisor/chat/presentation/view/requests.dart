@@ -1,4 +1,3 @@
-
 import 'package:tayseer/features/advisor/chat/data/repo/chat_repo_simple.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_requests_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/request_body.dart';
@@ -16,7 +15,7 @@ class Requests extends StatelessWidget {
         body: CustomBackground(
           child: Column(
             children: [
-              const CustomAppBar(title: 'طلبات الدردشة'),
+              CustomAppBar(title: context.tr('chat_requests_title')),
               const Expanded(child: RequestBody()),
             ],
           ),

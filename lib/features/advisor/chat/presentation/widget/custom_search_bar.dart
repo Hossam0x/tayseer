@@ -25,10 +25,10 @@ class CustomSearchBar extends StatelessWidget {
             onTap!();
           }
         },
-        textAlign: TextAlign.right,
-        textDirection: TextDirection.rtl,
+        textAlign: isArabic ? TextAlign.right : TextAlign.left,
+        textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
         decoration: InputDecoration(
-          hintText: 'ابحث عن ما تريده',
+          hintText: context.tr('search_hint'),
           hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14.sp),
           prefixIcon: Icon(Icons.search, color: Colors.grey, size: 20.sp),
           filled: true,

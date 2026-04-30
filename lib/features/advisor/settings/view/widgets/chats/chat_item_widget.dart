@@ -70,15 +70,16 @@ class ChatItemWidget extends StatelessWidget {
         extentRatio: 0.25,
         children: [
           CustomSlidableAction(
-            onPressed: (context) {
-              Slidable.of(context)?.close();
+            onPressed: (slidableContext) {
+              Slidable.of(slidableContext)?.close();
+              // Save cubit reference before dialog opens - context may be deactivated after item removal
+              final cubit = context.read<ArchivedChatsCubit>();
               showConfirmationDialog(
                 context: context,
                 imagePath: AssetsData.chatArchiveIcon,
                 title: context.tr('unarchive_chat_title'),
                 subtitle: context.tr('unarchive_chat_subtitle'),
-                onConfirm: () =>
-                    context.read<ArchivedChatsCubit>().unarchiveChat(chatRoom.id),
+                onConfirm: () => cubit.unarchiveChat(chatRoom.id),
               );
             },
             backgroundColor: Colors.transparent,
@@ -106,13 +107,14 @@ class ChatItemWidget extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
+            // Save cubit reference before dialog opens
+            final cubit = context.read<ArchivedChatsCubit>();
             showConfirmationDialog(
               context: context,
               imagePath: AssetsData.chatArchiveIcon,
               title: context.tr('unarchive_chat_title'),
               subtitle: context.tr('unarchive_chat_subtitle'),
-              onConfirm: () =>
-                  context.read<ArchivedChatsCubit>().unarchiveChat(chatRoom.id),
+              onConfirm: () => cubit.unarchiveChat(chatRoom.id),
             );
           },
           borderRadius: BorderRadius.circular(12.r),
@@ -249,14 +251,13 @@ class ChatItemWidget extends StatelessWidget {
                 color: AppColors.kRedColor,
                 onTap: () {
                   Slidable.of(context)?.close();
+                  final cubit = context.read<ArchivedChatsCubit>();
                   showConfirmationDialog(
                     context: context,
                     imagePath: AssetsData.deleteIcon,
                     title: context.tr('confirm_delete_chat'),
                     subtitle: context.tr('confirm_delete_chat_message'),
-                    onConfirm: () => context
-                        .read<ArchivedChatsCubit>()
-                        .deleteChatRoom(chatRoom.id),
+                    onConfirm: () => cubit.deleteChatRoom(chatRoom.id),
                   );
                 },
               ),
@@ -286,17 +287,17 @@ class ChatItemWidget extends StatelessWidget {
                 color: const Color(0xFF581C25),
                 onTap: () {
                   Slidable.of(context)?.close();
+                  final cubit = context.read<ArchivedChatsCubit>();
                   if (chatRoom.isBlocked) {
                     showConfirmationDialog(
                       context: context,
                       imagePath: AssetsData.deleteIcon,
                       title: context.tr('confirm_unblock_user'),
                       subtitle: context.tr('confirm_unblock_user_message'),
-                      onConfirm: () =>
-                          context.read<ArchivedChatsCubit>().unblockUser(
-                            userId: otherUser?.id ?? '',
-                            chatId: chatRoom.id,
-                          ),
+                      onConfirm: () => cubit.unblockUser(
+                        userId: otherUser?.id ?? '',
+                        chatId: chatRoom.id,
+                      ),
                     );
                   } else {
                     showConfirmationDialog(
@@ -304,11 +305,10 @@ class ChatItemWidget extends StatelessWidget {
                       imagePath: AssetsData.deleteIcon,
                       title: context.tr('confirm_block_user'),
                       subtitle: context.tr('confirm_block_user_message'),
-                      onConfirm: () =>
-                          context.read<ArchivedChatsCubit>().blockUser(
-                            userId: otherUser?.id ?? '',
-                            chatId: chatRoom.id,
-                          ),
+                      onConfirm: () => cubit.blockUser(
+                        userId: otherUser?.id ?? '',
+                        chatId: chatRoom.id,
+                      ),
                     );
                   }
                 },
@@ -409,23 +409,6 @@ class ChatItemWidget extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  void _openArchivedChat(BuildContext context, ArchiveUserModel? otherUser) {
-    if (otherUser == null) {
-      AppToast.error(context, context.tr('user_not_found'));
-      return;
-    }
-    context.pushNamed(
-      AppRouter.kConversitionView,
-      arguments: {
-        'receiverid': otherUser.id,
-        'chatroomid': chatRoom.id,
-        'username': otherUser.name,
-        'userimage': otherUser.image,
-        'isBlocked': chatRoom.isBlocked,
-      },
     );
   }
 }

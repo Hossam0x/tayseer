@@ -309,9 +309,14 @@ class UserSubscriptionView extends StatelessWidget {
     List<NewUserSubModel> subs,
   ) {
     if (hasCurrentSub && upgradeSub != null) {
-      final label = upgradeSub.isMonthly
-          ? context.tr('monthly')
-          : context.tr('weekly');
+      final String label;
+      if (upgradeSub.isWeekly) {
+        label = context.tr('weekly');
+      } else if (upgradeSub.isMonthly) {
+        label = context.tr('monthly');
+      } else {
+        label = context.tr('three_months');
+      }
       return '${context.tr('change_to')} $label';
     }
     return context.tr('pay');

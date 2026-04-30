@@ -12,7 +12,10 @@ class NewChatFloatingButton extends StatelessWidget {
     final borderRadius = isMobile ? 12.0 : 15.0;
 
     return Container(
-      margin: EdgeInsets.only(right: rightMargin, bottom: bottomMargin),
+      margin: EdgeInsetsDirectional.only(
+        end: rightMargin,
+        bottom: bottomMargin,
+      ),
       child: FloatingActionButton.extended(
         onPressed: () {},
         backgroundColor: const Color(0xFFFFEBF0),
@@ -28,7 +31,7 @@ class NewChatFloatingButton extends StatelessWidget {
           size: isMobile ? 18 : 20,
         ),
         label: Text(
-          "إضافة محادثة جديدة",
+          context.tr('add_new_chat'),
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: isMobile ? 12 : 14,

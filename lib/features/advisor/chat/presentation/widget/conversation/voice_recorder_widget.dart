@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 import 'package:tayseer/core/utils/colors.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 
 class VoiceRecorderWidget extends StatefulWidget {
   final Function(File audioFile, Duration duration) onSendVoice;
@@ -64,7 +65,8 @@ class _VoiceRecorderWidgetState extends State<VoiceRecorderWidget>
 
       // إنشاء مسار الملف
       final directory = await getTemporaryDirectory();
-      _audioPath = '${directory.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      _audioPath =
+          '${directory.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
       // بدء التسجيل
       await _audioRecorder.start(
@@ -148,11 +150,7 @@ class _VoiceRecorderWidgetState extends State<VoiceRecorderWidget>
           // زر الإلغاء
           IconButton(
             onPressed: _cancelRecording,
-            icon: Icon(
-              Icons.delete_outline,
-              color: Colors.red,
-              size: 28.sp,
-            ),
+            icon: Icon(Icons.delete_outline, color: Colors.red, size: 28.sp),
           ),
           SizedBox(width: 12.w),
 
@@ -183,7 +181,7 @@ class _VoiceRecorderWidgetState extends State<VoiceRecorderWidget>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'جاري التسجيل...',
+                  context.tr('recording'),
                   style: TextStyle(
                     fontSize: 14.sp,
                     color: Colors.grey[600],
@@ -213,11 +211,7 @@ class _VoiceRecorderWidgetState extends State<VoiceRecorderWidget>
                 color: AppColors.kprimaryColor,
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                Icons.send,
-                color: Colors.white,
-                size: 24.sp,
-              ),
+              child: Icon(Icons.send, color: Colors.white, size: 24.sp),
             ),
           ),
         ],

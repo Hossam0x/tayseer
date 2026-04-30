@@ -96,7 +96,7 @@ void main() async {
   PaintingBinding.instance.imageCache.maximumSizeBytes = 300 << 20; // 300 MB
 
   // ✅ أولاً runApp عشان الـ Navigator يكون جاهز
-  runApp(const TayseerApp());
+  runApp(const AppRestarter(child: TayseerApp()));
 
   // ✅ تشغيل مراقب الـ screenshot على Android
   ScreenshotDetector.init();

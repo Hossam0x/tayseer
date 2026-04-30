@@ -12,9 +12,7 @@ import 'package:tayseer/features/shared/post_details/presentation/views/post_det
 import 'package:tayseer/core/widgets/post_card/post_shimmer.dart';
 import 'package:tayseer/features/shared/home/model/best_advisor_model.dart';
 import 'package:tayseer/features/shared/home/model/similar_user_model.dart';
-import 'package:tayseer/features/shared/home/model/past_match_model.dart';
 import 'package:tayseer/features/shared/home/views/widgets/sections/best_advisor_section.dart';
-import 'package:tayseer/features/shared/home/views/widgets/sections/best_matches_section.dart';
 import 'package:tayseer/features/shared/home/views/widgets/sections/similar_users_section.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -180,7 +178,6 @@ class HomePostFeed extends StatelessWidget {
     loadMoreServerFailed: state.loadMoreServerFailed,
     bestAdvisors: state.bestAdvisors,
     similarUsers: state.similarUsers,
-    pastMatches: state.pastMatches,
   );
 
   void _handleHideFeedback(BuildContext context, HomeState state) {
@@ -335,9 +332,7 @@ class HomePostFeed extends StatelessWidget {
     // If Only Consultation active -> Show Similar Users & Best Matches (Hide Best Advisor).
     final bool showAdvisors =
         isUser && isMarriageVisible && state.bestAdvisors.isNotEmpty;
-    final bool showMarriageContent =
-        isUser &&
-        (state.similarUsers.isNotEmpty || state.pastMatches.isNotEmpty);
+    final bool showMarriageContent = isUser && state.similarUsers.isNotEmpty;
     // Always show similar/matches if isUser, because user said they should show even if ONLY consultation active.
 
     int currentPostIndex = 0;
@@ -362,7 +357,7 @@ class HomePostFeed extends StatelessWidget {
         continue;
       }
 
-      // Inject Similar Users & Matches after 5 items
+      // Inject Similar Users after 5 items
       if (showMarriageContent && items.length == 5) {
         if (state.similarUsers.isNotEmpty) {
           items.add(
@@ -374,17 +369,7 @@ class HomePostFeed extends StatelessWidget {
             ),
           );
         }
-        if (state.pastMatches.isNotEmpty) {
-          items.add(
-            BestMatchesSection(
-              matches: state.pastMatches,
-              pagination: homeCubit.state.pastMatchesPagination,
-              onLoadMore: () => homeCubit.loadMorePastMatches(),
-              isLoadingMore: homeCubit.state.pastMatchesIsLoadingMore,
-            ),
-          );
-        }
-        if (state.similarUsers.isNotEmpty || state.pastMatches.isNotEmpty) {
+        if (state.similarUsers.isNotEmpty) {
           continue;
         }
       }
@@ -464,7 +449,6 @@ class _FeedState extends Equatable {
 
   final List<BestAdvisorModel> bestAdvisors;
   final List<SimilarUserModel> similarUsers;
-  final List<PastMatchModel> pastMatches;
 
   const _FeedState({
     required this.postIds,
@@ -478,7 +462,6 @@ class _FeedState extends Equatable {
     this.loadMoreServerFailed = false,
     this.bestAdvisors = const [],
     this.similarUsers = const [],
-    this.pastMatches = const [],
   });
 
   bool get isEmpty => postIds.isEmpty;
@@ -498,7 +481,6 @@ class _FeedState extends Equatable {
     loadMoreServerFailed,
     bestAdvisors,
     similarUsers,
-    pastMatches,
   ];
 }
 

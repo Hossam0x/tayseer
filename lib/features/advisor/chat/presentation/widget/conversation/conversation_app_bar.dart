@@ -60,11 +60,11 @@ class _ConversationAppBarState extends State<ConversationAppBar> {
     final isHaveSession = sessiondata?.id != null;
 
     return Container(
-      padding: EdgeInsets.only(
+      padding: EdgeInsetsDirectional.only(
         top: isMobile ? 50 : 30,
         bottom: 10,
-        left: 16,
-        right: 8,
+        start: 16,
+        end: 8,
       ),
       color: const Color(0xFFF9EEFA),
       child: Row(

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/features/advisor/chat/presentation/theme/chat_theme.dart';
 
 class ReplyPreviewBubble extends StatelessWidget {
@@ -74,7 +75,7 @@ class ReplyPreviewBubble extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (_isMediaReply) _buildMediaPreview(),
-            Expanded(child: _buildTextContent()),
+            Expanded(child: _buildTextContent(context)),
           ],
         ),
       ),
@@ -85,7 +86,7 @@ class ReplyPreviewBubble extends StatelessWidget {
     return Container(
       width: ChatDimensions.mediaPreviewSize,
       height: ChatDimensions.mediaPreviewSize,
-      margin: const EdgeInsets.only(left: 8),
+      margin: const EdgeInsetsDirectional.only(start: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(6),
         color: _isVideoReply ? Colors.black : Colors.grey[300],
@@ -129,7 +130,7 @@ class ReplyPreviewBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildTextContent() {
+  Widget _buildTextContent(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -138,7 +139,7 @@ class ReplyPreviewBubble extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'رد على رسالة',
+              context.tr('reply_to_message'),
               style: TextStyle(
                 color: isMe ? Colors.white70 : ChatColors.bubbleSender,
                 fontSize: 10,
@@ -166,7 +167,9 @@ class ReplyPreviewBubble extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                _isImageReply ? 'صورة' : 'فيديو',
+                _isImageReply
+                    ? context.tr('media_image')
+                    : context.tr('media_video'),
                 style: TextStyle(
                   color: isMe ? Colors.white60 : Colors.grey[600],
                   fontSize: 11,

@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 import 'package:tayseer/features/advisor/chat/presentation/theme/chat_theme.dart';
 
@@ -38,7 +39,9 @@ class ReplyPreviewInput extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'رد على ${replyMessage.senderName}',
+                  context
+                      .tr('reply_to')
+                      .replaceAll('{name}', replyMessage.senderName),
                   style: const TextStyle(
                     color: ChatColors.bubbleSender,
                     fontWeight: FontWeight.bold,
@@ -59,7 +62,9 @@ class ReplyPreviewInput extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        replyMessage.messageType == 'image' ? 'صورة' : 'فيديو',
+                        replyMessage.messageType == 'image'
+                            ? context.tr('media_image')
+                            : context.tr('media_video'),
                         style: const TextStyle(
                           color: Colors.grey,
                           fontSize: 12,
@@ -86,7 +91,7 @@ class ReplyPreviewInput extends StatelessWidget {
             Container(
               width: 45,
               height: 45,
-              margin: const EdgeInsets.only(left: 8),
+              margin: const EdgeInsetsDirectional.only(start: 8),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 color: Colors.grey[300],

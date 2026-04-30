@@ -45,20 +45,25 @@ class SelectableSubCard extends StatelessWidget {
 
     final durationLabel = sub.isWeekly
         ? context.tr('weekly')
+        : sub.isThreeMonths
+        ? context.tr('three_months')
         : context.tr('monthly');
 
+    // الوحدة تحت الرقم: أسبوع، شهر، أشهر
     final durationUnit = sub.isWeekly
         ? context.tr('weekly')
+        : sub.isThreeMonths
+        ? context.tr('months')
         : context.tr('monthly');
 
-    // رقم المدة: أسبوع=1، شهر=1
-    const durationNumber = '1';
+    // رقم المدة: أسبوع=1، شهر=1، 3 أشهر=3
+    final durationNumber = sub.isThreeMonths ? '3' : '1';
 
     final isMostPopular = index == 1 && totalCount >= 3;
     final isBestValue =
         index == totalCount - 1 && totalCount >= 2 && !isMostPopular;
 
-    // سعر الشهر: للشهري هو نفس السعر، للأسبوعي لا يُعرض
+    // سعر الشهر: للشهري هو نفس السعر، للـ 3 أشهر من الـ API، للأسبوعي لا يُعرض
     final num? pricePerMonth =
         sub.pricePerMonth ?? (sub.isMonthly ? sub.price : null);
 
@@ -119,8 +124,9 @@ class SelectableSubCard extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: 3.h),
-                  // سعر الشهر (للشهري فقط)
-                  if (pricePerMonth != null && sub.isMonthly) ...[
+                  // سعر الشهر (للشهري والـ 3 أشهر)
+                  if (pricePerMonth != null &&
+                      (sub.isMonthly || sub.isThreeMonths)) ...[
                     Text(
                       '${context.tr('price_per_month')}: ${pricePerMonth.toStringAsFixed(0)} $currency',
                       style: TextStyle(

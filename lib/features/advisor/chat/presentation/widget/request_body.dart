@@ -36,22 +36,23 @@ class _RequestBodyState extends State<RequestBody> {
           ),
           loaded: (requests) {
             if (requests.isEmpty) {
-              return const Center(
+              return Center(
                 child: EmptySessionsState(
-                  title: 'لا توجد طلبات',
-                  subtitle: 'طلبات الدردشة ستظهر هنا',
+                  title: context.tr('no_requests'),
+                  subtitle: context.tr('chat_requests_appear_here'),
                 ),
               );
             }
 
             return RefreshIndicator(
-              onRefresh: () => context.read<ChatRequestsCubit>().loadChatRequests(),
+              onRefresh: () =>
+                  context.read<ChatRequestsCubit>().loadChatRequests(),
               color: const Color(0xFFE96E88),
               child: ListView.separated(
-                padding: EdgeInsets.only(
+                padding: EdgeInsetsDirectional.only(
                   bottom: screenHeight * 0.12,
-                  left: 16,
-                  right: 16,
+                  start: 16,
+                  end: 16,
                   top: 8,
                 ),
                 itemCount: requests.length,

@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
+import 'package:tayseer/core/constant/constans.dart';
 import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/message_model.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
@@ -27,9 +28,10 @@ class MessageDetailsScreen extends StatelessWidget {
   static const Color kPrimaryColor = Color(0xFFD84D65);
   static const Color kTitleColor = Color(0xFF1E1B4B);
 
-  String _formatDateTime(String? dateTimeString) {
+  String _formatDateTime(String? dateTimeString, BuildContext context) {
     if (dateTimeString == null || dateTimeString.isEmpty) return '---';
     try {
+      final locale = isArabic ? 'ar' : 'en';
       final dateTime = DateTime.parse(dateTimeString);
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
@@ -37,36 +39,38 @@ class MessageDetailsScreen extends StatelessWidget {
 
       String dateLabel;
       if (messageDate == today) {
-        dateLabel = 'اليوم';
+        dateLabel = context.tr('date_today');
       } else if (messageDate == today.subtract(const Duration(days: 1))) {
-        dateLabel = 'أمس';
+        dateLabel = context.tr('date_yesterday');
       } else {
-        dateLabel = DateFormat('d/M/yyyy', 'ar').format(dateTime);
+        dateLabel = DateFormat('d/M/yyyy').format(dateTime);
       }
-      final timeLabel = DateFormat('h:mm', 'en').format(dateTime);
+      final timeLabel = DateFormat('h:mm', locale).format(dateTime);
       return '$timeLabel $dateLabel';
     } catch (e) {
       return dateTimeString;
     }
   }
 
-  String _getDateLabel(String? dateTimeString) {
-    if (dateTimeString == null || dateTimeString.isEmpty) return 'اليوم';
+  String _getDateLabel(String? dateTimeString, BuildContext context) {
+    if (dateTimeString == null || dateTimeString.isEmpty)
+      return context.tr('date_today');
     try {
+      final locale = isArabic ? 'ar' : 'en';
       final dateTime = DateTime.parse(dateTimeString);
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
       final messageDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
 
       if (messageDate == today) {
-        return 'اليوم';
+        return context.tr('date_today');
       } else if (messageDate == today.subtract(const Duration(days: 1))) {
-        return 'أمس';
+        return context.tr('date_yesterday');
       } else {
-        return DateFormat('EEEE d MMMM', 'ar').format(dateTime);
+        return DateFormat('EEEE d MMMM', locale).format(dateTime);
       }
     } catch (e) {
-      return 'اليوم';
+      return context.tr('date_today');
     }
   }
 
@@ -134,7 +138,7 @@ class MessageDetailsScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _buildDateChip(_getDateLabel(time)),
+                    _buildDateChip(_getDateLabel(time, context)),
                     const SizedBox(height: 24),
 
                     if (isMedia)
@@ -183,7 +187,7 @@ class MessageDetailsScreen extends StatelessWidget {
                     _buildStatusRow(
                       icon: deliveredMessageIcon,
                       label: context.tr('delivered_status'),
-                      time: _formatDateTime(deliveredAt),
+                      time: _formatDateTime(deliveredAt, context),
                     ),
                     const SizedBox(height: 24),
                     Divider(
@@ -195,7 +199,7 @@ class MessageDetailsScreen extends StatelessWidget {
                     _buildStatusRow(
                       icon: readMessageIcon,
                       label: context.tr('read_status'),
-                      time: isRead ? _formatDateTime(readAt) : '---',
+                      time: isRead ? _formatDateTime(readAt, context) : '---',
                     ),
                     const SizedBox(height: 20),
                   ],

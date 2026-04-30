@@ -201,11 +201,19 @@ class _LanguageSelectionViewBodyState
                   title: context.tr('confirm'),
                   useGradient: true,
                   onPressed: () async {
-                    final result = await context
+                    final newLangCode = await context
                         .read<LanguageSelectionUiCubit>()
                         .confirmSelection();
                     if (!context.mounted) return;
-                    Navigator.pop(context, result);
+                    if (newLangCode != null) {
+                      await context.read<LanguageCubit>().setLanguage(
+                        newLangCode,
+                        context,
+                        forceRestart: true,
+                      );
+                    } else {
+                      Navigator.pop(context);
+                    }
                   },
                 ),
               ),

@@ -1,5 +1,4 @@
 import 'package:country_picker/country_picker.dart';
-import 'package:tayseer/core/appLocalizations/appLocalizations.dart';
 import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
@@ -7,6 +6,42 @@ import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/splash_s
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/main.dart';
 import 'package:tayseer/my_import.dart';
+
+/// يعمل restart كامل للتطبيق من الـ root — نفس تأثير Hot Restart
+class AppRestarter extends StatefulWidget {
+  const AppRestarter({super.key, required this.child});
+
+  final Widget child;
+
+  /// استدعي هذه الدالة لإعادة تشغيل التطبيق بالكامل
+  static Future<void> restart(BuildContext context) async {
+    final state = context.findAncestorStateOfType<_AppRestarterState>();
+    await state?.restartApp();
+  }
+
+  @override
+  State<AppRestarter> createState() => _AppRestarterState();
+}
+
+class _AppRestarterState extends State<AppRestarter> {
+  Key _key = UniqueKey();
+
+  Future<void> restartApp() async {
+    // إعادة تسجيل كل الـ singletons في getIt
+    await getIt.reset();
+    await setupGetIt();
+
+    // إعادة بناء الـ widget tree كاملاً
+    setState(() {
+      _key = UniqueKey();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return KeyedSubtree(key: _key, child: widget.child);
+  }
+}
 
 class TayseerApp extends StatefulWidget {
   const TayseerApp({super.key});

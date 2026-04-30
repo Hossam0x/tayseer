@@ -42,7 +42,7 @@ class ToggleTabs extends StatelessWidget {
                   onTap: onSessionTap,
                   borderRadius: BorderRadius.circular(12),
                   child: _buildTabItem(
-                    title: "الجلسات",
+                    title: context.tr('sessions_tab'),
                     isActive: !isChatsSelected,
                     height: tabHeight,
                     isMobile: isMobile,
@@ -55,7 +55,7 @@ class ToggleTabs extends StatelessWidget {
                   onTap: onChatTap,
                   borderRadius: BorderRadius.circular(12),
                   child: _buildTabItem(
-                    title: "المحادثات",
+                    title: context.tr('chats_tab'),
                     isActive: isChatsSelected,
                     height: tabHeight,
                     isMobile: isMobile,

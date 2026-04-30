@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tayseer/core/constant/constans.dart';
 import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/chat_list_builder.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/chat_view_header.dart';
@@ -18,12 +19,8 @@ class _ChatViewBodyState extends State<ChatViewBody> {
 
   @override
   Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    final screenWidth = mediaQuery.size.width;
-    final isMobile = screenWidth < 600;
-
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
         body: Container(
           width: double.infinity,

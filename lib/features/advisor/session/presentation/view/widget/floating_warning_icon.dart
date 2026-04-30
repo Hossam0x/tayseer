@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 
 class FloatingWarningIcon extends StatefulWidget {
   const FloatingWarningIcon({super.key});
@@ -70,7 +71,7 @@ class _FloatingWarningIconState extends State<FloatingWarningIcon>
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'إذا لم تدخل الجلسة خلال أول 5 دقائق سيتم إلغاؤها ولن تحصل على أموال الجلسة وسيقل التقييم الخاص بك',
+                          context.tr('session_warning_message'),
                           style: TextStyle(
                             fontFamily: 'Cairo',
                             fontSize: 14,

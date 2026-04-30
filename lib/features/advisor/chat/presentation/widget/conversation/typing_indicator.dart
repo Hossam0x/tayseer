@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/features/advisor/chat/presentation/theme/chat_theme.dart';
 
 class TypingIndicator extends StatefulWidget {
@@ -62,7 +63,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '${widget.userName} يكتب الآن',
+                  context.tr('is_typing').replaceAll('{name}', widget.userName),
                   style: TextStyle(
                     color: Colors.grey.shade700,
                     fontSize: 12,

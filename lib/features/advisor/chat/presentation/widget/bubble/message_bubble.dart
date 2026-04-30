@@ -37,20 +37,21 @@ class _MessageBubbleState extends State<MessageBubble> {
   bool _isExpanded = false;
   static const int _maxLines = 10;
 
-  String _formatTime(String timeString) {
+  String _formatTime(String timeString, BuildContext context) {
     try {
+      final locale = isArabic ? 'ar' : 'en';
       final dateTime = DateTime.parse(timeString);
       final now = DateTime.now();
       final difference = now.difference(dateTime);
 
       if (difference.inDays == 0) {
-        return DateFormat('h:mm a', 'ar').format(dateTime);
+        return DateFormat('h:mm a', locale).format(dateTime);
       } else if (difference.inDays == 1) {
-        return 'أمس';
+        return context.tr('yesterday');
       } else if (difference.inDays < 7) {
-        return DateFormat('EEEE', 'ar').format(dateTime);
+        return DateFormat('EEEE', locale).format(dateTime);
       } else {
-        return DateFormat('d/M/yyyy', 'ar').format(dateTime);
+        return DateFormat('d/M/yyyy').format(dateTime);
       }
     } catch (e) {
       return timeString;
@@ -104,8 +105,8 @@ class _MessageBubbleState extends State<MessageBubble> {
         !_isExpanded &&
         _isTextExceedsMaxLines(fullText, contentMaxWidth, textStyle);
 
-    final bool hasReactions = widget.chatMessage != null &&
-        widget.chatMessage!.reactions.isNotEmpty;
+    final bool hasReactions =
+        widget.chatMessage != null && widget.chatMessage!.reactions.isNotEmpty;
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -139,7 +140,10 @@ class _MessageBubbleState extends State<MessageBubble> {
                       child: Container(
                         constraints: BoxConstraints(maxWidth: maxBubbleWidth),
                         padding: isSingleEmoji
-                            ? EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h)
+                            ? EdgeInsets.symmetric(
+                                horizontal: 4.w,
+                                vertical: 4.h,
+                              )
                             : (isMediaMessage && !hasReply
                                   ? EdgeInsets.all(4.r)
                                   : EdgeInsets.symmetric(
@@ -170,7 +174,9 @@ class _MessageBubbleState extends State<MessageBubble> {
                                 ),
                                 border: Border(
                                   bottom: BorderSide(
-                                    color: isMe ? Colors.black12 : Colors.grey.shade200,
+                                    color: isMe
+                                        ? Colors.black12
+                                        : Colors.grey.shade200,
                                     width: 1,
                                   ),
                                 ),
@@ -203,7 +209,9 @@ class _MessageBubbleState extends State<MessageBubble> {
                                 maxWidth: maxBubbleWidth,
                                 onTap: () {
                                   if (reply.replyMessageId != null) {
-                                    widget.onReplyTap?.call(reply.replyMessageId);
+                                    widget.onReplyTap?.call(
+                                      reply.replyMessageId,
+                                    );
                                   }
                                 },
                               ),
@@ -219,8 +227,10 @@ class _MessageBubbleState extends State<MessageBubble> {
                                   child: MessageContentBuilder(
                                     messageType: messageType,
                                     contentList: contentList,
-                                    localFilePaths: widget.chatMessage?.localFilePaths,
-                                    uploadProgress: widget.chatMessage?.uploadProgress,
+                                    localFilePaths:
+                                        widget.chatMessage?.localFilePaths,
+                                    uploadProgress:
+                                        widget.chatMessage?.uploadProgress,
                                     textColor: textColor,
                                     fontSize: 14.sp,
                                     maxWidth: 236.w,
@@ -230,6 +240,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                             else if (needsExpansion)
                               // ✅ رسالة نصية طويلة - عرض مقتطع مع "عرض المزيد"
                               _buildCollapsedText(
+                                context: context,
                                 fullText: fullText,
                                 textStyle: textStyle,
                                 textColor: textColor,
@@ -240,8 +251,10 @@ class _MessageBubbleState extends State<MessageBubble> {
                               MessageContentBuilder(
                                 messageType: messageType,
                                 contentList: contentList,
-                                localFilePaths: widget.chatMessage?.localFilePaths,
-                                uploadProgress: widget.chatMessage?.uploadProgress,
+                                localFilePaths:
+                                    widget.chatMessage?.localFilePaths,
+                                uploadProgress:
+                                    widget.chatMessage?.uploadProgress,
                                 textColor: textColor,
                                 fontSize: 14.sp,
                                 maxWidth: maxBubbleWidth,
@@ -256,7 +269,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                                   contentMaxWidth,
                                   textStyle,
                                 ))
-                              _buildShowLessButton(isMe),
+                              _buildShowLessButton(context, isMe),
 
                             Align(
                               alignment: isMe
@@ -270,17 +283,22 @@ class _MessageBubbleState extends State<MessageBubble> {
                                       ),
                                       decoration: BoxDecoration(
                                         color: bgColor,
-                                        borderRadius: BorderRadius.circular(12.r),
+                                        borderRadius: BorderRadius.circular(
+                                          12.r,
+                                        ),
                                       ),
                                       child: MessageTimeStatus(
-                                        formattedTime: _formatTime(time),
+                                        formattedTime: _formatTime(
+                                          time,
+                                          context,
+                                        ),
                                         isMe: isMe,
                                         status: status,
                                         isOverlay: widget.isOverlay,
                                       ),
                                     )
                                   : MessageTimeStatus(
-                                      formattedTime: _formatTime(time),
+                                      formattedTime: _formatTime(time, context),
                                       isMe: isMe,
                                       status: status,
                                       isOverlay: widget.isOverlay,
@@ -295,12 +313,15 @@ class _MessageBubbleState extends State<MessageBubble> {
               ),
               // ✅ عرض الـ reactions جنب البابل باستخدام Stack
               if (hasReactions)
-                Positioned(
+                PositionedDirectional(
                   bottom: -22.h,
-                  left: isMe ? null : 8.w,
-                  right: isMe ? 8.w : null,
+                  start: isMe ? null : 8.w,
+                  end: isMe ? 8.w : null,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 6.w,
+                      vertical: 4.h,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16.r),
@@ -333,13 +354,14 @@ class _MessageBubbleState extends State<MessageBubble> {
 
   /// ✅ النص المقتطع مع "عرض المزيد" - بدون LayoutBuilder
   Widget _buildCollapsedText({
+    required BuildContext context,
     required String fullText,
     required TextStyle textStyle,
     required Color textColor,
     required bool isMe,
     required double maxWidth,
   }) {
-    final showMoreText = ' عرض المزيد';
+    final showMoreText = context.tr('show_more');
     final showMoreStyle = TextStyle(
       color: isMe ? Colors.white70 : ChatColors.bubbleSender,
       fontSize: 13.sp,
@@ -381,7 +403,7 @@ class _MessageBubbleState extends State<MessageBubble> {
         });
       },
       child: RichText(
-        textDirection: ui.TextDirection.rtl,
+        textDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
         text: TextSpan(
           children: [
             TextSpan(text: '$truncatedText...', style: textStyle),
@@ -393,7 +415,7 @@ class _MessageBubbleState extends State<MessageBubble> {
   }
 
   /// ✅ زر "عرض أقل"
-  Widget _buildShowLessButton(bool isMe) {
+  Widget _buildShowLessButton(BuildContext context, bool isMe) {
     return Padding(
       padding: EdgeInsets.only(bottom: 4.h),
       child: GestureDetector(
@@ -405,7 +427,7 @@ class _MessageBubbleState extends State<MessageBubble> {
         child: Align(
           alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
           child: Text(
-            'عرض أقل',
+            context.tr('show_less'),
             style: TextStyle(
               color: isMe ? Colors.white70 : ChatColors.bubbleSender,
               fontSize: 13.sp,

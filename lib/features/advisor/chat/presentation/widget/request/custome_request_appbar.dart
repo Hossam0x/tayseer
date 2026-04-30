@@ -28,10 +28,10 @@ class CustomAppBar extends StatelessWidget {
         SafeArea(
           bottom: false,
           child: Padding(
-            padding: EdgeInsets.only(
+            padding: EdgeInsetsDirectional.only(
               top: paddingTop,
-              left: paddingHorizontal,
-              right: paddingHorizontal,
+              start: paddingHorizontal,
+              end: paddingHorizontal,
               bottom: paddingBottom,
             ),
             child: Row(
