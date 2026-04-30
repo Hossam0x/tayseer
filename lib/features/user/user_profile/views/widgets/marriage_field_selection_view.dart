@@ -485,20 +485,10 @@ class _MarriageFieldSelectionViewState
       case 'occupation':
         return {
           'titleKey': 'select_occupation_title',
-          'items': [
-            'job_student',
-            'job_teacher',
-            'job_engineer',
-            'job_doctor',
-            'job_nurse',
-            'job_driver',
-            'job_business',
-            'job_unemployed',
-            'job_other',
-          ],
+          'items': QuestionsData.genderedJobs,
           'showSearch': true,
           'searchHint': 'search_occupation',
-          'displayKeyMapper': QuestionsData.genderedKey,
+          // ✅ الـ keys نفسها gendered — مش محتاج displayKeyMapper
         };
 
       case 'education_level':

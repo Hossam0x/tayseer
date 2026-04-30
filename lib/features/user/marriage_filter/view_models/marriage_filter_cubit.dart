@@ -1,6 +1,7 @@
 import 'package:tayseer/features/user/marriage/view_model/marriage_event_bus.dart';
 import 'package:tayseer/features/user/marriage_filter/repo/marriage_filter_repo.dart';
 import 'package:tayseer/features/user/marriage_filter/view_models/marriage_filter_state.dart';
+import 'package:tayseer/features/user/questions/data/models/questions_data.dart';
 import 'package:tayseer/my_import.dart';
 
 class MarriageFilterCubit extends Cubit<MarriageFilterState> {
@@ -109,6 +110,9 @@ class MarriageFilterCubit extends Cubit<MarriageFilterState> {
         return;
 
       final apiKey = _keyMapping[key] ?? key;
+
+      // ── job: ابعت الـ gendered key كما هو للـ API ──
+      // (job_engineer_female / job_engineer_male)
 
       // ── imageBlur: visible/hidden → bool ──
       if (key == 'imageBlur' && value is String) {

@@ -182,11 +182,11 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
         titleKey: 'choose_job',
         questionNumber: 15,
         questionCategoryEnum: 'job',
-        items: QuestionsData.jobs,
+        items: QuestionsData.genderedJobs,
         type: QuestionType.selectableList,
         showSearch: true,
         searchHintKey: 'search_job',
-        displayKeyMapper: QuestionsData.genderedKey,
+        displayKeyMapper: null, // ✅ الـ keys نفسها gendered — مش محتاج mapper
       ),
       QuestionPageConfig(
         titleKey: 'choose_employer',

@@ -1356,7 +1356,7 @@ class MarriageBodyState extends State<MarriageBody>
                     name: user?.name ?? '',
                     age: "🎂 ${_tr(answers?.aboutMe?.age)}",
                     location: _tr(user?.country ?? answers?.aboutMe?.country),
-                    tagsjob: "💼 ${_tr(user?.about?.job)}",
+                    tagsjob: "💼 ${_tr(user?.about?.job ?? '')}",
                     educationLevel: "🎓 ${_tr(user?.about?.educationLevel)}",
                     religiousCommitment:
                         "🕌 ${_tr(user?.about?.religiousCommitment)}",
@@ -1379,7 +1379,7 @@ class MarriageBodyState extends State<MarriageBody>
                           )
                         : null,
                     nextTagsjob: hasNext
-                        ? "💼 ${_tr(nextUser?.about?.job)}"
+                        ? "💼 ${_tr(nextUser?.about?.job ?? '')}"
                         : null,
                     nextEducationLevel: hasNext
                         ? "🎓 ${_tr(nextUser?.about?.educationLevel)}"

@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
+import 'package:tayseer/features/user/questions/data/models/questions_data.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/regards_purchase_sheet.dart';
 import 'package:tayseer/my_import.dart';
 

@@ -313,6 +313,18 @@ class QuestionsData {
     'job_other',
   ];
 
+  /// Jobs list with gendered keys — للعرض والإرسال للـ API
+  static List<String> get genderedJobs {
+    return jobs.map((key) => genderedKey(key)).toList();
+  }
+
+  /// يحول الـ gendered key للـ base key (للـ API القديم)
+  static String baseJobKey(String genderedJobKey) {
+    return genderedJobKey
+        .replaceAll('_male', '')
+        .replaceAll('_female', '');
+  }
+
   // ─────────────────────────────────────────────────────
   // Gender-aware key helper
   // Returns the gender-specific translation key if available
@@ -337,6 +349,34 @@ class QuestionsData {
     if (!genderedKeys.contains(key)) return key;
     final isFemale = kCurrentUserData?.gender == 'female';
     return isFemale ? '${key}_female' : '${key}_male';
+  }
+
+  static String oppositeGenderedKey(String key) {
+    const genderedKeys = {
+      'are_you_smoker',
+      'religious_strict',
+      'religiosity_not_committed',
+      'religiosity_committed',
+      'religion_full',
+      'religion_partial',
+      'job_student',
+      'job_teacher',
+      'job_engineer',
+      'job_doctor',
+      'job_nurse',
+      'job_driver',
+      'job_business',
+      'job_unemployed',
+    };
+    if (!genderedKeys.contains(key)) return key;
+    final isFemale = kCurrentUserData?.gender == 'female';
+    return isFemale ? '${key}_male' : '${key}_female';
+  }
+
+
+  /// Jobs list بالجنس المعاكس — للفلتر
+  static List<String> get oppositeGenderedJobs {
+    return jobs.map((key) => oppositeGenderedKey(key)).toList();
   }
 
   // ─────────────────────────────────────────────────────

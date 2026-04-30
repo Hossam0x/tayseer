@@ -244,7 +244,6 @@ class _MarriageFilterBodyState extends State<MarriageFilterBody> {
                             'religiousCommitment',
                           ),
                           _buildRow(context, state, 'smoking', 'smoker'),
-                          _buildRow(context, state, 'hijab', 'wearHijab'),
                         ],
                       ),
                     ),
@@ -303,6 +302,10 @@ class _MarriageFilterBodyState extends State<MarriageFilterBody> {
   ) {
     final value = state.selectedFilters[fieldKey];
 
+    // ✅ الـ fields اللي محتاجة gendered translation
+    // job: الـ value نفسه gendered (job_engineer_male) — بس نترجمه مباشرة
+    // religiousCommitment: الـ value مش gendered — محتاج genderedKey
+
     String displayValue = context.tr('no_preference');
 
     if (value is int) {
@@ -310,6 +313,8 @@ class _MarriageFilterBodyState extends State<MarriageFilterBody> {
     } else if (value is String &&
         value.isNotEmpty &&
         value != 'no_preference') {
+      // ✅ كل الـ values دلوقتي already gendered (job_engineer_female, religion_full_female, F_social_single)
+      // نترجمهم مباشرة بدون أي تحويل
       displayValue = context.tr(value);
     } else if (value is List && value.isNotEmpty) {
       displayValue = '${value.length} ${context.tr('selected')}';

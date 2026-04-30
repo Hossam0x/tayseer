@@ -646,21 +646,24 @@ class _InfoCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Flexible(
-                      child: Text(
-                        name.isNotEmpty
-                            ? '${name[0].toUpperCase()}${name.substring(1)}'
-                            : name,
-                        style: Styles.textStyle32Meduim.copyWith(
-                          color: Colors.white,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black.withOpacity(0.7),
-                              blurRadius: 8,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          name.isNotEmpty
+                              ? '${name[0].toUpperCase()}${name.substring(1)}'
+                              : name,
+                          style: Styles.textStyle32Bold.copyWith(
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withOpacity(0.7),
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     Gap(2.w),

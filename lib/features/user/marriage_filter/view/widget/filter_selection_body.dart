@@ -91,18 +91,11 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
   Widget _buildContent(QuestionPageConfig config, BuildContext context) {
     switch (config.type) {
       case QuestionType.selectableList:
-        // ✅ displayKeyMapper للـ fields اللي محتاجة gendered keys
-        String Function(String)? displayKeyMapper;
-        if (widget.fieldKey == 'job' ||
-            widget.fieldKey == 'religiousCommitment') {
-          displayKeyMapper = QuestionsData.genderedKey;
-        }
         return SelectableListWidget(
           items: config.items ?? [],
           selectedKey: tempValue,
           showSearch: config.showSearch,
           searchHintKey: config.searchHintKey,
-          displayKeyMapper: displayKeyMapper,
           onChanged: (key, value) {
             setState(() => tempValue = key);
           },
@@ -238,36 +231,39 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
         );
 
       case 'maritalStatus':
-        return const QuestionPageConfig(
+        // ✅ الفلتر يعرض الجنس المعاكس
+        final oppositeStatusItems = kCurrentUserData?.gender == 'male'
+            ? const [
+                'F_social_single',
+                'F_social_married',
+                'F_social_divorced',
+                'F_social_widowed',
+                'no_preference',
+              ]
+            : const [
+                'social_single',
+                'social_married',
+                'social_divorced',
+                'social_widowed',
+                'no_preference',
+              ];
+        return QuestionPageConfig(
           titleKey: 'marital_status',
           questionNumber: 3,
           questionCategoryEnum: 'personal',
           type: QuestionType.selectableList,
-          items: [
-            'social_single',
-            'social_married',
-            'social_divorced',
-            'social_widowed',
-            'no_preference',
-          ],
+          items: oppositeStatusItems,
         );
 
       case 'job':
-        return const QuestionPageConfig(
+        // ✅ الفلتر يعرض الجنس المعاكس
+        return QuestionPageConfig(
           titleKey: 'job',
           questionNumber: 6,
           questionCategoryEnum: 'personal',
           type: QuestionType.selectableList,
           items: [
-            'job_student',
-            'job_teacher',
-            'job_engineer',
-            'job_doctor',
-            'job_nurse',
-            'job_driver',
-            'job_business',
-            'job_unemployed',
-            'job_other',
+            ...QuestionsData.oppositeGenderedJobs,
             'no_preference',
           ],
           showSearch: true,
@@ -365,16 +361,15 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
       // الدين والعادات
       // ============================================
       case 'religiousCommitment':
-        return const QuestionPageConfig(
+        // ✅ الفلتر يعرض الجنس المعاكس
+        return QuestionPageConfig(
           titleKey: 'religious_commitment',
           questionNumber: 15,
           questionCategoryEnum: 'religion',
           type: QuestionType.selectableList,
           items: [
-            'religion_full',
-            'religion_partial',
-            'religion_sometimes',
-            'religion_none',
+            ...QuestionsData.religiousCommitments
+                .map(QuestionsData.oppositeGenderedKey),
             'no_preference',
           ],
         );
@@ -383,15 +378,6 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
         return const QuestionPageConfig(
           titleKey: 'smoking',
           questionNumber: 17,
-          questionCategoryEnum: 'religion',
-          type: QuestionType.selectableList,
-          items: ['yes', 'no', 'no_preference'],
-        );
-
-      case 'wearHijab':
-        return const QuestionPageConfig(
-          titleKey: 'hijab',
-          questionNumber: 18,
           questionCategoryEnum: 'religion',
           type: QuestionType.selectableList,
           items: ['yes', 'no', 'no_preference'],

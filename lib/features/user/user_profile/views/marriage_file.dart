@@ -8,12 +8,14 @@ import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/marriage_profile_repository.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_state.dart';
 import 'package:tayseer/features/user/user_profile/views/marriage_profile_edit_view.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/complete_marriage_file.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/marriage_life_events_section.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/marriage_reward_card.dart';
+import 'package:tayseer/features/user/questions/data/models/questions_data.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/user/marriage/view/widget/about_me.dart';
 import 'package:tayseer/features/user/marriage/view/widget/bio_voice_section.dart';
@@ -683,7 +685,19 @@ class _MarriagefilePageState extends State<MarriagefilePage>
             _buildImageSection(images[3], 'profile_image_3'),
 
           SliverToBoxAdapter(child: SizedBox(height: 30.h)),
-          SliverToBoxAdapter(child: MarriageRewardCard()),
+          SliverToBoxAdapter(
+            child: MarriageRewardCard(
+              onContactTap: () async {
+                const url = 'https://m.tayser-app.com/contact-us/';
+                if (await canLaunchUrl(Uri.parse(url))) {
+                  await launchUrl(
+                    Uri.parse(url),
+                    mode: LaunchMode.externalApplication,
+                  );
+                }
+              },
+            ),
+          ),
           SliverToBoxAdapter(child: SizedBox(height: 140.h)),
         ],
       ),
@@ -1039,7 +1053,7 @@ class _MarriagefilePageState extends State<MarriagefilePage>
       if (profile.professionalLife?.job != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': "💼 ${_translateValue(profile.professionalLife!.job)}",
+          'label': "💼 ${context.tr(QuestionsData.genderedKey(profile.professionalLife!.job!))}",
         },
     ];
   }
@@ -1084,7 +1098,7 @@ class _MarriagefilePageState extends State<MarriagefilePage>
         {
           'icon': AssetsData.kdrawingIcon,
           'label':
-              "🕌 ${_translateValue(profile.aboutMe!.religiousCommitment)}",
+              "🕌 ${context.tr(QuestionsData.genderedKey(profile.aboutMe!.religiousCommitment!))}",
         },
       if (profile.aboutMe?.smoker != null)
         {
