@@ -4,6 +4,7 @@ import 'package:tayseer/core/utils/global_mute_manager.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/core/utils/video_cache_manager.dart';
 import 'package:tayseer/core/utils/video_playback_manager.dart';
+import 'package:tayseer/core/video/feed_video_preloader.dart';
 import 'package:tayseer/core/video/video_state_manager.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -29,7 +30,8 @@ class RealVideoPlayer extends StatefulWidget {
   State<RealVideoPlayer> createState() => _RealVideoPlayerState();
 }
 
-class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
+class _RealVideoPlayerState extends State<RealVideoPlayer>
+    with RouteAware, WidgetsBindingObserver {
   VideoPlayerController? _controller;
   final _videoCacheManager = VideoCacheManager();
   final _stateManager = VideoStateManager();
@@ -45,6 +47,15 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
 
   // ✅ NEW: حفظ حالة الـ play zone قبل الانتقال لصفحة تانية
   bool _wasInPlayZoneBeforeNav = false;
+
+  // ✅ NEW: هل الفيديو كان شغال قبل ما التطبيق يروح للخلفية؟
+  bool _wasPlayingBeforeBackground = false;
+
+  // ✅ NEW: هل التطبيق في الخلفية حالياً؟ (لمنع الـ VideoManager من إيقاف الفيديو أثناء الـ resume)
+  bool _isAppInBackground = false;
+
+  // ✅ NEW: هل الـ controller جاي من الـ FeedVideoPreloader؟
+  bool _isUsingPreloadedController = false;
 
   Completer<void>? _initCompleter;
 
@@ -62,6 +73,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     VideoManager.instance.currentlyPlayingPostId.addListener(
       _videoManagerListener,
     );
@@ -141,6 +153,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     );
     _muteManager.isMuted.removeListener(_onGlobalMuteChanged);
     videoRouteObserver.unsubscribe(this);
+    WidgetsBinding.instance.removeObserver(this);
     _disposeLocalController();
     super.dispose();
   }
@@ -212,6 +225,67 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
   }
 
   // ═══════════════════════════════════════════════════════════════════
+  // App Lifecycle — Pause on background, resume on foreground
+  // ═══════════════════════════════════════════════════════════════════
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      // ✅ inactive = نزول الستارة / App Switcher على iOS
+      // ✅ paused / hidden = التطبيق راح للخلفية فعلاً
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+        _isAppInBackground = true;
+        final controller = _controller;
+        if (controller != null &&
+            controller.value.isInitialized &&
+            controller.value.isPlaying) {
+          // حفظ الحالة بس لو مش محفوظة بالفعل (inactive بييجي قبل paused)
+          if (!_wasPlayingBeforeBackground) {
+            _wasPlayingBeforeBackground = true;
+            _savePosition();
+          }
+          controller.setVolume(0.0);
+          controller.pause();
+          debugPrint('⏸️ App inactive/backgrounded — paused ${widget.postId}');
+        }
+        break;
+
+      case AppLifecycleState.resumed:
+        if (_wasPlayingBeforeBackground && !_isDisposed && mounted) {
+          _wasPlayingBeforeBackground = false;
+
+          final controller = _controller;
+          if (controller != null && controller.value.isInitialized) {
+            controller.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
+            if (!controller.value.isPlaying) {
+              controller.play();
+              VideoManager.instance.playVideo(widget.postId);
+              debugPrint('▶️ App resumed — resumed ${widget.postId}');
+            }
+          }
+
+          // ✅ نرجع نفعّل الـ VisibilityDetector و VideoManager listener
+          // بعد فترة كافية عشان الـ VisibilityDetector يبعت events صحيحة
+          Future.delayed(const Duration(milliseconds: 800), () {
+            if (mounted && !_isDisposed) {
+              _isAppInBackground = false;
+            }
+          });
+        } else {
+          _isAppInBackground = false;
+          _wasPlayingBeforeBackground = false;
+        }
+        break;
+
+      case AppLifecycleState.detached:
+        _isAppInBackground = false;
+        break;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
   // Listeners
   // ═══════════════════════════════════════════════════════════════════
 
@@ -234,11 +308,13 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
     final controller = _controller;
     if (_isDisposed || controller == null) return;
 
+    // ✅ لو التطبيق بيرجع من الخلفية، تجاهل أي pause من الـ VideoManager
+    if (_isAppInBackground) return;
+
     if (VideoManager.instance.currentlyPlayingPostId.value != widget.postId) {
       try {
         if (controller.value.isPlaying) {
           _savePosition();
-          // ✅ إيقاف الصوت والفيديو (synchronous)
           controller.setVolume(0.0);
           controller.pause();
           debugPrint('⏸️ Paused by VideoManager: ${widget.postId}');
@@ -326,7 +402,16 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
 
     controller.removeListener(_videoListener);
 
-    if (widget.videoController != null) return; // shared — مش بنعمله dispose
+    // shared من parent → مش بنعمله dispose
+    if (widget.videoController != null) return;
+
+    // preloaded من FeedVideoPreloader → مش بنعمله dispose هنا
+    // الـ FeedVideoPreloader هو المسؤول عن lifecycle الـ controller ده
+    if (_isUsingPreloadedController) {
+      _isUsingPreloadedController = false;
+      debugPrint('♻️ Releasing preloaded controller ref: ${widget.postId}');
+      return;
+    }
 
     try {
       if (controller.value.isInitialized) {
@@ -372,6 +457,29 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
         return;
       }
 
+      // ✅ FAST PATH: استخدم الـ pre-initialized controller من الـ FeedVideoPreloader
+      final preloadedController = FeedVideoPreloader.instance
+          .getReadyController(widget.postId);
+      if (preloadedController != null) {
+        debugPrint('⚡ Using preloaded controller for ${widget.postId}');
+        _controller = preloadedController;
+        _isUsingPreloadedController = true;
+        await _controller!.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
+        _setupController();
+        widget.onControllerCreated?.call(_controller!);
+        await _restorePosition();
+        _stateManager.markAsLoaded(widget.postId);
+        _retryCount = 0;
+        _autoRetryTimer?.cancel();
+        if (_canPlay) {
+          VideoManager.instance.playVideo(widget.postId);
+          _controller!.play();
+        }
+        safeComplete();
+        return;
+      }
+
+      // ✅ SLOW PATH: تحميل عادي من الكاش أو الشبكة
       final cachedFile = await _videoCacheManager.getCachedFile(
         widget.videoUrl,
       );
@@ -568,6 +676,10 @@ class _RealVideoPlayerState extends State<RealVideoPlayer> with RouteAware {
 
     final route = ModalRoute.of(context);
     if (route != null && !route.isCurrent) return;
+
+    // ✅ تجاهل أي visibility events لما التطبيق في الخلفية أو بيرجع منها
+    // الـ VisibilityDetector بيبعت visibleFraction = 0 خطأ في اللحظة دي
+    if (_isAppInBackground) return;
 
     final visibleFraction = info.visibleFraction;
 

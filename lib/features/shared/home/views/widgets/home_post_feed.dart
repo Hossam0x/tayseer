@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:tayseer/core/video/feed_video_preloader.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/core/models/post_model.dart';
@@ -166,19 +167,37 @@ class HomePostFeed extends StatelessWidget {
     }
   }
 
-  _FeedState _selectFeedState(HomeState state) => _FeedState(
-    postIds: state.postIds,
-    status: state.postsState,
-    isLoadingMore: state.isLoadingMore,
-    hasMore: state.hasMore,
-    error: state.postsErrorMessage,
-    isAllCategory: state.selectedCategoryId == null,
-    isOffline: state.isOffline,
-    isShowingCachedData: state.isShowingCachedData,
-    loadMoreServerFailed: state.loadMoreServerFailed,
-    bestAdvisors: state.bestAdvisors,
-    similarUsers: state.similarUsers,
-  );
+  _FeedState _selectFeedState(HomeState state) {
+    final feedState = _FeedState(
+      postIds: state.postIds,
+      status: state.postsState,
+      isLoadingMore: state.isLoadingMore,
+      hasMore: state.hasMore,
+      error: state.postsErrorMessage,
+      isAllCategory: state.selectedCategoryId == null,
+      isOffline: state.isOffline,
+      isShowingCachedData: state.isShowingCachedData,
+      loadMoreServerFailed: state.loadMoreServerFailed,
+      bestAdvisors: state.bestAdvisors,
+      similarUsers: state.similarUsers,
+    );
+
+    // ✅ أبلّغ الـ FeedVideoPreloader بالـ posts الجديدة عشان يبدأ preloading
+    final videoPosts = state.posts
+        .where(
+          (p) =>
+              (p.videoData?.video.isNotEmpty == true ||
+                  p.videoUrl?.isNotEmpty == true) &&
+              !p.isHidden &&
+              !p.isBlocked,
+        )
+        .toList();
+    if (videoPosts.isNotEmpty) {
+      FeedVideoPreloader.instance.updateFeedPosts(videoPosts);
+    }
+
+    return feedState;
+  }
 
   void _handleHideFeedback(BuildContext context, HomeState state) {
     switch (state.hidePostActionState) {
@@ -521,6 +540,11 @@ class _PostItemState extends State<_PostItem> {
     if (info.visibleFraction >= 0.5) {
       _markedAsRead = true;
       widget.homeCubit.markPostAsRead(widget.postId);
+    }
+
+    // ✅ أبلّغ الـ FeedVideoPreloader لما البوست يظهر عشان يبدأ preload للقادمين
+    if (info.visibleFraction >= 0.3) {
+      FeedVideoPreloader.instance.onPostVisible(widget.postId);
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/utils/video_playback_manager.dart';
+import 'package:tayseer/core/video/feed_video_preloader.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/features/advisor/add_post/view/widget/upload_post_banner.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/upload_post/upload_post_cubit.dart';
@@ -124,6 +125,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
 
     // ✅ إيقاف وتدمير كل الفيديوهات قبل الـ refresh
     await VideoManager.instance.stopAll();
+    await FeedVideoPreloader.instance.reset();
 
     // ✅ حفظ context قبل async gap
     if (!mounted) return;
@@ -160,6 +162,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
 
             // ✅ إيقاف وتدمير كل الفيديوهات قبل الـ refresh
             await VideoManager.instance.stopAll();
+            await FeedVideoPreloader.instance.reset();
 
             // ✅ حفظ context قبل async gap
             if (!context.mounted) return;
@@ -174,7 +177,8 @@ class HomeViewBodyState extends State<HomeViewBody> {
             children: [
               CustomScrollView(
                 physics: const ClampingScrollPhysics(),
-                cacheExtent: 300,
+                cacheExtent:
+                    1500, // ✅ زيادة الـ cache extent عشان الـ widgets تتبني مبكراً
                 controller: _scrollController,
                 slivers: [
                   const HomeAppBar(),
@@ -226,6 +230,7 @@ class HomeViewBodyState extends State<HomeViewBody> {
 
     // ✅ تدمير كل الفيديوهات عند الخروج من الـ home
     VideoManager.instance.stopAll();
+    FeedVideoPreloader.instance.reset();
 
     super.dispose();
   }
