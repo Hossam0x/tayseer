@@ -182,7 +182,34 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
       );
     } else if (notification.type == NotificationType.newChat ||
         notification.type == NotificationType.newMessage) {
-      // navigate to chat
+      final chatId = notification.data?.chatId;
+      final senderId = notification.data?.senderId;
+      if (chatId != null && chatId.isNotEmpty) {
+        if (isAdvisor) {
+          context.pushNamed(
+            AppRouter.kConversitionView,
+            arguments: {
+              'receiverid': senderId ?? '',
+              'chatroomid': chatId,
+              'username': null,
+              'userimage': notification.senderImage,
+              'isBlocked': false,
+              'isHaveSession': true,
+            },
+          );
+        } else {
+          context.pushNamed(
+            AppRouter.kUserChatView,
+            arguments: {
+              'receiverid': senderId ?? '',
+              'chatroomid': chatId,
+              'username': null,
+              'userimage': notification.senderImage,
+              'isBlocked': false,
+            },
+          );
+        }
+      }
     } else if (notification.type == NotificationType.sessionPaid) {
       context.pushNamed(
         AppRouter.incommingsessiondetails,
