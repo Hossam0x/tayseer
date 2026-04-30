@@ -19,6 +19,7 @@ enum PostEventType {
   commentCountSynced,
   commented,
   edited,
+  created,
 }
 
 class PostEvent {
@@ -58,6 +59,12 @@ class PostEvent {
   // For unarchived — البوست اللي اتعمله unarchive عشان يتضاف في الـ feeds
   final PostModel? unarchivedPost;
 
+  // For created — البوست الجديد اللي اتنشر عشان يتضاف في الأول فوراً
+  final PostModel? createdPost;
+
+  // For created — اسم الكاتيجوري عشان يتعرض صح في الـ PostCard
+  final String? categoryName;
+
   const PostEvent({
     required this.type,
     required this.postId,
@@ -76,6 +83,8 @@ class PostEvent {
     this.isAnonymous,
     this.updatedPost,
     this.unarchivedPost,
+    this.createdPost,
+    this.categoryName,
   });
 }
 

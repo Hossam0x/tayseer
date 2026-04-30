@@ -3,6 +3,7 @@ import 'package:tayseer/core/functions/upload_imageandvideo_to_api.dart';
 import 'package:tayseer/core/models/category_model.dart';
 import 'package:tayseer/core/models/pagination_model.dart';
 import 'package:tayseer/features/advisor/add_post/model/category_response_model.dart';
+import 'package:tayseer/features/advisor/add_post/model/created_post_data.dart';
 import 'package:tayseer/my_import.dart';
 
 import 'posts_repository.dart';
@@ -21,7 +22,7 @@ class PostsRepositoryImpl implements PostsRepository {
   }
 
   @override
-  Future<Either<Failure, void>> createPost({
+  Future<Either<Failure, CreatedPostData>> createPost({
     String? content,
     required String categoryId,
     required String postType,
@@ -63,7 +64,10 @@ class PostsRepositoryImpl implements PostsRepository {
       final success = response['success'] ?? false;
 
       if (success) {
-        return right(null);
+        final postData = CreatedPostData.fromJson(
+          response['data'] as Map<String, dynamic>,
+        );
+        return right(postData);
       } else {
         return left(ServerFailure(response['message'] ?? 'فشل إنشاء المنشور'));
       }

@@ -2,6 +2,7 @@ import 'package:country_picker/country_picker.dart';
 import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
+import 'package:tayseer/core/video/feed_video_preloader.dart';
 import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/splash_screen.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/main.dart';
@@ -71,14 +72,19 @@ class _TayseerAppState extends State<TayseerApp> with WidgetsBindingObserver {
     super.didChangeAppLifecycleState(state);
 
     switch (state) {
+      case AppLifecycleState.inactive:
+        // ✅ بس نوقف الـ audio — الـ RealVideoPlayer بيتعامل مع الفيديو بنفسه
+        AudioService.instance.onAppPaused();
+        break;
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
+        // ✅ التطبيق راح للخلفية فعلاً — نوقف كل حاجة
         AudioService.instance.onAppPaused();
+        FeedVideoPreloader.instance.pauseAll();
         break;
       case AppLifecycleState.resumed:
         AudioService.instance.onAppResumed();
         break;
-      case AppLifecycleState.inactive:
       case AppLifecycleState.detached:
         break;
     }

@@ -52,6 +52,8 @@ mixin PostEventListenerMixin<S> on Cubit<S> {
         isAnonymous: event.isAnonymous,
         updatedPost: event.updatedPost,
         unarchivedPost: event.unarchivedPost,
+        createdPost: event.createdPost,
+        categoryName: event.categoryName,
       ),
     );
   }
@@ -192,6 +194,10 @@ mixin PostEventListenerMixin<S> on Cubit<S> {
 
       case PostEventType.unarchived:
         // الـ mixin cubits مش محتاجة تضيف البوست - بس HomeCubit و ProfileCubit بيعملوا كده
+        break;
+
+      case PostEventType.created:
+        // الـ mixin cubits مش محتاجة تضيف البوست الجديد - بس HomeCubit و ProfileCubit بيعملوا كده
         break;
     }
   }

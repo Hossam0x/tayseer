@@ -72,11 +72,12 @@ class HomeCubit extends Cubit<HomeState> {
     final postId = event.postId;
     // لو البوست مش موجود عندنا، مفيش حاجة نعملها
     if (_findPost(postId) == null) {
-      // للـ deleted/archived/hidden/blocked: مش محتاجين البوست موجود
+      // للـ deleted/archived/hidden/blocked/created: مش محتاجين البوست موجود
       if (event.type != PostEventType.deleted &&
           event.type != PostEventType.archived &&
           event.type != PostEventType.hidden &&
-          event.type != PostEventType.blocked)
+          event.type != PostEventType.blocked &&
+          event.type != PostEventType.created)
         return;
     }
 
@@ -238,6 +239,40 @@ class HomeCubit extends Cubit<HomeState> {
           }
         }
         emit(state.copyWith(categoryPostsMap: newMap));
+        break;
+
+      case PostEventType.created:
+        if (event.createdPost == null) break;
+        // أضيف البوست في أول كل category موجودة ومحملة
+        final newPost = event.createdPost!;
+        final createdCategoryId = event.categoryName != null
+            ? state.categories
+                  .where((c) => c.name == event.categoryName)
+                  .map((c) => c.id)
+                  .firstOrNull
+            : null;
+        final createdMap = <String?, CategoryPostsData>{};
+        for (final entry in state.categoryPostsMap.entries) {
+          // أضيفه في الـ "All" category (null) وفي الـ category الخاصة بيه (بالـ ID)
+          final isAllCategory = entry.key == null;
+          final isMatchingCategory =
+              createdCategoryId != null && entry.key == createdCategoryId;
+          if (isAllCategory || isMatchingCategory) {
+            final alreadyExists = entry.value.posts.any(
+              (p) => p.postId == newPost.postId,
+            );
+            if (!alreadyExists) {
+              createdMap[entry.key] = entry.value.copyWith(
+                posts: [newPost, ...entry.value.posts],
+              );
+            } else {
+              createdMap[entry.key] = entry.value;
+            }
+          } else {
+            createdMap[entry.key] = entry.value;
+          }
+        }
+        emit(state.copyWith(categoryPostsMap: createdMap));
         break;
     }
   }
