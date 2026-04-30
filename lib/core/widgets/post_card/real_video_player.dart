@@ -94,30 +94,50 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
     super.didUpdateWidget(oldWidget);
     if (widget.videoController != oldWidget.videoController &&
         widget.videoController != null) {
+      final newController = widget.videoController!;
+
+      // ✅ Guard: skip if this is the same controller we already have
+      if (_controller == newController) return;
+
+      // ✅ Guard: verify the new controller is not disposed before using it
+      bool isNewControllerValid = false;
       try {
-        // ✅ تحقق إن الـ controller الجديد مش disposed
-        final newController = widget.videoController!;
-        final testValue = newController.value; // throws if disposed
-        if (!testValue.isInitialized && testValue.duration == Duration.zero) {
-          // controller لسه مش initialized — مش هنستخدمه
-          return;
-        }
-        // ✅ تأكد إن الـ _controller القديم مش نفس الجديد قبل dispose
-        if (_controller != null && _controller != newController) {
-          _controller!.removeListener(_videoListener);
-          // dispose بس لو هو اللي أنشأناه (مش shared من parent قديم)
-          if (oldWidget.videoController == null) {
-            _controller!.dispose();
-          }
-          _controller = null;
-          _isInitialized = false;
-          _isBuffering = false;
-        }
-        _controller = newController;
-        _setupController();
+        final testValue = newController.value;
+        // A disposed controller throws in addListener, not in .value,
+        // so we do a lightweight addListener/removeListener probe.
+        void probe() {}
+        newController.addListener(probe);
+        newController.removeListener(probe);
+        isNewControllerValid = testValue.isInitialized;
       } catch (e) {
-        debugPrint('⚠️ Received disposed controller, ignoring: $e');
+        debugPrint(
+          '⚠️ Received disposed controller in didUpdateWidget, ignoring: $e',
+        );
+        return;
       }
+
+      if (!isNewControllerValid) {
+        // Controller exists but isn't initialized yet — ignore for now;
+        // the parent will push another update once it's ready.
+        return;
+      }
+
+      // Tear down the old controller
+      if (_controller != null) {
+        _controller!.removeListener(_videoListener);
+        if (oldWidget.videoController == null && !_isUsingPreloadedController) {
+          try {
+            _controller!.dispose();
+          } catch (_) {}
+        }
+        _controller = null;
+        _isInitialized = false;
+        _isBuffering = false;
+        _isUsingPreloadedController = false;
+      }
+
+      _controller = newController;
+      _setupController();
     }
   }
 
@@ -831,14 +851,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
                     // Video Player
                     if (_isInitialized && _controller != null)
                       Positioned.fill(
-                        child: FittedBox(
-                          fit: BoxFit.cover,
-                          child: SizedBox(
-                            width: _controller!.value.size.width,
-                            height: _controller!.value.size.height,
-                            child: VideoPlayer(_controller!),
-                          ),
-                        ),
+                        child: _SafeVideoPlayer(controller: _controller!),
                       ),
 
                     // Error State
@@ -921,6 +934,38 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
             strokeWidth: 2,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SafeVideoPlayer extends StatelessWidget {
+  final VideoPlayerController controller;
+
+  const _SafeVideoPlayer({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    // Guard against a disposed controller reaching the VideoPlayer widget.
+    // VideoPlayer calls addListener in didUpdateWidget which throws on disposed controllers.
+    bool isAlive = false;
+    try {
+      void probe() {}
+      controller.addListener(probe);
+      controller.removeListener(probe);
+      isAlive = controller.value.isInitialized;
+    } catch (_) {
+      isAlive = false;
+    }
+
+    if (!isAlive) return const SizedBox.shrink();
+
+    return FittedBox(
+      fit: BoxFit.cover,
+      child: SizedBox(
+        width: controller.value.size.width,
+        height: controller.value.size.height,
+        child: VideoPlayer(controller),
       ),
     );
   }

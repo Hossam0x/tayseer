@@ -76,7 +76,23 @@ class FeedVideoPreloader {
   VideoPlayerController? getReadyController(String postId) {
     final preloaded = _controllers[postId];
     if (preloaded == null) return null;
-    if (!preloaded.controller.value.isInitialized) return null;
+
+    // ✅ Guard: verify the controller hasn't been disposed externally
+    try {
+      if (!preloaded.controller.value.isInitialized) return null;
+      // Probe addListener to confirm the controller is still alive
+      void probe() {}
+      preloaded.controller.addListener(probe);
+      preloaded.controller.removeListener(probe);
+    } catch (e) {
+      // Controller was disposed — clean it up and return null
+      debugPrint(
+        '⚠️ Preloaded controller for $postId was disposed externally, removing: $e',
+      );
+      _controllers.remove(postId);
+      return null;
+    }
+
     return preloaded.controller;
   }
 
