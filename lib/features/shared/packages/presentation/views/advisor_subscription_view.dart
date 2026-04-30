@@ -251,7 +251,7 @@ class AdvisorSubscriptionView extends StatelessWidget {
                                   context.tr('auto_renew_note'),
                                   style: TextStyle(
                                     fontSize: 12.sp,
-                                    color: Colors.black,
+                                    color: Colors.white,
                                   ),
                                   textAlign: TextAlign.center,
                                 ),

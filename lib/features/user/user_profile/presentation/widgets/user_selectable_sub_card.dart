@@ -51,7 +51,7 @@ class UserSelectableSubCard extends StatelessWidget {
 
     // وحدة المدة تظهر جنب الرقم
     final durationUnit = sub.isThreeMonths
-        ? context.tr('three_months')
+        ? context.tr('months')
         : sub.isWeekly
         ? context.tr('weekly')
         : context.tr('monthly');
