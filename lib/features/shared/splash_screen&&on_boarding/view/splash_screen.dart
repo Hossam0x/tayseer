@@ -19,13 +19,61 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
+  late AnimationController _badgeController;
+  late Animation<double> _badgeFade;
+  late Animation<Offset> _badgeSlide;
+  late Animation<double> _badgeScale;
+
   @override
   void initState() {
     super.initState();
+
+    // Badge animation: fade + slide up + scale — total 900ms
+    _badgeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+
+    // Fade: starts immediately, eases out quickly in first 60% of duration
+    _badgeFade = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _badgeController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOutQuart),
+      ),
+    );
+
+    // Slide: slight upward travel with elastic bounce at the end
+    _badgeSlide = Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _badgeController,
+            curve: const Interval(0.0, 1.0, curve: Curves.elasticOut),
+          ),
+        );
+
+    // Scale: grows from 80% → 100% with a gentle overshoot
+    _badgeScale = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _badgeController,
+        curve: const Interval(0.0, 0.7, curve: Curves.easeOutBack),
+      ),
+    );
+
+    // تشغيل الأنيميشن في نص الـ GIF (2400ms)
+    Future.delayed(const Duration(milliseconds: 2400), () {
+      if (mounted) _badgeController.forward();
+    });
+
     _initializeSocket();
     _initializeHomeData();
     _navigateBasedOnToken();
     _playSoundAfterHalfAnimation();
+  }
+
+  @override
+  void dispose() {
+    _badgeController.dispose();
+    super.dispose();
   }
 
   /// تحميل بيانات الهوم والـ Stories مسبقاً في الـ Splash
@@ -211,6 +259,28 @@ class _SplashScreenState extends State<SplashScreen>
                 AssetsData.kAppLogoGif,
                 width: context.width * 0.4,
                 height: context.height * 0.4,
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 40),
+              child: FadeTransition(
+                opacity: _badgeFade,
+                child: SlideTransition(
+                  position: _badgeSlide,
+                  child: ScaleTransition(
+                    scale: _badgeScale,
+                    child: Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [AppImage(AssetsData.logoAthr, width: 80)],
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
