@@ -123,9 +123,13 @@ class _ChooseSocialStatusBodyState extends State<_ChooseSocialStatusBody> {
               _selectedKey == 'F_social_married';
 
           if (isFemaleMarried) {
-            // ✅ أخفي قسم الزواج تلقائياً
+            // ✅ أخفي قسم الزواج تلقائياً وحفظ flag دائم
             await CachNetwork.setBool(
               key: kMarriageSectionDeactivatedKey,
+              value: true,
+            );
+            await CachNetwork.setBool(
+              key: kIsFemaleMarriedKey,
               value: true,
             );
             if (!mounted) return;
@@ -134,6 +138,11 @@ class _ChooseSocialStatusBodyState extends State<_ChooseSocialStatusBody> {
               predicate: (route) => false,
             );
           } else {
+            // ✅ مش أنثى متزوجة — امسح الـ flag لو كان موجود
+            await CachNetwork.setBool(
+              key: kIsFemaleMarriedKey,
+              value: false,
+            );
             context.pushReplacementNamed(AppRouter.kPurposeSelectionView);
           }
         } else if (state.setSocialStatusState == CubitStates.failure) {

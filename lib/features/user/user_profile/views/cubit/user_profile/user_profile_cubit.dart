@@ -160,6 +160,9 @@ class UserProfileCubit extends Cubit<UserProfileState> {
     final notificationStatus = await _getNotificationStatus();
     final soundStatus = await _getSoundStatus();
 
+    // ✅ أخفي زر تغيير الوضع فقط لو أنثى ومتزوجة (من الـ flag)
+    final hideMarriageToggle = prefs.getBool(kIsFemaleMarriedKey) ?? false;
+
     return [
       SettingItemModel(
         id: 'edit_profile',
@@ -176,9 +179,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
           iconAsset: AssetsData.icManagementSettings,
           routeName: '',
         ),
-      // ✅ أخفي زر تغيير الوضع لو أنثى ومتزوجة
-      if (!(kCurrentUserData?.gender == 'female' &&
-          kCurrentUserData?.socialStatus == 'F_social_married'))
+      if (!hideMarriageToggle)
         SettingItemModel(
           id: 'deactivate_the_marriage_section',
           title: 'deactivate_the_marriage_section',
@@ -685,12 +686,9 @@ class UserProfileCubit extends Cubit<UserProfileState> {
   // ════════════════════════════════════════════════════════════════
 
   Future<bool> _getMarriageSectionDeactivated() async {
-    // ✅ لو أنثى ومتزوجة → الزواج مخفي دايماً بغض النظر عن الـ cache
-    if (kCurrentUserData?.gender == 'female' &&
-        kCurrentUserData?.socialStatus == 'F_social_married') {
-      return true;
-    }
     final prefs = await SharedPreferences.getInstance();
+    // ✅ اقرأ الـ flag المحفوظ بعد الـ login
+    if (prefs.getBool(kIsFemaleMarriedKey) ?? false) return true;
     return prefs.getBool(kMarriageSectionDeactivatedKey) ?? false;
   }
 

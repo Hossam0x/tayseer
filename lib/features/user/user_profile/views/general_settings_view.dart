@@ -11,6 +11,7 @@ import 'package:tayseer/features/user/user_profile/views/widgets/general_setting
 import 'package:tayseer/features/user/user_profile/views/widgets/general_settings/settings_section_container.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/general_settings/settings_skeleton.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/general_settings/settings_switch_row.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/nav_animation_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class GeneralSettingsView extends StatefulWidget {
@@ -153,17 +154,39 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
     BuildContext context,
     UserProfileModel? userProfile,
   ) {
+    // ✅ أخفي زر تغيير الوضع لو أنثى ومتزوجة
+    final hideMarriageToggle =
+        kCurrentUserData?.gender == 'female' &&
+        (kCurrentUserData?.socialStatus == 'F_social_married' ||
+            kCurrentUserData?.socialStatus == 'F_social_married');
+
     return SettingsSectionContainer(
       title: context.tr('privacy'),
       children: [
-        SettingsSwitchRow(
-          label: context.tr('stop_marriage'),
-          value: !(userProfile?.availableForMarry ?? false),
-          onChanged: (value) async {
-            final cubit = context.read<UserProfileCubit>();
-            await cubit.toggleMarriageStatus(!value);
-          },
-        ),
+        
+        // ✅ زر تفعيل/إيقاف قسم الزواج — نفس لوجك الزر في البروفايل
+        if (!hideMarriageToggle)
+          BlocBuilder<UserProfileCubit, UserProfileState>(
+            buildWhen: (prev, curr) {
+              if (prev is SettingsLoaded && curr is SettingsLoaded) {
+                return prev.isMarriageSectionDeactivated !=
+                    curr.isMarriageSectionDeactivated;
+              }
+              return false;
+            },
+            builder: (context, state) {
+              final isDeactivated = state is SettingsLoaded
+                  ? state.isMarriageSectionDeactivated
+                  : false;
+              return SettingsSwitchRow(
+                label: context.tr('deactivate_the_marriage_section'),
+                value: isDeactivated,
+                onChanged: (value) {
+                  _showDeactivateMarriageDialog(context, value);
+                },
+              );
+            },
+          ),
         InkWell(
           onTap: () async {
             final currentStatus = _getPrivacyStatus(userProfile?.isAnonymous);
@@ -297,4 +320,32 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
 
   String _getContactsStatus(bool? isAnonymous) =>
       (isAnonymous ?? false) ? 'hide_val' : 'appear_val';
+
+  void _showDeactivateMarriageDialog(BuildContext context, bool value) {
+    final overlay = Overlay.of(context);
+    final icon = value ? AssetsData.consultationIcon : AssetsData.ringIcon;
+    CustomshowDialogWithImage(
+      context,
+      title: context.tr(
+        value ? 'deactivate_marriage_title' : 'activate_marriage_title',
+      ),
+      supTitle: context.tr('activate_marriage_subtitle'),
+      imageUrl: AssetsData.marriageRingIcon,
+      bottonText: context.tr('yes'),
+      cancelText: context.tr('no'),
+      showCancelButton: true,
+      onPressed: () {
+        NavAnimationService.instance.flyIcon(
+          fromContext: context,
+          iconAsset: icon,
+          overlay: overlay,
+          onComplete: () => context.read<UserProfileCubit>().updateSwitch(
+            'deactivate_the_marriage_section',
+            value,
+          ),
+        );
+      },
+      onCancel: () {},
+    );
+  }
 }

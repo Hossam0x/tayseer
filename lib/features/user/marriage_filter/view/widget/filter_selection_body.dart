@@ -1,4 +1,5 @@
 import 'package:tayseer/core/constant/marriage_constants.dart';
+import 'package:tayseer/features/user/questions/data/models/questions_data.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/user/questions/data/models/question_page_config.dart';
 import 'package:tayseer/features/user/questions/presentation/widgets/custom_selectable_list.dart';
@@ -90,11 +91,18 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
   Widget _buildContent(QuestionPageConfig config, BuildContext context) {
     switch (config.type) {
       case QuestionType.selectableList:
+        // ✅ displayKeyMapper للـ fields اللي محتاجة gendered keys
+        String Function(String)? displayKeyMapper;
+        if (widget.fieldKey == 'job' ||
+            widget.fieldKey == 'religiousCommitment') {
+          displayKeyMapper = QuestionsData.genderedKey;
+        }
         return SelectableListWidget(
           items: config.items ?? [],
           selectedKey: tempValue,
           showSearch: config.showSearch,
           searchHintKey: config.searchHintKey,
+          displayKeyMapper: displayKeyMapper,
           onChanged: (key, value) {
             setState(() => tempValue = key);
           },

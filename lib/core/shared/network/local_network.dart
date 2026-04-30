@@ -100,6 +100,16 @@ class CachNetwork {
     return await sharedPref.remove(key);
   }
 
+  static Future<void> syncFemaleMarriedFlag() async {
+    final isFemaleMarried =
+        kCurrentUserData?.gender == 'female' &&
+        kCurrentUserData?.socialStatus == 'F_social_married';
+    await sharedPref.setBool(kIsFemaleMarriedKey, isFemaleMarried);
+    if (isFemaleMarried) {
+      await sharedPref.setBool(kMarriageSectionDeactivatedKey, true);
+    }
+  }
+
   /// مسح كاش الجيست والبروفايل عند الانتقال من جيست → لوجن
   /// استخدمها قبل التوجيه لشاشة التسجيل
   static Future<void> clearGuestAndProfileCache() async {

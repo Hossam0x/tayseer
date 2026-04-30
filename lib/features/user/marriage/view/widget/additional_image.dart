@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
+import 'package:tayseer/core/widgets/screenshot_protected_image.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/regards_purchase_sheet.dart';
 import 'package:tayseer/my_import.dart';
@@ -39,21 +40,30 @@ class AdditionalImageSection extends StatelessWidget {
           borderRadius: BorderRadius.circular(16.r),
           child: Stack(
             children: [
-              // ✅ الصورة مع دعم الـ blur
+              // ✅ الصورة مع دعم الـ blur والحماية من الـ screenshot
               if (shouldBlur)
                 ImageFiltered(
                   imageFilter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                   child: SizedBox(
                     width: double.infinity,
                     height: context.height * 0.4,
-                    child: AppImage(imageUrl, fit: BoxFit.cover),
+                    child: ScreenshotProtectedImage(
+                      imageUrl: imageUrl,
+                      fit: BoxFit.cover,
+                      shouldBlur: false,
+                      isAnimating: true, // ✅ يمنع Hero الداخلي
+                    ),
                   ),
                 )
               else
                 SizedBox(
                   width: double.infinity,
                   height: context.height * 0.4,
-                  child: AppImage(imageUrl, fit: BoxFit.cover),
+                  child: ScreenshotProtectedImage(
+                    imageUrl: imageUrl,
+                    fit: BoxFit.cover,
+                    isAnimating: true, // ✅ يمنع Hero الداخلي
+                  ),
                 ),
 
               // ✅ طبقة تعتيم فوق الـ blur

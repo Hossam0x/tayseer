@@ -48,6 +48,12 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
     super.initState();
     _cubit = context.read<LayoutCubit>();
 
+    // ✅ أعد حساب الـ marriage visibility بعد ما الـ layout يتبني
+    // عشان تضمن إن الـ flag اتحفظ بعد الـ login
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _cubit.refreshMarriageVisibility();
+    });
+
     // User pages
     _homeView = HomeView(onScroll: _cubit.onScroll);
     _marriageView = MarriageView(key: _marriageKey, onScroll: _cubit.onScroll);

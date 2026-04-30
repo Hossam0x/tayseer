@@ -116,6 +116,35 @@ class AuthRepoImpl implements AuthRepo {
         );
         kCurrentUserData = registerResponse.data?.user;
 
+        // ✅ جيب الـ profile كامل عشان تاخد socialStatus
+        if (selectedUserType != UserTypeEnum.asConsultant) {
+          try {
+            final profileResponse = await apiService.get(
+              endPoint: '/user/profile',
+            );
+            if (profileResponse['success'] == true) {
+              final profileData =
+                  profileResponse['data'] as Map<String, dynamic>?;
+              if (profileData != null) {
+                final socialStatus =
+                    profileData['socialStatus']?.toString();
+                if (socialStatus != null) {
+                  kCurrentUserData =
+                      kCurrentUserData?.copyWith(socialStatus: socialStatus);
+                  await CachNetwork.setData(
+                    key: kuserData,
+                    value: jsonEncode(kCurrentUserData?.toJson() ?? {}),
+                  );
+                }
+              }
+            }
+          } catch (_) {
+            // مش مشكلة لو فشل — الـ flag هيتحسب من الـ user data المتاح
+          }
+        }
+
+        await CachNetwork.syncFemaleMarriedFlag();
+
         // ✅ حفظ الاسم والصورة في الكاش عشان الـ HomeCubit يلاقيهم فوراً
         await CachNetwork.setData(
           key: kMyProfileImage,

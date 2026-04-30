@@ -6,6 +6,7 @@ const String kUserType = "user_type";
 const String ktoken = "token";
 const String kuserData = "user_data";
 const String kMarriageSectionDeactivatedKey = 'marriage_section_deactivated';
+const String kIsFemaleMarriedKey = 'is_female_married';
 
 const String kAdvisorProfileCache = 'advisor_profile_cache';
 const String kAdvisorStatus = 'advisor_status';

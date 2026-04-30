@@ -109,11 +109,13 @@ class SliverProfileHeader extends StatelessWidget {
     final double statusBarHeight = MediaQuery.of(context).padding.top;
     // ✅ الـ toolbar height الكلي = الارتفاع الأصلي + الـ status bar
     final double totalToolbarHeight = 72.h + statusBarHeight;
-    final double toolbarHeight = showTitleBar ? totalToolbarHeight : statusBarHeight;
+    final double toolbarHeight = showTitleBar
+        ? totalToolbarHeight
+        : statusBarHeight;
 
     return SliverAppBar(
       // ✅ الشاشة كاملة من أول لآخر
-      expandedHeight: context.height*0.85.h,
+      expandedHeight: context.height * 0.85.h,
       // ✅ toolbarHeight يشمل الـ status bar
       toolbarHeight: toolbarHeight,
       pinned: true,
@@ -157,11 +159,13 @@ class SliverProfileHeader extends StatelessWidget {
                     // ✅ leftWidget أو AnimatedBeFirstButton الافتراضي
                     Positioned(
                       left: 0,
-                      child: leftWidget ?? AnimatedBeFirstButton(
-                        onTap: () {
-                          context.pushNamed(AppRouter.kBoostAccountView);
-                        },
-                      ),
+                      child:
+                          leftWidget ??
+                          AnimatedBeFirstButton(
+                            onTap: () {
+                              context.pushNamed(AppRouter.kBoostAccountView);
+                            },
+                          ),
                     ),
                   ],
                 ),
@@ -391,21 +395,25 @@ class _FrontProfileCard extends StatelessWidget {
             top: 150.h,
             right: 16.w,
             child: Column(
-              crossAxisAlignment: isArabic ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+              crossAxisAlignment: isArabic
+                  ? CrossAxisAlignment.start
+                  : CrossAxisAlignment.end,
               children: [
-                if (activeToday) _buildBadge(
-                  icon: Icons.circle,
-                  iconColor: const Color(0xFF4CAF50),
-                  label: context.tr('active_today'),
-                  bgColor: Colors.black.withOpacity(0.55),
-                ),
+                if (activeToday)
+                  _buildBadge(
+                    icon: Icons.circle,
+                    iconColor: const Color(0xFF4CAF50),
+                    label: context.tr('active_today'),
+                    bgColor: Colors.black.withOpacity(0.55),
+                  ),
                 if (activeToday && recentlyJoined) SizedBox(height: 8.h),
-                if (recentlyJoined) _buildBadge(
-                  icon: Icons.person_add_rounded,
-                  iconColor: const Color(0xFFE91E8C),
-                  label: context.tr('recently_joined'),
-                  bgColor: Colors.black.withOpacity(0.55),
-                ),
+                if (recentlyJoined)
+                  _buildBadge(
+                    icon: Icons.person_add_rounded,
+                    iconColor: const Color(0xFFE91E8C),
+                    label: context.tr('recently_joined'),
+                    bgColor: Colors.black.withOpacity(0.55),
+                  ),
               ],
             ),
           ),
@@ -443,7 +451,8 @@ class _FrontProfileCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaceholder() {    return Container(
+  Widget _buildPlaceholder() {
+    return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -638,9 +647,18 @@ class _InfoCard extends StatelessWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        name,
-                        style: Styles.textStyle32Bold.copyWith(
+                        name.isNotEmpty
+                            ? '${name[0].toUpperCase()}${name.substring(1)}'
+                            : name,
+                        style: Styles.textStyle32Meduim.copyWith(
                           color: Colors.white,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withOpacity(0.7),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -750,7 +768,7 @@ class _InfoCard extends StatelessWidget {
       case 'gold':
         return AppImage(AssetsData.goldIcon, width: 35.w);
       case 'ultra':
-        return    AppImage(AssetsData.eliteIcon, width: 35.w);
+        return AppImage(AssetsData.eliteIcon, width: 35.w);
       default:
         return const SizedBox.shrink();
     }
@@ -779,7 +797,6 @@ class _InfoCard extends StatelessWidget {
     double paddingAll = 0.0,
   }) {
     final decoration = BoxDecoration(
-    
       gradient: LinearGradient(
         colors: [
           Colors.white.withOpacity(opacity),
@@ -793,7 +810,6 @@ class _InfoCard extends StatelessWidget {
 
     if (blur <= 0) {
       return ClipRRect(
-      
         child: Container(
           padding: EdgeInsets.all(paddingAll),
           decoration: decoration,
@@ -803,7 +819,6 @@ class _InfoCard extends StatelessWidget {
     }
 
     return ClipRRect(
-    
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
         child: Container(

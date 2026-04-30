@@ -8,20 +8,22 @@ class LayoutCubit extends Cubit<LayoutState> {
     _loadMarriageVisibility();
   }
   Future<void> _loadMarriageVisibility() async {
-    // ✅ لو أنثى ومتزوجة → الزواج مخفي دايماً بغض النظر عن الـ cache
-    if (kCurrentUserData?.gender == 'female' &&
-        kCurrentUserData?.socialStatus == 'F_social_married') {
+    final prefs = await SharedPreferences.getInstance();
+
+    // ✅ اقرأ الـ flag المحفوظ بعد الـ login
+    final isFemaleMarried = prefs.getBool(kIsFemaleMarriedKey) ?? false;
+
+    if (isFemaleMarried) {
       if (state.isMarriageVisible) {
         emit(state.copyWith(isMarriageVisible: false));
       }
       return;
     }
-    final prefs = await SharedPreferences.getInstance();
+
     final isDeactivated =
-        prefs.getBool('marriage_section_deactivated') ?? false;
+        prefs.getBool(kMarriageSectionDeactivatedKey) ?? false;
     final shouldBeVisible = !isDeactivated;
 
-    // ⭐ فقط emit لو القيمة اتغيرت فعلاً
     if (state.isMarriageVisible != shouldBeVisible) {
       emit(state.copyWith(isMarriageVisible: shouldBeVisible));
     }
@@ -87,5 +89,10 @@ class LayoutCubit extends Cubit<LayoutState> {
         marriageToggleTrigger: state.marriageToggleTrigger + 1,
       ),
     );
+  }
+
+  /// ✅ استدعيها بعد الـ login مباشرة عشان تعيد حساب الـ marriage visibility
+  Future<void> refreshMarriageVisibility() async {
+    await _loadMarriageVisibility();
   }
 }

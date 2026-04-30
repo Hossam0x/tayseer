@@ -157,7 +157,7 @@ class UserModel {
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
       isNew: json['isNew'], // ✅
-      socialStatus: json['socialStatus'], // ✅
+      socialStatus: json['socialStatus'] ?? json['userSocialStatus'],
       hasChildren: json['hasChildren'] ?? false, // ✅
     );
   }
