@@ -26,9 +26,9 @@ class SelectionBottomBar extends StatelessWidget {
         }
 
         return Container(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
+          padding: EdgeInsetsDirectional.only(
+            start: 16,
+            end: 16,
             top: 12,
             bottom: MediaQuery.of(context).padding.bottom + 12,
           ),
@@ -48,7 +48,7 @@ class SelectionBottomBar extends StatelessWidget {
               IconButton(
                 onPressed: onCancel,
                 icon: const Icon(Icons.close),
-                tooltip: 'إلغاء',
+                tooltip: context.tr('cancel_selection'),
               ),
               const SizedBox(width: 8),
               // Selection count

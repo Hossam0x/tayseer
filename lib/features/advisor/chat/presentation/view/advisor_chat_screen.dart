@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayseer/core/constant/constans.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/utils/assets.dart';
@@ -207,7 +208,7 @@ class _ChatContentState extends State<_ChatContent> {
               resizeToAvoidBottomInset: true,
               backgroundColor: ChatColors.chatBackground,
               body: Directionality(
-                textDirection: TextDirection.rtl,
+                textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
                 child: Stack(
                   children: [
                     Column(

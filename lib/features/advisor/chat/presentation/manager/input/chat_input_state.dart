@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tayseer/core/constant/constans.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 
 class ChatInputState {
@@ -6,11 +7,12 @@ class ChatInputState {
   final bool showEmojiPicker;
   final TextDirection textDirection;
 
-  const ChatInputState({
+  ChatInputState({
     this.replyingToMessage,
     this.showEmojiPicker = false,
-    this.textDirection = TextDirection.rtl,
-  });
+    TextDirection? textDirection,
+  }) : textDirection =
+           textDirection ?? (isArabic ? TextDirection.rtl : TextDirection.ltr);
 
   ChatInputState copyWith({
     ChatMessage? replyingToMessage,

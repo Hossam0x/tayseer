@@ -25,10 +25,8 @@ class ChatListContent extends StatelessWidget {
       },
       color: const Color(0xFFE96E88),
       child: ListView.separated(
-        padding: EdgeInsets.only(
+        padding: EdgeInsetsDirectional.only(
           bottom: screenHeight * 0.12,
-          left: 0,
-          right: 0,
           top: 0,
         ),
         itemCount: chatRooms.length,
@@ -95,18 +93,18 @@ class ChatListContent extends StatelessWidget {
             'onBlockStatusChanged': (bool isBlocked) {
               if (context.mounted) {
                 context.read<ChatListCubit>().updateBlockStatus(
-                      chatRoom.id,
-                      isBlocked,
-                    );
+                  chatRoom.id,
+                  isBlocked,
+                );
               }
             },
           },
         )
         .then((_) {
-      if (context.mounted) {
-        context.read<ChatListCubit>().setActiveChatRoom(null);
-      }
-    });
+          if (context.mounted) {
+            context.read<ChatListCubit>().setActiveChatRoom(null);
+          }
+        });
   }
 
   void _handleArchive(BuildContext context, ChatRoom chatRoom) {
@@ -152,9 +150,9 @@ class ChatListContent extends StatelessWidget {
         subtitle: context.tr('confirm_unblock_user_message'),
         onConfirm: () {
           context.read<ChatListCubit>().unblockUser(
-                blockedId: otherUser?.id ?? '',
-                chatRoomId: chatRoom.id,
-              );
+            blockedId: otherUser?.id ?? '',
+            chatRoomId: chatRoom.id,
+          );
         },
       );
     } else {
@@ -164,9 +162,9 @@ class ChatListContent extends StatelessWidget {
         subtitle: context.tr('confirm_block_user_message'),
         onConfirm: () {
           context.read<ChatListCubit>().blockUser(
-                blockedId: otherUser?.id ?? '',
-                chatRoomId: chatRoom.id,
-              );
+            blockedId: otherUser?.id ?? '',
+            chatRoomId: chatRoom.id,
+          );
         },
       );
     }

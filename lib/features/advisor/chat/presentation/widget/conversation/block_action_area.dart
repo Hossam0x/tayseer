@@ -27,7 +27,7 @@ class BlockedActionArea extends StatelessWidget {
             Expanded(
               child: CustomBotton(
                 useGradient: true,
-                title: 'إلغاء الحظر',
+                title: context.tr('unblock_user'),
                 onPressed: onUnblockTap,
               ),
             ),
@@ -36,7 +36,7 @@ class BlockedActionArea extends StatelessWidget {
               child: CustomOutlineButton(
                 width: 338,
                 height: 50,
-                text: 'مسح الدردشة',
+                text: context.tr('delete_chat'),
                 onTap: onDeleteChatTap,
               ),
             ),

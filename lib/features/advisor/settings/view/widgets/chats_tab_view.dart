@@ -28,19 +28,32 @@ class _ChatsTabViewBody extends StatelessWidget {
           listener: (context, state) {
             if (state.errorMessage != null &&
                 state.state == CubitStates.failure) {
-              AppToast.error(context, state.errorMessage!);
-              context.read<ArchivedChatsCubit>().clearError();
+              if (context.mounted) AppToast.error(context, state.errorMessage!);
+              // Use addPostFrameCallback to avoid deactivated widget error
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (context.mounted) {
+                  context.read<ArchivedChatsCubit>().clearError();
+                }
+              });
             }
             if (state.unarchiveActionState == CubitStates.success) {
-              if (state.unarchiveMessage != null) {
+              if (state.unarchiveMessage != null && context.mounted) {
                 AppToast.success(context, context.tr(state.unarchiveMessage!));
               }
-              context.read<ArchivedChatsCubit>().resetUnarchiveState();
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (context.mounted) {
+                  context.read<ArchivedChatsCubit>().resetUnarchiveState();
+                }
+              });
             } else if (state.unarchiveActionState == CubitStates.failure) {
-              if (state.unarchiveMessage != null) {
+              if (state.unarchiveMessage != null && context.mounted) {
                 AppToast.error(context, state.unarchiveMessage!);
               }
-              context.read<ArchivedChatsCubit>().resetUnarchiveState();
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (context.mounted) {
+                  context.read<ArchivedChatsCubit>().resetUnarchiveState();
+                }
+              });
             }
           },
           builder: (context, state) {

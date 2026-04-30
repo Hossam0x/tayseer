@@ -82,7 +82,7 @@ class _SessionViewBodyState extends State<SessionViewBody> {
           slivers: [
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.only(right: 20),
+                padding: const EdgeInsetsDirectional.only(start: 20),
                 child: Text(
                   context.tr("coming"),
                   style: Styles.textStyle16SemiBold,
@@ -192,7 +192,7 @@ class _SessionViewBodyState extends State<SessionViewBody> {
             // --- عنوان الجلسات السابقة ---
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.only(right: 20, top: 16),
+                padding: const EdgeInsetsDirectional.only(start: 20, top: 16),
                 child: Text(
                   context.tr("previous_sessions"),
                   style: Styles.textStyle16SemiBold,

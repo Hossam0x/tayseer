@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/utils/assets.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/message_actions_handler.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/scroll_behavior_handler.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit_simple.dart';
@@ -41,10 +42,10 @@ class ChatBottomArea extends StatelessWidget {
           return SelectionBottomBar(
             onDeleteForMe: () => actionsHandler
                 .showDeleteConfirmationForSelectedMessages(deleteType: 'me'),
-            onDeleteForAll: () => actionsHandler
-                .showDeleteConfirmationForSelectedMessages(
-              deleteType: 'everyone',
-            ),
+            onDeleteForAll: () =>
+                actionsHandler.showDeleteConfirmationForSelectedMessages(
+                  deleteType: 'everyone',
+                ),
             onCancel: () =>
                 context.read<MessageSelectionCubit>().exitSelectionMode(),
           );
@@ -52,15 +53,15 @@ class ChatBottomArea extends StatelessWidget {
           // التحقق من نوع الحظر
           final cubit = context.read<ChatMessagesCubit>();
           final amIBlocker = cubit.amIBlocker;
-          
+
           if (amIBlocker) {
             // أنا الحاظر - أعرض إلغاء الحظر ومسح الدردشة
             return BlockedActionArea(
               onUnblockTap: () async {
                 if (receiverId != null) {
                   await context.read<ChatMessagesCubit>().unblockUser(
-                        blockedId: receiverId!,
-                      );
+                    blockedId: receiverId!,
+                  );
                   onBlockStatusChanged?.call(false);
                 }
               },
@@ -77,7 +78,7 @@ class ChatBottomArea extends StatelessWidget {
                 top: false,
                 child: Center(
                   child: Text(
-                    'أنت محظور من إرسال الرسائل في هذه الدردشة',
+                    context.tr('blocked_from_sending'),
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.red.shade700,
@@ -117,15 +118,17 @@ class ChatBottomArea extends StatelessWidget {
     String message,
     String? replyMessageId,
   ) {
-    final replyToMessage =
-        context.read<ChatInputCubit>().state.replyingToMessage;
+    final replyToMessage = context
+        .read<ChatInputCubit>()
+        .state
+        .replyingToMessage;
     context.read<ChatMessagesCubit>().sendMessage(
-          receiverId!,
-          message,
-          chatRoomId!,
-          replyMessageId: replyMessageId,
-          replyToMessage: replyToMessage,
-        );
+      receiverId!,
+      message,
+      chatRoomId!,
+      replyMessageId: replyMessageId,
+      replyToMessage: replyToMessage,
+    );
     scrollHandler.scrollToBottomAfterSend();
   }
 
@@ -135,17 +138,19 @@ class ChatBottomArea extends StatelessWidget {
     String messageType,
     String? replyMessageId,
   ) {
-    final replyToMessage =
-        context.read<ChatInputCubit>().state.replyingToMessage;
+    final replyToMessage = context
+        .read<ChatInputCubit>()
+        .state
+        .replyingToMessage;
     context.read<ChatMessagesCubit>().sendMediaMessage(
-          chatRoomId: chatRoomId!,
-          messageType: messageType,
-          images: messageType == 'image' ? files : null,
-          videos: messageType == 'video' ? files : null,
-          audio: messageType == 'audio' ? files.firstOrNull : null,
-          replyMessageId: replyMessageId,
-          replyToMessage: replyToMessage,
-        );
+      chatRoomId: chatRoomId!,
+      messageType: messageType,
+      images: messageType == 'image' ? files : null,
+      videos: messageType == 'video' ? files : null,
+      audio: messageType == 'audio' ? files.firstOrNull : null,
+      replyMessageId: replyMessageId,
+      replyToMessage: replyToMessage,
+    );
     scrollHandler.scrollToBottomAfterSend();
   }
 }

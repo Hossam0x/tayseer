@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:tayseer/features/advisor/chat/data/model/chat_requests/chat_request_model.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/my_import.dart';
 
 class RequestListTile extends StatelessWidget {
@@ -54,9 +55,7 @@ class RequestListTile extends StatelessWidget {
           Expanded(
             child: Text(
               item.name,
-              style: Styles.textStyle16Bold.copyWith(
-                color: Colors.black87,
-              ),
+              style: Styles.textStyle16Bold.copyWith(color: Colors.black87),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -71,10 +70,7 @@ class RequestListTile extends StatelessWidget {
               print("عرض الطلب: ${item.name}");
             },
             child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: 12.w,
-                vertical: 6.h,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFF0F5),
                 borderRadius: BorderRadius.circular(10),
@@ -83,17 +79,13 @@ class RequestListTile extends StatelessWidget {
               child: Row(
                 children: [
                   Text(
-                    "عرض",
+                    context.tr('view'),
                     style: Styles.textStyle12Bold.copyWith(
                       color: const Color(0xFFFF80AB),
                     ),
                   ),
                   SizedBox(width: 4.w),
-                  Icon(
-                    Icons.diamond,
-                    color: Colors.amber,
-                    size: 16.sp,
-                  ),
+                  Icon(Icons.diamond, color: Colors.amber, size: 16.sp),
                 ],
               ),
             ),

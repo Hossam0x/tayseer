@@ -196,13 +196,13 @@ class _ConversationInputAreaState extends State<ConversationInputArea> {
               setState(() {
                 _isRecording = false;
               });
-              
+
               final replyMessageId = context
                   .read<ChatInputCubit>()
                   .state
                   .replyingToMessage
                   ?.id;
-              
+
               // إرسال الملف الصوتي
               widget.onSendMedia?.call([audioFile], 'audio', replyMessageId);
               context.read<ChatInputCubit>().onMessageSent();
@@ -252,14 +252,16 @@ class _ConversationInputAreaState extends State<ConversationInputArea> {
                         child: Row(
                           children: [
                             SizedBox(width: spacing2),
-                            
+
                             // زر التسجيل الصوتي - نقلناه للأول
                             GestureDetector(
                               onTap: () {
                                 setState(() {
                                   _isRecording = true;
                                 });
-                                context.read<ChatInputCubit>().setShowEmojiPicker(false);
+                                context
+                                    .read<ChatInputCubit>()
+                                    .setShowEmojiPicker(false);
                               },
                               child: Icon(
                                 Icons.mic,
@@ -291,7 +293,7 @@ class _ConversationInputAreaState extends State<ConversationInputArea> {
                               ),
                             ),
                             SizedBox(width: spacing3),
-                            
+
                             Expanded(
                               child: TextField(
                                 controller: _messageController,
@@ -310,8 +312,10 @@ class _ConversationInputAreaState extends State<ConversationInputArea> {
                                   }
                                 },
                                 decoration: InputDecoration(
-                                  hintText: "نص الرسالة",
-                                  hintTextDirection: TextDirection.rtl,
+                                  hintText: context.tr('message_hint'),
+                                  hintTextDirection: isArabic
+                                      ? TextDirection.rtl
+                                      : TextDirection.ltr,
                                   hintStyle: TextStyle(
                                     color: Colors.grey,
                                     fontSize: inputFontSize,

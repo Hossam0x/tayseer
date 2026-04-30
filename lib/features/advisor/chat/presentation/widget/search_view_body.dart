@@ -5,6 +5,7 @@ import 'package:tayseer/core/constant/constans.dart';
 import 'package:tayseer/core/enum/chat_room_type.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/utils/assets.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_search_cubit.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/custom_search_bar.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/search/search_result_list.dart';
@@ -29,16 +30,16 @@ class _ChatSearchViewBodyState extends State<ChatSearchViewBody> {
 
   void _onSearchChanged() {
     final searchKey = _searchController.text.trim();
-    
+
     // Determine chatRoomType based on user type
     final chatRoomType = selectedUserType == UserTypeEnum.asConsultant
         ? ChatRoomType.userAdvisor
         : ChatRoomType.userUser;
-    
+
     context.read<ChatSearchCubit>().searchChatRooms(
-          searchKey: searchKey,
-          chatRoomType: chatRoomType,
-        );
+      searchKey: searchKey,
+      chatRoomType: chatRoomType,
+    );
   }
 
   @override
@@ -70,7 +71,10 @@ class _ChatSearchViewBodyState extends State<ChatSearchViewBody> {
                     width: 40.w,
                     height: 40.h,
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+                      icon: const Icon(
+                        Icons.arrow_back_ios,
+                        color: Colors.black,
+                      ),
                       iconSize: 18.sp,
                       onPressed: () => Navigator.of(context).pop(),
                     ),
@@ -87,14 +91,14 @@ class _ChatSearchViewBodyState extends State<ChatSearchViewBody> {
             ),
             Expanded(
               child: Directionality(
-                textDirection: TextDirection.rtl,
+                textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
                 child: BlocBuilder<ChatSearchCubit, ChatSearchState>(
                   builder: (context, state) {
                     if (state is ChatSearchInitial) {
-                      return const Center(
+                      return Center(
                         child: Text(
-                          'ابحث عن محادثة',
-                          style: TextStyle(color: Colors.grey),
+                          context.tr('search_chat'),
+                          style: const TextStyle(color: Colors.grey),
                         ),
                       );
                     } else if (state is ChatSearchLoading) {
@@ -102,8 +106,8 @@ class _ChatSearchViewBodyState extends State<ChatSearchViewBody> {
                     } else if (state is ChatSearchSuccess) {
                       return SearchResultsList(rooms: state.rooms);
                     } else if (state is ChatSearchEmpty) {
-                      return const SharedEmptyState(
-                        title: "لا يوجد محادثة لهذا الشخص",
+                      return SharedEmptyState(
+                        title: context.tr('no_chat_for_person'),
                       );
                     } else if (state is ChatSearchError) {
                       return Center(
