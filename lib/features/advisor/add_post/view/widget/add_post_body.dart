@@ -78,7 +78,9 @@ class AddPostBody extends StatelessWidget {
                     name: kCurrentUserData?.name ?? 'user',
                     initialSubtitle: context.tr('select_group'),
                     isVerified: false,
-                    imageUrl: kCurrentUserData?.image ?? AssetsData.defaultProfileImage,
+                    imageUrl:
+                        kCurrentUserData?.image ??
+                        AssetsData.defaultProfileImage,
                     groups: state.categories,
                     onGroupSelectedId: (group) =>
                         cubit.setSelectedCategoryId(group),
@@ -166,8 +168,17 @@ class AddPostBody extends StatelessWidget {
     final images = List<File>.from(state.capturedImages);
     final video = state.capturedVideo;
 
+    // جيب اسم الكاتيجوري من الـ list
+    final categoryName =
+        state.categories
+            .where((c) => c.id == categoryId)
+            .map((c) => c.name)
+            .firstOrNull ??
+        categoryId;
+
     getIt<UploadPostCubit>().startUploadWithRetry(
       categoryId: categoryId,
+      categoryName: categoryName,
       postType: postType.name,
       content: content,
       images: images,

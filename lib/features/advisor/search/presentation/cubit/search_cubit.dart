@@ -195,6 +195,10 @@ class SearchCubit extends Cubit<SearchState> {
       case PostEventType.unarchived:
         // Search مش محتاج يضيف البوست - بس يتجاهل الـ event
         break;
+
+      case PostEventType.created:
+        // Search مش محتاج يضيف البوست الجديد - بس يتجاهل الـ event
+        break;
     }
   }
 

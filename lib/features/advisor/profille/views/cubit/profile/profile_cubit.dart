@@ -234,6 +234,17 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
           emit(state.copyWith(posts: [event.unarchivedPost!, ...state.posts]));
         }
         break;
+
+      case PostEventType.created:
+        if (event.createdPost == null) return;
+        // أضيف البوست في أول الـ profile لو مش موجود
+        final alreadyExists = state.posts.any(
+          (p) => p.postId == event.createdPost!.postId,
+        );
+        if (!alreadyExists) {
+          emit(state.copyWith(posts: [event.createdPost!, ...state.posts]));
+        }
+        break;
     }
   }
 

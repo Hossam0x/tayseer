@@ -1,10 +1,12 @@
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/features/advisor/add_post/model/category_response_model.dart';
+import 'package:tayseer/features/advisor/add_post/model/created_post_data.dart';
 import 'package:tayseer/my_import.dart';
 
 abstract class PostsRepository {
   /// Create a new post with optional images, videos and gifs.
-  Future<Either<Failure, void>> createPost({
+  /// Returns [CreatedPostData] with the real post ID from the server.
+  Future<Either<Failure, CreatedPostData>> createPost({
     String? content,
     required String categoryId,
     required String postType,
@@ -22,7 +24,6 @@ abstract class PostsRepository {
     List<String>? videosToDelete,
 
     XFile? videoFile,
-
   });
 
   Future<Either<Failure, CategoryResponse>> getALLCategory(String? page);

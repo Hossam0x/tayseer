@@ -197,9 +197,8 @@ class HomeViewBodyState extends State<HomeViewBody> {
                     child:
                         BlocListener<UploadPostCubit, UploadPostProgressState>(
                           listener: (context, state) {
-                            if (state.status == UploadPostStatus.success) {
-                              homeCubit.refreshHome();
-                            }
+                            // ✅ البوست بيتضاف optimistically عبر PostEventBus
+                            // مش محتاجين refreshHome هنا
                           },
                           child: const UploadPostBanner(),
                         ),
