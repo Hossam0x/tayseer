@@ -3,6 +3,7 @@ import 'package:tayseer/features/advisor/layout/views/a_layout_view.dart';
 import 'package:tayseer/features/user/layout/view/user_layout_view.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/nav_animation_service.dart';
 import 'package:tayseer/my_import.dart';
+import 'package:tayseer/tayser_app.dart';
 
 import '../../splash_screen&&on_boarding/view/splash_screen.dart';
 
@@ -27,6 +28,7 @@ class LanguageCubit extends Cubit<Locale> {
     String languageCode,
     BuildContext context, {
     bool navigate = true,
+    bool forceRestart = false,
   }) async {
     // لو نفس اللغة الحالية → متعملش أي حاجة
     if (languageCode == state.languageCode) return;
@@ -34,21 +36,27 @@ class LanguageCubit extends Cubit<Locale> {
     await CachNetwork.setData(key: _key, value: languageCode);
     selectedLanguage = languageCode;
 
+    if (forceRestart) {
+      // إعادة تشغيل التطبيق كاملاً من الـ root — نفس تأثير Hot Restart
+      emit(Locale(languageCode));
+      if (context.mounted) {
+        await AppRestarter.restart(context);
+      }
+      return;
+    }
+
     // Reset GlobalKey to avoid duplicate key errors
     NavAnimationService.instance.resetKey();
 
     if (navigate) {
-
-      String? token = CachNetwork.getStringData(key: ktoken);
-     if(token!=null){
-       _pendingWidget = isAdvisor
-           ? ALayoutView(currentUserType: UserTypeEnum.asConsultant)
-           : UserLayoutView();
-     }else
-       {
-         _pendingWidget = SplashScreen();
-       }
-
+      String token = CachNetwork.getStringData(key: ktoken);
+      if (token.isNotEmpty) {
+        _pendingWidget = isAdvisor
+            ? ALayoutView(currentUserType: UserTypeEnum.asConsultant)
+            : UserLayoutView();
+      } else {
+        _pendingWidget = const SplashScreen();
+      }
     }
 
     // Emit triggers MaterialApp rebuild with new key (ValueKey(locale))
