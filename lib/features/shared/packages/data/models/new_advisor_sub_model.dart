@@ -73,4 +73,5 @@ class NewAdvisorSubModel {
   bool get isUltra => subscriptionType == 'ultra';
   bool get isMonthly => subscriptionDurationType == 'monthly';
   bool get isWeekly => subscriptionDurationType == 'weekly';
+  bool get isThreeMonths => subscriptionDurationType == 'threemonths';
 }

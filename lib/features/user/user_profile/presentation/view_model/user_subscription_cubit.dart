@@ -84,12 +84,27 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
     ).where((s) => s.isCurrentSub).firstOrNull;
   }
 
+  int _durationWeight(NewUserSubModel s) {
+    switch (s.subscriptionDurationType) {
+      case 'weekly':
+        return 0;
+      case 'monthly':
+        return 1;
+      case 'threemonths':
+        return 2;
+      default:
+        return -1;
+    }
+  }
+
   NewUserSubModel? getUpgradeSub(List<NewUserSubModel> allSubs) {
     final subs = getSubscriptionsForPackage(allSubs);
     final current = subs.where((s) => s.isCurrentSub).firstOrNull;
     if (current == null) return null;
+    final currentWeight = _durationWeight(current);
+    // upgrade = أي sub مدتها أكبر من الـ current فقط
     return subs
-        .where((s) => !s.isCurrentSub && !(current.isMonthly && s.isWeekly))
+        .where((s) => !s.isCurrentSub && _durationWeight(s) > currentWeight)
         .firstOrNull;
   }
 

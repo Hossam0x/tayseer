@@ -59,7 +59,21 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
     this._apiService,
   ) : super(AdvisorSubscriptionState(packageType: packageType));
 
-  /// يرجع الـ subscriptions المناسبة للباقة (weekly أولاً ثم monthly)
+  /// ترتيب المدة: weekly=0, monthly=1, threemonths=2
+  int _durationWeight(NewAdvisorSubModel s) {
+    switch (s.subscriptionDurationType) {
+      case 'weekly':
+        return 0;
+      case 'monthly':
+        return 1;
+      case 'threemonths':
+        return 2;
+      default:
+        return -1;
+    }
+  }
+
+  /// يرجع الـ subscriptions المناسبة للباقة مرتبة تصاعدياً (weekly → monthly → threemonths)
   List<NewAdvisorSubModel> getSubscriptionsForPackage(
     List<NewAdvisorSubModel> allSubs,
   ) {
@@ -69,11 +83,7 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
     final filtered = allSubs
         .where((s) => s.subscriptionType == targetType)
         .toList();
-    filtered.sort((a, b) {
-      if (a.isWeekly && b.isMonthly) return -1;
-      if (a.isMonthly && b.isWeekly) return 1;
-      return 0;
-    });
+    filtered.sort((a, b) => _durationWeight(a).compareTo(_durationWeight(b)));
     return filtered;
   }
 
@@ -84,14 +94,15 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
     ).where((s) => s.isCurrentSub).firstOrNull;
   }
 
-  /// يرجع الـ upgrade option (التانية اللي مش current وليست downgrade)
+  /// يرجع أول upgrade متاح — يعني أول sub مدتها أكبر من الـ current فقط
   NewAdvisorSubModel? getUpgradeSub(List<NewAdvisorSubModel> allSubs) {
     final subs = getSubscriptionsForPackage(allSubs);
     final current = subs.where((s) => s.isCurrentSub).firstOrNull;
     if (current == null) return null;
-    // upgrade = monthly لو current weekly
+    final currentWeight = _durationWeight(current);
+    // upgrade = أي sub مدتها أكبر من الـ current (مش أقل أو مساوية)
     return subs
-        .where((s) => !s.isCurrentSub && !(current.isMonthly && s.isWeekly))
+        .where((s) => !s.isCurrentSub && _durationWeight(s) > currentWeight)
         .firstOrNull;
   }
 
