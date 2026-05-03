@@ -126,21 +126,20 @@ class IAPService {
     // Clear any stale pending transactions before starting a new purchase
     await _clearPendingTransactions();
 
-    // Call buyConsumable — on iOS this just enqueues the payment,
-    // the actual result comes via purchaseStream, NOT as a return value.
-    // Any exception here is a setup error (not a payment error).
+    // For subscriptions, use buyNonConsumable (not buyConsumable).
+    // buyConsumable treats the product as a one-time consumable and
+    // prevents it from appearing in Apple Subscriptions settings.
     bool buyStarted = false;
     try {
-      buyStarted = await _iap.buyConsumable(
+      buyStarted = await _iap.buyNonConsumable(
         purchaseParam: PurchaseParam(
           productDetails: product,
           applicationUserName: uniqueNumber,
         ),
-        autoConsume: true,
       );
-      log('[IAP] buyConsumable returned: $buyStarted');
+      log('[IAP] buyNonConsumable returned: $buyStarted');
     } catch (e, st) {
-      log('[IAP] ❌ buyConsumable threw: $e\n$st');
+      log('[IAP] ❌ buyNonConsumable threw: $e\n$st');
       // If completer already resolved by stream (race condition), ignore
       if (!completer.isCompleted) {
         _completers.remove(uniqueNumber);
@@ -195,6 +194,11 @@ class IAPService {
     // No active session
     if (!_isPurchasing && _completers.isEmpty) {
       log('[IAP] No active session, completing and ignoring');
+      // If a restore collector is active, forward restored transactions to it
+      if (purchase.status == PurchaseStatus.restored &&
+          _restoreCollector != null) {
+        _restoreCollector!(purchase);
+      }
       await _completePurchase(purchase);
       return;
     }
@@ -302,6 +306,68 @@ class IAPService {
   }
 
   Future<void> restorePurchases() => _iap.restorePurchases();
+
+  /// Triggers Apple restore and collects all restored transactions.
+  /// Returns the last restored purchase (most recent subscription).
+  /// Must be called after [init].
+  Future<List<PurchaseDetails>> restoreAndCollect({
+    Duration timeout = const Duration(seconds: 15),
+  }) async {
+    // Set the collector BEFORE init so we don't miss any transactions
+    // that arrive during or right after initialization.
+    final List<PurchaseDetails> collected = [];
+    final completer = Completer<List<PurchaseDetails>>();
+    Timer? idleTimer;
+
+    void scheduleComplete() {
+      idleTimer?.cancel();
+      // Wait 3s of silence before considering restore done
+      idleTimer = Timer(const Duration(seconds: 3), () {
+        if (!completer.isCompleted) {
+          _restoreCollector = null;
+          completer.complete(List.unmodifiable(collected));
+        }
+      });
+    }
+
+    _restoreCollector = (purchase) {
+      collected.add(purchase);
+      scheduleComplete();
+    };
+
+    // Safety timeout — complete even if no transactions arrive
+    final safetyTimer = Timer(timeout, () {
+      if (!completer.isCompleted) {
+        _restoreCollector = null;
+        idleTimer?.cancel();
+        completer.complete(List.unmodifiable(collected));
+      }
+    });
+
+    try {
+      await init();
+      if (!_storeAvailable) {
+        _restoreCollector = null;
+        idleTimer?.cancel();
+        safetyTimer.cancel();
+        throw Exception('store_unavailable');
+      }
+
+      await _iap.restorePurchases();
+
+      // Start the idle timer now in case Apple delivers 0 transactions
+      scheduleComplete();
+
+      return await completer.future;
+    } finally {
+      safetyTimer.cancel();
+      idleTimer?.cancel();
+      _restoreCollector = null;
+    }
+  }
+
+  // Callback set during restoreAndCollect to intercept restored transactions
+  void Function(PurchaseDetails)? _restoreCollector;
 
   void dispose() {
     _sub?.cancel();

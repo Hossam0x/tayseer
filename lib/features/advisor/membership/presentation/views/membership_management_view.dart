@@ -4,6 +4,7 @@ import 'package:tayseer/features/advisor/membership/presentation/cubit/membershi
 import 'package:tayseer/features/advisor/membership/presentation/widgets/membership_action_buttons.dart';
 import 'package:tayseer/features/advisor/membership/presentation/widgets/membership_cancel_dialog.dart';
 import 'package:tayseer/features/advisor/membership/presentation/widgets/membership_info_card.dart';
+import 'package:tayseer/features/advisor/membership/presentation/widgets/membership_restore_conflict_dialog.dart';
 import 'package:tayseer/features/advisor/membership/presentation/widgets/membership_status_banner.dart';
 import 'package:tayseer/features/advisor/membership/presentation/widgets/membership_success_dialog.dart';
 import 'package:tayseer/my_import.dart';
@@ -24,6 +25,8 @@ class MembershipManagementView extends StatelessWidget {
             if (curr is MembershipLoaded && prev is MembershipLoaded) {
               return curr.timestamp != prev.timestamp;
             }
+            if (curr is MembershipRestoreConflict) return true;
+            if (curr is MembershipNoSubscriptionWithMessage) return true;
             return false;
           },
           listener: _onStateChanged,
@@ -46,13 +49,40 @@ class MembershipManagementView extends StatelessWidget {
   }
 
   void _onStateChanged(BuildContext context, MembershipState state) {
-    if (state is! MembershipLoaded) return;
-    if (state.actionSuccess != null) {
-      showMembershipSuccessDialog(context, messageKey: state.actionSuccess!);
-      context.read<MembershipCubit>().clearMessages();
-    } else if (state.actionError != null) {
-      AppToast.error(context, state.actionError!);
-      context.read<MembershipCubit>().clearMessages();
+    // Loaded state messages
+    if (state is MembershipLoaded) {
+      if (state.actionSuccess != null) {
+        showMembershipSuccessDialog(context, messageKey: state.actionSuccess!);
+        context.read<MembershipCubit>().clearMessages();
+      } else if (state.actionError != null) {
+        AppToast.error(context, state.actionError!);
+        context.read<MembershipCubit>().clearMessages();
+      }
+      return;
+    }
+
+    // Restore: conflict — show transfer dialog
+    if (state is MembershipRestoreConflict) {
+      showRestoreConflictDialog(
+        context,
+        message: state.message,
+        onTransfer: () => context.read<MembershipCubit>().transferSubscription(
+          state.purchaseId,
+        ),
+      );
+      return;
+    }
+
+    // Restore: result message (NO_SUBSCRIPTION or NEW_LINK)
+    if (state is MembershipNoSubscriptionWithMessage) {
+      if (state.isSuccess) {
+        showMembershipSuccessDialog(
+          context,
+          messageKey: 'restore_membership_success',
+        );
+      } else {
+        AppToast.error(context, state.message);
+      }
     }
   }
 }
@@ -108,6 +138,18 @@ class _MembershipBody extends StatelessWidget {
           return _ErrorBody(message: state.message);
         }
         if (state is MembershipNoSubscription) {
+          return const _NoSubscriptionBody();
+        }
+        if (state is MembershipNoSubscriptionRestoring) {
+          return const _NoSubscriptionBody(isRestoring: true);
+        }
+        if (state is MembershipNoSubscriptionWithMessage) {
+          // After restore attempt — show no-subscription screen
+          // (listener already showed toast/dialog)
+          return const _NoSubscriptionBody();
+        }
+        if (state is MembershipRestoreConflict) {
+          // Listener shows the dialog; keep showing no-subscription screen
           return const _NoSubscriptionBody();
         }
         if (state is MembershipLoaded) {
@@ -187,7 +229,8 @@ class _SkeletonBody extends StatelessWidget {
 
 // ── No subscription ───────────────────────────────────────────────────────────
 class _NoSubscriptionBody extends StatelessWidget {
-  const _NoSubscriptionBody();
+  final bool isRestoring;
+  const _NoSubscriptionBody({this.isRestoring = false});
 
   @override
   Widget build(BuildContext context) {
@@ -215,6 +258,7 @@ class _NoSubscriptionBody extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             Gap(28.h),
+            // Browse packages button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -225,18 +269,21 @@ class _NoSubscriptionBody extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                 ),
-                onPressed: () {
-                  final isUserMembership =
-                      context.read<MembershipCubit>() is UserMembershipCubit;
-                  final packagesRoute = isUserMembership
-                      ? AppRouter.kUserPackagesView
-                      : AppRouter.kPackagesView;
-                  Navigator.pushNamed(context, packagesRoute).then((_) {
-                    if (context.mounted) {
-                      context.read<MembershipCubit>().loadMembership();
-                    }
-                  });
-                },
+                onPressed: isRestoring
+                    ? null
+                    : () {
+                        final isUserMembership =
+                            context.read<MembershipCubit>()
+                                is UserMembershipCubit;
+                        final packagesRoute = isUserMembership
+                            ? AppRouter.kUserPackagesView
+                            : AppRouter.kPackagesView;
+                        Navigator.pushNamed(context, packagesRoute).then((_) {
+                          if (context.mounted) {
+                            context.read<MembershipCubit>().loadMembership();
+                          }
+                        });
+                      },
                 child: Text(
                   context.tr('browse_packages'),
                   style: Styles.textStyle16SemiBold.copyWith(
@@ -245,6 +292,41 @@ class _NoSubscriptionBody extends StatelessWidget {
                 ),
               ),
             ),
+            Gap(12.h),
+            // Restore purchase button (iOS only)
+            if (Platform.isIOS)
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 14.h),
+                    side: BorderSide(
+                      color: AppColors.kprimaryColor.withOpacity(0.6),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                  ),
+                  onPressed: isRestoring
+                      ? null
+                      : () => context.read<MembershipCubit>().restorePurchase(),
+                  child: isRestoring
+                      ? SizedBox(
+                          height: 20.h,
+                          width: 20.h,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.kprimaryColor,
+                          ),
+                        )
+                      : Text(
+                          context.tr('restore_membership'),
+                          style: Styles.textStyle16SemiBold.copyWith(
+                            color: AppColors.kprimaryColor,
+                          ),
+                        ),
+                ),
+              ),
           ],
         ),
       ),

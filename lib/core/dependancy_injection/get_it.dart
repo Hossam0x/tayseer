@@ -376,7 +376,10 @@ Future<void> setupGetIt() async {
   );
 
   getIt.registerFactory<UserMembershipCubit>(
-    () => UserMembershipCubit(getIt<UserMembershipRepository>()),
+    () => UserMembershipCubit(
+      getIt<UserMembershipRepository>(),
+      getIt<MembershipRepository>(),
+    ),
   );
   getIt.registerFactory<MembershipCubit>(
     () => MembershipCubit(getIt<MembershipRepository>()),

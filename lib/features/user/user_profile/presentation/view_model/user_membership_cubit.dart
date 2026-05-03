@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
-import 'package:tayseer/features/advisor/membership/data/models/my_subscription_model.dart';
 import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
 import 'package:tayseer/features/advisor/membership/presentation/cubit/membership_cubit.dart';
 import 'package:tayseer/features/advisor/membership/presentation/cubit/membership_state.dart';
@@ -15,10 +13,10 @@ class UserMembershipCubit extends MembershipCubit {
   final UserMembershipRepository _userRepository;
   late final StreamSubscription<SubscriptionChangedEvent> _userSubSubscription;
 
-  UserMembershipCubit(this._userRepository)
-    : super(_DummyMembershipRepository()) {
-    // Cancel the parent's subscription listener (uses dummy repo)
-    // We manage our own
+  /// [realRepository] is the advisor MembershipRepository — used for
+  /// restorePurchase and transferSubscription (same endpoints for both user/advisor).
+  UserMembershipCubit(this._userRepository, MembershipRepository realRepository)
+    : super(realRepository) {
     loadUserMembership();
     _userSubSubscription = SubscriptionEventBus.instance.onSubscriptionChanged
         .listen((_) {
@@ -105,16 +103,4 @@ class UserMembershipCubit extends MembershipCubit {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
-}
-
-/// Dummy repo passed to parent constructor — never actually called
-/// because UserMembershipCubit overrides all methods.
-class _DummyMembershipRepository implements MembershipRepository {
-  @override
-  Future<Either<Failure, MySubscriptionModel>> getMySubscription() async =>
-      Left(ServerFailure('dummy'));
-
-  @override
-  Future<Either<Failure, void>> cancelMySubscription() async =>
-      Left(ServerFailure('dummy'));
 }
