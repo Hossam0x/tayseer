@@ -42,6 +42,11 @@ class MembershipCubit extends Cubit<MembershipState> {
     });
   }
 
+  // ── Cancel ──────────────────────────────────────────────────────────────────
+
+  /// Opens Apple/Google subscription management, then calls the backend to
+  /// record the cancellation. The backend should also receive Apple Server
+  /// Notifications for the actual cancellation event.
   Future<void> cancelMembership() async {
     final current = state;
     if (current is! MembershipLoaded) return;
@@ -49,8 +54,10 @@ class MembershipCubit extends Cubit<MembershipState> {
     emit(current.copyWith(isCancelLoading: true));
 
     try {
+      // Open Apple/Google subscription management page
       await _openSubscriptionManagement();
 
+      // After user returns, notify backend to sync subscription status
       final result = await _repository.cancelMySubscription();
       result.fold(
         (failure) => emit(
@@ -105,9 +112,13 @@ class MembershipCubit extends Cubit<MembershipState> {
 
   // ── Restore Purchase ────────────────────────────────────────────────────────
 
-  /// Uses IAPService.restoreAndCollect() so the IAPService's own stream
-  /// handler intercepts the restored transactions (instead of swallowing them
-  /// with "No active session, completing and ignoring").
+  /// Restores purchases via Apple, then sends the receipt to the backend.
+  ///
+  /// Receipt priority:
+  ///   1. applicationUserName (JWT pendingId) — set when purchase was made
+  ///      via this app's backend flow.
+  ///   2. serverVerificationData — the App Receipt from Apple (Base64 encoded
+  ///      PKCS7 blob). The backend must verify this with Apple's servers.
   Future<void> restorePurchase() async {
     if (isClosed) return;
     emit(MembershipNoSubscriptionRestoring());
@@ -126,34 +137,27 @@ class MembershipCubit extends Cubit<MembershipState> {
       String? receipt;
 
       if (Platform.isIOS) {
-        // محاولة 1: applicationUserName (JWT من Apple)
+        // Pass 1: applicationUserName (JWT pendingId) — new purchases
         for (final p in restoredPurchases.reversed) {
           if (p is AppStorePurchaseDetails) {
             final appUsername =
                 p.skPaymentTransaction.payment.applicationUsername;
             if (appUsername != null && appUsername.isNotEmpty) {
               receipt = appUsername;
-              log(
-                '[Restore] using applicationUserName (JWT): ${receipt.substring(0, 50)}...',
-              );
+              log('[Restore] using applicationUserName (JWT)');
               break;
             }
           }
         }
 
-        // محاولة 2: transactionReceipt (JWT الحقيقي)
+        // Pass 2: serverVerificationData (App Receipt) — legacy purchases
         if (receipt == null || receipt.isEmpty) {
-          for (final p in restoredPurchases.reversed) {
-            final transactionReceipt = p.verificationData.localVerificationData;
-            // أو p.verificationData.serverVerificationData
-            if (transactionReceipt.isNotEmpty &&
-                transactionReceipt.startsWith('eyJ')) {
-              receipt = transactionReceipt;
-              log(
-                '[Restore] using transactionReceipt (JWT): ${receipt.substring(0, 50)}...',
-              );
-              break;
-            }
+          log('[Restore] no JWT — using serverVerificationData');
+          final serverData =
+              restoredPurchases.last.verificationData.serverVerificationData;
+          if (serverData.isNotEmpty) {
+            receipt = serverData;
+            log('[Restore] serverVerificationData length: ${receipt.length}');
           }
         }
       }

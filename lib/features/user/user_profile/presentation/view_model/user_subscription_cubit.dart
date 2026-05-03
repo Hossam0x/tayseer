@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:equatable/equatable.dart';
@@ -178,7 +179,32 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
       }
 
       final pendingId = response['data']?['pendingId'] as String? ?? '';
-      await _iapService.buyProduct(productId, uniqueNumber: pendingId);
+      final purchase = await _iapService.buyProduct(
+        productId,
+        uniqueNumber: pendingId,
+      );
+
+      // Confirm purchase with backend
+      final receipt = Platform.isIOS
+          ? purchase.verificationData.serverVerificationData
+          : purchase.verificationData.localVerificationData;
+
+      if (receipt.isNotEmpty) {
+        try {
+          await _apiService.post(
+            endPoint: ApiEndPoint.confirmSubscriptionPurchase,
+            data: {
+              'pendingId': pendingId,
+              'receipt': receipt,
+              'platform': platform,
+            },
+          );
+          log('[UserSub] ✅ Backend confirmed purchase');
+        } catch (e) {
+          log('[UserSub] ⚠️ Backend confirmation failed: $e');
+        }
+      }
+
       SubscriptionEventBus.instance.fire(
         SubscriptionChangedEvent(subscriptionType: targetSub.subscriptionType),
       );
