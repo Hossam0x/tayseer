@@ -12,6 +12,7 @@ import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/core/utils/styles.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/core/utils/colors.dart';
+import 'package:tayseer/features/shared/auth/view/widget/agreement_text.dart';
 import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
 import 'package:tayseer/features/shared/packages/domain/use_cases/get_package_display_data.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/package_selection_cubit.dart';
@@ -293,6 +294,8 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
                 _buildTabSelector(),
                 Gap(20.h),
                 _buildActionButton(),
+                Gap(12.h),
+                const AgreementText(),
                 Gap(20.h),
                 _buildViewAllBenefitsButton(),
                 Gap(20.h),

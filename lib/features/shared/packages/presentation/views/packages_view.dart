@@ -7,6 +7,7 @@ import 'package:tayseer/core/constant/constans.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/utils/router/app_router.dart';
+import 'package:tayseer/features/shared/auth/view/widget/agreement_text.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
 import 'package:tayseer/features/shared/packages/domain/use_cases/get_package_display_data.dart';
@@ -285,6 +286,8 @@ class _PackagesViewContentState extends State<_PackagesViewContent>
                 _buildTabSelector(),
                 Gap(110.h),
                 _buildActionButton(),
+                Gap(12.h),
+                const AgreementText(),
                 Gap(20.h),
               ],
             ),
