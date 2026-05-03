@@ -102,4 +102,7 @@ class ApiEndPoint {
   static const String bestAdvisors = '/advisor/best';
   static const String similarUsers = '/user/similar-users';
   static const String chatDurationExtensions = '/chat-duration-extension';
+  static const String iapRestorePurchase = '/iap/restore-purchase';
+  static const String iapTransferSubscription = '/iap/transfer-subscription';
+  static const String confirmSubscriptionPurchase = '/iap/confirm-purchase';
 }

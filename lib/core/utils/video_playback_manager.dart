@@ -36,6 +36,14 @@ class VideoManager {
     }
   }
 
+  /// ✅ وقّف الفيديو الحالي بس — بدون dispose أو refresh lock
+  /// استخدمه عند تغيير الـ tab أو الانتقال لصفحة تانية
+  void pauseAll() {
+    currentlyPlayingPostId.value = null;
+    _controllerManager.pauseAll();
+    debugPrint('⏸️ VideoManager: Paused all (no dispose)');
+  }
+
   Future<void> stopAll() async {
     _isRefreshing = true;
     debugPrint('🔒 VideoManager: Refresh lock ON');

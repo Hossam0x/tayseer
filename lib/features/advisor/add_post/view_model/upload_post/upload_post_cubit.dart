@@ -1,10 +1,7 @@
 import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:tayseer/core/constant/constans.dart';
-import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/utils/post_event_bus.dart';
-import 'package:tayseer/features/advisor/add_post/model/created_post_data.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository.dart';
 import 'upload_post_state.dart';
 
@@ -87,12 +84,18 @@ class UploadPostCubit extends Cubit<UploadPostProgressState> {
       (createdPost) async {
         emit(state.copyWith(status: UploadPostStatus.success));
 
-        // 🔥 أضيف البوست بالـ real ID من السيرفر في أول الـ home feed والـ profile
-        _fireCreatedEvent(
-          createdPost: createdPost,
-          categoryName: categoryName,
-          content: content,
-          postType: postType,
+        // 🔥 أضيف البوست بالـ real data من السيرفر في أول الـ home feed والـ profile
+        PostEventBus.instance.fire(
+          PostEvent(
+            type: PostEventType.created,
+            postId: createdPost.postId,
+            sourceId: 'UploadPostCubit',
+            createdPost: createdPost.copyWith(
+              category: categoryName,
+              isMine: true,
+            ),
+            categoryName: categoryName,
+          ),
         );
 
         // اخفاء البانر بعد 3 ثواني
@@ -138,49 +141,5 @@ class UploadPostCubit extends Cubit<UploadPostProgressState> {
     _lastContent = null;
     _lastImages = null;
     _lastVideo = null;
-  }
-
-  // ─────────────────────────────────────────
-  // بناء بوست من الـ real server data وإرساله للـ feeds
-  // ─────────────────────────────────────────
-  void _fireCreatedEvent({
-    required CreatedPostData createdPost,
-    required String categoryName,
-    required String content,
-    required String postType,
-  }) {
-    final userData = kCurrentUserData;
-    if (userData == null) return;
-
-    final realPost = PostModel(
-      postId: createdPost.id,
-      name: userData.name ?? '',
-      userName: userData.username ?? '',
-      advisorId: userData.id ?? '',
-      isFollowing: false,
-      avatar: userData.image ?? '',
-      isVerified: userData.isVerified ?? false,
-      category: categoryName,
-      timeAgo: 'الآن',
-      content: content,
-      contentType: postType == 'reel'
-          ? PostContentType.reel
-          : PostContentType.post,
-      commentsCount: 0,
-      sharesCount: 0,
-      likesCount: 0,
-      isMine: true,
-      userType: createdPost.userRef,
-    );
-
-    PostEventBus.instance.fire(
-      PostEvent(
-        type: PostEventType.created,
-        postId: realPost.postId,
-        sourceId: 'UploadPostCubit',
-        createdPost: realPost,
-        categoryName: categoryName,
-      ),
-    );
   }
 }

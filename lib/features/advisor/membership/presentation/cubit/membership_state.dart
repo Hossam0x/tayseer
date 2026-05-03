@@ -17,6 +17,8 @@ class MembershipLoaded extends MembershipState {
   final String? actionSuccess;
   final String? actionError;
   final bool isCancelLoading;
+  final bool isRestoreLoading;
+  final bool isTransferLoading;
   final int timestamp;
 
   const MembershipLoaded({
@@ -24,6 +26,8 @@ class MembershipLoaded extends MembershipState {
     this.actionSuccess,
     this.actionError,
     this.isCancelLoading = false,
+    this.isRestoreLoading = false,
+    this.isTransferLoading = false,
     this.timestamp = 0,
   });
 
@@ -33,6 +37,8 @@ class MembershipLoaded extends MembershipState {
     String? actionError,
     bool clearMessages = false,
     bool? isCancelLoading,
+    bool? isRestoreLoading,
+    bool? isTransferLoading,
     int? timestamp,
   }) {
     return MembershipLoaded(
@@ -40,6 +46,8 @@ class MembershipLoaded extends MembershipState {
       actionSuccess: clearMessages ? null : actionSuccess,
       actionError: clearMessages ? null : actionError,
       isCancelLoading: isCancelLoading ?? this.isCancelLoading,
+      isRestoreLoading: isRestoreLoading ?? this.isRestoreLoading,
+      isTransferLoading: isTransferLoading ?? this.isTransferLoading,
       timestamp: timestamp ?? this.timestamp,
     );
   }
@@ -50,11 +58,43 @@ class MembershipLoaded extends MembershipState {
     actionSuccess,
     actionError,
     isCancelLoading,
+    isRestoreLoading,
+    isTransferLoading,
     timestamp,
   ];
 }
 
 class MembershipNoSubscription extends MembershipState {}
+
+class MembershipNoSubscriptionRestoring extends MembershipState {}
+
+/// Shown after a restore attempt with a message (success or failure).
+class MembershipNoSubscriptionWithMessage extends MembershipState {
+  final String message;
+  final bool isSuccess;
+
+  const MembershipNoSubscriptionWithMessage({
+    required this.message,
+    this.isSuccess = false,
+  });
+
+  @override
+  List<Object?> get props => [message, isSuccess];
+}
+
+/// Shown when the backend returns CONFLICT — subscription exists on another account.
+class MembershipRestoreConflict extends MembershipState {
+  final String message;
+  final String purchaseId;
+
+  const MembershipRestoreConflict({
+    required this.message,
+    required this.purchaseId,
+  });
+
+  @override
+  List<Object?> get props => [message, purchaseId];
+}
 
 class MembershipError extends MembershipState {
   final String message;

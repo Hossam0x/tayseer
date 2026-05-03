@@ -1,7 +1,7 @@
 import 'package:preload_page_view/preload_page_view.dart';
 import 'package:tayseer/core/utils/global_mute_manager.dart';
-import 'package:tayseer/core/utils/video_cache_manager.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/video/reels_video_preloader.dart';
 import 'package:tayseer/core/video/video_state_manager.dart';
 import 'package:tayseer/features/shared/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/features/shared/reels/views/widget/reels_item.dart';
@@ -40,8 +40,8 @@ class _ReelsFeedContent extends StatefulWidget {
 
 class _ReelsFeedContentState extends State<_ReelsFeedContent> {
   PreloadPageController? _pageController;
-  final _videoCacheManager = VideoCacheManager();
-  final _stateManager = VideoStateManager(); // ✅ جديد
+  final _stateManager = VideoStateManager();
+  final _preloader = ReelsVideoPreloader.instance;
 
   int _currentIndex = 0;
 
@@ -66,26 +66,22 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
     });
   }
 
-  void _preloadNextVideos(List<PostModel> reels, int currentIndex) {
-    for (int i = 1; i <= _preloadCount; i++) {
-      final nextIndex = currentIndex + i;
-      if (nextIndex < reels.length) {
-        final videoUrl = reels[nextIndex].videoUrl;
-        if (videoUrl != null && videoUrl.isNotEmpty) {
-          _videoCacheManager.preloadVideoInBackground(videoUrl);
-        }
-      }
-    }
+  void _onReelsUpdated(List<PostModel> reels) {
+    _preloader.updateReels(reels);
+    _preloader.onReelVisible(_currentIndex);
   }
 
   void _onPageChanged(int index, List<PostModel> reels) {
     if (_currentIndex == index) return;
 
-    // ✅ جديد: احفظ الـ position للريل الحالي قبل ما نسيبه
+    // احفظ الـ position للريل الحالي قبل ما نسيبه
     _saveCurrentReelPosition(reels);
 
     setState(() => _currentIndex = index);
-    _preloadNextVideos(reels, index);
+
+    // ✅ Trigger preloader — بيعمل pre-initialize للـ controllers القادمة
+    _preloader.onReelVisible(index);
+
     _checkLoadMore(index, reels.length);
   }
 
@@ -112,8 +108,9 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
 
   @override
   void dispose() {
-    // ✅ جديد: احفظ position الفيديو الحالي قبل dispose
+    // احفظ position الفيديو الحالي قبل dispose
     _savePositionBeforeDispose();
+    _preloader.pauseAll();
     _pageController?.dispose();
     super.dispose();
   }
@@ -141,8 +138,7 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
           BlocListener<ReelsCubit, ReelsState>(
             listenWhen: (previous, current) =>
                 previous.reels.length != current.reels.length,
-            listener: (context, state) =>
-                _preloadNextVideos(state.reels, _currentIndex),
+            listener: (context, state) => _onReelsUpdated(state.reels),
           ),
           BlocListener<ReelsCubit, ReelsState>(
             listenWhen: (previous, current) =>
@@ -262,6 +258,9 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
   Widget _buildReelsList(ReelsState state) {
     final itemCount = state.reels.length + (state.isLoadingMore ? 1 : 0);
 
+    // ✅ تأكد إن الـ preloader عنده أحدث قائمة
+    _preloader.updateReels(state.reels);
+
     return PreloadPageView.builder(
       controller: _pageController,
       scrollDirection: Axis.vertical,
@@ -279,8 +278,16 @@ class _ReelsFeedContentState extends State<_ReelsFeedContent> {
     }
 
     final reel = state.reels[index];
-    final controllerToPass = index == 0 ? widget.initialController : null;
     final shouldInit = (index == _currentIndex || index == _currentIndex + 1);
+
+    // ✅ استخدم الـ preloaded controller لو موجود — fast path
+    // الـ index 0 بيستخدم الـ initialController اللي جاي من الـ home feed
+    VideoPlayerController? controllerToPass;
+    if (index == 0 && widget.initialController != null) {
+      controllerToPass = widget.initialController;
+    } else {
+      controllerToPass = _preloader.getReadyController(reel.postId);
+    }
 
     return ReelsItem(
       key: ValueKey('reel_item_${reel.postId}'),

@@ -61,6 +61,7 @@ abstract class AssetsData {
   static const String kblurImage = "assets/images/blur_image.png";
 
   // ==================== SVG Icons ====================
+  static const String logoAthr = "assets/icons/logoAthr.svg";
   static const String addCertificateImage =
       "assets/icons/addCertificateImage.svg";
   static const String amountIcon = "assets/icons/amountIcon.svg";

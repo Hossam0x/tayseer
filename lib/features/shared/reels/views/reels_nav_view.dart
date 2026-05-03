@@ -1,7 +1,7 @@
 import 'package:preload_page_view/preload_page_view.dart';
 import 'package:tayseer/core/utils/global_mute_manager.dart';
-import 'package:tayseer/core/utils/video_cache_manager.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/video/reels_video_preloader.dart';
 import 'package:tayseer/features/shared/reels/view_model/cubit/reels_cubit.dart';
 import 'package:tayseer/features/shared/reels/views/widget/reels_item.dart';
 import 'package:tayseer/features/shared/reels/views/widget/reels_shimmer.dart';
@@ -31,7 +31,7 @@ class _ReelsNavContent extends StatefulWidget {
 
 class _ReelsNavContentState extends State<_ReelsNavContent> {
   PreloadPageController? _pageController;
-  final _videoCacheManager = VideoCacheManager();
+  final _preloader = ReelsVideoPreloader.instance;
 
   int _currentIndex = 0;
   bool _isTabActive = false;
@@ -46,26 +46,22 @@ class _ReelsNavContentState extends State<_ReelsNavContent> {
     _pageController = PreloadPageController(initialPage: 0);
   }
 
-  void _preloadNextVideos(List<PostModel> reels, int currentIndex) {
-    for (int i = 1; i <= _preloadCount; i++) {
-      final nextIndex = currentIndex + i;
-      if (nextIndex < reels.length) {
-        final videoUrl = reels[nextIndex].videoUrl;
-        if (videoUrl != null && videoUrl.isNotEmpty) {
-          _videoCacheManager.preloadVideoInBackground(videoUrl);
-        }
-      }
-    }
+  void _onReelsUpdated(List<PostModel> reels) {
+    _preloader.updateReels(reels);
+    _preloader.onReelVisible(_currentIndex);
   }
 
   void _onPageChanged(int index, List<PostModel> reels) {
     if (_currentIndex == index) return;
 
     setState(() => _currentIndex = index);
-    _preloadNextVideos(reels, index);
+
+    // ✅ Trigger preloader — بيعمل pre-initialize للـ controllers القادمة
+    _preloader.onReelVisible(index);
+
     _checkLoadMore(index, reels.length);
 
-    // ✅ Mark current reel as seen (نفس منطق الـ home posts)
+    // ✅ Mark current reel as seen
     if (index < reels.length) {
       context.read<ReelsCubit>().markReelAsRead(reels[index].postId);
     }
@@ -80,6 +76,7 @@ class _ReelsNavContentState extends State<_ReelsNavContent> {
 
   @override
   void dispose() {
+    _preloader.pauseAll();
     _pageController?.dispose();
     super.dispose();
   }
@@ -94,8 +91,7 @@ class _ReelsNavContentState extends State<_ReelsNavContent> {
           BlocListener<ReelsCubit, ReelsState>(
             listenWhen: (previous, current) =>
                 previous.reels.length != current.reels.length,
-            listener: (context, state) =>
-                _preloadNextVideos(state.reels, _currentIndex),
+            listener: (context, state) => _onReelsUpdated(state.reels),
           ),
 
           // Listener 2: Share action toasts
@@ -139,7 +135,17 @@ class _ReelsNavContentState extends State<_ReelsNavContent> {
                 if (!_hasFetched) {
                   _hasFetched = true;
                   context.read<ReelsCubit>().fetchReels();
+                } else {
+                  // ✅ الـ tab رجع — أعد تفعيل الـ preloader
+                  final reels = context.read<ReelsCubit>().state.reels;
+                  if (reels.isNotEmpty) {
+                    _preloader.updateReels(reels);
+                    _preloader.onReelVisible(_currentIndex);
+                  }
                 }
+              } else {
+                // ✅ الـ tab اتغير — وقّف كل الفيديوهات
+                _preloader.pauseAll();
               }
             }
           },
@@ -327,11 +333,15 @@ class _ReelsNavContentState extends State<_ReelsNavContent> {
     final reel = state.reels[index];
     final shouldInit = (index == _currentIndex || index == _currentIndex + 1);
 
+    // ✅ استخدم الـ preloaded controller لو موجود — fast path
+    final preloadedController = _preloader.getReadyController(reel.postId);
+
     return ReelsItem(
       key: ValueKey('reel_nav_${reel.postId}'),
       post: reel,
       isCurrentPage: index == _currentIndex && _isTabActive,
       shouldInitialize: shouldInit && _isTabActive,
+      sharedController: preloadedController,
       onClose: () {
         final layoutCubit = context.read<LayoutCubit>();
         layoutCubit.changeIndex(0);
