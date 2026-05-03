@@ -184,6 +184,12 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
         notification.type == NotificationType.newMessage) {
       final chatId = notification.data?.chatId;
       final senderId = notification.data?.senderId;
+      // Extract sender name from description e.g. "Aml Elemam: أرسل لك رسالة"
+      final description = notification.description ?? '';
+      final colonIndex = description.indexOf(':');
+      final senderName = colonIndex > 0
+          ? description.substring(0, colonIndex).trim()
+          : notification.title;
       if (chatId != null && chatId.isNotEmpty) {
         if (isAdvisor) {
           context.pushNamed(
@@ -191,7 +197,7 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
             arguments: {
               'receiverid': senderId ?? '',
               'chatroomid': chatId,
-              'username': null,
+              'username': senderName,
               'userimage': notification.senderImage,
               'isBlocked': false,
               'isHaveSession': true,
@@ -203,7 +209,7 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
             arguments: {
               'receiverid': senderId ?? '',
               'chatroomid': chatId,
-              'username': null,
+              'username': senderName,
               'userimage': notification.senderImage,
               'isBlocked': false,
             },
