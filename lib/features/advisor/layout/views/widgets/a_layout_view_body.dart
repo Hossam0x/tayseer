@@ -83,8 +83,8 @@ class _ALayOutViewBodyState extends State<ALayOutViewBody> {
     return BlocConsumer<LayoutCubit, LayoutState>(
       listenWhen: (prev, curr) => prev.currentIndex != curr.currentIndex,
       listener: (context, state) {
-        // وقف كل الفيديوهات لما تتغير الـ tab
-        VideoManager.instance.stopAll();
+        // وقف كل الفيديوهات لما تتغير الـ tab (بدون dispose)
+        VideoManager.instance.pauseAll();
       },
       // ✅ Only rebuild for visual changes — not scroll/trigger state
       buildWhen: (prev, curr) =>

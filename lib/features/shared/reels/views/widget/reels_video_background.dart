@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:tayseer/core/utils/global_mute_manager.dart';
 import 'package:tayseer/core/utils/video_cache_manager.dart';
+import 'package:tayseer/core/utils/video_playback_manager.dart';
+import 'package:tayseer/core/video/reels_video_preloader.dart';
 import 'package:tayseer/core/video/video_state_manager.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
@@ -54,6 +56,10 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
   // ignore: unused_field
   bool _showSpeedIndicator = false;
 
+  // ✅ هل الـ controller جاي من الـ parent's sharedController (مش بنعمله dispose)
+  // الـ preloaded controllers بنعمل transfer of ownership — بنعمله dispose هنا
+  bool _isExternalController = false;
+
   Completer<void>? _initCompleter;
 
   int _retryCount = 0;
@@ -71,8 +77,29 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _muteManager.isMuted.addListener(_onGlobalMuteChanged);
+    // ✅ استمع لـ VideoManager عشان لو فيديو تاني اشتغل نوقف الريل ده
+    VideoManager.instance.currentlyPlayingPostId.addListener(
+      _onVideoManagerChanged,
+    );
     if (widget.shouldInitialize) {
       _initializeVideo();
+    }
+  }
+
+  /// ✅ لو VideoManager شغّل فيديو تاني — وقّف الريل ده فوراً
+  void _onVideoManagerChanged() {
+    if (_isDisposed || _controller == null) return;
+    final playingId = VideoManager.instance.currentlyPlayingPostId.value;
+    if (playingId != null && playingId != _videoId) {
+      try {
+        if (_controller!.value.isPlaying) {
+          _controller!.setVolume(0.0);
+          _controller!.pause();
+          debugPrint('⏸️ Reel paused by VideoManager: $_videoId');
+        }
+      } catch (e) {
+        debugPrint('⚠️ Cannot pause reel in VideoManager listener: $e');
+      }
     }
   }
 
@@ -108,38 +135,135 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
 
     if (_controller != null && _isInitialized) return;
 
-    _initCompleter = Completer<void>();
+    final completer = Completer<void>();
+    _initCompleter = completer;
 
+    void safeComplete() {
+      if (!completer.isCompleted) completer.complete();
+    }
+
+    // ─── FAST PATH 1: sharedController من الـ parent (home feed controller) ───
     if (widget.sharedController != null) {
+      bool isValid = false;
+      try {
+        void probe() {}
+        widget.sharedController!.addListener(probe);
+        widget.sharedController!.removeListener(probe);
+        isValid = widget.sharedController!.value.isInitialized;
+      } catch (_) {
+        isValid = false;
+      }
+
+      if (!isValid) {
+        // الـ controller مش valid — روح للـ slow path
+        safeComplete();
+        _initCompleter = null;
+        // لا نعمل recursive call — نبدأ slow path مباشرة
+        _startSlowPath();
+        return;
+      }
+
       _controller = widget.sharedController;
+      _isExternalController = true;
       try {
         await _controller!.setVolume(_volume);
-
         if (!mounted || _controller == null || _isDisposed) {
-          _initCompleter?.complete();
+          safeComplete();
           return;
         }
-
-        if (_controller!.value.isInitialized) {
-          _isInitialized = true;
-          _hasError = false;
-          await _controller!.setLooping(true);
-          await _restorePosition();
-          if (widget.shouldPlay) _controller!.play();
+        _isInitialized = true;
+        _hasError = false;
+        await _controller!.setLooping(true);
+        await _restorePosition();
+        if (widget.shouldPlay) {
+          VideoManager.instance.playVideo(_videoId);
+          _controller!.play();
         }
         _attachListener();
         widget.onControllerCreated?.call(_controller!);
         if (mounted && !_isDisposed) setState(() {});
       } catch (e) {
         debugPrint('⚠️ Error setting up shared controller: $e');
+        _controller = null;
+        _isExternalController = false;
       }
-      _initCompleter?.complete();
+      safeComplete();
       return;
+    }
+
+    // ─── FAST PATH 2: preloaded controller من الـ ReelsVideoPreloader ───
+    if (_videoId.isNotEmpty) {
+      final preloaded = ReelsVideoPreloader.instance.claimController(_videoId);
+      if (preloaded != null) {
+        debugPrint('⚡ Reel claimed preloaded controller: $_videoId');
+        _controller = preloaded;
+        _isExternalController = false;
+        bool fastPathOk = false;
+        try {
+          await _controller!.setVolume(_volume);
+          if (!mounted || _isDisposed) {
+            try {
+              _controller!.dispose();
+            } catch (_) {}
+            _controller = null;
+            safeComplete();
+            return;
+          }
+          await _controller!.setLooping(true);
+          await _restorePosition();
+          _attachListener();
+          widget.onControllerCreated?.call(_controller!);
+          setState(() {
+            _isInitialized = true;
+            _hasError = false;
+          });
+          if (widget.shouldPlay) {
+            VideoManager.instance.playVideo(_videoId);
+            _controller!.play();
+          }
+          fastPathOk = true;
+        } catch (e) {
+          debugPrint('⚠️ Error setting up preloaded reel controller: $e');
+          try {
+            _controller?.dispose();
+          } catch (_) {}
+          _controller = null;
+          _isExternalController = false;
+        }
+        safeComplete();
+        // لو فشل الـ fast path، ابدأ slow path في الـ frame الجاي
+        if (!fastPathOk && mounted && !_isDisposed) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && !_isDisposed && !_isInitialized) {
+              _initCompleter = null;
+              _startSlowPath();
+            }
+          });
+        }
+        return;
+      }
+    }
+
+    // ─── SLOW PATH ───
+    safeComplete();
+    _initCompleter = null;
+    _startSlowPath();
+  }
+
+  /// ✅ Slow path منفصل — بيتعمل call مباشرة بدون Completer موروث
+  Future<void> _startSlowPath() async {
+    if (_isDisposed || (_controller != null && _isInitialized)) return;
+
+    final completer = Completer<void>();
+    _initCompleter = completer;
+
+    void safeComplete() {
+      if (!completer.isCompleted) completer.complete();
     }
 
     try {
       if (widget.videoUrl.isEmpty) {
-        _initCompleter?.complete();
+        safeComplete();
         return;
       }
 
@@ -147,35 +271,44 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
         widget.videoUrl,
       );
       if (!mounted || _isDisposed) {
-        _initCompleter?.complete();
+        safeComplete();
         return;
       }
 
-      _controller = cachedFile != null
-          ? VideoPlayerController.file(cachedFile)
-          : VideoPlayerController.networkUrl(
-              Uri.parse(widget.videoUrl),
-              videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
-            );
-
-      if (cachedFile == null) {
+      if (cachedFile != null) {
+        _controller = VideoPlayerController.file(
+          cachedFile,
+          videoPlayerOptions: VideoPlayerOptions(
+            mixWithOthers: false,
+            allowBackgroundPlayback: false,
+          ),
+        );
+      } else {
+        _controller = VideoPlayerController.networkUrl(
+          Uri.parse(widget.videoUrl),
+          videoPlayerOptions: VideoPlayerOptions(
+            mixWithOthers: false,
+            allowBackgroundPlayback: false,
+          ),
+        );
         _videoCacheManager.preloadVideoInBackground(widget.videoUrl);
       }
+      _isExternalController = false;
 
       await _controller!.initialize();
 
       if (!mounted || _isDisposed) {
-        _controller?.dispose();
+        try {
+          _controller?.dispose();
+        } catch (_) {}
         _controller = null;
-        _initCompleter?.complete();
+        safeComplete();
         return;
       }
 
       _attachListener();
-
       await _controller!.setLooping(true);
       await _controller!.setVolume(_volume);
-
       widget.onControllerCreated?.call(_controller!);
       await _restorePosition();
 
@@ -188,34 +321,38 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
       _retryCount = 0;
       _autoRetryTimer?.cancel();
 
-      if (widget.shouldPlay) _controller!.play();
+      if (widget.shouldPlay) {
+        VideoManager.instance.playVideo(_videoId);
+        _controller!.play();
+      }
 
-      _initCompleter?.complete();
+      safeComplete();
     } catch (e) {
       debugPrint('❌ Error initializing video: $e');
       if (!mounted || _isDisposed) {
-        _initCompleter?.complete();
+        safeComplete();
         return;
       }
 
       try {
         _detachListener();
-        _controller?.dispose();
+        if (!_isExternalController) _controller?.dispose();
       } catch (_) {}
       _controller = null;
       _isInitialized = false;
+      _isExternalController = false;
 
       if (_retryCount < _maxRetries && _stateManager.canRetry(_videoId)) {
         _retryCount++;
         _stateManager.recordError(_videoId);
-        _initCompleter?.complete();
+        safeComplete();
+        _initCompleter = null;
 
         final delay = Duration(milliseconds: 800 * _retryCount);
         _autoRetryTimer?.cancel();
         _autoRetryTimer = Timer(delay, () {
           if (mounted && !_isDisposed) {
-            _initCompleter = null;
-            _initializeVideo();
+            _startSlowPath();
           }
         });
       } else {
@@ -223,7 +360,7 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
           _hasError = true;
           _isInitialized = false;
         });
-        _initCompleter?.complete();
+        safeComplete();
       }
     }
   }
@@ -289,19 +426,20 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
 
       try {
         _detachListener();
-        if (widget.sharedController == null) {
+        if (!_isExternalController) {
           _controller?.dispose();
         }
       } catch (_) {}
       _controller = null;
       _isInitialized = false;
+      _isExternalController = false;
       _initCompleter = null;
 
       final delay = Duration(milliseconds: 800 * _retryCount);
       _autoRetryTimer?.cancel();
       _autoRetryTimer = Timer(delay, () {
         if (mounted && !_isDisposed) {
-          _initializeVideo();
+          _startSlowPath();
         }
       });
     } else {
@@ -322,6 +460,26 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
   void didUpdateWidget(covariant ReelsVideoBackground oldWidget) {
     super.didUpdateWidget(oldWidget);
 
+    // ✅ لو الـ sharedController اتغير — استخدمه لو مش initialized
+    if (widget.sharedController != oldWidget.sharedController &&
+        widget.sharedController != null &&
+        !_isInitialized) {
+      // تخلص من أي controller قديم بنيناه بنفسنا
+      if (_controller != null && !_isExternalController) {
+        try {
+          _detachListener();
+          _controller!.setVolume(0.0);
+          _controller!.pause();
+          _controller!.dispose();
+        } catch (_) {}
+        _controller = null;
+        _isInitialized = false;
+        _initCompleter = null;
+      }
+      _initializeVideo();
+      return;
+    }
+
     if (widget.shouldInitialize &&
         !oldWidget.shouldInitialize &&
         !_isInitialized &&
@@ -338,18 +496,53 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
     }
 
     if (_isInitialized && _controller != null && !_isDisposed) {
+      // تحقق إن الـ controller لسه valid
+      if (!_isControllerValid()) {
+        _controller = null;
+        _isInitialized = false;
+        _isExternalController = false;
+        _initCompleter = null;
+        if (widget.shouldInitialize) {
+          setState(() {});
+          _initializeVideo();
+        }
+        return;
+      }
+
       try {
         if (widget.shouldPlay && !oldWidget.shouldPlay) {
           _attachListener();
+          VideoManager.instance.playVideo(_videoId);
+          _controller!.setVolume(_volume);
           _controller!.play();
         } else if (!widget.shouldPlay && oldWidget.shouldPlay) {
           _savePosition();
+          _controller!.setVolume(0.0);
           _controller!.pause();
           _detachListener();
         }
       } catch (e) {
-        debugPrint('⚠️ Controller disposed in didUpdateWidget');
+        debugPrint('⚠️ Controller disposed in didUpdateWidget: $e');
+        _controller = null;
+        _isInitialized = false;
+        _isExternalController = false;
+        _initCompleter = null;
+        if (widget.shouldInitialize) _initializeVideo();
       }
+    }
+  }
+
+  /// ✅ تحقق إن الـ controller لسه valid وغير disposed
+  bool _isControllerValid() {
+    final ctrl = _controller;
+    if (ctrl == null) return false;
+    try {
+      void probe() {}
+      ctrl.addListener(probe);
+      ctrl.removeListener(probe);
+      return ctrl.value.isInitialized;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -371,14 +564,20 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
     if (_controller == null) return;
     _savePosition();
     try {
+      _controller!.setVolume(0.0);
       _controller!.pause();
     } catch (_) {}
     _detachListener();
-    if (widget.sharedController == null) {
-      _controller!.dispose();
+    // ✅ لو الـ controller جاي من الـ parent (sharedController)، مش بنعمله dispose
+    // لو جاي من الـ preloader (claimed) أو بنيناه بنفسنا، نعمله dispose
+    if (!_isExternalController) {
+      try {
+        _controller!.dispose();
+      } catch (_) {}
     }
     _controller = null;
     _isInitialized = false;
+    _isExternalController = false;
     _initCompleter = null;
     if (mounted && !_isDisposed) setState(() {});
   }
@@ -388,12 +587,14 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
       if (_controller?.value.isPlaying == true) {
+        _controller?.setVolume(0.0);
         _controller?.pause();
         _savePosition();
       }
     } else if (state == AppLifecycleState.resumed) {
       _videoCacheManager.resetAllFailedStatuses();
       if (widget.shouldPlay && _controller?.value.isInitialized == true) {
+        _controller?.setVolume(_volume);
         _controller?.play();
       }
     }
@@ -401,15 +602,23 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
 
   @override
   void didPushNext() {
+    // ✅ وقّف الريل وامسح تسجيله من VideoManager لما نروح لصفحة تانية
     if (_controller?.value.isPlaying == true) {
+      _controller?.setVolume(0.0);
       _controller?.pause();
       _savePosition();
+    }
+    // لو الريل ده كان مسجّل في VideoManager، امسحه
+    if (VideoManager.instance.currentlyPlayingPostId.value == _videoId) {
+      VideoManager.instance.currentlyPlayingPostId.value = null;
     }
   }
 
   @override
   void didPopNext() {
     if (widget.shouldPlay && _controller?.value.isInitialized == true) {
+      VideoManager.instance.playVideo(_videoId);
+      _controller?.setVolume(_volume);
       _controller?.play();
     }
   }
@@ -426,19 +635,39 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
     _autoRetryTimer?.cancel();
     _savePosition();
 
+    // ✅ وقّف الصوت فوراً قبل أي حاجة تانية
+    try {
+      _controller?.setVolume(0.0);
+      if (_controller?.value.isPlaying == true) {
+        _controller?.pause();
+      }
+    } catch (_) {}
+
+    // ✅ لو الريل ده كان مسجّل في VideoManager، امسحه
+    if (VideoManager.instance.currentlyPlayingPostId.value == _videoId) {
+      VideoManager.instance.currentlyPlayingPostId.value = null;
+    }
+
     if (_initCompleter != null && !_initCompleter!.isCompleted) {
       _initCompleter!.complete();
     }
 
     _muteManager.isMuted.removeListener(_onGlobalMuteChanged);
+    VideoManager.instance.currentlyPlayingPostId.removeListener(
+      _onVideoManagerChanged,
+    );
     videoRouteObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
 
     final controller = _controller;
     if (controller != null) {
       _detachListener();
-      if (widget.sharedController == null) {
-        controller.dispose();
+      // ✅ لو الـ controller جاي من الـ parent (sharedController)، مش بنعمله dispose
+      // لو جاي من الـ preloader (claimed) أو بنيناه بنفسنا، نعمله dispose
+      if (!_isExternalController) {
+        try {
+          controller.dispose();
+        } catch (_) {}
       }
     }
     _controller = null;
@@ -458,12 +687,15 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
       _isInitialized = false;
     });
 
-    if (widget.sharedController == null && _controller != null) {
+    if (!_isExternalController && _controller != null) {
       _detachListener();
-      _controller!.dispose();
+      try {
+        _controller!.dispose();
+      } catch (_) {}
     }
     _controller = null;
-    _initializeVideo();
+    _isExternalController = false;
+    _startSlowPath();
   }
 
   void _seekTo(Duration position) {
@@ -502,16 +734,49 @@ class _ReelsVideoBackgroundState extends State<ReelsVideoBackground>
   }
 
   Widget _buildVideoPlayer() {
-    if (_controller == null) return const SizedBox.shrink();
+    final ctrl = _controller;
+    if (ctrl == null) return const SizedBox.shrink();
 
-    final videoSize = _controller!.value.size;
+    // ✅ Guard: تحقق إن الـ controller لسه valid قبل ما نبني VideoPlayer
+    bool isAlive = false;
+    try {
+      void probe() {}
+      ctrl.addListener(probe);
+      ctrl.removeListener(probe);
+      isAlive = ctrl.value.isInitialized;
+    } catch (_) {
+      isAlive = false;
+    }
+
+    if (!isAlive) {
+      // الـ controller اتعمله dispose من الخارج — reset في الـ frame الجاي
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_isDisposed && _controller != null) {
+          _detachListener();
+          _controller = null;
+          _isInitialized = false;
+          _isExternalController = false;
+          _initCompleter = null;
+          if (widget.shouldInitialize) {
+            setState(() {});
+            _initializeVideo();
+          }
+        }
+      });
+      return const SizedBox.shrink();
+    }
+
+    final videoSize = ctrl.value.size;
+    if (videoSize.width == 0 || videoSize.height == 0) {
+      return const SizedBox.shrink();
+    }
 
     return FittedBox(
       fit: BoxFit.contain,
       child: SizedBox(
         width: videoSize.width,
         height: videoSize.height,
-        child: VideoPlayer(_controller!),
+        child: VideoPlayer(ctrl),
       ),
     );
   }

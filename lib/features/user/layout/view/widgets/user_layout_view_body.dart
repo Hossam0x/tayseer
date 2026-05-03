@@ -174,8 +174,8 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
       child: BlocConsumer<LayoutCubit, LayoutState>(
         listenWhen: (prev, curr) => prev.currentIndex != curr.currentIndex,
         listener: (context, state) {
-          // وقف كل الفيديوهات لما تتغير الـ tab
-          VideoManager.instance.stopAll();
+          // وقف كل الفيديوهات لما تتغير الـ tab (بدون dispose)
+          VideoManager.instance.pauseAll();
 
           // ✅ فعّل FLAG_SECURE لما تدخل تاب الزواج (index 1)، وشيله لما تخرج
           if (state.currentIndex == 1) {

@@ -185,7 +185,10 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
   @override
   void didPushNext() {
     _isPageActive = false;
-    _wasInPlayZoneBeforeNav = _isInPlayZone; // ✅ NEW: حفظ الحالة
+    _wasInPlayZoneBeforeNav = _isInPlayZone; // ✅ حفظ الحالة قبل الانتقال
+    // ✅ إلغاء أي dispose timer شغال — منع dispose الـ controller أثناء الانتقال
+    _disposeDelayTimer?.cancel();
+    _disposeDelayTimer = null;
     _pauseAndSave();
     _controller?.removeListener(_videoListener);
     VideoManager.instance.currentlyPlayingPostId.removeListener(
@@ -200,6 +203,10 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
 
     if (_isDisposed || !mounted) return;
 
+    // ✅ إلغاء أي dispose timer شغال — منع dispose الـ controller بعد الرجوع
+    _disposeDelayTimer?.cancel();
+    _disposeDelayTimer = null;
+
     // إعادة توصيل الـ listeners
     VideoManager.instance.currentlyPlayingPostId.addListener(
       _videoManagerListener,
@@ -210,11 +217,13 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
     }
 
     // ✅ FIXED: ننتظر الـ frame يخلص عشان الصفحة المتقفلة تعمل dispose الأول
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // نستخدم delay أطول شوية عشان الـ dispose timer (500ms) يخلص لو كان شغال
+    Future.delayed(const Duration(milliseconds: 600), () {
       if (!mounted || _isDisposed || !_isPageActive) return;
 
       // ✅ FIXED: نستخدم الحالة المحفوظة قبل الانتقال
       final shouldResume = _wasInPlayZoneBeforeNav || _isInPlayZone;
+      // ✅ استعادة _isInPlayZone عشان _canPlay يشتغل صح
       if (shouldResume) _isInPlayZone = true;
 
       final controller = _controller;
@@ -229,6 +238,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
         _restorePosition().then((_) {
           if (mounted && !_isDisposed && _isPageActive) {
             try {
+              controller.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
               if (!controller.value.isPlaying) {
                 controller.play();
               }
@@ -238,8 +248,22 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
           }
         });
       } else if (shouldResume && _controller == null && !_hasError) {
-        VideoManager.instance.playVideo(widget.postId);
-        _initializeVideo();
+        // ✅ الـ controller اتعمله dispose — ابدأ initialize من الأول
+        // _isInPlayZone = true بالفعل فوق، فـ _canPlay هيشتغل صح
+        _initializeVideo().then((_) {
+          if (mounted && !_isDisposed && _isPageActive && _isInitialized) {
+            final ctrl = _controller;
+            if (ctrl != null && !ctrl.value.isPlaying) {
+              try {
+                VideoManager.instance.playVideo(widget.postId);
+                ctrl.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
+                ctrl.play();
+              } catch (e) {
+                debugPrint('⚠️ Cannot play after re-init on pop: $e');
+              }
+            }
+          }
+        });
       }
     });
   }
@@ -749,9 +773,10 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
       _pauseAndSave();
 
       // ✅ تدمير فوري للـ controller عشان نمنع تراكم الأصوات
+      // لكن بس لو الصفحة active — مش لما نكون في صفحة تانية
       _disposeDelayTimer?.cancel();
       _disposeDelayTimer = Timer(const Duration(milliseconds: 500), () {
-        if (mounted && !_isDisposed && _controller != null) {
+        if (mounted && !_isDisposed && _controller != null && _isPageActive) {
           debugPrint('♻️ Immediate dispose for ${widget.postId}');
           _savePosition();
           _disposeLocalController();
