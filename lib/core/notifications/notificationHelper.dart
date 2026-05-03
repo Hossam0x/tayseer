@@ -56,17 +56,30 @@ class NotificationHelper {
       //chat
       case 'new_chat':
       case 'new_message':
-        navigatorKey.currentState!.pushNamed(
-          AppRouter.kConversitionView,
-          arguments: {
-            'receiverid': senderId ?? '',
-            'chatroomid': data['chatId'] as String?,
-            'username': data['senderName'] as String?,
-            'userimage': data['senderImage'] as String?,
-            'isBlocked': false,
-            'isHaveSession': true,
-          },
-        );
+        if (isAdvisor) {
+          navigatorKey.currentState!.pushNamed(
+            AppRouter.kConversitionView,
+            arguments: {
+              'receiverid': senderId ?? '',
+              'chatroomid': data['chatId'] as String?,
+              'username': data['senderName'] as String?,
+              'userimage': data['senderImage'] as String?,
+              'isBlocked': false,
+              'isHaveSession': true,
+            },
+          );
+        } else {
+          navigatorKey.currentState!.pushNamed(
+            AppRouter.kUserChatView,
+            arguments: {
+              'receiverid': senderId ?? '',
+              'chatroomid': data['chatId'] as String?,
+              'username': data['senderName'] as String?,
+              'userimage': data['senderImage'] as String?,
+              'isBlocked': false,
+            },
+          );
+        }
         break;
       // ─── POST ───────────────────────────────────────────
       //need to go to post details with post id and comment id if exist
