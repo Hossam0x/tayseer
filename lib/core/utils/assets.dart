@@ -59,6 +59,14 @@ abstract class AssetsData {
   static const String vodacasheIcon = "assets/icons/voda.png";
   static const String vodafoneCash = "assets/images/vodafoneCash.png";
   static const String kblurImage = "assets/images/blur_image.png";
+  static const String kCorrectImage1 = "assets/images/kCorrectImage1.jpg";
+  static const String kWrongImageAI = "assets/images/kWrongImageAI.jpg";
+
+  static const String kWrongImageCovered =
+      "assets/images/kWrongImageCovered.jpg";
+  static const String kWrongImageFar = "assets/images/kWrongImageFar.png";
+  static const String kWrongImageNotPerson =
+      "assets/images/kWrongImageNotPerson.jpg";
 
   // ==================== SVG Icons ====================
   static const String logoAthr = "assets/icons/logoAthr.svg";
