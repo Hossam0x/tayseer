@@ -5,6 +5,7 @@ import 'package:tayseer/features/advisor/stories/data/repository/stories_reposit
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_state.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_event_bus.dart';
 import 'package:tayseer/core/utils/profile_event_bus.dart';
+import 'package:tayseer/core/video/story_video_preloader.dart';
 import 'package:tayseer/my_import.dart';
 
 class StoriesCubit extends Cubit<StoriesState> {
@@ -218,6 +219,8 @@ class StoriesCubit extends Cubit<StoriesState> {
                 advisorId: effectiveAdvisorId,
               ),
             );
+            // Preload newly loaded stories in the background
+            StoryVideoPreloader.instance.preloadFromStories(newStories);
           }
         },
       );
@@ -336,6 +339,10 @@ class StoriesCubit extends Cubit<StoriesState> {
                 advisorId: effectiveAdvisorId,
               ),
             );
+            // ── Kick off background preloading immediately after fetch ──
+            // Videos start downloading to disk cache right away so by the
+            // time the user taps a story ring the media is already cached.
+            StoryVideoPreloader.instance.preloadFromStories(storiesFetched);
           }
         },
       );

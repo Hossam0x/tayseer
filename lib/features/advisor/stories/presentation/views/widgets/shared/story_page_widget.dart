@@ -2,6 +2,7 @@ import 'package:story_view/story_view.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/core/utils/story_audio_manager.dart';
 import 'package:tayseer/core/utils/video_playback_manager.dart';
+import 'package:tayseer/core/video/story_video_preloader.dart';
 import 'package:tayseer/features/advisor/stories/stories.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/widgets/shared/story_bottom_section.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/widgets/shared/story_custom_controller.dart';
@@ -187,6 +188,32 @@ class _UserStoryPageState extends State<UserStoryPage> with RouteAware {
       _mediaReady = sorted[start].isPostStory && sorted[start].post != null;
     }
 
+    // ── Preload videos for this user's stories ────────────────────────────
+    final videoUrls = sorted
+        .where((s) => !s.isPostStory && s.video?.isNotEmpty == true)
+        .map((s) => s.video!)
+        .toList();
+    if (videoUrls.isNotEmpty) {
+      StoryVideoPreloader.instance.preloadForUser(
+        videoUrls,
+        startIndex: videoUrls
+            .indexWhere(
+              (u) => start < sorted.length && u == sorted[start].video,
+            )
+            .clamp(0, videoUrls.length - 1),
+      );
+    }
+
+    // ── Precache images for this user's stories via CachedNetworkImage ───────
+    // CachedNetworkImage stores to disk automatically; we also warm the
+    // Flutter memory cache so the image shows instantly without any flicker.
+    for (final s in sorted) {
+      if (!s.isPostStory && (s.video?.isEmpty ?? true) && s.image.isNotEmpty) {
+        // Warm Flutter memory cache
+        precacheImage(CachedNetworkImageProvider(s.image), context);
+      }
+    }
+
     final isArabic = context.isArabicLang;
     for (final s in sorted) {
       _items.add(_buildItem(s, isArabic));
@@ -288,6 +315,22 @@ class _UserStoryPageState extends State<UserStoryPage> with RouteAware {
                     }
                   });
                   _markViewed();
+                  // Notify preloader so it shifts the preload window
+                  if (i < _stories.length &&
+                      _stories[i].video?.isNotEmpty == true) {
+                    final videoUrls = _stories
+                        .where(
+                          (s) => !s.isPostStory && s.video?.isNotEmpty == true,
+                        )
+                        .map((s) => s.video!)
+                        .toList();
+                    final videoIndex = videoUrls.indexWhere(
+                      (u) => u == _stories[i].video,
+                    );
+                    if (videoIndex != -1) {
+                      StoryVideoPreloader.instance.onStoryVisible(videoIndex);
+                    }
+                  }
                 });
               },
               progressPosition: ProgressPosition.top,
@@ -403,13 +446,7 @@ class _StoryLoader extends StatelessWidget {
   const _StoryLoader();
 
   @override
-  Widget build(BuildContext context) => const Center(
-    child: SizedBox(
-      width: 40,
-      height: 40,
-      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-    ),
-  );
+  Widget build(BuildContext context) => const StoryLoadingRing();
 }
 
 class _StoryGradientOverlay extends StatelessWidget {
