@@ -37,7 +37,6 @@ class BottomActionsSection extends StatelessWidget {
 
             Expanded(
               child: _buildActionItem(
-                
                 Icons.block_flipped,
                 context.tr("block_profile"),
                 AppColors.kscandryTextColor,
@@ -73,6 +72,7 @@ class BottomActionsSection extends StatelessWidget {
   ) {
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

@@ -139,7 +139,10 @@ class SliverProfileHeader extends StatelessWidget {
                   alignment: Alignment.center,
                   clipBehavior: Clip.none,
                   children: [
-                    if (toggleWidget != null) Center(child: toggleWidget!),
+                    if (toggleWidget != null)
+                      Positioned.fill(
+                        child: Center(child: toggleWidget!),
+                      ),
                     Positioned(
                       right: 0,
                       child: GestureDetector(

@@ -86,19 +86,19 @@ class MarriageLifeEventsSection extends StatelessWidget {
     return Column(
       children: [
         // ── Time label ──
-        SizedBox(
-          height: 40.h,
+        ConstrainedBox(
+          constraints: BoxConstraints(minHeight: 32.h),
           child: Center(
             child: Text(
               timeLabel,
               textAlign: TextAlign.center,
-              maxLines: 2,
+              maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: Styles.textStyle12.copyWith(
                 color: Colors.grey.shade700,
                 fontWeight: FontWeight.w500,
                 height: 1.3,
-                fontSize: 12.sp,
+                fontSize: 11.sp,
               ),
             ),
           ),

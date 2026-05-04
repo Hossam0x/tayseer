@@ -77,35 +77,41 @@ class AdditionalImageSection extends StatelessWidget {
                 Positioned(
                   bottom: 15.h,
                   left: 15.w,
-                  child: CircleAvatar(
-                    backgroundColor: HexColor('cccab3'),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.star,
-                        color: AppColors.kWhiteColor,
-                        size: 20.sp,
+                  child: SizedBox(
+                    width: 44.r,
+                    height: 44.r,
+                    child: CircleAvatar(
+                      backgroundColor: HexColor('cccab3'),
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        icon: Icon(
+                          Icons.star,
+                          color: AppColors.kWhiteColor,
+                          size: 22.r,
+                        ),
+                        onPressed: () {
+                          if (personId == null) return;
+                          final regardsLeft =
+                              context.read<MarriageCubit>().state.regardsLeft;
+                          if (regardsLeft == 0) {
+                            showRegardsPurchaseSheet(context);
+                            return;
+                          }
+                          showRegardInputSheet(
+                            context,
+                            personId: personId!,
+                            personName: '',
+                            onSend: (text) {
+                              context.read<MarriageCubit>().sendRegardText(
+                                personId: personId!,
+                                text: text,
+                                countView: true,
+                              );
+                            },
+                          );
+                        },
                       ),
-                      onPressed: () {
-                        if (personId == null) return;
-                        final regardsLeft =
-                            context.read<MarriageCubit>().state.regardsLeft;
-                        if (regardsLeft == 0) {
-                          showRegardsPurchaseSheet(context);
-                          return;
-                        }
-                        showRegardInputSheet(
-                          context,
-                          personId: personId!,
-                          personName: '',
-                          onSend: (text) {
-                            context.read<MarriageCubit>().sendRegardText(
-                              personId: personId!,
-                              text: text,
-                              countView: true,
-                            );
-                          },
-                        );
-                      },
                     ),
                   ),
                 )

@@ -395,6 +395,9 @@ class MarriageBodyState extends State<MarriageBody>
     bool countView = false,
   }) {
     final controller = TextEditingController();
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth >= 600;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -406,58 +409,71 @@ class MarriageBodyState extends State<MarriageBody>
         return Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
-            left: 20.w,
-            right: 20.w,
-            top: 20.h,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '$personName ${context.tr('messge_profil_title')}',
-                style: Styles.textStyle14Bold,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isTablet ? 560 : double.infinity,
               ),
-              Gap(10.h),
-              TextField(
-                controller: controller,
-                maxLines: 4,
-                autofocus: true,
-                decoration: InputDecoration(
-                  fillColor: HexColor('f9f8ec'),
-                  filled: true,
-                  hintText: context.tr('type_your_message'),
-                  hintStyle: Styles.textStyle12.copyWith(color: Colors.grey),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16.r),
-                    borderSide: BorderSide.none,
-                  ),
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 20.w,
+                  right: 20.w,
+                  top: 20.h,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$personName ${context.tr('messge_profil_title')}',
+                      style: Styles.textStyle14Bold,
+                    ),
+                    Gap(10.h),
+                    TextField(
+                      controller: controller,
+                      maxLines: 4,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        fillColor: HexColor('f9f8ec'),
+                        filled: true,
+                        hintText: context.tr('type_your_message'),
+                        hintStyle: Styles.textStyle12.copyWith(
+                          color: Colors.grey,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.r),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    Gap(16.h),
+                    ValueListenableBuilder<TextEditingValue>(
+                      valueListenable: controller,
+                      builder: (_, value, __) {
+                        final enabled = value.text.trim().isNotEmpty;
+                        return CustomBotton(
+                          backGroundcolor: AppColors.kgreyColor,
+                          useGradient: enabled,
+                          title: context.tr('send_reply'),
+                          onPressed: enabled
+                              ? () {
+                                  Navigator.pop(sheetContext);
+                                  cubit.sendRegardText(
+                                    personId: personId,
+                                    text: value.text.trim(),
+                                    countView: countView,
+                                  );
+                                }
+                              : null,
+                        );
+                      },
+                    ),
+                    Gap(20.h),
+                  ],
                 ),
               ),
-              Gap(16.h),
-              ValueListenableBuilder<TextEditingValue>(
-                valueListenable: controller,
-                builder: (_, value, __) {
-                  final enabled = value.text.trim().isNotEmpty;
-                  return CustomBotton(
-                    backGroundcolor: AppColors.kgreyColor,
-                    useGradient: enabled,
-                    title: context.tr('send_reply'),
-                    onPressed: enabled
-                        ? () {
-                            Navigator.pop(sheetContext);
-                            cubit.sendRegardText(
-                              personId: personId,
-                              text: value.text.trim(),
-                              countView: countView,
-                            );
-                          }
-                        : null,
-                  );
-                },
-              ),
-              Gap(20.h),
-            ],
+            ),
           ),
         );
       },
@@ -1921,11 +1937,8 @@ class MarriageBodyState extends State<MarriageBody>
           ? IgnorePointer(
               ignoring: state.isAnimating,
               child: Row(
-                mainAxisAlignment: state.userHistory.isEmpty
-                    ? MainAxisAlignment.spaceAround
-                    : MainAxisAlignment.spaceEvenly,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  const SizedBox.shrink(),
                   // ✅ Like button
                   buildCircleButton(
                     onTap: () => _runAction(() async {
@@ -2039,9 +2052,7 @@ class MarriageBodyState extends State<MarriageBody>
                       Colors.white,
                       flipVertical: true,
                       AppColors.primary200,
-                    )
-                  else
-                    const SizedBox.shrink(),
+                    ),
                 ],
               ),
             )

@@ -2,6 +2,7 @@ import 'package:tayseer/features/user/interactions/presentation/view/widget/Inte
 import 'package:tayseer/features/user/interactions/presentation/view/widget/default_appbar.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/greeting_interaction_card.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/recently_joined.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/regards_purchase_sheet.dart';
 import 'package:tayseer/my_import.dart';
 
 import '../../../data/Model/interaction_usermodel .dart';
@@ -113,21 +114,10 @@ double _getRecentlyJoinedAspectRatio(int crossAxisCount) {
       ),
       itemCount: data.length,
       itemBuilder: (context, index) {
-        return   GestureDetector(
-                          onTap: () {
-                            context.pushNamed(
-                              AppRouter.kMarriageView,
-                              arguments: {
-                                'personId': data[index].userId,
-                                'fromInteractions': true,
-                              },
-                            );
-                          },
-          child: RecentlyJoined(
-            item: data[index],
-            forceBlur: !isSubscribed,
-            isCompact: true, // ✅ تفعيل الوضع المصغر
-          ),
+        return RecentlyJoined(
+          item: data[index],
+          forceBlur: !isSubscribed,
+          isCompact: true,
         );
       },
     );

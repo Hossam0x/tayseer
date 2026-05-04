@@ -289,12 +289,15 @@ class ExplorationState extends State<Exploration> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => CategoryDetailPage(
-                            title: context.tr("recently_joined"),
-                            subtitle: context.tr("meet_new_members"),
-                            data: state.explorationData["منضم حديثاً"]!,
-                            isSubscribed: state.isSubscribed,
-                            isRecentlyJoinedCategory: true,
+                          builder: (newContext) => BlocProvider.value(
+                            value: context.read<InteractionsCubit>(),
+                            child: CategoryDetailPage(
+                              title: context.tr("recently_joined"),
+                              subtitle: context.tr("meet_new_members"),
+                              data: state.explorationData["منضم حديثاً"]!,
+                              isSubscribed: state.isSubscribed,
+                              isRecentlyJoinedCategory: true,
+                            ),
                           ),
                         ),
                       );
@@ -450,8 +453,10 @@ class ExplorationState extends State<Exploration> {
 
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = screenWidth >= 600;
-    final cardWidth = isTablet ? 220.w : 190.w;
-    final cardHeight = isTablet ? 300.0 : 245.0;
+
+    // ✅ استخدم نسبة من عرض الشاشة بدل .w عشان يشتغل صح على iPad
+    final cardWidth = isTablet ? screenWidth * 0.28 : screenWidth * 0.46;
+    final cardHeight = isTablet ? screenWidth * 0.42 : 260.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -483,12 +488,15 @@ class ExplorationState extends State<Exploration> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => CategoryDetailPage(
-                      title: title,
-                      subtitle: subtitle,
-                      data: navigationData,
-                      isSubscribed: isSubscribed,
-                      isRecentlyJoinedCategory: false,
+                    builder: (newContext) => BlocProvider.value(
+                      value: context.read<InteractionsCubit>(),
+                      child: CategoryDetailPage(
+                        title: title,
+                        subtitle: subtitle,
+                        data: navigationData,
+                        isSubscribed: isSubscribed,
+                        isRecentlyJoinedCategory: false,
+                      ),
                     ),
                   ),
                 );
@@ -525,7 +533,7 @@ class ExplorationState extends State<Exploration> {
           ),
         SizedBox(height: 16.h),
         SizedBox(
-          height: isTablet ? 320.0 : 260.0,
+          height: isTablet ? screenWidth * 0.46 : 260.0,
           child: Directionality(
             textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
             child: ListView.builder(
