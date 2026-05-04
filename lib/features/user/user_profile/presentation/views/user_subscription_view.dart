@@ -1,4 +1,6 @@
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:tayseer/features/shared/auth/view/widget/agreement_text.dart';
+import 'package:tayseer/features/shared/packages/presentation/widgets/restore_purchases_button.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/subscription_purchasing_button.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/subscription_success_dialog.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
@@ -246,15 +248,33 @@ class UserSubscriptionView extends StatelessWidget {
                                     ),
                                   ),
                                 Gap(12.h),
-                                Text(
-                                  context.tr('auto_renew_note'),
-                                  style: TextStyle(
-                                    fontSize: 12.sp,
-                                    color: Colors.black,
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8.w,
                                   ),
-                                  textAlign: TextAlign.center,
+                                  child: Text(
+                                    context.tr('auto_renew_note'),
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      color: Colors.white.withOpacity(0.9),
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
                                 ),
-                                Gap(30.h),
+                                Gap(10.h),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8.w,
+                                  ),
+                                  child: const AgreementText(
+                                    onWhiteBackground: false,
+                                  ),
+                                ),
+                                if (Platform.isIOS) ...[
+                                  Gap(4.h),
+                                  const RestorePurchasesButton(),
+                                ],
+                                Gap(16.h),
                               ],
                             ),
                           ),

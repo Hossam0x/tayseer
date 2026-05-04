@@ -114,8 +114,7 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
     NotificationCubit cubit,
     NotificationModel item,
   ) async {
-    // Use senderId as regardRequestId based on the API response structure
-    final regardRequestId = item.data?.senderId;
+    final regardRequestId = item.data?.regardRequestId;
     if (regardRequestId == null || regardRequestId.isEmpty) return;
 
     final result = await _userChatRepo.acceptRegardRequest(regardRequestId);
@@ -135,8 +134,7 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
     NotificationCubit cubit,
     NotificationModel item,
   ) async {
-    // Use senderId as regardRequestId based on the API response structure
-    final regardRequestId = item.data?.senderId;
+    final regardRequestId = item.data?.regardRequestId;
     if (regardRequestId == null || regardRequestId.isEmpty) return;
 
     final result = await _userChatRepo.rejectRegardRequest(regardRequestId);

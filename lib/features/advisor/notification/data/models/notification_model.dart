@@ -121,7 +121,8 @@ class NotificationData {
       chatId: json["chatId"]?.toString(),
       eventId: json["eventId"]?.toString(),
       senderId: json["senderId"],
-      regardRequestId: json["regardRequestId"]?.toString(),
+      regardRequestId: (json["requestId"] ?? json["regardRequestId"])
+          ?.toString(),
     );
   }
 }

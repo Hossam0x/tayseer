@@ -23,7 +23,7 @@ PODS:
   - CryptoSwift (1.8.4)
   - device_info_plus (0.0.1):
     - Flutter
-  - didit_sdk (3.4.3):
+  - didit_sdk (3.4.5):
     - DiditSDK (~> 3.2)
     - Flutter
   - DiditSDK (3.3.3)
@@ -489,7 +489,7 @@ SPEC CHECKSUMS:
   connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
   CryptoSwift: e64e11850ede528a02a0f3e768cec8e9d92ecb90
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
-  didit_sdk: af559c66999a6ae99f47b961f98105ae2597b1b1
+  didit_sdk: a93cb7274623cc192c040f75455953e2d0acf1c9
   DiditSDK: f86d44443bddad2dc6dfd2197d2f6514517d2210
   DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
   DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
