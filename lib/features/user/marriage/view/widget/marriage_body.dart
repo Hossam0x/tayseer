@@ -830,7 +830,8 @@ class MarriageBodyState extends State<MarriageBody>
       },
       builder: (context, state) {
         if (state.marriageProfileState == CubitStates.loading) {
-          return _buildShimmerScreen();
+          // ✅ خلفية فاضية — الـ GIF overlay بيتعرض فوقها من initState
+          return _buildLoadingBackground();
         } else if (state.marriageProfileState == CubitStates.failure) {
           return _isConsultantViewingProfile
               ? _buildConsultantErrorScreen(state.errorMessage)
@@ -846,7 +847,7 @@ class MarriageBodyState extends State<MarriageBody>
         final List<UserItem> allUsers = state.allUsers;
 
         if (_isCurrentProfilePartial(state, allUsers)) {
-          return _buildShimmerScreen();
+          return _buildLoadingBackground();
         }
 
         final List<UserItem> users = widget.personId != null
@@ -876,7 +877,7 @@ class MarriageBodyState extends State<MarriageBody>
               .where((u) => u.user?.id == widget.personId)
               .firstOrNull;
           if (targetUser != null && targetUser.isPartialData) {
-            return _buildShimmerScreen();
+            return _buildLoadingBackground();
           }
         }
 
@@ -918,7 +919,7 @@ class MarriageBodyState extends State<MarriageBody>
         }
 
         if (users[profileIndex].isPartialData) {
-          return _buildShimmerScreen();
+          return _buildLoadingBackground();
         }
 
         if (state.isMarriageTab) {
@@ -2081,6 +2082,12 @@ class MarriageBodyState extends State<MarriageBody>
         ),
       ),
     );
+  }
+
+  Widget _buildLoadingBackground() {
+    // ✅ خلفية فاضية — الـ GIF overlay بيتعرض فوقها
+    // مش shimmer عشان مش عاوز أي animation تظهر تحت الـ GIF
+    return CustomBackground(child: const SizedBox.expand());
   }
 
   Widget _buildShimmerScreen() {
