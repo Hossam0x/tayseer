@@ -8,6 +8,7 @@ environment:
   sdk: ">=3.8.1 <4.0.0"
 
 dependencies:
+  appsflyer_sdk: 6.17.9+1
   app_links: ^7.0.0
   audioplayers: ^6.1.0
   cached_network_image: ^3.4.1

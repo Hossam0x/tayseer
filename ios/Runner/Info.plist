@@ -4,6 +4,8 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>يستخدم التطبيق هذا الإذن لتقديم إعلانات مخصصة وتحسين تجربتك.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

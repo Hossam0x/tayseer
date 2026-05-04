@@ -11,6 +11,14 @@ PODS:
     - GoogleUtilities/Environment (~> 8.0)
     - GoogleUtilities/UserDefaults (~> 8.0)
     - PromisesObjC (~> 2.4)
+  - appsflyer_sdk (6.17.9):
+    - appsflyer_sdk/Core (= 6.17.9)
+  - appsflyer_sdk/Core (6.17.9):
+    - AppsFlyerFramework (= 6.17.9)
+    - Flutter
+  - AppsFlyerFramework (6.17.9):
+    - AppsFlyerFramework/Main (= 6.17.9)
+  - AppsFlyerFramework/Main (6.17.9)
   - audio_session (0.0.1):
     - Flutter
   - audioplayers_darwin (0.0.1):
@@ -285,6 +293,7 @@ PODS:
 
 DEPENDENCIES:
   - app_links (from `.symlinks/plugins/app_links/ios`)
+  - appsflyer_sdk (from `.symlinks/plugins/appsflyer_sdk/ios`)
   - audio_session (from `.symlinks/plugins/audio_session/ios`)
   - audioplayers_darwin (from `.symlinks/plugins/audioplayers_darwin/darwin`)
   - camera_avfoundation (from `.symlinks/plugins/camera_avfoundation/ios`)
@@ -341,6 +350,7 @@ SPEC REPOS:
   trunk:
     - AppAuth
     - AppCheckCore
+    - AppsFlyerFramework
     - CryptoSwift
     - DKImagePickerController
     - DKPhotoGallery
@@ -376,6 +386,8 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   app_links:
     :path: ".symlinks/plugins/app_links/ios"
+  appsflyer_sdk:
+    :path: ".symlinks/plugins/appsflyer_sdk/ios"
   audio_session:
     :path: ".symlinks/plugins/audio_session/ios"
   audioplayers_darwin:
@@ -483,6 +495,8 @@ SPEC CHECKSUMS:
   app_links: a754cbec3c255bd4bbb4d236ecc06f28cd9a7ce8
   AppAuth: d4f13a8fe0baf391b2108511793e4b479691fb73
   AppCheckCore: cc8fd0a3a230ddd401f326489c99990b013f0c4f
+  appsflyer_sdk: df7fed59a464949334c9daf4decbdad221ac32d1
+  AppsFlyerFramework: 4f9a8237d40e9093941aef760cd77d606238aedd
   audio_session: 9bb7f6c970f21241b19f5a3658097ae459681ba0
   audioplayers_darwin: 4f9ca89d92d3d21cec7ec580e78ca888e5fb68bd
   camera_avfoundation: be3be85408cd4126f250386828e9b1dfa40ab436
