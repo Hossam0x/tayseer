@@ -107,13 +107,20 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
         .firstOrNull;
   }
 
-  /// أول ما تيجي البيانات — لو مفيش current sub اختار الأولى
+  /// أول ما تيجي البيانات — يختار الـ monthly تلقائياً (Most Popular)
+  /// لو مفيش monthly يختار الأولى
   void initSelection(List<NewAdvisorSubModel> allSubs) {
     final subs = getSubscriptionsForPackage(allSubs);
     if (subs.isEmpty) return;
     final currentIndex = subs.indexWhere((s) => s.isCurrentSub);
     if (currentIndex == -1) {
-      emit(state.copyWith(selectedDurationIndex: 0));
+      // اختار الـ monthly (index = 1) لو موجود، غير كده الأولى
+      final monthlyIndex = subs.indexWhere((s) => s.isMonthly);
+      emit(
+        state.copyWith(
+          selectedDurationIndex: monthlyIndex != -1 ? monthlyIndex : 0,
+        ),
+      );
     }
     // لو في current sub مش محتاج نعمل حاجة — الـ UI هيعرض الـ upgrade مباشرة
   }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -19,6 +20,7 @@ import 'package:tayseer/features/shared/packages/presentation/view_model/package
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/package_background.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/package_king_icon.dart';
+import 'package:tayseer/features/shared/packages/presentation/widgets/restore_purchases_button.dart';
 import 'package:tayseer/features/shared/packages/data/models/package_display_model.dart';
 import 'package:tayseer/features/user/user_profile/data/models/new_user_sub_model.dart';
 import 'package:tayseer/features/user/user_profile/presentation/view_model/user_packages_cubit.dart';
@@ -295,7 +297,16 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
                 Gap(20.h),
                 _buildActionButton(),
                 Gap(12.h),
-                const AgreementText(),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.w),
+                  child: const AgreementText(),
+                ),
+                if (Platform.isIOS) ...[
+                  Gap(4.h),
+                  RestorePurchasesButton(
+                    textColor: AppColors.kprimaryTextColor,
+                  ),
+                ],
                 Gap(20.h),
                 _buildViewAllBenefitsButton(),
                 Gap(20.h),

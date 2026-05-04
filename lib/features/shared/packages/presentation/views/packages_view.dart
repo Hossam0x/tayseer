@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -6,6 +7,7 @@ import 'package:gap/gap.dart';
 import 'package:tayseer/core/constant/constans.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/core/utils/assets.dart';
+import 'package:tayseer/core/utils/colors.dart';
 import 'package:tayseer/core/utils/router/app_router.dart';
 import 'package:tayseer/features/shared/auth/view/widget/agreement_text.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
@@ -17,6 +19,7 @@ import 'package:tayseer/features/shared/packages/presentation/widgets/package_ba
 import 'package:tayseer/features/shared/packages/presentation/widgets/package_detail_content.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/package_king_icon.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/package_tab_selector.dart';
+import 'package:tayseer/features/shared/packages/presentation/widgets/restore_purchases_button.dart';
 
 class PackagesView extends StatelessWidget {
   final int? initialPage;
@@ -284,10 +287,19 @@ class _PackagesViewContentState extends State<_PackagesViewContent>
               children: [
                 Expanded(child: _buildPageView()),
                 _buildTabSelector(),
-                Gap(110.h),
+                Gap(20.h),
                 _buildActionButton(),
                 Gap(12.h),
-                const AgreementText(),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.w),
+                  child: const AgreementText(),
+                ),
+                if (Platform.isIOS) ...[
+                  Gap(4.h),
+                  RestorePurchasesButton(
+                    textColor: AppColors.kprimaryTextColor,
+                  ),
+                ],
                 Gap(20.h),
               ],
             ),
