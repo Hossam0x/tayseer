@@ -656,7 +656,7 @@ class _InfoCard extends StatelessWidget {
                           name.isNotEmpty
                               ? '${name[0].toUpperCase()}${name.substring(1)}'
                               : name,
-                          style: Styles.textStyle32Bold.copyWith(
+                          style: Styles.textStyle26Bold.copyWith(
                             color: Colors.white,
                             shadows: [
                               Shadow(
@@ -673,7 +673,7 @@ class _InfoCard extends StatelessWidget {
                     if (age.isNotEmpty)
                       Text(
                         "$age",
-                        style: Styles.textStyle28.copyWith(color: Colors.white),
+                        style: Styles.textStyle24.copyWith(color: Colors.white),
                       ),
                     if (isVerified) ...[
                       Gap(8.w),
@@ -724,7 +724,7 @@ class _InfoCard extends StatelessWidget {
                     city != null && city!.isNotEmpty
                         ? '$location، ( $city )'
                         : location,
-                    style: Styles.textStyle16.copyWith(color: Colors.white70),
+                    style: Styles.textStyle14.copyWith(color: Colors.white70),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -732,19 +732,19 @@ class _InfoCard extends StatelessWidget {
                 Flexible(
                   child: Text(
                     city!,
-                    style: Styles.textStyle14.copyWith(color: Colors.white70),
+                    style: Styles.textStyle10.copyWith(color: Colors.white70),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
               if (distanceKm != null) ...[
-                Gap(8.w),
+                // Gap(8.w),
                 Text(
                   context.tr(
                     'distance_away',
                     args: [distanceKm!.toStringAsFixed(0)],
                   ),
-                  style: Styles.textStyle14.copyWith(color: Colors.white70),
+                  style: Styles.textStyle12.copyWith(color: Colors.white70),
                 ),
               ],
             ],

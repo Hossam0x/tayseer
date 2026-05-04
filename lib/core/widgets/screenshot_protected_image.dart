@@ -1,7 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:tayseer/core/widgets/secure_image_wrapper.dart';
 import 'package:tayseer/my_import.dart';
 
 /// صورة محمية من الـ screenshot
@@ -33,15 +32,9 @@ class ScreenshotProtectedImage extends StatelessWidget {
       );
     }
 
-    // ✅ iOS: الصورة جوه native secure container
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return SecureImageWrapper(
-        imageUrl: imageUrl,
-        child: const SizedBox.expand(),
-      );
-    }
-
-    // ✅ Android: AppImage عادي — الحماية من FLAG_SECURE على الـ Window
+    // ✅ Android + iOS: AppImage عادي
+    // Android: الحماية من FLAG_SECURE على الـ Window
+    // iOS: FLAG_SECURE مش متاح — نستخدم AppImage عادي عشان Hero animation تشتغل
     return _flutterImage();
   }
 
