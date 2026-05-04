@@ -2275,5 +2275,9 @@
   "chat_requests_title": "Chat Requests",
   "session_warning_message": "If you don't join the session within the first 5 minutes, it will be cancelled and you will not receive the session payment, and your rating will decrease",
   "date_today": "Today",
-  "date_yesterday": "Yesterday"
+  "date_yesterday": "Yesterday",
+  "image_message": "Image",
+  "voice_message": "Voice message",
+  "video_message": "Video",
+  "file_message": "File"
 }

@@ -48,6 +48,24 @@ class _UserChatContentState extends State<UserChatContent>
 class _UserChatBody extends StatelessWidget {
   const _UserChatBody();
 
+  /// ✅ ترجمة الـ content type لنص مناسب للعرض في الـ list
+  String _formatLastMessage(BuildContext context, String content) {
+    final lower = content.trim().toLowerCase();
+    if (lower == 'media' || lower == 'image' || lower == 'photo') {
+      return '📷 ${context.tr('image_message')}';
+    }
+    if (lower == 'audio' || lower == 'voice') {
+      return '🎤 ${context.tr('voice_message')}';
+    }
+    if (lower == 'video') {
+      return '🎥 ${context.tr('video_message')}';
+    }
+    if (lower == 'file' || lower == 'document') {
+      return '📄 ${context.tr('file_message')}';
+    }
+    return content;
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<UserChatCubit, UserChatState>(
@@ -293,7 +311,7 @@ class _UserChatBody extends StatelessWidget {
       key: ValueKey('user_chat_${room.id}'),
       id: room.id,
       title: room.otherUser.name,
-      subtitle: room.lastMessage?.content ?? '',
+      subtitle: _formatLastMessage(context, room.lastMessage?.content ?? ''),
       imageUrl: room.otherUser.image,
       lastUpdate: room.lastMessage?.sentAt,
       unreadCount: room.unreadCount,

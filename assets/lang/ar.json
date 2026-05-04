@@ -2280,5 +2280,9 @@
   "chat_requests_title": "طلبات الدردشة",
   "session_warning_message": "إذا لم تدخل الجلسة خلال أول 5 دقائق سيتم إلغاؤها ولن تحصل على أموال الجلسة وسيقل التقييم الخاص بك",
   "date_today": "اليوم",
-  "date_yesterday": "أمس"
+  "date_yesterday": "أمس",
+  "image_message": "صورة",
+  "voice_message": "رسالة صوتية",
+  "video_message": "فيديو",
+  "file_message": "ملف"
 }

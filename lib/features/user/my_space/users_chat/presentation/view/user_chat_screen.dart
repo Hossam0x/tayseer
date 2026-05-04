@@ -106,6 +106,7 @@ class _UserChatContentState extends State<_UserChatContent> {
   late final MessageActionsHandler _actionsHandler;
   StreamSubscription<String>? _failEventSubscription;
   bool _handlersInitialized = false;
+  bool _isPopping = false; // ✅ guard ضد double pop
 
   @override
   void initState() {
@@ -150,6 +151,29 @@ class _UserChatContentState extends State<_UserChatContent> {
     super.dispose();
   }
 
+  /// ✅ يخرج من الشات ويبعت آخر رسالة حقيقية كـ result
+  /// عشان الـ chat list يعرض الرسالة الصح بعد الحذف
+  void _popWithLastMessage(BuildContext context) {
+    if (_isPopping) return; // ✅ منع double pop
+    _isPopping = true;
+
+    final messages = context.read<ChatMessagesCubit>().state.messagesOrEmpty;
+    if (messages.isNotEmpty) {
+      final lastMsg = messages.first; // مرتبة من الأحدث للأقدم
+      final content = lastMsg.contentList.isNotEmpty
+          ? lastMsg.contentList.first
+          : '';
+      final sentAt = DateTime.tryParse(lastMsg.createdAt) ?? DateTime.now();
+      Navigator.pop(context, {
+        'lastMessage': content,
+        'sentAt': sentAt,
+        'status': lastMsg.status.name,
+      });
+    } else {
+      Navigator.pop(context);
+    }
+  }
+
   Future<void> _cancelMatch() async {
     try {
       final api = getIt<ApiService>();
@@ -175,11 +199,14 @@ class _UserChatContentState extends State<_UserChatContent> {
       buildWhen: (p, c) => p.isSelectionMode != c.isSelectionMode,
       builder: (context, selectionState) {
         return PopScope(
-          canPop: !selectionState.isSelectionMode,
+          canPop: false, // ✅ نتحكم في الـ pop يدوياً عشان نبعت الـ last message
           onPopInvokedWithResult: (didPop, result) {
-            if (!didPop && selectionState.isSelectionMode) {
+            if (selectionState.isSelectionMode) {
               context.read<MessageSelectionCubit>().exitSelectionMode();
+              return;
             }
+            // ✅ ابعت آخر رسالة حقيقية لما يخرج (بيحل مشكلة الصورة/الصوت المحذوف)
+            _popWithLastMessage(context);
           },
           child: SafeArea(
             top: false,
@@ -306,7 +333,7 @@ class _UserChatContentState extends State<_UserChatContent> {
           child: Row(
             children: [
               GestureDetector(
-                onTap: () => Navigator.pop(context),
+                onTap: () => _popWithLastMessage(context),
                 child: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 24),
               ),
               SizedBox(width: 8.w),

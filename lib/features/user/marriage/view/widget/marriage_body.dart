@@ -2085,9 +2085,23 @@ class MarriageBodyState extends State<MarriageBody>
   }
 
   Widget _buildLoadingBackground() {
-    // ✅ خلفية فاضية — الـ GIF overlay بيتعرض فوقها
-    // مش shimmer عشان مش عاوز أي animation تظهر تحت الـ GIF
-    return CustomBackground(child: const SizedBox.expand());
+    // ✅ GIF كـ widget عادي scoped جوه الـ marriage tab بس
+    return Scaffold(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(AssetsData.userBGImage, fit: BoxFit.cover),
+          Container(color: Colors.white.withOpacity(0.55)),
+          Center(
+            child: Image.asset(
+              AssetsData.kGifOverlayLoading,
+              width: 400.w,
+              height: 400.w,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildShimmerScreen() {

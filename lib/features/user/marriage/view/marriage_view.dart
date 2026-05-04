@@ -32,13 +32,11 @@ class _MarriageViewState extends State<MarriageView> {
   @override
   void initState() {
     super.initState();
-    // ✅ فعّل حماية الـ screenshot لما الصفحة تفتح
     SecureWindowService.enable();
   }
 
   @override
   void dispose() {
-    // ✅ شيل الحماية لما الصفحة تتقفل
     SecureWindowService.disable();
     super.dispose();
   }
