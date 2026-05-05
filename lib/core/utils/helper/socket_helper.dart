@@ -116,6 +116,16 @@ class tayseerSocketHelper {
       _isConnected = false;
       onError?.call('تم قطع الاتصال: $reason');
       onDisconnected?.call();
+
+      // ✅ auto-reconnect لو الانقطاع مش بسبب logout
+      if (_authorizedToken != null && _authorizedToken!.isNotEmpty) {
+        log('🔄 Attempting auto-reconnect in 2s...');
+        Future.delayed(const Duration(seconds: 2), () {
+          if (!_isConnected && _authorizedToken != null) {
+            connect(token: _authorizedToken);
+          }
+        });
+      }
     });
 
     _socket!.onAny((dynamic event, [dynamic data]) {

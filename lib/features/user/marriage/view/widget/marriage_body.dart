@@ -398,86 +398,109 @@ class MarriageBodyState extends State<MarriageBody>
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = screenWidth >= 600;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-      ),
-      builder: (sheetContext) {
-        return Padding(
+    // ✅ محتوى الـ sheet مشترك بين الـ dialog والـ bottom sheet
+    Widget buildContent(BuildContext sheetContext) {
+      return Directionality(
+        textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+        child: Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+            left: 20.w,
+            right: 20.w,
+            top: 20.h,
           ),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: isTablet ? 560 : double.infinity,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$personName ${context.tr('messge_profil_title')}',
+                style: Styles.textStyle14Bold,
               ),
-              child: Padding(
-                padding: EdgeInsets.only(
-                  left: 20.w,
-                  right: 20.w,
-                  top: 20.h,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '$personName ${context.tr('messge_profil_title')}',
-                      style: Styles.textStyle14Bold,
-                    ),
-                    Gap(10.h),
-                    TextField(
-                      controller: controller,
-                      maxLines: 4,
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        fillColor: HexColor('f9f8ec'),
-                        filled: true,
-                        hintText: context.tr('type_your_message'),
-                        hintStyle: Styles.textStyle12.copyWith(
-                          color: Colors.grey,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16.r),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                    Gap(16.h),
-                    ValueListenableBuilder<TextEditingValue>(
-                      valueListenable: controller,
-                      builder: (_, value, __) {
-                        final enabled = value.text.trim().isNotEmpty;
-                        return CustomBotton(
-                          backGroundcolor: AppColors.kgreyColor,
-                          useGradient: enabled,
-                          title: context.tr('send_reply'),
-                          onPressed: enabled
-                              ? () {
-                                  Navigator.pop(sheetContext);
-                                  cubit.sendRegardText(
-                                    personId: personId,
-                                    text: value.text.trim(),
-                                    countView: countView,
-                                  );
-                                }
-                              : null,
-                        );
-                      },
-                    ),
-                    Gap(20.h),
-                  ],
+              Gap(10.h),
+              TextField(
+                controller: controller,
+                maxLines: 4,
+                autofocus: true,
+                decoration: InputDecoration(
+                  fillColor: HexColor('f9f8ec'),
+                  filled: true,
+                  hintText: context.tr('type_your_message'),
+                  hintStyle: Styles.textStyle12.copyWith(color: Colors.grey),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
+              Gap(16.h),
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: controller,
+                builder: (_, value, __) {
+                  final enabled = value.text.trim().isNotEmpty;
+                  return CustomBotton(
+                    backGroundcolor: AppColors.kgreyColor,
+                    useGradient: enabled,
+                    title: context.tr('send_reply'),
+                    onPressed: enabled
+                        ? () {
+                            Navigator.pop(sheetContext);
+                            cubit.sendRegardText(
+                              personId: personId,
+                              text: value.text.trim(),
+                              countView: countView,
+                            );
+                          }
+                        : null,
+                  );
+                },
+              ),
+              Gap(20.h),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (isTablet) {
+      // ✅ iPad: dialog في المنتصف مع background معتم
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (dialogContext) {
+          return Dialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24.r),
             ),
-          ),
-        );
-      },
-    );
+            insetPadding: EdgeInsets.symmetric(
+              horizontal: screenWidth * 0.2,
+              vertical: 40.h,
+            ),
+            child: SingleChildScrollView(
+              child: buildContent(dialogContext),
+            ),
+          );
+        },
+      );
+    } else {
+      // ✅ موبايل: bottom sheet عادي
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+        ),
+        builder: (sheetContext) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+            ),
+            child: buildContent(sheetContext),
+          );
+        },
+      );
+    }
   }
 
   void scrollToTop() {
@@ -1934,6 +1957,8 @@ class MarriageBodyState extends State<MarriageBody>
       bottom: bottom,
       left: 0,
       right: 0,
+      // ✅ ارتفاع محدد = حجم الـ button بس عشان ميغطيش على الـ content اللي تحته
+      height: (28.r * 2) + 16.h,
       child: canInteract
           ? IgnorePointer(
               ignoring: state.isAnimating,
@@ -2057,7 +2082,7 @@ class MarriageBodyState extends State<MarriageBody>
                 ],
               ),
             )
-          : const SizedBox.shrink(),
+          : IgnorePointer(child: const SizedBox.shrink()),
     );
   }
 

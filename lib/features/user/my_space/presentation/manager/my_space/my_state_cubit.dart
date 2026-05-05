@@ -122,6 +122,24 @@ class MySpaceCubit extends Cubit<MySpaceState> {
     log('🎯 [$_listenerId] Active chat room set to: $chatRoomId');
   }
 
+  /// ✅ تحديث آخر رسالة لغرفة معينة بدون إعادة تحميل كامل
+  void updateLastMessage({
+    required String chatRoomId,
+    required String content,
+    required DateTime sentAt,
+  }) {
+    _updateChatRoomLastMessage(
+      chatRoomId: chatRoomId,
+      messageId: '',
+      content: content,
+      createdAt: sentAt.toIso8601String(),
+      updatedAt: sentAt.toIso8601String(),
+      isMe: true,
+      senderName: '',
+      messageType: 'text',
+    );
+  }
+
   Future<void> getAdvisorChat() async {
     final userId = kCurrentUserData?.id;
     if (userId == null) {

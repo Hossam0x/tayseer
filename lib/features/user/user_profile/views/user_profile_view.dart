@@ -238,6 +238,8 @@ class _UserProfileViewState extends State<UserProfileView> {
   void _showDeactivateMarriageDialog(BuildContext context, bool value) {
     final overlay = Overlay.of(context);
     final icon = value ? AssetsData.consultationIcon : AssetsData.ringIcon;
+    // ✅ احفظ reference للـ cubit قبل الـ animation عشان الـ context ميبقاش stale
+    final cubit = context.read<UserProfileCubit>();
     CustomshowDialogWithImage(
       context,
       title: context.tr(
@@ -253,7 +255,7 @@ class _UserProfileViewState extends State<UserProfileView> {
           fromContext: context,
           iconAsset: icon,
           overlay: overlay,
-          onComplete: () => context.read<UserProfileCubit>().updateSwitch(
+          onComplete: () => cubit.updateSwitch(
             'deactivate_the_marriage_section',
             value,
           ),

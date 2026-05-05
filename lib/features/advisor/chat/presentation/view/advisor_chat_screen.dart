@@ -134,6 +134,7 @@ class _ChatContentState extends State<_ChatContent> {
   late final MessageActionsHandler _actionsHandler;
   StreamSubscription<String>? _failEventSubscription;
   bool _handlersInitialized = false;
+  bool _isPopping = false; // ✅ guard ضد double pop
 
   @override
   void initState() {
@@ -186,6 +187,28 @@ class _ChatContentState extends State<_ChatContent> {
     super.dispose();
   }
 
+  /// ✅ يخرج من الشات ويبعت آخر رسالة حقيقية كـ result
+  void _popWithLastMessage(BuildContext context) {
+    if (_isPopping) return;
+    _isPopping = true;
+
+    final messages = context.read<ChatMessagesCubit>().state.messagesOrEmpty;
+    if (messages.isNotEmpty) {
+      final lastMsg = messages.first; // مرتبة من الأحدث للأقدم
+      final content = lastMsg.contentList.isNotEmpty
+          ? lastMsg.contentList.first
+          : '';
+      final sentAt = DateTime.tryParse(lastMsg.createdAt) ?? DateTime.now();
+      Navigator.pop(context, {
+        'lastMessage': content,
+        'sentAt': sentAt,
+        'status': lastMsg.status.name,
+      });
+    } else {
+      Navigator.pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -196,11 +219,14 @@ class _ChatContentState extends State<_ChatContent> {
           previous.isSelectionMode != current.isSelectionMode,
       builder: (context, selectionState) {
         return PopScope(
-          canPop: !selectionState.isSelectionMode,
+          canPop: false,
           onPopInvokedWithResult: (didPop, result) {
-            if (!didPop && selectionState.isSelectionMode) {
+            if (didPop) return;
+            if (selectionState.isSelectionMode) {
               context.read<MessageSelectionCubit>().exitSelectionMode();
+              return;
             }
+            _popWithLastMessage(context);
           },
           child: SafeArea(
             top: false,

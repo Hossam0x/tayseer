@@ -50,20 +50,7 @@ class _UserChatBody extends StatelessWidget {
 
   /// ✅ ترجمة الـ content type لنص مناسب للعرض في الـ list
   String _formatLastMessage(BuildContext context, String content) {
-    final lower = content.trim().toLowerCase();
-    if (lower == 'media' || lower == 'image' || lower == 'photo') {
-      return '📷 ${context.tr('image_message')}';
-    }
-    if (lower == 'audio' || lower == 'voice') {
-      return '🎤 ${context.tr('voice_message')}';
-    }
-    if (lower == 'video') {
-      return '🎥 ${context.tr('video_message')}';
-    }
-    if (lower == 'file' || lower == 'document') {
-      return '📄 ${context.tr('file_message')}';
-    }
-    return content;
+    return ChatRoomListItem.formatLastMessage(context, content);
   }
 
   @override

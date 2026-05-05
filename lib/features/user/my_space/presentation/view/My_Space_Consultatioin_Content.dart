@@ -106,7 +106,7 @@ class _MySpaceConsultationContentState
                   key: ValueKey('chat_${chatRoom.id}'),
                   id: chatRoom.id,
                   title: chatRoom.displayTitle,
-                  subtitle: chatRoom.lastMessage?.content ?? '',
+                  subtitle: ChatRoomListItem.formatLastMessage(context, chatRoom.lastMessage?.content ?? ''),
                   imageUrl: chatRoom.displayImage,
                   lastUpdate: chatRoom.lastMessageAt ?? chatRoom.updatedAt,
                   unreadCount: chatRoom.unreadCount,
@@ -138,9 +138,18 @@ class _MySpaceConsultationContentState
                           AppRouter.kConversitionView,
                           arguments: arguments,
                         )
-                        .then((_) {
+                        .then((result) {
                           if (context.mounted) {
                             cubit.setActiveChatRoom(null);
+                            // ✅ لو رجع بآخر رسالة، حدّث الـ list بدون reload كامل
+                            if (result is Map<String, dynamic> &&
+                                result['lastMessage'] != null) {
+                              cubit.updateLastMessage(
+                                chatRoomId: chatRoom.id,
+                                content: result['lastMessage'] as String,
+                                sentAt: result['sentAt'] as DateTime? ?? DateTime.now(),
+                              );
+                            }
                           }
                         });
                   },

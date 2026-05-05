@@ -21,6 +21,19 @@ class RecentlyJoined extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shouldBlur = forceBlur || item.isImageBlurred;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth >= 600;
+
+    // ✅ عرض الكارد يتحسب من عرض الشاشة عشان يشتغل صح على iPad
+    final cardWidth = isTablet
+        ? screenWidth * 0.16
+        : (isCompact ? 100.w : 110.w);
+    final cardHeight = isTablet
+        ? screenWidth * 0.28
+        : (isCompact ? 170.h : 190.h);
+    final imageHeight = isTablet ? screenWidth * 0.16 : (isCompact ? 80.h : 100.h);
+    final fontSize = isTablet ? 11.0 : (isCompact ? 12.sp : 14.sp);
+    final iconSize = isTablet ? 12.0 : (isCompact ? 13.sp : 16.sp);
 
     return GestureDetector(
       onTap: () {
@@ -48,8 +61,8 @@ class RecentlyJoined extends StatelessWidget {
           borderRadius: BorderRadius.circular(20.r),
         ),
         child: SizedBox(
-          height: isCompact ? 170.h : 190.h, // ✅ ارتفاع مصغر
-          width: isCompact ? 100.w : 110.w, // ✅ عرض مصغر
+          height: cardHeight,
+          width: cardWidth,
           child: Directionality(
             textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
 
@@ -71,13 +84,13 @@ class RecentlyJoined extends StatelessWidget {
                                 child: AppImage(
                                   item.image,
                                   fit: BoxFit.cover,
-                                  height: isCompact ? 80.h : 100.h,
+                                  height: imageHeight,
                                 ),
                               )
                             : AppImage(
                                 item.image,
                                 fit: BoxFit.cover,
-                                height: isCompact ? 80.h : 100.h,
+                                height: imageHeight,
                               ),
                         if (shouldBlur)
                           Container(color: Colors.black.withOpacity(0.2)),
@@ -88,7 +101,7 @@ class RecentlyJoined extends StatelessWidget {
 
                 Padding(
                   padding: EdgeInsets.only(
-                    top: isCompact ? 6.h : 10.h, // ✅ مسافة مصغرة
+                    top: isCompact ? 6.h : 10.h,
                     right: 4.w,
                     left: 4.w,
                   ),
@@ -104,9 +117,7 @@ class RecentlyJoined extends StatelessWidget {
                                   child: Text(
                                     item.name,
                                     style: Styles.textStyle14SemiBold.copyWith(
-                                      fontSize: isCompact
-                                          ? 12.sp
-                                          : 14.sp, // ✅ حجم خط مصغر
+                                      fontSize: fontSize,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -116,30 +127,28 @@ class RecentlyJoined extends StatelessWidget {
                                   Icon(
                                     Icons.verified,
                                     color: Colors.blue,
-                                    size: isCompact
-                                        ? 13.sp
-                                        : 16.sp, // ✅ حجم أيقونة مصغر
+                                    size: iconSize,
                                   ),
                               ],
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: isCompact ? 4.h : 8.h), // ✅ مسافة مصغرة
+                      SizedBox(height: isCompact ? 4.h : 8.h),
                       _buildBadge(
                         text: context.tr("recently_joined"),
                         icon: AssetsData.joinedIcon,
-                        isCompact: isCompact,
+                        isCompact: isCompact || isTablet,
                       ),
-                      SizedBox(height: isCompact ? 4.h : 8.h), // ✅ مسافة مصغرة
+                      SizedBox(height: isCompact ? 4.h : 8.h),
                       if (item.country.isNotEmpty) ...[
                         _buildBadge(
                           text:
                               '${CountryFlagUtils.getFlag(item.country)} ${context.tr(item.country)}',
-                          isCompact: isCompact,
+                          isCompact: isCompact || isTablet,
                         ),
                       ] else ...[
-                        _buildBadge(text: "", icon: "", isCompact: isCompact),
+                        _buildBadge(text: "", icon: "", isCompact: isCompact || isTablet),
                       ],
                     ],
                   ),

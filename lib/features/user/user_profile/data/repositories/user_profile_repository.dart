@@ -141,8 +141,8 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
   Future<Either<Failure, void>> toggleMarriageStatus(bool enable) async {
     try {
       final response = await _apiService.patch(
-        endPoint: '/user/change-avaliable-for-marry',
-        data: {'action': enable ? 'enable' : 'disable'},
+        endPoint: '/user/toggle-available-for-marry',
+        data: {'avaliableForMarry': enable},
       );
 
       if (response['success'] == true) {

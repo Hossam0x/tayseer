@@ -357,6 +357,41 @@ class ChatListCubit extends Cubit<ChatListState> {
   }
 
   void setActiveChatRoom(String? chatRoomId) {}
+
+  /// ✅ تحديث آخر رسالة لغرفة معينة بدون إعادة تحميل كامل
+  void updateLastMessage({
+    required String chatRoomId,
+    required String content,
+    required DateTime sentAt,
+  }) {
+    final currentState = state.maybeMap(
+      loaded: (state) => state,
+      orElse: () => null,
+    );
+    if (currentState == null) return;
+
+    final updatedRooms = currentState.chatRooms.map((room) {
+      if (room.id == chatRoomId) {
+        return room.copyWith(
+          lastMessage: LastMessage(content: content, sentAt: sentAt),
+          unreadCount: 0,
+        );
+      }
+      return room;
+    }).toList();
+
+    // رتب الـ rooms بحيث الأحدث فوق
+    updatedRooms.sort((a, b) {
+      final aTime = a.lastMessage?.sentAt ?? DateTime(0);
+      final bTime = b.lastMessage?.sentAt ?? DateTime(0);
+      return bTime.compareTo(aTime);
+    });
+
+    emit(ChatListState.loaded(
+      chatRooms: updatedRooms,
+      pendingRequestsCount: currentState.pendingRequestsCount,
+    ));
+  }
   void markMessageRed(String chatRoomId) {
     final currentState = state.maybeMap(
       loaded: (state) => state,

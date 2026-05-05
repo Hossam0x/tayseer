@@ -28,7 +28,7 @@ class SearchResultsList extends StatelessWidget {
         return ChatRoomListItem(
           id: room.id,
           title: otherUser?.name ?? 'Unknown',
-          subtitle: room.lastMessage?.content ?? '',
+          subtitle: ChatRoomListItem.formatLastMessage(context, room.lastMessage?.content ?? ''),
           imageUrl: room.isSystemChat
               ? room.systemChatImage
               : otherUser?.image,

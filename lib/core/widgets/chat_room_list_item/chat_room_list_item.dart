@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:tayseer/core/functions/formate_time.dart';
 import 'package:tayseer/core/utils/colors.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/core/utils/styles.dart';
 import 'package:tayseer/core/widgets/chat_room_list_item/widgets/chat_room_avatar.dart';
 import 'package:tayseer/core/widgets/chat_room_list_item/widgets/chat_room_slidable_actions.dart';
@@ -47,6 +48,24 @@ class ChatRoomListItem extends StatelessWidget {
     this.onBlock,
     this.blockLabel,
   });
+
+  /// ✅ ترجمة الـ content type لنص مناسب للعرض في الـ list
+  static String formatLastMessage(BuildContext context, String content) {
+    final lower = content.trim().toLowerCase();
+    if (lower == 'media' || lower == 'image' || lower == 'photo') {
+      return '📷 ${context.tr('image_message')}';
+    }
+    if (lower == 'audio' || lower == 'voice') {
+      return '🎤 ${context.tr('voice_message')}';
+    }
+    if (lower == 'video') {
+      return '🎥 ${context.tr('video_message')}';
+    }
+    if (lower == 'file' || lower == 'document') {
+      return '📄 ${context.tr('file_message')}';
+    }
+    return content;
+  }
 
   @override
   Widget build(BuildContext context) {

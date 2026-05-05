@@ -727,25 +727,47 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       await AudioService.instance.setSoundEffectsEnabled(value);
       emit(currentState.copyWith(isSoundEnabled: value));
     } else if (id == 'deactivate_the_marriage_section') {
+      // ✅ optimistic update أولاً
       emit(currentState.copyWith(isMarriageSectionDeactivated: value));
       await _saveMarriageSectionDeactivated(value);
-
-      // ✅ أضف السطر ده
       UserProfileCubit.marriageStatusStream.add(value);
+
+      // ✅ بعت API call — لما يفعّل الزواج (value=false) نبعت true، ولما يعطله نبعت false
+      debugPrint('📡 Calling toggleMarriageStatus with: ${!value}, isClosed: $isClosed');
+      if (isClosed) return;
+      final apiResult = await _userProfileRepository.toggleMarriageStatus(!value);
+      debugPrint('📡 toggleMarriageStatus result: $apiResult');
+      apiResult.fold(
+        (failure) {
+          // ✅ revert لو فشل
+          emit(currentState.copyWith(
+            isMarriageSectionDeactivated: !value,
+            actionMessage: 'update_marriage_status_failed',
+            isActionSuccess: false,
+            actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+          ));
+          _saveMarriageSectionDeactivated(!value);
+          UserProfileCubit.marriageStatusStream.add(!value);
+          return;
+        },
+        (_) {
+          debugPrint('✅ Marriage availability toggled on server: ${!value}');
+        },
+      );
 
       final updatedSettings = await _loadSettings(
         isProfileComplete: currentState.isMarriageProfileComplete,
         isMarriageDeactivated: value,
       );
-      emit(
-        currentState.copyWith(
-          isMarriageSectionDeactivated: value,
-          settings: updatedSettings,
-        ),
-      );
-      debugPrint(
-        '✅ Marriage section ${value ? "deactivated" : "activated"} locally',
-      );
+      if (!isClosed) {
+        emit(
+          currentState.copyWith(
+            isMarriageSectionDeactivated: value,
+            settings: updatedSettings,
+          ),
+        );
+      }
+      debugPrint('✅ Marriage section ${value ? "deactivated" : "activated"} locally');
     }
   }
 

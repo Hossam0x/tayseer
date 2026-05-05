@@ -40,6 +40,14 @@ class GreetingProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final shouldBlur = forceBlur || item.isImageBlurred;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth >= 600;
+
+    // ✅ أبعاد متجاوبة مع الـ iPad
+    final imageWidth = isTablet ? screenWidth * 0.15 : 130.w;
+    final imageHeight = isTablet ? screenWidth * 0.14 : 117.h;
+    final cardHeight = isTablet ? screenWidth * 0.16 : 160.h;
+    final starSize = isTablet ? screenWidth * 0.06 : 55.w;
 
     return BlocListener<InteractionsCubit, InteractionsState>(
       listener: (context, state) {
@@ -67,7 +75,7 @@ class GreetingProfileCard extends StatelessWidget {
       child: GestureDetector(
         onTap: () => _navigateToProfile(context),
         child: Container(
-          height: 160.h,
+          height: cardHeight,
           padding: EdgeInsets.all(12.w),
           decoration: BoxDecoration(
             color: const Color.fromRGBO(0, 0, 0, 0.08),
@@ -91,15 +99,15 @@ class GreetingProfileCard extends StatelessWidget {
                               ),
                               child: AppImage(
                                 item.image,
-                                width: 130.w,
-                                height: 117.h,
+                                width: imageWidth,
+                                height: imageHeight,
                                 fit: BoxFit.cover,
                               ),
                             )
                           : AppImage(
                               item.image,
-                              width: 130.w,
-                              height: 117.h,
+                              width: imageWidth,
+                              height: imageHeight,
                               fit: BoxFit.cover,
                             ),
                       if (shouldBlur)
@@ -207,8 +215,8 @@ class GreetingProfileCard extends StatelessWidget {
                     );
                   },
                   child: Container(
-                    width: 55.w,
-                    height: 55.h,
+                    width: starSize,
+                    height: starSize,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: LinearGradient(

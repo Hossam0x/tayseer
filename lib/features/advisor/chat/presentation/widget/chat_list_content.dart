@@ -53,7 +53,7 @@ class ChatListContent extends StatelessWidget {
       key: ValueKey('chat_room_${chatRoom.id}'),
       id: chatRoom.id,
       title: displayName,
-      subtitle: chatRoom.lastMessage?.content ?? context.tr('no_messages'),
+      subtitle: ChatRoomListItem.formatLastMessage(context, chatRoom.lastMessage?.content ?? context.tr('no_messages')),
       imageUrl: displayImage,
       lastUpdate: chatRoom.lastMessage?.sentAt,
       unreadCount: chatRoom.unreadCount,
@@ -100,9 +100,18 @@ class ChatListContent extends StatelessWidget {
             },
           },
         )
-        .then((_) {
+        .then((result) {
           if (context.mounted) {
             context.read<ChatListCubit>().setActiveChatRoom(null);
+            // ✅ لو رجع بآخر رسالة، حدّث الـ list بدون reload كامل
+            if (result is Map<String, dynamic> &&
+                result['lastMessage'] != null) {
+              context.read<ChatListCubit>().updateLastMessage(
+                chatRoomId: chatRoom.id,
+                content: result['lastMessage'] as String,
+                sentAt: result['sentAt'] as DateTime? ?? DateTime.now(),
+              );
+            }
           }
         });
   }
