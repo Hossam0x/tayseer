@@ -2281,5 +2281,9 @@
   "religiosity_not_committed_male": "Not committed",
   "religiosity_not_committed_female": "Not committed",
   "religious_strict_male": "Committed to religious practices",
-  "religious_strict_female": "Committed to religious practices"
+  "religious_strict_female": "Committed to religious practices",
+  "translate": "Translate",
+  "show_original": "Show Original",
+  "translating": "Translating...",
+  "translation_failed": "Translation failed"
 }

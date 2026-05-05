@@ -2281,5 +2281,9 @@
   "session_warning_message": "إذا لم تدخل الجلسة خلال أول 5 دقائق سيتم إلغاؤها ولن تحصل على أموال الجلسة وسيقل التقييم الخاص بك",
   "date_today": "اليوم",
   "date_yesterday": "أمس",
-  "verification_failed": "فشل التحقق"
+  "verification_failed": "فشل التحقق",
+  "translate": "ترجمة",
+  "show_original": "عرض الأصلي",
+  "translating": "جاري الترجمة...",
+  "translation_failed": "فشلت الترجمة"
 }
