@@ -1,6 +1,7 @@
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/core/utils/story_audio_manager.dart';
 import 'package:tayseer/core/utils/video_playback_manager.dart';
+import 'package:tayseer/core/video/story_video_preloader.dart';
 import 'package:tayseer/features/advisor/stories/stories.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_states.dart';
@@ -47,6 +48,10 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
     _current = widget.initialUserIndex;
     _usersStories = List.from(widget.usersStories);
     _page = PageController(initialPage: widget.initialUserIndex);
+    // Kick off preloading for the initial user and the next one
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _preloadAdjacentUserVideos(widget.initialUserIndex);
+    });
   }
 
   @override
@@ -61,6 +66,7 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
     // ✅ Clear ALL story audio when the story screen is fully closed.
     StoryAudioManager.instance.clear();
     VideoManager.instance.stopAll();
+    StoryVideoPreloader.instance.clear();
     _page.dispose();
     super.dispose();
   }
@@ -118,6 +124,29 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
       ],
       child: body,
     );
+  }
+
+  /// Preload video files for the current user and the next user's stories.
+  /// This runs in the background so by the time the user swipes, videos are
+  /// already cached on disk and the controller is pre-initialized.
+  void _preloadAdjacentUserVideos(int currentIndex) {
+    final preloader = StoryVideoPreloader.instance;
+
+    // Collect video URLs for current + next user
+    final urls = <String>[];
+    for (int offset = 0; offset <= 1; offset++) {
+      final idx = currentIndex + offset;
+      if (idx >= _usersStories.length) break;
+      for (final story in _usersStories[idx].stories) {
+        if (!story.isPostStory && story.video?.isNotEmpty == true) {
+          urls.add(story.video!);
+        }
+      }
+    }
+
+    if (urls.isNotEmpty) {
+      preloader.preloadForUser(urls, startIndex: 0);
+    }
   }
 
   void _onArchiveState(BuildContext ctx, ArchivedStoriesState s) {
@@ -196,6 +225,8 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
                       context: context,
                     );
                   }
+                  // Preload videos for the next user's stories
+                  _preloadAdjacentUserVideos(i);
                 },
                 itemBuilder: (_, i) => UserStoryPage(
                   userStories: _usersStories[i],

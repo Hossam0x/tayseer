@@ -8,7 +8,6 @@ import 'package:tayseer/core/notifications/message_config.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/connectivity_service.dart';
-import 'package:tayseer/core/services/appsflyer_service.dart';
 import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/services/screenshot_detector.dart';
 import 'package:tayseer/core/utils/global_mute_manager.dart';
@@ -80,7 +79,7 @@ void main() async {
   await GlobalMuteManager.instance.init();
 
   // ✅ تهيئة AppsFlyer SDK
-  await AppsFlyerService.instance.initialize();
+  // await AppsFlyerService.instance.initialize();
 
   // ✅ نحفظ الـ cold start URI قبل runApp — بدون أي navigation هنا
   await _captureColdStartLink();

@@ -4,13 +4,18 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:story_view/story_view.dart';
 import 'package:tayseer/core/utils/global_mute_manager.dart';
 import 'package:tayseer/core/utils/story_audio_manager.dart';
+import 'package:tayseer/core/utils/video_cache_manager.dart';
+import 'package:tayseer/core/video/story_video_preloader.dart';
+import 'package:tayseer/features/advisor/stories/presentation/views/widgets/shared/story_image_guard.dart';
 import 'package:tayseer/my_import.dart';
 
 /// Story video widget that:
+/// • Checks [StoryVideoPreloader] first — if the controller is already
+///   initialized, it shows instantly with zero loading time.
+/// • Falls back to downloading + initializing on its own if not preloaded.
 /// • Integrates with [GlobalMuteManager] for app-wide mute toggle.
 /// • Registers its [VideoPlayerController] with [StoryAudioManager] so the
 ///   story screen can silence it immediately on navigation / dispose.
-/// • Uses mixWithOthers:false to take exclusive audio focus.
 class StoryVideoMuted extends StatefulWidget {
   final String url;
   final StoryController storyController;
@@ -39,8 +44,14 @@ class _StoryVideoMutedState extends State<StoryVideoMuted> {
   bool _hasError = false;
   bool _disposed = false;
 
+  // Whether this widget created the controller itself (must dispose it)
+  // vs. borrowed it from the preloader (must release it back).
+  bool _ownsController = false;
+
   final _mute = GlobalMuteManager.instance;
   final _audio = StoryAudioManager.instance;
+  final _preloader = StoryVideoPreloader.instance;
+  final _cacheManager = VideoCacheManager();
 
   @override
   void initState() {
@@ -60,13 +71,22 @@ class _StoryVideoMutedState extends State<StoryVideoMuted> {
     });
 
     widget.storyController.pause();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_disposed && mounted && !_isInitialized) {
-        widget.storyController.pause();
-      }
-    });
 
-    _loadVideo();
+    // ── Fast path: preloader already has a ready controller ──────────────
+    final preloaded = _preloader.getReadyController(widget.url);
+    if (preloaded != null) {
+      _controller = preloaded;
+      _ownsController = false;
+      _attachController();
+    } else {
+      // ── Slow path: load it ourselves ─────────────────────────────────
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_disposed && mounted && !_isInitialized) {
+          widget.storyController.pause();
+        }
+      });
+      _loadVideo();
+    }
   }
 
   @override
@@ -75,15 +95,20 @@ class _StoryVideoMutedState extends State<StoryVideoMuted> {
     _mute.isMuted.removeListener(_onMuteChanged);
     _guardSub?.cancel();
     _playbackSub?.cancel();
-    // Unregister BEFORE dispose so silenceAll() can still reach it if called
-    // concurrently (e.g. didPushNext fires while dispose is in progress).
+
     if (_controller != null) {
       _audio.unregister(_controller!);
       try {
         _controller!.pause();
         _controller!.setVolume(0);
       } catch (_) {}
-      _controller!.dispose();
+
+      if (_ownsController) {
+        _controller!.dispose();
+      } else {
+        // Return the borrowed controller to the preloader pool
+        _preloader.releaseController(widget.url);
+      }
       _controller = null;
     }
     super.dispose();
@@ -97,18 +122,66 @@ class _StoryVideoMutedState extends State<StoryVideoMuted> {
     } catch (_) {}
   }
 
+  /// Attach an already-initialized controller (from preloader or self-loaded).
+  void _attachController() {
+    if (_disposed || !mounted) return;
+
+    final ctrl = _controller!;
+
+    ctrl.setVolume(_mute.isMuted.value ? 0.0 : 1.0);
+    ctrl.setLooping(true);
+
+    // Register with StoryAudioManager so navigation can silence this.
+    _audio.register(ctrl);
+
+    // Mirror StoryController play/pause onto VideoPlayer.
+    _playbackSub = widget.storyController.playbackNotifier.listen((s) {
+      if (_disposed || !mounted) return;
+      if (s == PlaybackState.pause) {
+        ctrl.pause();
+      } else {
+        ctrl.play();
+      }
+    });
+
+    if (mounted) setState(() => _isInitialized = true);
+
+    _guardSub?.cancel();
+    _guardSub = null;
+
+    if (!_disposed && mounted) {
+      widget.storyController.play();
+      widget.onReady?.call();
+    }
+  }
+
   Future<void> _loadVideo() async {
     try {
-      final fileInfo = await DefaultCacheManager().getSingleFile(widget.url);
+      // Recheck preloader — it may have finished while we were waiting
+      final preloaded = _preloader.getReadyController(widget.url);
+      if (preloaded != null && !_disposed && mounted) {
+        _controller = preloaded;
+        _ownsController = false;
+        _attachController();
+        return;
+      }
+
+      // Try disk cache first (fast), then network
+      final cachedFile = await _cacheManager.getCachedFile(widget.url);
+      if (_disposed || !mounted) return;
+
+      final file =
+          cachedFile ?? await DefaultCacheManager().getSingleFile(widget.url);
       if (_disposed || !mounted) return;
 
       _controller = VideoPlayerController.file(
-        fileInfo,
+        file,
         videoPlayerOptions: VideoPlayerOptions(
           mixWithOthers: false,
           allowBackgroundPlayback: false,
         ),
       );
+      _ownsController = true;
       await _controller!.initialize();
 
       if (_disposed || !mounted) {
@@ -117,31 +190,7 @@ class _StoryVideoMutedState extends State<StoryVideoMuted> {
         return;
       }
 
-      await _controller!.setLooping(true);
-      _controller!.setVolume(_mute.isMuted.value ? 0.0 : 1.0);
-
-      // Register with StoryAudioManager so navigation can silence this.
-      _audio.register(_controller!);
-
-      // Mirror StoryController play/pause onto VideoPlayer.
-      _playbackSub = widget.storyController.playbackNotifier.listen((s) {
-        if (_disposed || !mounted) return;
-        if (s == PlaybackState.pause) {
-          _controller?.pause();
-        } else {
-          _controller?.play();
-        }
-      });
-
-      if (mounted) setState(() => _isInitialized = true);
-
-      _guardSub?.cancel();
-      _guardSub = null;
-
-      if (!_disposed && mounted) {
-        widget.storyController.play();
-        widget.onReady?.call();
-      }
+      _attachController();
     } catch (e) {
       debugPrint('❌ StoryVideoMuted error: $e');
       if (!_disposed && mounted) setState(() => _hasError = true);
@@ -157,17 +206,7 @@ class _StoryVideoMutedState extends State<StoryVideoMuted> {
           );
     }
     if (!_isInitialized || _controller == null) {
-      return widget.loadingWidget ??
-          const Center(
-            child: SizedBox(
-              width: 40,
-              height: 40,
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2.5,
-              ),
-            ),
-          );
+      return widget.loadingWidget ?? const StoryLoadingRing();
     }
     return ColoredBox(
       color: Colors.black,

@@ -2,12 +2,9 @@ import 'package:story_view/story_view.dart';
 import 'package:tayseer/my_import.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// StoryImage Guard — wraps StoryImage.url and fires onReady once loaded
+// StoryImageGuard — loads story images via CachedNetworkImage (disk + memory
+// cache) and shows a spinning ring while loading, then fires onReady.
 // ─────────────────────────────────────────────────────────────────────────────
-/// Wraps [StoryImage.url] and intercepts any [PlaybackState.play] signal that
-/// arrives before the image has finished loading, re-issuing a pause so the
-/// progress bar stays frozen. Once [StoryImage] calls controller.play()
-/// internally (image loaded), we forward that signal and notify [onReady].
 class StoryImageGuard extends StatefulWidget {
   final String url;
   final StoryController storyController;
@@ -25,68 +22,105 @@ class StoryImageGuard extends StatefulWidget {
 }
 
 class _StoryImageGuardState extends State<StoryImageGuard> {
-  late final _ProxyStoryController _proxy;
+  bool _readyFired = false;
+  bool _disposed = false;
+
+  // Guard: keep progress bar paused until image is ready.
+  late final _guardSub = widget.storyController.playbackNotifier.listen((s) {
+    if (_disposed || !mounted) return;
+    if (s == PlaybackState.play && !_readyFired) {
+      Future.microtask(() {
+        if (!_disposed && mounted && !_readyFired) {
+          widget.storyController.pause();
+        }
+      });
+    }
+  });
 
   @override
   void initState() {
     super.initState();
-    _proxy = _ProxyStoryController(
-      delegate: widget.storyController,
-      onImageReady: widget.onReady,
-    );
+    widget.storyController.pause();
+    // Start listening immediately
+    _guardSub; // initialise the late field
   }
 
   @override
   void dispose() {
-    _proxy.disposeProxy();
+    _disposed = true;
+    _guardSub.cancel();
     super.dispose();
+  }
+
+  void _onImageReady() {
+    if (_readyFired || _disposed || !mounted) return;
+    _readyFired = true;
+    widget.storyController.play();
+    widget.onReady();
   }
 
   @override
   Widget build(BuildContext context) {
-    return StoryImage.url(widget.url, controller: _proxy, fit: BoxFit.contain);
+    return CachedNetworkImage(
+      imageUrl: widget.url,
+      fit: BoxFit.contain,
+      fadeInDuration: Duration.zero,
+      fadeOutDuration: Duration.zero,
+      imageBuilder: (_, imageProvider) {
+        // Image is in memory — fire onReady on next frame
+        WidgetsBinding.instance.addPostFrameCallback((_) => _onImageReady());
+        return Image(image: imageProvider, fit: BoxFit.contain);
+      },
+      progressIndicatorBuilder: (_, __, progress) {
+        final value = progress.totalSize != null && progress.totalSize! > 0
+            ? progress.downloaded / progress.totalSize!
+            : null;
+        return _StoryLoadingRing(value: value);
+      },
+      errorWidget: (_, __, ___) {
+        // Even on error, unblock the progress bar
+        WidgetsBinding.instance.addPostFrameCallback((_) => _onImageReady());
+        return const ColoredBox(color: Colors.black);
+      },
+    );
   }
 }
 
-/// A [StoryController] proxy that sits between [StoryImage] and the real
-/// [StoryController]. It intercepts the first [play()] call that [StoryImage]
-/// makes when the image finishes loading so we can fire [onImageReady], then
-/// delegates everything else to the real controller.
-class _ProxyStoryController extends StoryController {
-  final StoryController delegate;
-  final VoidCallback onImageReady;
-  bool _readyFired = false;
+// ─────────────────────────────────────────────────────────────────────────────
+// StoryLoadingRing — spinning ring identical to the upload ring in AddStoryItem
+// ─────────────────────────────────────────────────────────────────────────────
+class _StoryLoadingRing extends StatelessWidget {
+  final double? value; // null = indeterminate (spinning), 0-1 = progress
 
-  _ProxyStoryController({required this.delegate, required this.onImageReady});
-
-  // Forward the stream so StoryImage subscribes to the real notifier.
-  @override
-  // ignore: overridden_fields
-  late final playbackNotifier = delegate.playbackNotifier;
+  const _StoryLoadingRing({this.value});
 
   @override
-  void play() {
-    if (!_readyFired) {
-      _readyFired = true;
-      onImageReady();
-    }
-    delegate.play();
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: Colors.black,
+      child: Center(
+        child: SizedBox(
+          width: 52,
+          height: 52,
+          child: CircularProgressIndicator(
+            value: value,
+            strokeWidth: 2.5,
+            color: Colors.white,
+            backgroundColor: Colors.white24,
+          ),
+        ),
+      ),
+    );
   }
+}
+
+/// Public version used by StoryVideoMuted and story_page_widget as a
+/// consistent loading placeholder across all story media types.
+class StoryLoadingRing extends StatelessWidget {
+  final double? value;
+
+  const StoryLoadingRing({super.key, this.value});
 
   @override
-  void pause() => delegate.pause();
-
-  @override
-  void next() => delegate.next();
-
-  @override
-  void previous() => delegate.previous();
-
-  /// Do NOT close the delegate's stream — it is owned by _UserStoryPageState.
-  void disposeProxy() {}
-
-  @override
-  void dispose() {
-    // Intentionally empty — delegate owns the stream.
-  }
+  Widget build(BuildContext context) => _StoryLoadingRing(value: value);
 }
