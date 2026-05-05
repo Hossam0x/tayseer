@@ -2275,5 +2275,11 @@
   "chat_requests_title": "Chat Requests",
   "session_warning_message": "If you don't join the session within the first 5 minutes, it will be cancelled and you will not receive the session payment, and your rating will decrease",
   "date_today": "Today",
-  "date_yesterday": "Yesterday"
+  "date_yesterday": "Yesterday",
+  "religiosity_committed_male": "Committed",
+  "religiosity_committed_female": "Committed",
+  "religiosity_not_committed_male": "Not committed",
+  "religiosity_not_committed_female": "Not committed",
+  "religious_strict_male": "Committed to religious practices",
+  "religious_strict_female": "Committed to religious practices"
 }
