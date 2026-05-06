@@ -1,6 +1,7 @@
 import 'package:tayseer/core/functions/get_language_code_name.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/profille/views/widgets/boost/selection_item.dart';
+import 'package:tayseer/features/advisor/settings/data/repositories/language_repository.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/language_selection_ui_cubit.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/my_import.dart';
@@ -11,7 +12,9 @@ class LanguageSelectionView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => LanguageSelectionUiCubit()..loadSavedLanguage(),
+      create: (context) =>
+          LanguageSelectionUiCubit(getIt<LanguageRepository>())
+            ..loadSavedLanguage(),
       child: const _LanguageSelectionViewBody(),
     );
   }
