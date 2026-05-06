@@ -135,44 +135,22 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
       // البلد والجنسية — ✅ بدون no_preference
       // ============================================
       case 'country':
-        return const QuestionPageConfig(
+        return QuestionPageConfig(
           titleKey: 'country',
           questionNumber: 1,
           questionCategoryEnum: 'location',
           type: QuestionType.selectableList,
-          items: [
-            'country_saudi',
-            'country_egypt',
-            'country_emirati',
-            'country_kuwait',
-            'country_qatar',
-            'country_bahrain',
-            'country_jordan',
-            'country_palestine',
-            'country_morocco',
-            'country_tunisia',
-          ],
+          items: QuestionsData.countries,
           showSearch: true,
         );
 
       case 'nationality':
-        return const QuestionPageConfig(
+        return QuestionPageConfig(
           titleKey: 'nationality',
           questionNumber: 2,
           questionCategoryEnum: 'location',
           type: QuestionType.selectableList,
-          items: [
-            'nationality_saudi',
-            'nationality_egyptian',
-            'nationality_emirati',
-            'nationality_kuwaiti',
-            'nationality_qatari',
-            'nationality_bahraini',
-            'nationality_jordanian',
-            'nationality_palestinian',
-            'nationality_moroccan',
-            'nationality_tunisian',
-          ],
+          items: QuestionsData.nationalities,
           showSearch: true,
         );
 

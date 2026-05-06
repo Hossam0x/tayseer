@@ -333,18 +333,7 @@ class _MarriageFieldSelectionViewState
       case 'country':
         return {
           'titleKey': 'select_country_title',
-          'items': [
-            'country_saudi',
-            'country_egypt',
-            'country_emirati',
-            'country_kuwait',
-            'country_qatar',
-            'country_bahrain',
-            'country_jordan',
-            'country_palestine',
-            'country_morocco',
-            'country_tunisia',
-          ],
+          'items': QuestionsData.countries,
           'showSearch': true,
           'searchHint': 'search_country',
         };
@@ -352,18 +341,7 @@ class _MarriageFieldSelectionViewState
       case 'nationality':
         return {
           'titleKey': 'select_nationality_title',
-          'items': [
-            'nationality_saudi',
-            'nationality_egyptian',
-            'nationality_emirati',
-            'nationality_kuwaiti',
-            'nationality_qatari',
-            'nationality_bahraini',
-            'nationality_jordanian',
-            'nationality_palestinian',
-            'nationality_moroccan',
-            'nationality_tunisian',
-          ],
+          'items': QuestionsData.nationalities,
           'showSearch': true,
           'searchHint': 'search_nationality',
         };

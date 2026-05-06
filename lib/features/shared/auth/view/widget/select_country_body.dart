@@ -46,6 +46,11 @@ class _SelectCountryBodyState extends State<SelectCountryBody> {
     LocalCountryModel(translationKey: 'country_palestine', flagEmoji: '🇵🇸'),
     LocalCountryModel(translationKey: 'country_morocco', flagEmoji: '🇲🇦'),
     LocalCountryModel(translationKey: 'country_tunisia', flagEmoji: '🇹🇳'),
+    LocalCountryModel(translationKey: 'country_algeria', flagEmoji: '🇩🇿'),
+    LocalCountryModel(translationKey: 'country_usa', flagEmoji: '🇺🇸'),
+    LocalCountryModel(translationKey: 'country_uk', flagEmoji: '🇬🇧'),
+    LocalCountryModel(translationKey: 'country_canada', flagEmoji: '🇨🇦'),
+    LocalCountryModel(translationKey: 'country_australia', flagEmoji: '🇦🇺'),
   ];
 
   @override

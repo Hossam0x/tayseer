@@ -650,6 +650,11 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     'country_palestine': 'nationality_palestinian',
     'country_morocco': 'nationality_moroccan',
     'country_tunisia': 'nationality_tunisian',
+    'country_algeria': 'nationality_algerian',
+    'country_usa': 'nationality_american',
+    'country_uk': 'nationality_british',
+    'country_canada': 'nationality_canadian',
+    'country_australia': 'nationality_australian',
   };
 
   static const Map<String, String> _countryValueToNationalityKeyMap = {
@@ -663,6 +668,11 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     'فلسطين': 'nationality_palestinian',
     'المغرب': 'nationality_moroccan',
     'تونس': 'nationality_tunisian',
+    'الجزائر': 'nationality_algerian',
+    'أمريكا': 'nationality_american',
+    'بريطانيا': 'nationality_british',
+    'كندا': 'nationality_canadian',
+    'أستراليا': 'nationality_australian',
     'Saudi Arabia': 'nationality_saudi',
     'Egypt': 'nationality_egyptian',
     'United Arab Emirates': 'nationality_emirati',
@@ -673,6 +683,13 @@ class MarriageProfileCubit extends Cubit<MarriageProfileState> {
     'Palestine': 'nationality_palestinian',
     'Morocco': 'nationality_moroccan',
     'Tunisia': 'nationality_tunisian',
+    'Algeria': 'nationality_algerian',
+    'USA': 'nationality_american',
+    'United States': 'nationality_american',
+    'UK': 'nationality_british',
+    'United Kingdom': 'nationality_british',
+    'Canada': 'nationality_canadian',
+    'Australia': 'nationality_australian',
   };
 
   String _convertCountryToNationality(String country) {

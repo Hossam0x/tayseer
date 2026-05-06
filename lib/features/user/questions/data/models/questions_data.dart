@@ -184,6 +184,11 @@ class QuestionsData {
     'nationality_palestinian',
     'nationality_moroccan',
     'nationality_tunisian',
+    'nationality_algerian',
+    'nationality_american',
+    'nationality_british',
+    'nationality_canadian',
+    'nationality_australian',
   ];
 
   // ─────────────────────────────────────────────────────
@@ -201,6 +206,11 @@ class QuestionsData {
     'country_palestine',
     'country_morocco',
     'country_tunisia',
+    'country_algeria',
+    'country_usa',
+    'country_uk',
+    'country_canada',
+    'country_australia',
   ];
 
   // ─────────────────────────────────────────────────────

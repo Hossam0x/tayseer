@@ -32,6 +32,11 @@ class _PersonalInfoAsConsultantBodyState
     'nationality_palestinian',
     'nationality_moroccan',
     'nationality_tunisian',
+    'nationality_algerian',
+    'nationality_american',
+    'nationality_british',
+    'nationality_canadian',
+    'nationality_australian',
   ];
 
   static const List<String> _countryKeys = [
@@ -45,6 +50,11 @@ class _PersonalInfoAsConsultantBodyState
     'country_palestine',
     'country_morocco',
     'country_tunisia',
+    'country_algeria',
+    'country_usa',
+    'country_uk',
+    'country_canada',
+    'country_australia',
   ];
 
   @override
