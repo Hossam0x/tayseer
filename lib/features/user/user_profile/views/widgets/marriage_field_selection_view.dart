@@ -259,6 +259,15 @@ class _MarriageFieldSelectionViewState
             break;
           }
         }
+        // ثالثاً: لو القيمة base key (مثل religion_full) ابحث عن الـ gendered version
+        if (initialSelectedKey == null) {
+          for (var key in items) {
+            if (key.startsWith(widget.currentValue!)) {
+              initialSelectedKey = key;
+              break;
+            }
+          }
+        }
       }
     }
 
@@ -441,14 +450,8 @@ class _MarriageFieldSelectionViewState
       case 'religiosity':
         return {
           'titleKey': 'select_religiosity_title',
-          'items': [
-            'religion_full',
-            'religion_partial',
-            'religion_sometimes',
-            'religion_none',
-          ],
+          'items': QuestionsData.genderedReligiousCommitments,
           'showSearch': false,
-          'displayKeyMapper': QuestionsData.genderedKey,
         };
 
       case 'smoker':
