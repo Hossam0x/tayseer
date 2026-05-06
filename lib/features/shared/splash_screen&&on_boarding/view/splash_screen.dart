@@ -1,4 +1,6 @@
 import 'dart:developer';
+import 'dart:io';
+import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/notifications/notificationHelper.dart';
 import 'package:tayseer/core/services/audio_service.dart';
@@ -68,12 +70,42 @@ class _SplashScreenState extends State<SplashScreen>
     _initializeHomeData();
     _navigateBasedOnToken();
     _playSoundAfterHalfAnimation();
+    // ✅ طلب إذن App Tracking Transparency على iOS
+    if (Platform.isIOS) {
+      _requestTrackingPermission();
+    }
   }
 
   @override
   void dispose() {
     _badgeController.dispose();
     super.dispose();
+  }
+
+  /// ✅ طلب إذن App Tracking Transparency (iOS 14+)
+  /// Apple تشترط هذا الإذن قبل أي tracking للمستخدم
+  Future<void> _requestTrackingPermission() async {
+    try {
+      // انتظر شوية عشان الـ UI يكون جاهز
+      await Future.delayed(const Duration(milliseconds: 1000));
+      if (!mounted) return;
+
+      final status = await AppTrackingTransparency.trackingAuthorizationStatus;
+
+      // لو لسه مش اتسأل، اسأل المستخدم
+      if (status == TrackingStatus.notDetermined) {
+        // انتظر الـ dialog يظهر بعد ما الـ splash animation تخلص
+        await Future.delayed(const Duration(milliseconds: 200));
+        if (!mounted) return;
+        await AppTrackingTransparency.requestTrackingAuthorization();
+      }
+
+      log(
+        '📊 ATT Status: ${await AppTrackingTransparency.trackingAuthorizationStatus}',
+      );
+    } catch (e) {
+      log('⚠️ ATT request error: $e');
+    }
   }
 
   /// تحميل بيانات الهوم والـ Stories مسبقاً في الـ Splash

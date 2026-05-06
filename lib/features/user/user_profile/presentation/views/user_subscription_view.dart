@@ -1,4 +1,6 @@
+import 'package:flutter/gestures.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:tayseer/core/functions/url_launcher.dart';
 import 'package:tayseer/features/shared/auth/view/widget/agreement_text.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/restore_purchases_button.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/subscription_purchasing_button.dart';
@@ -262,6 +264,84 @@ class UserSubscriptionView extends StatelessWidget {
                                   ),
                                 ),
                                 Gap(10.h),
+                                // ── EULA link مطلوب من Apple لـ auto-renewable subscriptions ──
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8.w,
+                                  ),
+                                  child: Text.rich(
+                                    TextSpan(
+                                      children: [
+                                        TextSpan(
+                                          text: context.tr(
+                                            'subscription_eula_prefix',
+                                          ),
+                                          style: TextStyle(
+                                            fontSize: 12.sp,
+                                            color: Colors.white.withOpacity(
+                                              0.85,
+                                            ),
+                                          ),
+                                        ),
+                                        TextSpan(
+                                          text: context.tr(
+                                            'subscription_eula_link',
+                                          ),
+                                          style: TextStyle(
+                                            fontSize: 12.sp,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            decoration:
+                                                TextDecoration.underline,
+                                            decorationColor: Colors.white,
+                                          ),
+                                          recognizer: TapGestureRecognizer()
+                                            ..onTap = () {
+                                              ApplaunchUrl(
+                                                Uri.parse(
+                                                  'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
+                                                ),
+                                              );
+                                            },
+                                        ),
+                                        TextSpan(
+                                          text: context.tr(
+                                            'subscription_eula_separator',
+                                          ),
+                                          style: TextStyle(
+                                            fontSize: 12.sp,
+                                            color: Colors.white.withOpacity(
+                                              0.85,
+                                            ),
+                                          ),
+                                        ),
+                                        TextSpan(
+                                          text: context.tr(
+                                            'subscription_privacy_link',
+                                          ),
+                                          style: TextStyle(
+                                            fontSize: 12.sp,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            decoration:
+                                                TextDecoration.underline,
+                                            decorationColor: Colors.white,
+                                          ),
+                                          recognizer: TapGestureRecognizer()
+                                            ..onTap = () {
+                                              ApplaunchUrl(
+                                                Uri.parse(
+                                                  'https://m.tayser-app.com/privacy-policy-2/',
+                                                ),
+                                              );
+                                            },
+                                        ),
+                                      ],
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                                Gap(8.h),
                                 Padding(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: 8.w,
