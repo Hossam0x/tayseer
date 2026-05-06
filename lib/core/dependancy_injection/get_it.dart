@@ -115,6 +115,7 @@ import 'package:tayseer/features/user/user_profile/views/cubit/otp/otp_cubit.dar
 import 'package:tayseer/features/user/user_profile/views/cubit/phone/phone_edit_cubit.dart';
 import 'package:tayseer/features/advisor/membership/presentation/cubit/membership_cubit.dart';
 import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
+import 'package:tayseer/features/advisor/settings/data/repositories/language_repository.dart';
 
 import '../../features/advisor/notification/presentation/manager/notification_cubit.dart';
 import '../../my_import.dart';
@@ -410,6 +411,10 @@ Future<void> setupGetIt() async {
 
   getIt.registerFactory<HelpSupportCubit>(
     () => HelpSupportCubit(getIt<ContactRepository>()),
+  );
+
+  getIt.registerLazySingleton<LanguageRepository>(
+    () => LanguageRepositoryImpl(getIt<ApiService>()),
   );
 
   getIt.registerLazySingleton<UserAdvisorProfileRepository>(

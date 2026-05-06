@@ -2,42 +2,52 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tayseer/core/functions/get_language_code_name.dart';
+import 'package:tayseer/features/advisor/settings/data/repositories/language_repository.dart';
 import 'package:tayseer/my_import.dart';
-
-// Assuming AppLanguage is defined in 'package:tayseer/core/functions/get_language_code_name.dart' or similar
-// If not, I'll rely on what was in the original view file.
-// Ideally I should import where AppLanguage is defined.
-// Original file imported 'package:tayseer/core/functions/get_language_code_name.dart'.
 
 class LanguageSelectionState extends Equatable {
   final AppLanguage? selectedLanguage;
   final String searchQuery;
   final bool isLoading;
 
+  /// حالة إرسال الـ API (null = لم يبدأ، true = جاري، false = انتهى)
+  final bool isSaving;
+
   const LanguageSelectionState({
     this.selectedLanguage,
     this.searchQuery = '',
     this.isLoading = true,
+    this.isSaving = false,
   });
 
   LanguageSelectionState copyWith({
     AppLanguage? selectedLanguage,
     String? searchQuery,
     bool? isLoading,
+    bool? isSaving,
   }) {
     return LanguageSelectionState(
       selectedLanguage: selectedLanguage ?? this.selectedLanguage,
       searchQuery: searchQuery ?? this.searchQuery,
       isLoading: isLoading ?? this.isLoading,
+      isSaving: isSaving ?? this.isSaving,
     );
   }
 
   @override
-  List<Object?> get props => [selectedLanguage, searchQuery, isLoading];
+  List<Object?> get props => [
+    selectedLanguage,
+    searchQuery,
+    isLoading,
+    isSaving,
+  ];
 }
 
 class LanguageSelectionUiCubit extends Cubit<LanguageSelectionState> {
-  LanguageSelectionUiCubit() : super(const LanguageSelectionState());
+  final LanguageRepository _languageRepository;
+
+  LanguageSelectionUiCubit(this._languageRepository)
+    : super(const LanguageSelectionState());
 
   static const List<AppLanguage> allLanguages = [
     AppLanguage(code: 'ar', title: 'العربية'),
@@ -64,6 +74,8 @@ class LanguageSelectionUiCubit extends Cubit<LanguageSelectionState> {
     emit(state.copyWith(selectedLanguage: language));
   }
 
+  /// يحفظ اللغة محلياً ويرسلها للـ API
+  /// يرجع كود اللغة الجديدة لو تغيّرت، أو null لو نفس اللغة الحالية
   Future<String?> confirmSelection() async {
     if (state.selectedLanguage == null) return null;
 
@@ -73,7 +85,22 @@ class LanguageSelectionUiCubit extends Cubit<LanguageSelectionState> {
     // لو نفس اللغة الحالية → مفيش تغيير
     if (state.selectedLanguage!.code == currentCode) return null;
 
+    emit(state.copyWith(isSaving: true));
+
+    // حفظ محلي أولاً
     await prefs.setString('app_language', state.selectedLanguage!.code);
+
+    // إرسال للـ API (fire-and-forget — لو فشل مش بنوقف تغيير اللغة)
+    final result = await _languageRepository.setLanguage(
+      state.selectedLanguage!.code,
+    );
+
+    result.fold(
+      (failure) => debugPrint('⚠️ set-language API failed: ${failure.message}'),
+      (_) => debugPrint('✅ set-language API success'),
+    );
+
+    emit(state.copyWith(isSaving: false));
 
     return state.selectedLanguage!.code;
   }

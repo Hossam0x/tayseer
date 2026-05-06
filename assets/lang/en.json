@@ -2295,5 +2295,9 @@
   "translate": "Translate",
   "show_original": "Show Original",
   "translating": "Translating...",
-  "translation_failed": "Translation failed"
+  "translation_failed": "Translation failed",
+  "subscription_eula_prefix": "By subscribing, you agree to our ",
+  "subscription_eula_link": "Terms of Use (EULA)",
+  "subscription_privacy_link": "Privacy Policy",
+  "subscription_eula_separator": " and "
 }

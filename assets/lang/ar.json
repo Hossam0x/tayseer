@@ -2299,5 +2299,9 @@
   "image_message": "صورة",
   "voice_message": "رسالة صوتية",
   "video_message": "فيديو",
-  "file_message": "ملف"
+  "file_message": "ملف",
+  "subscription_eula_prefix": "بالاشتراك، أنت توافق على ",
+  "subscription_eula_link": "شروط الاستخدام (EULA)",
+  "subscription_privacy_link": "سياسة الخصوصية",
+  "subscription_eula_separator": " و"
 }
