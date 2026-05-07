@@ -46,8 +46,10 @@ class _FaceVerificationBodyState extends State<FaceVerificationBody> {
           context.read<QuestionsCubit>().resetFaceVerification();
         }
       },
-      child: CustomBackground(
-        child: SafeArea(
+      child: Directionality(
+        textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+        child: CustomBackground(
+          child: SafeArea(
           child: BlocConsumer<QuestionsCubit, QuestionsState>(
             listenWhen: (previous, current) =>
                 previous.faceVerificationState != current.faceVerificationState,
@@ -86,7 +88,8 @@ class _FaceVerificationBodyState extends State<FaceVerificationBody> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   // ═══════════════════════════════════════
@@ -95,10 +98,13 @@ class _FaceVerificationBodyState extends State<FaceVerificationBody> {
 
   Widget _buildHeader(BuildContext context) {
     return Align(
-      alignment: Alignment.topRight,
+      alignment: AlignmentDirectional.topEnd,
       child: IconButton(
         onPressed: () => context.pop(),
-        icon: const Icon(Icons.arrow_back, size: 20),
+        icon: Icon(
+          isArabic ? Icons.arrow_forward : Icons.arrow_back,
+          size: 20,
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:tayseer/core/constant/constans.dart';
 import 'package:tayseer/features/user/verification/data/models/Verification_result_model.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -201,7 +202,20 @@ class _VerificationWebViewScreenState extends State<VerificationWebViewScreen> {
 
                         return NavigationActionPolicy.ALLOW;
                       },
-                  onLoadStop: (_, __) => setState(() => _isLoading = false),
+                  onLoadStop: (controller, url) async {
+                    setState(() => _isLoading = false);
+
+                    // ✅ لو اللغة عربية، اضبط اتجاه الصفحة RTL
+                    if (isArabic) {
+                      await controller.evaluateJavascript(source: """
+                        document.documentElement.setAttribute('dir', 'rtl');
+                        document.documentElement.setAttribute('lang', 'ar');
+                        document.body.style.direction = 'rtl';
+                        document.body.style.textAlign = 'right';
+                        document.body.style.fontFamily = 'Arial, sans-serif';
+                      """);
+                    }
+                  },
                 ),
                 if (_isLoading)
                   const Center(child: CircularProgressIndicator()),
