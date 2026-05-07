@@ -269,6 +269,14 @@ class QuestionsData {
     'religion_none',
   ];
 
+  /// نفس الـ religiousCommitments بس بالجنس الحالي — للإرسال للـ API
+  static List<String> get genderedReligiousCommitments =>
+      religiousCommitments.map(genderedKey).toList();
+
+  /// نفس الـ religiousCommitments بالجنس المعاكس — للفلتر
+  static List<String> get oppositeGenderedReligiousCommitments =>
+      religiousCommitments.map(oppositeGenderedKey).toList();
+
   // ─────────────────────────────────────────────────────
   // Children Numbers
   // ─────────────────────────────────────────────────────
@@ -312,7 +320,6 @@ class QuestionsData {
   // ─────────────────────────────────────────────────────
 
   static const List<String> jobs = [
-    'job_student',
     'job_teacher',
     'job_engineer',
     'job_doctor',
@@ -320,6 +327,32 @@ class QuestionsData {
     'job_driver',
     'job_business',
     'job_unemployed',
+    'job_student',
+    'job_lawyer',
+    'job_accountant',
+    'job_pharmacist',
+    'job_police',
+    'job_military',
+    'job_freelancer',
+    'job_artist',
+    'job_designer',
+    'job_developer',
+    'job_marketer',
+    'job_sales',
+    'job_hr',
+    'job_manager',
+    'job_technician',
+    'job_mechanic',
+    'job_farmer',
+    'job_chef',
+    'job_waiter',
+    'job_cleaner',
+    'job_security',
+    'job_receptionist',
+    'job_translator',
+    'job_writer',
+    'job_photographer',
+    'job_trainer',
     'job_other',
   ];
 

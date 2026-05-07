@@ -346,8 +346,7 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
           questionCategoryEnum: 'religion',
           type: QuestionType.selectableList,
           items: [
-            ...QuestionsData.religiousCommitments
-                .map(QuestionsData.oppositeGenderedKey),
+            ...QuestionsData.oppositeGenderedReligiousCommitments,
             'no_preference',
           ],
         );
