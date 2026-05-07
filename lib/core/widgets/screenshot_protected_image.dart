@@ -34,10 +34,7 @@ class ScreenshotProtectedImage extends StatelessWidget {
 
     // ✅ iOS: استخدم SecureImageWrapper عشان يخفي الصورة في الـ screenshot
     if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return SecureImageWrapper(
-        imageUrl: imageUrl,
-        child: _flutterImage(),
-      );
+      return SecureImageWrapper(imageUrl: imageUrl, child: _flutterImage());
     }
 
     // ✅ Android: الحماية من FLAG_SECURE على الـ Window
@@ -45,12 +42,6 @@ class ScreenshotProtectedImage extends StatelessWidget {
   }
 
   Widget _flutterImage() {
-    if (isAnimating) {
-      return AppImage(imageUrl, fit: fit);
-    }
-    return Hero(
-      tag: 'profile_$imageUrl',
-      child: AppImage(imageUrl, fit: fit),
-    );
+    return AppImage(imageUrl, fit: fit);
   }
 }

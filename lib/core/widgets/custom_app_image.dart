@@ -39,18 +39,6 @@ class AppImage extends StatefulWidget {
 }
 
 class _AppImageState extends State<AppImage> {
-  String? _previousNetworkPath;
-
-  @override
-  void didUpdateWidget(AppImage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.path != widget.path &&
-        oldWidget.path != null &&
-        oldWidget.path!.startsWith('http')) {
-      _previousNetworkPath = oldWidget.path;
-    }
-  }
-
   Widget _flipIfLtr(Widget child, BuildContext context) {
     if (!widget.flipOnLtr) return child;
     final isLtr = Directionality.of(context) == TextDirection.ltr;
@@ -120,7 +108,6 @@ class _AppImageState extends State<AppImage> {
           loadingPlaceholder: _buildLoadingPlaceholder(),
           pixelRatio: pixelRatio,
           blur: widget.blur,
-          previousUrl: _previousNetworkPath,
           radius: widget.radius,
         ),
       );
@@ -199,7 +186,6 @@ class _AppImageState extends State<AppImage> {
         loadingPlaceholder: _buildLoadingPlaceholder(),
         pixelRatio: pixelRatio,
         blur: widget.blur,
-        previousUrl: _previousNetworkPath,
         radius: widget.radius,
       );
     }
@@ -308,7 +294,6 @@ class _ConnectivityNetworkImage extends StatefulWidget {
   final Widget loadingPlaceholder;
   final double pixelRatio;
   final double? blur;
-  final String? previousUrl;
   final double? radius;
 
   const _ConnectivityNetworkImage({
@@ -322,7 +307,6 @@ class _ConnectivityNetworkImage extends StatefulWidget {
     required this.loadingPlaceholder,
     required this.pixelRatio,
     this.blur,
-    this.previousUrl,
     this.radius,
   });
 
@@ -334,19 +318,11 @@ class _ConnectivityNetworkImage extends StatefulWidget {
 class _ConnectivityNetworkImageState extends State<_ConnectivityNetworkImage> {
   int _retryKey = 0;
   bool _hasFailed = false;
-  String? _localPreviousUrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _localPreviousUrl = widget.previousUrl;
-  }
 
   @override
   void didUpdateWidget(_ConnectivityNetworkImage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.imageUrl != widget.imageUrl) {
-      _localPreviousUrl = widget.previousUrl ?? oldWidget.imageUrl;
       _hasFailed = false;
     }
   }
@@ -392,28 +368,9 @@ class _ConnectivityNetworkImageState extends State<_ConnectivityNetworkImage> {
         fadeOutDuration: Duration.zero,
         fadeInDuration: Duration.zero,
         placeholderFadeInDuration: Duration.zero,
-        useOldImageOnUrlChange:
-            false, // ✅ disable — conflicts with _localPreviousUrl
+        useOldImageOnUrlChange: true,
 
-        placeholder: (_, __) {
-          final prev = _localPreviousUrl;
-          if (prev != null && prev.isNotEmpty) {
-            return CachedNetworkImage(
-              imageUrl: prev,
-              fit: widget.fit, // ✅ consistent fit
-              height: widget.height,
-              width: widget.width,
-              memCacheWidth: _memCacheWidth,
-              memCacheHeight: _memCacheHeight,
-              fadeInDuration: Duration.zero,
-              fadeOutDuration: Duration.zero,
-              color: widget.color, // ✅ apply color to old image too
-              colorBlendMode: BlendMode.srcIn,
-              errorWidget: (_, __, ___) => _buildPlaceholder(),
-            );
-          }
-          return _buildPlaceholder();
-        },
+        placeholder: (_, __) => _buildPlaceholder(),
 
         errorWidget: (_, __, ___) {
           WidgetsBinding.instance.addPostFrameCallback((_) {

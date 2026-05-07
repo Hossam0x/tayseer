@@ -11,11 +11,7 @@ class SecureImageWrapper extends StatelessWidget {
   final String? imageUrl;
   final Widget child;
 
-  const SecureImageWrapper({
-    super.key,
-    required this.child,
-    this.imageUrl,
-  });
+  const SecureImageWrapper({super.key, required this.child, this.imageUrl});
 
   @override
   Widget build(BuildContext context) {
@@ -25,16 +21,58 @@ class SecureImageWrapper extends StatelessWidget {
       }
 
       if (defaultTargetPlatform == TargetPlatform.iOS) {
-        return UiKitView(
-          viewType: 'secure_image_view',
-          layoutDirection: TextDirection.ltr,
-          creationParams: {'url': imageUrl},
-          creationParamsCodec: const StandardMessageCodec(),
+        // ✅ Key على الـ URL عشان Flutter يعمل dispose للـ view القديم
+        // قبل ما يعمل create للجديد — يمنع PlatformException(recreating_view)
+        return _IosSecureImage(
+          key: ValueKey(imageUrl),
+          imageUrl: imageUrl!,
+          flutterFallback: child,
         );
       }
     }
 
     return child;
+  }
+}
+
+/// iOS: StatefulWidget مع key على الـ URL لضمان dispose صحيح
+class _IosSecureImage extends StatefulWidget {
+  final String imageUrl;
+  final Widget flutterFallback;
+
+  const _IosSecureImage({
+    super.key,
+    required this.imageUrl,
+    required this.flutterFallback,
+  });
+
+  @override
+  State<_IosSecureImage> createState() => _IosSecureImageState();
+}
+
+class _IosSecureImageState extends State<_IosSecureImage> {
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // ✅ نأخر الـ UiKitView create بـ frame واحد عشان نضمن إن الـ dispose
+    // القديم اتم على الـ platform channel قبل ما نعمل create جديد
+    // يمنع: PlatformException(recreating_view, trying to create an already created view)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _ready = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_ready) return widget.flutterFallback;
+    return UiKitView(
+      viewType: 'secure_image_view',
+      layoutDirection: TextDirection.ltr,
+      creationParams: {'url': widget.imageUrl},
+      creationParamsCodec: const StandardMessageCodec(),
+    );
   }
 }
 
@@ -57,13 +95,13 @@ class _AndroidSecureImage extends StatelessWidget {
       },
       onCreatePlatformView: (params) {
         return PlatformViewsService.initSurfaceAndroidView(
-          id: params.id,
-          viewType: 'secure_image_view',
-          layoutDirection: TextDirection.ltr,
-          creationParams: {'url': imageUrl},
-          creationParamsCodec: const StandardMessageCodec(),
-          onFocus: () => params.onFocusChanged(true),
-        )
+            id: params.id,
+            viewType: 'secure_image_view',
+            layoutDirection: TextDirection.ltr,
+            creationParams: {'url': imageUrl},
+            creationParamsCodec: const StandardMessageCodec(),
+            onFocus: () => params.onFocusChanged(true),
+          )
           ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
           ..create();
       },

@@ -1321,8 +1321,20 @@ class MarriageBodyState extends State<MarriageBody>
     if (nextImages.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
+        final screenWidth = MediaQuery.of(context).size.width;
+        final screenHeight = screenWidth * 1.5;
+        final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+        final cacheW = (screenWidth * pixelRatio).toInt();
+        final cacheH = (screenHeight * pixelRatio).toInt();
         for (final url in nextImages) {
-          precacheImage(CachedNetworkImageProvider(url), context);
+          precacheImage(
+            CachedNetworkImageProvider(
+              url,
+              maxWidth: cacheW,
+              maxHeight: cacheH,
+            ),
+            context,
+          );
         }
       });
     }
@@ -1384,6 +1396,7 @@ class MarriageBodyState extends State<MarriageBody>
                 controller: _mainScrollController,
                 slivers: [
                   SliverProfileHeader(
+                    key: ValueKey(user?.id ?? profileIndex),
                     city: user?.city,
                     distanceKm: user?.distanceKm,
                     isVerified: isVerifiedUser,

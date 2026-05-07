@@ -273,6 +273,9 @@ class IAPService {
     if (p.pendingCompletePurchase) {
       try {
         await _iap.completePurchase(p);
+        log(
+          'Complete Purchase with apple : -------------------------------- ${p.toString()}',
+        );
       } catch (e) {
         log('[IAP] Error completing purchase: $e');
       }
