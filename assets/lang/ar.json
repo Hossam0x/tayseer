@@ -98,7 +98,11 @@
   "religion_partial_male": "ملتزم جزئيًا وأحرص على أداء العبادات",
   "religion_partial_female": "ملتزمة جزئيًا وأحرص على أداء العبادات",
   "religion_sometimes": "أحيانًا ألتزم حسب الظروف",
+  "religion_sometimes_male": "أحيانًا ألتزم حسب الظروف",
+  "religion_sometimes_female": "أحيانًا ألتزم حسب الظروف",
   "religion_none": "لا ألتزم بشكل منتظم",
+  "religion_none_male": "لا ألتزم بشكل منتظم",
+  "religion_none_female": "لا ألتزم بشكل منتظم",
   "has_children": "هل لديك أطفال؟",
   "has_childrens": "لديك أطفال",
   "children_number": "كم طفلًا لديك؟",
@@ -2056,8 +2060,8 @@
   "regards_balance_finished": "لقد انتهى رصيد التحية المتاح",
   "likes_balance_finished": "رصيد الإعجابات نفد",
   "likes_balance_finished_desc": "اشترِ المزيد من الإعجابات للاستمرار في التواصل مع الآخرين",
-  "ultra_profile_title": "هذا اللفف مشترك في نظام Elite و موثق",
-  "gold_profile_title": "هذا اللفف مشترك في نظام Gold و موثق",
+  "ultra_profile_title": "هذا الملف مشترك في نظام Elite و موثق",
+  "gold_profile_title": "هذا الملف مشترك في نظام Gold و موثق",
   "ultra_profile_desc": "تم التأكد من صحة جميع البيانات الشخصية من قبل التطبيق",
   "gold_profile_desc": "تم التأكد من صحة جميع البيانات الشخصية من قبل التطبيق",
   "regards_balance_finished_desc": "اشترِ تحيات إضافية للاستمرار في الحصول على تطابق مع أفضل المحترفين",
@@ -2327,4 +2331,5 @@
   "subscription_eula_link": "شروط الاستخدام (EULA)",
   "subscription_privacy_link": "سياسة الخصوصية",
   "subscription_eula_separator": " و"
+
 }

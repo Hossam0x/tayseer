@@ -403,17 +403,15 @@ class MarriageBodyState extends State<MarriageBody>
       return Directionality(
         textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
         child: Padding(
-          padding: EdgeInsets.only(
-            left: 20.w,
-            right: 20.w,
-            top: 20.h,
-          ),
+          padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '$personName ${context.tr('messge_profil_title')}',
+                Directionality.of(context) == TextDirection.rtl
+                    ? '${context.tr('messge_profil_title')} $personName'
+                    : '$personName ${context.tr('messge_profil_title')}',
                 style: Styles.textStyle14Bold,
               ),
               Gap(10.h),
@@ -433,26 +431,29 @@ class MarriageBodyState extends State<MarriageBody>
                 ),
               ),
               Gap(16.h),
-              ValueListenableBuilder<TextEditingValue>(
-                valueListenable: controller,
-                builder: (_, value, __) {
-                  final enabled = value.text.trim().isNotEmpty;
-                  return CustomBotton(
-                    backGroundcolor: AppColors.kgreyColor,
-                    useGradient: enabled,
-                    title: context.tr('send_reply'),
-                    onPressed: enabled
-                        ? () {
-                            Navigator.pop(sheetContext);
-                            cubit.sendRegardText(
-                              personId: personId,
-                              text: value.text.trim(),
-                              countView: countView,
-                            );
-                          }
-                        : null,
-                  );
-                },
+              Center(
+                child: ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: controller,
+                  builder: (_, value, __) {
+                    final enabled = value.text.trim().isNotEmpty;
+                    return CustomBotton(
+                      backGroundcolor: enabled ? null : AppColors.kgreyColor,
+
+                      useGradient: enabled,
+                      title: context.tr('send_reply'),
+                      onPressed: enabled
+                          ? () {
+                              Navigator.pop(sheetContext);
+                              cubit.sendRegardText(
+                                personId: personId,
+                                text: value.text.trim(),
+                                countView: countView,
+                              );
+                            }
+                          : null,
+                    );
+                  },
+                ),
               ),
               Gap(20.h),
             ],
@@ -476,9 +477,7 @@ class MarriageBodyState extends State<MarriageBody>
               horizontal: screenWidth * 0.2,
               vertical: 40.h,
             ),
-            child: SingleChildScrollView(
-              child: buildContent(dialogContext),
-            ),
+            child: SingleChildScrollView(child: buildContent(dialogContext)),
           );
         },
       );
@@ -1484,8 +1483,7 @@ class MarriageBodyState extends State<MarriageBody>
                               (_interactionsCubit ?? getIt<InteractionsCubit>())
                                   .state
                                   .subscriptionType;
-                          final isFree =
-                              subType == 'free' || subType.isEmpty;
+                          final isFree = subType == 'free' || subType.isEmpty;
                           return CompatibilitySection(
                             title: context.tr('compatibility_profile'),
                             subtitle: user?.similarity != null

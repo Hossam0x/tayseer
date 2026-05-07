@@ -90,12 +90,13 @@ class PurchasePackage {
         appleProductId: sub.appleProductId,
         count: sub.numberOfLikes,
         price: (sub.price ?? 0).toDouble(),
-        pricePerMonth: sub.pricePerMonth?.toDouble() ??
+        pricePerMonth:
+            sub.pricePerMonth?.toDouble() ??
             (sub.isThreeMonths
                 ? (sub.price ?? 0).toDouble() / 3
                 : sub.isMonthly
-                    ? (sub.price ?? 0).toDouble()
-                    : null),
+                ? (sub.price ?? 0).toDouble()
+                : null),
         currency: sub.currency ?? 'EGP',
         isMostPopular: isMid,
         hasDiscount: discount != null,
@@ -165,7 +166,10 @@ void showGoldPurchaseSheet(BuildContext context, {VoidCallback? onDismiss}) {
 }
 
 /// نفس الـ gold sheet بس بعنوان مختلف — يظهر لما يوصل للحد الأقصى من المشاهدات
-void showViewLimitPurchaseSheet(BuildContext context, {VoidCallback? onDismiss}) {
+void showViewLimitPurchaseSheet(
+  BuildContext context, {
+  VoidCallback? onDismiss,
+}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -200,11 +204,7 @@ class _PurchaseSheet extends StatefulWidget {
   final String? titleKey;
   final String? subtitleKey;
 
-  const _PurchaseSheet({
-    required this.type,
-    this.titleKey,
-    this.subtitleKey,
-  });
+  const _PurchaseSheet({required this.type, this.titleKey, this.subtitleKey});
 
   @override
   State<_PurchaseSheet> createState() => _PurchaseSheetState();
@@ -1037,29 +1037,28 @@ void showRegardInputSheet(
   required void Function(String text) onSend,
 }) {
   final controller = TextEditingController();
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.white,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-    ),
-    builder: (sheetContext) {
-      return Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
-          left: 20.w,
-          right: 20.w,
-          top: 20.h,
-        ),
+  final screenWidth = MediaQuery.of(context).size.width;
+  final isTablet = screenWidth >= 600;
+
+  // العنوان حسب الاتجاه
+  String buildTitle(BuildContext ctx) {
+    return Directionality.of(ctx) == TextDirection.rtl
+        ? '${ctx.tr('messge_profil_title')} $personName'
+        : '$personName ${ctx.tr('messge_profil_title')}';
+  }
+
+  Widget buildContent(BuildContext sheetContext) {
+    return Directionality(
+      textDirection: /* isArabic */ true
+          ? TextDirection.rtl
+          : TextDirection.ltr,
+      child: Padding(
+        padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '$personName ${context.tr('messge_profil_title')}',
-              style: Styles.textStyle14Bold,
-            ),
+            Text(buildTitle(sheetContext), style: Styles.textStyle14Bold),
             Gap(10.h),
             TextField(
               controller: controller,
@@ -1068,7 +1067,7 @@ void showRegardInputSheet(
               decoration: InputDecoration(
                 fillColor: HexColor('f9f8ec'),
                 filled: true,
-                hintText: context.tr('type_your_message'),
+                hintText: sheetContext.tr('type_your_message'),
                 hintStyle: Styles.textStyle12.copyWith(color: Colors.grey),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16.r),
@@ -1077,27 +1076,62 @@ void showRegardInputSheet(
               ),
             ),
             Gap(16.h),
-            ValueListenableBuilder<TextEditingValue>(
-              valueListenable: controller,
-              builder: (_, value, __) {
-                final enabled = value.text.trim().isNotEmpty;
-                return CustomBotton(
-                  backGroundcolor: AppColors.kgreyColor,
-                  useGradient: enabled,
-                  title: context.tr('send_reply'),
-                  onPressed: enabled
-                      ? () {
-                          Navigator.pop(sheetContext);
-                          onSend(value.text.trim());
-                        }
-                      : null,
-                );
-              },
+            Center(
+              child: ValueListenableBuilder<TextEditingValue>(
+                valueListenable: controller,
+                builder: (_, value, __) {
+                  final enabled = value.text.trim().isNotEmpty;
+                  return CustomBotton(
+                    backGroundcolor: enabled ? null : AppColors.kgreyColor,
+                    useGradient: enabled,
+                    title: sheetContext.tr('send_reply'),
+                    onPressed: enabled
+                        ? () {
+                            Navigator.pop(sheetContext);
+                            onSend(value.text.trim());
+                          }
+                        : null,
+                  );
+                },
+              ),
             ),
             Gap(20.h),
           ],
         ),
-      );
-    },
-  );
+      ),
+    );
+  }
+
+  if (isTablet) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24.r),
+        ),
+        insetPadding: EdgeInsets.symmetric(
+          horizontal: screenWidth * 0.2,
+          vertical: 40.h,
+        ),
+        child: SingleChildScrollView(child: buildContent(dialogContext)),
+      ),
+    );
+  } else {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+      ),
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+        ),
+        child: buildContent(sheetContext),
+      ),
+    );
+  }
 }
