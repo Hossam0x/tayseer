@@ -192,6 +192,27 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
         uniqueNumber: pendingId,
       );
 
+      // Confirm purchase with backend using transactionId
+      // This is required because Apple doesn't guarantee applicationUsername
+      // will be present in Server Notifications (webhooks)
+      final transactionId = purchase.purchaseID ?? '';
+      if (transactionId.isNotEmpty) {
+        try {
+          await _apiService.post(
+            endPoint: ApiEndPoint.confirmSubscriptionPurchase,
+            data: {
+              'pendingId': pendingId,
+              'transactionId': transactionId,
+              'platform': platform,
+            },
+          );
+          log('[UserSub] ✅ Backend confirmed: $transactionId');
+        } catch (e) {
+          log('[UserSub] ⚠️ Backend confirmation failed: $e');
+          // Don't block user — backend should also handle via webhooks
+        }
+      }
+
       SubscriptionEventBus.instance.fire(
         SubscriptionChangedEvent(subscriptionType: targetSub.subscriptionType),
       );

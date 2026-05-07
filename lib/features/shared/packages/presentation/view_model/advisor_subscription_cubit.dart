@@ -194,6 +194,25 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
         uniqueNumber: pendingId,
       );
 
+      // Confirm purchase with backend using transactionId
+      // Apple doesn't guarantee applicationUsername in Server Notifications
+      final transactionId = purchase.purchaseID ?? '';
+      if (transactionId.isNotEmpty) {
+        try {
+          await _apiService.post(
+            endPoint: ApiEndPoint.confirmSubscriptionPurchase,
+            data: {
+              'pendingId': pendingId,
+              'transactionId': transactionId,
+              'platform': platform,
+            },
+          );
+          log('[AdvisorSub] ✅ Backend confirmed: $transactionId');
+        } catch (e) {
+          log('[AdvisorSub] ⚠️ Backend confirmation failed: $e');
+        }
+      }
+
       // Notify all listeners that subscription changed
       final newType = targetSub.subscriptionType; // 'gold' or 'ultra'
       SubscriptionEventBus.instance.fire(

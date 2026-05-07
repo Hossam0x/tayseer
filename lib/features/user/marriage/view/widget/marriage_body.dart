@@ -403,11 +403,7 @@ class MarriageBodyState extends State<MarriageBody>
       return Directionality(
         textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
         child: Padding(
-          padding: EdgeInsets.only(
-            left: 20.w,
-            right: 20.w,
-            top: 20.h,
-          ),
+          padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -476,9 +472,7 @@ class MarriageBodyState extends State<MarriageBody>
               horizontal: screenWidth * 0.2,
               vertical: 40.h,
             ),
-            child: SingleChildScrollView(
-              child: buildContent(dialogContext),
-            ),
+            child: SingleChildScrollView(child: buildContent(dialogContext)),
           );
         },
       );
@@ -1322,8 +1316,20 @@ class MarriageBodyState extends State<MarriageBody>
     if (nextImages.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
+        final screenWidth = MediaQuery.of(context).size.width;
+        final screenHeight = screenWidth * 1.5;
+        final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+        final cacheW = (screenWidth * pixelRatio).toInt();
+        final cacheH = (screenHeight * pixelRatio).toInt();
         for (final url in nextImages) {
-          precacheImage(CachedNetworkImageProvider(url), context);
+          precacheImage(
+            CachedNetworkImageProvider(
+              url,
+              maxWidth: cacheW,
+              maxHeight: cacheH,
+            ),
+            context,
+          );
         }
       });
     }
@@ -1385,6 +1391,7 @@ class MarriageBodyState extends State<MarriageBody>
                 controller: _mainScrollController,
                 slivers: [
                   SliverProfileHeader(
+                    key: ValueKey(user?.id ?? profileIndex),
                     city: user?.city,
                     distanceKm: user?.distanceKm,
                     isVerified: isVerifiedUser,
@@ -1484,8 +1491,7 @@ class MarriageBodyState extends State<MarriageBody>
                               (_interactionsCubit ?? getIt<InteractionsCubit>())
                                   .state
                                   .subscriptionType;
-                          final isFree =
-                              subType == 'free' || subType.isEmpty;
+                          final isFree = subType == 'free' || subType.isEmpty;
                           return CompatibilitySection(
                             title: context.tr('compatibility_profile'),
                             subtitle: user?.similarity != null
