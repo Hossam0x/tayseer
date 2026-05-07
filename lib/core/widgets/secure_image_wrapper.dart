@@ -52,13 +52,11 @@ class _IosSecureImage extends StatefulWidget {
 
 class _IosSecureImageState extends State<_IosSecureImage> {
   bool _ready = false;
+  bool _nativeLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    // ✅ نأخر الـ UiKitView create بـ frame واحد عشان نضمن إن الـ dispose
-    // القديم اتم على الـ platform channel قبل ما نعمل create جديد
-    // يمنع: PlatformException(recreating_view, trying to create an already created view)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) setState(() => _ready = true);
     });
@@ -66,12 +64,34 @@ class _IosSecureImageState extends State<_IosSecureImage> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_ready) return widget.flutterFallback;
-    return UiKitView(
-      viewType: 'secure_image_view',
-      layoutDirection: TextDirection.ltr,
-      creationParams: {'url': widget.imageUrl},
-      creationParamsCodec: const StandardMessageCodec(),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // ✅ الـ fallback بيتخفى بـ fade ناعم
+        AnimatedOpacity(
+          opacity: _nativeLoaded ? 0.0 : 1.0,
+          duration: const Duration(milliseconds: 300),
+          child: widget.flutterFallback,
+        ),
+
+        // ✅ الـ UiKitView بيبدأ بـ opacity 0 ويتظهر تدريجياً
+        if (_ready)
+          AnimatedOpacity(
+            opacity: _nativeLoaded ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 300),
+            child: UiKitView(
+              viewType: 'secure_image_view',
+              layoutDirection: TextDirection.ltr,
+              creationParams: {'url': widget.imageUrl},
+              creationParamsCodec: const StandardMessageCodec(),
+              onPlatformViewCreated: (_) {
+                Future.delayed(const Duration(milliseconds: 250), () {
+                  if (mounted) setState(() => _nativeLoaded = true);
+                });
+              },
+            ),
+          ),
+      ],
     );
   }
 }
