@@ -192,27 +192,6 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
         uniqueNumber: pendingId,
       );
 
-      // Confirm purchase with backend
-      final receipt = Platform.isIOS
-          ? purchase.verificationData.serverVerificationData
-          : purchase.verificationData.localVerificationData;
-
-      if (receipt.isNotEmpty) {
-        try {
-          await _apiService.post(
-            endPoint: ApiEndPoint.confirmSubscriptionPurchase,
-            data: {
-              'pendingId': pendingId,
-              'receipt': receipt,
-              'platform': platform,
-            },
-          );
-          log('[UserSub] ✅ Backend confirmed purchase');
-        } catch (e) {
-          log('[UserSub] ⚠️ Backend confirmation failed: $e');
-        }
-      }
-
       SubscriptionEventBus.instance.fire(
         SubscriptionChangedEvent(subscriptionType: targetSub.subscriptionType),
       );

@@ -194,31 +194,6 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
         uniqueNumber: pendingId,
       );
 
-      // Confirm purchase with backend using the receipt from Apple.
-      // This is required so the backend can verify and activate the subscription.
-      // Both PurchaseStatus.purchased and .restored are valid success states.
-      final receipt = Platform.isIOS
-          ? purchase.verificationData.serverVerificationData
-          : purchase.verificationData.localVerificationData;
-
-      if (receipt.isNotEmpty) {
-        try {
-          await _apiService.post(
-            endPoint: ApiEndPoint.confirmSubscriptionPurchase,
-            data: {
-              'pendingId': pendingId,
-              'receipt': receipt,
-              'platform': platform,
-            },
-          );
-          log('[AdvisorSub] ✅ Backend confirmed purchase');
-        } catch (e) {
-          // Backend confirmation failed — log but don't block the user.
-          // The backend should also receive Apple Server Notifications.
-          log('[AdvisorSub] ⚠️ Backend confirmation failed: $e');
-        }
-      }
-
       // Notify all listeners that subscription changed
       final newType = targetSub.subscriptionType; // 'gold' or 'ultra'
       SubscriptionEventBus.instance.fire(
