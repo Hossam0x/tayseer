@@ -486,7 +486,7 @@
   "religious": " الاستقامة",
   "my_interests": "اهتماماتي",
   "my_cv": "السيرة الذاتية",
-  "messge_profil_title": "عبر عن اعجابك وابدأ بالدردشة مع",
+  "messge_profil_title": "عبر عن اعجابك وابدأ بالدردشة مع {name}",
   "messge_profil_sub_title": "انت و {name} متشابهين ألق عليه التحية",
   "type_your_message": "سجل اعجابك",
   "share_profil": "مشاركة الملف",

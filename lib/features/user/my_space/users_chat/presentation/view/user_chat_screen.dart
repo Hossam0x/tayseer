@@ -60,10 +60,12 @@ class UserChatScreen extends StatelessWidget {
             final messagesCubit = context.read<ChatMessagesCubit>();
             return ChatInputCubit(
               onTypingStart: () {
-                if (!messagesCubit.isClosed) messagesCubit.typingStart(chatRoomId!);
+                if (!messagesCubit.isClosed)
+                  messagesCubit.typingStart(chatRoomId!);
               },
               onTypingStop: () {
-                if (!messagesCubit.isClosed) messagesCubit.typingStop(chatRoomId!);
+                if (!messagesCubit.isClosed)
+                  messagesCubit.typingStop(chatRoomId!);
               },
             );
           },
@@ -225,7 +227,9 @@ class _UserChatContentState extends State<_UserChatContent> {
                           child: Container(
                             decoration: const BoxDecoration(
                               image: DecorationImage(
-                                image: AssetImage(AssetsData.homeBackgroundImage),
+                                image: AssetImage(
+                                  AssetsData.homeBackgroundImage,
+                                ),
                                 fit: BoxFit.cover,
                               ),
                             ),
@@ -287,9 +291,12 @@ class _UserChatContentState extends State<_UserChatContent> {
         final minutes = diff.inMinutes % 60;
 
         final parts = <String>[];
-        if (days > 0) parts.add(context.tr('expiry_days').replaceAll('{n}', '$days'));
-        if (hours > 0) parts.add(context.tr('expiry_hours').replaceAll('{n}', '$hours'));
-        if (minutes > 0) parts.add(context.tr('expiry_minutes').replaceAll('{n}', '$minutes'));
+        if (days > 0)
+          parts.add(context.tr('expiry_days').replaceAll('{n}', '$days'));
+        if (hours > 0)
+          parts.add(context.tr('expiry_hours').replaceAll('{n}', '$hours'));
+        if (minutes > 0)
+          parts.add(context.tr('expiry_minutes').replaceAll('{n}', '$minutes'));
         final timeStr = parts.join(' ');
 
         return Container(
@@ -312,7 +319,8 @@ class _UserChatContentState extends State<_UserChatContent> {
     );
   }
 
-  Widget _buildScrollToBottomButton() {    return BlocBuilder<ChatScrollCubit, ChatScrollState>(
+  Widget _buildScrollToBottomButton() {
+    return BlocBuilder<ChatScrollCubit, ChatScrollState>(
       buildWhen: (p, c) => p.isAtBottom != c.isAtBottom,
       builder: (context, state) {
         return ScrollToBottomButton(
@@ -328,53 +336,81 @@ class _UserChatContentState extends State<_UserChatContent> {
       buildWhen: (p, c) => p.isBlocked != c.isBlocked,
       builder: (context, chatState) {
         return Container(
-          padding: EdgeInsets.only(top: 50.h, bottom: 10.h, left: 16.w, right: 8.w),
+          padding: EdgeInsets.only(
+            top: 50.h,
+            bottom: 10.h,
+            left: 16.w,
+            right: 8.w,
+          ),
           color: const Color(0xFFF9EEFA),
           child: Row(
             children: [
               GestureDetector(
                 onTap: () => _popWithLastMessage(context),
-                child: const Icon(Icons.arrow_back_ios, color: Colors.black87, size: 24),
+                child: const Icon(
+                  Icons.arrow_back_ios,
+                  color: Colors.black87,
+                  size: 24,
+                ),
               ),
               SizedBox(width: 8.w),
               Expanded(
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 20.r,
-                      backgroundImage: NetworkImage(
-                        widget.userimage ?? 'https://i.pravatar.cc/150',
-                      ),
-                    ),
-                    SizedBox(width: 8.w),
-                    Flexible(
-                      child: Text(
-                        widget.username ?? '',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16.sp,
-                          color: Colors.blue,
+                child: GestureDetector(
+                  onTap: () {
+                    // ✅ افتح البروفايل لما يضغط على الاسم أو الصورة
+                    if (widget.receiverId != null) {
+                      context.pushNamed(
+                        AppRouter.kUserPublicProfileView,
+                        arguments: widget.receiverId,
+                      );
+                    }
+                  },
+
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20.r,
+                        backgroundImage: NetworkImage(
+                          widget.userimage ?? 'https://i.pravatar.cc/150',
                         ),
                       ),
-                    ),
-                  ],
+                      SizedBox(width: 8.w),
+                      Flexible(
+                        child: Text(
+                          widget.username ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16.sp,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               PopupMenuButton<String>(
                 offset: const Offset(20, 50),
-                icon: const Icon(Icons.more_vert, color: Colors.black87, size: 24),
+                icon: const Icon(
+                  Icons.more_vert,
+                  color: Colors.black87,
+                  size: 24,
+                ),
                 color: const Color(0xFFF5F6F8),
                 elevation: 2,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
                 onSelected: (value) async {
                   switch (value) {
                     case 'cancel_match':
                       ChatRoomDialogHelper.showCancelMatchDialog(
                         context: context,
                         title: context.tr('cancel_match_title'),
-                        subtitle: context.tr('cancel_match_confirm')
+                        subtitle: context
+                            .tr('cancel_match_confirm')
                             .replaceAll('{name}', widget.username ?? ''),
                         onConfirm: _cancelMatch,
                       );
@@ -425,30 +461,44 @@ class _UserChatContentState extends State<_UserChatContent> {
                 itemBuilder: (_) => [
                   PopupMenuItem(
                     value: 'cancel_match',
-                    child: Row(children: [
-                      const Icon(Icons.cancel_outlined, size: 20),
-                      SizedBox(width: 8.w),
-                      Text(context.tr('cancel_match_menu'), style: TextStyle(fontSize: 14.sp)),
-                    ]),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.cancel_outlined, size: 20),
+                        SizedBox(width: 8.w),
+                        Text(
+                          context.tr('cancel_match_menu'),
+                          style: TextStyle(fontSize: 14.sp),
+                        ),
+                      ],
+                    ),
                   ),
                   PopupMenuItem(
                     value: 'report',
-                    child: Row(children: [
-                      const Icon(Icons.info_outline, size: 20),
-                      SizedBox(width: 8.w),
-                      Text(context.tr('report_menu'), style: TextStyle(fontSize: 14.sp)),
-                    ]),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline, size: 20),
+                        SizedBox(width: 8.w),
+                        Text(
+                          context.tr('report_menu'),
+                          style: TextStyle(fontSize: 14.sp),
+                        ),
+                      ],
+                    ),
                   ),
                   PopupMenuItem(
                     value: 'block',
-                    child: Row(children: [
-                      const Icon(Icons.block_outlined, size: 20),
-                      SizedBox(width: 8.w),
-                      Text(
-                        chatState.isBlocked ? context.tr('unblock_label') : context.tr('block_label'),
-                        style: TextStyle(fontSize: 14.sp),
-                      ),
-                    ]),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.block_outlined, size: 20),
+                        SizedBox(width: 8.w),
+                        Text(
+                          chatState.isBlocked
+                              ? context.tr('unblock_label')
+                              : context.tr('block_label'),
+                          style: TextStyle(fontSize: 14.sp),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -458,5 +508,4 @@ class _UserChatContentState extends State<_UserChatContent> {
       },
     );
   }
-
 }

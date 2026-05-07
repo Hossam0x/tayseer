@@ -483,7 +483,7 @@
   "religious": "Religiosity",
   "my_interests": "My Interests",
   "my_cv": "Bio",
-  "messge_profil_title": "Express your interest and start chatting with",
+  "messge_profil_title": "Express your interest and start chatting with {name}",
   "messge_profil_sub_title": "You and {name} are similar, say hello",
   "type_your_message": "Register your interest",
   "share_profil": "Share Profile",

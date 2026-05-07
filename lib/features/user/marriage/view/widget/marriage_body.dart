@@ -409,9 +409,7 @@ class MarriageBodyState extends State<MarriageBody>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                Directionality.of(context) == TextDirection.rtl
-                    ? '${context.tr('messge_profil_title')} $personName'
-                    : '$personName ${context.tr('messge_profil_title')}',
+                context.tr('messge_profil_title').replaceAll('{name}', personName),
                 style: Styles.textStyle14Bold,
               ),
               Gap(10.h),

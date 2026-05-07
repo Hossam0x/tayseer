@@ -1042,16 +1042,12 @@ void showRegardInputSheet(
 
   // العنوان حسب الاتجاه
   String buildTitle(BuildContext ctx) {
-    return Directionality.of(ctx) == TextDirection.rtl
-        ? '${ctx.tr('messge_profil_title')} $personName'
-        : '$personName ${ctx.tr('messge_profil_title')}';
+    return ctx.tr('messge_profil_title').replaceAll('{name}', personName);
   }
 
   Widget buildContent(BuildContext sheetContext) {
     return Directionality(
-      textDirection: /* isArabic */ true
-          ? TextDirection.rtl
-          : TextDirection.ltr,
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: Padding(
         padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h),
         child: Column(

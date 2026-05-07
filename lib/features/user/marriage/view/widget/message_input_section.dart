@@ -54,7 +54,7 @@ class _MessageInputSectionState extends State<MessageInputSection> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "${widget.name} ${context.tr('messge_profil_title')}",
+            context.tr('messge_profil_title').replaceAll('{name}', widget.name),
             style: Styles.textStyle14Bold,
           ),
           Text(
