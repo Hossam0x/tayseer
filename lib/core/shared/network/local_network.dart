@@ -43,7 +43,17 @@ class CachNetwork {
       selectedUserType = UserTypeEnum.user;
     }
 
-    selectedLanguage = sharedPref.getString(kAppLanguage) ?? 'ar';
+    // لو مفيش لغة محفوظة → استخدم لغة الجهاز (ar أو en فقط، غير كده ar)
+    final savedLanguage = sharedPref.getString(kAppLanguage);
+    if (savedLanguage != null) {
+      selectedLanguage = savedLanguage;
+    } else {
+      final deviceLocale = WidgetsBinding.instance.platformDispatcher.locale;
+      final deviceLang = deviceLocale.languageCode;
+      selectedLanguage = (deviceLang == 'ar' || deviceLang == 'en')
+          ? deviceLang
+          : 'ar';
+    }
     debugPrint("selectedLanguage initialized to: $selectedLanguage");
 
     final advisorStatusString = sharedPref.getString(kAdvisorStatus);
