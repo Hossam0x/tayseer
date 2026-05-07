@@ -7,6 +7,8 @@ import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/features/shared/force_update/data/repo/force_update_repo.dart';
+import 'package:tayseer/features/shared/force_update/presentation/views/force_update_screen.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/main.dart';
@@ -188,6 +190,23 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _navigateBasedOnToken() async {
     await Future.delayed(const Duration(milliseconds: 4800));
     if (!mounted) return;
+
+    // ── Force Update Check ──────────────────────────────────────────────────
+    final forceUpdateRepo = getIt<ForceUpdateRepo>();
+    final updateRequired = await forceUpdateRepo.isUpdateRequired();
+
+    if (updateRequired) {
+      if (!mounted) return;
+      final storeUrl = await forceUpdateRepo.getStoreUrl();
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => ForceUpdateScreen(storeUrl: storeUrl),
+        ),
+      );
+      return;
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     final String token = CachNetwork.getStringData(key: ktoken);
     final String? userType = CachNetwork.getStringData(key: kUserType);

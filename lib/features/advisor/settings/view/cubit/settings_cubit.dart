@@ -164,8 +164,9 @@ class SettingsCubit extends Cubit<SettingsState> {
       ];
 
       // Use user ID to generate a placeholder referral link
-      final userId = kCurrentUserData?.id ?? 'user';
-      final referralLink = 'https://tayseer.app/referral/$userId';
+      // final userId = kCurrentUserData?.id ?? 'user';
+      final referralLink =
+          'https://apps.apple.com/eg/app/tayseer-community/id6756886227';
 
       if (!isClosed) {
         emit(
@@ -230,10 +231,13 @@ class SettingsCubit extends Cubit<SettingsState> {
 
   Future<void> shareApp(String message, String subject) async {
     try {
-      // رابط التطبيق
-      const String appLink =
+      // روابط التطبيق
+      const String playStoreLink =
           'https://play.google.com/store/apps/details?id=com.tayseer.app';
-      String fullMessage = '$message$appLink';
+      const String appStoreLink =
+          'https://apps.apple.com/eg/app/tayseer-community/id6756886227';
+      String fullMessage =
+          '$message\n🤖 Android: $playStoreLink\n🍎 iOS: $appStoreLink';
 
       await Share.share(fullMessage, subject: subject);
     } catch (e) {

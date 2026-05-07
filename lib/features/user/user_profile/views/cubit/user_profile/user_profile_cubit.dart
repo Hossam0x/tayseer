@@ -647,9 +647,12 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
   Future<void> _shareAppLink() async {
     try {
-      const String appLink =
+      const String playStoreLink =
           'https://play.google.com/store/apps/details?id=com.tayseer.app';
-      const String message = 'جرب تطبيق تيسير الآن! 😊\n$appLink';
+      const String appStoreLink =
+          'https://apps.apple.com/eg/app/tayseer-community/id6756886227';
+      const String message =
+          'جرب تطبيق تيسير الآن! 😊\n🤖 Android: $playStoreLink\n🍎 iOS: $appStoreLink';
 
       await Share.share(message, subject: 'دعوة لتطبيق تيسير');
     } catch (e) {
@@ -733,19 +736,25 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       UserProfileCubit.marriageStatusStream.add(value);
 
       // ✅ بعت API call — لما يفعّل الزواج (value=false) نبعت true، ولما يعطله نبعت false
-      debugPrint('📡 Calling toggleMarriageStatus with: ${!value}, isClosed: $isClosed');
+      debugPrint(
+        '📡 Calling toggleMarriageStatus with: ${!value}, isClosed: $isClosed',
+      );
       if (isClosed) return;
-      final apiResult = await _userProfileRepository.toggleMarriageStatus(!value);
+      final apiResult = await _userProfileRepository.toggleMarriageStatus(
+        !value,
+      );
       debugPrint('📡 toggleMarriageStatus result: $apiResult');
       apiResult.fold(
         (failure) {
           // ✅ revert لو فشل
-          emit(currentState.copyWith(
-            isMarriageSectionDeactivated: !value,
-            actionMessage: 'update_marriage_status_failed',
-            isActionSuccess: false,
-            actionTimestamp: DateTime.now().millisecondsSinceEpoch,
-          ));
+          emit(
+            currentState.copyWith(
+              isMarriageSectionDeactivated: !value,
+              actionMessage: 'update_marriage_status_failed',
+              isActionSuccess: false,
+              actionTimestamp: DateTime.now().millisecondsSinceEpoch,
+            ),
+          );
           _saveMarriageSectionDeactivated(!value);
           UserProfileCubit.marriageStatusStream.add(!value);
           return;
@@ -767,7 +776,9 @@ class UserProfileCubit extends Cubit<UserProfileState> {
           ),
         );
       }
-      debugPrint('✅ Marriage section ${value ? "deactivated" : "activated"} locally');
+      debugPrint(
+        '✅ Marriage section ${value ? "deactivated" : "activated"} locally',
+      );
     }
   }
 
