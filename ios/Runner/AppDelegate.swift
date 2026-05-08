@@ -146,6 +146,89 @@ class SecureImageFactory: NSObject, FlutterPlatformViewFactory {
             }
             // ────────────────────────────────────────────────────────────────
 
+            // ── IAP Management Channel ───────────────────────────────────────
+            // manageSubscriptionsSheet و beginRefundRequest — native Apple sheets
+            let iapManageChannel = FlutterMethodChannel(
+                name: "com.athr.tayser/iap_manage",
+                binaryMessenger: controller.binaryMessenger
+            )
+            iapManageChannel.setMethodCallHandler { [weak controller] (call, result) in
+                if #available(iOS 15.0, *) {
+                    if call.method == "showManageSubscriptions" {
+                        // يفتح Apple's native Manage Subscriptions sheet داخل التطبيق
+                        Task { @MainActor in
+                            guard let scene = UIApplication.shared.connectedScenes
+                                .compactMap({ $0 as? UIWindowScene })
+                                .first else {
+                                result(FlutterError(code: "NO_SCENE", message: "No UIWindowScene found", details: nil))
+                                return
+                            }
+                            do {
+                                try await AppStore.showManageSubscriptions(in: scene)
+                                result(true)
+                            } catch {
+                                result(FlutterError(code: "MANAGE_ERROR", message: error.localizedDescription, details: nil))
+                            }
+                        }
+                    } else if call.method == "beginRefundRequest" {
+                        // يفتح Apple's native Refund Request sheet داخل التطبيق
+                        guard let args = call.arguments as? [String: Any],
+                              let transactionIdStr = args["transactionId"] as? String,
+                              let transactionId = UInt64(transactionIdStr) else {
+                            result(FlutterError(code: "INVALID_ARGS", message: "transactionId required", details: nil))
+                            return
+                        }
+                        Task { @MainActor in
+                            guard let scene = UIApplication.shared.connectedScenes
+                                .compactMap({ $0 as? UIWindowScene })
+                                .first else {
+                                result(FlutterError(code: "NO_SCENE", message: "No UIWindowScene found", details: nil))
+                                return
+                            }
+                            do {
+                                let status = try await Transaction.beginRefundRequest(for: transactionId, in: scene)
+                                switch status {
+                                case .success:
+                                    result("success")
+                                case .userCancelled:
+                                    result("cancelled")
+                                @unknown default:
+                                    result("unknown")
+                                }
+                            } catch {
+                                result(FlutterError(code: "REFUND_ERROR", message: error.localizedDescription, details: nil))
+                            }
+                        }
+                    } else if call.method == "getLatestTransactionId" {
+                        // يجيب أحدث transactionId للـ subscription الحالية
+                        guard let args = call.arguments as? [String: Any],
+                              let productId = args["productId"] as? String else {
+                            result(FlutterError(code: "INVALID_ARGS", message: "productId required", details: nil))
+                            return
+                        }
+                        Task {
+                            var latestId: String? = nil
+                            for await verificationResult in Transaction.currentEntitlements {
+                                if case .verified(let transaction) = verificationResult,
+                                   transaction.productID == productId {
+                                    latestId = "\(transaction.id)"
+                                    break
+                                }
+                            }
+                            DispatchQueue.main.async {
+                                result(latestId)
+                            }
+                        }
+                    } else {
+                        result(FlutterMethodNotImplemented)
+                    }
+                } else {
+                    // iOS 14 fallback — فتح Settings
+                    result(FlutterError(code: "UNSUPPORTED", message: "iOS 15+ required", details: nil))
+                }
+            }
+            // ────────────────────────────────────────────────────────────────
+
             let audioSessionChannel = FlutterMethodChannel(
                 name: "com.athr.tayser/audio_session",
                 binaryMessenger: controller.binaryMessenger

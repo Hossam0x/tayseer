@@ -36,19 +36,15 @@ class _CancelDialog extends StatelessWidget {
             ),
             Gap(8.h),
 
-            // Warning icon
+            // Apple icon — يوضح إن الـ cancel بيتم عبر Apple
             Container(
               width: 72.w,
               height: 72.w,
               decoration: BoxDecoration(
-                color: Colors.red.shade50,
+                color: Colors.grey.shade100,
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                Icons.warning_amber_rounded,
-                color: Colors.red.shade400,
-                size: 40.sp,
-              ),
+              child: Icon(Icons.apple, color: Colors.black87, size: 40.sp),
             ),
             Gap(16.h),
 
@@ -60,14 +56,45 @@ class _CancelDialog extends StatelessWidget {
             ),
             Gap(10.h),
 
-            // Subtitle
+            // Description — يشرح إن الاشتراك يفضل نشط لحد نهاية الفترة
             Text(
               context.tr('cancel_auto_renew_confirm_desc'),
               style: Styles.textStyle12.copyWith(
                 color: Colors.grey.shade600,
-                height: 1.5,
+                height: 1.6,
               ),
               textAlign: TextAlign.center,
+            ),
+            Gap(8.h),
+
+            // Info chip — Apple's policy
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 14.sp,
+                    color: Colors.blue.shade600,
+                  ),
+                  Gap(6.w),
+                  Flexible(
+                    child: Text(
+                      context.tr('cancel_auto_renew_apple_info'),
+                      style: Styles.textStyle12.copyWith(
+                        color: Colors.blue.shade700,
+                        height: 1.4,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
             ),
             Gap(24.h),
 
@@ -76,8 +103,8 @@ class _CancelDialog extends StatelessWidget {
               children: [
                 Expanded(
                   child: _DialogButton(
-                    label: context.tr('yes'),
-                    color: Colors.green.shade500,
+                    label: context.tr('open_apple_settings'),
+                    color: Colors.black87,
                     onTap: () {
                       Navigator.of(context).pop();
                       onConfirm();
@@ -87,8 +114,8 @@ class _CancelDialog extends StatelessWidget {
                 Gap(12.w),
                 Expanded(
                   child: _DialogButton(
-                    label: context.tr('no'),
-                    color: Colors.red.shade400,
+                    label: context.tr('cancel'),
+                    color: Colors.grey.shade400,
                     onTap: () => Navigator.of(context).pop(),
                   ),
                 ),
@@ -125,7 +152,8 @@ class _DialogButton extends StatelessWidget {
         child: Center(
           child: Text(
             label,
-            style: Styles.textStyle16SemiBold.copyWith(color: Colors.white),
+            style: Styles.textStyle14SemiBold.copyWith(color: Colors.white),
+            textAlign: TextAlign.center,
           ),
         ),
       ),

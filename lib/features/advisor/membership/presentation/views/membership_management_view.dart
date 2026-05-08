@@ -96,8 +96,9 @@ class MembershipManagementView extends StatelessWidget {
     // Loaded state messages
     if (state is MembershipLoaded) {
       if (state.actionSuccess != null) {
-        // cancel auto-renew → toast بسيط (مش dialog احتفالي)
         if (state.actionSuccess == 'cancel_auto_renew_success') {
+          // بعد ما يرجع من Apple sheet — reload بيحصل تلقائياً في الـ cubit
+          // نعرض toast بسيط بس
           AppToast.info(context, context.tr(state.actionSuccess!));
         } else {
           showMembershipSuccessDialog(
@@ -243,17 +244,26 @@ class _LoadedBody extends StatelessWidget {
     final MySubscriptionModel sub = state.sub;
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 20.h),
+      padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
       child: Column(
         children: [
           MembershipStatusBanner(sub: sub),
           Gap(20.h),
           MembershipInfoCard(sub: sub),
-          Gap(32.h),
-          MembershipActionButtons(
-            sub: sub,
-            onCancelTap: () => _showCancelDialog(context),
-          ),
+          Gap(24.h),
+
+          // ── Apple Policy Info Card ─────────────────────────────────────
+          if (Platform.isIOS) _ApplePolicyCard(),
+          if (Platform.isIOS) Gap(24.h),
+
+          // ── Action Buttons ─────────────────────────────────────────────
+          if (state.isCancelLoading)
+            _LoadingButton()
+          else
+            MembershipActionButtons(
+              sub: sub,
+              onCancelTap: () => _showCancelDialog(context),
+            ),
         ],
       ),
     );
@@ -263,6 +273,63 @@ class _LoadedBody extends StatelessWidget {
     showMembershipCancelDialog(
       ctx,
       onConfirm: () => ctx.read<MembershipCubit>().cancelMembership(),
+    );
+  }
+}
+
+// ── Apple Policy Info Card ────────────────────────────────────────────────────
+class _ApplePolicyCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(14.w),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.apple, size: 18.sp, color: Colors.black54),
+          Gap(10.w),
+          Expanded(
+            child: Text(
+              context.tr('apple_subscription_policy_info'),
+              style: Styles.textStyle12.copyWith(
+                color: Colors.grey.shade600,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Loading Button ────────────────────────────────────────────────────────────
+class _LoadingButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 52.h,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.kprimaryColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Center(
+        child: SizedBox(
+          width: 22.w,
+          height: 22.w,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            color: AppColors.kprimaryColor,
+          ),
+        ),
+      ),
     );
   }
 }

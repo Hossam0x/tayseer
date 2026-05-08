@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:developer';
+import 'package:flutter/services.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:tayseer/core/services/iap_service.dart';
+import 'package:tayseer/features/advisor/membership/data/models/my_subscription_model.dart';
 import 'package:tayseer/features/advisor/membership/data/models/restore_purchase_result.dart';
 import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
 import 'package:tayseer/features/advisor/membership/presentation/cubit/membership_state.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
+import 'package:tayseer/features/user/user_profile/presentation/view_model/user_membership_cubit.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -54,20 +57,10 @@ class MembershipCubit extends Cubit<MembershipState> {
     emit(current.copyWith(isCancelLoading: true));
 
     try {
-      log('[Cancel] 🚀 Opening Apple subscription management page');
-      log('[Cancel] ⚠️  This only cancels auto-renew.');
-      log('[Cancel]    Subscription stays active until billing period ends.');
-      log(
-        '[Cancel]    Apple sends DID_CHANGE_RENEWAL_STATUS webhook to backend.',
-      );
-
+      log('[Cancel] 🚀 Opening Apple Manage Subscriptions sheet');
       await _openSubscriptionManagement();
+      log('[Cancel] ✅ User returned from subscription management');
 
-      log('[Cancel] ✅ User returned from subscription management page');
-      log('[Cancel] 🔄 Reloading membership to reflect any changes...');
-
-      // Apple بتبعت الـ webhook للباك تلقائياً — مش محتاجين نبعت cancel API
-      // بس نعمل reload عشان نعرض الحالة الجديدة (isCancelled = true)
       emit(
         current.copyWith(
           isCancelLoading: false,
@@ -89,10 +82,17 @@ class MembershipCubit extends Cubit<MembershipState> {
   }
 
   Future<void> _openSubscriptionManagement() async {
-    final Uri uri;
     if (Platform.isIOS) {
-      // itms-apps:// بيفتح مباشرة في الـ App Store app → Subscriptions
-      // fallback: https لو itms-apps مش شغال
+      // iOS 15+: native sheet داخل التطبيق
+      try {
+        const channel = MethodChannel('com.athr.tayser/iap_manage');
+        await channel.invokeMethod('showManageSubscriptions');
+        log('[Cancel] ✅ Native manage subscriptions sheet closed');
+        return;
+      } catch (e) {
+        log('[Cancel] Native sheet failed, falling back to URL: $e');
+      }
+      // Fallback: itms-apps://
       final itmUri = Uri.parse(
         'itms-apps://apps.apple.com/account/subscriptions',
       );
@@ -100,13 +100,83 @@ class MembershipCubit extends Cubit<MembershipState> {
         await launchUrl(itmUri, mode: LaunchMode.externalApplication);
         return;
       }
-      uri = Uri.parse('https://apps.apple.com/account/subscriptions');
+      await launchUrl(
+        Uri.parse('https://apps.apple.com/account/subscriptions'),
+        mode: LaunchMode.externalApplication,
+      );
     } else {
-      uri = Uri.parse('https://play.google.com/store/account/subscriptions');
+      await launchUrl(
+        Uri.parse('https://play.google.com/store/account/subscriptions'),
+        mode: LaunchMode.externalApplication,
+      );
     }
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  /// يفتح Apple's native Refund Request sheet داخل التطبيق (iOS 15+)
+  Future<void> requestRefund() async {
+    final current = state;
+    if (current is! MembershipLoaded) return;
+
+    try {
+      if (Platform.isIOS) {
+        const channel = MethodChannel('com.athr.tayser/iap_manage');
+
+        // نجيب الـ transactionId الأحدث للـ subscription الحالية
+        final productId = _getProductId(current.sub);
+        String? transactionId;
+
+        if (productId != null) {
+          transactionId = await channel.invokeMethod<String>(
+            'getLatestTransactionId',
+            {'productId': productId},
+          );
+          log('[Refund] transactionId for $productId: $transactionId');
+        }
+
+        if (transactionId != null) {
+          // iOS 15+: native refund sheet
+          final status = await channel.invokeMethod<String>(
+            'beginRefundRequest',
+            {'transactionId': transactionId},
+          );
+          log('[Refund] status: $status');
+        } else {
+          // Fallback: reportaproblem.apple.com
+          await launchUrl(
+            Uri.parse('https://reportaproblem.apple.com'),
+            mode: LaunchMode.externalApplication,
+          );
+        }
+      } else {
+        await launchUrl(
+          Uri.parse('https://reportaproblem.apple.com'),
+          mode: LaunchMode.externalApplication,
+        );
+      }
+    } catch (e) {
+      log('[Refund] Error: $e');
+      // Fallback
+      await launchUrl(
+        Uri.parse('https://reportaproblem.apple.com'),
+        mode: LaunchMode.externalApplication,
+      );
     }
+  }
+
+  String? _getProductId(MySubscriptionModel sub) {
+    // نبني الـ productId من الـ subscription type و duration
+    // مثال: tayseer.advisor.gold.monthly
+    final type = sub.isGold ? 'gold' : 'elite';
+    final duration = switch (sub.subscriptionDurationType) {
+      'weekly' => 'weekly',
+      'monthly' => 'monthly',
+      'threeMonths' => 'three.months',
+      _ => null,
+    };
+    if (duration == null) return null;
+    // نحاول نعرف لو advisor أو user من الـ cubit type
+    final prefix = this is UserMembershipCubit ? 'user' : 'advisor';
+    return 'tayseer.$prefix.$type.$duration';
   }
 
   void clearMessages() {
