@@ -3,6 +3,7 @@ import UIKit
 import GoogleMaps
 import AVFoundation
 import PaymobSDK
+import StoreKit
 
 // MARK: - Secure Image Platform View (prevents screenshots)
 class SecureImageView: NSObject, FlutterPlatformView {
@@ -98,6 +99,52 @@ class SecureImageFactory: NSObject, FlutterPlatformViewFactory {
         }
 
         if let controller = window?.rootViewController as? FlutterViewController {
+
+            // ── IAP JWS Channel ──────────────────────────────────────────────
+            // يجيب الـ JWS (jwsRepresentation) من Transaction.currentEntitlements
+            // الـ Flutter package مش بيبعت الـ JWS — بنجيبه مباشرة من native
+            let iapJwsChannel = FlutterMethodChannel(
+                name: "com.athr.tayser/iap_jws",
+                binaryMessenger: controller.binaryMessenger
+            )
+            iapJwsChannel.setMethodCallHandler { (call, result) in
+                if call.method == "getCurrentEntitlementsJWS" {
+                    if #available(iOS 15.0, *) {
+                        Task {
+                            var jwsList: [[String: String]] = []
+                            for await verificationResult in Transaction.currentEntitlements {
+                                switch verificationResult {
+                                case .verified(let transaction):
+                                    jwsList.append([
+                                        "transactionId": "\(transaction.id)",
+                                        "productId": transaction.productID,
+                                        "jws": verificationResult.jwsRepresentation
+                                    ])
+                                case .unverified(let transaction, _):
+                                    // نضيف الـ JWS حتى لو unverified — الباك-إند هيتحقق
+                                    jwsList.append([
+                                        "transactionId": "\(transaction.id)",
+                                        "productId": transaction.productID,
+                                        "jws": verificationResult.jwsRepresentation
+                                    ])
+                                }
+                            }
+                            DispatchQueue.main.async {
+                                result(jwsList)
+                            }
+                        }
+                    } else {
+                        result(FlutterError(
+                            code: "UNSUPPORTED",
+                            message: "StoreKit 2 requires iOS 15+",
+                            details: nil
+                        ))
+                    }
+                } else {
+                    result(FlutterMethodNotImplemented)
+                }
+            }
+            // ────────────────────────────────────────────────────────────────
 
             let audioSessionChannel = FlutterMethodChannel(
                 name: "com.athr.tayser/audio_session",

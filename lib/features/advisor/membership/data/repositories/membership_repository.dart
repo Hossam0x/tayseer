@@ -8,8 +8,9 @@ abstract class MembershipRepository {
   Future<Either<Failure, MySubscriptionModel>> getMySubscription();
   Future<Either<Failure, void>> cancelMySubscription();
   Future<Either<Failure, RestorePurchaseResult>> restorePurchase(
-    String receipt,
-  );
+    String receipt, {
+    String? originalTransactionId,
+  });
   Future<Either<Failure, void>> transferSubscription(String purchaseId);
 }
 
@@ -80,14 +81,25 @@ class MembershipRepositoryImpl implements MembershipRepository {
 
   @override
   Future<Either<Failure, RestorePurchaseResult>> restorePurchase(
-    String receipt,
-  ) async {
+    String receipt, {
+    String? originalTransactionId,
+  }) async {
     try {
+      final body = <String, dynamic>{
+        'receipts': [receipt],
+      };
+      if (originalTransactionId != null && originalTransactionId.isNotEmpty) {
+        body['originalTransactionId'] = originalTransactionId;
+      }
+
+      log('[MembershipRepo] restorePurchase body keys: ${body.keys.toList()}');
+      if (originalTransactionId != null) {
+        log('[MembershipRepo] originalTransactionId: $originalTransactionId');
+      }
+
       final response = await _apiService.post(
         endPoint: ApiEndPoint.iapRestorePurchase,
-        data: {
-          'receipts': [receipt],
-        },
+        data: body,
       );
       if (response['success'] == true) {
         // data is a List — take the first element

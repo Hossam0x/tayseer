@@ -3,9 +3,11 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:in_app_purchase_storekit/store_kit_wrappers.dart';
+import 'package:in_app_purchase_storekit/src/sk2_pigeon.g.dart';
 // ignore: unused_import
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 
@@ -38,10 +40,17 @@ class IAPService {
     log('[IAP] Store available: $_storeAvailable');
     if (!_storeAvailable) return;
 
+    // StoreKit 1 only: set payment queue delegate
+    // مع StoreKit 2 ده مش مطلوب لكن مش بيضر
     if (Platform.isIOS) {
-      final iosAddition = _iap
-          .getPlatformAddition<InAppPurchaseStoreKitPlatformAddition>();
-      await iosAddition.setDelegate(PaymentQueueDelegate());
+      try {
+        final iosAddition = _iap
+            .getPlatformAddition<InAppPurchaseStoreKitPlatformAddition>();
+        await iosAddition.setDelegate(PaymentQueueDelegate());
+      } catch (e) {
+        // StoreKit 2 قد لا يدعم setDelegate — نتجاهل الخطأ
+        log('[IAP] setDelegate skipped (StoreKit 2 mode): $e');
+      }
     }
 
     await _sub?.cancel();
@@ -53,21 +62,20 @@ class IAPService {
     _initialized = true;
     log('[IAP] ✅ Initialized');
 
-    // Only clear pending transactions when NOT in restore mode.
-    // During restore, we want to receive the restored transactions.
+    // StoreKit 1 only: clear pending transactions
+    // مع StoreKit 2 ده مش مطلوب — Apple بتتعامل مع الـ queue تلقائياً
     if (_restoreCollector == null) {
       await _clearPendingTransactions();
     }
   }
 
+  /// StoreKit 1 only — مع StoreKit 2 ده no-op
   Future<void> _clearPendingTransactions() async {
     if (!Platform.isIOS) return;
     try {
       final txns = await SKPaymentQueueWrapper().transactions();
       log('[IAP] Pending iOS transactions: ${txns.length}');
       for (final t in txns) {
-        // ✅ لا تـ finish الـ purchasing state — Apple مش بتسمح بده
-        // فقط finished/failed/restored/deferred
         final shouldFinish =
             t.transactionState == SKPaymentTransactionStateWrapper.purchased ||
             t.transactionState == SKPaymentTransactionStateWrapper.restored ||
@@ -85,7 +93,8 @@ class IAPService {
         }
       }
     } catch (e) {
-      log('[IAP] Error clearing pending: $e');
+      // StoreKit 2 بيرمي exception هنا — نتجاهله
+      log('[IAP] _clearPendingTransactions skipped: $e');
     }
   }
 
@@ -110,13 +119,10 @@ class IAPService {
 
   /// Purchases a subscription product.
   ///
-  /// Uses [buyNonConsumable] for subscriptions — this is the correct API for
-  /// Auto-Renewable Subscriptions on iOS. The purchase will appear in
-  /// Apple's Subscriptions settings and can be restored.
+  /// مع StoreKit 2: [uniqueNumber] بيتحط كـ applicationUserName
+  /// وبيرجع في الـ JWS payload كـ appAccountToken (UUID format).
   ///
-  /// Note: If the user already has an active subscription, Apple will return
-  /// [PurchaseStatus.restored] instead of [purchased] — both are treated as
-  /// success.
+  /// ملاحظة: Apple بتطلب الـ applicationUserName يكون UUID v4 مع StoreKit 2.
   Future<PurchaseDetails> buyProduct(
     String productId, {
     required String uniqueNumber,
@@ -150,31 +156,8 @@ class IAPService {
     _pendingProductId = productId;
     _isPurchasing = true;
 
-    // Clear stale pending transactions before starting
-    // ثم نستنى لحد ما الـ queue تبقى فاضية (max 3 ثواني)
+    // StoreKit 1 only: clear pending queue before purchase
     await _clearPendingTransactions();
-    if (Platform.isIOS) {
-      const maxWait = Duration(seconds: 3);
-      const checkInterval = Duration(milliseconds: 300);
-      final deadline = DateTime.now().add(maxWait);
-      while (DateTime.now().isBefore(deadline)) {
-        await Future.delayed(checkInterval);
-        final remaining = await SKPaymentQueueWrapper().transactions();
-        final hasPending = remaining.any(
-          (t) =>
-              t.transactionState ==
-                  SKPaymentTransactionStateWrapper.purchased ||
-              t.transactionState == SKPaymentTransactionStateWrapper.restored,
-        );
-        if (!hasPending) {
-          log('[IAP] ✅ Queue is clear — proceeding with purchase');
-          break;
-        }
-        log(
-          '[IAP] ⏳ Waiting for queue to clear... (${remaining.length} remaining)',
-        );
-      }
-    }
 
     bool buyStarted = false;
     try {
@@ -222,7 +205,7 @@ class IAPService {
   }
 
   Future<void> _handlePurchase(PurchaseDetails purchase) async {
-    // ── Full debug dump of everything Apple returned ──────────────────────
+    // ── Full debug dump ───────────────────────────────────────────────────
     log('[IAP] ════════════════════════════════════════');
     log('[IAP] 📩 RECEIVED FROM APPLE');
     log('[IAP]   status          : ${purchase.status}');
@@ -234,32 +217,36 @@ class IAPService {
       '[IAP]   verificationData.source          : ${purchase.verificationData.source}',
     );
     log(
-      '[IAP]   verificationData.localVerificationData (length): ${purchase.verificationData.localVerificationData.length}',
-    );
-    log(
       '[IAP]   verificationData.serverVerificationData (length): ${purchase.verificationData.serverVerificationData.length}',
     );
 
+    // StoreKit 1 details (مش موجودة مع StoreKit 2)
     if (Platform.isIOS && purchase is AppStorePurchaseDetails) {
       final txn = purchase.skPaymentTransaction;
       final payment = txn.payment;
       log(
-        '[IAP]   [iOS] transactionIdentifier  : ${txn.transactionIdentifier}',
+        '[IAP]   [SK1] transactionIdentifier  : ${txn.transactionIdentifier}',
       );
-      log('[IAP]   [iOS] transactionState       : ${txn.transactionState}');
-      log('[IAP]   [iOS] transactionTimeStamp   : ${txn.transactionTimeStamp}');
+      log('[IAP]   [SK1] transactionState       : ${txn.transactionState}');
       log(
-        '[IAP]   [iOS] payment.productIdentifier   : ${payment.productIdentifier}',
+        '[IAP]   [SK1] payment.applicationUsername : ${payment.applicationUsername}',
       );
-      log(
-        '[IAP]   [iOS] payment.applicationUsername : ${payment.applicationUsername}',
-      );
-      log('[IAP]   [iOS] payment.quantity            : ${payment.quantity}');
       if (txn.originalTransaction != null) {
         log(
-          '[IAP]   [iOS] originalTransaction.identifier: ${txn.originalTransaction!.transactionIdentifier}',
+          '[IAP]   [SK1] originalTransaction.identifier: ${txn.originalTransaction!.transactionIdentifier}',
         );
       }
+    }
+
+    // StoreKit 2 details
+    if (Platform.isIOS && purchase is SK2PurchaseDetails) {
+      log('[IAP]   [SK2] purchaseID: ${purchase.purchaseID}');
+      // الـ serverVerificationData هو الـ JWS (JWT) — ده اللي بنبعته للباك-إند
+      final jws = purchase.verificationData.serverVerificationData;
+      log('[IAP]   [SK2] JWS length: ${jws.length}');
+      log(
+        '[IAP]   [SK2] JWS preview: ${jws.length > 50 ? '${jws.substring(0, 50)}...' : jws}',
+      );
     }
     log('[IAP] ════════════════════════════════════════');
     // ─────────────────────────────────────────────────────────────────────
@@ -304,7 +291,9 @@ class IAPService {
       return;
     }
 
-    // Resolve using applicationUserName (pendingId) first, then fallback
+    // Resolve key:
+    // StoreKit 1: applicationUserName من الـ payment
+    // StoreKit 2: purchaseID أو _pendingUniqueNumber
     String? appUserName;
     if (Platform.isIOS && purchase is AppStorePurchaseDetails) {
       appUserName = purchase.skPaymentTransaction.payment.applicationUsername;
@@ -321,9 +310,6 @@ class IAPService {
 
       case PurchaseStatus.purchased:
       case PurchaseStatus.restored:
-        // Both purchased and restored are treated as success.
-        // iOS returns "restored" when the user already has an active
-        // subscription and tries to purchase again — this is expected.
         log('[IAP] ✅ Purchased/Restored!');
         if (pid != null) _processedIds[pid] = now;
         _lastSuccessTime = now;
@@ -396,9 +382,11 @@ class IAPService {
 
   /// Triggers Apple restore and collects all restored transactions.
   ///
-  /// Sets [_restoreCollector] BEFORE [init] so transactions arriving during
-  /// initialization are captured. Also skips [_clearPendingTransactions]
-  /// during restore to avoid finishing restored transactions prematurely.
+  /// مع StoreKit 2: بعد الـ restore، بنجيب الـ JWS مباشرة من
+  /// [InAppPurchase2API.transactions()] لأن الـ Flutter package
+  /// مش بيملأ [serverVerificationData] في الـ SK2 transactions.
+  ///
+  /// الـ JWS هو [SK2TransactionMessage.jsonRepresentation] — JWT موقع من Apple.
   Future<List<PurchaseDetails>> restoreAndCollect({
     Duration timeout = const Duration(seconds: 15),
   }) async {
@@ -416,7 +404,6 @@ class IAPService {
       });
     }
 
-    // Set collector BEFORE init — this also prevents _clearPendingTransactions
     _restoreCollector = (purchase) {
       collected.add(purchase);
       scheduleComplete();
@@ -441,14 +428,81 @@ class IAPService {
 
       await _iap.restorePurchases();
 
-      // Start idle timer — fires if Apple delivers 0 transactions
       scheduleComplete();
 
-      return await completer.future;
+      final purchases = await completer.future;
+
+      // ── StoreKit 2: جيب الـ JWS من native layer ──────────────────────────
+      // الـ Flutter package بيحط serverVerificationData فاضي في SK2
+      // لكن الـ JWS موجود في SK2TransactionMessage.jsonRepresentation
+      if (Platform.isIOS && purchases.any((p) => p is SK2PurchaseDetails)) {
+        return await _enrichSK2WithJWS(purchases);
+      }
+
+      return purchases;
     } finally {
       safetyTimer.cancel();
       idleTimer?.cancel();
       _restoreCollector = null;
+    }
+  }
+
+  /// يجيب الـ JWS لكل SK2 transaction من الـ native layer
+  /// عن طريق method channel مخصص يستخدم Transaction.currentEntitlements
+  Future<List<PurchaseDetails>> _enrichSK2WithJWS(
+    List<PurchaseDetails> purchases,
+  ) async {
+    try {
+      log('[IAP] 🔍 Fetching JWS via native method channel...');
+
+      const channel = MethodChannel('com.athr.tayser/iap_jws');
+      final List<dynamic> rawList = await channel.invokeMethod(
+        'getCurrentEntitlementsJWS',
+      );
+
+      log('[IAP] Native entitlements count: ${rawList.length}');
+
+      // Map: transactionId → JWS
+      final jwsMap = <String, String>{};
+      for (final item in rawList) {
+        if (item is Map) {
+          final txnId = item['transactionId']?.toString() ?? '';
+          final jws = item['jws']?.toString() ?? '';
+          if (txnId.isNotEmpty && jws.isNotEmpty) {
+            jwsMap[txnId] = jws;
+            log('[IAP] Entitlement $txnId → JWS length: ${jws.length}');
+            log(
+              '[IAP] JWS preview: ${jws.length > 30 ? '${jws.substring(0, 30)}...' : jws}',
+            );
+          }
+        }
+      }
+
+      // أضف الـ JWS لكل SK2PurchaseDetails
+      return purchases.map((p) {
+        if (p is SK2PurchaseDetails) {
+          final jws = jwsMap[p.purchaseID];
+          if (jws != null && jws.isNotEmpty) {
+            log('[IAP] ✅ Enriched SK2 purchase ${p.purchaseID} with JWS');
+            return SK2PurchaseDetails(
+              productID: p.productID,
+              purchaseID: p.purchaseID,
+              verificationData: PurchaseVerificationData(
+                localVerificationData: jws,
+                serverVerificationData: jws,
+                source: 'app_store',
+              ),
+              transactionDate: p.transactionDate,
+              status: p.status,
+            );
+          }
+          log('[IAP] ⚠️ No JWS found for SK2 purchase ${p.purchaseID}');
+        }
+        return p;
+      }).toList();
+    } catch (e) {
+      log('[IAP] ❌ Failed to enrich SK2 with JWS: $e');
+      return purchases;
     }
   }
 
@@ -486,7 +540,6 @@ class IAPErrorHandler {
     final s = error.toString().toLowerCase();
     log('[IAP] IAPErrorHandler: $error');
 
-    // ── إلغاء من المستخدم ──────────────────────────────────────────────────
     if (s.contains('user_canceled') ||
         s.contains('canceled') ||
         s.contains('cancelled') ||
@@ -498,54 +551,46 @@ class IAPErrorHandler {
       );
     }
 
-    // ── transaction مكررة (pending لنفس المنتج) ───────────────────────────
     if (s.contains('duplicate_product') ||
         s.contains('storekit_duplicate') ||
         s.contains('pending transaction')) {
       return const IAPErrorResult(messageKey: 'purchase_duplicate');
     }
 
-    // ── عملية شراء جارية بالفعل ───────────────────────────────────────────
     if (s.contains('already in progress') || s.contains('جارية')) {
       return const IAPErrorResult(messageKey: 'purchase_in_progress');
     }
 
-    // ── الشراء غير مسموح (parental controls, etc.) ────────────────────────
     if (s.contains('not_allowed') ||
         s.contains('payment_not_allowed') ||
         s.contains('purchases are not allowed')) {
       return const IAPErrorResult(messageKey: 'purchase_not_allowed');
     }
 
-    // ── مشكلة شبكة ────────────────────────────────────────────────────────
     if (s.contains('network') ||
         s.contains('connection') ||
         s.contains('internet') ||
-        s.contains('storekitd') || // NSCocoaErrorDomain Code=4097 (Simulator)
+        s.contains('storekitd') ||
         s.contains('nscocoaerrordomain')) {
       return const IAPErrorResult(messageKey: 'check_internet_connection');
     }
 
-    // ── timeout ───────────────────────────────────────────────────────────
     if (s.contains('timeout') ||
         s.contains('مهلة') ||
         s.contains('timed out')) {
       return const IAPErrorResult(messageKey: 'operation_timeout');
     }
 
-    // ── المنتج غير موجود ──────────────────────────────────────────────────
     if (s.contains('غير موجود') ||
         s.contains('not found') ||
         s.contains('invalid product')) {
       return const IAPErrorResult(messageKey: 'purchase_invalid_product');
     }
 
-    // ── المتجر غير متوفر ──────────────────────────────────────────────────
     if (s.contains('store_unavailable') || s.contains('unavailable')) {
       return const IAPErrorResult(messageKey: 'store_unavailable');
     }
 
-    // ── بيانات المستخدم مش موجودة ─────────────────────────────────────────
     if (s.contains('uuid') || s.contains('user data')) {
       return const IAPErrorResult(messageKey: 'purchase_user_data_missing');
     }

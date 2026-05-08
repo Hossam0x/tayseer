@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/adapters.dart';
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:tayseer/core/cache/chat_cache_service.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -51,6 +52,12 @@ RemoteMessage? pendingNotificationMessage;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ✅ تفعيل StoreKit 2 — بعد ensureInitialized مباشرة
+  // بيخلي serverVerificationData يرجع JWS (JWT موقع من Apple) بدل PKCS#7 blob
+  if (Platform.isIOS) {
+    await InAppPurchaseStoreKitPlatform.enableStoreKit2();
+  }
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
