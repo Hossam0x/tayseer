@@ -149,12 +149,14 @@ class IAPService {
     log('[IAP]   currencyCode: ${product.currencyCode}');
     log('[IAP]   rawPrice    : ${product.rawPrice}');
 
+    // ✅ Set _isPurchasing BEFORE clearing completers to prevent race condition
+    // لو double-tap حصل، الـ check فوق هيمنع الثاني من الوصول لهنا
+    _isPurchasing = true;
     _completers.clear();
     final completer = Completer<PurchaseDetails>();
     _completers[uniqueNumber] = completer;
     _pendingUniqueNumber = uniqueNumber;
     _pendingProductId = productId;
-    _isPurchasing = true;
 
     // StoreKit 1 only: clear pending queue before purchase
     await _clearPendingTransactions();
@@ -176,6 +178,13 @@ class IAPService {
       if (!completer.isCompleted) {
         _completers.remove(uniqueNumber);
         _clearPendingState();
+        // ✅ لو الـ error هو cancelled، نرمي exception بالاسم الصح
+        final errStr = e.toString().toLowerCase();
+        if (errStr.contains('cancelled') ||
+            errStr.contains('canceled') ||
+            errStr.contains('storekit2_purchase_cancelled')) {
+          throw Exception('تم إلغاء عملية الشراء');
+        }
         throw Exception('فشل بدء عملية الشراء: $e');
       }
     }
@@ -187,9 +196,9 @@ class IAPService {
     }
 
     return completer.future.timeout(
-      const Duration(minutes: 5),
+      const Duration(minutes: 2),
       onTimeout: () {
-        log('[IAP] ⏰ Purchase timed out');
+        log('[IAP] ⏰ Purchase timed out after 2 minutes');
         _completers.remove(uniqueNumber);
         _clearPendingState();
         throw TimeoutException('انتهت مهلة عملية الشراء');
@@ -278,7 +287,35 @@ class IAPService {
 
     // Product mismatch
     if (_pendingProductId != null && purchase.productID != _pendingProductId) {
-      log('[IAP] Product mismatch, ignoring');
+      log(
+        '[IAP] Product mismatch (got ${purchase.productID}, expected $_pendingProductId)',
+      );
+
+      // ── StoreKit 2 behavior ───────────────────────────────────────────────
+      // مع StoreKit 2، لما تشتري subscription جديدة وعندك existing subscription
+      // في نفس الـ Apple account، Apple بتبعت الـ existing subscription كـ
+      // purchased event أولاً. ده سلوك Apple الطبيعي مش bug.
+      //
+      // الحل: لو الـ status هو purchased/restored وعندنا pending purchase،
+      // نعتبره success — Apple بتعمل الـ switch تلقائياً من جهتها،
+      // والـ backend بيعرف عن طريق server-to-server notifications.
+      if (Platform.isIOS &&
+          purchase is SK2PurchaseDetails &&
+          (purchase.status == PurchaseStatus.purchased ||
+              purchase.status == PurchaseStatus.restored)) {
+        log(
+          '[IAP] SK2 cross-subscription event — treating as success for pending purchase',
+        );
+        final now2 = DateTime.now();
+        if (pid != null) _processedIds[pid] = now2;
+        _lastSuccessTime = now2;
+        await _completePurchase(purchase);
+        final key2 = _pendingUniqueNumber ?? '';
+        _resolve(key2, purchase);
+        return;
+      }
+
+      // StoreKit 1 أو non-purchased status → تجاهل
       await _completePurchase(purchase);
       return;
     }
@@ -543,6 +580,7 @@ class IAPErrorHandler {
     if (s.contains('user_canceled') ||
         s.contains('canceled') ||
         s.contains('cancelled') ||
+        s.contains('storekit2_purchase_cancelled') ||
         s.contains('تم إلغاء') ||
         s.contains('إلغاء')) {
       return const IAPErrorResult(

@@ -205,7 +205,6 @@ class _PurchaseSheet extends StatefulWidget {
 
 class _PurchaseSheetState extends State<_PurchaseSheet> {
   int _selectedIndex = 0;
-  bool _useWallet = true;
   late Timer _timer;
   int _remainingSeconds = 0;
   int _closeCountdown = 5;
@@ -285,7 +284,8 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
 
   void _onPayGold(BuildContext context, List<NewUserSubModel> allSubs) {
     final cubit = context.read<UserSubscriptionCubit>();
-    // ✅ Set the selected duration index before purchasing
+    // ✅ نبعت الـ allSubs مع الـ selectedIndex — الـ cubit هيحدد الـ target بنفسه
+    // لكن لازم نحدد الـ selectedDurationIndex أولاً عشان الـ purchaseSubscription يستخدمه
     cubit.selectDuration(_selectedIndex, allSubs);
     cubit.purchaseSubscription(allSubs);
   }
@@ -543,12 +543,13 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                           ? const CircularProgressIndicator(color: Colors.white)
                           : Text(
                               selectedPkg != null
-                                  ? '${context.tr('subscribe')} - ${selectedPkg.price.toStringAsFixed(2)} ${selectedPkg.currency} ${context.tr('total')}'
+                                  ? _buildSubscribeLabel(context, selectedPkg)
                                   : context.tr('subscribe'),
                               style: TextStyle(
-                                fontSize: 16.sp,
+                                fontSize: 15.sp,
                                 fontWeight: FontWeight.w700,
                               ),
+                              textAlign: TextAlign.center,
                             ),
                     ),
                   ),
@@ -619,7 +620,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                   // لو مش موجود → اعرض السعر الكلي
                   if (pkg.pricePerMonth != null) ...[
                     Text(
-                      '${context.tr('price_per_month')}: ${pkg.pricePerMonth!.toStringAsFixed(2)} ${pkg.currency}',
+                      '${pkg.pricePerMonth!.toStringAsFixed(2)} ${pkg.currency} / ${context.tr('month')}',
                       style: TextStyle(
                         fontSize: 13.sp,
                         color: _goldMid,
@@ -627,14 +628,14 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                       ),
                     ),
                     SizedBox(height: 2.h),
-                    // Text(
-                    //   '${context.tr('total')}: ${pkg.price.toStringAsFixed(2)} ${pkg.currency}',
-                    //   style: TextStyle(
-                    //     fontSize: 12.sp,
-                    //     color: Colors.black54,
-                    //     fontWeight: FontWeight.w500,
-                    //   ),
-                    // ),
+                    Text(
+                      '${context.tr('total')}: ${pkg.price.toStringAsFixed(2)} ${pkg.currency}',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: Colors.black45,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
                   ] else
                     Text(
                       '${pkg.price.toStringAsFixed(2)} ${pkg.currency}',
@@ -718,6 +719,16 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     if (label.contains('3') || label.toLowerCase().contains('three'))
       return '3';
     return '1';
+  }
+
+  // ── helper: نص زرار الاشتراك ──
+  String _buildSubscribeLabel(BuildContext context, PurchasePackage pkg) {
+    if (pkg.pricePerMonth != null) {
+      // لو في pricePerMonth → اعرض "اشترك - X EGP/شهر (إجمالي Y EGP)"
+      return '${context.tr('subscribe')} · ${pkg.pricePerMonth!.toStringAsFixed(2)} ${pkg.currency}/${context.tr('month')}';
+    }
+    // لو مفيش pricePerMonth → اعرض السعر الكلي
+    return '${context.tr('subscribe')} · ${pkg.price.toStringAsFixed(2)} ${pkg.currency}';
   }
 
   // ════════════════════════════════════
@@ -1049,9 +1060,7 @@ void showRegardInputSheet(
 
   Widget buildContent(BuildContext sheetContext) {
     return Directionality(
-      textDirection: /* isArabic */ true
-          ? TextDirection.rtl
-          : TextDirection.ltr,
+      textDirection: TextDirection.rtl,
       child: Padding(
         padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 20.h),
         child: Column(

@@ -154,11 +154,20 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
     final NewAdvisorSubModel targetSub;
 
     if (current != null) {
-      // ✅ لو الاشتراك الحالي نشط (مش ملغي) → upgrade فقط
       if (current.isActiveInApple) {
+        // اشتراك نشط → upgrade فقط
         final upgrade = getUpgradeSub(allSubs);
         if (upgrade == null) {
-          log('[AdvisorSub] ⚠️ No upgrade available — current is active');
+          log(
+            '[AdvisorSub] ⚠️ No upgrade available — current is active in Apple',
+          );
+          // أعلم الـ user إنه على أعلى خطة متاحة
+          emit(
+            state.copyWith(
+              status: AdvisorSubStatus.error,
+              error: 'already_on_highest_plan',
+            ),
+          );
           return;
         }
         targetSub = upgrade;
@@ -166,7 +175,7 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
           '[AdvisorSub] 📈 UPGRADE: ${current.subscriptionDurationType} → ${targetSub.subscriptionDurationType}',
         );
       } else {
-        // ✅ الاشتراك ملغي auto-renew → يمكن upgrade أو downgrade
+        // الاشتراك ملغي auto-renew → upgrade أو downgrade
         final upgrade = getUpgradeSub(allSubs);
         final downgrade = getDowngradeSub(allSubs);
 
@@ -182,6 +191,12 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
           );
         } else {
           log('[AdvisorSub] ⚠️ No change available');
+          emit(
+            state.copyWith(
+              status: AdvisorSubStatus.error,
+              error: 'already_on_highest_plan',
+            ),
+          );
           return;
         }
       }
@@ -207,7 +222,20 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
     }
 
     emit(state.copyWith(status: AdvisorSubStatus.purchasing));
-    unawaited(_iapService.init());
+
+    // تهيئة الـ IAP service قبل الشراء — لو فشل نوقف العملية
+    try {
+      await _iapService.init();
+    } catch (e) {
+      log('[AdvisorSub] ❌ IAP init failed: $e');
+      emit(
+        state.copyWith(
+          status: AdvisorSubStatus.error,
+          error: 'store_unavailable',
+        ),
+      );
+      return;
+    }
 
     final platform = Platform.isIOS ? 'ios' : 'android';
 

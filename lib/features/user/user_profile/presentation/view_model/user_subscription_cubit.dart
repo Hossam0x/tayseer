@@ -157,6 +157,12 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
         final upgrade = getUpgradeSub(allSubs);
         if (upgrade == null) {
           log('[UserSub] ⚠️ No upgrade available — current is active in Apple');
+          emit(
+            state.copyWith(
+              status: UserSubStatus.error,
+              error: 'already_on_highest_plan',
+            ),
+          );
           return;
         }
         targetSub = upgrade;
@@ -179,6 +185,12 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
           );
         } else {
           log('[UserSub] ⚠️ No change available');
+          emit(
+            state.copyWith(
+              status: UserSubStatus.error,
+              error: 'already_on_highest_plan',
+            ),
+          );
           return;
         }
       }
@@ -203,7 +215,17 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
     }
 
     emit(state.copyWith(status: UserSubStatus.purchasing));
-    unawaited(_iapService.init());
+
+    // تهيئة الـ IAP service قبل الشراء — لو فشل نوقف العملية
+    try {
+      await _iapService.init();
+    } catch (e) {
+      log('[UserSub] ❌ IAP init failed: $e');
+      emit(
+        state.copyWith(status: UserSubStatus.error, error: 'store_unavailable'),
+      );
+      return;
+    }
 
     final platform = Platform.isIOS ? 'ios' : 'android';
 

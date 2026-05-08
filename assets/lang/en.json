@@ -2096,6 +2096,7 @@
   "check_internet_connection": "Check your internet connection and try again",
   "operation_timeout": "The operation timed out. Please try again",
   "product_unavailable": "This product is currently unavailable",
+  "already_on_highest_plan": "You're already on the highest available plan for this package",
   "unexpected_error": "An unexpected error occurred. Please try again",
   "subscription_activated": "Your subscription has been activated successfully 🎉",
   "subscription_cancelled_by_user": "Subscription cancelled",

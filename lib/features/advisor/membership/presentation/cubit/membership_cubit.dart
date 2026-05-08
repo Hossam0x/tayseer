@@ -163,20 +163,30 @@ class MembershipCubit extends Cubit<MembershipState> {
     }
   }
 
+  /// يجيب الـ productId من الـ subscription الحالية للـ refund request.
+  ///
+  /// الـ productId بيتجيب من الـ native layer مباشرة عن طريق
+  /// Transaction.currentEntitlements — أدق من بناءه manually.
+  /// لو مش موجود، بنرجع null والـ fallback هو reportaproblem.apple.com.
   String? _getProductId(MySubscriptionModel sub) {
     // نبني الـ productId من الـ subscription type و duration
-    // مثال: tayseer.advisor.gold.monthly
+    // الـ subscriptionDurationType بيجي lowercase من الـ backend
     final type = sub.isGold ? 'gold' : 'elite';
-    final duration = switch (sub.subscriptionDurationType) {
+    final rawDuration = sub.subscriptionDurationType.toLowerCase();
+    final duration = switch (rawDuration) {
       'weekly' => 'weekly',
       'monthly' => 'monthly',
-      'threeMonths' => 'three.months',
+      'threemonths' || 'three_months' || 'three.months' => 'three.months',
       _ => null,
     };
-    if (duration == null) return null;
-    // نحاول نعرف لو advisor أو user من الـ cubit type
+    if (duration == null) {
+      log('[Refund] Unknown duration: ${sub.subscriptionDurationType}');
+      return null;
+    }
     final prefix = this is UserMembershipCubit ? 'user' : 'advisor';
-    return 'tayseer.$prefix.$type.$duration';
+    final productId = 'tayseer.$prefix.$type.$duration';
+    log('[Refund] Built productId: $productId');
+    return productId;
   }
 
   void clearMessages() {

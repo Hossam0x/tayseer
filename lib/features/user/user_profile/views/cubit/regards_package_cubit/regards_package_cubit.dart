@@ -27,7 +27,19 @@ class RegardsPackagePurchaseCubit extends Cubit<RegardsPackagePurchaseState> {
     }
 
     emit(state.copyWith(status: RegardsPackagePurchaseStatus.purchasing));
-    unawaited(_iapService.init());
+
+    // تهيئة الـ IAP service قبل الشراء
+    try {
+      await _iapService.init();
+    } catch (e) {
+      emit(
+        state.copyWith(
+          status: RegardsPackagePurchaseStatus.error,
+          error: 'store_unavailable',
+        ),
+      );
+      return;
+    }
 
     final platform = Platform.isIOS ? 'ios' : 'android';
 
