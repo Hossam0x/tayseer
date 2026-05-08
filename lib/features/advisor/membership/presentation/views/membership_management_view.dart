@@ -12,6 +12,14 @@ import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/membership/data/models/my_subscription_model.dart';
 import 'package:tayseer/features/user/user_profile/presentation/view_model/user_membership_cubit.dart';
 
+// ── ألوان Gold ──
+const _goldGradient1 = Color(0xFFD4A017);
+const _goldGradient2 = Color(0xFF8B6914);
+
+// ── ألوان Elite ──
+const _eliteGradient1 = Color(0xFF6A1FC2);
+const _eliteGradient2 = Color(0xFF4A1A8C);
+
 class MembershipManagementView extends StatelessWidget {
   const MembershipManagementView({super.key});
 
@@ -30,18 +38,54 @@ class MembershipManagementView extends StatelessWidget {
             return false;
           },
           listener: _onStateChanged,
-          child: Stack(
-            children: [
-              const _BackgroundBar(),
-              SafeArea(
-                child: Column(
-                  children: [
-                    const _Header(),
-                    const Expanded(child: _MembershipBody()),
-                  ],
-                ),
-              ),
-            ],
+          child: BlocBuilder<MembershipCubit, MembershipState>(
+            buildWhen: (prev, curr) =>
+                (prev is MembershipLoaded) != (curr is MembershipLoaded) ||
+                (prev is MembershipLoaded &&
+                    curr is MembershipLoaded &&
+                    prev.sub.subscriptionType != curr.sub.subscriptionType),
+            builder: (context, state) {
+              final sub = state is MembershipLoaded ? state.sub : null;
+              final isGold = sub?.isGold ?? false;
+              final isUltra = sub?.isUltra ?? false;
+              final hasTheme = isGold || isUltra;
+
+              return Stack(
+                children: [
+                  const _BackgroundBar(),
+                  // ── Gradient overlay حسب نوع الاشتراك ──────────────────
+                  if (hasTheme)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                (isGold ? _goldGradient1 : _eliteGradient1)
+                                    .withOpacity(0.18),
+                                (isGold ? _goldGradient2 : _eliteGradient2)
+                                    .withOpacity(0.08),
+                                Colors.transparent,
+                              ],
+                              stops: const [0.0, 0.25, 0.55],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  SafeArea(
+                    child: Column(
+                      children: [
+                        _Header(sub: sub),
+                        const Expanded(child: _MembershipBody()),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -52,10 +96,18 @@ class MembershipManagementView extends StatelessWidget {
     // Loaded state messages
     if (state is MembershipLoaded) {
       if (state.actionSuccess != null) {
-        showMembershipSuccessDialog(context, messageKey: state.actionSuccess!);
+        // cancel auto-renew → toast بسيط (مش dialog احتفالي)
+        if (state.actionSuccess == 'cancel_auto_renew_success') {
+          AppToast.info(context, context.tr(state.actionSuccess!));
+        } else {
+          showMembershipSuccessDialog(
+            context,
+            messageKey: state.actionSuccess!,
+          );
+        }
         context.read<MembershipCubit>().clearMessages();
       } else if (state.actionError != null) {
-        AppToast.error(context, state.actionError!);
+        AppToast.error(context, context.tr(state.actionError!));
         context.read<MembershipCubit>().clearMessages();
       }
       return;
@@ -112,13 +164,33 @@ class _BackgroundBar extends StatelessWidget {
 
 // ── Header ────────────────────────────────────────────────────────────────────
 class _Header extends StatelessWidget {
-  const _Header();
+  final MySubscriptionModel? sub;
+  const _Header({this.sub});
 
   @override
   Widget build(BuildContext context) {
+    final isGold = sub?.isGold ?? false;
+    final isUltra = sub?.isUltra ?? false;
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-      child: SimpleAppBar(title: context.tr('membership_management')),
+      child: Row(
+        children: [
+          Expanded(
+            child: SimpleAppBar(title: context.tr('membership_management')),
+          ),
+          // أيقونة الباقة في الـ app bar
+          if (isGold || isUltra)
+            Padding(
+              padding: EdgeInsets.only(bottom: 8.h),
+              child: AppImage(
+                isGold ? AssetsData.goldIcon : AssetsData.eliteIcon,
+                width: 28.w,
+                height: 28.w,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

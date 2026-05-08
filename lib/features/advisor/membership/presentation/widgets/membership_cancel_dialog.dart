@@ -20,9 +20,7 @@ class _CancelDialog extends StatelessWidget {
     return Dialog(
       backgroundColor: Colors.white,
       insetPadding: EdgeInsets.symmetric(horizontal: 24.w),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24.r),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r)),
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
         child: Column(
@@ -56,7 +54,7 @@ class _CancelDialog extends StatelessWidget {
 
             // Title
             Text(
-              context.tr('membership_cancel_confirm_title'),
+              context.tr('cancel_auto_renew_confirm_title'),
               style: Styles.textStyle16Bold.copyWith(color: Colors.black87),
               textAlign: TextAlign.center,
             ),
@@ -64,7 +62,7 @@ class _CancelDialog extends StatelessWidget {
 
             // Subtitle
             Text(
-              context.tr('membership_cancel_confirm_desc'),
+              context.tr('cancel_auto_renew_confirm_desc'),
               style: Styles.textStyle12.copyWith(
                 color: Colors.grey.shade600,
                 height: 1.5,

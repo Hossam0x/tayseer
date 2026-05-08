@@ -6,6 +6,7 @@ class NewUserSubModel {
   final String subscriptionType; // "gold" | "ultra"
   final String subscriptionDurationType; // "monthly" | "weekly" | "threeMonths"
   final bool isCurrentSub;
+  final bool isCancelled;
   final String? subscriptionExpiresAt;
   final int numberOfChatRooms;
   final int numberOfChatRoomMins;
@@ -24,6 +25,7 @@ class NewUserSubModel {
     required this.subscriptionType,
     required this.subscriptionDurationType,
     required this.isCurrentSub,
+    this.isCancelled = false,
     this.subscriptionExpiresAt,
     required this.numberOfChatRooms,
     required this.numberOfChatRoomMins,
@@ -48,6 +50,7 @@ class NewUserSubModel {
           .toString()
           .toLowerCase(),
       isCurrentSub: json['isCurrentSub'] ?? false,
+      isCancelled: json['isCancelled'] ?? false,
       subscriptionExpiresAt: json['subscriptionExpiresAt'],
       numberOfChatRooms: json['numberOfChatRooms'] ?? 0,
       numberOfChatRoomMins: json['numberOfChatRoomMins'] ?? 0,
@@ -71,6 +74,17 @@ class NewUserSubModel {
   bool get isWeekly => subscriptionDurationType == 'weekly';
   bool get isThreeMonths => subscriptionDurationType == 'threemonths';
 
+  /// الاشتراك نشط في Apple (لم يُلغَ auto-renew بعد)
+  bool get isActiveInApple => isCurrentSub && !isCancelled;
+
+  /// الاشتراك ملغي auto-renew لكن لسه شغال لحد تاريخ الانتهاء
+  bool get isCancelledButActive {
+    if (!isCancelled || subscriptionExpiresAt == null) return false;
+    final expiry = DateTime.tryParse(subscriptionExpiresAt!);
+    if (expiry == null) return false;
+    return DateTime.now().isBefore(expiry);
+  }
+
   /// Maps to NewAdvisorSubModel so shared UI (GetPackageDisplayData) can reuse it.
   NewAdvisorSubModel toAdvisorSubModel() {
     return NewAdvisorSubModel(
@@ -79,6 +93,7 @@ class NewUserSubModel {
       subscriptionType: subscriptionType,
       subscriptionDurationType: subscriptionDurationType,
       isCurrentSub: isCurrentSub,
+      isCancelled: isCancelled,
       subscriptionExpiresAt: subscriptionExpiresAt,
       numberOfSessions: 0,
       sessionsAppInterestPercentage: 0,

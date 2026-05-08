@@ -35,10 +35,16 @@ class MembershipInfoCard extends StatelessWidget {
             value: _statusText(context),
             valueColor: _statusColor(),
           ),
+          _Divider(),
+          // ── Auto-Renewal row ──────────────────────────────────────────
+          _AutoRenewalRow(autoRenewal: sub.autoRenewal),
           if (sub.subscriptionExpiresAt != null) ...[
             _Divider(),
             _InfoRow(
-              label: context.tr('next_billing_date'),
+              // لو التجديد ملغي → "تاريخ الانتهاء"، لو شغال → "تاريخ التجديد"
+              label: sub.autoRenewal
+                  ? context.tr('next_billing_date')
+                  : context.tr('subscription_ended_in'),
               value: _formatDate(sub.subscriptionExpiresAt),
               isLast: true,
             ),
@@ -56,14 +62,66 @@ class MembershipInfoCard extends StatelessWidget {
   }
 
   String _statusText(BuildContext context) {
-    if (sub.isCancelled) return context.tr('status_cancelled');
     if (sub.isExpired) return context.tr('status_ended');
+    if (!sub.autoRenewal) return context.tr('status_cancelled_auto_renew');
+    if (sub.isCancelled) return context.tr('status_cancelled');
     return context.tr('status_active');
   }
 
   Color _statusColor() {
-    if (sub.isActive && !sub.isCancelled) return AppColors.kprimaryColor;
-    return Colors.red.shade400;
+    if (sub.isExpired) return Colors.red.shade400;
+    if (!sub.autoRenewal) return Colors.orange.shade600;
+    if (sub.isCancelled) return Colors.red.shade400;
+    return AppColors.kprimaryColor;
+  }
+}
+
+// ── Auto-Renewal row ─────────────────────────────────────────────────────────
+class _AutoRenewalRow extends StatelessWidget {
+  final bool autoRenewal;
+  const _AutoRenewalRow({required this.autoRenewal});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            context.tr('auto_renewal'),
+            style: Styles.textStyle14Bold.copyWith(color: Colors.black87),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 8.w,
+                height: 8.w,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: autoRenewal
+                      ? const Color(0xFF22C55E)
+                      : Colors.orange.shade500,
+                ),
+              ),
+              Gap(6.w),
+              Text(
+                autoRenewal
+                    ? context.tr('auto_renewal_on')
+                    : context.tr('auto_renewal_off'),
+                style: Styles.textStyle14.copyWith(
+                  color: autoRenewal
+                      ? const Color(0xFF22C55E)
+                      : Colors.orange.shade600,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 

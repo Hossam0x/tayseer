@@ -83,7 +83,7 @@ class RechargeCubit extends Cubit<RechargeState> {
           status: err.isCanceled
               ? RechargeStatus.canceled
               : RechargeStatus.error,
-          error: err.isCanceled ? null : err.message,
+          error: err.isCanceled ? null : err.messageKey,
         ),
       );
     }

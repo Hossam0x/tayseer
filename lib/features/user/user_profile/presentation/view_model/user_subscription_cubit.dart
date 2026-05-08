@@ -4,9 +4,9 @@ import 'dart:io';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/services/iap_service.dart';
-import 'package:tayseer/core/utils/api_endpoint.dart';
-import 'package:tayseer/core/utils/api_service.dart';
+import 'package:tayseer/core/shared/network/local_network.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/models/new_user_sub_model.dart';
@@ -52,13 +52,9 @@ class UserSubscriptionState extends Equatable {
 
 class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
   final IAPService _iapService;
-  final ApiService _apiService;
 
-  UserSubscriptionCubit(
-    SelectedPackage packageType,
-    this._iapService,
-    this._apiService,
-  ) : super(UserSubscriptionState(packageType: packageType));
+  UserSubscriptionCubit(SelectedPackage packageType, this._iapService)
+    : super(UserSubscriptionState(packageType: packageType));
 
   List<NewUserSubModel> getSubscriptionsForPackage(
     List<NewUserSubModel> allSubs,
@@ -109,6 +105,18 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
         .firstOrNull;
   }
 
+  /// downgrade متاح فقط لو الاشتراك الحالي ملغي auto-renew
+  NewUserSubModel? getDowngradeSub(List<NewUserSubModel> allSubs) {
+    final subs = getSubscriptionsForPackage(allSubs);
+    final current = subs.where((s) => s.isCurrentSub).firstOrNull;
+    if (current == null) return null;
+    if (!current.isCancelled) return null;
+    final currentWeight = _durationWeight(current);
+    return subs
+        .where((s) => !s.isCurrentSub && _durationWeight(s) < currentWeight)
+        .lastOrNull;
+  }
+
   /// أول ما تيجي البيانات — يختار الـ monthly تلقائياً (Most Popular)
   /// لو مفيش monthly يختار الأولى
   void initSelection(List<NewUserSubModel> allSubs) {
@@ -139,23 +147,56 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
     final subs = getSubscriptionsForPackage(allSubs);
     if (subs.isEmpty) return;
 
+    // ── Step 1: تحديد الـ target subscription ────────────────────────────
     final current = subs.where((s) => s.isCurrentSub).firstOrNull;
     final NewUserSubModel targetSub;
+
     if (current != null) {
-      final upgrade = getUpgradeSub(allSubs);
-      if (upgrade == null) return;
-      targetSub = upgrade;
+      if (current.isActiveInApple) {
+        // اشتراك نشط → upgrade فقط
+        final upgrade = getUpgradeSub(allSubs);
+        if (upgrade == null) {
+          log('[UserSub] ⚠️ No upgrade available — current is active in Apple');
+          return;
+        }
+        targetSub = upgrade;
+        log(
+          '[UserSub] 📈 UPGRADE: ${current.subscriptionDurationType} → ${targetSub.subscriptionDurationType}',
+        );
+      } else {
+        // اشتراك ملغي auto-renew → upgrade أو downgrade
+        final upgrade = getUpgradeSub(allSubs);
+        final downgrade = getDowngradeSub(allSubs);
+        if (upgrade != null) {
+          targetSub = upgrade;
+          log(
+            '[UserSub] 📈 UPGRADE (cancelled): ${current.subscriptionDurationType} → ${targetSub.subscriptionDurationType}',
+          );
+        } else if (downgrade != null) {
+          targetSub = downgrade;
+          log(
+            '[UserSub] 📉 DOWNGRADE: ${current.subscriptionDurationType} → ${targetSub.subscriptionDurationType}',
+          );
+        } else {
+          log('[UserSub] ⚠️ No change available');
+          return;
+        }
+      }
     } else {
       if (state.selectedDurationIndex >= subs.length) return;
       targetSub = subs[state.selectedDurationIndex];
+      log(
+        '[UserSub] 🆕 NEW SUBSCRIPTION: ${targetSub.subscriptionDurationType}',
+      );
     }
 
+    // ── Step 2: التحقق من الـ product ID ──────────────────────────────────
     final productId = targetSub.appleProductId;
     if (productId.isEmpty) {
       emit(
         state.copyWith(
           status: UserSubStatus.error,
-          error: 'معرف المنتج غير متوفر',
+          error: 'purchase_invalid_product',
         ),
       );
       return;
@@ -167,52 +208,54 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
     final platform = Platform.isIOS ? 'ios' : 'android';
 
     try {
-      final response = await _apiService.post(
-        endPoint: ApiEndPoint.initiateSubscriptionPurchase,
-        data: {
-          'productId': productId,
-          'platform': platform,
-          'subscriptionId': targetSub.id,
-        },
-      );
+      // ── Step 1: قراءة الـ uuid من الكاش ──────────────────────────────────
+      final uuid = CachNetwork.getStringData(key: kUuid);
 
-      if (response['success'] != true) {
+      log('[UserSub] ════════════════════════════════════════');
+      log('[UserSub] 🛒 PURCHASE FLOW START');
+      log('[UserSub]   productId      : $productId');
+      log('[UserSub]   platform       : $platform');
+      log('[UserSub]   subscriptionId : ${targetSub.id}');
+      log('[UserSub]   target sub     : ${targetSub.subscriptionDurationType}');
+      log(
+        '[UserSub]   current sub    : ${current?.subscriptionDurationType ?? "none"}',
+      );
+      log('[UserSub]   is active      : ${current?.isActiveInApple ?? false}');
+      log('[UserSub]   is cancelled   : ${current?.isCancelled ?? false}');
+      log('[UserSub] ────────────────────────────────────────');
+      log(
+        '[UserSub] 🆔 uuid from cache  : ${uuid.isNotEmpty ? uuid : "⚠️ EMPTY — uuid not cached yet"}',
+      );
+      log('[UserSub] 📲 applicationUserName → Apple: $uuid');
+      log('[UserSub] ════════════════════════════════════════');
+
+      if (uuid.isEmpty) {
         emit(
           state.copyWith(
             status: UserSubStatus.error,
-            error: response['message']?.toString() ?? 'فشل بدء عملية الاشتراك',
+            error: 'purchase_user_data_missing',
           ),
         );
         return;
       }
 
-      final pendingId = response['data']?['pendingId'] as String? ?? '';
+      // ── Step 2: Apple IAP ─────────────────────────────────────────────────
       final purchase = await _iapService.buyProduct(
         productId,
-        uniqueNumber: pendingId,
+        uniqueNumber: uuid,
       );
 
-      // Confirm purchase with backend using transactionId
-      // This is required because Apple doesn't guarantee applicationUsername
-      // will be present in Server Notifications (webhooks)
-      final transactionId = purchase.purchaseID ?? '';
-      if (transactionId.isNotEmpty) {
-        try {
-          await _apiService.post(
-            endPoint: ApiEndPoint.confirmSubscriptionPurchase,
-            data: {
-              'pendingId': pendingId,
-              'transactionId': transactionId,
-              'platform': platform,
-            },
-          );
-          log('[UserSub] ✅ Backend confirmed: $transactionId');
-        } catch (e) {
-          log('[UserSub] ⚠️ Backend confirmation failed: $e');
-          // Don't block user — backend should also handle via webhooks
-        }
-      }
+      log('[UserSub] ✅ Apple purchase success:');
+      log('[UserSub]   purchaseID (transactionId): ${purchase.purchaseID}');
+      log('[UserSub]   productID                 : ${purchase.productID}');
+      log(
+        '[UserSub]   transactionDate           : ${purchase.transactionDate}',
+      );
+      log('[UserSub]   status                    : ${purchase.status}');
 
+      // ── Step 3: Success ───────────────────────────────────────────────────
+      // Apple بتكلم الباك مباشرة عن طريق server-to-server notifications
+      // transfer-subscription بتتبعت بس في الـ restore flow مش هنا
       SubscriptionEventBus.instance.fire(
         SubscriptionChangedEvent(subscriptionType: targetSub.subscriptionType),
       );
@@ -222,7 +265,7 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
       emit(
         state.copyWith(
           status: err.isCanceled ? UserSubStatus.canceled : UserSubStatus.error,
-          error: err.isCanceled ? null : err.message,
+          error: err.isCanceled ? null : err.messageKey,
         ),
       );
     }

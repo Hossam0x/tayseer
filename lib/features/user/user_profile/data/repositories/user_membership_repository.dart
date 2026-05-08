@@ -1,5 +1,5 @@
+import 'dart:developer';
 import 'package:dartz/dartz.dart';
-import 'package:tayseer/core/utils/api_endpoint.dart';
 import 'package:tayseer/features/advisor/membership/data/models/my_subscription_model.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -40,10 +40,24 @@ class UserMembershipRepositoryImpl implements UserMembershipRepository {
   @override
   Future<Either<Failure, void>> cancelMySubscription() async {
     try {
+      log('[UserRepo] ════════════════════════════════════════');
+      log('[UserRepo] 📤 SENDING cancel to backend');
+      log('[UserRepo]   endpoint: ${ApiEndPoint.cancelUserSubscription}');
+      log(
+        '[UserRepo]   body: {} (empty — backend uses token to identify user)',
+      );
+      log('[UserRepo] ════════════════════════════════════════');
+
       final response = await _apiService.post(
         endPoint: ApiEndPoint.cancelUserSubscription,
         data: {},
       );
+
+      log('[UserRepo] 📩 RECEIVED from backend (cancel):');
+      log('[UserRepo]   success : ${response['success']}');
+      log('[UserRepo]   message : ${response['message']}');
+      log('[UserRepo]   data    : ${response['data']}');
+
       if (response['success'] == true) {
         return const Right(null);
       }
@@ -51,8 +65,10 @@ class UserMembershipRepositoryImpl implements UserMembershipRepository {
         ServerFailure(response['message']?.toString() ?? 'فشل إلغاء الاشتراك'),
       );
     } on DioException catch (e) {
+      log('[UserRepo] ❌ DioException on cancel: ${e.message}');
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
+      log('[UserRepo] ❌ Exception on cancel: $e');
       return Left(ServerFailure(e.toString()));
     }
   }

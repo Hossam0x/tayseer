@@ -1,5 +1,7 @@
 // ignore_for_file: unnecessary_null_comparison
 
+import 'dart:developer';
+
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/services/connectivity_service.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
@@ -423,10 +425,19 @@ class HomeRepositoryImpl implements HomeRepository {
       final name = data['name'] as String? ?? '';
       final image = data['image'] as String? ?? '';
       final approvalKey = data['approvalKey'] as String? ?? '';
+      final uuid = data['uuid'] as String? ?? '';
 
       // حفظ الاسم والصورة في الكاش عند النجاح لضمان العرض في وضع عدم الاتصال (أوفلاين)
       await CachNetwork.setData(key: kMyProfileName, value: name);
       await CachNetwork.setData(key: kMyProfileImage, value: image);
+
+      // حفظ الـ uuid في الكاش — يُستخدم في عمليات الدفع مع Apple
+      if (uuid.isNotEmpty) {
+        await CachNetwork.setData(key: kUuid, value: uuid);
+        log('[Home] ✅ uuid cached successfully: $uuid');
+      } else {
+        log('[Home] ⚠️ uuid is EMPTY in API response — not cached');
+      }
 
       return Right(
         ImageAndNameModel(
@@ -434,6 +445,7 @@ class HomeRepositoryImpl implements HomeRepository {
           name: name,
           notifications: notifications,
           approvalKey: approvalKey,
+          uuid: uuid,
         ),
       );
     } on DioException catch (e) {

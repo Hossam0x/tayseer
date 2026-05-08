@@ -46,12 +46,18 @@ class AdvisorSubscriptionView extends StatelessWidget {
       listenWhen: (p, c) => p.status != c.status,
       listener: (context, state) {
         if (state.status == AdvisorSubStatus.success) {
-          showSubscriptionSuccessDialog(context);
+          final isGold = state.packageType != SelectedPackage.elite;
+          showSubscriptionSuccessDialog(context, isGold: isGold);
         } else if (state.status == AdvisorSubStatus.error &&
             state.error != null) {
-          AppToast.error(context, state.error!);
+          AppToast.error(context, context.tr(state.error!));
           context.read<AdvisorSubscriptionCubit>().resetStatus();
         } else if (state.status == AdvisorSubStatus.canceled) {
+          AppToast.show(
+            context,
+            message: context.tr('purchase_cancelled'),
+            type: ToastType.info,
+          );
           context.read<AdvisorSubscriptionCubit>().resetStatus();
         }
       },
@@ -83,6 +89,11 @@ class AdvisorSubscriptionView extends StatelessWidget {
             final upgradeSub = isLoading
                 ? null
                 : cubit.getUpgradeSub(packagesState.subscriptions);
+            final downgradeSub = isLoading
+                ? null
+                : cubit.getDowngradeSub(packagesState.subscriptions);
+            final changeSub = upgradeSub ?? downgradeSub;
+            final isUpgradeAction = upgradeSub != null;
             final hasCurrentSub = currentSub != null;
 
             return Scaffold(
@@ -165,9 +176,12 @@ class AdvisorSubscriptionView extends StatelessWidget {
                                     enabled: isLoading,
                                     child: CurrentSubCard(sub: currentSub),
                                   ),
-                                  if (upgradeSub != null) ...[
+                                  if (changeSub != null) ...[
                                     Gap(16.h),
-                                    UpgradeSubCard(sub: upgradeSub),
+                                    UpgradeSubCard(
+                                      sub: changeSub,
+                                      isUpgrade: isUpgradeAction,
+                                    ),
                                   ],
                                 ] else
                                   Skeletonizer(
@@ -213,7 +227,7 @@ class AdvisorSubscriptionView extends StatelessWidget {
                                     backgroundColor: accentDark,
                                     borderRadius: 28.r,
                                   )
-                                else if (!(hasCurrentSub && upgradeSub == null))
+                                else if (!(hasCurrentSub && changeSub == null))
                                   SizedBox(
                                     width: double.infinity,
                                     height: 54.h,
@@ -239,7 +253,8 @@ class AdvisorSubscriptionView extends StatelessWidget {
                                         _buttonLabel(
                                           context,
                                           hasCurrentSub,
-                                          upgradeSub,
+                                          changeSub,
+                                          isUpgradeAction,
                                           subState,
                                           subs,
                                         ),
@@ -405,20 +420,24 @@ class AdvisorSubscriptionView extends StatelessWidget {
   String _buttonLabel(
     BuildContext context,
     bool hasCurrentSub,
-    NewAdvisorSubModel? upgradeSub,
+    NewAdvisorSubModel? changeSub,
+    bool isUpgrade,
     AdvisorSubscriptionState state,
     List<NewAdvisorSubModel> subs,
   ) {
-    if (hasCurrentSub && upgradeSub != null) {
-      final String label;
-      if (upgradeSub.isWeekly) {
-        label = context.tr('weekly');
-      } else if (upgradeSub.isMonthly) {
-        label = context.tr('monthly');
+    if (hasCurrentSub && changeSub != null) {
+      final String durationLabel;
+      if (changeSub.isWeekly) {
+        durationLabel = context.tr('weekly');
+      } else if (changeSub.isMonthly) {
+        durationLabel = context.tr('monthly');
       } else {
-        label = context.tr('three_months');
+        durationLabel = context.tr('three_months');
       }
-      return '${context.tr('change_to')} $label';
+      final action = isUpgrade
+          ? context.tr('upgrade')
+          : context.tr('downgrade');
+      return '$action ${context.tr('to')} $durationLabel';
     }
     return context.tr('pay');
   }

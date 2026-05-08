@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:tayseer/core/services/iap_service.dart';
-import 'package:tayseer/core/utils/api_service.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/user/marriage/model/regards_package_model.dart';
 import 'package:tayseer/features/user/marriage/view_model/regards_packages_cubit.dart';
@@ -152,11 +151,8 @@ void showGoldPurchaseSheet(BuildContext context, {VoidCallback? onDismiss}) {
     builder: (_) => MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (_) => UserSubscriptionCubit(
-            SelectedPackage.pro,
-            getIt<IAPService>(),
-            getIt<ApiService>(),
-          ),
+          create: (_) =>
+              UserSubscriptionCubit(SelectedPackage.pro, getIt<IAPService>()),
         ),
         BlocProvider(create: (_) => getIt<UserPackagesCubit>()..getPackages()),
       ],
@@ -179,11 +175,8 @@ void showViewLimitPurchaseSheet(
     builder: (_) => MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (_) => UserSubscriptionCubit(
-            SelectedPackage.pro,
-            getIt<IAPService>(),
-            getIt<ApiService>(),
-          ),
+          create: (_) =>
+              UserSubscriptionCubit(SelectedPackage.pro, getIt<IAPService>()),
         ),
         BlocProvider(create: (_) => getIt<UserPackagesCubit>()..getPackages()),
       ],
@@ -372,16 +365,23 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
-              text: context.tr('purchase_success'),
+              text: context.tr('subscription_activated'),
               isSuccess: true,
             ),
           );
         } else if (state.status == UserSubStatus.error && state.error != null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: state.error!, isError: true),
+            CustomSnackBar(
+              context,
+              text: context.tr(state.error!),
+              isError: true,
+            ),
           );
           context.read<UserSubscriptionCubit>().resetStatus();
         } else if (state.status == UserSubStatus.canceled) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(context, text: context.tr('purchase_cancelled')),
+          );
           context.read<UserSubscriptionCubit>().resetStatus();
         }
       },

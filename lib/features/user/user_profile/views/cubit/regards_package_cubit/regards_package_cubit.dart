@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'package:tayseer/core/services/iap_service.dart';
@@ -66,7 +65,7 @@ class RegardsPackagePurchaseCubit extends Cubit<RegardsPackagePurchaseState> {
           status: err.isCanceled
               ? RegardsPackagePurchaseStatus.canceled
               : RegardsPackagePurchaseStatus.error,
-          error: err.isCanceled ? null : err.message,
+          error: err.isCanceled ? null : err.messageKey,
         ),
       );
     }

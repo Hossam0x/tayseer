@@ -21,23 +21,34 @@ class MembershipActionButtons extends StatelessWidget {
         ? AppRouter.kUserPackagesView
         : AppRouter.kPackagesView;
 
-    // Cancelled or expired: restore only
-    if (sub.isCancelled || sub.isExpired) {
+    // initialPage حسب نوع الاشتراك: gold=1 (Pro), ultra=2 (Elite)
+    final initialPage = sub.isUltra ? 2 : 1;
+
+    // منتهي أو ملغي auto-renew وانتهت المدة → restore فقط
+    if (sub.isExpired || (sub.isCancelled && !sub.isActive)) {
       return _PrimaryButton(
         label: context.tr('restore_membership'),
-        onPressed: () => _pushAndRefetch(context, packagesRoute),
+        onPressed: () => _pushAndRefetch(
+          context,
+          packagesRoute,
+          args: {'initialPage': initialPage},
+        ),
       );
     }
 
-    // Active: change plan + cancel (no renew)
+    // نشط: change plan + cancel auto-renew (بس لو autoRenewal = true)
     return Column(
       children: [
         _PrimaryButton(
           label: context.tr('change_plan'),
-          onPressed: () => _pushAndRefetch(context, packagesRoute),
+          onPressed: () => _pushAndRefetch(
+            context,
+            packagesRoute,
+            args: {'initialPage': initialPage},
+          ),
         ),
-        Gap(12.h),
-        _CancelButton(onTap: onCancelTap),
+        // زرار الإلغاء يظهر بس لو التجديد التلقائي شغال
+        if (sub.autoRenewal) ...[Gap(12.h), _CancelButton(onTap: onCancelTap)],
       ],
     );
   }
@@ -72,11 +83,23 @@ class _CancelButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextButton(
-      onPressed: onTap,
-      child: Text(
-        context.tr('cancel_subscription'),
-        style: Styles.textStyle14.copyWith(color: Colors.red.shade400),
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          padding: EdgeInsets.symmetric(vertical: 14.h),
+          side: BorderSide(color: Colors.red.shade300),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+        ),
+        onPressed: onTap,
+        child: Text(
+          context.tr('cancel_auto_renew'),
+          style: Styles.textStyle16SemiBold.copyWith(
+            color: Colors.red.shade400,
+          ),
+        ),
       ),
     );
   }

@@ -2,16 +2,16 @@ import 'package:flutter/gestures.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/core/functions/url_launcher.dart';
 import 'package:tayseer/features/shared/auth/view/widget/agreement_text.dart';
+import 'package:tayseer/features/shared/packages/presentation/widgets/current_sub_card.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/restore_purchases_button.dart';
+import 'package:tayseer/features/shared/packages/presentation/widgets/selectable_sub_card.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/subscription_purchasing_button.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/subscription_success_dialog.dart';
+import 'package:tayseer/features/shared/packages/presentation/widgets/upgrade_sub_card.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/models/new_user_sub_model.dart';
 import 'package:tayseer/features/user/user_profile/presentation/view_model/user_packages_cubit.dart';
 import 'package:tayseer/features/user/user_profile/presentation/view_model/user_subscription_cubit.dart';
-import 'package:tayseer/features/user/user_profile/presentation/widgets/user_current_sub_card.dart';
-import 'package:tayseer/features/user/user_profile/presentation/widgets/user_selectable_sub_card.dart';
-import 'package:tayseer/features/user/user_profile/presentation/widgets/user_upgrade_sub_card.dart';
 import 'package:tayseer/my_import.dart';
 
 // ── ألوان Gold ──
@@ -47,11 +47,17 @@ class UserSubscriptionView extends StatelessWidget {
       listenWhen: (p, c) => p.status != c.status,
       listener: (context, state) {
         if (state.status == UserSubStatus.success) {
-          showSubscriptionSuccessDialog(context);
+          final isGold = state.packageType != SelectedPackage.elite;
+          showSubscriptionSuccessDialog(context, isGold: isGold);
         } else if (state.status == UserSubStatus.error && state.error != null) {
-          AppToast.error(context, state.error!);
+          AppToast.error(context, context.tr(state.error!));
           context.read<UserSubscriptionCubit>().resetStatus();
         } else if (state.status == UserSubStatus.canceled) {
+          AppToast.show(
+            context,
+            message: context.tr('purchase_cancelled'),
+            type: ToastType.info,
+          );
           context.read<UserSubscriptionCubit>().resetStatus();
         }
       },
@@ -83,6 +89,11 @@ class UserSubscriptionView extends StatelessWidget {
             final upgradeSub = isLoading
                 ? null
                 : cubit.getUpgradeSub(packagesState.subscriptions);
+            final downgradeSub = isLoading
+                ? null
+                : cubit.getDowngradeSub(packagesState.subscriptions);
+            final changeSub = upgradeSub ?? downgradeSub;
+            final isUpgradeAction = upgradeSub != null;
             final hasCurrentSub = currentSub != null;
 
             return Scaffold(
@@ -162,11 +173,16 @@ class UserSubscriptionView extends StatelessWidget {
                                 if (hasCurrentSub) ...[
                                   Skeletonizer(
                                     enabled: isLoading,
-                                    child: UserCurrentSubCard(sub: currentSub),
+                                    child: CurrentSubCard(
+                                      sub: currentSub.toAdvisorSubModel(),
+                                    ),
                                   ),
-                                  if (upgradeSub != null) ...[
+                                  if (changeSub != null) ...[
                                     Gap(16.h),
-                                    UserUpgradeSubCard(sub: upgradeSub),
+                                    UpgradeSubCard(
+                                      sub: changeSub.toAdvisorSubModel(),
+                                      isUpgrade: isUpgradeAction,
+                                    ),
                                   ],
                                 ] else
                                   Skeletonizer(
@@ -182,8 +198,8 @@ class UserSubscriptionView extends StatelessWidget {
                                             padding: EdgeInsets.only(
                                               bottom: 16.h,
                                             ),
-                                            child: UserSelectableSubCard(
-                                              sub: sub,
+                                            child: SelectableSubCard(
+                                              sub: sub.toAdvisorSubModel(),
                                               isSelected:
                                                   !isLoading &&
                                                   subState.selectedDurationIndex ==
@@ -212,7 +228,7 @@ class UserSubscriptionView extends StatelessWidget {
                                     backgroundColor: accentDark,
                                     borderRadius: 28.r,
                                   )
-                                else if (!(hasCurrentSub && upgradeSub == null))
+                                else if (!(hasCurrentSub && changeSub == null))
                                   SizedBox(
                                     width: double.infinity,
                                     height: 54.h,
@@ -238,7 +254,8 @@ class UserSubscriptionView extends StatelessWidget {
                                         _buttonLabel(
                                           context,
                                           hasCurrentSub,
-                                          upgradeSub,
+                                          changeSub,
+                                          isUpgradeAction,
                                           subState,
                                           subs,
                                         ),
@@ -404,20 +421,24 @@ class UserSubscriptionView extends StatelessWidget {
   String _buttonLabel(
     BuildContext context,
     bool hasCurrentSub,
-    NewUserSubModel? upgradeSub,
+    NewUserSubModel? changeSub,
+    bool isUpgrade,
     UserSubscriptionState state,
     List<NewUserSubModel> subs,
   ) {
-    if (hasCurrentSub && upgradeSub != null) {
-      final String label;
-      if (upgradeSub.isWeekly) {
-        label = context.tr('weekly');
-      } else if (upgradeSub.isMonthly) {
-        label = context.tr('monthly');
+    if (hasCurrentSub && changeSub != null) {
+      final String durationLabel;
+      if (changeSub.isWeekly) {
+        durationLabel = context.tr('weekly');
+      } else if (changeSub.isMonthly) {
+        durationLabel = context.tr('monthly');
       } else {
-        label = context.tr('three_months');
+        durationLabel = context.tr('three_months');
       }
-      return '${context.tr('change_to')} $label';
+      final action = isUpgrade
+          ? context.tr('upgrade')
+          : context.tr('downgrade');
+      return '$action ${context.tr('to')} $durationLabel';
     }
     return context.tr('pay');
   }

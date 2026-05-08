@@ -66,11 +66,12 @@ class IAPService {
       final txns = await SKPaymentQueueWrapper().transactions();
       log('[IAP] Pending iOS transactions: ${txns.length}');
       for (final t in txns) {
+        // ✅ لا تـ finish الـ purchasing state — Apple مش بتسمح بده
+        // فقط finished/failed/restored/deferred
         final shouldFinish =
             t.transactionState == SKPaymentTransactionStateWrapper.purchased ||
             t.transactionState == SKPaymentTransactionStateWrapper.restored ||
             t.transactionState == SKPaymentTransactionStateWrapper.failed ||
-            t.transactionState == SKPaymentTransactionStateWrapper.purchasing ||
             t.transactionState == SKPaymentTransactionStateWrapper.deferred;
         if (shouldFinish) {
           try {
@@ -126,9 +127,21 @@ class IAPService {
     if (!_initialized) throw Exception('فشل تهيئة خدمة الشراء');
     if (_isPurchasing) throw Exception('يوجد عملية شراء جارية بالفعل');
 
-    log('[IAP] 🛒 buyProduct: $productId | pendingId: $uniqueNumber');
+    log('[IAP] ════════════════════════════════════════');
+    log('[IAP] 🛒 SENDING TO APPLE');
+    log('[IAP]   productId        : $productId');
+    log('[IAP]   applicationUserName (pendingId): $uniqueNumber');
+    log('[IAP] ════════════════════════════════════════');
 
     final product = await _fetchProduct(productId);
+
+    log('[IAP] 📦 Product details from Apple:');
+    log('[IAP]   id          : ${product.id}');
+    log('[IAP]   title       : ${product.title}');
+    log('[IAP]   description : ${product.description}');
+    log('[IAP]   price       : ${product.price}');
+    log('[IAP]   currencyCode: ${product.currencyCode}');
+    log('[IAP]   rawPrice    : ${product.rawPrice}');
 
     _completers.clear();
     final completer = Completer<PurchaseDetails>();
@@ -138,10 +151,36 @@ class IAPService {
     _isPurchasing = true;
 
     // Clear stale pending transactions before starting
+    // ثم نستنى لحد ما الـ queue تبقى فاضية (max 3 ثواني)
     await _clearPendingTransactions();
+    if (Platform.isIOS) {
+      const maxWait = Duration(seconds: 3);
+      const checkInterval = Duration(milliseconds: 300);
+      final deadline = DateTime.now().add(maxWait);
+      while (DateTime.now().isBefore(deadline)) {
+        await Future.delayed(checkInterval);
+        final remaining = await SKPaymentQueueWrapper().transactions();
+        final hasPending = remaining.any(
+          (t) =>
+              t.transactionState ==
+                  SKPaymentTransactionStateWrapper.purchased ||
+              t.transactionState == SKPaymentTransactionStateWrapper.restored,
+        );
+        if (!hasPending) {
+          log('[IAP] ✅ Queue is clear — proceeding with purchase');
+          break;
+        }
+        log(
+          '[IAP] ⏳ Waiting for queue to clear... (${remaining.length} remaining)',
+        );
+      }
+    }
 
     bool buyStarted = false;
     try {
+      log(
+        '[IAP] ▶ Calling buyNonConsumable with applicationUserName=$uniqueNumber',
+      );
       buyStarted = await _iap.buyNonConsumable(
         purchaseParam: PurchaseParam(
           productDetails: product,
@@ -183,9 +222,47 @@ class IAPService {
   }
 
   Future<void> _handlePurchase(PurchaseDetails purchase) async {
+    // ── Full debug dump of everything Apple returned ──────────────────────
+    log('[IAP] ════════════════════════════════════════');
+    log('[IAP] 📩 RECEIVED FROM APPLE');
+    log('[IAP]   status          : ${purchase.status}');
+    log('[IAP]   productID       : ${purchase.productID}');
+    log('[IAP]   purchaseID      : ${purchase.purchaseID}');
+    log('[IAP]   transactionDate : ${purchase.transactionDate}');
+    log('[IAP]   pendingComplete : ${purchase.pendingCompletePurchase}');
     log(
-      '[IAP] ▶ status=${purchase.status} | product=${purchase.productID} | purchaseID=${purchase.purchaseID}',
+      '[IAP]   verificationData.source          : ${purchase.verificationData.source}',
     );
+    log(
+      '[IAP]   verificationData.localVerificationData (length): ${purchase.verificationData.localVerificationData.length}',
+    );
+    log(
+      '[IAP]   verificationData.serverVerificationData (length): ${purchase.verificationData.serverVerificationData.length}',
+    );
+
+    if (Platform.isIOS && purchase is AppStorePurchaseDetails) {
+      final txn = purchase.skPaymentTransaction;
+      final payment = txn.payment;
+      log(
+        '[IAP]   [iOS] transactionIdentifier  : ${txn.transactionIdentifier}',
+      );
+      log('[IAP]   [iOS] transactionState       : ${txn.transactionState}');
+      log('[IAP]   [iOS] transactionTimeStamp   : ${txn.transactionTimeStamp}');
+      log(
+        '[IAP]   [iOS] payment.productIdentifier   : ${payment.productIdentifier}',
+      );
+      log(
+        '[IAP]   [iOS] payment.applicationUsername : ${payment.applicationUsername}',
+      );
+      log('[IAP]   [iOS] payment.quantity            : ${payment.quantity}');
+      if (txn.originalTransaction != null) {
+        log(
+          '[IAP]   [iOS] originalTransaction.identifier: ${txn.originalTransaction!.transactionIdentifier}',
+        );
+      }
+    }
+    log('[IAP] ════════════════════════════════════════');
+    // ─────────────────────────────────────────────────────────────────────
 
     final now = DateTime.now();
     _processedIds.removeWhere((_, t) => now.difference(t).inSeconds > 5);
@@ -273,9 +350,7 @@ class IAPService {
     if (p.pendingCompletePurchase) {
       try {
         await _iap.completePurchase(p);
-        log(
-          'Complete Purchase with apple : -------------------------------- ${p.toString()}',
-        );
+        log('[IAP] ✅ completePurchase sent to Apple for: ${p.purchaseID}');
       } catch (e) {
         log('[IAP] Error completing purchase: $e');
       }
@@ -401,41 +476,80 @@ class PaymentQueueDelegate implements SKPaymentQueueDelegateWrapper {
 }
 
 class IAPErrorResult {
-  final String message;
+  final String messageKey; // localization key
   final bool isCanceled;
-  const IAPErrorResult({required this.message, this.isCanceled = false});
+  const IAPErrorResult({required this.messageKey, this.isCanceled = false});
 }
 
 class IAPErrorHandler {
   static IAPErrorResult handle(dynamic error) {
     final s = error.toString().toLowerCase();
     log('[IAP] IAPErrorHandler: $error');
+
+    // ── إلغاء من المستخدم ──────────────────────────────────────────────────
     if (s.contains('user_canceled') ||
         s.contains('canceled') ||
         s.contains('cancelled') ||
         s.contains('تم إلغاء') ||
         s.contains('إلغاء')) {
       return const IAPErrorResult(
-        message: 'purchase_cancelled',
+        messageKey: 'purchase_cancelled',
         isCanceled: true,
       );
     }
+
+    // ── transaction مكررة (pending لنفس المنتج) ───────────────────────────
+    if (s.contains('duplicate_product') ||
+        s.contains('storekit_duplicate') ||
+        s.contains('pending transaction')) {
+      return const IAPErrorResult(messageKey: 'purchase_duplicate');
+    }
+
+    // ── عملية شراء جارية بالفعل ───────────────────────────────────────────
+    if (s.contains('already in progress') || s.contains('جارية')) {
+      return const IAPErrorResult(messageKey: 'purchase_in_progress');
+    }
+
+    // ── الشراء غير مسموح (parental controls, etc.) ────────────────────────
+    if (s.contains('not_allowed') ||
+        s.contains('payment_not_allowed') ||
+        s.contains('purchases are not allowed')) {
+      return const IAPErrorResult(messageKey: 'purchase_not_allowed');
+    }
+
+    // ── مشكلة شبكة ────────────────────────────────────────────────────────
     if (s.contains('network') ||
         s.contains('connection') ||
-        s.contains('internet')) {
-      return const IAPErrorResult(message: 'check_internet_connection');
+        s.contains('internet') ||
+        s.contains('storekitd') || // NSCocoaErrorDomain Code=4097 (Simulator)
+        s.contains('nscocoaerrordomain')) {
+      return const IAPErrorResult(messageKey: 'check_internet_connection');
     }
+
+    // ── timeout ───────────────────────────────────────────────────────────
     if (s.contains('timeout') ||
         s.contains('مهلة') ||
         s.contains('timed out')) {
-      return const IAPErrorResult(message: 'operation_timeout');
+      return const IAPErrorResult(messageKey: 'operation_timeout');
     }
-    if (s.contains('already in progress') || s.contains('جارية')) {
-      return const IAPErrorResult(message: 'purchase_in_progress');
+
+    // ── المنتج غير موجود ──────────────────────────────────────────────────
+    if (s.contains('غير موجود') ||
+        s.contains('not found') ||
+        s.contains('invalid product')) {
+      return const IAPErrorResult(messageKey: 'purchase_invalid_product');
     }
-    if (s.contains('غير موجود') || s.contains('not found')) {
-      return const IAPErrorResult(message: 'product_unavailable');
+
+    // ── المتجر غير متوفر ──────────────────────────────────────────────────
+    if (s.contains('store_unavailable') || s.contains('unavailable')) {
+      return const IAPErrorResult(messageKey: 'store_unavailable');
     }
-    return const IAPErrorResult(message: 'unexpected_error');
+
+    // ── بيانات المستخدم مش موجودة ─────────────────────────────────────────
+    if (s.contains('uuid') || s.contains('user data')) {
+      return const IAPErrorResult(messageKey: 'purchase_user_data_missing');
+    }
+
+    return const IAPErrorResult(messageKey: 'unexpected_error');
   }
 }

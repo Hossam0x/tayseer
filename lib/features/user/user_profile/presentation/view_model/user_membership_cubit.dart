@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
 import 'package:tayseer/features/advisor/membership/presentation/cubit/membership_cubit.dart';
@@ -56,32 +57,32 @@ class UserMembershipCubit extends MembershipCubit {
     emit(current.copyWith(isCancelLoading: true));
 
     try {
+      log('[UserCancel] 🚀 Opening Apple subscription management page');
+      log('[UserCancel] ⚠️  This only cancels auto-renew.');
+      log(
+        '[UserCancel]    Subscription stays active until billing period ends.',
+      );
+      log(
+        '[UserCancel]    Apple sends DID_CHANGE_RENEWAL_STATUS webhook to backend.',
+      );
+
       await _openSubscriptionManagement();
 
-      final result = await _userRepository.cancelMySubscription();
-      result.fold(
-        (failure) => emit(
-          current.copyWith(
-            isCancelLoading: false,
-            actionError: failure.message,
-            timestamp: DateTime.now().millisecondsSinceEpoch,
-          ),
+      log('[UserCancel] ✅ User returned from subscription management page');
+      log('[UserCancel] 🔄 Reloading membership to reflect any changes...');
+
+      // Apple بتبعت الـ webhook للباك تلقائياً — مش محتاجين نبعت cancel API
+      // بس نعمل reload عشان نعرض الحالة الجديدة (isCancelled = true)
+      emit(
+        current.copyWith(
+          isCancelLoading: false,
+          actionSuccess: 'cancel_auto_renew_success',
+          timestamp: DateTime.now().millisecondsSinceEpoch,
         ),
-        (_) async {
-          SubscriptionEventBus.instance.fire(
-            const SubscriptionChangedEvent(subscriptionType: 'free'),
-          );
-          emit(
-            current.copyWith(
-              isCancelLoading: false,
-              actionSuccess: 'cancel_membership_success',
-              timestamp: DateTime.now().millisecondsSinceEpoch,
-            ),
-          );
-          await loadUserMembership();
-        },
       );
+      await loadUserMembership();
     } catch (e) {
+      log('[UserCancel] ❌ Exception: $e');
       emit(
         current.copyWith(
           isCancelLoading: false,
@@ -95,6 +96,15 @@ class UserMembershipCubit extends MembershipCubit {
   Future<void> _openSubscriptionManagement() async {
     final Uri uri;
     if (Platform.isIOS) {
+      // itms-apps:// بيفتح مباشرة في الـ App Store app → Subscriptions
+      // fallback: https لو itms-apps مش شغال
+      final itmUri = Uri.parse(
+        'itms-apps://apps.apple.com/account/subscriptions',
+      );
+      if (await canLaunchUrl(itmUri)) {
+        await launchUrl(itmUri, mode: LaunchMode.externalApplication);
+        return;
+      }
       uri = Uri.parse('https://apps.apple.com/account/subscriptions');
     } else {
       uri = Uri.parse('https://play.google.com/store/account/subscriptions');

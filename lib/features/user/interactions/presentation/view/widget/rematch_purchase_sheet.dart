@@ -13,10 +13,7 @@ class _PurchaseState {
   final _PurchaseStatus status;
   final String? error;
 
-  const _PurchaseState({
-    this.status = _PurchaseStatus.initial,
-    this.error,
-  });
+  const _PurchaseState({this.status = _PurchaseStatus.initial, this.error});
 
   _PurchaseState copyWith({_PurchaseStatus? status, String? error}) =>
       _PurchaseState(status: status ?? this.status, error: error);
@@ -27,17 +24,22 @@ class _PurchaseCubit extends Cubit<_PurchaseState> {
   final ApiService _apiService;
 
   _PurchaseCubit(this._iapService, this._apiService)
-      : super(const _PurchaseState());
+    : super(const _PurchaseState());
 
   void reset() => emit(const _PurchaseState());
 
-  Future<void> purchase(ChatDurationPackageModel package, {required String chatRoomId}) async {
+  Future<void> purchase(
+    ChatDurationPackageModel package, {
+    required String chatRoomId,
+  }) async {
     final productId = package.appleProductId;
     if (productId.isEmpty) {
-      emit(state.copyWith(
-        status: _PurchaseStatus.error,
-        error: 'معرف المنتج غير متوفر',
-      ));
+      emit(
+        state.copyWith(
+          status: _PurchaseStatus.error,
+          error: 'معرف المنتج غير متوفر',
+        ),
+      );
       return;
     }
 
@@ -58,10 +60,12 @@ class _PurchaseCubit extends Cubit<_PurchaseState> {
       );
 
       if (response['success'] != true) {
-        emit(state.copyWith(
-          status: _PurchaseStatus.error,
-          error: response['message']?.toString() ?? 'فشل بدء عملية الشراء',
-        ));
+        emit(
+          state.copyWith(
+            status: _PurchaseStatus.error,
+            error: response['message']?.toString() ?? 'فشل بدء عملية الشراء',
+          ),
+        );
         return;
       }
 
@@ -71,10 +75,14 @@ class _PurchaseCubit extends Cubit<_PurchaseState> {
       emit(state.copyWith(status: _PurchaseStatus.success));
     } catch (e) {
       final err = IAPErrorHandler.handle(e);
-      emit(state.copyWith(
-        status: err.isCanceled ? _PurchaseStatus.canceled : _PurchaseStatus.error,
-        error: err.isCanceled ? null : err.message,
-      ));
+      emit(
+        state.copyWith(
+          status: err.isCanceled
+              ? _PurchaseStatus.canceled
+              : _PurchaseStatus.error,
+          error: err.isCanceled ? null : err.messageKey,
+        ),
+      );
     }
   }
 }
@@ -98,7 +106,8 @@ void showRematchPurchaseSheet(
           create: (_) => getIt<ChatDurationPackagesCubit>()..fetchPackages(),
         ),
         BlocProvider(
-          create: (_) => _PurchaseCubit(getIt<IAPService>(), getIt<ApiService>()),
+          create: (_) =>
+              _PurchaseCubit(getIt<IAPService>(), getIt<ApiService>()),
         ),
       ],
       child: _RematchSheet(
@@ -136,7 +145,10 @@ class _RematchSheetState extends State<_RematchSheet> {
   void _onPay(BuildContext context, List<ChatDurationPackageModel> packages) {
     if (packages.isEmpty) return;
     final idx = _selectedIndex.clamp(0, packages.length - 1);
-    context.read<_PurchaseCubit>().purchase(packages[idx], chatRoomId: widget.chatRoomId);
+    context.read<_PurchaseCubit>().purchase(
+      packages[idx],
+      chatRoomId: widget.chatRoomId,
+    );
   }
 
   @override
@@ -167,93 +179,98 @@ class _RematchSheetState extends State<_RematchSheet> {
           borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         ),
         padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 32.h),
-        child: BlocBuilder<ChatDurationPackagesCubit, ChatDurationPackagesState>(
-          builder: (context, pkgState) {
-            final packages = pkgState.status == CubitStates.success
-                ? pkgState.packages
-                : <ChatDurationPackageModel>[];
-            final isLoading = pkgState.status == CubitStates.loading;
+        child:
+            BlocBuilder<ChatDurationPackagesCubit, ChatDurationPackagesState>(
+              builder: (context, pkgState) {
+                final packages = pkgState.status == CubitStates.success
+                    ? pkgState.packages
+                    : <ChatDurationPackageModel>[];
+                final isLoading = pkgState.status == CubitStates.loading;
 
-            return BlocBuilder<_PurchaseCubit, _PurchaseState>(
-              builder: (context, purchaseState) {
-                final isPurchasing =
-                    purchaseState.status == _PurchaseStatus.purchasing;
+                return BlocBuilder<_PurchaseCubit, _PurchaseState>(
+                  builder: (context, purchaseState) {
+                    final isPurchasing =
+                        purchaseState.status == _PurchaseStatus.purchasing;
 
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Handle
-                    Container(
-                      width: 40.w,
-                      height: 4.h,
-                      decoration: BoxDecoration(
-                        color: AppColors.secondary200,
-                        borderRadius: BorderRadius.circular(2.r),
-                      ),
-                    ),
-                    SizedBox(height: 20.h),
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Handle
+                        Container(
+                          width: 40.w,
+                          height: 4.h,
+                          decoration: BoxDecoration(
+                            color: AppColors.secondary200,
+                            borderRadius: BorderRadius.circular(2.r),
+                          ),
+                        ),
+                        SizedBox(height: 20.h),
 
-                    // Avatar
-                    CircleAvatar(
-                      radius: 36.r,
-                      backgroundImage: widget.userImage.isNotEmpty
-                          ? NetworkImage(widget.userImage)
-                          : null,
-                      backgroundColor: AppColors.secondary100,
-                      child: widget.userImage.isEmpty
-                          ? Icon(Icons.person,
-                              color: AppColors.secondary400, size: 32.w)
-                          : null,
-                    ),
-                    SizedBox(height: 12.h),
+                        // Avatar
+                        CircleAvatar(
+                          radius: 36.r,
+                          backgroundImage: widget.userImage.isNotEmpty
+                              ? NetworkImage(widget.userImage)
+                              : null,
+                          backgroundColor: AppColors.secondary100,
+                          child: widget.userImage.isEmpty
+                              ? Icon(
+                                  Icons.person,
+                                  color: AppColors.secondary400,
+                                  size: 32.w,
+                                )
+                              : null,
+                        ),
+                        SizedBox(height: 12.h),
 
-                    Text(
-                      'إعادة التوافق مع ${widget.userName}',
-                      style: Styles.textStyle20Meduim.copyWith(
-                        color: AppColors.kscandryTextColor,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 8.h),
-                    Text(
-                      'اختر مدة تمديد التوافق مع هذا الشخص',
-                      style: Styles.textStyle14
-                          .copyWith(color: AppColors.secondary400),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 20.h),
+                        Text(
+                          'إعادة التوافق مع ${widget.userName}',
+                          style: Styles.textStyle20Meduim.copyWith(
+                            color: AppColors.kscandryTextColor,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 8.h),
+                        Text(
+                          'اختر مدة تمديد التوافق مع هذا الشخص',
+                          style: Styles.textStyle14.copyWith(
+                            color: AppColors.secondary400,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 20.h),
 
-                    if (isLoading)
-                      Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24.h),
-                        child: const CircularProgressIndicator(),
-                      )
-                    else
-                      ...packages.asMap().entries.map(
+                        if (isLoading)
+                          Padding(
+                            padding: EdgeInsets.symmetric(vertical: 24.h),
+                            child: const CircularProgressIndicator(),
+                          )
+                        else
+                          ...packages.asMap().entries.map(
                             (e) => Padding(
                               padding: EdgeInsets.only(bottom: 10.h),
                               child: _buildPackageCard(e.key, e.value),
                             ),
                           ),
 
-                    SizedBox(height: 20.h),
-                    CustomBotton(
-                      title: isPurchasing ? '' : 'إعادة التوافق',
-                      height: 54.h,
-                      width: double.infinity,
-                      useGradient: true,
-                      isLoading: isPurchasing,
-                      onPressed: isPurchasing || packages.isEmpty
-                          ? null
-                          : () => _onPay(context, packages),
-                    ),
-                  ],
+                        SizedBox(height: 20.h),
+                        CustomBotton(
+                          title: isPurchasing ? '' : 'إعادة التوافق',
+                          height: 54.h,
+                          width: double.infinity,
+                          useGradient: true,
+                          isLoading: isPurchasing,
+                          onPressed: isPurchasing || packages.isEmpty
+                              ? null
+                              : () => _onPay(context, packages),
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
-            );
-          },
-        ),
+            ),
       ),
     );
   }
@@ -264,8 +281,8 @@ class _RematchSheetState extends State<_RematchSheet> {
     final daysLabel = pkg.durationInDays == 1
         ? 'يوم واحد'
         : pkg.durationInDays == 2
-            ? 'يومان'
-            : '${pkg.durationInDays} أيام';
+        ? 'يومان'
+        : '${pkg.durationInDays} أيام';
 
     return GestureDetector(
       onTap: () => setState(() => _selectedIndex = index),
@@ -278,8 +295,7 @@ class _RematchSheetState extends State<_RematchSheet> {
             color: isSelected ? AppColors.primary50 : Colors.white,
             borderRadius: BorderRadius.circular(14.r),
             border: Border.all(
-              color:
-                  isSelected ? AppColors.primary300 : AppColors.secondary100,
+              color: isSelected ? AppColors.primary300 : AppColors.secondary100,
               width: isSelected ? 1.5 : 1,
             ),
           ),
@@ -296,8 +312,9 @@ class _RematchSheetState extends State<_RematchSheet> {
                 textDirection: TextDirection.ltr,
                 child: Text(
                   '${pkg.price.toStringAsFixed(0)} ${pkg.currency}',
-                  style: Styles.textStyle14
-                      .copyWith(color: AppColors.secondary400),
+                  style: Styles.textStyle14.copyWith(
+                    color: AppColors.secondary400,
+                  ),
                 ),
               ),
               SizedBox(width: 12.w),

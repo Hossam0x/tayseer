@@ -379,11 +379,8 @@ abstract class AppRouter {
           page: MultiBlocProvider(
             providers: [
               BlocProvider(
-                create: (context) => AdvisorSubscriptionCubit(
-                  packageType,
-                  getIt<IAPService>(),
-                  getIt<ApiService>(),
-                ),
+                create: (context) =>
+                    AdvisorSubscriptionCubit(packageType, getIt<IAPService>()),
               ),
               BlocProvider(
                 create: (context) => getIt<PackagesCubit>()..getPackages(),
@@ -1228,11 +1225,8 @@ abstract class AppRouter {
           page: MultiBlocProvider(
             providers: [
               BlocProvider(
-                create: (context) => UserSubscriptionCubit(
-                  packageType,
-                  getIt<IAPService>(),
-                  getIt<ApiService>(),
-                ),
+                create: (context) =>
+                    UserSubscriptionCubit(packageType, getIt<IAPService>()),
               ),
               BlocProvider(
                 create: (context) => getIt<UserPackagesCubit>()..getPackages(),

@@ -54,34 +54,30 @@ class MembershipCubit extends Cubit<MembershipState> {
     emit(current.copyWith(isCancelLoading: true));
 
     try {
-      // Open Apple/Google subscription management page
+      log('[Cancel] 🚀 Opening Apple subscription management page');
+      log('[Cancel] ⚠️  This only cancels auto-renew.');
+      log('[Cancel]    Subscription stays active until billing period ends.');
+      log(
+        '[Cancel]    Apple sends DID_CHANGE_RENEWAL_STATUS webhook to backend.',
+      );
+
       await _openSubscriptionManagement();
 
-      // After user returns, notify backend to sync subscription status
-      final result = await _repository.cancelMySubscription();
-      result.fold(
-        (failure) => emit(
-          current.copyWith(
-            isCancelLoading: false,
-            actionError: failure.message,
-            timestamp: DateTime.now().millisecondsSinceEpoch,
-          ),
+      log('[Cancel] ✅ User returned from subscription management page');
+      log('[Cancel] 🔄 Reloading membership to reflect any changes...');
+
+      // Apple بتبعت الـ webhook للباك تلقائياً — مش محتاجين نبعت cancel API
+      // بس نعمل reload عشان نعرض الحالة الجديدة (isCancelled = true)
+      emit(
+        current.copyWith(
+          isCancelLoading: false,
+          actionSuccess: 'cancel_auto_renew_success',
+          timestamp: DateTime.now().millisecondsSinceEpoch,
         ),
-        (_) async {
-          SubscriptionEventBus.instance.fire(
-            const SubscriptionChangedEvent(subscriptionType: 'free'),
-          );
-          emit(
-            current.copyWith(
-              isCancelLoading: false,
-              actionSuccess: 'cancel_membership_success',
-              timestamp: DateTime.now().millisecondsSinceEpoch,
-            ),
-          );
-          await loadMembership();
-        },
       );
+      await loadMembership();
     } catch (e) {
+      log('[Cancel] ❌ Exception: $e');
       emit(
         current.copyWith(
           isCancelLoading: false,
@@ -95,6 +91,15 @@ class MembershipCubit extends Cubit<MembershipState> {
   Future<void> _openSubscriptionManagement() async {
     final Uri uri;
     if (Platform.isIOS) {
+      // itms-apps:// بيفتح مباشرة في الـ App Store app → Subscriptions
+      // fallback: https لو itms-apps مش شغال
+      final itmUri = Uri.parse(
+        'itms-apps://apps.apple.com/account/subscriptions',
+      );
+      if (await canLaunchUrl(itmUri)) {
+        await launchUrl(itmUri, mode: LaunchMode.externalApplication);
+        return;
+      }
       uri = Uri.parse('https://apps.apple.com/account/subscriptions');
     } else {
       uri = Uri.parse('https://play.google.com/store/account/subscriptions');
