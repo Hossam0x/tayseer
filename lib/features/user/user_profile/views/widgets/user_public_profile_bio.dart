@@ -144,6 +144,7 @@ class UserPublicProfileBio extends StatelessWidget {
           // حالة الجاهزية للزواج
           if (!profile.isMe &&
               !isConsultant &&
+              (profile.dataCompleted ?? false) &&
               profile.gender != kCurrentUserData?.gender) ...[
             profile.availableForMarry
                 ? Padding(
