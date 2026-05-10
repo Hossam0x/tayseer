@@ -304,6 +304,8 @@ class _NotificationItemState extends State<NotificationItem>
         return AssetsData.ticketEventNotify;
       case NotificationType.regardRequest:
         return AssetsData.heartLockIcon;
+      case NotificationType.system:
+        return AssetsData.careIcon;
       default:
         return AssetsData.careIcon;
     }

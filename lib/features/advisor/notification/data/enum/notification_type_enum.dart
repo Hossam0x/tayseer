@@ -21,6 +21,7 @@ enum NotificationType {
   postComment,
   postLike,
   regardRequest,
+  system,
   unknown;
 
   static NotificationType fromType(String? type) {
@@ -79,6 +80,8 @@ enum NotificationType {
         return NotificationType.postLike;
       case 'regard_request':
         return NotificationType.regardRequest;
+      case 'system':
+        return NotificationType.system;
       default:
         return NotificationType.unknown;
     }

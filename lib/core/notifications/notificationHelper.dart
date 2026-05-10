@@ -165,6 +165,7 @@ class NotificationHelper {
 
       case 'user_blocked':
       case 'content_reported':
+      case 'system':
         debugPrint('ℹ️ Notification type $type - no navigation needed');
         break;
 
