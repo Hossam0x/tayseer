@@ -16,6 +16,7 @@ enum NotificationType {
   commentReply,
   commentLike,
   newPostFromFollowing,
+  postSuggestion,
   postShare,
   postComment,
   postLike,
@@ -68,6 +69,8 @@ enum NotificationType {
         return NotificationType.commentLike;
       case 'new_post_from_following':
         return NotificationType.newPostFromFollowing;
+      case 'post_suggestion':
+        return NotificationType.postSuggestion;
       case 'post_share':
         return NotificationType.postShare;
       case 'post_comment':

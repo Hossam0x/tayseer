@@ -87,6 +87,7 @@ class NotificationHelper {
       case 'post_comment':
       case 'post_share':
       case 'new_post_from_following':
+      case 'post_suggestion':
       case 'comment_like':
       case 'comment_reply':
       case 'reply_like':

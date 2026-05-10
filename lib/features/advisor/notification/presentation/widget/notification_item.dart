@@ -256,7 +256,8 @@ class _NotificationItemState extends State<NotificationItem>
               backgroundColor: Colors.grey[200],
               backgroundImage: widget.notification.senderImage != null
                   ? NetworkImage(widget.notification.senderImage!)
-                  : const AssetImage(AssetsData.defaultProfileImage) as ImageProvider,
+                  : const AssetImage(AssetsData.defaultProfileImage)
+                        as ImageProvider,
             ),
           ),
           Align(
@@ -278,6 +279,7 @@ class _NotificationItemState extends State<NotificationItem>
       case NotificationType.commentReply:
         return AssetsData.commentIcon;
       case NotificationType.newPostFromFollowing:
+      case NotificationType.postSuggestion:
         return AssetsData.addCertificateImage;
       case NotificationType.postComment:
         return AssetsData.commentIcon;
