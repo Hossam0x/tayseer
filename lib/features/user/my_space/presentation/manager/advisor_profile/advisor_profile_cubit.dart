@@ -46,35 +46,36 @@ class AdvisorProfileCubit extends Cubit<AdvisorProfileState> {
         });
   }
 
-  void fetchAdvisorProfile(String userId) {
+  Future<void> fetchAdvisorProfile(String userId) async {
     emit(state.copyWith(getadvisorchatprofileState: CubitStates.loading));
 
-    mySpaceRepo.getadvisorchatprofile(userId).then((either) {
-      either.fold(
-        (failure) {
-          emit(
-            state.copyWith(
-              getadvisorchatprofileState: CubitStates.failure,
-              errorMessage: failure.message,
-            ),
-          );
-        },
-        (sessionsResponse) {
-          emit(
-            state.copyWith(
-              getadvisorchatprofileState: CubitStates.success,
-              advisor: sessionsResponse.data.advisor,
-              expiredSessions: sessionsResponse.data.sessionExpired,
-              upcomingSessions: sessionsResponse.data.sessionNotExpired,
-              allSessions: [
-                ...sessionsResponse.data.sessionExpired,
-                ...sessionsResponse.data.sessionNotExpired,
-              ],
-            ),
-          );
-        },
-      );
-    });
+    final either = await mySpaceRepo.getadvisorchatprofile(userId);
+    if (isClosed) return;
+
+    either.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            getadvisorchatprofileState: CubitStates.failure,
+            errorMessage: failure.message,
+          ),
+        );
+      },
+      (sessionsResponse) {
+        emit(
+          state.copyWith(
+            getadvisorchatprofileState: CubitStates.success,
+            advisor: sessionsResponse.data.advisor,
+            expiredSessions: sessionsResponse.data.sessionExpired,
+            upcomingSessions: sessionsResponse.data.sessionNotExpired,
+            allSessions: [
+              ...sessionsResponse.data.sessionExpired,
+              ...sessionsResponse.data.sessionNotExpired,
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _removeSessionLocally(String sessionId) {

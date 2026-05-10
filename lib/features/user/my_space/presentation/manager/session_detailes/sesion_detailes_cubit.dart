@@ -69,6 +69,7 @@ class SesionDetailesCubit extends Cubit<SessionDetailesState> {
     emit(state.copyWith(getSessionDetailesState: CubitStates.loading));
 
     final result = await mySpaceRepo.getSessionDetails(sessionId);
+    if (isClosed) return;
 
     result.fold(
       (failure) {
@@ -94,6 +95,7 @@ class SesionDetailesCubit extends Cubit<SessionDetailesState> {
     emit(state.copyWith(cancelSession: CubitStates.loading));
 
     final result = await mySpaceRepo.cancelSession(sessionId);
+    if (isClosed) return;
 
     result.fold(
       (failure) {

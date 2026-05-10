@@ -36,6 +36,7 @@ class UserMembershipCubit extends MembershipCubit {
   Future<void> loadUserMembership() async {
     emit(MembershipLoading());
     final result = await _userRepository.getMySubscription();
+    if (isClosed) return;
     result.fold((failure) => emit(MembershipError(message: failure.message)), (
       sub,
     ) {

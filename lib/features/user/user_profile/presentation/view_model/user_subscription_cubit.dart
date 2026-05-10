@@ -266,6 +266,7 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
         productId,
         uniqueNumber: uuid,
       );
+      if (isClosed) return;
 
       log('[UserSub] ✅ Apple purchase success:');
       log('[UserSub]   purchaseID (transactionId): ${purchase.purchaseID}');

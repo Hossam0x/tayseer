@@ -34,6 +34,7 @@ class MembershipCubit extends Cubit<MembershipState> {
   Future<void> loadMembership() async {
     emit(MembershipLoading());
     final result = await _repository.getMySubscription();
+    if (isClosed) return;
     result.fold((failure) => emit(MembershipError(message: failure.message)), (
       sub,
     ) {
@@ -59,6 +60,7 @@ class MembershipCubit extends Cubit<MembershipState> {
     try {
       log('[Cancel] 🚀 Opening Apple Manage Subscriptions sheet');
       await _openSubscriptionManagement();
+      if (isClosed) return;
       log('[Cancel] ✅ User returned from subscription management');
 
       emit(
@@ -71,6 +73,7 @@ class MembershipCubit extends Cubit<MembershipState> {
       await loadMembership();
     } catch (e) {
       log('[Cancel] ❌ Exception: $e');
+      if (isClosed) return;
       emit(
         current.copyWith(
           isCancelLoading: false,
@@ -304,6 +307,7 @@ class MembershipCubit extends Cubit<MembershipState> {
         receipt,
         originalTransactionId: originalTransactionId,
       );
+      if (isClosed) return;
       result.fold(
         (failure) => _emitRestoreError(failure.message),
         (restoreResult) => _handleRestoreResult(restoreResult),
@@ -351,6 +355,7 @@ class MembershipCubit extends Cubit<MembershipState> {
     emit(MembershipNoSubscriptionRestoring());
 
     final result = await _repository.transferSubscription(purchaseId);
+    if (isClosed) return;
     result.fold((failure) => _emitRestoreError(failure.message), (_) {
       SubscriptionEventBus.instance.fire(
         const SubscriptionChangedEvent(subscriptionType: 'gold'),
