@@ -74,4 +74,15 @@ class NewAdvisorSubModel {
   bool get isMonthly => subscriptionDurationType == 'monthly';
   bool get isWeekly => subscriptionDurationType == 'weekly';
   bool get isThreeMonths => subscriptionDurationType == 'threemonths';
+
+  /// الاشتراك نشط في Apple (لم يُلغَ auto-renew بعد)
+  bool get isActiveInApple => isCurrentSub && !isCancelled;
+
+  /// الاشتراك ملغي auto-renew لكن لسه شغال لحد تاريخ الانتهاء
+  bool get isCancelledButActive {
+    if (!isCancelled || subscriptionExpiresAt == null) return false;
+    final expiry = DateTime.tryParse(subscriptionExpiresAt!);
+    if (expiry == null) return false;
+    return DateTime.now().isBefore(expiry);
+  }
 }

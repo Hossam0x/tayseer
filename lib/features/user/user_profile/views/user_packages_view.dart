@@ -11,7 +11,6 @@ import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/utils/router/app_router.dart';
 import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/core/utils/styles.dart';
-import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/core/utils/colors.dart';
 import 'package:tayseer/features/shared/auth/view/widget/agreement_text.dart';
 import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
@@ -62,7 +61,8 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
   final _getPackageData = GetPackageDisplayData();
 
   bool _initialPageSet = false;
-  StreamSubscription? _subscriptionSubscription;
+  // ✅ تم إزالة _subscriptionSubscription — الـ UserPackagesCubit بيعمل refresh تلقائياً
+  // عن طريق SubscriptionEventBus listener الداخلي، مش محتاجين listener تاني هنا
 
   // Animation controllers for balloon effect on tab buttons
   late AnimationController _basicScaleController;
@@ -130,13 +130,9 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
     _entranceController.forward();
     _jumpToCachedPage();
 
-    _subscriptionSubscription = SubscriptionEventBus
-        .instance
-        .onSubscriptionChanged
-        .listen((_) {
-          if (!mounted) return;
-          context.read<UserPackagesCubit>().getPackages();
-        });
+    // ✅ لا نستمع للـ SubscriptionEventBus هنا — الـ UserPackagesCubit بيعمل ده تلقائياً
+    // الـ double refresh كان بيحصل لأن الـ cubit بيعمل getPackages() من الـ event bus
+    // والـ view كانت بتعمله تاني — ده كان يسبب 2 API calls متتاليين
   }
 
   Future<void> _jumpToCachedPage() async {
@@ -169,7 +165,6 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
 
   @override
   void dispose() {
-    _subscriptionSubscription?.cancel();
     _pageController.dispose();
     _basicScaleController.dispose();
     _proScaleController.dispose();
@@ -210,9 +205,9 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
               // Not subscribed → animate to Pro (gold) page
               Future.delayed(const Duration(milliseconds: 400), () {
                 if (!mounted) return;
-                context.read<PackageSelectionCubit>().selectPackage(
-                  PackageType.pro,
-                );
+                // ✅ safe: mounted check is done before context.read
+                final selectionCubit = context.read<PackageSelectionCubit>();
+                selectionCubit.selectPackage(PackageType.pro);
                 if (_pageController.hasClients) {
                   _pageController.animateToPage(
                     1,

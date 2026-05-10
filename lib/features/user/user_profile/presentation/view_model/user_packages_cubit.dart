@@ -59,6 +59,7 @@ class UserPackagesCubit extends Cubit<UserPackagesState> {
   Future<void> getPackages() async {
     emit(state.copyWith(isLoading: true, errorMessage: null));
     final result = await _repository.getPackages();
+    if (isClosed) return;
     result.fold(
       (failure) =>
           emit(state.copyWith(isLoading: false, errorMessage: failure.message)),

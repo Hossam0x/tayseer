@@ -3,6 +3,7 @@ import UIKit
 import GoogleMaps
 import AVFoundation
 import PaymobSDK
+import StoreKit
 
 // MARK: - Secure Image Platform View (prevents screenshots)
 class SecureImageView: NSObject, FlutterPlatformView {
@@ -98,6 +99,250 @@ class SecureImageFactory: NSObject, FlutterPlatformViewFactory {
         }
 
         if let controller = window?.rootViewController as? FlutterViewController {
+
+            // ── IAP Consumable Channel (StoreKit 2) ─────────────────────────
+            // يشتري الـ consumable مع appAccountToken صح عن طريق SK2 native
+            // applicationUserName في Flutter plugin مش بيتبعت كـ appAccountToken
+            // في SK2 للـ consumables — لازم نعمله native
+            let iapConsumableChannel = FlutterMethodChannel(
+                name: "com.athr.tayser/iap_consumable",
+                binaryMessenger: controller.binaryMessenger
+            )
+            iapConsumableChannel.setMethodCallHandler { (call, result) in
+                if #available(iOS 15.0, *) {
+                    if call.method == "purchaseConsumable" {
+                        guard let args = call.arguments as? [String: Any],
+                              let productId = args["productId"] as? String,
+                              let uuidString = args["appAccountToken"] as? String,
+                              let uuid = UUID(uuidString: uuidString) else {
+                            result(FlutterError(
+                                code: "INVALID_ARGS",
+                                message: "productId and appAccountToken (UUID) are required",
+                                details: nil
+                            ))
+                            return
+                        }
+                        Task {
+                            do {
+                                // جيب الـ product من StoreKit 2
+                                let products = try await Product.products(for: [productId])
+                                guard let product = products.first else {
+                                    DispatchQueue.main.async {
+                                        result(FlutterError(
+                                            code: "PRODUCT_NOT_FOUND",
+                                            message: "Product not found: \(productId)",
+                                            details: nil
+                                        ))
+                                    }
+                                    return
+                                }
+
+                                // اشتري مع appAccountToken — ده اللي بيتبعت للـ webhook
+                                let purchaseResult = try await product.purchase(options: [
+                                    .appAccountToken(uuid)
+                                ])
+
+                                DispatchQueue.main.async {
+                                    switch purchaseResult {
+                                    case .success(let verificationResult):
+                                        switch verificationResult {
+                                        case .verified(let transaction):
+                                            // أكمل الـ transaction
+                                            Task { await transaction.finish() }
+                                            result([
+                                                "status": "purchased",
+                                                "transactionId": "\(transaction.id)",
+                                                "productId": transaction.productID,
+                                                "jws": verificationResult.jwsRepresentation
+                                            ])
+                                        case .unverified(let transaction, let error):
+                                            Task { await transaction.finish() }
+                                            result(FlutterError(
+                                                code: "UNVERIFIED",
+                                                message: "Transaction unverified: \(error.localizedDescription)",
+                                                details: nil
+                                            ))
+                                        }
+                                    case .userCancelled:
+                                        result(FlutterError(
+                                            code: "USER_CANCELLED",
+                                            message: "تم إلغاء عملية الشراء",
+                                            details: nil
+                                        ))
+                                    case .pending:
+                                        result(FlutterError(
+                                            code: "PENDING",
+                                            message: "العملية في انتظار الموافقة",
+                                            details: nil
+                                        ))
+                                    @unknown default:
+                                        result(FlutterError(
+                                            code: "UNKNOWN",
+                                            message: "نتيجة غير معروفة",
+                                            details: nil
+                                        ))
+                                    }
+                                }
+                            } catch {
+                                DispatchQueue.main.async {
+                                    let errStr = error.localizedDescription.lowercased()
+                                    if errStr.contains("cancel") {
+                                        result(FlutterError(
+                                            code: "USER_CANCELLED",
+                                            message: "تم إلغاء عملية الشراء",
+                                            details: nil
+                                        ))
+                                    } else {
+                                        result(FlutterError(
+                                            code: "PURCHASE_ERROR",
+                                            message: error.localizedDescription,
+                                            details: nil
+                                        ))
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        result(FlutterMethodNotImplemented)
+                    }
+                } else {
+                    result(FlutterError(
+                        code: "UNSUPPORTED",
+                        message: "StoreKit 2 requires iOS 15+",
+                        details: nil
+                    ))
+                }
+            }
+            // ────────────────────────────────────────────────────────────────
+
+            // ── IAP JWS Channel ──────────────────────────────────────────────
+            // يجيب الـ JWS (jwsRepresentation) من Transaction.currentEntitlements
+            // الـ Flutter package مش بيبعت الـ JWS — بنجيبه مباشرة من native
+            let iapJwsChannel = FlutterMethodChannel(
+                name: "com.athr.tayser/iap_jws",
+                binaryMessenger: controller.binaryMessenger
+            )
+            iapJwsChannel.setMethodCallHandler { (call, result) in
+                if call.method == "getCurrentEntitlementsJWS" {
+                    if #available(iOS 15.0, *) {
+                        Task {
+                            var jwsList: [[String: String]] = []
+                            for await verificationResult in Transaction.currentEntitlements {
+                                switch verificationResult {
+                                case .verified(let transaction):
+                                    jwsList.append([
+                                        "transactionId": "\(transaction.id)",
+                                        "productId": transaction.productID,
+                                        "jws": verificationResult.jwsRepresentation
+                                    ])
+                                case .unverified(let transaction, _):
+                                    // نضيف الـ JWS حتى لو unverified — الباك-إند هيتحقق
+                                    jwsList.append([
+                                        "transactionId": "\(transaction.id)",
+                                        "productId": transaction.productID,
+                                        "jws": verificationResult.jwsRepresentation
+                                    ])
+                                }
+                            }
+                            DispatchQueue.main.async {
+                                result(jwsList)
+                            }
+                        }
+                    } else {
+                        result(FlutterError(
+                            code: "UNSUPPORTED",
+                            message: "StoreKit 2 requires iOS 15+",
+                            details: nil
+                        ))
+                    }
+                } else {
+                    result(FlutterMethodNotImplemented)
+                }
+            }
+            // ────────────────────────────────────────────────────────────────
+
+            // ── IAP Management Channel ───────────────────────────────────────
+            // manageSubscriptionsSheet و beginRefundRequest — native Apple sheets
+            let iapManageChannel = FlutterMethodChannel(
+                name: "com.athr.tayser/iap_manage",
+                binaryMessenger: controller.binaryMessenger
+            )
+            iapManageChannel.setMethodCallHandler { [weak controller] (call, result) in
+                if #available(iOS 15.0, *) {
+                    if call.method == "showManageSubscriptions" {
+                        // يفتح Apple's native Manage Subscriptions sheet داخل التطبيق
+                        Task { @MainActor in
+                            guard let scene = UIApplication.shared.connectedScenes
+                                .compactMap({ $0 as? UIWindowScene })
+                                .first else {
+                                result(FlutterError(code: "NO_SCENE", message: "No UIWindowScene found", details: nil))
+                                return
+                            }
+                            do {
+                                try await AppStore.showManageSubscriptions(in: scene)
+                                result(true)
+                            } catch {
+                                result(FlutterError(code: "MANAGE_ERROR", message: error.localizedDescription, details: nil))
+                            }
+                        }
+                    } else if call.method == "beginRefundRequest" {
+                        // يفتح Apple's native Refund Request sheet داخل التطبيق
+                        guard let args = call.arguments as? [String: Any],
+                              let transactionIdStr = args["transactionId"] as? String,
+                              let transactionId = UInt64(transactionIdStr) else {
+                            result(FlutterError(code: "INVALID_ARGS", message: "transactionId required", details: nil))
+                            return
+                        }
+                        Task { @MainActor in
+                            guard let scene = UIApplication.shared.connectedScenes
+                                .compactMap({ $0 as? UIWindowScene })
+                                .first else {
+                                result(FlutterError(code: "NO_SCENE", message: "No UIWindowScene found", details: nil))
+                                return
+                            }
+                            do {
+                                let status = try await Transaction.beginRefundRequest(for: transactionId, in: scene)
+                                switch status {
+                                case .success:
+                                    result("success")
+                                case .userCancelled:
+                                    result("cancelled")
+                                @unknown default:
+                                    result("unknown")
+                                }
+                            } catch {
+                                result(FlutterError(code: "REFUND_ERROR", message: error.localizedDescription, details: nil))
+                            }
+                        }
+                    } else if call.method == "getLatestTransactionId" {
+                        // يجيب أحدث transactionId للـ subscription الحالية
+                        guard let args = call.arguments as? [String: Any],
+                              let productId = args["productId"] as? String else {
+                            result(FlutterError(code: "INVALID_ARGS", message: "productId required", details: nil))
+                            return
+                        }
+                        Task {
+                            var latestId: String? = nil
+                            for await verificationResult in Transaction.currentEntitlements {
+                                if case .verified(let transaction) = verificationResult,
+                                   transaction.productID == productId {
+                                    latestId = "\(transaction.id)"
+                                    break
+                                }
+                            }
+                            DispatchQueue.main.async {
+                                result(latestId)
+                            }
+                        }
+                    } else {
+                        result(FlutterMethodNotImplemented)
+                    }
+                } else {
+                    // iOS 14 fallback — فتح Settings
+                    result(FlutterError(code: "UNSUPPORTED", message: "iOS 15+ required", details: nil))
+                }
+            }
+            // ────────────────────────────────────────────────────────────────
 
             let audioSessionChannel = FlutterMethodChannel(
                 name: "com.athr.tayser/audio_session",

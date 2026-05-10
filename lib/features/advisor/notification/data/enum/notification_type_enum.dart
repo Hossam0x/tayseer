@@ -16,10 +16,12 @@ enum NotificationType {
   commentReply,
   commentLike,
   newPostFromFollowing,
+  postSuggestion,
   postShare,
   postComment,
   postLike,
   regardRequest,
+  system,
   unknown;
 
   static NotificationType fromType(String? type) {
@@ -68,6 +70,8 @@ enum NotificationType {
         return NotificationType.commentLike;
       case 'new_post_from_following':
         return NotificationType.newPostFromFollowing;
+      case 'post_suggestion':
+        return NotificationType.postSuggestion;
       case 'post_share':
         return NotificationType.postShare;
       case 'post_comment':
@@ -76,6 +80,8 @@ enum NotificationType {
         return NotificationType.postLike;
       case 'regard_request':
         return NotificationType.regardRequest;
+      case 'system':
+        return NotificationType.system;
       default:
         return NotificationType.unknown;
     }

@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:developer';
+import 'package:flutter/services.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
 import 'package:tayseer/features/advisor/membership/presentation/cubit/membership_cubit.dart';
@@ -34,6 +36,7 @@ class UserMembershipCubit extends MembershipCubit {
   Future<void> loadUserMembership() async {
     emit(MembershipLoading());
     final result = await _userRepository.getMySubscription();
+    if (isClosed) return;
     result.fold((failure) => emit(MembershipError(message: failure.message)), (
       sub,
     ) {
@@ -56,32 +59,20 @@ class UserMembershipCubit extends MembershipCubit {
     emit(current.copyWith(isCancelLoading: true));
 
     try {
+      log('[UserCancel] 🚀 Opening Apple Manage Subscriptions sheet');
       await _openSubscriptionManagement();
+      log('[UserCancel] ✅ User returned from subscription management');
 
-      final result = await _userRepository.cancelMySubscription();
-      result.fold(
-        (failure) => emit(
-          current.copyWith(
-            isCancelLoading: false,
-            actionError: failure.message,
-            timestamp: DateTime.now().millisecondsSinceEpoch,
-          ),
+      emit(
+        current.copyWith(
+          isCancelLoading: false,
+          actionSuccess: 'cancel_auto_renew_success',
+          timestamp: DateTime.now().millisecondsSinceEpoch,
         ),
-        (_) async {
-          SubscriptionEventBus.instance.fire(
-            const SubscriptionChangedEvent(subscriptionType: 'free'),
-          );
-          emit(
-            current.copyWith(
-              isCancelLoading: false,
-              actionSuccess: 'cancel_membership_success',
-              timestamp: DateTime.now().millisecondsSinceEpoch,
-            ),
-          );
-          await loadUserMembership();
-        },
       );
+      await loadUserMembership();
     } catch (e) {
+      log('[UserCancel] ❌ Exception: $e');
       emit(
         current.copyWith(
           isCancelLoading: false,
@@ -93,14 +84,30 @@ class UserMembershipCubit extends MembershipCubit {
   }
 
   Future<void> _openSubscriptionManagement() async {
-    final Uri uri;
     if (Platform.isIOS) {
-      uri = Uri.parse('https://apps.apple.com/account/subscriptions');
+      try {
+        const channel = MethodChannel('com.athr.tayser/iap_manage');
+        await channel.invokeMethod('showManageSubscriptions');
+        return;
+      } catch (e) {
+        log('[UserCancel] Native sheet failed, falling back: $e');
+      }
+      final itmUri = Uri.parse(
+        'itms-apps://apps.apple.com/account/subscriptions',
+      );
+      if (await canLaunchUrl(itmUri)) {
+        await launchUrl(itmUri, mode: LaunchMode.externalApplication);
+        return;
+      }
+      await launchUrl(
+        Uri.parse('https://apps.apple.com/account/subscriptions'),
+        mode: LaunchMode.externalApplication,
+      );
     } else {
-      uri = Uri.parse('https://play.google.com/store/account/subscriptions');
-    }
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      await launchUrl(
+        Uri.parse('https://play.google.com/store/account/subscriptions'),
+        mode: LaunchMode.externalApplication,
+      );
     }
   }
 }

@@ -19,6 +19,7 @@ class AdvisorSessionCubit extends Cubit<AdvisorSessionState> {
     emit(state.copyWith(getadvisorsessionState: CubitStates.loading));
     try {
       final response = await advisorSessionRepository.getSessions();
+      if (isClosed) return;
       response.fold(
         (failure) {
           emit(state.copyWith(getadvisorsessionState: CubitStates.failure));
@@ -33,6 +34,7 @@ class AdvisorSessionCubit extends Cubit<AdvisorSessionState> {
         },
       );
     } catch (e) {
+      if (isClosed) return;
       emit(state.copyWith(getadvisorsessionState: CubitStates.failure));
     }
   }
@@ -45,6 +47,7 @@ class AdvisorSessionCubit extends Cubit<AdvisorSessionState> {
   }
 
   void _addSessionLocally(AdvisorSession acceptSessionData) {
+    if (isClosed) return;
     if (state.advisorData == null) return;
 
     final updatedNotExpired = [

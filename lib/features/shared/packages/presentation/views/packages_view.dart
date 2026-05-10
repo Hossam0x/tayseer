@@ -215,9 +215,9 @@ class _PackagesViewContentState extends State<_PackagesViewContent>
               // Not subscribed → animate to Pro (gold) page
               Future.delayed(const Duration(milliseconds: 400), () {
                 if (!mounted) return;
-                context.read<PackageSelectionCubit>().selectPackage(
-                  PackageType.pro,
-                );
+                // ✅ safe: mounted check is done before context.read
+                final selectionCubit = context.read<PackageSelectionCubit>();
+                selectionCubit.selectPackage(PackageType.pro);
                 if (_pageController.hasClients) {
                   _pageController.animateToPage(
                     1,

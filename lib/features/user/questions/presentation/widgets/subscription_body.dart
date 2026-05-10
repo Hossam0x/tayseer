@@ -1,5 +1,6 @@
 // lib/features/subscription/view/subscription_screen.dart
 
+import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/features/user/questions/data/models/subscription_plan_model.dart';
 import 'package:tayseer/features/user/questions/presentation/manager/questions_cubit.dart';
 import 'package:tayseer/features/user/questions/presentation/manager/questions_state.dart';
@@ -23,6 +24,17 @@ class _SubscriptionBodyState extends State<SubscriptionBody> {
   void initState() {
     super.initState();
     _initPlans();
+    _ensureUuidCached();
+  }
+
+  /// يضمن إن الـ uuid محفوظ في الكاش قبل أي عملية دفع
+  /// لو اليوزر فتح الصفحة دي قبل ما يدخل الـ Home
+  Future<void> _ensureUuidCached() async {
+    final cachedUuid = CachNetwork.getStringData(key: kUuid);
+    if (cachedUuid.isNotEmpty) return; // موجود بالفعل
+
+    // مش موجود → اجلبه من الـ API وكيشه
+    await getIt<HomeRepository>().fetchNameAndImage();
   }
 
   void _initPlans() {

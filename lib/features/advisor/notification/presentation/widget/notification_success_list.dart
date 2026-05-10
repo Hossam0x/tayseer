@@ -168,6 +168,7 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
         arguments: kCurrentUserData!.id,
       );
     } else if (notification.type == NotificationType.newPostFromFollowing ||
+        notification.type == NotificationType.postSuggestion ||
         notification.type == NotificationType.postComment ||
         notification.type == NotificationType.replyLike ||
         notification.type == NotificationType.postLike ||

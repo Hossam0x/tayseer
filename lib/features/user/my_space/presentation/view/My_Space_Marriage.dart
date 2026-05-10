@@ -24,7 +24,7 @@ class MySpaceMarriageContent extends StatelessWidget {
       return _buildIncompleteProfile(context);
     }
 
-    return const UserChatContent();
+    return const _MarriageWithSystemChat();
   }
 
   Widget _buildIncompleteProfile(BuildContext context) {
@@ -82,6 +82,19 @@ class MySpaceMarriageContent extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Widget يجمع الـ system chat (من MySpaceCubit) مع الـ user chats (من UserChatContent)
+/// في الـ Marriage tab
+class _MarriageWithSystemChat extends StatelessWidget {
+  const _MarriageWithSystemChat();
+
+  @override
+  Widget build(BuildContext context) {
+    // ✅ UserChatContent تقرأ الـ system rooms بنفسها من MySpaceCubit
+    // بدل ما تتمرر كـ parameter — عشان منعمل dispose/recreate للـ cubit
+    return const UserChatContent(readSystemRoomsFromContext: true);
   }
 }
 

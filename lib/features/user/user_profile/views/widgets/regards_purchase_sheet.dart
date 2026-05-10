@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:tayseer/core/services/iap_service.dart';
-import 'package:tayseer/core/utils/api_service.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/user/marriage/model/regards_package_model.dart';
 import 'package:tayseer/features/user/marriage/view_model/regards_packages_cubit.dart';
@@ -152,11 +151,8 @@ void showGoldPurchaseSheet(BuildContext context, {VoidCallback? onDismiss}) {
     builder: (_) => MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (_) => UserSubscriptionCubit(
-            SelectedPackage.pro,
-            getIt<IAPService>(),
-            getIt<ApiService>(),
-          ),
+          create: (_) =>
+              UserSubscriptionCubit(SelectedPackage.pro, getIt<IAPService>()),
         ),
         BlocProvider(create: (_) => getIt<UserPackagesCubit>()..getPackages()),
       ],
@@ -179,11 +175,8 @@ void showViewLimitPurchaseSheet(
     builder: (_) => MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (_) => UserSubscriptionCubit(
-            SelectedPackage.pro,
-            getIt<IAPService>(),
-            getIt<ApiService>(),
-          ),
+          create: (_) =>
+              UserSubscriptionCubit(SelectedPackage.pro, getIt<IAPService>()),
         ),
         BlocProvider(create: (_) => getIt<UserPackagesCubit>()..getPackages()),
       ],
@@ -212,7 +205,6 @@ class _PurchaseSheet extends StatefulWidget {
 
 class _PurchaseSheetState extends State<_PurchaseSheet> {
   int _selectedIndex = 0;
-  bool _useWallet = true;
   late Timer _timer;
   int _remainingSeconds = 0;
   int _closeCountdown = 5;
@@ -292,7 +284,8 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
 
   void _onPayGold(BuildContext context, List<NewUserSubModel> allSubs) {
     final cubit = context.read<UserSubscriptionCubit>();
-    // ✅ Set the selected duration index before purchasing
+    // ✅ نبعت الـ allSubs مع الـ selectedIndex — الـ cubit هيحدد الـ target بنفسه
+    // لكن لازم نحدد الـ selectedDurationIndex أولاً عشان الـ purchaseSubscription يستخدمه
     cubit.selectDuration(_selectedIndex, allSubs);
     cubit.purchaseSubscription(allSubs);
   }
@@ -304,10 +297,11 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
   Widget build(BuildContext context) {
     if (_isGold) return _buildGoldSheet(context);
 
-    return BlocListener<
+    return BlocConsumer<
       RegardsPackagePurchaseCubit,
       RegardsPackagePurchaseState
     >(
+      listenWhen: (prev, curr) => prev.status != curr.status,
       listener: (context, state) {
         if (state.status == RegardsPackagePurchaseStatus.success) {
           Navigator.pop(context);
@@ -318,44 +312,59 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
               isSuccess: true,
             ),
           );
+        } else if (state.status == RegardsPackagePurchaseStatus.canceled) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(context, text: context.tr('purchase_cancelled')),
+          );
+          context.read<RegardsPackagePurchaseCubit>().resetStatus();
         } else if (state.status == RegardsPackagePurchaseStatus.error &&
             state.error != null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: state.error!, isError: true),
+            CustomSnackBar(
+              context,
+              text: context.tr(state.error!),
+              isError: true,
+            ),
           );
           context.read<RegardsPackagePurchaseCubit>().resetStatus();
         }
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-        ),
-        padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 32.h),
-        child: _isRegards
-            ? BlocBuilder<RegardsPackagesCubit, RegardsPackagesState>(
-                builder: (context, state) {
-                  if (state.regardsIncrementAt != null) {
-                    _initCountdown(state.regardsIncrementAt);
-                  }
-                  final packages = state.status == CubitStates.success
-                      ? PurchasePackage.fromApiPackages(state.packages)
-                      : <PurchasePackage>[];
-                  return _buildContent(
-                    context,
-                    packages: packages,
-                    isLoading: state.status == CubitStates.loading,
-                    onPay: () => _onPayRegards(context, packages),
-                  );
-                },
-              )
-            : _buildContent(
-                context,
-                packages: [],
-                isLoading: false,
-                onPay: () {},
-              ),
-      ),
+      builder: (context, purchaseState) {
+        final isPurchasing =
+            purchaseState.status == RegardsPackagePurchaseStatus.purchasing;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+          ),
+          padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 32.h),
+          child: _isRegards
+              ? BlocBuilder<RegardsPackagesCubit, RegardsPackagesState>(
+                  builder: (context, state) {
+                    if (state.regardsIncrementAt != null) {
+                      _initCountdown(state.regardsIncrementAt);
+                    }
+                    final packages = state.status == CubitStates.success
+                        ? PurchasePackage.fromApiPackages(state.packages)
+                        : <PurchasePackage>[];
+                    return _buildContent(
+                      context,
+                      packages: packages,
+                      isLoading: state.status == CubitStates.loading,
+                      isPurchasing: isPurchasing,
+                      onPay: () => _onPayRegards(context, packages),
+                    );
+                  },
+                )
+              : _buildContent(
+                  context,
+                  packages: [],
+                  isLoading: false,
+                  onPay: () {},
+                ),
+        );
+      },
     );
   }
 
@@ -372,16 +381,23 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
-              text: context.tr('purchase_success'),
+              text: context.tr('subscription_activated'),
               isSuccess: true,
             ),
           );
         } else if (state.status == UserSubStatus.error && state.error != null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: state.error!, isError: true),
+            CustomSnackBar(
+              context,
+              text: context.tr(state.error!),
+              isError: true,
+            ),
           );
           context.read<UserSubscriptionCubit>().resetStatus();
         } else if (state.status == UserSubStatus.canceled) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(context, text: context.tr('purchase_cancelled')),
+          );
           context.read<UserSubscriptionCubit>().resetStatus();
         }
       },
@@ -543,12 +559,13 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                           ? const CircularProgressIndicator(color: Colors.white)
                           : Text(
                               selectedPkg != null
-                                  ? '${context.tr('subscribe')} - ${selectedPkg.price.toStringAsFixed(2)} ${selectedPkg.currency} ${context.tr('total')}'
+                                  ? _buildSubscribeLabel(context, selectedPkg)
                                   : context.tr('subscribe'),
                               style: TextStyle(
-                                fontSize: 16.sp,
+                                fontSize: 15.sp,
                                 fontWeight: FontWeight.w700,
                               ),
+                              textAlign: TextAlign.center,
                             ),
                     ),
                   ),
@@ -619,7 +636,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                   // لو مش موجود → اعرض السعر الكلي
                   if (pkg.pricePerMonth != null) ...[
                     Text(
-                      '${context.tr('price_per_month')}: ${pkg.pricePerMonth!.toStringAsFixed(2)} ${pkg.currency}',
+                      '${pkg.pricePerMonth!.toStringAsFixed(2)} ${pkg.currency} / ${context.tr('month')}',
                       style: TextStyle(
                         fontSize: 13.sp,
                         color: _goldMid,
@@ -627,14 +644,14 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                       ),
                     ),
                     SizedBox(height: 2.h),
-                    // Text(
-                    //   '${context.tr('total')}: ${pkg.price.toStringAsFixed(2)} ${pkg.currency}',
-                    //   style: TextStyle(
-                    //     fontSize: 12.sp,
-                    //     color: Colors.black54,
-                    //     fontWeight: FontWeight.w500,
-                    //   ),
-                    // ),
+                    Text(
+                      '${context.tr('total')}: ${pkg.price.toStringAsFixed(2)} ${pkg.currency}',
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        color: Colors.black45,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
                   ] else
                     Text(
                       '${pkg.price.toStringAsFixed(2)} ${pkg.currency}',
@@ -718,6 +735,16 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     if (label.contains('3') || label.toLowerCase().contains('three'))
       return '3';
     return '1';
+  }
+
+  // ── helper: نص زرار الاشتراك ──
+  String _buildSubscribeLabel(BuildContext context, PurchasePackage pkg) {
+    if (pkg.pricePerMonth != null) {
+      // لو في pricePerMonth → اعرض "اشترك - X EGP/شهر (إجمالي Y EGP)"
+      return '${context.tr('subscribe')} · ${pkg.pricePerMonth!.toStringAsFixed(2)} ${pkg.currency}/${context.tr('month')}';
+    }
+    // لو مفيش pricePerMonth → اعرض السعر الكلي
+    return '${context.tr('subscribe')} · ${pkg.price.toStringAsFixed(2)} ${pkg.currency}';
   }
 
   // ════════════════════════════════════

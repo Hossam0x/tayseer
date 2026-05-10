@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:developer';
+import 'package:flutter/services.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:tayseer/core/services/iap_service.dart';
+import 'package:tayseer/features/advisor/membership/data/models/my_subscription_model.dart';
 import 'package:tayseer/features/advisor/membership/data/models/restore_purchase_result.dart';
 import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
 import 'package:tayseer/features/advisor/membership/presentation/cubit/membership_state.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
+import 'package:tayseer/features/user/user_profile/presentation/view_model/user_membership_cubit.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -31,6 +34,7 @@ class MembershipCubit extends Cubit<MembershipState> {
   Future<void> loadMembership() async {
     emit(MembershipLoading());
     final result = await _repository.getMySubscription();
+    if (isClosed) return;
     result.fold((failure) => emit(MembershipError(message: failure.message)), (
       sub,
     ) {
@@ -54,34 +58,22 @@ class MembershipCubit extends Cubit<MembershipState> {
     emit(current.copyWith(isCancelLoading: true));
 
     try {
-      // Open Apple/Google subscription management page
+      log('[Cancel] 🚀 Opening Apple Manage Subscriptions sheet');
       await _openSubscriptionManagement();
+      if (isClosed) return;
+      log('[Cancel] ✅ User returned from subscription management');
 
-      // After user returns, notify backend to sync subscription status
-      final result = await _repository.cancelMySubscription();
-      result.fold(
-        (failure) => emit(
-          current.copyWith(
-            isCancelLoading: false,
-            actionError: failure.message,
-            timestamp: DateTime.now().millisecondsSinceEpoch,
-          ),
+      emit(
+        current.copyWith(
+          isCancelLoading: false,
+          actionSuccess: 'cancel_auto_renew_success',
+          timestamp: DateTime.now().millisecondsSinceEpoch,
         ),
-        (_) async {
-          SubscriptionEventBus.instance.fire(
-            const SubscriptionChangedEvent(subscriptionType: 'free'),
-          );
-          emit(
-            current.copyWith(
-              isCancelLoading: false,
-              actionSuccess: 'cancel_membership_success',
-              timestamp: DateTime.now().millisecondsSinceEpoch,
-            ),
-          );
-          await loadMembership();
-        },
       );
+      await loadMembership();
     } catch (e) {
+      log('[Cancel] ❌ Exception: $e');
+      if (isClosed) return;
       emit(
         current.copyWith(
           isCancelLoading: false,
@@ -93,15 +85,111 @@ class MembershipCubit extends Cubit<MembershipState> {
   }
 
   Future<void> _openSubscriptionManagement() async {
-    final Uri uri;
     if (Platform.isIOS) {
-      uri = Uri.parse('https://apps.apple.com/account/subscriptions');
+      // iOS 15+: native sheet داخل التطبيق
+      try {
+        const channel = MethodChannel('com.athr.tayser/iap_manage');
+        await channel.invokeMethod('showManageSubscriptions');
+        log('[Cancel] ✅ Native manage subscriptions sheet closed');
+        return;
+      } catch (e) {
+        log('[Cancel] Native sheet failed, falling back to URL: $e');
+      }
+      // Fallback: itms-apps://
+      final itmUri = Uri.parse(
+        'itms-apps://apps.apple.com/account/subscriptions',
+      );
+      if (await canLaunchUrl(itmUri)) {
+        await launchUrl(itmUri, mode: LaunchMode.externalApplication);
+        return;
+      }
+      await launchUrl(
+        Uri.parse('https://apps.apple.com/account/subscriptions'),
+        mode: LaunchMode.externalApplication,
+      );
     } else {
-      uri = Uri.parse('https://play.google.com/store/account/subscriptions');
+      await launchUrl(
+        Uri.parse('https://play.google.com/store/account/subscriptions'),
+        mode: LaunchMode.externalApplication,
+      );
     }
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  /// يفتح Apple's native Refund Request sheet داخل التطبيق (iOS 15+)
+  Future<void> requestRefund() async {
+    final current = state;
+    if (current is! MembershipLoaded) return;
+
+    try {
+      if (Platform.isIOS) {
+        const channel = MethodChannel('com.athr.tayser/iap_manage');
+
+        // نجيب الـ transactionId الأحدث للـ subscription الحالية
+        final productId = _getProductId(current.sub);
+        String? transactionId;
+
+        if (productId != null) {
+          transactionId = await channel.invokeMethod<String>(
+            'getLatestTransactionId',
+            {'productId': productId},
+          );
+          log('[Refund] transactionId for $productId: $transactionId');
+        }
+
+        if (transactionId != null) {
+          // iOS 15+: native refund sheet
+          final status = await channel.invokeMethod<String>(
+            'beginRefundRequest',
+            {'transactionId': transactionId},
+          );
+          log('[Refund] status: $status');
+        } else {
+          // Fallback: reportaproblem.apple.com
+          await launchUrl(
+            Uri.parse('https://reportaproblem.apple.com'),
+            mode: LaunchMode.externalApplication,
+          );
+        }
+      } else {
+        await launchUrl(
+          Uri.parse('https://reportaproblem.apple.com'),
+          mode: LaunchMode.externalApplication,
+        );
+      }
+    } catch (e) {
+      log('[Refund] Error: $e');
+      // Fallback
+      await launchUrl(
+        Uri.parse('https://reportaproblem.apple.com'),
+        mode: LaunchMode.externalApplication,
+      );
     }
+  }
+
+  /// يجيب الـ productId من الـ subscription الحالية للـ refund request.
+  ///
+  /// الـ productId بيتجيب من الـ native layer مباشرة عن طريق
+  /// Transaction.currentEntitlements — أدق من بناءه manually.
+  /// لو مش موجود، بنرجع null والـ fallback هو reportaproblem.apple.com.
+  String? _getProductId(MySubscriptionModel sub) {
+    // نبني الـ productId من الـ subscription type و duration
+    // الـ subscriptionDurationType بيجي lowercase من الـ backend
+    final type = sub.isGold ? 'gold' : 'elite';
+    final rawDuration = sub.subscriptionDurationType.toLowerCase();
+    final duration = switch (rawDuration) {
+      'weekly' => 'weekly',
+      'monthly' => 'monthly',
+      'threemonths' || 'three_months' || 'three.months' => 'three.months',
+      _ => null,
+    };
+    if (duration == null) {
+      log('[Refund] Unknown duration: ${sub.subscriptionDurationType}');
+      return null;
+    }
+    final prefix = this is UserMembershipCubit ? 'user' : 'advisor';
+    final productId = 'tayseer.$prefix.$type.$duration';
+    log('[Refund] Built productId: $productId');
+    return productId;
   }
 
   void clearMessages() {
@@ -112,13 +200,13 @@ class MembershipCubit extends Cubit<MembershipState> {
 
   // ── Restore Purchase ────────────────────────────────────────────────────────
 
-  /// Restores purchases via Apple, then sends the receipt to the backend.
+  /// Restores purchases via Apple, then sends the JWS receipt to the backend.
   ///
-  /// Receipt priority:
-  ///   1. applicationUserName (JWT pendingId) — set when purchase was made
-  ///      via this app's backend flow.
-  ///   2. serverVerificationData — the App Receipt from Apple (Base64 encoded
-  ///      PKCS7 blob). The backend must verify this with Apple's servers.
+  /// مع StoreKit 2: الـ serverVerificationData في كل transaction هو JWS (JWT)
+  /// موقع من Apple — بنبعته مباشرة للباك-إند بدون أي معالجة.
+  ///
+  /// مع StoreKit 1 (fallback): نحاول نجيب applicationUserName أولاً،
+  /// ثم serverVerificationData كـ PKCS#7 receipt.
   Future<void> restorePurchase() async {
     if (isClosed) return;
     emit(MembershipNoSubscriptionRestoring());
@@ -135,29 +223,77 @@ class MembershipCubit extends Cubit<MembershipState> {
       }
 
       String? receipt;
+      String? originalTransactionId;
 
       if (Platform.isIOS) {
-        // Pass 1: applicationUserName (JWT pendingId) — new purchases
-        for (final p in restoredPurchases.reversed) {
-          if (p is AppStorePurchaseDetails) {
-            final appUsername =
-                p.skPaymentTransaction.payment.applicationUsername;
-            if (appUsername != null && appUsername.isNotEmpty) {
-              receipt = appUsername;
-              log('[Restore] using applicationUserName (JWT)');
-              break;
-            }
+        // ── StoreKit 2: SK2PurchaseDetails ────────────────────────────────
+        // الـ serverVerificationData هو JWS (JWT) مباشرة
+        final sk2Purchase = restoredPurchases.reversed
+            .whereType<SK2PurchaseDetails>()
+            .firstOrNull;
+
+        if (sk2Purchase != null) {
+          final jws = sk2Purchase.verificationData.serverVerificationData;
+          if (jws.isNotEmpty) {
+            receipt = jws;
+            log('[Restore] ✅ StoreKit 2 — using JWS (JWT)');
+            log('[Restore] JWS length: ${jws.length}');
+            log(
+              '[Restore] JWS preview: ${jws.length > 60 ? '${jws.substring(0, 60)}...' : jws}',
+            );
           }
         }
 
-        // Pass 2: serverVerificationData (App Receipt) — legacy purchases
+        // ── StoreKit 1 fallback: AppStorePurchaseDetails ──────────────────
         if (receipt == null || receipt.isEmpty) {
-          log('[Restore] no JWT — using serverVerificationData');
-          final serverData =
-              restoredPurchases.last.verificationData.serverVerificationData;
-          if (serverData.isNotEmpty) {
-            receipt = serverData;
-            log('[Restore] serverVerificationData length: ${receipt.length}');
+          // Pass 1: applicationUserName (JWT pendingId)
+          for (final p in restoredPurchases.reversed) {
+            if (p is AppStorePurchaseDetails) {
+              final appUsername =
+                  p.skPaymentTransaction.payment.applicationUsername;
+              if (appUsername != null && appUsername.isNotEmpty) {
+                receipt = appUsername;
+                log(
+                  '[Restore] SK1 — using applicationUserName (JWT pendingId)',
+                );
+                final origId = p
+                    .skPaymentTransaction
+                    .originalTransaction
+                    ?.transactionIdentifier;
+                if (origId != null && origId.isNotEmpty) {
+                  originalTransactionId = origId;
+                  log('[Restore] originalTransactionId: $origId');
+                }
+                break;
+              }
+            }
+          }
+
+          // Pass 2: serverVerificationData (PKCS#7)
+          if (receipt == null || receipt.isEmpty) {
+            log(
+              '[Restore] SK1 — no JWT, using serverVerificationData (PKCS#7)',
+            );
+            final serverData =
+                restoredPurchases.last.verificationData.serverVerificationData;
+            if (serverData.isNotEmpty) {
+              receipt = serverData;
+              log('[Restore] serverVerificationData length: ${receipt.length}');
+            }
+
+            for (final p in restoredPurchases.reversed) {
+              if (p is AppStorePurchaseDetails) {
+                final origId = p
+                    .skPaymentTransaction
+                    .originalTransaction
+                    ?.transactionIdentifier;
+                if (origId != null && origId.isNotEmpty) {
+                  originalTransactionId = origId;
+                  log('[Restore] originalTransactionId (legacy): $origId');
+                  break;
+                }
+              }
+            }
           }
         }
       }
@@ -167,7 +303,11 @@ class MembershipCubit extends Cubit<MembershipState> {
         return;
       }
 
-      final result = await _repository.restorePurchase(receipt);
+      final result = await _repository.restorePurchase(
+        receipt,
+        originalTransactionId: originalTransactionId,
+      );
+      if (isClosed) return;
       result.fold(
         (failure) => _emitRestoreError(failure.message),
         (restoreResult) => _handleRestoreResult(restoreResult),
@@ -215,6 +355,7 @@ class MembershipCubit extends Cubit<MembershipState> {
     emit(MembershipNoSubscriptionRestoring());
 
     final result = await _repository.transferSubscription(purchaseId);
+    if (isClosed) return;
     result.fold((failure) => _emitRestoreError(failure.message), (_) {
       SubscriptionEventBus.instance.fire(
         const SubscriptionChangedEvent(subscriptionType: 'gold'),

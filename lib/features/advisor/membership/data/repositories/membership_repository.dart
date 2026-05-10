@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/features/advisor/membership/data/models/my_subscription_model.dart';
 import 'package:tayseer/features/advisor/membership/data/models/restore_purchase_result.dart';
@@ -7,8 +8,9 @@ abstract class MembershipRepository {
   Future<Either<Failure, MySubscriptionModel>> getMySubscription();
   Future<Either<Failure, void>> cancelMySubscription();
   Future<Either<Failure, RestorePurchaseResult>> restorePurchase(
-    String receipt,
-  );
+    String receipt, {
+    String? originalTransactionId,
+  });
   Future<Either<Failure, void>> transferSubscription(String purchaseId);
 }
 
@@ -44,10 +46,24 @@ class MembershipRepositoryImpl implements MembershipRepository {
   @override
   Future<Either<Failure, void>> cancelMySubscription() async {
     try {
+      log('[AdvisorRepo] ════════════════════════════════════════');
+      log('[AdvisorRepo] 📤 SENDING cancel to backend');
+      log('[AdvisorRepo]   endpoint: ${ApiEndPoint.cancelAdvisorSubscription}');
+      log(
+        '[AdvisorRepo]   body: {} (empty — backend uses token to identify user)',
+      );
+      log('[AdvisorRepo] ════════════════════════════════════════');
+
       final response = await _apiService.post(
         endPoint: ApiEndPoint.cancelAdvisorSubscription,
         data: {},
       );
+
+      log('[AdvisorRepo] 📩 RECEIVED from backend (cancel):');
+      log('[AdvisorRepo]   success : ${response['success']}');
+      log('[AdvisorRepo]   message : ${response['message']}');
+      log('[AdvisorRepo]   data    : ${response['data']}');
+
       if (response['success'] == true) {
         return const Right(null);
       }
@@ -55,22 +71,35 @@ class MembershipRepositoryImpl implements MembershipRepository {
         ServerFailure(response['message']?.toString() ?? 'فشل إلغاء الاشتراك'),
       );
     } on DioException catch (e) {
+      log('[AdvisorRepo] ❌ DioException on cancel: ${e.message}');
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
+      log('[AdvisorRepo] ❌ Exception on cancel: $e');
       return Left(ServerFailure(e.toString()));
     }
   }
 
   @override
   Future<Either<Failure, RestorePurchaseResult>> restorePurchase(
-    String receipt,
-  ) async {
+    String receipt, {
+    String? originalTransactionId,
+  }) async {
     try {
+      final body = <String, dynamic>{
+        'receipts': [receipt],
+      };
+      if (originalTransactionId != null && originalTransactionId.isNotEmpty) {
+        body['originalTransactionId'] = originalTransactionId;
+      }
+
+      log('[MembershipRepo] restorePurchase body keys: ${body.keys.toList()}');
+      if (originalTransactionId != null) {
+        log('[MembershipRepo] originalTransactionId: $originalTransactionId');
+      }
+
       final response = await _apiService.post(
         endPoint: ApiEndPoint.iapRestorePurchase,
-        data: {
-          'receipts': [receipt],
-        },
+        data: body,
       );
       if (response['success'] == true) {
         // data is a List — take the first element

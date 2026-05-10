@@ -11,10 +11,17 @@ class ForceUpdateRepo {
 
   ForceUpdateRepo(this._apiService);
 
+  /// يجيب الـ version الحالية من الجهاز ويبعتها للـ API
   /// يرجع [AppVersionModel] لو الـ API نجح، أو null لو فشل
   Future<AppVersionModel?> fetchVersionInfo() async {
     try {
-      final response = await _apiService.get(endPoint: ApiEndPoint.appVersion);
+      final packageInfo = await PackageInfo.fromPlatform();
+      final currentVersion = packageInfo.version;
+
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.checkForUpdate,
+        data: {'currentVersion': currentVersion},
+      );
       return AppVersionModel.fromJson(response);
     } catch (e) {
       log('⚠️ ForceUpdateRepo: failed to fetch version info — $e');
@@ -22,20 +29,13 @@ class ForceUpdateRepo {
     }
   }
 
-  /// يقارن الـ version الحالية بالـ min_version من الـ API
-  /// يرجع true لو المستخدم محتاج يحدّث
+  /// يرجع true لو الـ API قال status = force_update
   Future<bool> isUpdateRequired() async {
     try {
       final versionInfo = await fetchVersionInfo();
       if (versionInfo == null) return false;
 
-      // لو الـ API بيقول force_update مباشرة
-      if (versionInfo.forceUpdate) return true;
-
-      final packageInfo = await PackageInfo.fromPlatform();
-      final currentVersion = packageInfo.version;
-
-      return _isVersionLower(currentVersion, versionInfo.minVersion);
+      return versionInfo.status == AppVersionStatus.forceUpdate;
     } catch (e) {
       log('⚠️ ForceUpdateRepo: isUpdateRequired error — $e');
       return false;
@@ -48,9 +48,10 @@ class ForceUpdateRepo {
       final versionInfo = await fetchVersionInfo();
       if (versionInfo == null) return _defaultStoreUrl();
 
-      return Platform.isIOS
-          ? versionInfo.iosStoreUrl
-          : versionInfo.androidStoreUrl;
+      final url = Platform.isIOS
+          ? versionInfo.iosLink
+          : versionInfo.androidLink;
+      return url.isNotEmpty ? url : _defaultStoreUrl();
     } catch (e) {
       return _defaultStoreUrl();
     }
@@ -61,27 +62,5 @@ class ForceUpdateRepo {
       return 'https://apps.apple.com/eg/app/tayseer-community/id6756886227';
     }
     return 'https://play.google.com/store/apps/details?id=com.tayseer.app';
-  }
-
-  /// يقارن نسختين بصيغة "1.2.3"
-  /// يرجع true لو [current] أقل من [minimum]
-  bool _isVersionLower(String current, String minimum) {
-    final currentParts = _parseParts(current);
-    final minimumParts = _parseParts(minimum);
-
-    for (int i = 0; i < 3; i++) {
-      final c = i < currentParts.length ? currentParts[i] : 0;
-      final m = i < minimumParts.length ? minimumParts[i] : 0;
-      if (c < m) return true;
-      if (c > m) return false;
-    }
-    return false; // متساويتين
-  }
-
-  List<int> _parseParts(String version) {
-    return version
-        .split('.')
-        .map((p) => int.tryParse(p.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0)
-        .toList();
   }
 }

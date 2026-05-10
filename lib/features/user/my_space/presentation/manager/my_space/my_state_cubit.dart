@@ -15,7 +15,7 @@ class MySpaceCubit extends Cubit<MySpaceState> {
 
   late final String _listenerId;
   String? _activeChatRoomId;
-  
+
   StreamSubscription<ChatUnarchiveEvent>? _unarchiveSubscription;
   StreamSubscription<ChatArchiveEvent>? _archiveSubscription;
   StreamSubscription<ChatDeleteEvent>? _deleteSubscription;
@@ -24,14 +24,16 @@ class MySpaceCubit extends Cubit<MySpaceState> {
     _listenerId =
         'MySpaceCubit_${DateTime.now().millisecondsSinceEpoch}_$hashCode';
     log('🆔 MySpaceCubit created with ID: $_listenerId');
-    
+
     // Listen to chat events
     _setupEventBusListeners();
   }
 
   void _setupEventBusListeners() {
     // Listen to unarchive events
-    _unarchiveSubscription = ChatEventBus.instance.onChatUnarchived.listen((event) {
+    _unarchiveSubscription = ChatEventBus.instance.onChatUnarchived.listen((
+      event,
+    ) {
       _handleChatUnarchived(event.chatRoomId);
     });
 
@@ -167,7 +169,7 @@ class MySpaceCubit extends Cubit<MySpaceState> {
           ),
         ),
       );
-      
+
       _safeEmit(
         state.copyWith(
           advisorChatState: CubitStates.success,
@@ -207,10 +209,12 @@ class MySpaceCubit extends Cubit<MySpaceState> {
           state: CubitStates.success,
         );
 
+        // ✅ دايماً حط lastUpdateTime جديد عشان Equatable يشوف فرق ويعمل rebuild
         _safeEmit(
           state.copyWith(
             advisorChatState: CubitStates.success,
             advisorChatModel: advisorChatModel,
+            lastUpdateTime: DateTime.now(),
           ),
         );
 
@@ -254,15 +258,22 @@ class MySpaceCubit extends Cubit<MySpaceState> {
     try {
       final messageData = data['message'];
       if (messageData == null) return;
-      
+
       final chatRoomId = messageData['chatRoomId']?.toString();
       final content = messageData['content'];
-      final createdAt = messageData['sentAt']?.toString() ?? messageData['createdAt']?.toString() ?? '';
+      final createdAt =
+          messageData['sentAt']?.toString() ??
+          messageData['createdAt']?.toString() ??
+          '';
       final updatedAt = messageData['updatedAt']?.toString() ?? '';
       final isMe = messageData['isMe'] ?? false;
       final senderName = messageData['senderName']?.toString() ?? '';
-      final messageType = messageData['contentType']?.toString() ?? messageData['messageType']?.toString() ?? 'text';
-      final messageId = messageData['id']?.toString() ?? messageData['_id']?.toString() ?? '';
+      final messageType =
+          messageData['contentType']?.toString() ??
+          messageData['messageType']?.toString() ??
+          'text';
+      final messageId =
+          messageData['id']?.toString() ?? messageData['_id']?.toString() ?? '';
 
       log(
         '📨 [$_listenerId] Extracted - chatRoomId: $chatRoomId, messageId: $messageId',
@@ -337,12 +348,12 @@ class MySpaceCubit extends Cubit<MySpaceState> {
     final updatedRooms = currentRooms.map((room) {
       if (room.id == chatRoomId) {
         log('✅ [$_listenerId] Updating lastMessage for room: $chatRoomId');
-        log('📝 [$_listenerId] New content: "$content", messageType: $messageType');
+        log(
+          '📝 [$_listenerId] New content: "$content", messageType: $messageType',
+        );
 
         final updatedLastMessage = LastMessageModel(
-          id: messageId.isNotEmpty
-              ? messageId
-              : (room.lastMessage?.id ?? ''), 
+          id: messageId.isNotEmpty ? messageId : (room.lastMessage?.id ?? ''),
           sender: room.lastMessage?.sender ?? '',
           senderType: room.lastMessage?.senderType ?? '',
           content: content,
@@ -416,7 +427,9 @@ class MySpaceCubit extends Cubit<MySpaceState> {
   /// Handle message status updates for chat list
   void _handleMessageStateUpdateForChatList(dynamic data) {
     if (isClosed) {
-      log('⚠️ [$_listenerId] Received message state update but Cubit is closed - ignoring');
+      log(
+        '⚠️ [$_listenerId] Received message state update but Cubit is closed - ignoring',
+      );
       return;
     }
 
@@ -424,13 +437,15 @@ class MySpaceCubit extends Cubit<MySpaceState> {
 
     try {
       if (data is! Map) return;
-      
+
       final status = data['status']?.toString() ?? '';
       final messageIds = data['messageIds'];
-      
+
       if (messageIds is! List || messageIds.isEmpty) return;
 
-      log('📊 [$_listenerId] Status: $status, Message IDs: ${messageIds.length}');
+      log(
+        '📊 [$_listenerId] Status: $status, Message IDs: ${messageIds.length}',
+      );
 
       // Update status in chat list's last message if it matches
       final currentChatData = state.advisorChatModel?.data;
@@ -440,9 +455,11 @@ class MySpaceCubit extends Cubit<MySpaceState> {
       final updatedRooms = currentChatData.chatRooms.map((room) {
         final lastMessageId = room.lastMessage?.id;
         if (lastMessageId != null && messageIds.contains(lastMessageId)) {
-          log('✅ [$_listenerId] Updating status for room ${room.id} last message');
+          log(
+            '✅ [$_listenerId] Updating status for room ${room.id} last message',
+          );
           hasUpdates = true;
-          
+
           final updatedLastMessage = LastMessageModel(
             id: room.lastMessage!.id,
             sender: room.lastMessage!.sender,
@@ -503,8 +520,10 @@ class MySpaceCubit extends Cubit<MySpaceState> {
 
   /// Extract content from message for display
   String _extractContentForDisplay(dynamic content, String messageType) {
-    log('🔍 [$_listenerId] _extractContentForDisplay - messageType: $messageType');
-    
+    log(
+      '🔍 [$_listenerId] _extractContentForDisplay - messageType: $messageType',
+    );
+
     // معالجة أنواع الميديا
     if (messageType == 'image' || messageType == 'images/videos') {
       log('✅ [$_listenerId] Detected image/video, returning "صورة"');
@@ -512,11 +531,15 @@ class MySpaceCubit extends Cubit<MySpaceState> {
     } else if (messageType == 'video') {
       log('✅ [$_listenerId] Detected video, returning "فيديو"');
       return 'فيديو';
-    } else if (messageType == 'audio' || messageType == 'voice' || messageType == 'record') {
-      log('✅ [$_listenerId] Detected audio/voice/record, returning "رسالة صوتية"');
+    } else if (messageType == 'audio' ||
+        messageType == 'voice' ||
+        messageType == 'record') {
+      log(
+        '✅ [$_listenerId] Detected audio/voice/record, returning "رسالة صوتية"',
+      );
       return 'رسالة صوتية';
     }
-    
+
     // للرسائل النصية والنظام
     log('📝 [$_listenerId] Text/system message, extracting content');
     return _extractContent(content);
@@ -528,46 +551,47 @@ class MySpaceCubit extends Cubit<MySpaceState> {
     if (content is String) {
       // Check if it's a media URL (audio/video/image)
       final lowerContent = content.toLowerCase();
-      if (lowerContent.contains('.mp3') || 
-          lowerContent.contains('.wav') || 
+      if (lowerContent.contains('.mp3') ||
+          lowerContent.contains('.wav') ||
           lowerContent.contains('.m4a') ||
           lowerContent.contains('.aac') ||
           lowerContent.contains('audio') ||
           lowerContent.contains('record')) {
         return 'رسالة صوتية';
-      } else if (lowerContent.contains('.mp4') || 
-                 lowerContent.contains('.mov') || 
-                 lowerContent.contains('.avi') ||
-                 lowerContent.contains('video')) {
+      } else if (lowerContent.contains('.mp4') ||
+          lowerContent.contains('.mov') ||
+          lowerContent.contains('.avi') ||
+          lowerContent.contains('video')) {
         return 'فيديو';
-      } else if (lowerContent.contains('.jpg') || 
-                 lowerContent.contains('.jpeg') || 
-                 lowerContent.contains('.png') || 
-                 lowerContent.contains('.gif') ||
-                 lowerContent.contains('image')) {
+      } else if (lowerContent.contains('.jpg') ||
+          lowerContent.contains('.jpeg') ||
+          lowerContent.contains('.png') ||
+          lowerContent.contains('.gif') ||
+          lowerContent.contains('image')) {
         return 'صورة';
       }
       return content;
     } else if (content is List && content.isNotEmpty) {
       final first = content.first;
       if (first is Map) {
-        final mediaUrl = first['media']?.toString() ?? first['url']?.toString() ?? '';
+        final mediaUrl =
+            first['media']?.toString() ?? first['url']?.toString() ?? '';
         if (mediaUrl.isNotEmpty) {
           // Check media type from URL
           final lowerUrl = mediaUrl.toLowerCase();
-          if (lowerUrl.contains('.mp3') || 
-              lowerUrl.contains('.wav') || 
+          if (lowerUrl.contains('.mp3') ||
+              lowerUrl.contains('.wav') ||
               lowerUrl.contains('.m4a') ||
               lowerUrl.contains('.aac')) {
             return 'رسالة صوتية';
-          } else if (lowerUrl.contains('.mp4') || 
-                     lowerUrl.contains('.mov') || 
-                     lowerUrl.contains('.avi')) {
+          } else if (lowerUrl.contains('.mp4') ||
+              lowerUrl.contains('.mov') ||
+              lowerUrl.contains('.avi')) {
             return 'فيديو';
-          } else if (lowerUrl.contains('.jpg') || 
-                     lowerUrl.contains('.jpeg') || 
-                     lowerUrl.contains('.png') || 
-                     lowerUrl.contains('.gif')) {
+          } else if (lowerUrl.contains('.jpg') ||
+              lowerUrl.contains('.jpeg') ||
+              lowerUrl.contains('.png') ||
+              lowerUrl.contains('.gif')) {
             return 'صورة';
           }
         }
@@ -657,28 +681,31 @@ class MySpaceCubit extends Cubit<MySpaceState> {
     );
 
     final result = await mySpaceRepo.deleteChatRoom(chatRoomId);
-    return result.fold((failure) {
-      // Revert on failure
-      _safeEmit(
-        state.copyWith(
-          advisorChatModel: AdvisorChatModel(
-            success: state.advisorChatModel!.success,
-            message: state.advisorChatModel!.message,
-            data: AdvisorChatData(
-              chatRooms: originalRooms,
-              pagination: currentChatData.pagination,
+    return result.fold(
+      (failure) {
+        // Revert on failure
+        _safeEmit(
+          state.copyWith(
+            advisorChatModel: AdvisorChatModel(
+              success: state.advisorChatModel!.success,
+              message: state.advisorChatModel!.message,
+              data: AdvisorChatData(
+                chatRooms: originalRooms,
+                pagination: currentChatData.pagination,
+              ),
             ),
+            lastUpdateTime: DateTime.now(),
+            errorMessage: failure.message,
           ),
-          lastUpdateTime: DateTime.now(),
-          errorMessage: failure.message,
-        ),
-      );
-      return false;
-    }, (_) {
-      // Notify other parts of the app
-      ChatEventBus.instance.notifyChatDeleted(chatRoomId);
-      return true;
-    });
+        );
+        return false;
+      },
+      (_) {
+        // Notify other parts of the app
+        ChatEventBus.instance.notifyChatDeleted(chatRoomId);
+        return true;
+      },
+    );
   }
 
   /// Archive chat room (optimistic update)
@@ -706,33 +733,42 @@ class MySpaceCubit extends Cubit<MySpaceState> {
     );
 
     final result = await mySpaceRepo.archiveChatRoom(chatRoomId);
-    return result.fold((failure) {
-      // Revert on failure
-      _safeEmit(
-        state.copyWith(
-          advisorChatModel: AdvisorChatModel(
-            success: state.advisorChatModel!.success,
-            message: state.advisorChatModel!.message,
-            data: AdvisorChatData(
-              chatRooms: originalRooms,
-              pagination: currentChatData.pagination,
+    return result.fold(
+      (failure) {
+        // Revert on failure
+        _safeEmit(
+          state.copyWith(
+            advisorChatModel: AdvisorChatModel(
+              success: state.advisorChatModel!.success,
+              message: state.advisorChatModel!.message,
+              data: AdvisorChatData(
+                chatRooms: originalRooms,
+                pagination: currentChatData.pagination,
+              ),
             ),
+            lastUpdateTime: DateTime.now(),
+            errorMessage: failure.message,
           ),
-          lastUpdateTime: DateTime.now(),
-          errorMessage: failure.message,
-        ),
-      );
-      return false;
-    }, (_) {
-      // Notify other parts of the app
-      ChatEventBus.instance.notifyChatArchived(chatRoomId);
-      return true;
-    });
+        );
+        return false;
+      },
+      (_) {
+        // Notify other parts of the app
+        ChatEventBus.instance.notifyChatArchived(chatRoomId);
+        return true;
+      },
+    );
   }
 
   /// Reset State
   void resetState() {
     _safeEmit(const MySpaceState());
+  }
+
+  /// Force rebuild للـ BlocBuilder بدون API call
+  /// بيستخدم لما نرجع من chat عشان الـ system rooms تظهر تاني
+  void touchState() {
+    _safeEmit(state.copyWith(lastUpdateTime: DateTime.now()));
   }
 
   @override

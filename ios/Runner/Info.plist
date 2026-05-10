@@ -55,6 +55,7 @@
 		<string>http</string>
 		<string>tel</string>
 		<string>mailto</string>
+		<string>itms-apps</string>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
@@ -90,6 +91,8 @@
 	<key>NSUserNotificationAlertStyle</key>
 	<string>alert</string>
 	<key>PHPhotoLibraryPreventAutomaticLimitedAccessAlert</key>
+	<true/>
+	<key>SKUseStoreKit2IfAvailable</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>

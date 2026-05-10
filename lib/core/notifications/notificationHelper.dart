@@ -87,6 +87,7 @@ class NotificationHelper {
       case 'post_comment':
       case 'post_share':
       case 'new_post_from_following':
+      case 'post_suggestion':
       case 'comment_like':
       case 'comment_reply':
       case 'reply_like':
@@ -164,6 +165,7 @@ class NotificationHelper {
 
       case 'user_blocked':
       case 'content_reported':
+      case 'system':
         debugPrint('ℹ️ Notification type $type - no navigation needed');
         break;
 

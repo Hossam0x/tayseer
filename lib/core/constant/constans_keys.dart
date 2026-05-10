@@ -16,3 +16,5 @@ const String kGuestName = 'guest_name';
 const String kGuestImage = 'guest_image';
 
 const String kAppLanguage = 'app_language';
+
+const String kUuid = 'uuid';

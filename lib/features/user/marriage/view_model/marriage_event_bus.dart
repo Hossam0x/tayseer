@@ -21,8 +21,17 @@ class MarriageEventBus {
     _switchToMarriageTabController.add(null);
   }
 
+  // ✅ refresh الـ regards balance بعد شراء باقة تهاني
+  final _regardsRefreshController = StreamController<void>.broadcast();
+  Stream<void> get onRegardsRefreshed => _regardsRefreshController.stream;
+
+  void refreshRegards() {
+    _regardsRefreshController.add(null);
+  }
+
   void dispose() {
     _filterController.close();
     _switchToMarriageTabController.close();
+    _regardsRefreshController.close();
   }
 }

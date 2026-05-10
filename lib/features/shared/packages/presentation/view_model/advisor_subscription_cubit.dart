@@ -4,9 +4,9 @@ import 'dart:io';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/services/iap_service.dart';
-import 'package:tayseer/core/utils/api_endpoint.dart';
-import 'package:tayseer/core/utils/api_service.dart';
+import 'package:tayseer/core/shared/network/local_network.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/shared/packages/data/models/new_advisor_sub_model.dart';
 import 'packages_cubit.dart';
@@ -52,13 +52,9 @@ class AdvisorSubscriptionState extends Equatable {
 
 class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
   final IAPService _iapService;
-  final ApiService _apiService;
 
-  AdvisorSubscriptionCubit(
-    SelectedPackage packageType,
-    this._iapService,
-    this._apiService,
-  ) : super(AdvisorSubscriptionState(packageType: packageType));
+  AdvisorSubscriptionCubit(SelectedPackage packageType, this._iapService)
+    : super(AdvisorSubscriptionState(packageType: packageType));
 
   /// ترتيب المدة: weekly=0, monthly=1, threemonths=2
   int _durationWeight(NewAdvisorSubModel s) {
@@ -107,6 +103,20 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
         .firstOrNull;
   }
 
+  /// يرجع أول downgrade متاح — مدتها أقل من الـ current
+  /// متاح فقط لو الاشتراك الحالي ملغي auto-renew (isCancelled)
+  NewAdvisorSubModel? getDowngradeSub(List<NewAdvisorSubModel> allSubs) {
+    final subs = getSubscriptionsForPackage(allSubs);
+    final current = subs.where((s) => s.isCurrentSub).firstOrNull;
+    if (current == null) return null;
+    // downgrade متاح فقط لو الاشتراك الحالي ملغي auto-renew
+    if (!current.isCancelled) return null;
+    final currentWeight = _durationWeight(current);
+    return subs
+        .where((s) => !s.isCurrentSub && _durationWeight(s) < currentWeight)
+        .lastOrNull; // أقرب مدة أقل
+  }
+
   /// أول ما تيجي البيانات — يختار الـ monthly تلقائياً (Most Popular)
   /// لو مفيش monthly يختار الأولى
   void initSelection(List<NewAdvisorSubModel> allSubs) {
@@ -139,82 +149,150 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
     final subs = getSubscriptionsForPackage(allSubs);
     if (subs.isEmpty) return;
 
-    // لو في current sub → اشتري الـ upgrade مباشرة
-    // لو مفيش → اشتري الـ selected
+    // ── Step 1: تحديد الـ target subscription ────────────────────────────
     final current = subs.where((s) => s.isCurrentSub).firstOrNull;
     final NewAdvisorSubModel targetSub;
+
     if (current != null) {
-      final upgrade = getUpgradeSub(allSubs);
-      if (upgrade == null) return;
-      targetSub = upgrade;
+      if (current.isActiveInApple) {
+        // اشتراك نشط → upgrade فقط
+        final upgrade = getUpgradeSub(allSubs);
+        if (upgrade == null) {
+          log(
+            '[AdvisorSub] ⚠️ No upgrade available — current is active in Apple',
+          );
+          // أعلم الـ user إنه على أعلى خطة متاحة
+          emit(
+            state.copyWith(
+              status: AdvisorSubStatus.error,
+              error: 'already_on_highest_plan',
+            ),
+          );
+          return;
+        }
+        targetSub = upgrade;
+        log(
+          '[AdvisorSub] 📈 UPGRADE: ${current.subscriptionDurationType} → ${targetSub.subscriptionDurationType}',
+        );
+      } else {
+        // الاشتراك ملغي auto-renew → upgrade أو downgrade
+        final upgrade = getUpgradeSub(allSubs);
+        final downgrade = getDowngradeSub(allSubs);
+
+        if (upgrade != null) {
+          targetSub = upgrade;
+          log(
+            '[AdvisorSub] 📈 UPGRADE (cancelled sub): ${current.subscriptionDurationType} → ${targetSub.subscriptionDurationType}',
+          );
+        } else if (downgrade != null) {
+          targetSub = downgrade;
+          log(
+            '[AdvisorSub] 📉 DOWNGRADE: ${current.subscriptionDurationType} → ${targetSub.subscriptionDurationType}',
+          );
+        } else {
+          log('[AdvisorSub] ⚠️ No change available');
+          emit(
+            state.copyWith(
+              status: AdvisorSubStatus.error,
+              error: 'already_on_highest_plan',
+            ),
+          );
+          return;
+        }
+      }
     } else {
+      // ✅ مفيش اشتراك حالي → اشتري الـ selected
       if (state.selectedDurationIndex >= subs.length) return;
       targetSub = subs[state.selectedDurationIndex];
+      log(
+        '[AdvisorSub] 🆕 NEW SUBSCRIPTION: ${targetSub.subscriptionDurationType}',
+      );
     }
 
+    // ── Step 2: التحقق من الـ product ID ──────────────────────────────────
     final productId = targetSub.appleProductId;
     if (productId.isEmpty) {
       emit(
         state.copyWith(
           status: AdvisorSubStatus.error,
-          error: 'معرف المنتج غير متوفر',
+          error: 'purchase_invalid_product',
         ),
       );
       return;
     }
 
     emit(state.copyWith(status: AdvisorSubStatus.purchasing));
-    unawaited(_iapService.init());
+
+    // تهيئة الـ IAP service قبل الشراء — لو فشل نوقف العملية
+    try {
+      await _iapService.init();
+    } catch (e) {
+      log('[AdvisorSub] ❌ IAP init failed: $e');
+      emit(
+        state.copyWith(
+          status: AdvisorSubStatus.error,
+          error: 'store_unavailable',
+        ),
+      );
+      return;
+    }
 
     final platform = Platform.isIOS ? 'ios' : 'android';
 
     try {
-      final response = await _apiService.post(
-        endPoint: ApiEndPoint.initiateSubscriptionPurchase,
-        data: {
-          'productId': productId,
-          'platform': platform,
-          'subscriptionId': targetSub.id,
-        },
-      );
+      // ── Step 1: قراءة الـ uuid من الكاش ──────────────────────────────────
+      final uuid = CachNetwork.getStringData(key: kUuid);
 
-      if (response['success'] != true) {
+      log('[AdvisorSub] ════════════════════════════════════════');
+      log('[AdvisorSub] 🛒 PURCHASE FLOW START');
+      log('[AdvisorSub]   productId      : $productId');
+      log('[AdvisorSub]   platform       : $platform');
+      log('[AdvisorSub]   subscriptionId : ${targetSub.id}');
+      log(
+        '[AdvisorSub]   target sub     : ${targetSub.subscriptionDurationType}',
+      );
+      log(
+        '[AdvisorSub]   current sub    : ${current?.subscriptionDurationType ?? "none"}',
+      );
+      log(
+        '[AdvisorSub]   is active      : ${current?.isActiveInApple ?? false}',
+      );
+      log('[AdvisorSub]   is cancelled   : ${current?.isCancelled ?? false}');
+      log('[AdvisorSub] ────────────────────────────────────────');
+      log(
+        '[AdvisorSub] 🆔 uuid from cache  : ${uuid.isNotEmpty ? uuid : "⚠️ EMPTY — uuid not cached yet"}',
+      );
+      log('[AdvisorSub] 📲 applicationUserName → Apple: $uuid');
+      log('[AdvisorSub] ════════════════════════════════════════');
+
+      if (uuid.isEmpty) {
         emit(
           state.copyWith(
             status: AdvisorSubStatus.error,
-            error: response['message']?.toString() ?? 'فشل بدء عملية الاشتراك',
+            error: 'purchase_user_data_missing',
           ),
         );
         return;
       }
 
-      final pendingId = response['data']?['pendingId'] as String? ?? '';
+      // ── Step 2: Apple IAP ─────────────────────────────────────────────────
       final purchase = await _iapService.buyProduct(
         productId,
-        uniqueNumber: pendingId,
+        uniqueNumber: uuid,
       );
 
-      // Confirm purchase with backend using transactionId
-      // Apple doesn't guarantee applicationUsername in Server Notifications
-      final transactionId = purchase.purchaseID ?? '';
-      if (transactionId.isNotEmpty) {
-        try {
-          await _apiService.post(
-            endPoint: ApiEndPoint.confirmSubscriptionPurchase,
-            data: {
-              'pendingId': pendingId,
-              'transactionId': transactionId,
-              'platform': platform,
-            },
-          );
-          log('[AdvisorSub] ✅ Backend confirmed: $transactionId');
-        } catch (e) {
-          log('[AdvisorSub] ⚠️ Backend confirmation failed: $e');
-        }
-      }
+      log('[AdvisorSub] ✅ Apple purchase success:');
+      log('[AdvisorSub]   purchaseID (transactionId): ${purchase.purchaseID}');
+      log('[AdvisorSub]   productID                 : ${purchase.productID}');
+      log(
+        '[AdvisorSub]   transactionDate           : ${purchase.transactionDate}',
+      );
+      log('[AdvisorSub]   status                    : ${purchase.status}');
 
-      // Notify all listeners that subscription changed
-      final newType = targetSub.subscriptionType; // 'gold' or 'ultra'
+      // ── Step 3: Success ───────────────────────────────────────────────────
+      // Apple بتكلم الباك مباشرة عن طريق server-to-server notifications
+      // transfer-subscription بتتبعت بس في الـ restore flow مش هنا
+      final newType = targetSub.subscriptionType;
       SubscriptionEventBus.instance.fire(
         SubscriptionChangedEvent(subscriptionType: newType),
       );
@@ -226,7 +304,7 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
           status: err.isCanceled
               ? AdvisorSubStatus.canceled
               : AdvisorSubStatus.error,
-          error: err.isCanceled ? null : err.message,
+          error: err.isCanceled ? null : err.messageKey,
         ),
       );
     }

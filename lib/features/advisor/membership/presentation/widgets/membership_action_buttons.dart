@@ -20,24 +20,49 @@ class MembershipActionButtons extends StatelessWidget {
     final packagesRoute = isUserMembership
         ? AppRouter.kUserPackagesView
         : AppRouter.kPackagesView;
+    final initialPage = sub.isUltra ? 2 : 1;
 
-    // Cancelled or expired: restore only
-    if (sub.isCancelled || sub.isExpired) {
+    // منتهي أو ملغي auto-renew وانتهت المدة → restore فقط
+    if (sub.isExpired || (sub.isCancelled && !sub.isActive)) {
       return _PrimaryButton(
         label: context.tr('restore_membership'),
-        onPressed: () => _pushAndRefetch(context, packagesRoute),
+        onPressed: () => _pushAndRefetch(
+          context,
+          packagesRoute,
+          args: {'initialPage': initialPage},
+        ),
       );
     }
 
-    // Active: change plan + cancel (no renew)
+    // نشط
     return Column(
       children: [
+        // ── تغيير الباقة ──────────────────────────────────────────────────
         _PrimaryButton(
           label: context.tr('change_plan'),
-          onPressed: () => _pushAndRefetch(context, packagesRoute),
+          onPressed: () => _pushAndRefetch(
+            context,
+            packagesRoute,
+            args: {'initialPage': initialPage},
+          ),
         ),
         Gap(12.h),
-        _CancelButton(onTap: onCancelTap),
+
+        // ── إدارة الاشتراك (Manage) — يفتح Apple sheet مباشرة ────────────
+        _ManageButton(
+          onTap: () => context.read<MembershipCubit>().cancelMembership(),
+        ),
+
+        // ── طلب استرداد (Refund) — iOS 15+ native sheet ───────────────────
+        if (Platform.isIOS) ...[
+          Gap(12.h),
+          _RefundButton(
+            onTap: () => context.read<MembershipCubit>().requestRefund(),
+          ),
+        ],
+
+        // ── إلغاء التجديد التلقائي — يظهر بس لو autoRenewal = true ────────
+        if (sub.autoRenewal) ...[Gap(12.h), _CancelButton(onTap: onCancelTap)],
       ],
     );
   }
@@ -51,6 +76,7 @@ class MembershipActionButtons extends StatelessWidget {
   }
 }
 
+// ── Primary Button ────────────────────────────────────────────────────────────
 class _PrimaryButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -66,17 +92,103 @@ class _PrimaryButton extends StatelessWidget {
   );
 }
 
+// ── Manage Button — يفتح Apple's native Manage Subscriptions sheet ────────────
+class _ManageButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _ManageButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          padding: EdgeInsets.symmetric(vertical: 14.h),
+          side: BorderSide(color: AppColors.kprimaryColor.withOpacity(0.6)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+        ),
+        onPressed: onTap,
+        icon: Icon(
+          Icons.settings_outlined,
+          size: 18.sp,
+          color: AppColors.kprimaryColor,
+        ),
+        label: Text(
+          context.tr('manage_subscription'),
+          style: Styles.textStyle16SemiBold.copyWith(
+            color: AppColors.kprimaryColor,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Refund Button — يفتح Apple's native Refund Request sheet ─────────────────
+class _RefundButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _RefundButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          padding: EdgeInsets.symmetric(vertical: 14.h),
+          side: BorderSide(color: Colors.orange.shade400),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+        ),
+        onPressed: onTap,
+        icon: Icon(
+          Icons.receipt_long_outlined,
+          size: 18.sp,
+          color: Colors.orange.shade600,
+        ),
+        label: Text(
+          context.tr('request_refund'),
+          style: Styles.textStyle16SemiBold.copyWith(
+            color: Colors.orange.shade600,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Cancel Auto-Renew Button ──────────────────────────────────────────────────
 class _CancelButton extends StatelessWidget {
   final VoidCallback onTap;
   const _CancelButton({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return TextButton(
-      onPressed: onTap,
-      child: Text(
-        context.tr('cancel_subscription'),
-        style: Styles.textStyle14.copyWith(color: Colors.red.shade400),
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          padding: EdgeInsets.symmetric(vertical: 14.h),
+          side: BorderSide(color: Colors.red.shade300),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+        ),
+        onPressed: onTap,
+        icon: Icon(
+          Icons.cancel_outlined,
+          size: 18.sp,
+          color: Colors.red.shade400,
+        ),
+        label: Text(
+          context.tr('cancel_auto_renew'),
+          style: Styles.textStyle16SemiBold.copyWith(
+            color: Colors.red.shade400,
+          ),
+        ),
       ),
     );
   }

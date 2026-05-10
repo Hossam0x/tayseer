@@ -1,5 +1,4 @@
 import 'dart:developer';
-import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/core/services/iap_service.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/advisor/membership/data/models/restore_purchase_result.dart';
@@ -39,24 +38,62 @@ class _RestorePurchasesButtonState extends State<RestorePurchasesButton> {
       }
 
       String? receipt;
+      String? originalTransactionId;
 
       if (Platform.isIOS) {
-        // Pass 1: applicationUserName (JWT pendingId)
-        for (final p in restoredPurchases.reversed) {
-          if (p is AppStorePurchaseDetails) {
-            final appUsername =
-                p.skPaymentTransaction.payment.applicationUsername;
-            if (appUsername != null && appUsername.isNotEmpty) {
-              receipt = appUsername;
-              break;
-            }
+        // ── StoreKit 2: SK2PurchaseDetails ────────────────────────────────
+        // الـ serverVerificationData هو JWS (JWT) مباشرة
+        final sk2Purchase = restoredPurchases.reversed
+            .whereType<SK2PurchaseDetails>()
+            .firstOrNull;
+
+        if (sk2Purchase != null) {
+          final jws = sk2Purchase.verificationData.serverVerificationData;
+          if (jws.isNotEmpty) {
+            receipt = jws;
+            log('[Restore] ✅ StoreKit 2 — using JWS (JWT)');
           }
         }
-        // Pass 2: serverVerificationData
+
+        // ── StoreKit 1 fallback ───────────────────────────────────────────
         if (receipt == null || receipt.isEmpty) {
-          final serverData =
-              restoredPurchases.last.verificationData.serverVerificationData;
-          if (serverData.isNotEmpty) receipt = serverData;
+          // Pass 1: applicationUserName (JWT pendingId)
+          for (final p in restoredPurchases.reversed) {
+            if (p is AppStorePurchaseDetails) {
+              final appUsername =
+                  p.skPaymentTransaction.payment.applicationUsername;
+              if (appUsername != null && appUsername.isNotEmpty) {
+                receipt = appUsername;
+                final origId = p
+                    .skPaymentTransaction
+                    .originalTransaction
+                    ?.transactionIdentifier;
+                if (origId != null && origId.isNotEmpty) {
+                  originalTransactionId = origId;
+                }
+                break;
+              }
+            }
+          }
+          // Pass 2: serverVerificationData (PKCS#7)
+          if (receipt == null || receipt.isEmpty) {
+            final serverData =
+                restoredPurchases.last.verificationData.serverVerificationData;
+            if (serverData.isNotEmpty) receipt = serverData;
+
+            for (final p in restoredPurchases.reversed) {
+              if (p is AppStorePurchaseDetails) {
+                final origId = p
+                    .skPaymentTransaction
+                    .originalTransaction
+                    ?.transactionIdentifier;
+                if (origId != null && origId.isNotEmpty) {
+                  originalTransactionId = origId;
+                  break;
+                }
+              }
+            }
+          }
         }
       }
 
@@ -65,7 +102,10 @@ class _RestorePurchasesButtonState extends State<RestorePurchasesButton> {
         return;
       }
 
-      final result = await repository.restorePurchase(receipt);
+      final result = await repository.restorePurchase(
+        receipt,
+        originalTransactionId: originalTransactionId,
+      );
       result.fold(
         (failure) => _showError(failure.message),
         (restoreResult) => _handleResult(restoreResult),
@@ -89,8 +129,6 @@ class _RestorePurchasesButtonState extends State<RestorePurchasesButton> {
         );
         _showSuccess('restore_membership_success');
       case RestoreCase.conflict:
-        // في حالة الـ conflict نعرض رسالة خطأ بسيطة من هنا
-        // الـ conflict dialog الكامل موجود في MembershipManagementView
         _showError(result.message);
     }
   }

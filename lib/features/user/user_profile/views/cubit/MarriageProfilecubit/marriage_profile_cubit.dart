@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:tayseer/features/user/marriage/view_model/marriage_event_bus.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_marriage_model.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/marriage_profile_repository.dart';
@@ -7,9 +10,21 @@ import 'package:tayseer/my_import.dart';
 class MarriageProfileCubit extends Cubit<MarriageProfileState> {
   final MarriageProfileRepository _repository;
   final UserProfileModel? initialUserProfile;
+  StreamSubscription? _regardsRefreshSub;
 
   MarriageProfileCubit(this._repository, {this.initialUserProfile})
-    : super(const MarriageProfileState());
+    : super(const MarriageProfileState()) {
+    // استمع لـ regards refresh event — بعد شراء باقة تهاني
+    _regardsRefreshSub = MarriageEventBus.instance.onRegardsRefreshed.listen(
+      (_) => _silentReload(),
+    );
+  }
+
+  @override
+  Future<void> close() {
+    _regardsRefreshSub?.cancel();
+    return super.close();
+  }
 
   // ════════════════════════════════════════════════════════════════
   // LOAD PROFILE

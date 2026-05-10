@@ -12,6 +12,14 @@ import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/advisor/membership/data/models/my_subscription_model.dart';
 import 'package:tayseer/features/user/user_profile/presentation/view_model/user_membership_cubit.dart';
 
+// ── ألوان Gold ──
+const _goldGradient1 = Color(0xFFD4A017);
+const _goldGradient2 = Color(0xFF8B6914);
+
+// ── ألوان Elite ──
+const _eliteGradient1 = Color(0xFF6A1FC2);
+const _eliteGradient2 = Color(0xFF4A1A8C);
+
 class MembershipManagementView extends StatelessWidget {
   const MembershipManagementView({super.key});
 
@@ -30,18 +38,54 @@ class MembershipManagementView extends StatelessWidget {
             return false;
           },
           listener: _onStateChanged,
-          child: Stack(
-            children: [
-              const _BackgroundBar(),
-              SafeArea(
-                child: Column(
-                  children: [
-                    const _Header(),
-                    const Expanded(child: _MembershipBody()),
-                  ],
-                ),
-              ),
-            ],
+          child: BlocBuilder<MembershipCubit, MembershipState>(
+            buildWhen: (prev, curr) =>
+                (prev is MembershipLoaded) != (curr is MembershipLoaded) ||
+                (prev is MembershipLoaded &&
+                    curr is MembershipLoaded &&
+                    prev.sub.subscriptionType != curr.sub.subscriptionType),
+            builder: (context, state) {
+              final sub = state is MembershipLoaded ? state.sub : null;
+              final isGold = sub?.isGold ?? false;
+              final isUltra = sub?.isUltra ?? false;
+              final hasTheme = isGold || isUltra;
+
+              return Stack(
+                children: [
+                  const _BackgroundBar(),
+                  // ── Gradient overlay حسب نوع الاشتراك ──────────────────
+                  if (hasTheme)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                (isGold ? _goldGradient1 : _eliteGradient1)
+                                    .withOpacity(0.18),
+                                (isGold ? _goldGradient2 : _eliteGradient2)
+                                    .withOpacity(0.08),
+                                Colors.transparent,
+                              ],
+                              stops: const [0.0, 0.25, 0.55],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  SafeArea(
+                    child: Column(
+                      children: [
+                        _Header(sub: sub),
+                        const Expanded(child: _MembershipBody()),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -52,10 +96,19 @@ class MembershipManagementView extends StatelessWidget {
     // Loaded state messages
     if (state is MembershipLoaded) {
       if (state.actionSuccess != null) {
-        showMembershipSuccessDialog(context, messageKey: state.actionSuccess!);
+        if (state.actionSuccess == 'cancel_auto_renew_success') {
+          // بعد ما يرجع من Apple sheet — reload بيحصل تلقائياً في الـ cubit
+          // نعرض toast بسيط بس
+          AppToast.info(context, context.tr(state.actionSuccess!));
+        } else {
+          showMembershipSuccessDialog(
+            context,
+            messageKey: state.actionSuccess!,
+          );
+        }
         context.read<MembershipCubit>().clearMessages();
       } else if (state.actionError != null) {
-        AppToast.error(context, state.actionError!);
+        AppToast.error(context, context.tr(state.actionError!));
         context.read<MembershipCubit>().clearMessages();
       }
       return;
@@ -112,13 +165,33 @@ class _BackgroundBar extends StatelessWidget {
 
 // ── Header ────────────────────────────────────────────────────────────────────
 class _Header extends StatelessWidget {
-  const _Header();
+  final MySubscriptionModel? sub;
+  const _Header({this.sub});
 
   @override
   Widget build(BuildContext context) {
+    final isGold = sub?.isGold ?? false;
+    final isUltra = sub?.isUltra ?? false;
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-      child: SimpleAppBar(title: context.tr('membership_management')),
+      child: Row(
+        children: [
+          Expanded(
+            child: SimpleAppBar(title: context.tr('membership_management')),
+          ),
+          // أيقونة الباقة في الـ app bar
+          if (isGold || isUltra)
+            Padding(
+              padding: EdgeInsets.only(bottom: 8.h),
+              child: AppImage(
+                isGold ? AssetsData.goldIcon : AssetsData.eliteIcon,
+                width: 28.w,
+                height: 28.w,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -171,17 +244,26 @@ class _LoadedBody extends StatelessWidget {
     final MySubscriptionModel sub = state.sub;
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 20.h),
+      padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
       child: Column(
         children: [
           MembershipStatusBanner(sub: sub),
           Gap(20.h),
           MembershipInfoCard(sub: sub),
-          Gap(32.h),
-          MembershipActionButtons(
-            sub: sub,
-            onCancelTap: () => _showCancelDialog(context),
-          ),
+          Gap(24.h),
+
+          // ── Apple Policy Info Card ─────────────────────────────────────
+          if (Platform.isIOS) _ApplePolicyCard(),
+          if (Platform.isIOS) Gap(24.h),
+
+          // ── Action Buttons ─────────────────────────────────────────────
+          if (state.isCancelLoading)
+            _LoadingButton()
+          else
+            MembershipActionButtons(
+              sub: sub,
+              onCancelTap: () => _showCancelDialog(context),
+            ),
         ],
       ),
     );
@@ -191,6 +273,63 @@ class _LoadedBody extends StatelessWidget {
     showMembershipCancelDialog(
       ctx,
       onConfirm: () => ctx.read<MembershipCubit>().cancelMembership(),
+    );
+  }
+}
+
+// ── Apple Policy Info Card ────────────────────────────────────────────────────
+class _ApplePolicyCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(14.w),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.apple, size: 18.sp, color: Colors.black54),
+          Gap(10.w),
+          Expanded(
+            child: Text(
+              context.tr('apple_subscription_policy_info'),
+              style: Styles.textStyle12.copyWith(
+                color: Colors.grey.shade600,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Loading Button ────────────────────────────────────────────────────────────
+class _LoadingButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 52.h,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.kprimaryColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Center(
+        child: SizedBox(
+          width: 22.w,
+          height: 22.w,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            color: AppColors.kprimaryColor,
+          ),
+        ),
+      ),
     );
   }
 }

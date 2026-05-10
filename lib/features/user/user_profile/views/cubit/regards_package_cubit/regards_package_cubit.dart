@@ -1,16 +1,17 @@
+import 'dart:developer';
 
-import 'dart:async';
-
+import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/services/iap_service.dart';
+import 'package:tayseer/core/shared/network/local_network.dart';
 import 'package:tayseer/features/user/marriage/model/regards_package_model.dart';
+import 'package:tayseer/features/user/marriage/view_model/marriage_event_bus.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/regards_package_cubit/regards_package_state.dart';
 import 'package:tayseer/my_import.dart';
 
 class RegardsPackagePurchaseCubit extends Cubit<RegardsPackagePurchaseState> {
   final IAPService _iapService;
-  final ApiService _apiService;
 
-  RegardsPackagePurchaseCubit(this._iapService, this._apiService)
+  RegardsPackagePurchaseCubit(this._iapService)
     : super(const RegardsPackagePurchaseState());
 
   void resetStatus() => emit(const RegardsPackagePurchaseState());
@@ -28,35 +29,53 @@ class RegardsPackagePurchaseCubit extends Cubit<RegardsPackagePurchaseState> {
     }
 
     emit(state.copyWith(status: RegardsPackagePurchaseStatus.purchasing));
-    unawaited(_iapService.init());
 
-    final platform = Platform.isIOS ? 'ios' : 'android';
+    // تهيئة الـ IAP service قبل الشراء
+    try {
+      await _iapService.init();
+    } catch (e) {
+      log('[RegardsPurchase] ❌ IAP init failed: $e');
+      emit(
+        state.copyWith(
+          status: RegardsPackagePurchaseStatus.error,
+          error: 'store_unavailable',
+        ),
+      );
+      return;
+    }
 
     try {
-      // 1. Initiate purchase on backend to get pendingId
-      final response = await _apiService.post(
-        endPoint: ApiEndPoint.initiatePurchase,
-        data: {
-          'productId': productId,
-          'platform': platform,
-          'packageId': package.id,
-        },
-      );
+      // قراءة الـ uuid من الكاش — نفس الطريقة المستخدمة في باقات الاشتراك
+      final uuid = CachNetwork.getStringData(key: kUuid);
 
-      if (response['success'] != true) {
+      log('[RegardsPurchase] ════════════════════════════════════════');
+      log('[RegardsPurchase] 🛒 PURCHASE FLOW START');
+      log('[RegardsPurchase]   productId : $productId');
+      log('[RegardsPurchase]   packageId : ${package.id}');
+      log(
+        '[RegardsPurchase]   uuid      : ${uuid.isNotEmpty ? uuid : "⚠️ EMPTY"}',
+      );
+      log('[RegardsPurchase] ════════════════════════════════════════');
+
+      if (uuid.isEmpty) {
         emit(
           state.copyWith(
             status: RegardsPackagePurchaseStatus.error,
-            error: response['message']?.toString() ?? 'فشل بدء عملية الشراء',
+            error: 'purchase_user_data_missing',
           ),
         );
         return;
       }
 
-      final pendingId = response['data']?['pendingId'] as String? ?? '';
+      // Trigger IAP flow مباشرة بالـ uuid من الكاش
+      // نستخدم native SK2 channel عشان appAccountToken يتبعت صح في الـ webhook
+      await _iapService.buyConsumableNative(
+        productId: productId,
+        appAccountToken: uuid,
+      );
 
-      // 2. Trigger IAP flow
-      await _iapService.buyProduct(productId, uniqueNumber: pendingId);
+      // أطلق event عشان الـ MarriageProfileCubit يعمل silent reload ويحدث الـ regardsLeft
+      MarriageEventBus.instance.refreshRegards();
 
       emit(state.copyWith(status: RegardsPackagePurchaseStatus.success));
     } catch (e) {
@@ -66,7 +85,7 @@ class RegardsPackagePurchaseCubit extends Cubit<RegardsPackagePurchaseState> {
           status: err.isCanceled
               ? RegardsPackagePurchaseStatus.canceled
               : RegardsPackagePurchaseStatus.error,
-          error: err.isCanceled ? null : err.message,
+          error: err.isCanceled ? null : err.messageKey,
         ),
       );
     }

@@ -107,5 +107,5 @@ class ApiEndPoint {
   static const String confirmSubscriptionPurchase = '/iap/confirm-purchase';
 
   // Force Update
-  static const String appVersion = '/app/version';
+  static const String checkForUpdate = '/version/check-for-update';
 }
