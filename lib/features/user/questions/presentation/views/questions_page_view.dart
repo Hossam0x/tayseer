@@ -93,11 +93,10 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
         initialValue: 20,
       ),
       QuestionPageConfig(
-        titleKey: 'choose_social_status',
+        titleKey: 'enter_your_name',
         questionNumber: 5,
-        questionCategoryEnum: 'socialStatus',
-        items: QuestionsData.socialStatusesForQuestions,
-        type: QuestionType.selectableList,
+        questionCategoryEnum: 'name',
+        type: QuestionType.textInput,
       ),
       QuestionPageConfig(
         titleKey: 'choose_weight',

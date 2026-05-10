@@ -77,6 +77,11 @@ class MarriageBodyState extends State<MarriageBody>
   StreamSubscription?
   _subscriptionSubscription; // ✅ للاستماع للتغييرات في الاشتراك
 
+  final TextEditingController _regardController = TextEditingController();
+  String? _regardControllerId;
+  bool _showInlineRegard = false;
+  final FocusNode _regardFocusNode = FocusNode();
+
   bool get _isConsultantViewingProfile =>
       widget.personId != null && selectedUserType == UserTypeEnum.asConsultant;
 
@@ -96,6 +101,22 @@ class MarriageBodyState extends State<MarriageBody>
   void initState() {
     super.initState();
     _mainScrollController.addListener(_scrollListener);
+
+    // ✅ استمع على الـ focus — لما الكيبورد يطلع اخفي navbar و buttons
+    _regardFocusNode.addListener(() {
+      if (!mounted) return;
+      if (_regardFocusNode.hasFocus) {
+        setState(() => _showInlineRegard = true);
+        if (_isInLayout) {
+          context.read<LayoutCubit>().setNavVisibility(false);
+        }
+      } else {
+        setState(() => _showInlineRegard = false);
+        if (_isInLayout) {
+          context.read<LayoutCubit>().setNavVisibility(true);
+        }
+      }
+    });
 
     // ✅ جيب الـ notification count فوراً عند فتح الصفحة
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -231,7 +252,9 @@ class MarriageBodyState extends State<MarriageBody>
   void dispose() {
     _scrollIdleTimer?.cancel();
     _layoutSubscription?.cancel();
-    _subscriptionSubscription?.cancel(); // ✅ إلغاء الاستماع
+    _subscriptionSubscription?.cancel();
+    _regardController.dispose();
+    _regardFocusNode.dispose();
     _mainScrollController.removeListener(_scrollListener);
     _mainScrollController.dispose();
     super.dispose();
@@ -385,6 +408,80 @@ class MarriageBodyState extends State<MarriageBody>
     } finally {
       if (mounted) _isActionInProgress = false;
     }
+  }
+
+  Widget _buildInlineRegardSection(
+    BuildContext context, {
+    required MarriageCubit cubit,
+    required String personId,
+    required String personName,
+    bool countView = false,
+  }) {
+    // ✅ reset لما يتغير الشخص
+    if (_regardControllerId != personId) {
+      _regardControllerId = personId;
+      _regardController.clear();
+      _regardFocusNode.unfocus();
+    }
+
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(16.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.tr('messge_profil_title').replaceAll('{name}', personName),
+            style: Styles.textStyle14Bold,
+          ),
+          Gap(10.h),
+          TextField(
+            controller: _regardController,
+            focusNode: _regardFocusNode,
+            maxLines: 3,
+            decoration: InputDecoration(
+              fillColor: HexColor('f9f8ec'),
+              filled: true,
+              hintText: context.tr('type_your_message'),
+              hintStyle: Styles.textStyle12.copyWith(color: Colors.grey),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16.r),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          Gap(16.h),
+          Center(
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _regardController,
+              builder: (_, value, __) {
+                final enabled = value.text.trim().isNotEmpty;
+                return CustomBotton(
+                  backGroundcolor: enabled ? null : AppColors.kgreyColor,
+                  useGradient: enabled,
+                  title: context.tr('send_reply'),
+                  onPressed: enabled
+                      ? () {
+                          final text = _regardController.text.trim();
+                          _regardController.clear();
+                          _regardFocusNode.unfocus();
+                          cubit.sendRegardText(
+                            personId: personId,
+                            text: text,
+                            countView: countView,
+                          );
+                        }
+                      : null,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showRegardInputSheet(
@@ -777,6 +874,24 @@ class MarriageBodyState extends State<MarriageBody>
 
         if (state.likesLeft == 0 &&
             state.userInteractionState == CubitStates.failure) {
+          // ✅ تحقق من الاشتراك — المشترك gold/ultra عنده unlimited likes
+          final subType = (_interactionsCubit ?? getIt<InteractionsCubit>())
+              .state.subscriptionType;
+          final isGoldOrUltra = subType == 'gold' || subType == 'ultra';
+
+          if (isGoldOrUltra) {
+            // ✅ مشترك ومع ذلك جاء likesLeft = 0 → مشكلة في السيرفر، اعرض error عادي
+            ScaffoldMessenger.of(context).showSnackBar(
+              CustomSnackBar(
+                context,
+                text: state.errorMessage ?? context.tr('error_occurred'),
+                isError: true,
+              ),
+            );
+            context.read<MarriageCubit>().resetState();
+            return;
+          }
+
           final regardsLeft = state.regardsLeft;
           if (!_isShowingGoldSheet) {
             _isShowingGoldSheet = true;
@@ -1712,6 +1827,23 @@ class MarriageBodyState extends State<MarriageBody>
                       ),
                     ),
 
+                  if (canInteract)
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 10.h,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: _buildInlineRegardSection(
+                          context,
+                          cubit: cubit,
+                          personId: user?.id ?? '',
+                          personName: user?.name ?? '',
+                          countView: widget.personId == null && !widget.fromInteractions,
+                        ),
+                      ),
+                    ),
+
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -1802,7 +1934,7 @@ class MarriageBodyState extends State<MarriageBody>
               child: _buildToggleAppBar(context),
             ),
 
-            if (!_isConsultantViewingProfile)
+            if (!_isConsultantViewingProfile && !_showInlineRegard)
               _isInLayout
                   ? BlocBuilder<LayoutCubit, LayoutState>(
                       buildWhen: (p, c) => p.isNavVisible != c.isNavVisible,
@@ -1982,8 +2114,14 @@ class MarriageBodyState extends State<MarriageBody>
                         return;
                       }
                       if (state.likesLeft == 0) {
-                        showGoldPurchaseSheet(context);
-                        return;
+                        // ✅ تحقق من الاشتراك — المشترك gold/ultra عنده unlimited likes
+                        final subType = (_interactionsCubit ?? getIt<InteractionsCubit>())
+                            .state.subscriptionType;
+                        final isGoldOrUltra = subType == 'gold' || subType == 'ultra';
+                        if (!isGoldOrUltra) {
+                          showGoldPurchaseSheet(context);
+                          return;
+                        }
                       }
                       await _showSwipePopup(context, SwipeActionType.like);
                       if (widget.fromInteractions) {

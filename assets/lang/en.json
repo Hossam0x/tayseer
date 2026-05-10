@@ -203,6 +203,7 @@
   "hobby_tourism": "Tourism",
   "add_your_cv": "Add your Bio",
   "tell_us_more_about_yourself": "Tell us more about yourself",
+  "enter_first_name_hint": "Enter your first name only",
   "cv_field_empty": "Field cannot be empty",
   "add_your_personal_details": "Add your personal details",
   "success_login": "Login successful",

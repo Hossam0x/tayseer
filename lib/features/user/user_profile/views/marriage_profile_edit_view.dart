@@ -162,94 +162,125 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView>
   }
 
   @override
-Widget build(BuildContext context) {
-  super.build(context);
+  Widget build(BuildContext context) {
+    super.build(context);
 
-  return BlocBuilder<MarriageProfileCubit, MarriageProfileState>(
-    bloc: widget.cubit,
-    builder: (context, state) {
-      final isUpdatingNow = state.isUpdating;
-      if (isUpdatingNow && !_wasUpdating) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            showGifOverlay(
-              context,
-              repeatCount: 10,
-              gifDuration: const Duration(milliseconds: 900),
-            );
-          }
-        });
-      }
-      _wasUpdating = isUpdatingNow;
+    return BlocBuilder<MarriageProfileCubit, MarriageProfileState>(
+      bloc: widget.cubit,
+      builder: (context, state) {
+        final isUpdatingNow = state.isUpdating;
+        if (isUpdatingNow && !_wasUpdating) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              showGifOverlay(
+                context,
+                repeatCount: 10,
+                gifDuration: const Duration(milliseconds: 900),
+              );
+            }
+          });
+        }
+        _wasUpdating = isUpdatingNow;
 
-      // ✅ استخدم state.profile المحدّث من الـ Cubit
-      return _buildScrollContent(context, state.profile ?? widget.profile);
-    },
-  );
-}
+        // ✅ استخدم state.profile المحدّث من الـ Cubit
+        return _buildScrollContent(
+          context,
+          state.profile ?? widget.profile,
+          state,
+        );
+      },
+    );
+  }
+
   // ════════════════════════════════════════════════════════════════
   // SCROLL CONTENT
   // ✅ ClampingScrollPhysics = scroll يشتغل فوراً بدون ما ينتظر
   //    الصور تتحمل — ده الفرق الجوهري عن BouncingScrollPhysics
   // ════════════════════════════════════════════════════════════════
-  Widget _buildScrollContent(BuildContext context, MarriageUserProfileModel profile) {
-    return CustomScrollView(
-      controller: _scrollController,
-      cacheExtent: 5000,
-      physics: const ClampingScrollPhysics(),
-      slivers: [
-        SliverPadding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate(
-              addRepaintBoundaries: false,
-              [
-                Gap(24.h),
-                _buildPersonalInfoSection(
-                  context,
-                  widget.cubit,
-                  profile,
-                ),
-                Gap(20.h),
-                Container(
-                  key: _imagesKey,
-                  child: _buildImagesSection(
+  Widget _buildScrollContent(
+    BuildContext context,
+    MarriageUserProfileModel profile,
+    MarriageProfileState state,
+  ) {
+    final hasUnsavedChanges =
+        state.pendingSingleImage != null ||
+        state.deletedSingleImageUrl != null ||
+        state.pendingImages.isNotEmpty ||
+        state.deletedImageUrls.isNotEmpty ||
+        state.pendingVideo != null ||
+        state.pendingDeleteVideo ||
+        state.pendingAudio != null ||
+        state.hasUnsavedFields ||
+        state.pendingDeleteAudio;
+
+    return Stack(
+      children: [
+        CustomScrollView(
+          controller: _scrollController,
+          cacheExtent: 5000,
+          physics: const ClampingScrollPhysics(),
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate(addRepaintBoundaries: false, [
+                  Gap(24.h),
+                  _buildPersonalInfoSection(context, widget.cubit, profile),
+                  Gap(20.h),
+                  Container(
+                    key: _imagesKey,
+                    child: _buildImagesSection(context, widget.cubit, profile),
+                  ),
+                  Gap(24.h),
+                  _buildProfessionalInfoSection(context, widget.cubit, profile),
+                  Gap(24.h),
+                  Container(key: _videoKey, child: _buildVideoSection(context)),
+                  Gap(24.h),
+                  Container(key: _audioKey, child: _buildAudioSection(context)),
+                  Gap(24.h),
+                  _buildFamilyAndPreferencesSection(
                     context,
                     widget.cubit,
                     profile,
                   ),
-                ),
-                Gap(24.h),
-                _buildProfessionalInfoSection(
-                  context,
-                  widget.cubit,
-                  profile,
-                ),
-                Gap(24.h),
-                Container(key: _videoKey, child: _buildVideoSection(context)),
-                Gap(24.h),
-                Container(key: _audioKey, child: _buildAudioSection(context)),
-                Gap(24.h),
-                _buildFamilyAndPreferencesSection(
-                  context,
-                  widget.cubit,
-                  profile,
-                ),
-                Gap(24.h),
-                _buildGoalsSection(context, widget.cubit, profile),
-                Gap(24.h),
-                _buildKnowMeMoreSection(
-                  context,
-                  widget.cubit,
-                  profile,
-                ),
-                Gap(32.h),
-                _buildSaveButton(context, widget.cubit, widget.state),
-                Gap(100.h),
-              ],
+                  Gap(24.h),
+                  _buildGoalsSection(context, widget.cubit, profile),
+                  Gap(24.h),
+                  _buildKnowMeMoreSection(context, widget.cubit, profile),
+                  Gap(32.h),
+                  // ✅ لو مفيش تعديلات: الزر في آخر الـ scroll عادي
+                  if (!hasUnsavedChanges)
+                    _buildSaveButton(context, widget.cubit, state),
+                  // ✅ لو في تعديلات: padding عشان الزر الـ floating ميغطيش المحتوى
+                  if (hasUnsavedChanges) SizedBox(height: 90.h),
+                  Gap(100.h),
+                ]),
+              ),
+            ),
+          ],
+        ),
+
+        // ✅ الزر الـ fixed يظهر بس لما في تعديلات غير محفوظة
+        if (hasUnsavedChanges)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 24.h),
+              // decoration: BoxDecoration(
+              //   color: Colors.white.withOpacity(0.95),
+              //   boxShadow: [
+              //     BoxShadow(
+              //       color: Colors.black.withOpacity(0.08),
+              //       blurRadius: 12,
+              //       offset: const Offset(0, -4),
+              //     ),
+              //   ],
+              // ),
+              child: _buildSaveButton(context, widget.cubit, state),
             ),
           ),
-        ),
       ],
     );
   }
@@ -327,8 +358,7 @@ Widget build(BuildContext context) {
                   ),
                   if (canDrag)
                     GestureDetector(
-                      onTap: () =>
-                          setState(() => _isDragMode = !_isDragMode),
+                      onTap: () => setState(() => _isDragMode = !_isDragMode),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         padding: EdgeInsets.symmetric(
@@ -382,10 +412,7 @@ Widget build(BuildContext context) {
                   widget.state.pendingDeleteSingleImage ||
                   widget.state.deletedImageUrls.isNotEmpty) ...[
                 Gap(6.h),
-                _buildPendingBadge(
-                  context,
-                  context.tr('images_pending_save'),
-                ),
+                _buildPendingBadge(context, context.tr('images_pending_save')),
               ],
             ],
           ),
@@ -496,19 +523,14 @@ Widget build(BuildContext context) {
           if (index == 0) {
             return GestureDetector(
               onTap: hasSingleToShow && displaySingleUrl != null
-                  ? () => _openFullScreen(
-                      context,
-                      displaySingleUrl,
-                      'main_image',
-                    )
+                  ? () =>
+                        _openFullScreen(context, displaySingleUrl, 'main_image')
                   : !hasSingleToShow
                   ? () => _pickSingleImage(context, cubit, profile)
                   : null,
               child: ImageSlotCard(
                 key: ValueKey(
-                  displaySingleUrl ??
-                      pendingSingle?.path ??
-                      'main_empty',
+                  displaySingleUrl ?? pendingSingle?.path ?? 'main_empty',
                 ),
                 imageUrl: displaySingleUrl,
                 localFile: pendingSingle,
@@ -708,10 +730,7 @@ Widget build(BuildContext context) {
                     ),
                     child: Text(
                       context.tr('pending'),
-                      style: TextStyle(
-                        fontSize: 10.sp,
-                        color: Colors.white,
-                      ),
+                      style: TextStyle(fontSize: 10.sp, color: Colors.white),
                     ),
                   ),
                 ),
@@ -772,10 +791,7 @@ Widget build(BuildContext context) {
                   );
                 },
                 children: List.generate(
-                  (secondaryImages.length + pendingImgs.length).clamp(
-                    0,
-                    4,
-                  ),
+                  (secondaryImages.length + pendingImgs.length).clamp(0, 4),
                   (i) => secSlot(i),
                 ),
               ),
@@ -1201,15 +1217,8 @@ Widget build(BuildContext context) {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: Icon(
-                Icons.mic,
-                color: AppColors.primary200,
-                size: 30.w,
-              ),
-              title: Text(
-                context.tr('record_now'),
-                style: Styles.textStyle16,
-              ),
+              leading: Icon(Icons.mic, color: AppColors.primary200, size: 30.w),
+              title: Text(context.tr('record_now'), style: Styles.textStyle16),
               subtitle: Text(
                 context.tr('record_voice_now'),
                 style: Styles.textStyle12.copyWith(color: Colors.grey),
@@ -1226,10 +1235,7 @@ Widget build(BuildContext context) {
                 color: AppColors.primary200,
                 size: 30.w,
               ),
-              title: Text(
-                context.tr('upload_file'),
-                style: Styles.textStyle16,
-              ),
+              title: Text(context.tr('upload_file'), style: Styles.textStyle16),
               subtitle: Text(
                 context.tr('choose_audio_file'),
                 style: Styles.textStyle12.copyWith(color: Colors.grey),
@@ -1283,15 +1289,7 @@ Widget build(BuildContext context) {
       }
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: [
-          'mp3',
-          'aac',
-          'wav',
-          'm4a',
-          'ogg',
-          'opus',
-          'flac',
-        ],
+        allowedExtensions: ['mp3', 'aac', 'wav', 'm4a', 'ogg', 'opus', 'flac'],
         allowCompression: false,
       );
       if (!mounted) return;
@@ -1300,22 +1298,14 @@ Widget build(BuildContext context) {
         if (!await file.exists()) {
           if (!mounted) return;
           messenger.showSnackBar(
-            CustomSnackBar(
-              context,
-              text: tr('file_not_found'),
-              isError: true,
-            ),
+            CustomSnackBar(context, text: tr('file_not_found'), isError: true),
           );
           return;
         }
         if (await file.length() > 10 * 1024 * 1024) {
           if (!mounted) return;
           messenger.showSnackBar(
-            CustomSnackBar(
-              context,
-              text: tr('file_too_large'),
-              isError: true,
-            ),
+            CustomSnackBar(context, text: tr('file_too_large'), isError: true),
           );
           return;
         }
@@ -1353,10 +1343,7 @@ Widget build(BuildContext context) {
     );
   }
 
-  Widget _buildAudioPreviewFull(
-    BuildContext context, {
-    File? pendingAudio,
-  }) {
+  Widget _buildAudioPreviewFull(BuildContext context, {File? pendingAudio}) {
     final pendingDeleteAudio = widget.state.pendingDeleteAudio;
     final serverAudioUrl = widget.profile.userMedia?.audio;
     final displayAudioUrl = pendingDeleteAudio ? null : serverAudioUrl;
@@ -1384,9 +1371,7 @@ Widget build(BuildContext context) {
             children: [
               Text(
                 context.tr('audio_clip'),
-                style: Styles.textStyle16.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: Styles.textStyle16.copyWith(fontWeight: FontWeight.w600),
               ),
               IconButton(
                 onPressed: () => _deleteAudio(context),
@@ -1430,10 +1415,7 @@ Widget build(BuildContext context) {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  context.tr('attach_audio'),
-                  style: Styles.textStyle16,
-                ),
+                Text(context.tr('attach_audio'), style: Styles.textStyle16),
                 Gap(4.h),
                 Text(
                   context.tr('record_or_upload'),
@@ -1487,49 +1469,72 @@ Widget build(BuildContext context) {
             context.tr('country'),
             _translateValue(profile.aboutMe?.country ?? '', context),
             () => _navigateToFieldSelection(
-              context, cubit, 'country', profile.aboutMe?.country,
+              context,
+              cubit,
+              'country',
+              profile.aboutMe?.country,
             ),
           ),
           _buildInfoRow(
             context.tr('nationality'),
             _translateValue(profile.aboutMe?.nationality ?? '', context),
             () => _navigateToFieldSelection(
-              context, cubit, 'nationality', profile.aboutMe?.nationality,
+              context,
+              cubit,
+              'nationality',
+              profile.aboutMe?.nationality,
             ),
           ),
           _buildInfoRow(
             context.tr('height'),
             profile.aboutMe?.height ?? context.tr('select'),
             () => _navigateToFieldSelection(
-              context, cubit, 'height', profile.aboutMe?.height,
+              context,
+              cubit,
+              'height',
+              profile.aboutMe?.height,
             ),
           ),
           _buildInfoRow(
             context.tr('weight'),
             profile.aboutMe?.weight ?? context.tr('select'),
             () => _navigateToFieldSelection(
-              context, cubit, 'weight', profile.aboutMe?.weight,
+              context,
+              cubit,
+              'weight',
+              profile.aboutMe?.weight,
             ),
           ),
           _buildInfoRow(
             context.tr('skin_color'),
             _translateValue(profile.aboutMe?.skinColor ?? '', context),
             () => _navigateToFieldSelection(
-              context, cubit, 'skinColor', profile.aboutMe?.skinColor,
+              context,
+              cubit,
+              'skinColor',
+              profile.aboutMe?.skinColor,
             ),
           ),
           _buildInfoRow(
             context.tr('select_health_status_title'),
             _translateValue(profile.aboutMe?.healthStatus ?? '', context),
             () => _navigateToFieldSelection(
-              context, cubit, 'healthStatus', profile.aboutMe?.healthStatus,
+              context,
+              cubit,
+              'healthStatus',
+              profile.aboutMe?.healthStatus,
             ),
           ),
           _buildInfoRow(
             context.tr('commitment_to_religion'),
-            _genderedTranslate(profile.aboutMe?.religiousCommitment ?? '', context),
+            _genderedTranslate(
+              profile.aboutMe?.religiousCommitment ?? '',
+              context,
+            ),
             () => _navigateToFieldSelection(
-              context, cubit, 'religiousCommitment',
+              context,
+              cubit,
+              'religiousCommitment',
               profile.aboutMe?.religiousCommitment,
             ),
           ),
@@ -1537,14 +1542,20 @@ Widget build(BuildContext context) {
             context.tr('smoking'),
             _genderedTranslate(profile.aboutMe?.smoker ?? '', context),
             () => _navigateToFieldSelection(
-              context, cubit, 'smoker', profile.aboutMe?.smoker,
+              context,
+              cubit,
+              'smoker',
+              profile.aboutMe?.smoker,
             ),
           ),
           _buildInfoRow(
             context.tr('drink_alcohol'),
             _translateValue(profile.aboutMe?.drinkAlcohol ?? '', context),
             () => _navigateToFieldSelection(
-              context, cubit, 'drinkAlcohol', profile.aboutMe?.drinkAlcohol,
+              context,
+              cubit,
+              'drinkAlcohol',
+              profile.aboutMe?.drinkAlcohol,
             ),
           ),
         ],
@@ -1567,13 +1578,21 @@ Widget build(BuildContext context) {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(context.tr('professional_info'), style: Styles.textStyle18Meduim),
+          Text(
+            context.tr('professional_info'),
+            style: Styles.textStyle18Meduim,
+          ),
           Gap(12.h),
           _buildInfoRow(
             context.tr('qualification'),
-            _translateValue(profile.professionalLife?.educationLevel ?? '', context),
+            _translateValue(
+              profile.professionalLife?.educationLevel ?? '',
+              context,
+            ),
             () => _navigateToFieldSelection(
-              context, cubit, 'education_level',
+              context,
+              cubit,
+              'education_level',
               profile.professionalLife?.educationLevel,
             ),
           ),
@@ -1582,15 +1601,23 @@ Widget build(BuildContext context) {
             context.tr('job'),
             _genderedTranslate(profile.professionalLife?.job ?? '', context),
             () => _navigateToFieldSelection(
-              context, cubit, 'choose_job', profile.professionalLife?.job,
+              context,
+              cubit,
+              'choose_job',
+              profile.professionalLife?.job,
             ),
           ),
           Gap(12.h),
           _buildInfoRow(
             context.tr('employer'),
-            _translateValue(profile.professionalLife?.chooseEmployer ?? '', context),
+            _translateValue(
+              profile.professionalLife?.chooseEmployer ?? '',
+              context,
+            ),
             () => _navigateToFieldSelection(
-              context, cubit, 'choose_employer',
+              context,
+              cubit,
+              'choose_employer',
               profile.professionalLife?.chooseEmployer,
             ),
           ),
@@ -1631,7 +1658,10 @@ Widget build(BuildContext context) {
             context.tr('marital_status'),
             _translateValue(profile.aboutMe?.socialStatus ?? '', context),
             () => _navigateToFieldSelection(
-              context, cubit, 'maritalStatus', profile.aboutMe?.socialStatus,
+              context,
+              cubit,
+              'maritalStatus',
+              profile.aboutMe?.socialStatus,
             ),
           ),
           if (showChildrenSection) ...[
@@ -1639,7 +1669,10 @@ Widget build(BuildContext context) {
               context.tr('has_childrens'),
               _translateValue(profile.family?.hasChildren ?? '', context),
               () => _navigateToFieldSelection(
-                context, cubit, 'hasChildren', profile.family?.hasChildren,
+                context,
+                cubit,
+                'hasChildren',
+                profile.family?.hasChildren,
               ),
             ),
             if (showChildrenDetails) ...[
@@ -1647,15 +1680,22 @@ Widget build(BuildContext context) {
                 context.tr('children_count'),
                 _translateValue(profile.family?.childrenNumber ?? '', context),
                 () => _navigateToFieldSelection(
-                  context, cubit, 'childrenNumber',
+                  context,
+                  cubit,
+                  'childrenNumber',
                   profile.family?.childrenNumber,
                 ),
               ),
               _buildInfoRow(
                 context.tr('children_live_with_you'),
-                _translateValue(profile.family?.childrenLivingStatus ?? '', context),
+                _translateValue(
+                  profile.family?.childrenLivingStatus ?? '',
+                  context,
+                ),
                 () => _navigateToFieldSelection(
-                  context, cubit, 'childrenLiveWithYou',
+                  context,
+                  cubit,
+                  'childrenLiveWithYou',
                   profile.family?.childrenLivingStatus,
                 ),
               ),
@@ -1687,29 +1727,42 @@ Widget build(BuildContext context) {
             context.tr('engagement'),
             _translateValue(profile.yourGoals?.engagement ?? '', context),
             () => _navigateToFieldSelection(
-              context, cubit, 'engagement', profile.yourGoals?.engagement,
+              context,
+              cubit,
+              'engagement',
+              profile.yourGoals?.engagement,
             ),
           ),
           _buildInfoRow(
             context.tr('marriage'),
             _translateValue(profile.yourGoals?.marry ?? '', context),
             () => _navigateToFieldSelection(
-              context, cubit, 'marriage_intentions', profile.yourGoals?.marry,
+              context,
+              cubit,
+              'marriage_intentions',
+              profile.yourGoals?.marry,
             ),
           ),
           _buildInfoRow(
             context.tr('family'),
             _translateValue(profile.yourGoals?.familyAcceptance ?? '', context),
             () => _navigateToFieldSelection(
-              context, cubit, 'familyAcceptance',
+              context,
+              cubit,
+              'familyAcceptance',
               profile.yourGoals?.familyAcceptance,
             ),
           ),
           _buildInfoRow(
             context.tr('travel'),
-            _translateValue(profile.yourGoals?.intendTravelAbroad ?? '', context),
+            _translateValue(
+              profile.yourGoals?.intendTravelAbroad ?? '',
+              context,
+            ),
             () => _navigateToFieldSelection(
-              context, cubit, 'intendTravelAbroad',
+              context,
+              cubit,
+              'intendTravelAbroad',
               profile.yourGoals?.intendTravelAbroad,
             ),
           ),
@@ -1748,7 +1801,9 @@ Widget build(BuildContext context) {
                 ? _formatHobbiesForDisplay(interestHobbies, context)
                 : context.tr('select'),
             () => _navigateToFieldSelection(
-              context, cubit, 'interests',
+              context,
+              cubit,
+              'interests',
               interestHobbies.isNotEmpty ? interestHobbies.join(', ') : null,
             ),
           ),
@@ -1758,7 +1813,9 @@ Widget build(BuildContext context) {
                 ? _formatHobbiesForDisplay(faithHobbies, context)
                 : context.tr('select'),
             () => _navigateToFieldSelection(
-              context, cubit, 'faith',
+              context,
+              cubit,
+              'faith',
               faithHobbies.isNotEmpty ? faithHobbies.join(', ') : null,
             ),
           ),
@@ -1789,11 +1846,7 @@ Widget build(BuildContext context) {
         } else if (state.state == CubitStates.failure) {
           if (state.errorMessage != null)
             ScaffoldMessenger.of(context).showSnackBar(
-              CustomSnackBar(
-                context,
-                text: state.errorMessage!,
-                isError: true,
-              ),
+              CustomSnackBar(context, text: state.errorMessage!, isError: true),
             );
         }
       },

@@ -135,6 +135,11 @@ class _QuestionPageState extends State<QuestionPage> {
           ),
           child: TextInputQuestion(
             controller: _textController,
+            showAiButton: widget.config.questionCategoryEnum != 'name',
+            hintKey: widget.config.questionCategoryEnum == 'name'
+                ? 'enter_first_name_hint'
+                : null,
+            maxLines: widget.config.questionCategoryEnum == 'name' ? 1 : null,
             onChanged: (value) {
               _selectedValue.value = {'key': value, 'value': value};
             },

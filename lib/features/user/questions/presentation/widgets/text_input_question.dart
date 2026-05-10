@@ -7,11 +7,17 @@ import 'package:tayseer/my_import.dart';
 class TextInputQuestion extends StatefulWidget {
   final ValueChanged<String> onChanged;
   final TextEditingController controller;
+  final bool showAiButton;
+  final String? hintKey;
+  final int? maxLines;
 
   const TextInputQuestion({
     super.key,
     required this.onChanged,
     required this.controller,
+    this.showAiButton = true,
+    this.hintKey,
+    this.maxLines,
   });
 
   @override
@@ -54,20 +60,23 @@ class _TextInputQuestionState extends State<TextInputQuestion> {
           children: [
             const SizedBox(height: 20),
             CustomTextField(
-              hintText: context.tr('tell_us_more_about_yourself'),
+              hintText: context.tr(widget.hintKey ?? 'tell_us_more_about_yourself'),
               controller: widget.controller,
+              maxLines: widget.maxLines,
+              showBorder: widget.maxLines == 1,
               onChanged: (value) {
                 widget.onChanged(value);
               },
             ),
             SizedBox(height: context.height * 0.05),
-            CusttomGlassButton(
-              text: context.tr('generate_ai_content'),
-              showIcon: qcState.isAiLoading,
-              onTap: () {
-                qc.enhanceTextWithGemini(widget.controller.text);
-              },
-            ),
+            if (widget.showAiButton)
+              CusttomGlassButton(
+                text: context.tr('generate_ai_content'),
+                showIcon: qcState.isAiLoading,
+                onTap: () {
+                  qc.enhanceTextWithGemini(widget.controller.text);
+                },
+              ),
             SizedBox(height: context.height * 0.05),
           ],
         ),

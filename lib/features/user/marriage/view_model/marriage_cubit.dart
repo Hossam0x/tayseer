@@ -860,14 +860,20 @@ class MarriageCubit extends Cubit<MarriageState> {
   }) async {
     if (state.isAnimating || _cardController == null) return;
 
-    // ✅ تحقق قبل أي شيء
-    if ((state.likesLeft != null && state.likesLeft! <= 0) ||
-        state.requiresSubscription) {
-      emit(state.copyWith(
-        userInteractionState: CubitStates.failure,
-        likesLeft: 0,
-      ));
-      return;
+    // ✅ تحقق من الاشتراك أولاً — المشترك gold/ultra عنده unlimited likes
+    final subType = getIt<InteractionsCubit>().state.subscriptionType;
+    final isGoldOrUltra = subType == 'gold' || subType == 'ultra';
+
+    // ✅ تحقق قبل أي شيء — بس لو مش مشترك
+    if (!isGoldOrUltra) {
+      if ((state.likesLeft != null && state.likesLeft! <= 0) ||
+          state.requiresSubscription) {
+        emit(state.copyWith(
+          userInteractionState: CubitStates.failure,
+          likesLeft: 0,
+        ));
+        return;
+      }
     }
 
     emit(state.copyWith(swipeDirection: 1, isAnimating: true));
