@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:developer';
 
+import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/services/iap_service.dart';
+import 'package:tayseer/core/shared/network/local_network.dart';
 import 'package:tayseer/features/user/interactions/data/model/chat_duration_package_model.dart';
 import 'package:tayseer/features/user/interactions/view_model/chat_duration_packages_cubit.dart';
 import 'package:tayseer/my_import.dart';
@@ -21,10 +24,8 @@ class _PurchaseState {
 
 class _PurchaseCubit extends Cubit<_PurchaseState> {
   final IAPService _iapService;
-  final ApiService _apiService;
 
-  _PurchaseCubit(this._iapService, this._apiService)
-    : super(const _PurchaseState());
+  _PurchaseCubit(this._iapService) : super(const _PurchaseState());
 
   void reset() => emit(const _PurchaseState());
 
@@ -44,33 +45,49 @@ class _PurchaseCubit extends Cubit<_PurchaseState> {
     }
 
     emit(state.copyWith(status: _PurchaseStatus.purchasing));
-    unawaited(_iapService.init());
-
-    final platform = Platform.isIOS ? 'ios' : 'android';
 
     try {
-      final response = await _apiService.post(
-        endPoint: ApiEndPoint.initiatePurchase,
-        data: {
-          'productId': productId,
-          'platform': platform,
-          // 'packageId': package.id,
-          if (chatRoomId.isNotEmpty) 'chatRoomId': chatRoomId,
-        },
+      await _iapService.init();
+    } catch (e) {
+      log('[RematchPurchase] ❌ IAP init failed: $e');
+      emit(
+        state.copyWith(
+          status: _PurchaseStatus.error,
+          error: 'store_unavailable',
+        ),
       );
+      return;
+    }
 
-      if (response['success'] != true) {
+    try {
+      // قراءة الـ uuid من الكاش — نفس الطريقة المستخدمة في باقات الاشتراك
+      final uuid = CachNetwork.getStringData(key: kUuid);
+
+      log('[RematchPurchase] ════════════════════════════════════════');
+      log('[RematchPurchase] 🛒 PURCHASE FLOW START');
+      log('[RematchPurchase]   productId  : $productId');
+      log('[RematchPurchase]   chatRoomId : $chatRoomId');
+      log(
+        '[RematchPurchase]   uuid       : ${uuid.isNotEmpty ? uuid : "⚠️ EMPTY"}',
+      );
+      log('[RematchPurchase] ════════════════════════════════════════');
+
+      if (uuid.isEmpty) {
         emit(
           state.copyWith(
             status: _PurchaseStatus.error,
-            error: response['message']?.toString() ?? 'فشل بدء عملية الشراء',
+            error: 'purchase_user_data_missing',
           ),
         );
         return;
       }
 
-      final pendingId = response['data']?['pendingId'] as String? ?? '';
-      await _iapService.buyProduct(productId, uniqueNumber: pendingId);
+      // Trigger IAP flow مباشرة بالـ uuid من الكاش
+      // نستخدم native SK2 channel عشان appAccountToken يتبعت صح في الـ webhook
+      await _iapService.buyConsumableNative(
+        productId: productId,
+        appAccountToken: uuid,
+      );
 
       emit(state.copyWith(status: _PurchaseStatus.success));
     } catch (e) {
@@ -105,10 +122,7 @@ void showRematchPurchaseSheet(
         BlocProvider(
           create: (_) => getIt<ChatDurationPackagesCubit>()..fetchPackages(),
         ),
-        BlocProvider(
-          create: (_) =>
-              _PurchaseCubit(getIt<IAPService>(), getIt<ApiService>()),
-        ),
+        BlocProvider(create: (_) => _PurchaseCubit(getIt<IAPService>())),
       ],
       child: _RematchSheet(
         userName: userName,

@@ -297,10 +297,11 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
   Widget build(BuildContext context) {
     if (_isGold) return _buildGoldSheet(context);
 
-    return BlocListener<
+    return BlocConsumer<
       RegardsPackagePurchaseCubit,
       RegardsPackagePurchaseState
     >(
+      listenWhen: (prev, curr) => prev.status != curr.status,
       listener: (context, state) {
         if (state.status == RegardsPackagePurchaseStatus.success) {
           Navigator.pop(context);
@@ -311,44 +312,59 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
               isSuccess: true,
             ),
           );
+        } else if (state.status == RegardsPackagePurchaseStatus.canceled) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(context, text: context.tr('purchase_cancelled')),
+          );
+          context.read<RegardsPackagePurchaseCubit>().resetStatus();
         } else if (state.status == RegardsPackagePurchaseStatus.error &&
             state.error != null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: state.error!, isError: true),
+            CustomSnackBar(
+              context,
+              text: context.tr(state.error!),
+              isError: true,
+            ),
           );
           context.read<RegardsPackagePurchaseCubit>().resetStatus();
         }
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-        ),
-        padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 32.h),
-        child: _isRegards
-            ? BlocBuilder<RegardsPackagesCubit, RegardsPackagesState>(
-                builder: (context, state) {
-                  if (state.regardsIncrementAt != null) {
-                    _initCountdown(state.regardsIncrementAt);
-                  }
-                  final packages = state.status == CubitStates.success
-                      ? PurchasePackage.fromApiPackages(state.packages)
-                      : <PurchasePackage>[];
-                  return _buildContent(
-                    context,
-                    packages: packages,
-                    isLoading: state.status == CubitStates.loading,
-                    onPay: () => _onPayRegards(context, packages),
-                  );
-                },
-              )
-            : _buildContent(
-                context,
-                packages: [],
-                isLoading: false,
-                onPay: () {},
-              ),
-      ),
+      builder: (context, purchaseState) {
+        final isPurchasing =
+            purchaseState.status == RegardsPackagePurchaseStatus.purchasing;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+          ),
+          padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 32.h),
+          child: _isRegards
+              ? BlocBuilder<RegardsPackagesCubit, RegardsPackagesState>(
+                  builder: (context, state) {
+                    if (state.regardsIncrementAt != null) {
+                      _initCountdown(state.regardsIncrementAt);
+                    }
+                    final packages = state.status == CubitStates.success
+                        ? PurchasePackage.fromApiPackages(state.packages)
+                        : <PurchasePackage>[];
+                    return _buildContent(
+                      context,
+                      packages: packages,
+                      isLoading: state.status == CubitStates.loading,
+                      isPurchasing: isPurchasing,
+                      onPay: () => _onPayRegards(context, packages),
+                    );
+                  },
+                )
+              : _buildContent(
+                  context,
+                  packages: [],
+                  isLoading: false,
+                  onPay: () {},
+                ),
+        );
+      },
     );
   }
 

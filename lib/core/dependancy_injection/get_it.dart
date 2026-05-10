@@ -607,7 +607,7 @@ Future<void> setupGetIt() async {
     () => RegardsPackagesCubit(getIt<ApiService>()),
   );
   getIt.registerFactory<RegardsPackagePurchaseCubit>(
-    () => RegardsPackagePurchaseCubit(getIt<IAPService>(), getIt<ApiService>()),
+    () => RegardsPackagePurchaseCubit(getIt<IAPService>()),
   );
   getIt.registerFactory<ChatDurationPackagesCubit>(
     () => ChatDurationPackagesCubit(getIt<ApiService>()),

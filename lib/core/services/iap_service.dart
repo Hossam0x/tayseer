@@ -117,6 +117,61 @@ class IAPService {
     return response.productDetails.first;
   }
 
+  /// Purchases a consumable product via StoreKit 2 native channel.
+  ///
+  /// يستخدم native SK2 `Product.purchase(options: [.appAccountToken(uuid)])`
+  /// عشان الـ appAccountToken يتبعت صح في الـ webhook — مش زي
+  /// applicationUserName اللي بيشتغل مع SK1 بس.
+  ///
+  /// بيرجع الـ JWS (signedTransactionInfo) اللي الباك-إند يتحقق منه.
+  Future<Map<String, dynamic>> buyConsumableNative({
+    required String productId,
+    required String appAccountToken,
+  }) async {
+    if (!Platform.isIOS) {
+      throw Exception('Native consumable purchase is iOS only');
+    }
+
+    log('[IAP] ════════════════════════════════════════');
+    log('[IAP] 🛒 CONSUMABLE PURCHASE (SK2 Native)');
+    log('[IAP]   productId       : $productId');
+    log('[IAP]   appAccountToken : $appAccountToken');
+    log('[IAP] ════════════════════════════════════════');
+
+    const channel = MethodChannel('com.athr.tayser/iap_consumable');
+    try {
+      final result = await channel.invokeMethod<Map>('purchaseConsumable', {
+        'productId': productId,
+        'appAccountToken': appAccountToken,
+      });
+
+      if (result == null) {
+        throw Exception('فشل الشراء: لا توجد نتيجة');
+      }
+
+      final map = Map<String, dynamic>.from(result);
+      log('[IAP] ✅ Consumable purchased:');
+      log('[IAP]   transactionId : ${map['transactionId']}');
+      log('[IAP]   productId     : ${map['productId']}');
+      log('[IAP]   jws length    : ${(map['jws'] as String?)?.length ?? 0}');
+
+      return map;
+    } on PlatformException catch (e) {
+      log('[IAP] ❌ Native consumable error: ${e.code} — ${e.message}');
+      // ترجم الـ native error codes لـ exceptions مفهومة
+      switch (e.code) {
+        case 'USER_CANCELLED':
+          throw Exception('تم إلغاء عملية الشراء');
+        case 'PRODUCT_NOT_FOUND':
+          throw Exception('المنتج غير موجود في المتجر: $productId');
+        case 'UNSUPPORTED':
+          throw Exception('store_unavailable');
+        default:
+          throw Exception(e.message ?? 'حدث خطأ أثناء الشراء');
+      }
+    }
+  }
+
   /// Purchases a subscription product.
   ///
   /// مع StoreKit 2: [uniqueNumber] بيتحط كـ applicationUserName
@@ -626,6 +681,11 @@ class IAPErrorHandler {
     }
 
     if (s.contains('store_unavailable') || s.contains('unavailable')) {
+      return const IAPErrorResult(messageKey: 'store_unavailable');
+    }
+
+    if (s.contains('missingpluginexception') ||
+        s.contains('no implementation found')) {
       return const IAPErrorResult(messageKey: 'store_unavailable');
     }
 
