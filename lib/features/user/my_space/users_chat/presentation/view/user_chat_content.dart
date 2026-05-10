@@ -1,5 +1,8 @@
 import 'package:tayseer/core/widgets/chat_room_list_item/chat_room_list_item.dart';
 import 'package:tayseer/core/widgets/chat_room_list_item/helpers/chat_room_dialog_helper.dart';
+import 'package:tayseer/features/user/my_space/data/model/advisor_chat_model.dart';
+import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_space_state.dart';
+import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
 import 'package:tayseer/features/user/my_space/users_chat/data/model/regard_request_model.dart';
 import 'package:tayseer/features/user/my_space/users_chat/data/model/user_chat_room_model.dart';
 import 'package:tayseer/features/user/my_space/users_chat/data/repo/user_chat_repo.dart';
@@ -8,7 +11,11 @@ import 'package:tayseer/features/user/my_space/users_chat/presentation/view/user
 import 'package:tayseer/my_import.dart';
 
 class UserChatContent extends StatefulWidget {
-  const UserChatContent({super.key});
+  /// لو [readSystemRoomsFromContext] = true، هيقرأ الـ system rooms من MySpaceCubit
+  /// في الـ context مباشرة — عشان نتجنب dispose/recreate للـ UserChatCubit
+  final bool readSystemRoomsFromContext;
+
+  const UserChatContent({super.key, this.readSystemRoomsFromContext = false});
 
   @override
   State<UserChatContent> createState() => _UserChatContentState();
@@ -17,12 +24,26 @@ class UserChatContent extends StatefulWidget {
 class _UserChatContentState extends State<UserChatContent>
     with WidgetsBindingObserver {
   late final UserChatCubit _cubit;
+  // ✅ callback بيتنادى من _UserChatBody لما يرجع من system chat
+  // عشان نعمل setState ونجبر الـ BlocBuilder<MySpaceCubit> على rebuild
+  void _onReturnFromSystemChat() {
+    if (!mounted) return;
+    if (widget.readSystemRoomsFromContext) {
+      context.read<MySpaceCubit>().touchState();
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _cubit = UserChatCubit(UserChatRepo(getIt<ApiService>()))..loadAll();
     WidgetsBinding.instance.addObserver(this);
+    // لو محتاج system rooms، تأكد إنها متحملة
+    if (widget.readSystemRoomsFromContext) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.read<MySpaceCubit>().getAdvisorChat();
+      });
+    }
   }
 
   @override
@@ -36,17 +57,32 @@ class _UserChatContentState extends State<UserChatContent>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _cubit.loadAll();
+      if (widget.readSystemRoomsFromContext && mounted) {
+        context.read<MySpaceCubit>().getAdvisorChat();
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(value: _cubit, child: const _UserChatBody());
+    return BlocProvider.value(
+      value: _cubit,
+      child: _UserChatBody(
+        readSystemRoomsFromContext: widget.readSystemRoomsFromContext,
+        onReturnFromSystemChat: _onReturnFromSystemChat,
+      ),
+    );
   }
 }
 
 class _UserChatBody extends StatelessWidget {
-  const _UserChatBody();
+  final bool readSystemRoomsFromContext;
+  final VoidCallback? onReturnFromSystemChat;
+
+  const _UserChatBody({
+    this.readSystemRoomsFromContext = false,
+    this.onReturnFromSystemChat,
+  });
 
   /// ✅ ترجمة الـ content type لنص مناسب للعرض في الـ list
   String _formatLastMessage(BuildContext context, String content) {
@@ -55,11 +91,39 @@ class _UserChatBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ لو محتاج system rooms، اقرأها من MySpaceCubit بـ BlocBuilder منفصل
+    // عشان الـ rebuild يشتغل صح لما MySpaceCubit يتغير
+    if (readSystemRoomsFromContext) {
+      return BlocBuilder<MySpaceCubit, MySpaceState>(
+        builder: (context, mySpaceState) {
+          final systemRooms =
+              mySpaceState.advisorChatModel?.data.chatRooms
+                  .where((r) => r.isSystemChat)
+                  .toList() ??
+              [];
+          return _buildContent(context, systemRooms);
+        },
+      );
+    }
+    return _buildContent(context, const []);
+  }
+
+  Widget _buildContent(
+    BuildContext context,
+    List<AdvisorChatRoomModel> systemRooms,
+  ) {
     return BlocBuilder<UserChatCubit, UserChatState>(
       builder: (context, state) {
-        if (state.status == CubitStates.loading) {
+        // ✅ اعرض loading بس لو مفيش أي محتوى خالص (initial state)
+        // لو في محتوى موجود (حتى لو loading)، اعرضه ولا تخفيه
+        if (state.status == CubitStates.loading &&
+            state.chatRooms.isEmpty &&
+            systemRooms.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
+
+        final allRooms = [...systemRooms, ...state.chatRooms];
+        final hasConversations = allRooms.isNotEmpty;
 
         return RefreshIndicator(
           onRefresh: () => context.read<UserChatCubit>().loadAll(),
@@ -71,21 +135,21 @@ class _UserChatBody extends StatelessWidget {
               // ✅ Requests section
               if (state.requests.isNotEmpty) ...[
                 SliverToBoxAdapter(
-                child: _buildSectionHeader(
-                  context,
-                  title: context.tr('requests_section'),
-                  showViewAll: state.requests.length > 1,
-                  onViewAll: () => Navigator.push(
+                  child: _buildSectionHeader(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => BlocProvider.value(
-                        value: context.read<UserChatCubit>(),
-                        child: const _AllRequestsPage(),
+                    title: context.tr('requests_section'),
+                    showViewAll: state.requests.length > 1,
+                    onViewAll: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BlocProvider.value(
+                          value: context.read<UserChatCubit>(),
+                          child: const _AllRequestsPage(),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
                 // ✅ يظهر أول طلب بس
                 SliverToBoxAdapter(
                   child: _RequestItem(
@@ -102,10 +166,13 @@ class _UserChatBody extends StatelessWidget {
 
               // ✅ Conversations section
               SliverToBoxAdapter(
-                child: _buildSectionHeader(context, title: context.tr('conversations_section')),
+                child: _buildSectionHeader(
+                  context,
+                  title: context.tr('conversations_section'),
+                ),
               ),
 
-              if (state.chatRooms.isEmpty)
+              if (!hasConversations)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 32.h),
@@ -131,22 +198,28 @@ class _UserChatBody extends StatelessWidget {
                     ),
                   ),
                 )
-      else
+              else
                 SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) =>
-                        _buildChatRoom(context, state.chatRooms[index]),
-                    childCount: state.chatRooms.length,
-                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    // الـ system rooms الأولى في الـ list
+                    if (index < systemRooms.length) {
+                      return _buildSystemChatRoom(context, systemRooms[index]);
+                    }
+                    // باقي الـ user rooms
+                    return _buildChatRoom(
+                      context,
+                      state.chatRooms[index - systemRooms.length],
+                    );
+                  }, childCount: allRooms.length),
                 ),
 
               // ✅ Matching rooms banner — only when slots available AND matching rooms exist
-              if (state.matchingCount > 0 && state.chatRooms.length < state.slotLimit)
-                SliverToBoxAdapter(
-                  child: _buildMatchingBanner(context, state),
-                ),
+              if (state.matchingCount > 0 &&
+                  state.chatRooms.length < state.slotLimit)
+                SliverToBoxAdapter(child: _buildMatchingBanner(context, state)),
 
-              SliverToBoxAdapter(child: SizedBox(height: 100.h)),            ],
+              SliverToBoxAdapter(child: SizedBox(height: 100.h)),
+            ],
           ),
         );
       },
@@ -159,12 +232,13 @@ class _UserChatBody extends StatelessWidget {
         ? context.tr('person_singular')
         : context.tr('person_plural');
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const UserChatMatchingListView()),
-      ).then((_) {
-        if (context.mounted) context.read<UserChatCubit>().loadAll();
-      }),
+      onTap: () =>
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const UserChatMatchingListView()),
+          ).then((_) {
+            if (context.mounted) context.read<UserChatCubit>().loadAll();
+          }),
       child: Container(
         margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
@@ -182,8 +256,11 @@ class _UserChatBody extends StatelessWidget {
                 color: AppColors.primary100,
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.favorite_rounded,
-                  color: AppColors.primary400, size: 22.w),
+              child: Icon(
+                Icons.favorite_rounded,
+                color: AppColors.primary400,
+                size: 22.w,
+              ),
             ),
             SizedBox(width: 12.w),
             Expanded(
@@ -191,17 +268,22 @@ class _UserChatBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    context.tr('matches_waiting').replaceAll('{count}', '${state.matchingCount}'),
+                    context
+                        .tr('matches_waiting')
+                        .replaceAll('{count}', '${state.matchingCount}'),
                     style: Styles.textStyle14Bold.copyWith(
-                        color: AppColors.kscandryTextColor),
+                      color: AppColors.kscandryTextColor,
+                    ),
                   ),
                   SizedBox(height: 2.h),
                   Text(
-                    context.tr('can_add_people')
+                    context
+                        .tr('can_add_people')
                         .replaceAll('{count}', '$available')
                         .replaceAll('{person}', personWord),
                     style: Styles.textStyle12.copyWith(
-                        color: AppColors.secondary400),
+                      color: AppColors.secondary400,
+                    ),
                   ),
                 ],
               ),
@@ -240,7 +322,9 @@ class _UserChatBody extends StatelessWidget {
           ),
           children: [
             TextSpan(
-              text: context.tr('chat_slot_banner_prefix').replaceAll('{count}', '$slotLimit'),
+              text: context
+                  .tr('chat_slot_banner_prefix')
+                  .replaceAll('{count}', '$slotLimit'),
             ),
             WidgetSpan(
               alignment: PlaceholderAlignment.middle,
@@ -259,9 +343,7 @@ class _UserChatBody extends StatelessWidget {
                 ),
               ),
             ),
-            TextSpan(
-              text: context.tr('chat_slot_banner_suffix'),
-            ),
+            TextSpan(text: context.tr('chat_slot_banner_suffix')),
           ],
         ),
       ),
@@ -290,6 +372,101 @@ class _UserChatBody extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSystemChatRoom(BuildContext context, AdvisorChatRoomModel room) {
+    final mySpaceCubit = context.read<MySpaceCubit>();
+    return ChatRoomListItem(
+      key: ValueKey('system_chat_${room.id}'),
+      id: room.id,
+      title: room.displayTitle,
+      subtitle: _formatLastMessage(context, room.lastMessage?.content ?? ''),
+      imageUrl: room.displayImage,
+      lastUpdate: room.lastMessageAt ?? room.updatedAt,
+      unreadCount: room.unreadCount,
+      fallbackAsset: AssetsData.kAppLogotayseerImage,
+      onTap: () {
+        mySpaceCubit.markChatAsRead(room.id);
+        mySpaceCubit.setActiveChatRoom(room.id);
+        mySpaceCubit.markMessageAsReadOnSocket(room.id);
+        context
+            .pushNamed(
+              AppRouter.kConversitionView,
+              arguments: {
+                'chatroomid': room.id,
+                'username': room.displayTitle,
+                'userimage': room.displayImage,
+                'isBlocked': room.isBlocked,
+                'isHaveSession': room.isHaveSession,
+                'isSystemChat': room.isSystemChat,
+                'system': true,
+              },
+            )
+            .then((result) {
+              if (!context.mounted) return;
+              mySpaceCubit.setActiveChatRoom(null);
+              if (result is Map<String, dynamic> &&
+                  result['lastMessage'] != null) {
+                mySpaceCubit.updateLastMessage(
+                  chatRoomId: room.id,
+                  content: result['lastMessage'] as String,
+                  sentAt: result['sentAt'] as DateTime? ?? DateTime.now(),
+                );
+              }
+              // ✅ دايماً اعمل touchState لما ترجع من system chat
+              // عشان الـ BlocBuilder<MySpaceCubit> يعمل rebuild ويعرض الـ system chat
+              onReturnFromSystemChat?.call();
+            });
+      },
+      onArchive: () => ChatRoomDialogHelper.showArchiveDialog(
+        context: context,
+        onConfirm: () async {
+          final success = await mySpaceCubit.archiveChatRoom(room.id);
+          if (context.mounted) {
+            success
+                ? AppToast.success(
+                    context,
+                    context.tr('consultation_archived_success'),
+                  )
+                : AppToast.error(
+                    context,
+                    context.tr('consultation_archive_failed'),
+                  );
+          }
+        },
+      ),
+      onDelete: () => ChatRoomDialogHelper.showDeleteDialog(
+        context: context,
+        onConfirm: () async {
+          final success = await mySpaceCubit.deleteChatRoom(room.id);
+          if (context.mounted) {
+            success
+                ? AppToast.success(context, context.tr('chat_deleted_success'))
+                : AppToast.error(context, context.tr('chat_delete_failed'));
+          }
+        },
+      ),
+      onReport: () => ChatRoomDialogHelper.showReportDialog(
+        context: context,
+        onConfirm: () {},
+      ),
+      onBlock: () {
+        if (room.isBlocked) {
+          ChatRoomDialogHelper.showUnblockDialog(
+            context: context,
+            onConfirm: () {},
+          );
+        } else {
+          ChatRoomDialogHelper.showBlockDialog(
+            context: context,
+            onConfirm: () {},
+          );
+        }
+      },
+      blockLabel: room.isBlocked
+          ? context.tr('unblock_label')
+          : context.tr('block_label'),
     );
   }
 
@@ -374,7 +551,9 @@ class _UserChatBody extends StatelessWidget {
           );
         }
       },
-      blockLabel: room.blockExists ? context.tr('unblock_label') : context.tr('block_label'),
+      blockLabel: room.blockExists
+          ? context.tr('unblock_label')
+          : context.tr('block_label'),
     );
   }
 }
@@ -413,7 +592,9 @@ class _RequestItem extends StatelessWidget {
           // Message
           Expanded(
             child: Text(
-              context.tr('sent_you_greeting').replaceAll('{name}', request.sender.name),
+              context
+                  .tr('sent_you_greeting')
+                  .replaceAll('{name}', request.sender.name),
               style: Styles.textStyle14Bold,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,

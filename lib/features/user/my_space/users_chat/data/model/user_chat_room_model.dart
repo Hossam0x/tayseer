@@ -62,11 +62,7 @@ class UserLastMessageModel {
   final DateTime? sentAt;
   final String? status;
 
-  UserLastMessageModel({
-    required this.content,
-    this.sentAt,
-    this.status,
-  });
+  UserLastMessageModel({required this.content, this.sentAt, this.status});
 
   factory UserLastMessageModel.fromJson(Map<String, dynamic> json) {
     return UserLastMessageModel(
@@ -105,7 +101,8 @@ class UserChatRoomsResponse {
       paginationData = data['pagination'] as Map<String, dynamic>? ?? {};
       slotLimit = data['slotLimit'] ?? 4;
     } else if (innerData is Map<String, dynamic>) {
-      chatRoomsList = innerData['chatRooms'] as List? ?? innerData['data'] as List? ?? [];
+      chatRoomsList =
+          innerData['chatRooms'] as List? ?? innerData['data'] as List? ?? [];
       paginationData = innerData['pagination'] as Map<String, dynamic>? ?? {};
       slotLimit = innerData['slotLimit'] ?? data['slotLimit'] ?? 4;
     } else {
@@ -114,13 +111,23 @@ class UserChatRoomsResponse {
       slotLimit = data['slotLimit'] ?? 4;
     }
 
-    final totalCount = paginationData['totalCount'] as int? ?? chatRoomsList.length;
+    final totalCount =
+        paginationData['totalCount'] as int? ?? chatRoomsList.length;
+
+    // ✅ فلتر الـ system chats — دي مش من مسؤولية UserChatCubit
+    // الـ system chats بتتعرض من MySpaceCubit في الـ Marriage tab
+    final userOnlyRooms = chatRoomsList
+        .where((e) => e is Map<String, dynamic> && e['systemChat'] != true)
+        .toList();
 
     return UserChatRoomsResponse(
-      chatRooms: chatRoomsList
+      chatRooms: userOnlyRooms
           .map((e) => UserChatRoomModel.fromJson(e as Map<String, dynamic>))
           .toList(),
-      pendingRequestsCount: data['pendingRequestsCount'] ?? paginationData['pendingRequestsCount'] ?? 0,
+      pendingRequestsCount:
+          data['pendingRequestsCount'] ??
+          paginationData['pendingRequestsCount'] ??
+          0,
       slotLimit: slotLimit,
       totalCount: totalCount,
     );
