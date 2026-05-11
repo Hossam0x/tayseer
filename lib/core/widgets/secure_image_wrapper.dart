@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 /// Wraps an image URL with a native secure layer.
 /// The image is loaded INSIDE the native secure SurfaceView (Android)
@@ -53,13 +54,24 @@ class _IosSecureImage extends StatefulWidget {
 class _IosSecureImageState extends State<_IosSecureImage> {
   bool _ready = false;
   bool _nativeLoaded = false;
+  // debounce flag لمنع PlatformException(recreating_view)
+  Timer? _readyTimer;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() => _ready = true);
+      // تأخير بسيط يمنع recreating_view لما الـ widget يتبني بسرعة
+      _readyTimer = Timer(const Duration(milliseconds: 100), () {
+        if (mounted) setState(() => _ready = true);
+      });
     });
+  }
+
+  @override
+  void dispose() {
+    _readyTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -67,14 +79,14 @@ class _IosSecureImageState extends State<_IosSecureImage> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // ✅ الـ fallback بيتخفى بـ fade ناعم
+        // الـ fallback بيتخفى بـ fade ناعم
         AnimatedOpacity(
           opacity: _nativeLoaded ? 0.0 : 1.0,
           duration: const Duration(milliseconds: 300),
           child: widget.flutterFallback,
         ),
 
-        // ✅ الـ UiKitView بيبدأ بـ opacity 0 ويتظهر تدريجياً
+        // الـ UiKitView بيبدأ بـ opacity 0 ويتظهر تدريجياً
         if (_ready)
           AnimatedOpacity(
             opacity: _nativeLoaded ? 1.0 : 0.0,
@@ -84,6 +96,10 @@ class _IosSecureImageState extends State<_IosSecureImage> {
               layoutDirection: TextDirection.ltr,
               creationParams: {'url': widget.imageUrl},
               creationParamsCodec: const StandardMessageCodec(),
+              // ✅ empty gestureRecognizers — يخلي Flutter يمسك الـ tap
+              // EagerGestureRecognizer كانت بتكسب الـ arena قبل الـ GestureDetector
+              gestureRecognizers:
+                  const <Factory<OneSequenceGestureRecognizer>>{},
               onPlatformViewCreated: (_) {
                 Future.delayed(const Duration(milliseconds: 250), () {
                   if (mounted) setState(() => _nativeLoaded = true);

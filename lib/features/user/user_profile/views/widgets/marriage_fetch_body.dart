@@ -1,6 +1,7 @@
-
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/user/marriage/view/widget/about_me.dart';
+import 'package:tayseer/features/user/marriage/view/widget/image_viewer_gallery.dart';
+import 'package:tayseer/features/user/questions/data/models/questions_data.dart';
 import 'package:tayseer/features/user/marriage/view/widget/bio_voice_section.dart';
 import 'package:tayseer/features/user/marriage/view/widget/education.dart';
 import 'package:tayseer/features/user/marriage/view/widget/interests_section.dart';
@@ -45,10 +46,11 @@ class _MarriageBodyContent extends StatelessWidget {
           if (profile == null) return const SizedBox.shrink();
 
           // ⭐⭐⭐ FIX: استخدام singleImage بدل أول صورة
-          final mainImage = profile.userMedia?.singleImage ?? 
-                           (profile.userMedia?.images.isNotEmpty == true 
-                               ? profile.userMedia!.images.first 
-                               : null);
+          final mainImage =
+              profile.userMedia?.singleImage ??
+              (profile.userMedia?.images.isNotEmpty == true
+                  ? profile.userMedia!.images.first
+                  : null);
 
           return Stack(
             children: [
@@ -101,7 +103,9 @@ class _MarriageBodyContent extends StatelessWidget {
                     ),
 
                   _buildSliverPadding(
-                    child: ReligiousSection(tags: _buildReligiousTags(profile)),
+                    child: ReligiousSection(
+                      tags: _buildReligiousTags(context, profile),
+                    ),
                   ),
 
                   if (profile.hobbies.isNotEmpty)
@@ -238,51 +242,53 @@ class _MarriageBodyContent extends StatelessWidget {
   }
 
   // ⭐⭐⭐ FIXED: Timeline Events with correct goal types
-// ════════════════════════════════════════════════════════════════
-// ⭐⭐⭐ UPDATED: _buildTimelineEvents في Fetch Body
-// ════════════════════════════════════════════════════════════════
+  // ════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ UPDATED: _buildTimelineEvents في Fetch Body
+  // ════════════════════════════════════════════════════════════════
 
-List<Map<String, dynamic>> _buildTimelineEvents(dynamic yourGoals) {
-  List<Map<String, dynamic>> events = [];
-  
-  // 1. الخطوبة
-  if (yourGoals.engagement != null && yourGoals.engagement.isNotEmpty) {
-    events.add({
-      'timeLabel': yourGoals.engagement,
-      'goalType': 'engagement',
-      'isActive': true,
-    });
+  List<Map<String, dynamic>> _buildTimelineEvents(dynamic yourGoals) {
+    List<Map<String, dynamic>> events = [];
+
+    // 1. الخطوبة
+    if (yourGoals.engagement != null && yourGoals.engagement.isNotEmpty) {
+      events.add({
+        'timeLabel': yourGoals.engagement,
+        'goalType': 'engagement',
+        'isActive': true,
+      });
+    }
+
+    // 2. الزواج
+    if (yourGoals.marry != null && yourGoals.marry.isNotEmpty) {
+      events.add({
+        'timeLabel': yourGoals.marry,
+        'goalType': 'marriage_intentions',
+        'isActive': true,
+      });
+    }
+
+    // ✅ 3. الأسرة (familyAcceptance)
+    if (yourGoals.familyAcceptance != null &&
+        yourGoals.familyAcceptance.isNotEmpty) {
+      events.add({
+        'timeLabel': yourGoals.familyAcceptance,
+        'goalType': 'familyAcceptance', // ✅ اسم الحقل الصحيح
+        'isActive': true,
+      });
+    }
+
+    // ✅ 4. السفر (intendTravelAbroad)
+    if (yourGoals.intendTravelAbroad != null &&
+        yourGoals.intendTravelAbroad.isNotEmpty) {
+      events.add({
+        'timeLabel': yourGoals.intendTravelAbroad,
+        'goalType': 'intendTravelAbroad', // ✅ اسم الحقل الصحيح
+        'isActive': true,
+      });
+    }
+
+    return events;
   }
-  
-  // 2. الزواج
-  if (yourGoals.marry != null && yourGoals.marry.isNotEmpty) {
-    events.add({
-      'timeLabel': yourGoals.marry,
-      'goalType': 'marriage_intentions',
-      'isActive': true,
-    });
-  }
-  
-  // ✅ 3. الأسرة (familyAcceptance)
-  if (yourGoals.familyAcceptance != null && yourGoals.familyAcceptance.isNotEmpty) {
-    events.add({
-      'timeLabel': yourGoals.familyAcceptance,
-      'goalType': 'familyAcceptance',  // ✅ اسم الحقل الصحيح
-      'isActive': true,
-    });
-  }
-  
-  // ✅ 4. السفر (intendTravelAbroad)
-  if (yourGoals.intendTravelAbroad != null && yourGoals.intendTravelAbroad.isNotEmpty) {
-    events.add({
-      'timeLabel': yourGoals.intendTravelAbroad,
-      'goalType': 'intendTravelAbroad',  // ✅ اسم الحقل الصحيح
-      'isActive': true,
-    });
-  }
-  
-  return events;
-}
 
   List<Map<String, dynamic>> _buildHeaderTags(profile) {
     List<Map<String, dynamic>> tags = [];
@@ -321,7 +327,10 @@ List<Map<String, dynamic>> _buildTimelineEvents(dynamic yourGoals) {
     ];
   }
 
-  List<Map<String, dynamic>> _buildReligiousTags(profile) {
+  List<Map<String, dynamic>> _buildReligiousTags(
+    BuildContext context,
+    profile,
+  ) {
     return [
       if (profile.aboutMe?.religiousCommitment != null)
         {
@@ -424,19 +433,38 @@ class SliverProfileHeader extends StatelessWidget {
             clipBehavior: Clip.none,
             alignment: Alignment.bottomCenter,
             children: [
-              // ⭐⭐⭐ Main image from singleImage
-              Container(
-                height: 450.h,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(32.r),
-                  ),
-                  image: DecorationImage(
-                    image: NetworkImage(
-                      mainImage ?? 'https://via.placeholder.com/400',
+              // ⭐⭐⭐ Main image from singleImage — tappable to open full screen
+              GestureDetector(
+                onTap: () {
+                  final allImages = [
+                    if (mainImage != null) mainImage!,
+                    ...images.where((img) => img != mainImage),
+                  ];
+                  if (allImages.isNotEmpty) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ImageViewerGallery(
+                          images: allImages,
+                          initialIndex: 0,
+                        ),
+                      ),
+                    );
+                  }
+                },
+                child: Container(
+                  height: 450.h,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.vertical(
+                      bottom: Radius.circular(32.r),
                     ),
-                    fit: BoxFit.cover,
+                    image: DecorationImage(
+                      image: NetworkImage(
+                        mainImage ?? 'https://via.placeholder.com/400',
+                      ),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),
