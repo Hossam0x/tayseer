@@ -1,9 +1,7 @@
-import 'dart:async';
 import 'dart:developer';
+import 'dart:io';
 
-import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/services/iap_service.dart';
-import 'package:tayseer/core/shared/network/local_network.dart';
 import 'package:tayseer/features/user/interactions/data/model/chat_duration_package_model.dart';
 import 'package:tayseer/features/user/interactions/view_model/chat_duration_packages_cubit.dart';
 import 'package:tayseer/my_import.dart';
@@ -24,8 +22,10 @@ class _PurchaseState {
 
 class _PurchaseCubit extends Cubit<_PurchaseState> {
   final IAPService _iapService;
+  final ApiService _apiService;
 
-  _PurchaseCubit(this._iapService) : super(const _PurchaseState());
+  _PurchaseCubit(this._iapService, this._apiService)
+    : super(const _PurchaseState());
 
   void reset() => emit(const _PurchaseState());
 
@@ -82,7 +82,30 @@ class _PurchaseCubit extends Cubit<_PurchaseState> {
         return;
       }
 
-      // Trigger IAP flow مباشرة بالـ uuid من الكاش
+      // 1️⃣ أول حاجة: نبعت للباك-إند عشان يسجل الـ purchase intent
+      log('[RematchPurchase] 📤 Calling /iap/initiate-purchase...');
+      try {
+        await _apiService.post(
+          endPoint: '/iap/initiate-purchase',
+          data: {
+            'productId': productId,
+            'platform': Platform.isIOS ? 'ios' : 'android',
+            'chatRoomId': chatRoomId,
+          },
+        );
+        log('[RematchPurchase] ✅ Backend registered purchase intent');
+      } catch (e) {
+        log('[RematchPurchase] ❌ Backend call failed: $e');
+        emit(
+          state.copyWith(
+            status: _PurchaseStatus.error,
+            error: 'فشل تسجيل عملية الشراء',
+          ),
+        );
+        return;
+      }
+
+      // 2️⃣ بعد كده نبدأ الشراء من Apple
       // نستخدم native SK2 channel عشان appAccountToken يتبعت صح في الـ webhook
       await _iapService.buyConsumableNative(
         productId: productId,
@@ -116,13 +139,18 @@ void showRematchPurchaseSheet(
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
+    isDismissible: false,
+    enableDrag: false,
     backgroundColor: Colors.transparent,
     builder: (_) => MultiBlocProvider(
       providers: [
         BlocProvider(
           create: (_) => getIt<ChatDurationPackagesCubit>()..fetchPackages(),
         ),
-        BlocProvider(create: (_) => _PurchaseCubit(getIt<IAPService>())),
+        BlocProvider(
+          create: (_) =>
+              _PurchaseCubit(getIt<IAPService>(), getIt<ApiService>()),
+        ),
       ],
       child: _RematchSheet(
         userName: userName,
@@ -155,6 +183,24 @@ class _RematchSheet extends StatefulWidget {
 
 class _RematchSheetState extends State<_RematchSheet> {
   int _selectedIndex = 0;
+  int _closeCountdown = 5;
+  bool _canClose = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // countdown عشان المستخدم ميقفلش الـ sheet بالغلط
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return false;
+      if (_closeCountdown > 0) {
+        setState(() => _closeCountdown--);
+        return true;
+      }
+      setState(() => _canClose = true);
+      return false;
+    });
+  }
 
   void _onPay(BuildContext context, List<ChatDurationPackageModel> packages) {
     if (packages.isEmpty) return;
@@ -179,10 +225,19 @@ class _RematchSheetState extends State<_RematchSheet> {
               isSuccess: true,
             ),
           );
+        } else if (state.status == _PurchaseStatus.canceled) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            CustomSnackBar(context, text: context.tr('purchase_cancelled')),
+          );
+          context.read<_PurchaseCubit>().reset();
         } else if (state.status == _PurchaseStatus.error &&
             state.error != null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(context, text: state.error!, isError: true),
+            CustomSnackBar(
+              context,
+              text: context.tr(state.error!),
+              isError: true,
+            ),
           );
           context.read<_PurchaseCubit>().reset();
         }
@@ -209,14 +264,60 @@ class _RematchSheetState extends State<_RematchSheet> {
                     return Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Handle
-                        Container(
-                          width: 40.w,
-                          height: 4.h,
-                          decoration: BoxDecoration(
-                            color: AppColors.secondary200,
-                            borderRadius: BorderRadius.circular(2.r),
-                          ),
+                        // Handle + زرار الإغلاق
+                        Row(
+                          children: [
+                            SizedBox(
+                              width: 36.w,
+                              height: 36.w,
+                              child:
+                                  _canClose &&
+                                      purchaseState.status !=
+                                          _PurchaseStatus.purchasing
+                                  ? GestureDetector(
+                                      onTap: () => Navigator.pop(context),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: AppColors.secondary100,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          Icons.close,
+                                          size: 18.w,
+                                          color: AppColors.secondary600,
+                                        ),
+                                      ),
+                                    )
+                                  : Container(
+                                      decoration: BoxDecoration(
+                                        color: AppColors.secondary100,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          _canClose ? '' : '$_closeCountdown',
+                                          style: Styles.textStyle14.copyWith(
+                                            color: AppColors.secondary600,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                            ),
+                            Expanded(
+                              child: Center(
+                                child: Container(
+                                  width: 40.w,
+                                  height: 4.h,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.secondary200,
+                                    borderRadius: BorderRadius.circular(2.r),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 36.w),
+                          ],
                         ),
                         SizedBox(height: 20.h),
 
