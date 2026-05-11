@@ -11,6 +11,7 @@ class ChatAppBarWrapper extends StatelessWidget {
   final String? username;
   final String? userimage;
   final String? receiverId;
+  final bool isSystemChat;
   final void Function(bool isBlocked)? onBlockStatusChanged;
 
   const ChatAppBarWrapper({
@@ -18,6 +19,7 @@ class ChatAppBarWrapper extends StatelessWidget {
     this.username,
     this.userimage,
     this.receiverId,
+    this.isSystemChat = false,
     this.onBlockStatusChanged,
   });
 
@@ -32,7 +34,9 @@ class ChatAppBarWrapper extends StatelessWidget {
           phoneIcon: AssetsData.phoneIcon,
           receiverId: receiverId,
           isBlocked: chatState.isBlocked,
-          onProfileTap: isUser
+          onProfileTap: isSystemChat
+              ? null
+              : isUser
               ? () {
                   Navigator.pushNamed(
                     context,

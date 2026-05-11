@@ -357,7 +357,7 @@ class _UserChatContentState extends State<_UserChatContent> {
               Expanded(
                 child: GestureDetector(
                   onTap: () {
-                    // ✅ افتح البروفايل لما يضغط على الاسم أو الصورة
+                    // ✅ افتح البروفايل لما يضغط على الاسم أو الصورة — بس مش لو system chat
                     if (widget.receiverId != null) {
                       context.pushNamed(
                         AppRouter.kUserPublicProfileView,

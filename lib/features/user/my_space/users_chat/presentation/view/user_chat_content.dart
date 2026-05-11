@@ -6,6 +6,7 @@ import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_
 import 'package:tayseer/features/user/my_space/users_chat/data/model/regard_request_model.dart';
 import 'package:tayseer/features/user/my_space/users_chat/data/model/user_chat_room_model.dart';
 import 'package:tayseer/features/user/my_space/users_chat/data/repo/user_chat_repo.dart';
+import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/my_space/users_chat/presentation/cubit/user_chat_cubit.dart';
 import 'package:tayseer/features/user/my_space/users_chat/presentation/view/user_chat_matching_list_view.dart';
 import 'package:tayseer/my_import.dart';
@@ -24,6 +25,7 @@ class UserChatContent extends StatefulWidget {
 class _UserChatContentState extends State<UserChatContent>
     with WidgetsBindingObserver {
   late final UserChatCubit _cubit;
+  bool _ownsCubit = true; // ✅ هل نحن المسؤولون عن الـ dispose؟
   // ✅ callback بيتنادى من _UserChatBody لما يرجع من system chat
   // عشان نعمل setState ونجبر الـ BlocBuilder<MySpaceCubit> على rebuild
   void _onReturnFromSystemChat() {
@@ -36,7 +38,14 @@ class _UserChatContentState extends State<UserChatContent>
   @override
   void initState() {
     super.initState();
-    _cubit = UserChatCubit(UserChatRepo(getIt<ApiService>()))..loadAll();
+    // ✅ استخدم الـ cubit الموجود في الـ context لو متاح، وإلا اعمل واحد جديد
+    try {
+      _cubit = context.read<UserChatCubit>();
+      _ownsCubit = false;
+    } catch (_) {
+      _cubit = UserChatCubit(UserChatRepo(getIt<ApiService>()))..loadAll();
+      _ownsCubit = true;
+    }
     WidgetsBinding.instance.addObserver(this);
     // لو محتاج system rooms، تأكد إنها متحملة
     if (widget.readSystemRoomsFromContext) {
@@ -49,7 +58,7 @@ class _UserChatContentState extends State<UserChatContent>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _cubit.close();
+    if (_ownsCubit) _cubit.close();
     super.dispose();
   }
 
@@ -125,12 +134,15 @@ class _UserChatBody extends StatelessWidget {
         final allRooms = [...systemRooms, ...state.chatRooms];
         final hasConversations = allRooms.isNotEmpty;
 
+        final currentSubscriptionType = getIt<InteractionsCubit>().state.subscriptionType;
+        final showBanner = currentSubscriptionType.toLowerCase() == 'free';
+
         return RefreshIndicator(
           onRefresh: () => context.read<UserChatCubit>().loadAll(),
           child: CustomScrollView(
             slivers: [
-              // ✅ Banner
-              SliverToBoxAdapter(child: _buildBanner(context, state.slotLimit)),
+              if (showBanner)
+                SliverToBoxAdapter(child: _buildBanner(context, state.slotLimit)),
 
               // ✅ Requests section
               if (state.requests.isNotEmpty) ...[

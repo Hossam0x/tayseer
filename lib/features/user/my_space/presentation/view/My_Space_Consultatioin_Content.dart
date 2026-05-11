@@ -27,6 +27,12 @@ class _MySpaceConsultationContentState
   Widget build(BuildContext context) {
     return BlocBuilder<MySpaceCubit, MySpaceState>(
       buildWhen: (previous, current) {
+        // ✅ لو loading بس في data موجودة، متعملش rebuild — عشان ما تختفيش الـ rooms
+        if (current.advisorChatState == CubitStates.loading &&
+            current.advisorChatModel != null) {
+          return false;
+        }
+
         // Only rebuild if state changes or chat list actually changes
         if (previous.advisorChatState != current.advisorChatState) {
           return true;

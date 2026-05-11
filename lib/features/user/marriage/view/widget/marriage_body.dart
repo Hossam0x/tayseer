@@ -424,62 +424,70 @@ class MarriageBodyState extends State<MarriageBody>
       _regardFocusNode.unfocus();
     }
 
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.85),
-        borderRadius: BorderRadius.circular(16.r),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            context.tr('messge_profil_title').replaceAll('{name}', personName),
-            style: Styles.textStyle14Bold,
-          ),
-          Gap(10.h),
-          TextField(
-            controller: _regardController,
-            focusNode: _regardFocusNode,
-            maxLines: 3,
-            decoration: InputDecoration(
-              fillColor: HexColor('f9f8ec'),
-              filled: true,
-              hintText: context.tr('type_your_message'),
-              hintStyle: Styles.textStyle12.copyWith(color: Colors.grey),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16.r),
-                borderSide: BorderSide.none,
+    return GestureDetector(
+      onTap: () => _regardFocusNode.unfocus(),
+      behavior: HitTestBehavior.translucent,
+      child: Container(
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.85),
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        child: GestureDetector(
+          onTap: () {},
+          behavior: HitTestBehavior.opaque,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.tr('messge_profil_title').replaceAll('{name}', personName),
+                style: Styles.textStyle14Bold,
               ),
-            ),
+              Gap(10.h),
+              TextField(
+                controller: _regardController,
+                focusNode: _regardFocusNode,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  fillColor: HexColor('f9f8ec'),
+                  filled: true,
+                  hintText: context.tr('type_your_message'),
+                  hintStyle: Styles.textStyle12.copyWith(color: Colors.grey),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16.r),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              Gap(16.h),
+              Center(
+                child: ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: _regardController,
+                  builder: (_, value, __) {
+                    final enabled = value.text.trim().isNotEmpty;
+                    return CustomBotton(
+                      backGroundcolor: enabled ? null : AppColors.kgreyColor,
+                      useGradient: enabled,
+                      title: context.tr('send_reply'),
+                      onPressed: enabled
+                          ? () {
+                              final text = _regardController.text.trim();
+                              _regardController.clear();
+                              _regardFocusNode.unfocus();
+                              cubit.sendRegardText(
+                                personId: personId,
+                                text: text,
+                                countView: countView,
+                              );
+                            }
+                          : null,
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-          Gap(16.h),
-          Center(
-            child: ValueListenableBuilder<TextEditingValue>(
-              valueListenable: _regardController,
-              builder: (_, value, __) {
-                final enabled = value.text.trim().isNotEmpty;
-                return CustomBotton(
-                  backGroundcolor: enabled ? null : AppColors.kgreyColor,
-                  useGradient: enabled,
-                  title: context.tr('send_reply'),
-                  onPressed: enabled
-                      ? () {
-                          final text = _regardController.text.trim();
-                          _regardController.clear();
-                          _regardFocusNode.unfocus();
-                          cubit.sendRegardText(
-                            personId: personId,
-                            text: text,
-                            countView: countView,
-                          );
-                        }
-                      : null,
-                );
-              },
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1499,11 +1507,18 @@ class MarriageBodyState extends State<MarriageBody>
       key: key,
       textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: CustomBackground(
-        child: Stack(
-          children: [
-            RefreshIndicator.adaptive(
-              onRefresh: () => cubit.refreshProfile(),
-              child: CustomScrollView(
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () {
+            if (_regardFocusNode.hasFocus) {
+              _regardFocusNode.unfocus();
+            }
+          },
+          child: Stack(
+            children: [
+              RefreshIndicator.adaptive(
+                onRefresh: () => cubit.refreshProfile(),
+                child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 key: ValueKey<int>(profileIndex),
                 controller: _mainScrollController,
@@ -1962,7 +1977,7 @@ class MarriageBodyState extends State<MarriageBody>
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildInteractionsContent({Key? key, required MarriageState state}) {

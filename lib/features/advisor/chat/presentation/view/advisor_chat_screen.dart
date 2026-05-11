@@ -243,6 +243,7 @@ class _ChatContentState extends State<_ChatContent> {
                           username: widget.username,
                           userimage: widget.userimage,
                           receiverId: widget.receiverId,
+                          isSystemChat: widget.isSystemChat,
                           onBlockStatusChanged: widget.onBlockStatusChanged,
                         ),
                         Expanded(

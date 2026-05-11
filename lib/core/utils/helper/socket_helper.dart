@@ -17,6 +17,7 @@ class tayseerSocketHelper {
 
   bool get isConnected => _isConnected && _socket != null && _socket!.connected;
   Function()? onDisconnected;
+  Function()? onReconnected; // ✅ NEW: callback لما الـ socket يرجع بعد انقطاع
   Function(String message)? onError;
 
   void setErrorCallback(Function(String message) callback) {
@@ -65,10 +66,17 @@ class tayseerSocketHelper {
 
     _socket!.onConnect((_) {
       log('✅ Connected to tayseer Game Socket');
+      final wasReconnect = _isConnected == false && _connectionCompleter?.isCompleted == true;
       _isConnected = true;
       _isConnecting = false;
       if (!(_connectionCompleter?.isCompleted ?? true)) {
         _connectionCompleter?.complete(true);
+      } else {
+        // ✅ NEW: لو الـ completer خلص من زمان، ده يعني reconnect — نادي الـ callback
+        if (wasReconnect) {
+          log('🔄 Socket reconnected — notifying listeners');
+          onReconnected?.call();
+        }
       }
     });
 
@@ -349,6 +357,7 @@ class tayseerSocketHelper {
     _isConnecting = false;
     _connectionCompleter = null;
     _authorizedToken = null; // ✅ امسح الـ authorized token عند الـ logout
+    onReconnected = null;    // ✅ NEW: امسح الـ reconnect callback عند الـ reset
     if (_socket != null) {
       _socket!.disconnect(); // sends disconnect packet → triggers onDisconnect
       _socket!.destroy(); // stops any reconnection attempts
@@ -388,6 +397,7 @@ class tayseerSocketHelper {
     _listeners.clear();
     _isConnecting = false;
     _connectionCompleter = null;
+    onReconnected = null; // ✅ NEW: امسح الـ reconnect callback قبل الـ reset
     // ✅ احفظ الـ token المعتمد للـ session الجديدة
     _authorizedToken = token;
 
@@ -412,6 +422,7 @@ class tayseerSocketHelper {
     disconnect();
     _socket?.dispose();
     _socket = null;
+    onReconnected = null; // ✅ NEW
     log('🗑️ Socket helper disposed');
   }
 }

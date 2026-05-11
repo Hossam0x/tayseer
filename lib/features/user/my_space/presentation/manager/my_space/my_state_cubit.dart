@@ -177,7 +177,10 @@ class MySpaceCubit extends Cubit<MySpaceState> {
         ),
       );
     } else {
-      _safeEmit(state.copyWith(advisorChatState: CubitStates.loading));
+      // ✅ لو في data موجودة في الـ state، متعملش emit(loading) عشان ما تمسحش الـ systemRooms
+      if (state.advisorChatModel == null) {
+        _safeEmit(state.copyWith(advisorChatState: CubitStates.loading));
+      }
     }
 
     CubitStates.printState(

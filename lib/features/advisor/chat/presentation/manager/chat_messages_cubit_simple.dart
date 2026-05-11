@@ -29,6 +29,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   bool _hasJoinedRoom = false;
   int _joinAttempts = 0;
   DateTime? _chatExpiresAt;
+  bool _isSystemChat = false; // ✅ NEW: احفظ نوع الـ chat عشان الـ rejoin يعرفه
 
   // ✅ FIX 3: احفظ الـ receiverId الأصلي اللي جاء من الـ navigation
   // منفصل عن _currentReceiverId عشان لو _currentChatRoomId اتغيّر،
@@ -54,6 +55,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     _currentChatRoomId = chatRoomId;
     _currentReceiverId = receiverId;
     _originalReceiverId = receiverId; // ✅ احفظ نسخة ثابتة من الـ receiverId
+    _isSystemChat = isSystemChat;     // ✅ NEW: احفظ نوع الـ chat
 
     _joinAttempts = 0;
     _hasJoinedRoom = false;
@@ -96,6 +98,9 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         setupSocketListeners();
       }
 
+      // ✅ NEW: سجّل الـ reconnect handler بعد ما الـ listeners اتعملت
+      _setupReconnectHandler();
+
       // 3. حفظ في الكاش
       await _cacheService.saveMessages(
         chatRoomId: chatRoomId,
@@ -115,12 +120,27 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     }
   }
 
+  // ✅ NEW: سجّل callback في الـ socketHelper يتنادى لما الـ socket يرجع
+  void _setupReconnectHandler() {
+    _socketHelper.onReconnected = () {
+      if (isClosed || _currentChatRoomId == null) return;
+
+      log('🔄 Socket reconnected — rejoining room: $_currentChatRoomId');
+      _hasJoinedRoom = false; // عشان leaveCurrentChatRoom ما يبعتش leave غلط
+      _joinAttempts = 0;
+      _sendJoinRequest(
+        isSystemChat: _isSystemChat,
+        receiverId: _currentReceiverId ?? _originalReceiverId,
+      );
+    };
+  }
+
   Future<void> _waitForSocketAndJoin({
     required bool isSystemChat,
     String? receiverId,
   }) async {
     int retries = 0;
-    const maxRetries = 6;
+    const maxRetries = 12; // ✅ 6 ثواني بدل 3 — كافي للـ system chat
     const delay = Duration(milliseconds: 500);
 
     while (!_socketHelper.isConnected && retries < maxRetries) {
@@ -131,6 +151,15 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
 
     if (!_socketHelper.isConnected) {
       log('❌ Socket not connected after ${maxRetries * 500}ms');
+      // ✅ للـ system chat، حاول تاني بعد ثانيتين لو الـ socket اتـ connect
+      if (isSystemChat) {
+        Future.delayed(const Duration(seconds: 2), () {
+          if (!isClosed && !_hasJoinedRoom && _socketHelper.isConnected) {
+            log('🔄 Retrying system chat join after delayed socket connect');
+            _sendJoinRequest(isSystemChat: true, receiverId: receiverId);
+          }
+        });
+      }
       return;
     }
 
@@ -142,7 +171,13 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
 
   void _sendJoinRequest({required bool isSystemChat, String? receiverId}) {
     if (isSystemChat) {
-      _socketHelper.send('joinChatRoom', {'system': true}, null);
+      final payload = <String, dynamic>{'system': true};
+      // ✅ أضف chatRoomId لو موجود عشان السيرفر يعرف يـ join الـ room الصح
+      if (_currentChatRoomId != null && _currentChatRoomId!.isNotEmpty) {
+        payload['chatRoomId'] = _currentChatRoomId;
+      }
+      log('📤 joinChatRoom (system): $payload');
+      _socketHelper.send('joinChatRoom', payload, null);
       return;
     }
 
@@ -1037,6 +1072,8 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
 
   @override
   Future<void> close() {
+    // ✅ NEW: امسح الـ reconnect callback عشان ما يتنادىش بعد الـ close
+    _socketHelper.onReconnected = null;
     leaveCurrentChatRoom();
     _listenersSetup = false;
     // ✅ امسح الـ original receiver عند الـ close
