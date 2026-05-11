@@ -7,6 +7,7 @@ import 'package:tayseer/features/user/my_space/users_chat/data/model/regard_requ
 import 'package:tayseer/features/user/my_space/users_chat/data/model/user_chat_room_model.dart';
 import 'package:tayseer/features/user/my_space/users_chat/data/repo/user_chat_repo.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
+import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_state.dart';
 import 'package:tayseer/features/user/my_space/users_chat/presentation/cubit/user_chat_cubit.dart';
 import 'package:tayseer/features/user/my_space/users_chat/presentation/view/user_chat_matching_list_view.dart';
 import 'package:tayseer/my_import.dart';
@@ -134,15 +135,18 @@ class _UserChatBody extends StatelessWidget {
         final allRooms = [...systemRooms, ...state.chatRooms];
         final hasConversations = allRooms.isNotEmpty;
 
-        final currentSubscriptionType = getIt<InteractionsCubit>().state.subscriptionType;
-        final showBanner = currentSubscriptionType.toLowerCase() == 'free';
-
         return RefreshIndicator(
           onRefresh: () => context.read<UserChatCubit>().loadAll(),
-          child: CustomScrollView(
-            slivers: [
-              if (showBanner)
-                SliverToBoxAdapter(child: _buildBanner(context, state.slotLimit)),
+          child: StreamBuilder<InteractionsState>(
+            stream: getIt<InteractionsCubit>().stream,
+            initialData: getIt<InteractionsCubit>().state,
+            builder: (context, snapshot) {
+              final subType = snapshot.data?.subscriptionType ?? 'free';
+              final showBanner = subType.isEmpty || subType.toLowerCase() == 'free';
+              return CustomScrollView(
+                slivers: [
+                  if (showBanner)
+                    SliverToBoxAdapter(child: _buildBanner(context, state.slotLimit)),
 
               // ✅ Requests section
               if (state.requests.isNotEmpty) ...[
@@ -232,6 +236,8 @@ class _UserChatBody extends StatelessWidget {
 
               SliverToBoxAdapter(child: SizedBox(height: 100.h)),
             ],
+          );
+            },
           ),
         );
       },

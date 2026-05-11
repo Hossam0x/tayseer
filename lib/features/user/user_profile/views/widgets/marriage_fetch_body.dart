@@ -326,7 +326,9 @@ List<Map<String, dynamic>> _buildTimelineEvents(dynamic yourGoals) {
       if (profile.aboutMe?.religiousCommitment != null)
         {
           'icon': AssetsData.kdrawingIcon,
-          'label': profile.aboutMe!.religiousCommitment,
+          'label': context.tr(
+            QuestionsData.genderedKey(profile.aboutMe!.religiousCommitment!),
+          ),
         },
     ];
   }
