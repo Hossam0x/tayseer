@@ -1,5 +1,4 @@
-import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:tayseer/core/services/groq_service.dart';
 import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/add_post_state.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository.dart';
@@ -227,48 +226,22 @@ class AddPostCubit extends Cubit<AddPostState> {
 
     emit(state.copyWith(isAiLoading: true));
 
-    final apiKey = dotenv.env['GEMINI_API_KEY'];
-    if (apiKey == null || apiKey.isEmpty) {
-      emit(state.copyWith(isAiLoading: false));
-      ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(
-          context,
-          text: 'Missing AI API key. Configure GEMINI_API_KEY in your .env',
-          isError: true,
-        ),
-      );
-      return;
-    }
-
     try {
-      final model = GenerativeModel(model: 'gemma-3-4b-it', apiKey: apiKey);
-
+      final groq = di.getIt<GroqService>();
       final prompt =
-          '''
-You are a professional social media content creator.
+          'You are a professional social media content creator.\n'
+          'IMPORTANT RULES:\n'
+          '1. Rewrite the text to be engaging, professional, and attractive for social media\n'
+          '2. Add relevant emojis\n'
+          '3. Return ONLY the rewritten text, nothing else\n'
+          'Input text: "$currentText"';
 
-IMPORTANT RULES:
-1. Detect the language of the input text
-2. Rewrite the text in THE SAME LANGUAGE as the input
-3. Make it engaging, professional, and attractive for social media
-4. Add relevant emojis
-5. Do NOT translate - keep the same language
-6. Return ONLY the rewritten text, nothing else
-
-Input text: "$currentText"
-''';
-
-      final content = [Content.text(prompt)];
-      final response = await model.generateContent(content);
-
-      if (response.text != null) {
-        contentController.text = response.text!;
-        emit(state.copyWith(draftText: response.text!, isAiLoading: false));
-      }
+      final result = await groq.generateText(prompt);
+      contentController.text = result;
+      emit(state.copyWith(draftText: result, isAiLoading: false));
     } catch (e) {
-      debugPrint('Gemini AI error: $e');
+      debugPrint('Groq AI error: $e');
       emit(state.copyWith(isAiLoading: false));
-
       ScaffoldMessenger.of(context).showSnackBar(
         CustomSnackBar(
           context,

@@ -120,7 +120,8 @@ import 'package:tayseer/features/advisor/membership/presentation/cubit/membershi
 import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/language_repository.dart';
 
-import '../../features/advisor/notification/presentation/manager/notification_cubit.dart';
+import 'package:tayseer/core/services/groq_service.dart';
+import 'package:tayseer/features/advisor/notification/presentation/manager/notification_cubit.dart';
 import '../../my_import.dart';
 
 final getIt = GetIt.instance;
@@ -148,6 +149,9 @@ Future<void> setupGetIt() async {
 
   /// ApiService
   getIt.registerLazySingleton<ApiService>(() => ApiService(getIt<Dio>()));
+
+  /// GroqService
+  getIt.registerLazySingleton<GroqService>(() => GroqService(Dio()));
 
   /// ConnectivityService
   getIt.registerLazySingleton<ConnectivityService>(() => ConnectivityService());

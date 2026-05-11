@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:tayseer/core/services/groq_service.dart';
+import 'package:tayseer/core/dependancy_injection/get_it.dart' as di;
 import 'package:tayseer/core/utils/profile_event_bus.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/edit_personal_data_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/models/edit_personal_data_models.dart';
@@ -399,28 +400,22 @@ class EditPersonalDataCubit extends Cubit<EditPersonalDataState> {
     }
 
     emit(state.copyWith(isAiState: CubitStates.loading));
-    const apiKey = 'AIzaSyAzkpmYLG58vfNtxPGvfh8Ynix02VNWnUg';
 
     try {
-      final model = GenerativeModel(model: 'gemma-3-4b-it', apiKey: apiKey);
+      final groq = di.getIt<GroqService>();
       final prompt =
-          '''
-أنت كاتب محتوى متخصص في كتابة السِّيَر الذاتية (Bio) للمستشارين والمرشدين الأسريين.
-المطلوب: بايو احترافي لمستشار/مرشد في العلاقات الأسرية.
-النص المُدخل: "$currentText"
-''';
+          'أنت كاتب محتوى متخصص في كتابة السِّيَر الذاتية (Bio) للمستشارين والمرشدين الأسريين.\n'
+          'المطلوب: بايو احترافي لمستشار/مرشد في العلاقات الأسرية.\n'
+          'النص المُدخل: "$currentText"\n'
+          'أرجع النص المحسّن فقط بدون أي شرح إضافي.';
 
-      final content = [Content.text(prompt)];
-      final response = await model.generateContent(content);
-
-      if (response.text != null) {
-        controller.text = response.text!;
-        updateBio(response.text!);
-        emit(state.copyWith(isAiState: CubitStates.success));
-        emit(state.copyWith(isAiState: CubitStates.initial));
-      }
+      final result = await groq.generateText(prompt);
+      controller.text = result;
+      updateBio(result);
+      emit(state.copyWith(isAiState: CubitStates.success));
+      emit(state.copyWith(isAiState: CubitStates.initial));
     } catch (e) {
-      debugPrint('Gemini AI error: $e');
+      debugPrint('Groq AI error: $e');
       emit(state.copyWith(isAiState: CubitStates.failure));
       ScaffoldMessenger.of(context).showSnackBar(
         CustomSnackBar(
