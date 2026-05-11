@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/secure_image_wrapper.dart';
 import 'package:tayseer/my_import.dart';
 
 class FullScreenImageView extends StatefulWidget {
@@ -14,7 +15,6 @@ class FullScreenImageView extends StatefulWidget {
     this.userName,
   });
 
-  /// استخدم دي بدل Navigator.push عشان الخلفية تبقى شفافة
   static Future<void> show(
     BuildContext context, {
     String? imageUrl,
@@ -99,7 +99,6 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
       if (mounted) _arrowHintController.forward();
     });
 
-    // منع الـ zoom out من تعدي الـ 1x
     _transformationController.addListener(_clampScale);
   }
 
@@ -163,13 +162,28 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
 
   void _handleDragEnd() {
     if (_isZoomed) return;
-    final threshold = 120.0;
+    const threshold = 120.0;
     if (_dragY.abs() > threshold) {
       Navigator.pop(context);
     } else {
       _snapStartY = _dragY;
       _snapBackController.forward(from: 0);
     }
+  }
+
+  Widget _buildImage() {
+    if (widget.imageFile != null) {
+      return Image.file(widget.imageFile!, fit: BoxFit.contain);
+    }
+    // ✅ نفس آلية الـ marriage profile card:
+    // iOS  → UiKitView(secure_image_view) بـ instanceId مختلف عن الـ card
+    //        عشان يمنع PlatformException(recreating_view)
+    // Android → AppImage عادي، الحماية من FLAG_SECURE على الـ Window
+    return SecureImageWrapper(
+      imageUrl: widget.imageUrl,
+      instanceId: 'fullscreen',
+      child: AppImage(widget.imageUrl, fit: BoxFit.contain),
+    );
   }
 
   @override
@@ -222,11 +236,7 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
                         _handleDragEnd();
                       }
                     },
-                    child: SizedBox.expand(
-                      child: widget.imageFile != null
-                          ? Image.file(widget.imageFile!, fit: BoxFit.contain)
-                          : AppImage(widget.imageUrl, fit: BoxFit.contain),
-                    ),
+                    child: SizedBox.expand(child: _buildImage()),
                   ),
                 ),
               ),

@@ -8,11 +8,19 @@ import 'dart:async';
 /// Wraps an image URL with a native secure layer.
 /// The image is loaded INSIDE the native secure SurfaceView (Android)
 /// or UITextField secure container (iOS).
+/// [instanceId] — optional suffix للـ key عشان يمنع recreating_view
+/// لما نفس الـ URL يتعرض في أكتر من مكان في نفس الوقت (مثلاً card + full screen)
 class SecureImageWrapper extends StatelessWidget {
   final String? imageUrl;
   final Widget child;
+  final String instanceId;
 
-  const SecureImageWrapper({super.key, required this.child, this.imageUrl});
+  const SecureImageWrapper({
+    super.key,
+    required this.child,
+    this.imageUrl,
+    this.instanceId = 'default',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,10 +30,9 @@ class SecureImageWrapper extends StatelessWidget {
       }
 
       if (defaultTargetPlatform == TargetPlatform.iOS) {
-        // ✅ Key على الـ URL عشان Flutter يعمل dispose للـ view القديم
-        // قبل ما يعمل create للجديد — يمنع PlatformException(recreating_view)
+        // Key = url + instanceId عشان card وfull screen يكون ليهم views مستقلة
         return _IosSecureImage(
-          key: ValueKey(imageUrl),
+          key: ValueKey('${imageUrl}_$instanceId'),
           imageUrl: imageUrl!,
           flutterFallback: child,
         );

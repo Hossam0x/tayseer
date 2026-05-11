@@ -65,11 +65,40 @@ class SecureImageFactory: NSObject, FlutterPlatformViewFactory {
     }
 }
 
+// MARK: - iOS Screenshot Detection (for full screen image protection)
+class IosScreenshotStreamHandler: NSObject, FlutterStreamHandler {
+    private var eventSink: FlutterEventSink?
+    private var observer: NSObjectProtocol?
+
+    func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+        eventSink = events
+        observer = NotificationCenter.default.addObserver(
+            forName: UIApplication.userDidTakeScreenshotNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.eventSink?(true)
+        }
+        return nil
+    }
+
+    func onCancel(withArguments arguments: Any?) -> FlutterError? {
+        if let observer = observer {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        observer = nil
+        eventSink = nil
+        return nil
+    }
+}
+
 @main
 @objc class AppDelegate: FlutterAppDelegate {
 
     var sdkResult: FlutterResult?
     var paymob: PaymobSDK?
+    // ✅ screenshot notification channel للـ full screen image
+    private var screenshotEventSink: FlutterEventSink?
 
     override func application(
         _ application: UIApplication,
@@ -86,6 +115,14 @@ class SecureImageFactory: NSObject, FlutterPlatformViewFactory {
             SecureImageFactory(),
             withId: "secure_image_view"
         )
+
+        // ✅ Screenshot detection channel للـ full screen image على iOS
+        if let controller = window?.rootViewController as? FlutterViewController {
+            FlutterEventChannel(
+                name: "com.athr.tayser/ios_screenshot",
+                binaryMessenger: controller.binaryMessenger
+            ).setStreamHandler(IosScreenshotStreamHandler())
+        }
 
         // ✅ Force Universal Links to stay in app
         if #available(iOS 14.0, *) {
