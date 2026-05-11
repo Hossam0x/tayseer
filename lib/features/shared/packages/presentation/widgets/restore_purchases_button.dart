@@ -3,6 +3,8 @@ import 'package:tayseer/core/services/iap_service.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/advisor/membership/data/models/restore_purchase_result.dart';
 import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
+import 'package:tayseer/features/advisor/membership/presentation/widgets/membership_restore_conflict_dialog.dart';
+import 'package:tayseer/features/advisor/membership/presentation/widgets/membership_success_dialog.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 
@@ -33,7 +35,7 @@ class _RestorePurchasesButtonState extends State<RestorePurchasesButton> {
       log('[Restore] total restored: ${restoredPurchases.length}');
 
       if (restoredPurchases.isEmpty) {
-        _showError('restore_no_receipt');
+        if (mounted) AppToast.error(context, 'restore_no_receipt');
         return;
       }
 
@@ -98,7 +100,7 @@ class _RestorePurchasesButtonState extends State<RestorePurchasesButton> {
       }
 
       if (receipt == null || receipt.isEmpty) {
-        _showError('restore_no_receipt');
+        if (mounted) AppToast.error(context, 'restore_no_receipt');
         return;
       }
 
@@ -106,13 +108,12 @@ class _RestorePurchasesButtonState extends State<RestorePurchasesButton> {
         receipt,
         originalTransactionId: originalTransactionId,
       );
-      result.fold(
-        (failure) => _showError(failure.message),
-        (restoreResult) => _handleResult(restoreResult),
-      );
+      result.fold((failure) {
+        if (mounted) AppToast.error(context, failure.message);
+      }, (restoreResult) => _handleResult(restoreResult));
     } catch (e) {
       log('[Restore] Error: $e');
-      _showError('restore_failed');
+      if (mounted) AppToast.error(context, 'restore_failed');
     } finally {
       if (mounted) setState(() => _isRestoring = false);
     }
@@ -122,25 +123,49 @@ class _RestorePurchasesButtonState extends State<RestorePurchasesButton> {
     if (!mounted) return;
     switch (result.restoreCase) {
       case RestoreCase.noSubscription:
-        _showError(result.message);
+        AppToast.error(context, result.message);
       case RestoreCase.newLink:
         SubscriptionEventBus.instance.fire(
           const SubscriptionChangedEvent(subscriptionType: 'gold'),
         );
-        _showSuccess('restore_membership_success');
+        showMembershipSuccessDialog(
+          context,
+          messageKey: 'restore_membership_success',
+        );
       case RestoreCase.conflict:
-        _showError(result.message);
+        showRestoreConflictDialog(
+          context,
+          message: result.message,
+          onTransfer: () => _transferSubscription(result.purchaseId),
+        );
     }
   }
 
-  void _showError(String key) {
-    if (!mounted) return;
-    AppToast.error(context, key);
-  }
-
-  void _showSuccess(String key) {
-    if (!mounted) return;
-    AppToast.success(context, key);
+  Future<void> _transferSubscription(String? purchaseId) async {
+    if (purchaseId == null || purchaseId.isEmpty) {
+      if (mounted) AppToast.error(context, 'restore_failed');
+      return;
+    }
+    setState(() => _isRestoring = true);
+    try {
+      final repository = getIt<MembershipRepository>();
+      final result = await repository.transferSubscription(purchaseId);
+      if (!mounted) return;
+      result.fold((failure) => AppToast.error(context, failure.message), (_) {
+        SubscriptionEventBus.instance.fire(
+          const SubscriptionChangedEvent(subscriptionType: 'gold'),
+        );
+        showMembershipSuccessDialog(
+          context,
+          messageKey: 'restore_membership_success',
+        );
+      });
+    } catch (e) {
+      log('[Restore Transfer] Error: $e');
+      if (mounted) AppToast.error(context, 'restore_failed');
+    } finally {
+      if (mounted) setState(() => _isRestoring = false);
+    }
   }
 
   @override

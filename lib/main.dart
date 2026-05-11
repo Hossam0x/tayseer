@@ -1,4 +1,5 @@
 import 'package:app_links/app_links.dart';
+import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +8,7 @@ import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:tayseer/core/cache/chat_cache_service.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:tayseer/core/services/appsflyer_service.dart';
 import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/connectivity_service.dart';
 import 'package:tayseer/core/services/deep_link_service.dart';
@@ -85,8 +87,8 @@ void main() async {
   await _initializeVideoSystem();
   await GlobalMuteManager.instance.init();
 
-  // ✅ تهيئة AppsFlyer SDK
-  // await AppsFlyerService.instance.initialize();
+  // ✅ تهيئة AppsFlyer SDK مع ATT على iOS
+  await _initAppsFlyer();
 
   // ✅ نحفظ الـ cold start URI قبل runApp — بدون أي navigation هنا
   await _captureColdStartLink();
@@ -397,4 +399,27 @@ Future<void> _initializeVideoSystem() async {
   } catch (e) {
     debugPrint('⚠️ Error initializing video system: $e');
   }
+}
+
+// ─────────────────────────────────────────────
+// AppsFlyer + ATT
+// ─────────────────────────────────────────────
+
+/// على iOS: نطلب ATT أولاً ثم نهيئ AppsFlyer بغض النظر عن قرار المستخدم.
+/// على Android: نهيئ مباشرة بدون ATT.
+Future<void> _initAppsFlyer() async {
+  if (Platform.isIOS) {
+    // ✅ نتحقق من الحالة الحالية — لو مش determined نطلب الإذن
+    final status = await AppTrackingTransparency.trackingAuthorizationStatus;
+    if (status == TrackingStatus.notDetermined) {
+      // نأخر قليلاً عشان الـ UI يكون جاهز (Apple requirement)
+      await Future.delayed(const Duration(milliseconds: 200));
+      await AppTrackingTransparency.requestTrackingAuthorization();
+    }
+    debugPrint('📊 ATT status: $status');
+  }
+
+  // ✅ نهيئ AppsFlyer بغض النظر عن قرار ATT
+  // AppsFlyer SDK بيتعامل مع الـ limited tracking تلقائياً
+  await AppsFlyerService.instance.initialize();
 }
