@@ -327,20 +327,19 @@ class MarriageCubit extends Cubit<MarriageState> {
   // FETCH NOTIFICATION COUNT
   // ═══════════════════════════════════════════════════════════════
   Future<void> fetchNotificationCount() async {
+    if (isClosed) return;
     final result = await _repo.getInteractionNotificationCount();
-    result.fold(
-      (failure) => print('❌ fetchNotificationCount failed: ${failure.message}'),
-      (model) {
-        emit(
-          state.copyWith(
-            interactionsNotificationCount: model.total,
-            likesNotificationCount: model.likes,
-            favoritesNotificationCount: model.favorites,
-            regardsNotificationCount: model.regards,
-          ),
-        );
-      },
-    );
+    if (isClosed) return;
+    result.fold((failure) => null, (model) {
+      emit(
+        state.copyWith(
+          interactionsNotificationCount: model.total,
+          likesNotificationCount: model.likes,
+          favoritesNotificationCount: model.favorites,
+          regardsNotificationCount: model.regards,
+        ),
+      );
+    });
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -396,7 +395,8 @@ class MarriageCubit extends Cubit<MarriageState> {
         final data = failure is ServerFailure ? failure.data : null;
         final likesLeft = data?['likesLeft'] as int?;
         final regardsLeft = data?['regardsLeft'] as int?;
-        final requiresSubscription = data?['requiresSubscription'] as bool? ?? false;
+        final requiresSubscription =
+            data?['requiresSubscription'] as bool? ?? false;
         emit(
           state.copyWith(
             userInteractionState: CubitStates.failure,
@@ -451,9 +451,13 @@ class MarriageCubit extends Cubit<MarriageState> {
         final data = failure is ServerFailure ? failure.data : null;
         final likesLeft = data?['likesLeft'] as int?;
         final regardsLeftFromData = data?['regardsLeft'] as int?;
-        final regardsLeft = regardsLeftFromData ??
-            (failure.message?.toLowerCase().contains('no regards') == true ? 0 : null);
-        final requiresSubscription = data?['requiresSubscription'] as bool? ?? false;
+        final regardsLeft =
+            regardsLeftFromData ??
+            (failure.message?.toLowerCase().contains('no regards') == true
+                ? 0
+                : null);
+        final requiresSubscription =
+            data?['requiresSubscription'] as bool? ?? false;
         emit(
           state.copyWith(
             sendRegardState: CubitStates.failure,
@@ -513,13 +517,18 @@ class MarriageCubit extends Cubit<MarriageState> {
       countView: countView,
     );
 
+    if (isClosed) return;
     result.fold(
       (failure) {
         final data = failure is ServerFailure ? failure.data : null;
         final regardsLeftFromData = data?['regardsLeft'] as int?;
-        final regardsLeft = regardsLeftFromData ??
-            (failure.message?.toLowerCase().contains('no regards') == true ? 0 : null);
-        final requiresSubscription = data?['requiresSubscription'] as bool? ?? false;
+        final regardsLeft =
+            regardsLeftFromData ??
+            (failure.message?.toLowerCase().contains('no regards') == true
+                ? 0
+                : null);
+        final requiresSubscription =
+            data?['requiresSubscription'] as bool? ?? false;
         emit(
           state.copyWith(
             sendRegardTextState: CubitStates.failure,
@@ -835,19 +844,26 @@ class MarriageCubit extends Cubit<MarriageState> {
       filters: state.activeFilters,
     );
 
-    result.fold((_) => emit(state.copyWith(isLoadingMore: false)), (profile) {
-      if (isClosed) return;
-      emit(
-        state.copyWith(
-          isLoadingMore: false,
-          allUsers: [...state.allUsers, ...profile.data?.users ?? []],
-          currentPage:
-              profile.data?.pagination?.currentPage ?? state.currentPage,
-          totalPages: profile.data?.pagination?.totalPages ?? state.totalPages,
-          favoritedIds: state.favoritedIds,
-        ),
-      );
-    });
+    result.fold(
+      (_) {
+        if (isClosed) return;
+        emit(state.copyWith(isLoadingMore: false));
+      },
+      (profile) {
+        if (isClosed) return;
+        emit(
+          state.copyWith(
+            isLoadingMore: false,
+            allUsers: [...state.allUsers, ...profile.data?.users ?? []],
+            currentPage:
+                profile.data?.pagination?.currentPage ?? state.currentPage,
+            totalPages:
+                profile.data?.pagination?.totalPages ?? state.totalPages,
+            favoritedIds: state.favoritedIds,
+          ),
+        );
+      },
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -868,10 +884,12 @@ class MarriageCubit extends Cubit<MarriageState> {
     if (!isGoldOrUltra) {
       if ((state.likesLeft != null && state.likesLeft! <= 0) ||
           state.requiresSubscription) {
-        emit(state.copyWith(
-          userInteractionState: CubitStates.failure,
-          likesLeft: 0,
-        ));
+        emit(
+          state.copyWith(
+            userInteractionState: CubitStates.failure,
+            likesLeft: 0,
+          ),
+        );
         return;
       }
     }
@@ -886,11 +904,9 @@ class MarriageCubit extends Cubit<MarriageState> {
     // ✅ لو فشل بسبب likesLeft = 0 من الـ API response → ارجع بدون ما تشيل اليوزر
     if (state.userInteractionState == CubitStates.failure &&
         state.likesLeft == 0) {
-      emit(state.copyWith(
-        swipeDirection: 0,
-        swipeProgress: 0,
-        isAnimating: false,
-      ));
+      emit(
+        state.copyWith(swipeDirection: 0, swipeProgress: 0, isAnimating: false),
+      );
       return;
     }
 
@@ -1117,10 +1133,7 @@ class MarriageCubit extends Cubit<MarriageState> {
 
         // ✅ لو كان removeFromList وفشل الـ API، ارجع اليوزر للـ list
         if (removeFromList && removedUserForRevert != null) {
-          final revertedUsers = [
-            removedUserForRevert!,
-            ...state.allUsers,
-          ];
+          final revertedUsers = [removedUserForRevert!, ...state.allUsers];
           final revertedHistory = state.userHistory.isNotEmpty
               ? state.userHistory.sublist(0, state.userHistory.length - 1)
               : <UserItem>[];
@@ -1145,6 +1158,7 @@ class MarriageCubit extends Cubit<MarriageState> {
         }
       },
       (_) {
+        if (isClosed) return;
         fetchNotificationCount();
       },
     );
@@ -1228,9 +1242,8 @@ class MarriageCubit extends Cubit<MarriageState> {
     );
 
     await _repo.resetLikesNotificationCount();
-  }
+  } // ═══════════════════════════════════════════════════════════════
 
-  // ═══════════════════════════════════════════════════════════════
   // RESET NOTIFICATION FOR FILTER
   // ═══════════════════════════════════════════════════════════════
   Future<void> resetNotificationForFilter(String filter) async {

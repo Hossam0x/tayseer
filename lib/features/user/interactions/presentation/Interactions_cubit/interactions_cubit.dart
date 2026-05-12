@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/core/errors/failure.dart';
+import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/user/interactions/data/repos/interactions_repository.dart';
 import '../../data/Model/interaction_usermodel .dart';
 import '../../data/Model/history_response_model.dart';
@@ -13,7 +15,30 @@ class InteractionsCubit extends Cubit<InteractionsState> {
   final Set<String> _pendingRemovalFavorites = {};
   final Set<String> _pendingAddFavorites = {};
 
-  InteractionsCubit(this.repository) : super(const InteractionsState());
+  late final StreamSubscription<SubscriptionChangedEvent> _subEventSubscription;
+
+  InteractionsCubit(this.repository) : super(const InteractionsState()) {
+    // ✅ استمع لأي تغيير في الاشتراك وحدّث الـ state فوراً
+    _subEventSubscription = SubscriptionEventBus.instance.onSubscriptionChanged
+        .listen((event) {
+          if (isClosed) return;
+          final isSubscribed =
+              event.subscriptionType == 'gold' ||
+              event.subscriptionType == 'ultra';
+          emit(
+            state.copyWith(
+              isSubscribed: isSubscribed,
+              subscriptionType: event.subscriptionType,
+            ),
+          );
+        });
+  }
+
+  @override
+  Future<void> close() {
+    _subEventSubscription.cancel();
+    return super.close();
+  }
 
   // ═══════════════════════════════════════════════════════════════════
   // SUBSCRIPTION STATUS

@@ -4,26 +4,41 @@ import 'dart:io';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/services.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/services/iap_service.dart';
 import 'package:tayseer/core/shared/network/local_network.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
+import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
+import 'package:tayseer/features/advisor/membership/data/models/restore_purchase_result.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/models/new_user_sub_model.dart';
 
-enum UserSubStatus { initial, purchasing, success, canceled, error }
+enum UserSubStatus {
+  initial,
+  purchasing,
+  success,
+  canceled,
+  error,
+  needsTransfer, // ✅ Apple purchase نجح لكن الاشتراك على account تاني
+}
 
 class UserSubscriptionState extends Equatable {
   final int selectedDurationIndex;
   final SelectedPackage packageType;
   final UserSubStatus status;
   final String? error;
+  final String?
+  transferPurchaseId; // ✅ purchaseId للـ transfer في حالة CONFLICT
 
   const UserSubscriptionState({
     this.selectedDurationIndex = 0,
     required this.packageType,
     this.status = UserSubStatus.initial,
     this.error,
+    this.transferPurchaseId,
   });
 
   UserSubscriptionState copyWith({
@@ -31,6 +46,7 @@ class UserSubscriptionState extends Equatable {
     SelectedPackage? packageType,
     UserSubStatus? status,
     String? error,
+    String? transferPurchaseId,
   }) {
     return UserSubscriptionState(
       selectedDurationIndex:
@@ -38,6 +54,7 @@ class UserSubscriptionState extends Equatable {
       packageType: packageType ?? this.packageType,
       status: status ?? this.status,
       error: error,
+      transferPurchaseId: transferPurchaseId ?? this.transferPurchaseId,
     );
   }
 
@@ -47,14 +64,19 @@ class UserSubscriptionState extends Equatable {
     packageType,
     status,
     error,
+    transferPurchaseId,
   ];
 }
 
 class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
   final IAPService _iapService;
+  final MembershipRepository _membershipRepository;
 
-  UserSubscriptionCubit(SelectedPackage packageType, this._iapService)
-    : super(UserSubscriptionState(packageType: packageType));
+  UserSubscriptionCubit(
+    SelectedPackage packageType,
+    this._iapService,
+    this._membershipRepository,
+  ) : super(UserSubscriptionState(packageType: packageType));
 
   List<NewUserSubModel> getSubscriptionsForPackage(
     List<NewUserSubModel> allSubs,
@@ -140,8 +162,6 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
     if (subs[index].isCurrentSub) return;
     emit(state.copyWith(selectedDurationIndex: index));
   }
-
-  void resetStatus() => emit(state.copyWith(status: UserSubStatus.initial));
 
   Future<void> purchaseSubscription(List<NewUserSubModel> allSubs) async {
     final subs = getSubscriptionsForPackage(allSubs);
@@ -276,9 +296,18 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
       );
       log('[UserSub]   status                    : ${purchase.status}');
 
-      // ── Step 3: Success ───────────────────────────────────────────────────
+      // ── Step 3: Restore على الباك-إند عشان نتحقق من الـ ownership ──────────
       // Apple بتكلم الباك مباشرة عن طريق server-to-server notifications
-      // transfer-subscription بتتبعت بس في الـ restore flow مش هنا
+      // لكن لو الاشتراك كان على account تاني (CONFLICT)، لازم نعمل transfer
+      final restoreResult = await _tryRestoreAfterPurchase(purchase);
+      if (isClosed) return;
+
+      if (restoreResult == _RestoreOutcome.conflict) {
+        // الـ UI هيعرض dialog للـ transfer — مش نعتبره success لسه
+        return;
+      }
+
+      // NEW_LINK أو مفيش restore (Apple server-to-server هيتكلم) → success
       SubscriptionEventBus.instance.fire(
         SubscriptionChangedEvent(subscriptionType: targetSub.subscriptionType),
       );
@@ -293,4 +322,138 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
       );
     }
   }
+
+  // ── Restore after purchase ──────────────────────────────────────────────────
+
+  /// بعد نجاح Apple IAP، نعمل restore على الباك-إند عشان نتحقق من الـ ownership.
+  /// لو الاشتراك كان على account تاني (CONFLICT) → نعمل emit بـ needsTransfer.
+  /// لو NEW_LINK أو مفيش مشكلة → نرجع success.
+  Future<_RestoreOutcome> _tryRestoreAfterPurchase(
+    PurchaseDetails purchase,
+  ) async {
+    try {
+      log('[UserSub] 🔄 Running post-purchase restore check...');
+
+      String? receipt;
+
+      if (Platform.isIOS) {
+        if (purchase is SK2PurchaseDetails) {
+          // ── SK2: جرب الـ serverVerificationData أولاً ──────────────────
+          final jws = purchase.verificationData.serverVerificationData;
+          if (jws.isNotEmpty) {
+            receipt = jws;
+            log('[UserSub] ✅ Got JWS from SK2 purchase directly');
+          } else {
+            // ── Fallback: جيب من native getCurrentEntitlementsJWS ─────────
+            // أسرع وأموثوق من restoreAndCollect في هذا السياق
+            log(
+              '[UserSub] 🔍 SK2 JWS empty — fetching from native entitlements',
+            );
+            receipt = await _getJWSFromNativeEntitlements();
+          }
+        } else if (purchase is AppStorePurchaseDetails) {
+          receipt =
+              purchase.skPaymentTransaction.payment.applicationUsername ??
+              purchase.verificationData.serverVerificationData;
+        }
+      }
+
+      if (receipt == null || receipt.isEmpty) {
+        log('[UserSub] ⚠️ No receipt for restore check — skipping');
+        return _RestoreOutcome.noReceipt;
+      }
+
+      log(
+        '[UserSub] 📤 Sending receipt to backend (length: ${receipt.length})',
+      );
+      final result = await _membershipRepository.restorePurchase(receipt);
+      if (isClosed) return _RestoreOutcome.noReceipt;
+
+      return result.fold(
+        (failure) {
+          log(
+            '[UserSub] ⚠️ Restore check failed: ${failure.message} — treating as success',
+          );
+          return _RestoreOutcome.success;
+        },
+        (restoreResult) {
+          switch (restoreResult.restoreCase) {
+            case RestoreCase.conflict:
+              log('[UserSub] ⚠️ CONFLICT — subscription on another account');
+              emit(
+                state.copyWith(
+                  status: UserSubStatus.needsTransfer,
+                  transferPurchaseId: restoreResult.purchaseId,
+                ),
+              );
+              return _RestoreOutcome.conflict;
+            case RestoreCase.newLink:
+              log('[UserSub] ✅ NEW_LINK — subscription linked to this account');
+              return _RestoreOutcome.success;
+            case RestoreCase.noSubscription:
+              log(
+                '[UserSub] ℹ️ NO_SUBSCRIPTION — Apple server-to-server will handle',
+              );
+              return _RestoreOutcome.success;
+          }
+        },
+      );
+    } catch (e) {
+      log('[UserSub] ⚠️ Restore check exception: $e — treating as success');
+      return _RestoreOutcome.noReceipt;
+    }
+  }
+
+  /// يجيب الـ JWS من native getCurrentEntitlementsJWS channel.
+  /// أسرع من restoreAndCollect لأنه بيجيب الـ current entitlements مباشرة.
+  Future<String?> _getJWSFromNativeEntitlements() async {
+    try {
+      const channel = MethodChannel('com.athr.tayser/iap_jws');
+      final List<dynamic> rawList = await channel.invokeMethod(
+        'getCurrentEntitlementsJWS',
+      );
+      log('[UserSub] Native entitlements count: ${rawList.length}');
+      for (final item in rawList) {
+        if (item is Map) {
+          final jws = item['jws']?.toString() ?? '';
+          if (jws.isNotEmpty) {
+            log('[UserSub] ✅ Got JWS from native entitlements');
+            return jws;
+          }
+        }
+      }
+      log('[UserSub] ⚠️ No JWS found in native entitlements');
+      return null;
+    } catch (e) {
+      log('[UserSub] ❌ Native entitlements error: $e');
+      return null;
+    }
+  }
+
+  /// يعمل transfer للاشتراك من account تاني للـ account الحالي.
+  Future<void> transferSubscription(String purchaseId) async {
+    if (isClosed) return;
+    emit(state.copyWith(status: UserSubStatus.purchasing));
+
+    final result = await _membershipRepository.transferSubscription(purchaseId);
+    if (isClosed) return;
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(status: UserSubStatus.error, error: failure.message),
+        );
+      },
+      (_) {
+        SubscriptionEventBus.instance.fire(
+          const SubscriptionChangedEvent(subscriptionType: 'gold'),
+        );
+        emit(state.copyWith(status: UserSubStatus.success));
+      },
+    );
+  }
+
+  void resetStatus() => emit(state.copyWith(status: UserSubStatus.initial));
 }
+
+enum _RestoreOutcome { success, conflict, noReceipt }

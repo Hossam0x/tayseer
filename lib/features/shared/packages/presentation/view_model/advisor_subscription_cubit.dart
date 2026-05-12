@@ -4,26 +4,41 @@ import 'dart:io';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/services.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/services/iap_service.dart';
 import 'package:tayseer/core/shared/network/local_network.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
+import 'package:tayseer/features/advisor/membership/data/models/restore_purchase_result.dart';
+import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
 import 'package:tayseer/features/shared/packages/data/models/new_advisor_sub_model.dart';
 import 'packages_cubit.dart';
 
-enum AdvisorSubStatus { initial, purchasing, success, canceled, error }
+enum AdvisorSubStatus {
+  initial,
+  purchasing,
+  success,
+  canceled,
+  error,
+  needsTransfer, // ✅ Apple purchase نجح لكن الاشتراك على account تاني
+}
 
 class AdvisorSubscriptionState extends Equatable {
   final int selectedDurationIndex;
   final SelectedPackage packageType;
   final AdvisorSubStatus status;
   final String? error;
+  final String?
+  transferPurchaseId; // ✅ purchaseId للـ transfer في حالة CONFLICT
 
   const AdvisorSubscriptionState({
     this.selectedDurationIndex = 0,
     required this.packageType,
     this.status = AdvisorSubStatus.initial,
     this.error,
+    this.transferPurchaseId,
   });
 
   AdvisorSubscriptionState copyWith({
@@ -31,6 +46,7 @@ class AdvisorSubscriptionState extends Equatable {
     SelectedPackage? packageType,
     AdvisorSubStatus? status,
     String? error,
+    String? transferPurchaseId,
   }) {
     return AdvisorSubscriptionState(
       selectedDurationIndex:
@@ -38,6 +54,7 @@ class AdvisorSubscriptionState extends Equatable {
       packageType: packageType ?? this.packageType,
       status: status ?? this.status,
       error: error,
+      transferPurchaseId: transferPurchaseId ?? this.transferPurchaseId,
     );
   }
 
@@ -47,14 +64,19 @@ class AdvisorSubscriptionState extends Equatable {
     packageType,
     status,
     error,
+    transferPurchaseId,
   ];
 }
 
 class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
   final IAPService _iapService;
+  final MembershipRepository _membershipRepository;
 
-  AdvisorSubscriptionCubit(SelectedPackage packageType, this._iapService)
-    : super(AdvisorSubscriptionState(packageType: packageType));
+  AdvisorSubscriptionCubit(
+    SelectedPackage packageType,
+    this._iapService,
+    this._membershipRepository,
+  ) : super(AdvisorSubscriptionState(packageType: packageType));
 
   /// ترتيب المدة: weekly=0, monthly=1, threemonths=2
   int _durationWeight(NewAdvisorSubModel s) {
@@ -142,8 +164,6 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
     if (subs[index].isCurrentSub) return;
     emit(state.copyWith(selectedDurationIndex: index));
   }
-
-  void resetStatus() => emit(state.copyWith(status: AdvisorSubStatus.initial));
 
   Future<void> purchaseSubscription(List<NewAdvisorSubModel> allSubs) async {
     final subs = getSubscriptionsForPackage(allSubs);
@@ -289,9 +309,18 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
       );
       log('[AdvisorSub]   status                    : ${purchase.status}');
 
-      // ── Step 3: Success ───────────────────────────────────────────────────
+      // ── Step 3: Restore على الباك-إند عشان نتحقق من الـ ownership ──────────
       // Apple بتكلم الباك مباشرة عن طريق server-to-server notifications
-      // transfer-subscription بتتبعت بس في الـ restore flow مش هنا
+      // لكن لو الاشتراك كان على account تاني (CONFLICT)، لازم نعمل transfer
+      final restoreResult = await _tryRestoreAfterPurchase(purchase);
+      if (isClosed) return;
+
+      if (restoreResult == _AdvisorRestoreOutcome.conflict) {
+        // الـ UI هيعرض dialog للـ transfer — مش نعتبره success لسه
+        return;
+      }
+
+      // NEW_LINK أو مفيش restore (Apple server-to-server هيتكلم) → success
       final newType = targetSub.subscriptionType;
       SubscriptionEventBus.instance.fire(
         SubscriptionChangedEvent(subscriptionType: newType),
@@ -309,4 +338,134 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
       );
     }
   }
+
+  // ── Restore after purchase ──────────────────────────────────────────────────
+
+  Future<_AdvisorRestoreOutcome> _tryRestoreAfterPurchase(
+    PurchaseDetails purchase,
+  ) async {
+    try {
+      log('[AdvisorSub] 🔄 Running post-purchase restore check...');
+
+      String? receipt;
+      if (Platform.isIOS) {
+        if (purchase is SK2PurchaseDetails) {
+          final jws = purchase.verificationData.serverVerificationData;
+          if (jws.isNotEmpty) {
+            receipt = jws;
+            log('[AdvisorSub] ✅ Got JWS from SK2 purchase directly');
+          } else {
+            log(
+              '[AdvisorSub] 🔍 SK2 JWS empty — fetching from native entitlements',
+            );
+            receipt = await _getJWSFromNativeEntitlements();
+          }
+        } else if (purchase is AppStorePurchaseDetails) {
+          receipt =
+              purchase.skPaymentTransaction.payment.applicationUsername ??
+              purchase.verificationData.serverVerificationData;
+        }
+      }
+
+      if (receipt == null || receipt.isEmpty) {
+        log('[AdvisorSub] ⚠️ No receipt for restore check — skipping');
+        return _AdvisorRestoreOutcome.noReceipt;
+      }
+
+      log(
+        '[AdvisorSub] 📤 Sending receipt to backend (length: ${receipt.length})',
+      );
+      final result = await _membershipRepository.restorePurchase(receipt);
+      if (isClosed) return _AdvisorRestoreOutcome.noReceipt;
+
+      return result.fold(
+        (failure) {
+          log(
+            '[AdvisorSub] ⚠️ Restore check failed: ${failure.message} — treating as success',
+          );
+          return _AdvisorRestoreOutcome.success;
+        },
+        (restoreResult) {
+          switch (restoreResult.restoreCase) {
+            case RestoreCase.conflict:
+              log('[AdvisorSub] ⚠️ CONFLICT — subscription on another account');
+              emit(
+                state.copyWith(
+                  status: AdvisorSubStatus.needsTransfer,
+                  transferPurchaseId: restoreResult.purchaseId,
+                ),
+              );
+              return _AdvisorRestoreOutcome.conflict;
+            case RestoreCase.newLink:
+              log(
+                '[AdvisorSub] ✅ NEW_LINK — subscription linked to this account',
+              );
+              return _AdvisorRestoreOutcome.success;
+            case RestoreCase.noSubscription:
+              log(
+                '[AdvisorSub] ℹ️ NO_SUBSCRIPTION — Apple server-to-server will handle',
+              );
+              return _AdvisorRestoreOutcome.success;
+          }
+        },
+      );
+    } catch (e) {
+      log('[AdvisorSub] ⚠️ Restore check exception: $e — treating as success');
+      return _AdvisorRestoreOutcome.noReceipt;
+    }
+  }
+
+  Future<String?> _getJWSFromNativeEntitlements() async {
+    try {
+      const channel = MethodChannel('com.athr.tayser/iap_jws');
+      final List<dynamic> rawList = await channel.invokeMethod(
+        'getCurrentEntitlementsJWS',
+      );
+      log('[AdvisorSub] Native entitlements count: ${rawList.length}');
+      for (final item in rawList) {
+        if (item is Map) {
+          final jws = item['jws']?.toString() ?? '';
+          if (jws.isNotEmpty) {
+            log('[AdvisorSub] ✅ Got JWS from native entitlements');
+            return jws;
+          }
+        }
+      }
+      log('[AdvisorSub] ⚠️ No JWS found in native entitlements');
+      return null;
+    } catch (e) {
+      log('[AdvisorSub] ❌ Native entitlements error: $e');
+      return null;
+    }
+  }
+
+  /// يعمل transfer للاشتراك من account تاني للـ account الحالي.
+  Future<void> transferSubscription(String purchaseId) async {
+    if (isClosed) return;
+    emit(state.copyWith(status: AdvisorSubStatus.purchasing));
+
+    final result = await _membershipRepository.transferSubscription(purchaseId);
+    if (isClosed) return;
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            status: AdvisorSubStatus.error,
+            error: failure.message,
+          ),
+        );
+      },
+      (_) {
+        SubscriptionEventBus.instance.fire(
+          const SubscriptionChangedEvent(subscriptionType: 'gold'),
+        );
+        emit(state.copyWith(status: AdvisorSubStatus.success));
+      },
+    );
+  }
+
+  void resetStatus() => emit(state.copyWith(status: AdvisorSubStatus.initial));
 }
+
+enum _AdvisorRestoreOutcome { success, conflict, noReceipt }

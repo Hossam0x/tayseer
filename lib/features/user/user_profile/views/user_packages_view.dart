@@ -33,6 +33,7 @@ class UserPackagesView extends StatelessWidget {
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final fromPartnerFilter = args?['fromPartnerFilter'] == true;
+    final fromOnboarding = args?['fromOnboarding'] == true;
     return MultiBlocProvider(
       providers: [
         BlocProvider(
@@ -40,15 +41,22 @@ class UserPackagesView extends StatelessWidget {
         ),
         BlocProvider(create: (context) => PackageSelectionCubit()),
       ],
-      child: _UserPackagesViewContent(fromPartnerFilter: fromPartnerFilter),
+      child: _UserPackagesViewContent(
+        fromPartnerFilter: fromPartnerFilter,
+        fromOnboarding: fromOnboarding,
+      ),
     );
   }
 }
 
 class _UserPackagesViewContent extends StatefulWidget {
-  const _UserPackagesViewContent({this.fromPartnerFilter = false});
+  const _UserPackagesViewContent({
+    this.fromPartnerFilter = false,
+    this.fromOnboarding = false,
+  });
 
   final bool fromPartnerFilter;
+  final bool fromOnboarding;
 
   @override
   State<_UserPackagesViewContent> createState() =>
@@ -888,7 +896,7 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
 
   void _onActionButtonPressed(BuildContext context, PackageType packageType) {
     if (packageType == PackageType.basic) {
-      if (widget.fromPartnerFilter) {
+      if (widget.fromPartnerFilter || widget.fromOnboarding) {
         Navigator.pushNamedAndRemoveUntil(
           context,
           AppRouter.kUserLayoutView,

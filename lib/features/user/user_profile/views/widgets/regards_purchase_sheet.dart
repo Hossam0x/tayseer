@@ -1,5 +1,10 @@
 import 'dart:async';
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:tayseer/core/services/iap_service.dart';
+import 'package:tayseer/core/utils/subscription_event_bus.dart';
+import 'package:tayseer/features/advisor/membership/data/models/restore_purchase_result.dart';
+import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
+import 'package:tayseer/features/advisor/membership/presentation/widgets/membership_restore_conflict_dialog.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/user/marriage/model/regards_package_model.dart';
 import 'package:tayseer/features/user/marriage/view_model/regards_packages_cubit.dart';
@@ -151,8 +156,11 @@ void showGoldPurchaseSheet(BuildContext context, {VoidCallback? onDismiss}) {
     builder: (_) => MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (_) =>
-              UserSubscriptionCubit(SelectedPackage.pro, getIt<IAPService>()),
+          create: (_) => UserSubscriptionCubit(
+            SelectedPackage.pro,
+            getIt<IAPService>(),
+            getIt<MembershipRepository>(),
+          ),
         ),
         BlocProvider(create: (_) => getIt<UserPackagesCubit>()..getPackages()),
       ],
@@ -175,8 +183,11 @@ void showViewLimitPurchaseSheet(
     builder: (_) => MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (_) =>
-              UserSubscriptionCubit(SelectedPackage.pro, getIt<IAPService>()),
+          create: (_) => UserSubscriptionCubit(
+            SelectedPackage.pro,
+            getIt<IAPService>(),
+            getIt<MembershipRepository>(),
+          ),
         ),
         BlocProvider(create: (_) => getIt<UserPackagesCubit>()..getPackages()),
       ],
@@ -373,17 +384,26 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
   // ════════════════════════════════════
   Widget _buildGoldSheet(BuildContext context) {
     return BlocConsumer<UserSubscriptionCubit, UserSubscriptionState>(
+      listenWhen: (prev, curr) => prev.status != curr.status,
       listener: (context, state) {
         if (state.status == UserSubStatus.success) {
           Navigator.pop(context);
-          // ✅ لا حاجة لاستدعاء getPackages هنا
-          // ✅ الصفحات الأخرى تستمع لـ SubscriptionEventBus وتحدث نفسها تلقائياً
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
               text: context.tr('subscription_activated'),
               isSuccess: true,
             ),
+          );
+        } else if (state.status == UserSubStatus.needsTransfer) {
+          // ✅ الاشتراك على account تاني — اعرض dialog للـ transfer
+          final purchaseId = state.transferPurchaseId ?? '';
+          showRestoreConflictDialog(
+            context,
+            message: context.tr('restore_conflict_desc'),
+            onTransfer: () => context
+                .read<UserSubscriptionCubit>()
+                .transferSubscription(purchaseId),
           );
         } else if (state.status == UserSubStatus.error && state.error != null) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -577,6 +597,32 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                     style: TextStyle(fontSize: 11.sp, color: Colors.black38),
                     textAlign: TextAlign.center,
                   ),
+
+                  // ── Restore Purchases ──
+                  if (Platform.isIOS) ...[
+                    SizedBox(height: 4.h),
+                    _GoldSheetRestoreButton(
+                      onNeedsTransfer: (purchaseId) {
+                        showRestoreConflictDialog(
+                          context,
+                          message: context.tr('restore_conflict_desc'),
+                          onTransfer: () => context
+                              .read<UserSubscriptionCubit>()
+                              .transferSubscription(purchaseId),
+                        );
+                      },
+                      onSuccess: () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          CustomSnackBar(
+                            context,
+                            text: context.tr('subscription_activated'),
+                            isSuccess: true,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ],
               ),
             );
@@ -1048,6 +1094,143 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════
+// GOLD SHEET RESTORE BUTTON
+// ═══════════════════════════════════════
+
+/// زرار Restore Purchases مخصص للـ gold sheet.
+/// بيستخدم نفس منطق RestorePurchasesButton لكن بيستدعي callbacks
+/// عشان يتكامل مع الـ UserSubscriptionCubit الموجود في الـ context.
+class _GoldSheetRestoreButton extends StatefulWidget {
+  final void Function(String purchaseId) onNeedsTransfer;
+  final VoidCallback onSuccess;
+
+  const _GoldSheetRestoreButton({
+    required this.onNeedsTransfer,
+    required this.onSuccess,
+  });
+
+  @override
+  State<_GoldSheetRestoreButton> createState() =>
+      _GoldSheetRestoreButtonState();
+}
+
+class _GoldSheetRestoreButtonState extends State<_GoldSheetRestoreButton> {
+  bool _isRestoring = false;
+
+  Future<void> _restore() async {
+    if (_isRestoring) return;
+    setState(() => _isRestoring = true);
+
+    try {
+      final iapService = getIt<IAPService>();
+      final repository = getIt<MembershipRepository>();
+
+      final restoredPurchases = await iapService.restoreAndCollect();
+
+      if (restoredPurchases.isEmpty) {
+        if (mounted) AppToast.error(context, context.tr('restore_no_receipt'));
+        return;
+      }
+
+      // جيب الـ JWS من الـ SK2 purchase
+      String? receipt;
+      if (Platform.isIOS) {
+        final sk2Purchase = restoredPurchases.reversed
+            .whereType<SK2PurchaseDetails>()
+            .firstOrNull;
+        if (sk2Purchase != null) {
+          final jws = sk2Purchase.verificationData.serverVerificationData;
+          if (jws.isNotEmpty) receipt = jws;
+        }
+        // SK1 fallback
+        if (receipt == null || receipt.isEmpty) {
+          for (final p in restoredPurchases.reversed) {
+            if (p is AppStorePurchaseDetails) {
+              final appUsername =
+                  p.skPaymentTransaction.payment.applicationUsername;
+              if (appUsername != null && appUsername.isNotEmpty) {
+                receipt = appUsername;
+                break;
+              }
+            }
+          }
+          if (receipt == null || receipt.isEmpty) {
+            final serverData =
+                restoredPurchases.last.verificationData.serverVerificationData;
+            if (serverData.isNotEmpty) receipt = serverData;
+          }
+        }
+      }
+
+      if (receipt == null || receipt.isEmpty) {
+        if (mounted) AppToast.error(context, context.tr('restore_no_receipt'));
+        return;
+      }
+
+      final result = await repository.restorePurchase(receipt);
+      if (!mounted) return;
+
+      result.fold((failure) => AppToast.error(context, failure.message), (
+        restoreResult,
+      ) {
+        switch (restoreResult.restoreCase) {
+          case RestoreCase.noSubscription:
+            AppToast.error(context, restoreResult.message);
+          case RestoreCase.newLink:
+            SubscriptionEventBus.instance.fire(
+              const SubscriptionChangedEvent(subscriptionType: 'gold'),
+            );
+            widget.onSuccess();
+          case RestoreCase.conflict:
+            widget.onNeedsTransfer(restoreResult.purchaseId ?? '');
+        }
+      });
+    } catch (e) {
+      if (mounted) AppToast.error(context, context.tr('restore_failed'));
+    } finally {
+      if (mounted) setState(() => _isRestoring = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const color = Color(0xFF8B6914); // _goldDark
+
+    if (_isRestoring) {
+      return SizedBox(
+        height: 36.h,
+        child: Center(
+          child: SizedBox(
+            width: 18.w,
+            height: 18.w,
+            child: const CircularProgressIndicator(
+              strokeWidth: 2,
+              color: color,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return TextButton(
+      onPressed: _restore,
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      ),
+      child: Text(
+        context.tr('restore_membership'),
+        style: TextStyle(
+          fontSize: 13.sp,
+          color: color,
+          decoration: TextDecoration.underline,
+          decorationColor: color,
         ),
       ),
     );

@@ -9,12 +9,16 @@ class SimilarUsersSection extends StatefulWidget {
     required this.users,
     required this.pagination,
     this.onLoadMore,
+    this.onUserVisited,
     this.isLoadingMore = false,
   });
 
   final List<SimilarUserModel> users;
   final PaginationModel? pagination;
   final VoidCallback? onLoadMore;
+
+  /// يُستدعى بعد ما اليوزر يدخل على البروفايل — يشيل الكارت من الـ list
+  final Function(String userId)? onUserVisited;
   final bool isLoadingMore;
 
   @override
@@ -93,8 +97,10 @@ class _SimilarUsersSectionState extends State<SimilarUsersSection> {
               itemCount: widget.users.length,
               onPageChanged: _onPageChanged,
               itemBuilder: (context, index) => _SimilarUserCard(
+                key: ValueKey(widget.users[index].id),
                 user: widget.users[index],
                 isSelected: _currentPage == index,
+                onUserVisited: widget.onUserVisited,
               ),
             ),
           ),
@@ -119,10 +125,16 @@ class _SimilarUsersSectionState extends State<SimilarUsersSection> {
 }
 
 class _SimilarUserCard extends StatelessWidget {
-  const _SimilarUserCard({required this.user, required this.isSelected});
+  const _SimilarUserCard({
+    super.key,
+    required this.user,
+    required this.isSelected,
+    this.onUserVisited,
+  });
 
   final SimilarUserModel user;
   final bool isSelected;
+  final Function(String userId)? onUserVisited;
 
   @override
   Widget build(BuildContext context) {
@@ -130,8 +142,8 @@ class _SimilarUserCard extends StatelessWidget {
       duration: const Duration(milliseconds: 400),
       scale: isSelected ? 1.0 : 0.95,
       child: GestureDetector(
-        onTap: () {
-          context.pushNamed(
+        onTap: () async {
+          await context.pushNamed(
             AppRouter.kMarriageView,
             arguments: {
               'personId': user.id,
@@ -150,6 +162,10 @@ class _SimilarUserCard extends StatelessWidget {
               ),
             },
           );
+          // ✅ بعد ما يرجع من البروفايل، شيل الكارت
+          if (user.id != null) {
+            onUserVisited?.call(user.id!);
+          }
         },
         child: Container(
           margin: EdgeInsets.symmetric(horizontal: 8.w),
@@ -172,7 +188,7 @@ class _SimilarUserCard extends StatelessWidget {
               padding: EdgeInsets.all(16.w),
               child: Row(
                 children: [
-                  // Avatar
+                  // ── Avatar ──
                   Container(
                     padding: EdgeInsets.all(3.w),
                     decoration: BoxDecoration(
@@ -182,46 +198,59 @@ class _SimilarUserCard extends StatelessWidget {
                         width: 1.5,
                       ),
                     ),
-                    child: CircleAvatar(
-                      radius: 40.r,
-                      backgroundColor: Colors.grey.shade100,
-                      backgroundImage: user.image != null
-                          ? NetworkImage(user.image!)
-                          : null,
-                      child: user.image == null
-                          ? Icon(
-                              Icons.person,
-                              size: 36,
-                              color: Colors.grey.shade400,
-                            )
-                          : null,
+                    child: ClipOval(
+                      child: CachedNetworkImage(
+                        imageUrl: user.image ?? '',
+                        width: 80.r,
+                        height: 80.r,
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) => CircleAvatar(
+                          radius: 40.r,
+                          backgroundColor: Colors.grey.shade100,
+                          child: Icon(
+                            Icons.person,
+                            size: 36,
+                            color: Colors.grey.shade400,
+                          ),
+                        ),
+                        errorWidget: (_, __, ___) => CircleAvatar(
+                          radius: 40.r,
+                          backgroundColor: Colors.grey.shade100,
+                          child: Icon(
+                            Icons.person,
+                            size: 36,
+                            color: Colors.grey.shade400,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                   Gap(16.w),
-                  // Details
+                  // ── Details ──
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        // ── Name + verified badge ──
                         Row(
                           children: [
-                            Expanded(
-                              child: Text(
-                                user.name ?? '',
-                                style: Styles.textStyle16SemiBold.copyWith(
-                                  color: Colors.black87,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                            Text(
+                              user.name ?? '',
+                              style: Styles.textStyle16SemiBold.copyWith(
+                                color: Colors.black87,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            if (user.isVerified == true)
+                            if (user.isVerified == true) ...[
+                              Gap(4.w),
                               Icon(
                                 Icons.verified,
                                 color: Colors.blue,
                                 size: 16.sp,
                               ),
+                            ],
                           ],
                         ),
                         Gap(4.h),
@@ -235,7 +264,6 @@ class _SimilarUserCard extends StatelessWidget {
                           ],
                         ),
                         Gap(8.h),
-                        // Similarity score
                         if (user.similarityScore != null)
                           Container(
                             padding: EdgeInsets.symmetric(

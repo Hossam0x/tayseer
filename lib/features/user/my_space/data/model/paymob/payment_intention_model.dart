@@ -22,11 +22,13 @@ class PaymentIntentionData {
   final String clientSecret;
   final String paymentKey;
   final int orderId;
+  final String publicKey;
 
   PaymentIntentionData({
     required this.clientSecret,
     required this.paymentKey,
     required this.orderId,
+    required this.publicKey,
   });
 
   factory PaymentIntentionData.fromJson(Map<String, dynamic> json) {
@@ -34,6 +36,7 @@ class PaymentIntentionData {
       clientSecret: json['clientSecret'] ?? '',
       paymentKey: json['paymentKey'] ?? '',
       orderId: json['orderId'] ?? 0,
+      publicKey: json['publicKey'] ?? '',
     );
   }
 }

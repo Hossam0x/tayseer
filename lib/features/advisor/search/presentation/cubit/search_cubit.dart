@@ -199,6 +199,39 @@ class SearchCubit extends Cubit<SearchState> {
       case PostEventType.created:
         // Search مش محتاج يضيف البوست الجديد - بس يتجاهل الـ event
         break;
+
+      case PostEventType.followToggled:
+        // حدّث isFollowing في posts و all tabs
+        if (event.advisorId == null) break;
+        final isNowFollowing = event.isFollowing ?? false;
+        final postsDataF = state.tabData('posts');
+        final allDataF = state.tabData('all');
+        emit(
+          state
+              .updateTab(
+                'posts',
+                postsDataF.copyWith(
+                  posts: postsDataF.posts.map((p) {
+                    if (p.advisorId == event.advisorId) {
+                      return p.copyWith(isFollowing: isNowFollowing);
+                    }
+                    return p;
+                  }).toList(),
+                ),
+              )
+              .updateTab(
+                'all',
+                allDataF.copyWith(
+                  posts: allDataF.posts.map((p) {
+                    if (p.advisorId == event.advisorId) {
+                      return p.copyWith(isFollowing: isNowFollowing);
+                    }
+                    return p;
+                  }).toList(),
+                ),
+              ),
+        );
+        break;
     }
   }
 

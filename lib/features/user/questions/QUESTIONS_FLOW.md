@@ -41,8 +41,7 @@ lib/features/user/questions/
         ├── account_review_view.dart
         ├── add_phone_view.dart
         ├── otp_phone_user_question.dart
-        ├── verify_data_view.dart
-        └── subscription_view.dart
+        └── verify_data_view.dart
 ```
 
 ---

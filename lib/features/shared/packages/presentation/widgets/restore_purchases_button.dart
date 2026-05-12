@@ -35,7 +35,7 @@ class _RestorePurchasesButtonState extends State<RestorePurchasesButton> {
       log('[Restore] total restored: ${restoredPurchases.length}');
 
       if (restoredPurchases.isEmpty) {
-        if (mounted) AppToast.error(context, 'restore_no_receipt');
+        if (mounted) AppToast.error(context, context.tr('restore_no_receipt'));
         return;
       }
 
@@ -100,7 +100,7 @@ class _RestorePurchasesButtonState extends State<RestorePurchasesButton> {
       }
 
       if (receipt == null || receipt.isEmpty) {
-        if (mounted) AppToast.error(context, 'restore_no_receipt');
+        if (mounted) AppToast.error(context, context.tr('restore_no_receipt'));
         return;
       }
 
@@ -113,7 +113,7 @@ class _RestorePurchasesButtonState extends State<RestorePurchasesButton> {
       }, (restoreResult) => _handleResult(restoreResult));
     } catch (e) {
       log('[Restore] Error: $e');
-      if (mounted) AppToast.error(context, 'restore_failed');
+      if (mounted) AppToast.error(context, context.tr('restore_failed'));
     } finally {
       if (mounted) setState(() => _isRestoring = false);
     }
@@ -123,7 +123,7 @@ class _RestorePurchasesButtonState extends State<RestorePurchasesButton> {
     if (!mounted) return;
     switch (result.restoreCase) {
       case RestoreCase.noSubscription:
-        AppToast.error(context, result.message);
+        AppToast.error(context, context.tr(result.message));
       case RestoreCase.newLink:
         SubscriptionEventBus.instance.fire(
           const SubscriptionChangedEvent(subscriptionType: 'gold'),
@@ -143,7 +143,7 @@ class _RestorePurchasesButtonState extends State<RestorePurchasesButton> {
 
   Future<void> _transferSubscription(String? purchaseId) async {
     if (purchaseId == null || purchaseId.isEmpty) {
-      if (mounted) AppToast.error(context, 'restore_failed');
+      if (mounted) AppToast.error(context, context.tr('restore_failed'));
       return;
     }
     setState(() => _isRestoring = true);
@@ -151,18 +151,21 @@ class _RestorePurchasesButtonState extends State<RestorePurchasesButton> {
       final repository = getIt<MembershipRepository>();
       final result = await repository.transferSubscription(purchaseId);
       if (!mounted) return;
-      result.fold((failure) => AppToast.error(context, failure.message), (_) {
-        SubscriptionEventBus.instance.fire(
-          const SubscriptionChangedEvent(subscriptionType: 'gold'),
-        );
-        showMembershipSuccessDialog(
-          context,
-          messageKey: 'restore_membership_success',
-        );
-      });
+      result.fold(
+        (failure) => AppToast.error(context, context.tr(failure.message)),
+        (_) {
+          SubscriptionEventBus.instance.fire(
+            const SubscriptionChangedEvent(subscriptionType: 'gold'),
+          );
+          showMembershipSuccessDialog(
+            context,
+            messageKey: 'restore_membership_success',
+          );
+        },
+      );
     } catch (e) {
       log('[Restore Transfer] Error: $e');
-      if (mounted) AppToast.error(context, 'restore_failed');
+      if (mounted) AppToast.error(context, context.tr('restore_failed'));
     } finally {
       if (mounted) setState(() => _isRestoring = false);
     }

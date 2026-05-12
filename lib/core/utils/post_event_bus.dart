@@ -20,6 +20,7 @@ enum PostEventType {
   commented,
   edited,
   created,
+  followToggled,
 }
 
 class PostEvent {
@@ -41,8 +42,11 @@ class PostEvent {
   // For saved
   final bool? isSaved;
 
-  // For blocked
+  // For blocked / followToggled
   final String? advisorId;
+
+  // For followToggled
+  final bool? isFollowing;
 
   // For poll voted
   final PollModel? pollModel;
@@ -76,6 +80,7 @@ class PostEvent {
     this.sharesCount,
     this.isSaved,
     this.advisorId,
+    this.isFollowing,
     this.pollModel,
     this.commentCountDelta,
     this.commentCountTotal,

@@ -199,6 +199,20 @@ mixin PostEventListenerMixin<S> on Cubit<S> {
       case PostEventType.created:
         // الـ mixin cubits مش محتاجة تضيف البوست الجديد - بس HomeCubit و ProfileCubit بيعملوا كده
         break;
+
+      case PostEventType.followToggled:
+        // الـ mixin cubits تحدث isFollowing في البوستات بتاعت الـ advisor ده
+        if (event.advisorId == null) return;
+        final isNowFollowing = event.isFollowing ?? false;
+        applyUpdatedPosts(
+          posts.map((p) {
+            if (p.advisorId == event.advisorId) {
+              return p.copyWith(isFollowing: isNowFollowing);
+            }
+            return p;
+          }).toList(),
+        );
+        break;
     }
   }
 
