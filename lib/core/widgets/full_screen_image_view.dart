@@ -1,3 +1,4 @@
+import 'package:tayseer/core/services/secure_window_service.dart';
 import 'package:tayseer/core/widgets/secure_image_wrapper.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -63,6 +64,11 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
   void initState() {
     super.initState();
 
+    // ✅ تفعيل الحماية بشكل مستقل — بغض النظر عن MarriageView
+    // Android: FLAG_SECURE على الـ Window
+    // iOS: الحماية عبر SecureImageWrapper (UiKitView)
+    SecureWindowService.enable();
+
     _snapBackController =
         AnimationController(
           vsync: this,
@@ -111,6 +117,9 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
 
   @override
   void dispose() {
+    // ✅ يشيل الحماية بس لو مفيش screen تاني محتاجها (مثلاً MarriageView لسه مفتوح)
+    // SecureWindowService بيتتبع العداد تلقائياً
+    SecureWindowService.disable();
     _transformationController.removeListener(_clampScale);
     _transformationController.dispose();
     _snapBackController.dispose();
