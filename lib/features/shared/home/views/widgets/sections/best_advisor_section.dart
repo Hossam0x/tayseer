@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/services.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:tayseer/core/models/pagination_model.dart';
 import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/utils/post_event_bus.dart';
@@ -37,6 +38,27 @@ class _BestAdvisorSectionState extends State<BestAdvisorSection> {
   void initState() {
     super.initState();
     _pageController = PageController(viewportFraction: 0.85);
+    _precacheAdvisorImages();
+  }
+
+  void _precacheAdvisorImages() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      for (final advisor in widget.advisors) {
+        final url = advisor.image;
+        if (url != null && url.isNotEmpty) {
+          DefaultCacheManager().downloadFile(url);
+        }
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(BestAdvisorSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.advisors != widget.advisors) {
+      _precacheAdvisorImages();
+    }
   }
 
   @override
@@ -278,6 +300,7 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
                             children: [
                               CachedNetworkImage(
                                 imageUrl: widget.advisor.image ?? '',
+                                memCacheWidth: 180,
                                 width: 90.r,
                                 height: 90.r,
                                 fit: BoxFit.cover,
