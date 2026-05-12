@@ -11,6 +11,7 @@ class MarriageLocationCubit extends Cubit<MarriageLocationState> {
   int _denialCount = 0; // متتبع لعدد مرات الرفض
 
   Future<void> checkAndSetLocation({bool requestPermission = true}) async {
+    if (isClosed) return;
     emit(MarriageLocationLoading());
 
     bool serviceEnabled;
@@ -19,6 +20,7 @@ class MarriageLocationCubit extends Cubit<MarriageLocationState> {
     try {
       // 1. Test if location services are enabled.
       serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (isClosed) return;
       if (!serviceEnabled) {
         emit(MarriageLocationServiceDisabled('location_service_disabled_desc'));
         return;
@@ -26,6 +28,7 @@ class MarriageLocationCubit extends Cubit<MarriageLocationState> {
 
       // 2. Check for location permission.
       permission = await Geolocator.checkPermission();
+      if (isClosed) return;
 
       if (permission == LocationPermission.deniedForever) {
         emit(
@@ -51,6 +54,7 @@ class MarriageLocationCubit extends Cubit<MarriageLocationState> {
 
         if (requestPermission) {
           permission = await Geolocator.requestPermission();
+          if (isClosed) return;
           if (permission == LocationPermission.denied) {
             _denialCount++;
             if (_denialCount >= 1) {
@@ -93,18 +97,21 @@ class MarriageLocationCubit extends Cubit<MarriageLocationState> {
       final Position position = await Geolocator.getCurrentPosition(
         timeLimit: const Duration(seconds: 15),
       );
+      if (isClosed) return;
 
       // 4. Send to backend.
       final result = await _repository.setUserLocation(
         lat: position.latitude,
         lng: position.longitude,
       );
+      if (isClosed) return;
 
       result.fold(
         (failure) => emit(MarriageLocationError(failure.message)),
         (_) => emit(MarriageLocationSuccess()),
       );
     } catch (e) {
+      if (isClosed) return;
       emit(MarriageLocationError('location_fetch_error'));
     }
   }
