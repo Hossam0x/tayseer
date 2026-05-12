@@ -85,7 +85,7 @@ class LanguageSelectionUiCubit extends Cubit<LanguageSelectionState> {
     // لو نفس اللغة الحالية → مفيش تغيير
     if (state.selectedLanguage!.code == currentCode) return null;
 
-    emit(state.copyWith(isSaving: true));
+    if (!isClosed) emit(state.copyWith(isSaving: true));
 
     // حفظ محلي أولاً
     await prefs.setString('app_language', state.selectedLanguage!.code);
@@ -100,7 +100,9 @@ class LanguageSelectionUiCubit extends Cubit<LanguageSelectionState> {
       (_) => debugPrint('✅ set-language API success'),
     );
 
-    emit(state.copyWith(isSaving: false));
+    // ✅ تحقق إن الـ cubit لسه شغال قبل الـ emit
+    // لأن forceRestart بيعمل getIt.reset() اللي بيقفل كل الـ cubits
+    if (!isClosed) emit(state.copyWith(isSaving: false));
 
     return state.selectedLanguage!.code;
   }

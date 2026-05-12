@@ -53,6 +53,8 @@ class CachNetwork {
       selectedLanguage = (deviceLang == 'ar' || deviceLang == 'en')
           ? deviceLang
           : 'ar';
+      // ✅ احفظ اللغة المحددة في SharedPreferences عشان الإعدادات تعرضها صح
+      await sharedPref.setString(kAppLanguage, selectedLanguage!);
     }
     debugPrint("selectedLanguage initialized to: $selectedLanguage");
 
