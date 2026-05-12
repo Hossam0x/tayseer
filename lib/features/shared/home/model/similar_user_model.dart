@@ -11,7 +11,9 @@ class SimilarUserResponse {
     return SimilarUserResponse(
       success: json['success'],
       message: json['message'],
-      data: json['data'] != null ? SimilarUserData.fromJson(json['data']) : null,
+      data: json['data'] != null
+          ? SimilarUserData.fromJson(json['data'])
+          : null,
     );
   }
 }
@@ -26,8 +28,8 @@ class SimilarUserData {
     return SimilarUserData(
       users: json['users'] != null
           ? (json['users'] as List)
-              .map((i) => SimilarUserModel.fromJson(i))
-              .toList()
+                .map((i) => SimilarUserModel.fromJson(i))
+                .toList()
           : null,
       pagination: json['pagination'] != null
           ? PaginationModel.fromJson(json['pagination'])
@@ -49,6 +51,7 @@ class SimilarUserModel {
   final bool? isVerified;
   final int? similarityScore;
   final Map<String, dynamic>? highlights;
+  final bool? imageBlur;
 
   SimilarUserModel({
     this.id,
@@ -63,6 +66,7 @@ class SimilarUserModel {
     this.isVerified,
     this.similarityScore,
     this.highlights,
+    this.imageBlur,
   });
 
   factory SimilarUserModel.fromJson(Map<String, dynamic> json) {
@@ -79,6 +83,7 @@ class SimilarUserModel {
       isVerified: json['isVerified'],
       similarityScore: json['similarityScore'],
       highlights: json['highlights'],
+      imageBlur: json['imageBlur'],
     );
   }
 }

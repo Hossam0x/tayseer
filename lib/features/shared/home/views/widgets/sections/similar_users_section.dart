@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:tayseer/core/models/pagination_model.dart';
 import 'package:tayseer/features/shared/home/model/similar_user_model.dart';
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
@@ -199,29 +201,42 @@ class _SimilarUserCard extends StatelessWidget {
                       ),
                     ),
                     child: ClipOval(
-                      child: CachedNetworkImage(
-                        imageUrl: user.image ?? '',
-                        width: 80.r,
-                        height: 80.r,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) => CircleAvatar(
-                          radius: 40.r,
-                          backgroundColor: Colors.grey.shade100,
-                          child: Icon(
-                            Icons.person,
-                            size: 36,
-                            color: Colors.grey.shade400,
+                      child: Stack(
+                        children: [
+                          CachedNetworkImage(
+                            imageUrl: user.image ?? '',
+                            width: 80.r,
+                            height: 80.r,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => CircleAvatar(
+                              radius: 40.r,
+                              backgroundColor: Colors.grey.shade100,
+                              child: Icon(
+                                Icons.person,
+                                size: 36,
+                                color: Colors.grey.shade400,
+                              ),
+                            ),
+                            errorWidget: (_, __, ___) => CircleAvatar(
+                              radius: 40.r,
+                              backgroundColor: Colors.grey.shade100,
+                              child: Icon(
+                                Icons.person,
+                                size: 36,
+                                color: Colors.grey.shade400,
+                              ),
+                            ),
                           ),
-                        ),
-                        errorWidget: (_, __, ___) => CircleAvatar(
-                          radius: 40.r,
-                          backgroundColor: Colors.grey.shade100,
-                          child: Icon(
-                            Icons.person,
-                            size: 36,
-                            color: Colors.grey.shade400,
-                          ),
-                        ),
+                          if (user.imageBlur == true)
+                            Positioned.fill(
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                                child: const ColoredBox(
+                                  color: Colors.transparent,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ),
