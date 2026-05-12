@@ -1508,11 +1508,9 @@ class MarriageBodyState extends State<MarriageBody>
       textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: CustomBackground(
         child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
+          behavior: HitTestBehavior.opaque,
           onTap: () {
-            if (_regardFocusNode.hasFocus) {
-              _regardFocusNode.unfocus();
-            }
+            FocusScope.of(context).unfocus();
           },
           child: Stack(
             children: [

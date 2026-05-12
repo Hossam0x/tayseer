@@ -140,7 +140,7 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
         type: QuestionType.selectableList,
         displayKeyMapper: QuestionsData.genderedKey,
       ),
-      if (!kCurrentUserData!.isSingle )
+      if (!kCurrentUserData!.isSingle)
         QuestionPageConfig(
           titleKey: 'has_children',
           questionNumber: 11,
@@ -148,8 +148,9 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
           items: QuestionsData.yesNo,
           type: QuestionType.selectableList,
         ),
+      // ✅ يظهر فقط لو المستخدم اختار "yes" في سؤال hasChildren في الجلسة الحالية
       if (!kCurrentUserData!.isSingle &&
-          kCurrentUserData?.hasChildren == true)
+          _answers['hasChildren'] == 'yes')
         QuestionPageConfig(
           titleKey: 'children_number',
           questionNumber: 12,
@@ -159,8 +160,8 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
           dependsOnQuestion: 'hasChildren',
           requiredAnswer: 'yes',
         ),
-      if (!kCurrentUserData!.isSingle&&
-          kCurrentUserData?.hasChildren == true)
+      if (!kCurrentUserData!.isSingle &&
+          _answers['hasChildren'] == 'yes')
         QuestionPageConfig(
           titleKey: 'children_living_status',
           questionNumber: 13,
@@ -187,15 +188,17 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
         searchHintKey: 'search_job',
         displayKeyMapper: null, // ✅ الـ keys نفسها gendered — مش محتاج mapper
       ),
-      QuestionPageConfig(
-        titleKey: 'choose_employer',
-        questionNumber: 16,
-        questionCategoryEnum: 'chooseEmployer',
-        items: QuestionsData.employers,
-        type: QuestionType.selectableList,
-        showSearch: true,
-        searchHintKey: 'search_employer',
-      ),
+      // ✅ يُخفى لو المستخدم اختار "طالب" في سؤال المهنة
+      if (!_isStudentSelected())
+        QuestionPageConfig(
+          titleKey: 'choose_employer',
+          questionNumber: 16,
+          questionCategoryEnum: 'chooseEmployer',
+          items: QuestionsData.employers,
+          type: QuestionType.selectableList,
+          showSearch: true,
+          searchHintKey: 'search_employer',
+        ),
       if (selectedGender == Gender.female ||
           (kCurrentUserData?.socialStatus != 'single' &&
               selectedGender == Gender.male))
@@ -353,6 +356,17 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
   }
 
   // ─────────────────────────────────────────────────────
+  // ✅ Helpers for conditional question visibility
+  // ─────────────────────────────────────────────────────
+
+  /// يرجع true لو المستخدم اختار مهنة الطالب في الجلسة الحالية
+  bool _isStudentSelected() {
+    final jobAnswer = _answers['job']?.toString() ?? '';
+    // الـ key بيكون gendered: job_student_male أو job_student_female
+    return jobAnswer.contains('job_student');
+  }
+
+  // ─────────────────────────────────────────────────────
   // ✅ Answer Submission - بيعمل setState عشان القائمة تتحدث
   // ─────────────────────────────────────────────────────
 
@@ -403,11 +417,22 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
 
   void _goToNextPage(List<QuestionPageConfig> questions, BuildContext context) {
     if (_currentPage + 1 < questions.length) {
-      _pageController.animateToPage(
-        _currentPage + 1,
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
-      );
+      final nextPage = _currentPage + 1;
+      void animate() {
+        _pageController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
+      }
+
+      if (_pageController.hasClients) {
+        animate();
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_pageController.hasClients) animate();
+        });
+      }
     } else {
       // آخر سؤال → روح للصفحة اللي بعد كده
       context.pushReplacementNamed(AppRouter.kPersonalInfoView);
