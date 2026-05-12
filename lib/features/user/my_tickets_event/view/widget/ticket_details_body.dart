@@ -32,13 +32,24 @@ class _TicketDetailsBodyState extends State<TicketDetailsBody> {
           return CustomBackground(
             child: CustomScrollView(
               slivers: [
-                SliverAppBar(
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  floating: true,
-                  leading: IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back, color: Colors.black),
+                SliverToBoxAdapter(
+                  child: SafeArea(
+                    bottom: false,
+                    child: SizedBox(
+                      height: kToolbarHeight,
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const Spacer(),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
 
@@ -61,13 +72,24 @@ class _TicketDetailsBodyState extends State<TicketDetailsBody> {
           child: CustomScrollView(
             slivers: [
               /// AppBar
-              SliverAppBar(
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                floating: true,
-                leading: IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back, color: Colors.black),
+              SliverToBoxAdapter(
+                child: SafeArea(
+                  bottom: false,
+                  child: SizedBox(
+                    height: kToolbarHeight,
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const Spacer(),
+                      ],
+                    ),
+                  ),
                 ),
               ),
 
@@ -328,7 +350,7 @@ class TicketDetailsShimmer extends StatelessWidget {
     return CustomBackground(
       child: CustomScrollView(
         slivers: [
-          const SliverAppBar(backgroundColor: Colors.transparent, elevation: 0),
+          const SliverAppBar(elevation: 0),
 
           SliverToBoxAdapter(
             child: Column(

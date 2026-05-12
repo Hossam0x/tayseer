@@ -11,33 +11,33 @@ import '../widgets/filter_section_title.dart';
 class AdvisorFilterView extends StatelessWidget {
   const AdvisorFilterView({super.key});
 
-Future<void> _onBackPressed(BuildContext context) async {
-  final cubit = context.read<AdvisorFilterCubit>();
+  Future<void> _onBackPressed(BuildContext context) async {
+    final cubit = context.read<AdvisorFilterCubit>();
 
-  if (!cubit.state.isFilterComplete) {
-    Navigator.pop(context);
-    return;
+    if (!cubit.state.isFilterComplete) {
+      Navigator.pop(context);
+      return;
+    }
+
+    // ✅ شيل الـ await — الدالة void مش Future
+    CustomshowDialogWithImage(
+      context,
+      title: context.tr("filter_profiles"),
+      supTitle: context.tr("apply_filters"),
+      imageUrl: AssetsData.kWoriningImage,
+      bottonText: context.tr("no"),
+      cancelText: context.tr("yes"),
+      showCancelButton: true,
+      onPressed: () {
+        Navigator.pop(context); // ارجع من صفحة الفلتر
+      },
+      onCancel: () {
+        // أغلق الـ dialog
+        cubit.applyFilters(context);
+      },
+    );
   }
 
-  // ✅ شيل الـ await — الدالة void مش Future
-  CustomshowDialogWithImage(
-    context,
-    title: context.tr("filter_profiles"),
-    supTitle: context.tr("apply_filters"),
-    imageUrl: AssetsData.kWoriningImage,
-    bottonText: context.tr("no"),
-    cancelText: context.tr("yes"),
-    showCancelButton: true,
-    onPressed: () {
-    
-      Navigator.pop(context); // ارجع من صفحة الفلتر
-    },
-    onCancel: () {
-     // أغلق الـ dialog
-      cubit.applyFilters(context);
-    },
-  );
-}
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -52,32 +52,44 @@ Future<void> _onBackPressed(BuildContext context) async {
             child: AdvisorBackground(
               child: Scaffold(
                 backgroundColor: Colors.transparent,
-                appBar: _buildAppBar(context),
-                body: const AdvisorFilterBody(),
+                body: Column(
+                  children: [
+                    SafeArea(
+                      bottom: false,
+                      child: SizedBox(
+                        height: kToolbarHeight,
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                color: AppColors.secondary800,
+                              ),
+                              onPressed: () => _onBackPressed(context),
+                            ),
+                            Expanded(
+                              child: Center(
+                                child: Text(
+                                  context.tr("filter_profiles"),
+                                  style: Styles.textStyle24Meduim.copyWith(
+                                    color: AppColors.secondary700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const ClearFiltersButton(),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Expanded(child: AdvisorFilterBody()),
+                  ],
+                ),
               ),
             ),
           );
         },
       ),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      scrolledUnderElevation: 0,
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      automaticallyImplyLeading: false,
-      title: Text(
-        context.tr("filter_profiles"),
-        style: Styles.textStyle24Meduim.copyWith(color: AppColors.secondary700),
-      ),
-      centerTitle: true,
-      leading: IconButton(
-        icon: Icon(Icons.close, color: AppColors.secondary800),
-        onPressed: () => _onBackPressed(context),
-      ),
-      actions: [const ClearFiltersButton()],
     );
   }
 }

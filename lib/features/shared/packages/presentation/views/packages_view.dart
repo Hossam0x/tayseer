@@ -232,8 +232,6 @@ class _PackagesViewContentState extends State<_PackagesViewContent>
         ),
       ],
       child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: _buildAppBar(),
         body: Stack(
           children: [
             const PackageBackground(),
@@ -245,66 +243,72 @@ class _PackagesViewContentState extends State<_PackagesViewContent>
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      leading:
-          BlocSelector<
-            PackageSelectionCubit,
-            PackageSelectionState,
-            PackageType
-          >(
-            selector: (state) => state.selectedPackage,
-            builder: (context, selectedPackage) {
-              final isElite = selectedPackage == PackageType.elite;
-              return IconButton(
-                icon: Transform.flip(
-                  flipX: !isArabic,
-                  child: SvgPicture.asset(
-                    AssetsData.backArrow,
-                    colorFilter: ColorFilter.mode(
-                      isElite ? Colors.white : Colors.black,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                ),
-                onPressed: () => Navigator.pop(context),
-              );
-            },
-          ),
-    );
-  }
-
   Widget _buildContent() {
     return Positioned.fill(
-      child: SafeArea(
-        child: FadeTransition(
-          opacity: _entranceFadeAnim,
-          child: SlideTransition(
-            position: _entranceSlideAnim,
-            child: Column(
-              children: [
-                Expanded(child: _buildPageView()),
-                _buildTabSelector(),
-                Gap(20.h),
-                _buildActionButton(),
-                Gap(12.h),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.w),
-                  child: const AgreementText(),
-                ),
-                if (Platform.isIOS) ...[
-                  Gap(4.h),
-                  RestorePurchasesButton(
-                    textColor: AppColors.kprimaryTextColor,
-                  ),
-                ],
-                Gap(20.h),
-              ],
+      child: Column(
+        children: [
+          SafeArea(
+            bottom: false,
+            child: SizedBox(
+              height: kToolbarHeight,
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child:
+                    BlocSelector<
+                      PackageSelectionCubit,
+                      PackageSelectionState,
+                      PackageType
+                    >(
+                      selector: (state) => state.selectedPackage,
+                      builder: (context, selectedPackage) {
+                        final isElite = selectedPackage == PackageType.elite;
+                        return IconButton(
+                          icon: Transform.flip(
+                            flipX: !isArabic,
+                            child: SvgPicture.asset(
+                              AssetsData.backArrow,
+                              colorFilter: ColorFilter.mode(
+                                isElite ? Colors.white : Colors.black,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                        );
+                      },
+                    ),
+              ),
             ),
           ),
-        ),
+          Expanded(
+            child: FadeTransition(
+              opacity: _entranceFadeAnim,
+              child: SlideTransition(
+                position: _entranceSlideAnim,
+                child: Column(
+                  children: [
+                    Expanded(child: _buildPageView()),
+                    _buildTabSelector(),
+                    Gap(20.h),
+                    _buildActionButton(),
+                    Gap(12.h),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24.w),
+                      child: const AgreementText(),
+                    ),
+                    if (Platform.isIOS) ...[
+                      Gap(4.h),
+                      RestorePurchasesButton(
+                        textColor: AppColors.kprimaryTextColor,
+                      ),
+                    ],
+                    Gap(20.h),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

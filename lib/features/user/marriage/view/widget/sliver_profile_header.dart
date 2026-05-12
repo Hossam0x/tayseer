@@ -121,7 +121,6 @@ class SliverProfileHeader extends StatelessWidget {
       pinned: true,
       floating: false,
       snap: false,
-      backgroundColor: Colors.transparent,
       elevation: 0,
       automaticallyImplyLeading: false,
       titleSpacing: 0,
