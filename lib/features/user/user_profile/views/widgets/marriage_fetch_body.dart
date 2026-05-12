@@ -6,6 +6,7 @@ import 'package:tayseer/features/user/marriage/view/widget/education.dart';
 import 'package:tayseer/features/user/marriage/view/widget/interests_section.dart';
 import 'package:tayseer/features/user/marriage/view/widget/life_event_section.dart';
 import 'package:tayseer/features/user/marriage/view/widget/religious.dart';
+import 'package:tayseer/features/user/questions/data/models/questions_data.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/marriage_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/MarriageProfilecubit/marriage_profile_state.dart';
@@ -101,7 +102,7 @@ class _MarriageBodyContent extends StatelessWidget {
                     ),
 
                   _buildSliverPadding(
-                    child: ReligiousSection(tags: _buildReligiousTags(profile)),
+                    child: ReligiousSection(tags: _buildReligiousTags(profile, context)),
                   ),
 
                   if (profile.hobbies.isNotEmpty)
@@ -321,7 +322,7 @@ List<Map<String, dynamic>> _buildTimelineEvents(dynamic yourGoals) {
     ];
   }
 
-  List<Map<String, dynamic>> _buildReligiousTags(profile) {
+  List<Map<String, dynamic>> _buildReligiousTags(profile,context) {
     return [
       if (profile.aboutMe?.religiousCommitment != null)
         {
