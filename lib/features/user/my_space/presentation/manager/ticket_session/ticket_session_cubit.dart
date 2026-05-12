@@ -108,6 +108,7 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
         try {
           final sdkResult = await PaymobService.pay(
             clientSecret: paymentIntention.data.clientSecret,
+            publicKey: paymentIntention.data.publicKey,
           );
 
           // ── Step 3: التعامل مع النتيجة ──
