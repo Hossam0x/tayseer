@@ -43,22 +43,29 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
       body: CustomBackground(
         child: CustomScrollView(
           slivers: [
-            SliverAppBar(
-              leading: IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => context.pop(),
-              ),
-              title: Text(
-                context.tr(config.titleKey),
-                style: Styles.textStyle18Bold,
-              ),
-              centerTitle: true,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              pinned: true,
-              floating: false,
-              flexibleSpace: Container(
-                decoration: const BoxDecoration(color: Colors.transparent),
+            SliverToBoxAdapter(
+              child: SafeArea(
+                bottom: false,
+                child: SizedBox(
+                  height: kToolbarHeight,
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                        onPressed: () => context.pop(),
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            context.tr(config.titleKey),
+                            style: Styles.textStyle18Bold,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 48.w),
+                    ],
+                  ),
+                ),
               ),
             ),
 
@@ -240,10 +247,7 @@ class _FilterSelectionScreenState extends State<FilterSelectionScreen> {
           questionNumber: 6,
           questionCategoryEnum: 'personal',
           type: QuestionType.selectableList,
-          items: [
-            ...QuestionsData.oppositeGenderedJobs,
-            'no_preference',
-          ],
+          items: [...QuestionsData.oppositeGenderedJobs, 'no_preference'],
           showSearch: true,
           searchHintKey: 'search_jobs',
         );

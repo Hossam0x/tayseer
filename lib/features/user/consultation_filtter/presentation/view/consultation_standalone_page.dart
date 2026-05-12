@@ -94,24 +94,24 @@ class _ConsultationViewState extends State<ConsultationView> {
 
   @override
   Widget build(BuildContext context) {
-    return AdvisorBackground(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          scrolledUnderElevation: 0,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          automaticallyImplyLeading: false,
-          title: Text(
-            context.tr("consultation"),
-            style: Styles.textStyle24Meduim.copyWith(
-              color: AppColors.secondary700,
-            ),
-          ),
-          centerTitle: true,
-        ),
-        body: Column(
+    return Scaffold(
+      body: AdvisorBackground(
+        child: Column(
           children: [
+            SafeArea(
+              bottom: false,
+              child: SizedBox(
+                height: kToolbarHeight,
+                child: Center(
+                  child: Text(
+                    context.tr("consultation"),
+                    style: Styles.textStyle24Meduim.copyWith(
+                      color: AppColors.secondary700,
+                    ),
+                  ),
+                ),
+              ),
+            ),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
               child: SearchBarWithFilter(

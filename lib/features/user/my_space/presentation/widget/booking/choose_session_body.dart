@@ -45,33 +45,43 @@ class _ChooseSessionBodyState extends State<ChooseSessionBody> {
                   return CustomScrollView(
                     slivers: [
                       // ═══ 1. App Bar (ثابت دائماً) ═══
-                      SliverAppBar(
-                        pinned: true,
-                        floating: false,
-                        elevation: 0,
-                        scrolledUnderElevation: 0,
-                        backgroundColor: Colors.transparent,
-                        centerTitle: true,
-                        title: Text(
-                          context.tr('choose_what_suits_you'),
-                          style: Styles.textStyle20Bold.copyWith(
-                            color: Colors.black87,
-                          ),
-                        ),
-                        actions: [
-                          IconButton(
-                            icon: Icon(
-                              Icons.error_outline,
-                              size: 25,
-                              color: AppColors.kscandryTextColor,
+                      SliverToBoxAdapter(
+                        child: SafeArea(
+                          bottom: false,
+                          child: SizedBox(
+                            height: kToolbarHeight,
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.arrow_back_ios_new_rounded,
+                                  ),
+                                  onPressed: () => context.pop(),
+                                ),
+                                Expanded(
+                                  child: Center(
+                                    child: Text(
+                                      context.tr('choose_what_suits_you'),
+                                      style: Styles.textStyle20Bold.copyWith(
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.error_outline,
+                                    size: 25,
+                                    color: AppColors.kscandryTextColor,
+                                  ),
+                                  onPressed: () =>
+                                      PrivacyGuidelinesBottomSheet.show(
+                                        context,
+                                      ),
+                                ),
+                              ],
                             ),
-                            onPressed: () =>
-                                PrivacyGuidelinesBottomSheet.show(context),
                           ),
-                        ],
-                        leading: IconButton(
-                          icon: Icon(Icons.arrow_back),
-                          onPressed: () => context.pop(),
                         ),
                       ),
 

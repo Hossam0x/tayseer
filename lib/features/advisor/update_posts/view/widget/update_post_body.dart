@@ -55,123 +55,136 @@ class UpdatePostBody extends StatelessWidget {
         return CustomBackground(
           child: Scaffold(
             backgroundColor: Colors.transparent,
-            appBar: AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-                onPressed: () => context.pop(),
-              ),
-              centerTitle: true,
-              title: Text(
-                context.tr('edit_post'),
-                style: Styles.textStyle16SemiBold,
-              ),
-              actions: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: state.updatePostState == CubitStates.loading
-                      ? const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: CustomloadingApp(),
-                        )
-                      : CustomBotton(
-                          backGroundcolor: AppColors.kgreyColor,
-                          useGradient: isActive,
-                          height: 40,
-                          width: context.responsiveWidth(100),
-                          title: context.tr('save'),
-                          onPressed: isActive ? () => cubit.updatePost() : null,
+            body: Column(
+              children: [
+                SafeArea(
+                  bottom: false,
+                  child: SizedBox(
+                    height: kToolbarHeight,
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back_ios,
+                            color: Colors.black,
+                          ),
+                          onPressed: () => context.pop(),
                         ),
+                        const Spacer(),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: state.updatePostState == CubitStates.loading
+                              ? const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 16),
+                                  child: CustomloadingApp(),
+                                )
+                              : CustomBotton(
+                                  backGroundcolor: AppColors.kgreyColor,
+                                  useGradient: isActive,
+                                  height: 40,
+                                  width: context.responsiveWidth(100),
+                                  title: context.tr('save'),
+                                  onPressed: isActive
+                                      ? () => cubit.updatePost()
+                                      : null,
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ════════════════════════════════
+                        // Profile Header + Category
+                        // ════════════════════════════════
+                        UpdateProfileHeader(
+                          cubit: cubit,
+                          name: kCurrentUserData?.name ?? 'user',
+                          initialSubtitle: _getCategoryName(state),
+                          isVerified: false,
+                          imageUrl:
+                              kCurrentUserData?.image ??
+                              AssetsData.defaultProfileImage,
+                          groups: state.categories,
+                          onGroupSelectedId: cubit.setSelectedCategoryId,
+                        ),
+
+                        // ════════════════════════════════
+                        // Text Input
+                        // ════════════════════════════════
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: TextField(
+                            controller: cubit.contentController,
+                            onChanged: cubit.updateText,
+                            maxLines: null,
+                            decoration: InputDecoration(
+                              hintText: postType == AddPostEnum.reel
+                                  ? context.tr('add_caption_optional')
+                                  : context.tr('you_like_to_share'),
+                              border: InputBorder.none,
+                              hintStyle: Styles.textStyle16.copyWith(
+                                color: AppColors.kgreyColor,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // ════════════════════════════════
+                        // ✅ الصور (السيرفر + الجديدة معاً)
+                        // ════════════════════════════════
+                        if ((state.existingImageUrls.isNotEmpty ||
+                                state.capturedImages.isNotEmpty) &&
+                            postType != AddPostEnum.reel)
+                          StyleCombinedGrid(
+                            existingImageUrls: state.existingImageUrls,
+                            onRemoveExisting: cubit.removeExistingImage,
+                            capturedImages: state.capturedImages,
+                            onRemoveCaptured: cubit.removeCapturedImage,
+                            galleryImages: const [],
+                            onRemoveGallery: (_) {},
+                          ),
+
+                        // ════════════════════════════════
+                        // ✅ فيديو موجود من السيرفر
+                        // ════════════════════════════════
+                        if (state.existingVideoUrl != null &&
+                            state.capturedVideo == null)
+                          ExistingVideoPreview(
+                            videoUrl: state.existingVideoUrl!,
+                            onRemove: cubit.removeExistingVideo,
+                            onVideoEdited: (editedVideo) {
+                              cubit.removeExistingVideo();
+                              cubit.addCapturedVideo(editedVideo);
+                            },
+                          ),
+
+                        // ════════════════════════════════
+                        // ✅ فيديو جديد
+                        // ════════════════════════════════
+                        if (state.capturedVideo != null)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: CustomUploadedVideoPreview(
+                              key: ValueKey(state.capturedVideo!.path),
+                              height: 0.7,
+                              width: 0.9,
+                              video: state.capturedVideo!,
+                              onInitialized: () {},
+                              onRemove: cubit.removeCapturedVideo,
+                              showEditButton: true,
+                              onVideoEdited: cubit.updateCapturedVideo,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
-            ),
-            body: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ════════════════════════════════
-                  // Profile Header + Category
-                  // ════════════════════════════════
-                  UpdateProfileHeader(
-                    cubit: cubit,
-                    name: kCurrentUserData?.name ?? 'user',
-                    initialSubtitle: _getCategoryName(state),
-                    isVerified: false,
-                    imageUrl: kCurrentUserData?.image ?? AssetsData.defaultProfileImage,
-                    groups: state.categories,
-                    onGroupSelectedId: cubit.setSelectedCategoryId,
-                  ),
-
-                  // ════════════════════════════════
-                  // Text Input
-                  // ════════════════════════════════
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: TextField(
-                      controller: cubit.contentController,
-                      onChanged: cubit.updateText,
-                      maxLines: null,
-                      decoration: InputDecoration(
-                        hintText: postType == AddPostEnum.reel
-                            ? context.tr('add_caption_optional')
-                            : context.tr('you_like_to_share'),
-                        border: InputBorder.none,
-                        hintStyle: Styles.textStyle16.copyWith(
-                          color: AppColors.kgreyColor,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // ════════════════════════════════
-                  // ✅ الصور (السيرفر + الجديدة معاً)
-                  // ════════════════════════════════
-                  if ((state.existingImageUrls.isNotEmpty ||
-                          state.capturedImages.isNotEmpty) &&
-                      postType != AddPostEnum.reel)
-                    StyleCombinedGrid(
-                      existingImageUrls: state.existingImageUrls,
-                      onRemoveExisting: cubit.removeExistingImage,
-                      capturedImages: state.capturedImages,
-                      onRemoveCaptured: cubit.removeCapturedImage,
-                      galleryImages: const [],
-                      onRemoveGallery: (_) {},
-                    ),
-
-                  // ════════════════════════════════
-                  // ✅ فيديو موجود من السيرفر
-                  // ════════════════════════════════
-                  if (state.existingVideoUrl != null &&
-                      state.capturedVideo == null)
-                    ExistingVideoPreview(
-                      videoUrl: state.existingVideoUrl!,
-                      onRemove: cubit.removeExistingVideo,
-                      onVideoEdited: (editedVideo) {
-                        cubit.removeExistingVideo();
-                        cubit.addCapturedVideo(editedVideo);
-                      },
-                    ),
-
-                  // ════════════════════════════════
-                  // ✅ فيديو جديد
-                  // ════════════════════════════════
-                  if (state.capturedVideo != null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: CustomUploadedVideoPreview(
-                        key: ValueKey(state.capturedVideo!.path),
-                        height: 0.7,
-                        width: 0.9,
-                        video: state.capturedVideo!,
-                        onInitialized: () {},
-                        onRemove: cubit.removeCapturedVideo,
-                        showEditButton: true,
-                        onVideoEdited: cubit.updateCapturedVideo,
-                      ),
-                    ),
-                ],
-              ),
             ),
             bottomNavigationBar: _buildBottomBar(context, state, cubit),
           ),

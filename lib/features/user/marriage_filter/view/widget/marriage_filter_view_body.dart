@@ -369,30 +369,43 @@ class _MarriageFilterBodyState extends State<MarriageFilterBody> {
   }
 
   Widget _buildSliverAppBar(BuildContext context) {
-    return SliverAppBar(
-      pinned: true,
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      centerTitle: true,
-      title: Text(context.tr('filter_profiles'), style: Styles.textStyle18Bold),
-      leading: IconButton(
-        icon: const Icon(Icons.close, color: Colors.grey),
-        onPressed:
-            widget.onBackPressed ??
-            () => context.pop(), // ✅ استخدم الـ callback
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => context.read<MarriageFilterCubit>().resetFilters(),
-          child: Text(
-            context.tr('clear_filters'),
-            style: Styles.textStyle14.copyWith(
-              color: Colors.grey[700],
-              decoration: TextDecoration.underline,
-            ),
+    return SliverToBoxAdapter(
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: kToolbarHeight,
+          child: Row(
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: AppColors.secondary800,
+                ),
+                onPressed: widget.onBackPressed ?? () => context.pop(),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    context.tr('filter_profiles'),
+                    style: Styles.textStyle18Bold,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () =>
+                    context.read<MarriageFilterCubit>().resetFilters(),
+                child: Text(
+                  context.tr('clear_filters'),
+                  style: Styles.textStyle14.copyWith(
+                    color: Colors.grey[700],
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 

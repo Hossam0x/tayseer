@@ -63,69 +63,90 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
         child: Scaffold(
           backgroundColor: Colors.transparent,
           extendBody: true,
-          extendBodyBehindAppBar: true,
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            centerTitle: true,
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: darkText, size: 24.sp),
-              onPressed: () => Navigator.pop(context),
-            ),
-            title: Text(
-              context.tr('advisor_data'),
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.bold,
-                color: darkText,
-              ),
-            ),
-          ),
-          body: BlocConsumer<AdvisorProfileCubit, AdvisorProfileState>(
-            listener: (context, state) {
-              if (state.getadvisorchatprofileState == CubitStates.success) {
-                _animationController.forward();
-              }
-            },
-            builder: (context, state) {
-              if (state.getadvisorchatprofileState == CubitStates.loading) {
-                return SafeArea(
-                  bottom: false,
-                  child: const AdvisorProfileShimmer(),
-                );
-              }
-
-              if (state.getadvisorchatprofileState == CubitStates.failure) {
-                return SafeArea(
-                  bottom: false,
-                  child: _buildErrorState(context),
-                );
-              }
-
-              if (state.getadvisorchatprofileState == CubitStates.success) {
-                if (_animationController.status == AnimationStatus.dismissed) {
-                  _animationController.forward();
-                }
-                return SafeArea(
-                  bottom: false,
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: SlideTransition(
-                      position: _slideAnimation,
-                      child: _buildSuccessContent(
-                        state,
-                        primaryPink,
-                        lightPinkBg,
-                        darkText,
-                        blueText,
+          body: Column(
+            children: [
+              SafeArea(
+                bottom: false,
+                child: SizedBox(
+                  height: kToolbarHeight,
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: darkText,
+                          size: 20.sp,
+                        ),
+                        onPressed: () => Navigator.pop(context),
                       ),
-                    ),
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            context.tr('advisor_data'),
+                            style: TextStyle(
+                              fontSize: 18.sp,
+                              fontWeight: FontWeight.bold,
+                              color: darkText,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 48.w),
+                    ],
                   ),
-                );
-              }
+                ),
+              ),
+              Expanded(
+                child: BlocConsumer<AdvisorProfileCubit, AdvisorProfileState>(
+                  listener: (context, state) {
+                    if (state.getadvisorchatprofileState ==
+                        CubitStates.success) {
+                      _animationController.forward();
+                    }
+                  },
+                  builder: (context, state) {
+                    if (state.getadvisorchatprofileState ==
+                        CubitStates.loading) {
+                      return SafeArea(
+                        bottom: false,
+                        child: const AdvisorProfileShimmer(),
+                      );
+                    }
 
-              return const SizedBox();
-            },
+                    if (state.getadvisorchatprofileState ==
+                        CubitStates.failure) {
+                      return SafeArea(
+                        bottom: false,
+                        child: _buildErrorState(context),
+                      );
+                    }
+
+                    if (state.getadvisorchatprofileState ==
+                        CubitStates.success) {
+                      if (_animationController.status ==
+                          AnimationStatus.dismissed) {
+                        _animationController.forward();
+                      }
+                      return FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: SlideTransition(
+                          position: _slideAnimation,
+                          child: _buildSuccessContent(
+                            state,
+                            primaryPink,
+                            lightPinkBg,
+                            darkText,
+                            blueText,
+                          ),
+                        ),
+                      );
+                    }
+
+                    return const SizedBox();
+                  },
+                ),
+              ),
+            ],
           ),
           bottomNavigationBar: _buildBottomBar(context, bottomPadding),
         ),

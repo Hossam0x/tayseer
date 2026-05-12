@@ -222,8 +222,6 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
         ),
       ],
       child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: _buildAppBar(),
         body: Stack(
           children: [
             const PackageBackground(),
@@ -235,80 +233,85 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      leading:
-          BlocSelector<
-            PackageSelectionCubit,
-            PackageSelectionState,
-            PackageType
-          >(
-            selector: (state) => state.selectedPackage,
-            builder: (context, selectedPackage) {
-              // ✅ لا يوجد elite بعد الآن، كل الألوان سوداء
-              return IconButton(
-                icon: Transform.flip(
-                  flipX: !isArabic,
-                  child: SvgPicture.asset(
-                    AssetsData.backArrow,
-                    colorFilter: const ColorFilter.mode(
-                      Colors.black,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                ),
-                onPressed: () {
-                  if (widget.fromPartnerFilter) {
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      AppRouter.kUserLayoutView,
-                      (route) => false,
-                    );
-                  } else {
-                    Navigator.pop(context);
-                  }
-                },
-              );
-            },
-          ),
-    );
-  }
-
   Widget _buildContent() {
     return Positioned.fill(
-      child: SafeArea(
-        child: FadeTransition(
-          opacity: _entranceFadeAnim,
-          child: SlideTransition(
-            position: _entranceSlideAnim,
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Expanded(flex: 6, child: _buildPageView()),
-                const Spacer(),
-                _buildTabSelector(),
-                Gap(20.h),
-                _buildActionButton(),
-                Gap(12.h),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.w),
-                  child: const AgreementText(),
-                ),
-                if (Platform.isIOS) ...[
-                  Gap(4.h),
-                  RestorePurchasesButton(
-                    textColor: AppColors.kprimaryTextColor,
-                  ),
-                ],
-                Gap(20.h),
-                _buildViewAllBenefitsButton(),
-                Gap(20.h),
-              ],
+      child: Column(
+        children: [
+          SafeArea(
+            bottom: false,
+            child: SizedBox(
+              height: kToolbarHeight,
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child:
+                    BlocSelector<
+                      PackageSelectionCubit,
+                      PackageSelectionState,
+                      PackageType
+                    >(
+                      selector: (state) => state.selectedPackage,
+                      builder: (context, selectedPackage) {
+                        return IconButton(
+                          icon: Transform.flip(
+                            flipX: !isArabic,
+                            child: SvgPicture.asset(
+                              AssetsData.backArrow,
+                              colorFilter: const ColorFilter.mode(
+                                Colors.black,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                          ),
+                          onPressed: () {
+                            if (widget.fromPartnerFilter) {
+                              Navigator.pushNamedAndRemoveUntil(
+                                context,
+                                AppRouter.kUserLayoutView,
+                                (route) => false,
+                              );
+                            } else {
+                              Navigator.pop(context);
+                            }
+                          },
+                        );
+                      },
+                    ),
+              ),
             ),
           ),
-        ),
+          Expanded(
+            child: FadeTransition(
+              opacity: _entranceFadeAnim,
+              child: SlideTransition(
+                position: _entranceSlideAnim,
+                child: Column(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    Expanded(flex: 6, child: _buildPageView()),
+                    const Spacer(),
+                    _buildTabSelector(),
+                    Gap(20.h),
+                    _buildActionButton(),
+                    Gap(12.h),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24.w),
+                      child: const AgreementText(),
+                    ),
+                    if (Platform.isIOS) ...[
+                      Gap(4.h),
+                      RestorePurchasesButton(
+                        textColor: AppColors.kprimaryTextColor,
+                      ),
+                    ],
+                    Gap(20.h),
+                    _buildViewAllBenefitsButton(),
+                    Gap(20.h),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

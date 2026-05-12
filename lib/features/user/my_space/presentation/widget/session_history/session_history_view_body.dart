@@ -40,54 +40,73 @@ class _SessionHistoryViewBodyState extends State<SessionHistoryViewBody> {
       child: AdvisorBackground(
         child: Scaffold(
           backgroundColor: Colors.transparent,
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            centerTitle: true,
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back, color: darkText, size: 24.sp),
-              onPressed: () => Navigator.pop(context),
-            ),
-            title: Text(
-              context.tr('sessions_history'),
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.bold,
-                color: darkText,
-              ),
-            ),
-          ),
-          body: BlocBuilder<AdvisorProfileCubit, AdvisorProfileState>(
-            builder: (context, state) {
-              // استخدام البيانات من الـ state إذا كانت موجودة، وإلا استخدام widget parameters
-              final upcomingSessions = state.upcomingSessions.isNotEmpty
-                  ? state.upcomingSessions
-                  : widget.upcomingSessions;
-              final expiredSessions = state.expiredSessions.isNotEmpty
-                  ? state.expiredSessions
-                  : widget.expiredSessions;
-
-              final bool hasNoSessions =
-                  upcomingSessions.isEmpty && expiredSessions.isEmpty;
-
-              if (hasNoSessions) {
-                return Center(
-                  child: EmptySessionsState(
-                    title: context.tr('no_sessions_history'),
-                    subtitle: context.tr('sessions_will_appear_here'),
-                    showAnimation: true,
-                    isCompact: false,
+          body: Column(
+            children: [
+              SafeArea(
+                bottom: false,
+                child: SizedBox(
+                  height: kToolbarHeight,
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: darkText,
+                          size: 20.sp,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            context.tr('sessions_history'),
+                            style: TextStyle(
+                              fontSize: 18.sp,
+                              fontWeight: FontWeight.bold,
+                              color: darkText,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 48.w),
+                    ],
                   ),
-                );
-              }
+                ),
+              ),
+              Expanded(
+                child: BlocBuilder<AdvisorProfileCubit, AdvisorProfileState>(
+                  builder: (context, state) {
+                    final upcomingSessions = state.upcomingSessions.isNotEmpty
+                        ? state.upcomingSessions
+                        : widget.upcomingSessions;
+                    final expiredSessions = state.expiredSessions.isNotEmpty
+                        ? state.expiredSessions
+                        : widget.expiredSessions;
 
-              return _buildSessionsList(
-                context,
-                darkText,
-                upcomingSessions,
-                expiredSessions,
-              );
-            },
+                    final bool hasNoSessions =
+                        upcomingSessions.isEmpty && expiredSessions.isEmpty;
+
+                    if (hasNoSessions) {
+                      return Center(
+                        child: EmptySessionsState(
+                          title: context.tr('no_sessions_history'),
+                          subtitle: context.tr('sessions_will_appear_here'),
+                          showAnimation: true,
+                          isCompact: false,
+                        ),
+                      );
+                    }
+
+                    return _buildSessionsList(
+                      context,
+                      darkText,
+                      upcomingSessions,
+                      expiredSessions,
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ),
       ),
