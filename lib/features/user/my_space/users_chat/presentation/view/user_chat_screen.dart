@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:developer';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
+import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/widgets/chat_room_list_item/helpers/chat_room_dialog_helper.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/message_actions_handler.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/overlay_manager.dart';
@@ -368,10 +370,28 @@ class _UserChatContentState extends State<_UserChatContent> {
 
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 20.r,
-                        backgroundImage: NetworkImage(
-                          widget.userimage ?? 'https://i.pravatar.cc/150',
+                      ClipOval(
+                        child: CachedNetworkImage(
+                          imageUrl: widget.userimage?.isNotEmpty == true
+                              ? widget.userimage!
+                              : AssetsData.defaultProfileImage,
+                          width: 40.r,
+                          height: 40.r,
+                          fit: BoxFit.cover,
+                          memCacheWidth: 80,
+                          memCacheHeight: 80,
+                          fadeInDuration: Duration.zero,
+                          fadeOutDuration: Duration.zero,
+                          placeholder: (_, __) => CircleAvatar(
+                            radius: 20.r,
+                            backgroundColor: Colors.grey[200],
+                          ),
+                          errorWidget: (_, __, ___) => Image.asset(
+                            AssetsData.defaultProfileImage,
+                            width: 40.r,
+                            height: 40.r,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                       SizedBox(width: 8.w),

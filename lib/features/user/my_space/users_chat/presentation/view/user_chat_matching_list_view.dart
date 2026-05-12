@@ -1,6 +1,8 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/widgets/chat_room_list_item/chat_room_list_item.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
 import 'package:tayseer/features/user/my_space/users_chat/data/model/user_chat_room_model.dart';
@@ -63,7 +65,11 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
     await _dataFuture;
   }
 
-  void _onRoomTap(BuildContext context, UserChatRoomModel room, _MatchingData data) {
+  void _onRoomTap(
+    BuildContext context,
+    UserChatRoomModel room,
+    _MatchingData data,
+  ) {
     final hasSlot = data.activeCount < data.slotLimit;
 
     if (hasSlot) {
@@ -129,48 +135,97 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
                           children: [
                             CircleAvatar(
                               radius: 40,
-                              backgroundImage: room.otherUser.image != null
-                                  ? NetworkImage(room.otherUser.image!)
-                                  : null,
                               backgroundColor: AppColors.secondary100,
-                              child: room.otherUser.image == null
-                                  ? const Icon(Icons.person, size: 40)
-                                  : null,
-                            )
-                                .animate()
-                                .scale(
-                                  begin: const Offset(0, 0),
-                                  end: const Offset(1, 1),
-                                  duration: const Duration(milliseconds: 600),
-                                  curve: Curves.elasticOut,
-                                ),
+                              child: ClipOval(
+                                child:
+                                    room.otherUser.image != null &&
+                                        room.otherUser.image!.isNotEmpty
+                                    ? CachedNetworkImage(
+                                        imageUrl: room.otherUser.image!,
+                                        width: 80,
+                                        height: 80,
+                                        fit: BoxFit.cover,
+                                        memCacheWidth: 160,
+                                        memCacheHeight: 160,
+                                        fadeInDuration: Duration.zero,
+                                        fadeOutDuration: Duration.zero,
+                                        placeholder: (_, __) => Container(
+                                          width: 80,
+                                          height: 80,
+                                          color: AppColors.secondary100,
+                                        ),
+                                        errorWidget: (_, __, ___) =>
+                                            Image.asset(
+                                              AssetsData.defaultProfileImage,
+                                              width: 80,
+                                              height: 80,
+                                              fit: BoxFit.cover,
+                                            ),
+                                      )
+                                    : Image.asset(
+                                        AssetsData.defaultProfileImage,
+                                        width: 80,
+                                        height: 80,
+                                        fit: BoxFit.cover,
+                                      ),
+                              ),
+                            ).animate().scale(
+                              begin: const Offset(0, 0),
+                              end: const Offset(1, 1),
+                              duration: const Duration(milliseconds: 600),
+                              curve: Curves.elasticOut,
+                            ),
                             const SizedBox(height: 20),
                             Text(
-                              context.tr('add_to_conversations_title').replaceAll('{name}', room.otherUser.name),
-                              style: Styles.textStyle16.copyWith(
-                                color: const Color(0xFF2D2D2D),
-                                fontWeight: FontWeight.bold,
-                                height: 1.4,
-                              ),
-                              textAlign: TextAlign.center,
-                            )
+                                  context
+                                      .tr('add_to_conversations_title')
+                                      .replaceAll(
+                                        '{name}',
+                                        room.otherUser.name,
+                                      ),
+                                  style: Styles.textStyle16.copyWith(
+                                    color: const Color(0xFF2D2D2D),
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.4,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                )
                                 .animate()
                                 .fadeIn(delay: 200.ms, duration: 400.ms)
-                                .slideY(begin: 0.5, end: 0, delay: 200.ms, duration: 400.ms, curve: Curves.easeOutCubic),
+                                .slideY(
+                                  begin: 0.5,
+                                  end: 0,
+                                  delay: 200.ms,
+                                  duration: 400.ms,
+                                  curve: Curves.easeOutCubic,
+                                ),
                             const SizedBox(height: 10),
                             Text(
-                              context.tr('available_slots')
-                                  .replaceAll('{available}', '${data.slotLimit - data.activeCount}')
-                                  .replaceAll('{total}', '${data.slotLimit}'),
-                              style: Styles.textStyle12.copyWith(
-                                color: const Color(0xFF6B6B6B),
-                                height: 1.5,
-                              ),
-                              textAlign: TextAlign.center,
-                            )
+                                  context
+                                      .tr('available_slots')
+                                      .replaceAll(
+                                        '{available}',
+                                        '${data.slotLimit - data.activeCount}',
+                                      )
+                                      .replaceAll(
+                                        '{total}',
+                                        '${data.slotLimit}',
+                                      ),
+                                  style: Styles.textStyle12.copyWith(
+                                    color: const Color(0xFF6B6B6B),
+                                    height: 1.5,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                )
                                 .animate()
                                 .fadeIn(delay: 300.ms, duration: 400.ms)
-                                .slideY(begin: 0.5, end: 0, delay: 300.ms, duration: 400.ms, curve: Curves.easeOutCubic),
+                                .slideY(
+                                  begin: 0.5,
+                                  end: 0,
+                                  delay: 300.ms,
+                                  duration: 400.ms,
+                                  curve: Curves.easeOutCubic,
+                                ),
                             const SizedBox(height: 28),
                             Row(
                               children: [
@@ -219,17 +274,22 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
     );
   }
 
-  Future<void> _activateRoom(BuildContext context, UserChatRoomModel room) async {
+  Future<void> _activateRoom(
+    BuildContext context,
+    UserChatRoomModel room,
+  ) async {
     final result = await _repo.activateMatchingRoom(room.id);
     if (!mounted) return;
 
-    result.fold(
-      (failure) => AppToast.error(context, failure.message),
-      (_) {
-        AppToast.success(context, context.tr('activate_room_success').replaceAll('{name}', room.otherUser.name));
-        _refresh();
-      },
-    );
+    result.fold((failure) => AppToast.error(context, failure.message), (_) {
+      AppToast.success(
+        context,
+        context
+            .tr('activate_room_success')
+            .replaceAll('{name}', room.otherUser.name),
+      );
+      _refresh();
+    });
   }
 
   @override
@@ -290,7 +350,8 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
                                 child: Text(
                                   context.tr('error_try_again'),
                                   style: Styles.textStyle14.copyWith(
-                                      color: AppColors.secondary400),
+                                    color: AppColors.secondary400,
+                                  ),
                                 ),
                               ),
                             ),
@@ -302,7 +363,9 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
 
                       if (data.matchingRooms.isEmpty) {
                         return Center(
-                          child: _EmptyState(message: context.tr('no_matches_yet')),
+                          child: _EmptyState(
+                            message: context.tr('no_matches_yet'),
+                          ),
                         );
                       }
 
@@ -326,7 +389,9 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
                             onDelete: () {},
                             onReport: () {},
                             onBlock: () {},
-                            blockLabel: room.blockExists ? context.tr('unblock_label') : context.tr('block_label'),
+                            blockLabel: room.blockExists
+                                ? context.tr('unblock_label')
+                                : context.tr('block_label'),
                           );
                         },
                         separatorBuilder: (_, __) => SizedBox(height: 12.h),
@@ -354,6 +419,7 @@ class _MatchingData {
     required this.slotLimit,
   });
 }
+
 class _EmptyState extends StatelessWidget {
   final String message;
   const _EmptyState({required this.message});

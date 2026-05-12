@@ -1,6 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:tayseer/core/utils/colors.dart';
 
 /// صورة المستخدم مع overlay الحظر
@@ -51,18 +50,12 @@ class ChatRoomAvatar extends StatelessWidget {
       return CachedNetworkImage(
         imageUrl: imageUrl!,
         fit: BoxFit.cover,
-        placeholder: (_, __) => Shimmer.fromColors(
-          baseColor: AppColors.secondary300,
-          highlightColor: AppColors.secondary100,
-          child: Container(
-            width: 56,
-            height: 56,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white,
-            ),
-          ),
-        ),
+        memCacheWidth: 112, // 56 * 2x pixel ratio
+        memCacheHeight: 112,
+        fadeInDuration: Duration.zero,
+        fadeOutDuration: Duration.zero,
+        placeholder: (_, __) =>
+            Container(width: 56, height: 56, color: AppColors.secondary200),
         errorWidget: (_, __, ___) =>
             Image.asset(fallbackAsset, fit: BoxFit.cover),
       );
