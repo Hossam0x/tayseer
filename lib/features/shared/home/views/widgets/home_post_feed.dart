@@ -340,19 +340,15 @@ class HomePostFeed extends StatelessWidget {
     final Map<int, int> postIndexToItemIndex = {};
 
     // Get feature flags from LayoutState
-    // Note: In this context, "Consultation" is active if isMarriageVisible is false,
-    // but the user said "لو هو مفعل الاستشارات يظهر" which usually means a separate flag or always for users.
-    // We'll use the flags if available or assume true for isUser.
     final layoutState = context.read<LayoutCubit>().state;
     final bool isMarriageVisible = layoutState.isMarriageVisible;
 
     // RULE:
-    // If Marriage active -> Show All 3.
-    // If Only Consultation active -> Show Similar Users & Best Matches (Hide Best Advisor).
-    final bool showAdvisors =
-        isUser && isMarriageVisible && state.bestAdvisors.isNotEmpty;
-    final bool showMarriageContent = isUser && state.similarUsers.isNotEmpty;
-    // Always show similar/matches if isUser, because user said they should show even if ONLY consultation active.
+    // لو الزواج مفعل  → اظهر BestAdvisorSection + SimilarUsersSection
+    // لو الزواج مش مفعل → اظهر BestAdvisorSection فقط (بدل SimilarUsersSection)
+    final bool showAdvisors = isUser && state.bestAdvisors.isNotEmpty;
+    final bool showMarriageContent =
+        isUser && isMarriageVisible && state.similarUsers.isNotEmpty;
 
     int currentPostIndex = 0;
     const int maxItems = 100; // Safety break
