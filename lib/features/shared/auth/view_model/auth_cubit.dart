@@ -4,8 +4,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:tayseer/core/services/groq_service.dart';
+import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -1207,7 +1207,7 @@ class AuthCubit extends Cubit<AuthState> {
     emit(state.copyWith(draftText: text));
   }
 
-  ///  🧠✨ Gemini AI Content Generation for Bio
+  ///  🧠✨ Groq AI Content Generation for Bio
   Future<void> enhanceTextWithGemini(BuildContext context) async {
     final currentText = bioController.text;
 
@@ -1224,68 +1224,27 @@ class AuthCubit extends Cubit<AuthState> {
 
     emit(state.copyWith(isAiState: CubitStates.loading));
 
-    final apiKey = dotenv.env['GEMINI_API_KEY'];
-    if (apiKey == null || apiKey.isEmpty) {
-      emit(state.copyWith(isAiState: CubitStates.failure));
-      ScaffoldMessenger.of(context).showSnackBar(
-        CustomSnackBar(
-          context,
-          text: 'Missing AI API key. Configure GEMINI_API_KEY in your .env',
-          isError: true,
-        ),
-      );
-      return;
-    }
-
     try {
-      final model = GenerativeModel(model: 'gemma-3-4b-it', apiKey: apiKey);
-
+      final groq = getIt<GroqService>();
       final prompt =
-          '''
-أنت كاتب محتوى متخصص في كتابة السِّيَر الذاتية (Bio) للمستشارين والمرشدين الأسريين.
+          'أنت كاتب محتوى متخصص في كتابة السِّيَر الذاتية (Bio) للمستشارين والمرشدين الأسريين.\n'
+          'المطلوب: بايو احترافي لمستشار/مرشد في العلاقات الأسرية بناءً على النص اللي هيكتبه المستخدم.\n'
+          'قواعد مهمة:\n'
+          '1. اكتشف لغة النص المُدخل واكتب البايو بنفس اللغة — لا تترجم أبدًا.\n'
+          '2. اجعل البايو احترافيًا، مطمئنًا، ويعكس الثقة والخبرة.\n'
+          '3. أبرز التخصص والخبرة في مجالات الإرشاد الأسري.\n'
+          '4. اجعل الأسلوب دافئًا وإنسانيًا مع إيموجي مناسبة باعتدال.\n'
+          '5. اجعل البايو مختصرًا (3-5 أسطر كحد أقصى).\n'
+          '6. أرجع البايو فقط — بدون أي شرح أو مقدمات.\n'
+          'النص المُدخل: "$currentText"';
 
-المطلوب:
-- اكتب بايو احترافي لمستشار/مرشد في العلاقات الأسرية بناءً على النص اللي هيكتبه المستخدم.
-- البايو يكون مناسب لعرضه في تطبيق استشارات أسرية.
-
-قواعد مهمة:
-1. اكتشف لغة النص المُدخل واكتب البايو بنفس اللغة — لا تترجم أبدًا.
-2. اجعل البايو احترافيًا، مطمئنًا، ويعكس الثقة والخبرة.
-3. أبرز التخصص والخبرة في مجالات الإرشاد الأسري مثل:
-   - الإرشاد الزواجي (الخلافات، التواصل، الثقة، الغيرة، إدارة المال، الخيانة)
-   - الإرشاد قبل الزواج (اختيار الشريك، التوقعات، التوافق، الجاهزية النفسية والمالية)
-   - الإرشاد التربوي والوالدي (أساليب التربية، العناد، الإدمان الرقمي)
-   - مشكلات الأطفال والمراهقين
-   - العلاقات العائلية الممتدة
-   - إدارة الأزمات الأسرية
-   - قضايا الطلاق وما بعده
-   - الصحة النفسية داخل الأسرة
-4. لا تذكر كل التخصصات — ركّز فقط على ما يتناسب مع كلام المستخدم.
-5. اجعل الأسلوب دافئًا وإنسانيًا، يشعر القارئ بالأمان والراحة.
-6. أضف إيموجي مناسبة باعتدال.
-7. اجعل البايو مختصرًا (3-5 أسطر كحد أقصى).
-8. أرجع البايو فقط — بدون أي شرح أو مقدمات أو تعليقات.
-
-النص المُدخل من المستخدم: "$currentText"
-''';
-
-      final content = [Content.text(prompt)];
-      final response = await model.generateContent(content);
-
-      if (response.text != null) {
-        bioController.text = response.text!;
-        emit(
-          state.copyWith(
-            draftText: response.text!,
-            isAiState: CubitStates.success,
-          ),
-        );
-        emit(state.copyWith(isAiState: CubitStates.initial));
-      }
+      final result = await groq.generateText(prompt);
+      bioController.text = result;
+      emit(state.copyWith(draftText: result, isAiState: CubitStates.success));
+      emit(state.copyWith(isAiState: CubitStates.initial));
     } catch (e) {
-      debugPrint('Gemini AI error: $e');
+      debugPrint('Groq AI error: $e');
       emit(state.copyWith(isAiState: CubitStates.failure));
-
       ScaffoldMessenger.of(context).showSnackBar(
         CustomSnackBar(
           context,

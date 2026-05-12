@@ -1,3 +1,4 @@
+import 'package:tayseer/core/widgets/secure_image_wrapper.dart';
 import 'package:tayseer/my_import.dart';
 
 class FullScreenImageView extends StatefulWidget {
@@ -14,7 +15,6 @@ class FullScreenImageView extends StatefulWidget {
     this.userName,
   });
 
-  /// استخدم دي بدل Navigator.push عشان الخلفية تبقى شفافة
   static Future<void> show(
     BuildContext context, {
     String? imageUrl,
@@ -99,7 +99,6 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
       if (mounted) _arrowHintController.forward();
     });
 
-    // منع الـ zoom out من تعدي الـ 1x
     _transformationController.addListener(_clampScale);
   }
 
@@ -163,7 +162,7 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
 
   void _handleDragEnd() {
     if (_isZoomed) return;
-    final threshold = 120.0;
+    const threshold = 120.0;
     if (_dragY.abs() > threshold) {
       Navigator.pop(context);
     } else {
@@ -172,13 +171,26 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
     }
   }
 
+  Widget _buildImage() {
+    if (widget.imageFile != null) {
+      return Image.file(widget.imageFile!, fit: BoxFit.contain);
+    }
+    // ✅ نفس آلية الـ marriage profile card:
+    // iOS  → UiKitView(secure_image_view) بـ instanceId مختلف عن الـ card
+    //        عشان يمنع PlatformException(recreating_view)
+    // Android → AppImage عادي، الحماية من FLAG_SECURE على الـ Window
+    return SecureImageWrapper(
+      imageUrl: widget.imageUrl,
+      instanceId: 'fullscreen',
+      child: AppImage(widget.imageUrl, fit: BoxFit.contain),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final progress = (_dragY.abs() / 350).clamp(0.0, 1.0);
     final bgOpacity = (1.0 - progress).clamp(0.0, 1.0);
-    // كل ما سحبت أكتر الصورة تصغر من 1.0 لـ 0.4
     final scale = (1.0 - progress * 0.6).clamp(0.4, 1.0);
-    // الـ borderRadius يبدأ من 0 ويوصل لـ 500 (دايرة كاملة)
     final screenW = MediaQuery.of(context).size.width;
     final borderRadius = progress * (screenW * scale / 2);
 
@@ -186,7 +198,7 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-          // خلفية سوداء منفصلة عشان ما تأثرش على الـ clip
+          // خلفية سوداء
           Positioned.fill(
             child: Container(color: Colors.black.withOpacity(bgOpacity)),
           ),
@@ -201,47 +213,37 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
                 scale: scale,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(borderRadius),
-                  child: Hero(
-                    tag: widget.heroTag,
-                    child: InteractiveViewer(
-                      transformationController: _transformationController,
-                      minScale: 1.0,
-                      maxScale: 4.0,
-                      panEnabled: true,
-                      scaleEnabled: true,
-                      constrained: true,
-                      boundaryMargin: EdgeInsets.zero,
-                      onInteractionStart: (details) {
-                        // لو إصبع واحد بس وما فيش zoom → ابدأ drag
-                        if (details.pointerCount == 1 && !_isZoomed) {
-                          _handleDragStart();
-                        }
-                      },
-                      onInteractionUpdate: (details) {
-                        // لو إصبع واحد بس وما فيش zoom → حرك drag
-                        if (details.pointerCount == 1 && !_isZoomed) {
-                          _handleDragMove(details.focalPointDelta.dy);
-                        }
-                      },
-                      onInteractionEnd: (details) {
-                        // لو كان في drag نشط → اتحقق من الـ threshold
-                        if (!_isZoomed && _dragY != 0) {
-                          _handleDragEnd();
-                        }
-                      },
-                      child: SizedBox.expand(
-                        child: widget.imageFile != null
-                            ? Image.file(widget.imageFile!, fit: BoxFit.contain)
-                            : AppImage(widget.imageUrl, fit: BoxFit.contain),
-                      ),
-                    ),
+                  child: InteractiveViewer(
+                    transformationController: _transformationController,
+                    minScale: 1.0,
+                    maxScale: 4.0,
+                    panEnabled: true,
+                    scaleEnabled: true,
+                    constrained: true,
+                    boundaryMargin: EdgeInsets.zero,
+                    onInteractionStart: (details) {
+                      if (details.pointerCount == 1 && !_isZoomed) {
+                        _handleDragStart();
+                      }
+                    },
+                    onInteractionUpdate: (details) {
+                      if (details.pointerCount == 1 && !_isZoomed) {
+                        _handleDragMove(details.focalPointDelta.dy);
+                      }
+                    },
+                    onInteractionEnd: (details) {
+                      if (!_isZoomed && _dragY != 0) {
+                        _handleDragEnd();
+                      }
+                    },
+                    child: SizedBox.expand(child: _buildImage()),
                   ),
                 ),
               ),
             ),
           ),
 
-          // سهم الإغلاق مع hint animation وسحب
+          // سهم الإغلاق
           Positioned(
             bottom: 10.h,
             left: 0,

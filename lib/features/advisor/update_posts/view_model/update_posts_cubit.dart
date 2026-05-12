@@ -1,5 +1,4 @@
-import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:tayseer/core/services/groq_service.dart';
 import 'package:tayseer/core/enum/add_post_enum.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/features/advisor/add_post/repo/posts_repository.dart';
@@ -346,37 +345,19 @@ class UpdatePostCubit extends Cubit<UpdatePostState> {
 
     emit(state.copyWith(isAiLoading: true));
 
-    final apiKey = dotenv.env['GEMINI_API_KEY'];
-    if (apiKey == null || apiKey.isEmpty) {
-      emit(state.copyWith(isAiLoading: false));
-      return;
-    }
-
     try {
-      final model = GenerativeModel(model: 'gemma-3-4b-it', apiKey: apiKey);
-
+      final groq = di.getIt<GroqService>();
       final prompt =
-          '''
-You are a professional social media content creator.
-IMPORTANT RULES:
-1. Detect the language of the input text
-2. Rewrite the text in THE SAME LANGUAGE as the input
-3. Make it engaging, professional, and attractive for social media
-4. Add relevant emojis
-5. Do NOT translate - keep the same language
-6. Return ONLY the rewritten text, nothing else
-Input text: "$currentText"
-''';
+          'أنت كاتب محتوى متخصص في منصات التواصل الاجتماعي.\n'
+          'أعد كتابة النص التالي ليكون أكثر جاذبية واحترافية مع إضافة إيموجي مناسبة.\n'
+          'أرجع النص المحسّن فقط بدون أي شرح.\n'
+          'النص: "$currentText"';
 
-      final content = [Content.text(prompt)];
-      final response = await model.generateContent(content);
-
-      if (response.text != null) {
-        contentController.text = response.text!;
-        emit(state.copyWith(draftText: response.text!, isAiLoading: false));
-      }
+      final result = await groq.generateText(prompt);
+      contentController.text = result;
+      emit(state.copyWith(draftText: result, isAiLoading: false));
     } catch (e) {
-      debugPrint('Gemini AI error: $e');
+      debugPrint('Groq AI error: $e');
       emit(state.copyWith(isAiLoading: false));
       ScaffoldMessenger.of(context).showSnackBar(
         CustomSnackBar(

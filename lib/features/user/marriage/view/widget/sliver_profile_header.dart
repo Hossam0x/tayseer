@@ -140,9 +140,7 @@ class SliverProfileHeader extends StatelessWidget {
                   clipBehavior: Clip.none,
                   children: [
                     if (toggleWidget != null)
-                      Positioned.fill(
-                        child: Center(child: toggleWidget!),
-                      ),
+                      Positioned.fill(child: Center(child: toggleWidget!)),
                     Positioned(
                       right: 0,
                       child: GestureDetector(
@@ -301,22 +299,8 @@ class _FrontProfileCard extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // ✅ الصورة فقط داخل SecureImageWrapper — محمية من screenshot
-        GestureDetector(
-          onTap: () {
-            if (images.isNotEmpty && !shouldBlur) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ImageViewerGallery(
-                    images: images,
-                    initialIndex: 0,
-                    personId: reportId,
-                  ),
-                ),
-              );
-            }
-          },
+        // الصورة — محمية من screenshot، AbsorbPointer يمنع UiKitView من أخذ الـ touch
+        AbsorbPointer(
           child: ClipRRect(
             borderRadius: BorderRadius.only(
               bottomLeft: Radius.circular(bottomRadius),
@@ -332,6 +316,26 @@ class _FrontProfileCard extends StatelessWidget {
                   ),
           ),
         ),
+
+        // ✅ tap layer فوق الـ UiKitView — opaque يضمن استقبال الـ touch دايماً
+        if (!shouldBlur && images.isNotEmpty)
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ImageViewerGallery(
+                      images: images,
+                      initialIndex: 0,
+                      personId: reportId,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
 
         // ✅ الـ gradient خارج الـ SecureImageWrapper — يظهر في screenshot
         Positioned.fill(

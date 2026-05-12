@@ -1,8 +1,8 @@
 // lib/features/user/questions/presentation/manager/questions_cubit.dart
 
+import 'package:tayseer/core/services/groq_service.dart';
+import 'package:tayseer/core/dependancy_injection/get_it.dart' as di;
 import 'package:didit_sdk/sdk_flutter.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:tayseer/features/user/questions/data/repo/questions_repo.dart';
 import 'package:tayseer/features/user/questions/presentation/manager/questions_state.dart';
 import 'package:tayseer/my_import.dart';
@@ -413,7 +413,7 @@ class QuestionsCubit extends Cubit<QuestionsState> {
   }
 
   // ─────────────────────────────────────────────────────
-  // AI Text Enhancement (Gemini)
+  // AI Text Enhancement (Groq)
   // ─────────────────────────────────────────────────────
 
   Future<void> enhanceTextWithGemini(String currentText) async {
@@ -424,55 +424,25 @@ class QuestionsCubit extends Cubit<QuestionsState> {
 
     emit(state.copyWith(isAiLoading: true, aiErrorMessage: null));
 
-    final apiKey = dotenv.env['GEMINI_API_KEY'];
-    if (apiKey == null || apiKey.isEmpty) {
-      emit(
-        state.copyWith(
-          isAiLoading: false,
-          aiErrorMessage:
-              'Missing AI API key. Configure GEMINI_API_KEY in your .env',
-        ),
-      );
-      return;
-    }
-
     try {
-      final model = GenerativeModel(model: 'gemma-3-4b-it', apiKey: apiKey);
+      final groq = di.getIt<GroqService>();
       final prompt =
-          '''
-You are a professional profile writer.
+          'You are a professional profile writer.\n'
+          'TASK: Write a marriage CV (personal profile) for someone who intends to get married.\n'
+          'IMPORTANT RULES:\n'
+          '1. Detect the language of the input text.\n'
+          '2. Write the CV in THE SAME LANGUAGE as the input.\n'
+          '3. Make it respectful, sincere, and well-structured.\n'
+          '4. Include: Brief personal introduction, Personality traits, Values and principles, Future goals, Vision for marriage and family life.\n'
+          '5. Make it emotionally intelligent and mature.\n'
+          '6. Do NOT translate the language.\n'
+          '7. Return ONLY the final CV text without explanations.\n'
+          'Use this information about the person: "$currentText"';
 
-TASK:
-Write a marriage CV (personal profile) for someone who intends to get married.
-
-IMPORTANT RULES:
-1. Detect the language of the input text.
-2. Write the CV in THE SAME LANGUAGE as the input.
-3. Make it respectful, sincere, and well-structured.
-4. Include:
-   - Brief personal introduction
-   - Personality traits
-   - Values and principles
-   - Future goals and ambitions
-   - Vision for marriage and family life
-5. Make it emotionally intelligent and mature.
-6. Do NOT translate the language.
-7. Return ONLY the final CV text without explanations.
-
-Use this information about the person:
-"$currentText"
-''';
-
-      final content = [Content.text(prompt)];
-      final response = await model.generateContent(content);
-
-      if (response.text != null) {
-        emit(
-          state.copyWith(aiGeneratedText: response.text!, isAiLoading: false),
-        );
-      }
+      final result = await groq.generateText(prompt);
+      emit(state.copyWith(aiGeneratedText: result, isAiLoading: false));
     } catch (e) {
-      debugPrint('Gemini AI error: $e');
+      debugPrint('Groq AI error: $e');
       emit(
         state.copyWith(
           isAiLoading: false,

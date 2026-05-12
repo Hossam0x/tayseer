@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tayseer/core/enum/report_type.dart';
+import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/widgets/chat_room_list_item/helpers/chat_room_dialog_helper.dart';
 import 'package:tayseer/features/shared/home/view_model/home_event_bus.dart';
 import 'package:tayseer/features/user/my_space/data/model/session_start_model.dart';
@@ -91,11 +93,28 @@ class _ConversationAppBarState extends State<ConversationAppBar> {
                     child: Row(
                       children: [
                         // الصورة
-                        CircleAvatar(
-                          radius: isMobile ? 20 : 24,
-                          backgroundImage: NetworkImage(
-                            widget.userimage ??
-                                'https://i.pravatar.cc/150?img=5',
+                        ClipOval(
+                          child: CachedNetworkImage(
+                            imageUrl: widget.userimage?.isNotEmpty == true
+                                ? widget.userimage!
+                                : AssetsData.defaultProfileImage,
+                            width: isMobile ? 40 : 48,
+                            height: isMobile ? 40 : 48,
+                            fit: BoxFit.cover,
+                            memCacheWidth: 96,
+                            memCacheHeight: 96,
+                            fadeInDuration: Duration.zero,
+                            fadeOutDuration: Duration.zero,
+                            placeholder: (_, __) => CircleAvatar(
+                              radius: isMobile ? 20 : 24,
+                              backgroundColor: Colors.grey[200],
+                            ),
+                            errorWidget: (_, __, ___) => Image.asset(
+                              AssetsData.defaultProfileImage,
+                              width: isMobile ? 40 : 48,
+                              height: isMobile ? 40 : 48,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
                         SizedBox(width: isMobile ? 8 : 12),

@@ -329,79 +329,85 @@ class _EditPersonalDataViewState extends State<EditPersonalDataView> {
               if (shouldPop && context.mounted) Navigator.pop(context);
             },
             child: Scaffold(
-              body: AdvisorBackground(
-                child: SingleChildScrollView(
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: 105.h,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: AssetImage(
-                                AssetsData.homeBarBackgroundImage,
+              body: GestureDetector(
+                onTap: () => FocusScope.of(context).unfocus(),
+                behavior: HitTestBehavior.opaque,
+                child: AdvisorBackground(
+                  child: SingleChildScrollView(
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: 105.h,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: AssetImage(
+                                  AssetsData.homeBarBackgroundImage,
+                                ),
+                                fit: BoxFit.fill,
                               ),
-                              fit: BoxFit.fill,
                             ),
                           ),
                         ),
-                      ),
-                      SafeArea(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 20.w,
-                            vertical: 16.h,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              SimpleAppBar(
-                                title: context.tr("edit_personal_data"),
-                                isLargeTitle: true,
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 25.0,
+                        SafeArea(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 20.w,
+                              vertical: 16.h,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                SimpleAppBar(
+                                  title: context.tr("edit_personal_data"),
+                                  isLargeTitle: true,
                                 ),
-                                child: Column(
-                                  children: [
-                                    Gap(32.h),
-                                    if (state.state == CubitStates.loading)
-                                      const EditPersonalDataSkeleton()
-                                    else if (state.state == CubitStates.failure)
-                                      CustomErrorView(
-                                        verticalPadding: 100,
-                                        message:
-                                            state.errorMessage ??
-                                            context.tr("data_load_error"),
-                                        onRetry: cubit.loadProfileData,
-                                      )
-                                    else
-                                      EditPersonalDataForm(
-                                        cubit: cubit,
-                                        state: state,
-                                        uiCubit: _uiCubit,
-                                        nameController: _nameController,
-                                        bioController: _bioController,
-                                        usernameController: _usernameController,
-                                        chewieController: _chewieController,
-                                        onPickImage: () =>
-                                            _pickAvatarImage(cubit),
-                                        onPickVideo: () => _pickVideo(cubit),
-                                        onRemoveVideo: () =>
-                                            _removeVideo(cubit),
-                                      ),
-                                  ],
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 25.0,
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Gap(32.h),
+                                      if (state.state == CubitStates.loading)
+                                        const EditPersonalDataSkeleton()
+                                      else if (state.state ==
+                                          CubitStates.failure)
+                                        CustomErrorView(
+                                          verticalPadding: 100,
+                                          message:
+                                              state.errorMessage ??
+                                              context.tr("data_load_error"),
+                                          onRetry: cubit.loadProfileData,
+                                        )
+                                      else
+                                        EditPersonalDataForm(
+                                          cubit: cubit,
+                                          state: state,
+                                          uiCubit: _uiCubit,
+                                          nameController: _nameController,
+                                          bioController: _bioController,
+                                          usernameController:
+                                              _usernameController,
+                                          chewieController: _chewieController,
+                                          onPickImage: () =>
+                                              _pickAvatarImage(cubit),
+                                          onPickVideo: () => _pickVideo(cubit),
+                                          onRemoveVideo: () =>
+                                              _removeVideo(cubit),
+                                        ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

@@ -1,4 +1,5 @@
-import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:tayseer/core/services/groq_service.dart';
+import 'package:tayseer/core/dependancy_injection/get_it.dart' as di;
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/add_story_cubit/add_story_state.dart';
 import 'package:tayseer/my_import.dart';
@@ -384,27 +385,20 @@ class AddStoryCubit extends Cubit<AddStoryState> {
     if (currentText.trim().isEmpty) return;
 
     if (!isClosed) emit(state.copyWith(isAiLoading: true));
-    const apiKey =
-        'AIzaSyAzkpmYLG58vfNtxPGvfh8Ynix02VNWnUg'; // Keep it for now as per AddPostCubit
 
     try {
-      final model = GenerativeModel(model: 'gemma-3-4b-it', apiKey: apiKey);
+      final groq = di.getIt<GroqService>();
       final prompt =
-          '''
-You are a professional social media content creator.
-Rewrite the text to be engaging and professional with emojis.
-Return ONLY the rewritten text.
-Input text: "$currentText"
-''';
-      final content = [Content.text(prompt)];
-      final response = await model.generateContent(content);
+          'أنت كاتب محتوى متخصص في منصات التواصل الاجتماعي.\n'
+          'أعد كتابة النص التالي ليكون أكثر جاذبية واحترافية مع إضافة إيموجي مناسبة.\n'
+          'أرجع النص المحسّن فقط بدون أي شرح.\n'
+          'النص: "$currentText"';
+
+      final result = await groq.generateText(prompt);
 
       if (isClosed) return;
-
-      if (response.text != null) {
-        contentController.text = response.text!;
-        emit(state.copyWith(draftText: response.text!, isAiLoading: false));
-      }
+      contentController.text = result;
+      emit(state.copyWith(draftText: result, isAiLoading: false));
     } catch (e) {
       if (!isClosed) emit(state.copyWith(isAiLoading: false));
     }
