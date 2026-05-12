@@ -2195,6 +2195,8 @@
   "confirm_button": "Confirm",
   "match_cancelled_success": "Match cancelled successfully",
   "match_cancel_failed": "Failed to cancel match",
+  "rematch_with": "Rematch with {name}",
+  "rematch_description": "Choose how long to extend your match with this person",
   "past_matches_title": "Past Matches",
   "past_matches_subtitle": "Expired matches appear here and you still have a chance to reconnect",
   "past_matches_error": "An error occurred while loading past matches",

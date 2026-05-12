@@ -8,6 +8,7 @@ class tayseerSocketHelper {
   IO.Socket? _socket;
   bool _isConnected = false;
   bool _isConnecting = false;
+  bool _isReconnecting = false; // ✅ flag لتمييز الـ reconnect عن الـ connect الأول
   Completer<bool>? _connectionCompleter;
   // ✅ الـ token المعتمد للـ session الحالية — يُعيَّن في resetAndConnect
   // يمنع أي connect() تاني من استخدام token قديم من الـ cache
@@ -66,17 +67,16 @@ class tayseerSocketHelper {
 
     _socket!.onConnect((_) {
       log('✅ Connected to tayseer Game Socket');
-      final wasReconnect = _isConnected == false && _connectionCompleter?.isCompleted == true;
       _isConnected = true;
       _isConnecting = false;
       if (!(_connectionCompleter?.isCompleted ?? true)) {
+        // ✅ الـ connect الأول — complete الـ completer
         _connectionCompleter?.complete(true);
-      } else {
-        // ✅ NEW: لو الـ completer خلص من زمان، ده يعني reconnect — نادي الـ callback
-        if (wasReconnect) {
-          log('🔄 Socket reconnected — notifying listeners');
-          onReconnected?.call();
-        }
+      } else if (_isReconnecting) {
+        // ✅ reconnect بعد انقطاع — نادي الـ callback
+        log('🔄 Socket reconnected — notifying listeners');
+        _isReconnecting = false;
+        onReconnected?.call();
       }
     });
 
@@ -128,9 +128,12 @@ class tayseerSocketHelper {
       // ✅ auto-reconnect لو الانقطاع مش بسبب logout
       if (_authorizedToken != null && _authorizedToken!.isNotEmpty) {
         log('🔄 Attempting auto-reconnect in 2s...');
+        _isReconnecting = true; // ✅ علّم إن ده reconnect مش connect أول مرة
         Future.delayed(const Duration(seconds: 2), () {
           if (!_isConnected && _authorizedToken != null) {
             connect(token: _authorizedToken);
+          } else {
+            _isReconnecting = false; // ✅ لو اتصل بطريقة تانية، reset الـ flag
           }
         });
       }
@@ -353,15 +356,16 @@ class tayseerSocketHelper {
 
   /// ✅ Full reset — call on logout to destroy socket and clear all listeners
   void reset() {
-    _listeners.clear(); // clear our map only (don't touch socket listeners yet)
+    _listeners.clear();
     _isConnecting = false;
+    _isReconnecting = false; // ✅ reset
     _connectionCompleter = null;
-    _authorizedToken = null; // ✅ امسح الـ authorized token عند الـ logout
-    onReconnected = null;    // ✅ NEW: امسح الـ reconnect callback عند الـ reset
+    _authorizedToken = null;
+    onReconnected = null;
     if (_socket != null) {
-      _socket!.disconnect(); // sends disconnect packet → triggers onDisconnect
-      _socket!.destroy(); // stops any reconnection attempts
-      _socket!.clearListeners(); // now safe to clear socket-level handlers
+      _socket!.disconnect();
+      _socket!.destroy();
+      _socket!.clearListeners();
       _socket!.dispose();
       _socket = null;
     }
@@ -396,8 +400,9 @@ class tayseerSocketHelper {
 
     _listeners.clear();
     _isConnecting = false;
+    _isReconnecting = false; // ✅ reset
     _connectionCompleter = null;
-    onReconnected = null; // ✅ NEW: امسح الـ reconnect callback قبل الـ reset
+    onReconnected = null;
     // ✅ احفظ الـ token المعتمد للـ session الجديدة
     _authorizedToken = token;
 

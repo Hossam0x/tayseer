@@ -32,7 +32,7 @@ class MessageDetailsScreen extends StatelessWidget {
     if (dateTimeString == null || dateTimeString.isEmpty) return '---';
     try {
       final locale = isArabic ? 'ar' : 'en';
-      final dateTime = DateTime.parse(dateTimeString);
+      final dateTime = DateTime.parse(dateTimeString).toLocal();
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
       final messageDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
@@ -57,7 +57,7 @@ class MessageDetailsScreen extends StatelessWidget {
       return context.tr('date_today');
     try {
       final locale = isArabic ? 'ar' : 'en';
-      final dateTime = DateTime.parse(dateTimeString);
+      final dateTime = DateTime.parse(dateTimeString).toLocal();
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
       final messageDate = DateTime(dateTime.year, dateTime.month, dateTime.day);

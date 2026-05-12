@@ -221,7 +221,7 @@ class _RematchSheetState extends State<_RematchSheet> {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
-              text: 'تمت إعادة التوافق بنجاح',
+              text: context.tr('purchase_success'),
               isSuccess: true,
             ),
           );
@@ -339,7 +339,9 @@ class _RematchSheetState extends State<_RematchSheet> {
                         SizedBox(height: 12.h),
 
                         Text(
-                          'إعادة التوافق مع ${widget.userName}',
+                          context
+                              .tr('rematch_with')
+                              .replaceFirst('{name}', widget.userName),
                           style: Styles.textStyle20Meduim.copyWith(
                             color: AppColors.kscandryTextColor,
                             fontWeight: FontWeight.w700,
@@ -348,7 +350,7 @@ class _RematchSheetState extends State<_RematchSheet> {
                         ),
                         SizedBox(height: 8.h),
                         Text(
-                          'اختر مدة تمديد التوافق مع هذا الشخص',
+                          context.tr('rematch_description'),
                           style: Styles.textStyle14.copyWith(
                             color: AppColors.secondary400,
                           ),
@@ -371,7 +373,9 @@ class _RematchSheetState extends State<_RematchSheet> {
 
                         SizedBox(height: 20.h),
                         CustomBotton(
-                          title: isPurchasing ? '' : 'إعادة التوافق',
+                          title: isPurchasing
+                              ? ''
+                              : context.tr('rematch_button'),
                           height: 54.h,
                           width: double.infinity,
                           useGradient: true,

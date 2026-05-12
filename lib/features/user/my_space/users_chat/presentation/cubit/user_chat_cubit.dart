@@ -245,7 +245,9 @@ class UserChatCubit extends Cubit<UserChatState> {
           chatRooms: cached['rooms'] as List<UserChatRoomModel>,
           slotLimit: (cached['slotLimit'] as int?) ?? state.slotLimit,
         ));
-      } else {
+      } else if (state.chatRooms.isEmpty) {
+        // ✅ فقط اعرض loading لو مفيش data موجودة في الـ state الحالي
+        // ده بيمنع اختفاء الـ system chat لما loadAll بيتنادى بعد الخروج من الشات
         emit(state.copyWith(status: CubitStates.loading));
       }
     } else {

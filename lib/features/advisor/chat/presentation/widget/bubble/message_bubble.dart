@@ -40,7 +40,7 @@ class _MessageBubbleState extends State<MessageBubble> {
   String _formatTime(String timeString, BuildContext context) {
     try {
       final locale = isArabic ? 'ar' : 'en';
-      final dateTime = DateTime.parse(timeString);
+      final dateTime = DateTime.parse(timeString).toLocal();
       final now = DateTime.now();
       final difference = now.difference(dateTime);
 

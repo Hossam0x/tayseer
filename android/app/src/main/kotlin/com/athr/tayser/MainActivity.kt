@@ -37,6 +37,13 @@ class MainActivity : FlutterActivity(), MethodCallHandler, PaymobSdkListener {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        // ✅ Register SecureImageView platform view
+        flutterEngine.platformViewsController.registry.registerViewFactory(
+            "secure_image_view",
+            SecureImageFactory(flutterEngine.dartExecutor.binaryMessenger)
+        )
+
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler(this)
 

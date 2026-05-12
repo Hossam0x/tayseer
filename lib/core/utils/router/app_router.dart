@@ -1,4 +1,6 @@
 import 'dart:developer';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/models/post_model.dart';
@@ -853,35 +855,63 @@ abstract class AppRouter {
         final isSystemChat = args?['isSystemChat'] as bool? ?? false;
         final bool hasSystem = args?['system'] as bool? ?? false;
 
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => AdvisorChatScreen(
-            receiverId: (isSystemChat || hasSystem)
-                ? null
-                : (args?['receiverid'] as String?),
-            chatRoomId: args?['chatroomid'] as String?,
-            username: args?['username'] as String?,
-            userimage: args?['userimage'] as String?,
-            isBlocked: args?['isBlocked'] as bool? ?? false,
-            isHaveSession: args?['isHaveSession'] as bool? ?? true,
-            isSystemChat: isSystemChat || hasSystem,
-            onBlockStatusChanged:
-                args?['onBlockStatusChanged'] as void Function(bool)?,
-          ),
-        );
+        return defaultTargetPlatform == TargetPlatform.iOS
+            ? CupertinoPageRoute(
+                settings: settings,
+                builder: (_) => AdvisorChatScreen(
+                  receiverId: (isSystemChat || hasSystem)
+                      ? null
+                      : (args?['receiverid'] as String?),
+                  chatRoomId: args?['chatroomid'] as String?,
+                  username: args?['username'] as String?,
+                  userimage: args?['userimage'] as String?,
+                  isBlocked: args?['isBlocked'] as bool? ?? false,
+                  isHaveSession: args?['isHaveSession'] as bool? ?? true,
+                  isSystemChat: isSystemChat || hasSystem,
+                  onBlockStatusChanged:
+                      args?['onBlockStatusChanged'] as void Function(bool)?,
+                ),
+              )
+            : MaterialPageRoute(
+                settings: settings,
+                builder: (_) => AdvisorChatScreen(
+                  receiverId: (isSystemChat || hasSystem)
+                      ? null
+                      : (args?['receiverid'] as String?),
+                  chatRoomId: args?['chatroomid'] as String?,
+                  username: args?['username'] as String?,
+                  userimage: args?['userimage'] as String?,
+                  isBlocked: args?['isBlocked'] as bool? ?? false,
+                  isHaveSession: args?['isHaveSession'] as bool? ?? true,
+                  isSystemChat: isSystemChat || hasSystem,
+                  onBlockStatusChanged:
+                      args?['onBlockStatusChanged'] as void Function(bool)?,
+                ),
+              );
 
       case kUserChatView:
         final userArgs = settings.arguments as Map<String, dynamic>?;
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => UserChatScreen(
-            chatRoomId: userArgs?['chatroomid'] as String?,
-            receiverId: userArgs?['receiverid'] as String?,
-            username: userArgs?['username'] as String?,
-            userimage: userArgs?['userimage'] as String?,
-            isBlocked: userArgs?['isBlocked'] as bool? ?? false,
-          ),
-        );
+        return defaultTargetPlatform == TargetPlatform.iOS
+            ? CupertinoPageRoute(
+                settings: settings,
+                builder: (_) => UserChatScreen(
+                  chatRoomId: userArgs?['chatroomid'] as String?,
+                  receiverId: userArgs?['receiverid'] as String?,
+                  username: userArgs?['username'] as String?,
+                  userimage: userArgs?['userimage'] as String?,
+                  isBlocked: userArgs?['isBlocked'] as bool? ?? false,
+                ),
+              )
+            : MaterialPageRoute(
+                settings: settings,
+                builder: (_) => UserChatScreen(
+                  chatRoomId: userArgs?['chatroomid'] as String?,
+                  receiverId: userArgs?['receiverid'] as String?,
+                  username: userArgs?['username'] as String?,
+                  userimage: userArgs?['userimage'] as String?,
+                  isBlocked: userArgs?['isBlocked'] as bool? ?? false,
+                ),
+              );
       case notification:
         return MaterialPageRoute(
           settings: settings,

@@ -98,9 +98,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         setupSocketListeners();
       }
 
-      // ✅ NEW: سجّل الـ reconnect handler بعد ما الـ listeners اتعملت
-      _setupReconnectHandler();
-
       // 3. حفظ في الكاش
       await _cacheService.saveMessages(
         chatRoomId: chatRoomId,
@@ -108,10 +105,17 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       );
 
       // 4. انتظر الـ socket وبعدين join
+      // ✅ لازم _setupReconnectHandler يتنادى بعد _waitForSocketAndJoin
+      // عشان لو الـ socket مش متصل، _waitForSocketAndJoin يسجّل الـ callback أولاً
+      // وبعدين _setupReconnectHandler يكتب عليه بالـ handler الدائم للـ reconnect
       await _waitForSocketAndJoin(
         isSystemChat: isSystemChat,
         receiverId: receiverId,
       );
+
+      // ✅ سجّل الـ reconnect handler الدائم بعد الـ join الأول
+      // (بيكتب على الـ temporary callback اللي سجّله _waitForSocketAndJoin)
+      _setupReconnectHandler();
     } catch (e) {
       log('❌ Error loading messages: $e');
       if (cachedMessages == null || cachedMessages.isEmpty) {
@@ -120,13 +124,13 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     }
   }
 
-  // ✅ NEW: سجّل callback في الـ socketHelper يتنادى لما الـ socket يرجع
+  // ✅ سجّل callback في الـ socketHelper يتنادى لما الـ socket يرجع بعد انقطاع
   void _setupReconnectHandler() {
     _socketHelper.onReconnected = () {
       if (isClosed || _currentChatRoomId == null) return;
 
       log('🔄 Socket reconnected — rejoining room: $_currentChatRoomId');
-      _hasJoinedRoom = false; // عشان leaveCurrentChatRoom ما يبعتش leave غلط
+      _hasJoinedRoom = false;
       _joinAttempts = 0;
       _sendJoinRequest(
         isSystemChat: _isSystemChat,
@@ -139,34 +143,22 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     required bool isSystemChat,
     String? receiverId,
   }) async {
-    int retries = 0;
-    const maxRetries = 12; // ✅ 6 ثواني بدل 3 — كافي للـ system chat
-    const delay = Duration(milliseconds: 500);
-
-    while (!_socketHelper.isConnected && retries < maxRetries) {
-      log('⏳ Waiting for socket... attempt ${retries + 1}/$maxRetries');
-      await Future.delayed(delay);
-      retries++;
-    }
-
-    if (!_socketHelper.isConnected) {
-      log('❌ Socket not connected after ${maxRetries * 500}ms');
-      // ✅ للـ system chat، حاول تاني بعد ثانيتين لو الـ socket اتـ connect
-      if (isSystemChat) {
-        Future.delayed(const Duration(seconds: 2), () {
-          if (!isClosed && !_hasJoinedRoom && _socketHelper.isConnected) {
-            log('🔄 Retrying system chat join after delayed socket connect');
-            _sendJoinRequest(isSystemChat: true, receiverId: receiverId);
-          }
-        });
-      }
+    // ✅ لو الـ socket متصل فعلاً، join فوراً
+    if (_socketHelper.isConnected) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      log('✅ Socket connected, joining room: $_currentChatRoomId');
+      _sendJoinRequest(isSystemChat: isSystemChat, receiverId: receiverId);
       return;
     }
 
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    log('✅ Socket connected, joining room: $_currentChatRoomId');
-    _sendJoinRequest(isSystemChat: isSystemChat, receiverId: receiverId);
+    // ✅ لو مش متصل، سجّل callback يتنادى أوتوماتيك لما يتصل
+    // بدل الانتظار الثابت اللي بيـ timeout لو الـ socket اتأخر
+    log('⏳ Socket not ready — will join when connected (room: $_currentChatRoomId)');
+    _socketHelper.onReconnected = () {
+      if (isClosed || _hasJoinedRoom) return;
+      log('🔄 Socket connected — joining room: $_currentChatRoomId');
+      _sendJoinRequest(isSystemChat: isSystemChat, receiverId: receiverId);
+    };
   }
 
   void _sendJoinRequest({required bool isSystemChat, String? receiverId}) {

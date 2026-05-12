@@ -2199,6 +2199,8 @@
   "confirm_button": "تأكيد",
   "match_cancelled_success": "تم إلغاء التوافق",
   "match_cancel_failed": "فشل إلغاء التوافق",
+  "rematch_with": "إعادة التوافق مع {name}",
+  "rematch_description": "اختر مدة تمديد التوافق مع هذا الشخص",
   "past_matches_title": "التوافقات السابقة",
   "past_matches_subtitle": "تظهر التوافقات منتهية هنا ويبقى امامك فرصة حتي تعيد الارسال مره أخرى",
   "past_matches_error": "حدث خطأ أثناء تحميل التوافقات السابقة",

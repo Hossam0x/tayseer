@@ -1,3 +1,11 @@
+/// ✅ Helper: يحول الـ string لـ DateTime بـ UTC صح
+/// السيرفر بيبعت UTC بدون Z أحياناً، فنضيفها لو مش موجودة
+DateTime? _parseUtc(String s) {
+  if (s.isEmpty) return null;
+  if (!s.endsWith('Z') && !s.contains('+')) s = '${s}Z';
+  return DateTime.tryParse(s)?.toLocal();
+}
+
 class AdvisorChatModel {
   final bool success;
   final String message;
@@ -158,20 +166,19 @@ class AdvisorChatRoomModel {
           ? LastMessageModel.fromJson(json['lastMessage'])
           : null,
       lastMessageAt: json['lastMessageAt'] != null
-          ? DateTime.tryParse(json['lastMessageAt'].toString()) ??
-              DateTime.now()
+          ? _parseUtc(json['lastMessageAt'].toString())
           : (json['lastMessage']?['sentAt'] != null 
-             ? DateTime.tryParse(json['lastMessage']['sentAt'].toString())
+             ? _parseUtc(json['lastMessage']['sentAt'].toString())
              : null),
       status: extractString(json['status']),
       sender: senderUser,
       createdAt: json['sentAt'] != null
-          ? DateTime.tryParse(json['sentAt'].toString()) ?? DateTime.now()
+          ? _parseUtc(json['sentAt'].toString()) ?? DateTime.now()
           : (json['createdAt'] != null
-              ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
+              ? _parseUtc(json['createdAt'].toString()) ?? DateTime.now()
               : DateTime.now()),
       updatedAt: json['updatedAt'] != null
-          ? DateTime.tryParse(json['updatedAt'].toString()) ?? DateTime.now()
+          ? _parseUtc(json['updatedAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
       unreadCount: json['unreadCount'] ?? 0,
       isSystemChat: isSystemChat,
@@ -314,10 +321,10 @@ class LastMessageModel {
       messageType: messageType,
       chatRoom: extractString(json['chatRoom']),
       createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
+          ? _parseUtc(json['createdAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
       updatedAt: json['updatedAt'] != null
-          ? DateTime.tryParse(json['updatedAt'].toString()) ?? DateTime.now()
+          ? _parseUtc(json['updatedAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
       senderName: extractString(json['senderName']),
       timeAgo: extractString(json['timeAgo']),

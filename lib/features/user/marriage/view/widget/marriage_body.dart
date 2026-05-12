@@ -2155,6 +2155,10 @@ class MarriageBodyState extends State<MarriageBody>
                           scrollToTop();
                         }
                         await _syncNotificationAfterInteraction();
+                        // ✅ لو الملف مفتوح من link مباشر (مش من الـ swipe)، ارجع بعد الـ like
+                        if (widget.personId != null && mounted) {
+                          context.pop();
+                        }
                       }
                     }),
                     Icons.check,
@@ -2210,6 +2214,10 @@ class MarriageBodyState extends State<MarriageBody>
                         if (widget.personId == null && mounted) {
                           _resetScrollTracking();
                           scrollToTop();
+                        }
+                        // ✅ لو الملف مفتوح من link مباشر، ارجع بعد الـ dislike
+                        if (widget.personId != null && mounted) {
+                          context.pop();
                         }
                       }
                     }),

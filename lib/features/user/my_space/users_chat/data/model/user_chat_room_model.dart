@@ -65,11 +65,18 @@ class UserLastMessageModel {
   UserLastMessageModel({required this.content, this.sentAt, this.status});
 
   factory UserLastMessageModel.fromJson(Map<String, dynamic> json) {
+    // ✅ نضمن إن الـ sentAt يتعامل معاه كـ UTC
+    // السيرفر بيبعت UTC بدون Z أحياناً، فـ DateTime.tryParse بيعتبره local
+    DateTime? parseSentAt(dynamic value) {
+      if (value == null) return null;
+      String s = value.toString();
+      if (!s.endsWith('Z') && !s.contains('+')) s = '${s}Z';
+      return DateTime.tryParse(s)?.toLocal();
+    }
+
     return UserLastMessageModel(
       content: json['content']?.toString() ?? '',
-      sentAt: json['sentAt'] != null
-          ? DateTime.tryParse(json['sentAt'].toString())
-          : null,
+      sentAt: parseSentAt(json['sentAt']),
       status: json['status']?.toString(),
     );
   }

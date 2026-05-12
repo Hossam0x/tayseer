@@ -21,6 +21,7 @@ import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/c
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/scroll_to_bottom_button.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/state/chat_messages_state.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/scroll/chat_scroll_state.dart';
+import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserChatScreen extends StatelessWidget {
@@ -203,14 +204,18 @@ class _UserChatContentState extends State<_UserChatContent> {
       buildWhen: (p, c) => p.isSelectionMode != c.isSelectionMode,
       builder: (context, selectionState) {
         return PopScope(
-          canPop: false, // ✅ نتحكم في الـ pop يدوياً عشان نبعت الـ last message
+          // ✅ نسمح بالـ swipe back على iOS لما مفيش selection mode
+          canPop: !selectionState.isSelectionMode,
           onPopInvokedWithResult: (didPop, result) {
             if (selectionState.isSelectionMode) {
               context.read<MessageSelectionCubit>().exitSelectionMode();
               return;
             }
             // ✅ ابعت آخر رسالة حقيقية لما يخرج (بيحل مشكلة الصورة/الصوت المحذوف)
-            _popWithLastMessage(context);
+            // didPop = true لما الـ swipe back يحصل تلقائياً — مش محتاج نعمل pop تاني
+            if (!didPop) {
+              _popWithLastMessage(context);
+            }
           },
           child: SafeArea(
             top: false,
@@ -359,11 +364,26 @@ class _UserChatContentState extends State<_UserChatContent> {
               Expanded(
                 child: GestureDetector(
                   onTap: () {
-                    // ✅ افتح البروفايل لما يضغط على الاسم أو الصورة — بس مش لو system chat
+                    // ✅ افتح MarriageView بدل UserPublicProfileView
                     if (widget.receiverId != null) {
                       context.pushNamed(
-                        AppRouter.kUserPublicProfileView,
-                        arguments: widget.receiverId,
+                        AppRouter.kMarriageView,
+                        arguments: {
+                          'personId': widget.receiverId,
+                          'fromInteractions': false,
+                          'isFavorite': false,
+                          'interactionUser': InteractionUserModel(
+                            userId: widget.receiverId!,
+                            name: widget.username ?? '',
+                            age: 0, // غير متاح في الشات
+                            country: '', // غير متاح في الشات
+                            day: '',
+                            job: '', // غير متاح في الشات
+                            image: widget.userimage ?? '',
+                            isverified: false, // غير متاح في الشات
+                            isImageBlurred: false, // غير متاح في الشات
+                          ),
+                        },
                       );
                     }
                   },
