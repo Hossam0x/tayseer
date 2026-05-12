@@ -87,9 +87,6 @@ void main() async {
   await _initializeVideoSystem();
   await GlobalMuteManager.instance.init();
 
-  // ✅ تهيئة AppsFlyer SDK مع ATT على iOS
-  await _initAppsFlyer();
-
   // ✅ نحفظ الـ cold start URI قبل runApp — بدون أي navigation هنا
   await _captureColdStartLink();
 
@@ -113,13 +110,18 @@ void main() async {
   // ✅ تشغيل مراقب الـ screenshot على Android
   ScreenshotDetector.init();
 
-  // ✅ بعد runApp — initialize الإشعارات بعد ما التطبيق يشتغل
+  // ✅ بعد runApp — initialize الإشعارات وATT بعد ما التطبيق يشتغل
   WidgetsBinding.instance.addPostFrameCallback((_) async {
     // Initialize AudioService AFTER runApp so platform channels are ready
     await AudioService.instance.initialize();
 
     final localNotification = LocalNotification(navigatorKey: navigatorKey);
     await localNotification.initialize();
+
+    // ✅ ATT request بعد ما الـ UI يكون جاهز تماماً
+    // Apple تشترط أن يكون الـ UIWindow ظاهراً قبل طلب الإذن
+    // استدعاؤه قبل runApp يمنع ظهور الـ dialog على بعض الأجهزة
+    await _initAppsFlyer();
   });
 
   // ✅ Warm start فقط — التطبيق في الخلفية
@@ -411,12 +413,23 @@ Future<void> _initAppsFlyer() async {
   if (Platform.isIOS) {
     // ✅ نتحقق من الحالة الحالية — لو مش determined نطلب الإذن
     final status = await AppTrackingTransparency.trackingAuthorizationStatus;
+    debugPrint('📊 ATT initial status: $status');
+
     if (status == TrackingStatus.notDetermined) {
-      // نأخر قليلاً عشان الـ UI يكون جاهز (Apple requirement)
-      await Future.delayed(const Duration(milliseconds: 200));
-      await AppTrackingTransparency.requestTrackingAuthorization();
+      debugPrint('📊 ATT: Requesting authorization...');
+      // ✅ نأخر عشان الـ UIWindow يكون ظاهر تماماً — Apple requirement
+      // الـ 200ms مش كافية على بعض الأجهزة، خصوصاً iPad وiPadOS الجديد
+      await Future.delayed(const Duration(milliseconds: 500));
+      final result =
+          await AppTrackingTransparency.requestTrackingAuthorization();
+      debugPrint('📊 ATT: User response: $result');
+    } else {
+      debugPrint('📊 ATT: Already determined, skipping request');
     }
-    debugPrint('📊 ATT status: $status');
+
+    final updatedStatus =
+        await AppTrackingTransparency.trackingAuthorizationStatus;
+    debugPrint('📊 ATT final status: $updatedStatus');
   }
 
   // ✅ نهيئ AppsFlyer بغض النظر عن قرار ATT
