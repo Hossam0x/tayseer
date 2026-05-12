@@ -41,6 +41,7 @@ import 'package:tayseer/features/advisor/update_posts/view_model/update_posts_cu
 import 'package:tayseer/features/advisor/update_posts/view/update_post_view.dart';
 import 'package:tayseer/features/advisor/membership/presentation/cubit/membership_cubit.dart';
 import 'package:tayseer/features/advisor/membership/presentation/views/membership_management_view.dart';
+import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
 import 'package:tayseer/features/shared/auth/view/purpose_selection_view.dart';
 import 'package:tayseer/features/shared/auth/view/choose_social_status_view.dart';
 import 'package:tayseer/features/shared/auth/view/select_country_view.dart';
@@ -104,7 +105,6 @@ import 'package:tayseer/features/user/questions/presentation/views/otp_phone_use
 import 'package:tayseer/features/user/questions/presentation/views/questions_page_view.dart';
 import 'package:tayseer/features/shared/auth/view/choose_gender_view.dart';
 import 'package:tayseer/features/user/questions/presentation/views/personal_info_view.dart';
-import 'package:tayseer/features/user/questions/presentation/views/subscription_view.dart';
 import 'package:tayseer/features/user/questions/presentation/views/verify_data_view.dart';
 import 'package:tayseer/features/user/questions/presentation/manager/questions_cubit.dart';
 import 'package:tayseer/features/user/questions/presentation/widgets/blocked_contacts_success_widget.dart';
@@ -211,7 +211,6 @@ abstract class AppRouter {
   static const kMarriageView = '/MarriageView';
   static const kCommitmentView = '/CommitmentView';
   static const kAccountReviewUserView = '/AccountReviewUserView';
-  static const kSubscriptionView = '/SubscriptionView';
   static const kMyTicketsView = '/MyTicketsView';
   static const kTicketDetailsView = '/TicketDetailsView';
 
@@ -379,8 +378,11 @@ abstract class AppRouter {
           page: MultiBlocProvider(
             providers: [
               BlocProvider(
-                create: (context) =>
-                    AdvisorSubscriptionCubit(packageType, getIt<IAPService>()),
+                create: (context) => AdvisorSubscriptionCubit(
+                  packageType,
+                  getIt<IAPService>(),
+                  getIt<MembershipRepository>(),
+                ),
               ),
               BlocProvider(
                 create: (context) => getIt<PackagesCubit>()..getPackages(),
@@ -1080,14 +1082,6 @@ abstract class AppRouter {
             child: CommitmentViewBody(),
           ),
         );
-      case kSubscriptionView:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => BlocProvider.value(
-            value: getIt<QuestionsCubit>(),
-            child: SubscriptionView(),
-          ),
-        );
       case kBlockedContactsSuccessScreen:
         return MaterialPageRoute(
           settings: settings,
@@ -1225,8 +1219,11 @@ abstract class AppRouter {
           page: MultiBlocProvider(
             providers: [
               BlocProvider(
-                create: (context) =>
-                    UserSubscriptionCubit(packageType, getIt<IAPService>()),
+                create: (context) => UserSubscriptionCubit(
+                  packageType,
+                  getIt<IAPService>(),
+                  getIt<MembershipRepository>(),
+                ),
               ),
               BlocProvider(
                 create: (context) => getIt<UserPackagesCubit>()..getPackages(),

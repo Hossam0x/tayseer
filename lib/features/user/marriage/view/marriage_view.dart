@@ -84,7 +84,10 @@ class _MarriageViewState extends State<MarriageView> {
                     } else if (lastQuestionNumber <= 27) {
                       context.pushNamed(AppRouter.kCommitmentView);
                     } else if (lastQuestionNumber >= 29) {
-                      context.pushNamed(AppRouter.kSubscriptionView);
+                      context.pushNamed(
+                        AppRouter.kUserPackagesView,
+                        arguments: {'fromOnboarding': true},
+                      );
                     }
                   } else if (state.lastQuestionNumberState ==
                       CubitStates.failure) {

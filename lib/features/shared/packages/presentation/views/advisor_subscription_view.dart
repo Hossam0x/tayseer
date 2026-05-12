@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tayseer/core/functions/url_launcher.dart';
+import 'package:tayseer/features/advisor/membership/presentation/widgets/membership_restore_conflict_dialog.dart';
 import 'package:tayseer/features/shared/auth/view/widget/agreement_text.dart';
 import 'package:tayseer/features/shared/packages/data/models/new_advisor_sub_model.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/advisor_subscription_cubit.dart';
@@ -48,6 +49,16 @@ class AdvisorSubscriptionView extends StatelessWidget {
         if (state.status == AdvisorSubStatus.success) {
           final isGold = state.packageType != SelectedPackage.elite;
           showSubscriptionSuccessDialog(context, isGold: isGold);
+        } else if (state.status == AdvisorSubStatus.needsTransfer) {
+          // ✅ الاشتراك على account تاني — اعرض dialog للـ transfer
+          final purchaseId = state.transferPurchaseId ?? '';
+          showRestoreConflictDialog(
+            context,
+            message: context.tr('restore_conflict_desc'),
+            onTransfer: () => context
+                .read<AdvisorSubscriptionCubit>()
+                .transferSubscription(purchaseId),
+          );
         } else if (state.status == AdvisorSubStatus.error &&
             state.error != null) {
           AppToast.error(context, context.tr(state.error!));
