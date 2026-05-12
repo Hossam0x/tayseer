@@ -240,13 +240,15 @@ class _ChatContentState extends State<_ChatContent> {
           previous.isSelectionMode != current.isSelectionMode,
       builder: (context, selectionState) {
         return PopScope(
-          canPop: false,
+          canPop: !selectionState.isSelectionMode,
           onPopInvokedWithResult: (didPop, result) {
-            if (didPop) return;
             if (selectionState.isSelectionMode) {
-              context.read<MessageSelectionCubit>().exitSelectionMode();
+              if (!didPop) {
+                context.read<MessageSelectionCubit>().exitSelectionMode();
+              }
               return;
             }
+            if (didPop) return;
             _popWithLastMessage(context);
           },
           child: SafeArea(

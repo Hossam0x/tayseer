@@ -244,58 +244,53 @@ class _UserChatContentState extends State<_UserChatContent> {
             child: Scaffold(
               resizeToAvoidBottomInset: true,
               backgroundColor: ChatColors.chatBackground,
-              body: Directionality(
-                textDirection: TextDirection.rtl,
-                child: Stack(
-                  children: [
-                    Column(
-                      children: [
-                        _buildAppBar(context),
-                        _buildExpiryBanner(context),
-                        Expanded(
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              image: DecorationImage(
-                                image: AssetImage(
-                                  AssetsData.homeBackgroundImage,
-                                ),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            child: Stack(
-                              children: [
-                                ChatMessagesArea(
-                                  isMobile: isMobile,
-                                  scrollController: _scrollController,
-                                  scrollHandler: _scrollHandler,
-                                  overlayManager: _overlayManager,
-                                  onStateChanged: () => setState(() {}),
-                                  showFreeChatBanner: false,
-                                ),
-                                _buildScrollToBottomButton(),
-                              ],
+              body: Stack(
+                children: [
+                  Column(
+                    children: [
+                      _buildAppBar(context),
+                      _buildExpiryBanner(context),
+                      Expanded(
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            image: DecorationImage(
+                              image: AssetImage(AssetsData.homeBackgroundImage),
+                              fit: BoxFit.cover,
                             ),
                           ),
+                          child: Stack(
+                            children: [
+                              ChatMessagesArea(
+                                isMobile: isMobile,
+                                scrollController: _scrollController,
+                                scrollHandler: _scrollHandler,
+                                overlayManager: _overlayManager,
+                                onStateChanged: () => setState(() {}),
+                                showFreeChatBanner: false,
+                              ),
+                              _buildScrollToBottomButton(),
+                            ],
+                          ),
                         ),
-                        ChatBottomArea(
-                          chatRoomId: widget.chatRoomId,
-                          receiverId: widget.receiverId,
-                          isSystemChat: false,
-                          selectionState: selectionState,
-                          actionsHandler: _actionsHandler,
-                          scrollHandler: _scrollHandler,
-                        ),
-                      ],
-                    ),
-                    ChatContextMenuWrapper(
-                      screenSize: screenSize,
-                      isMobile: isMobile,
-                      overlayManager: _overlayManager,
-                      actionsHandler: _actionsHandler,
-                      onStateChanged: () => setState(() {}),
-                    ),
-                  ],
-                ),
+                      ),
+                      ChatBottomArea(
+                        chatRoomId: widget.chatRoomId,
+                        receiverId: widget.receiverId,
+                        isSystemChat: false,
+                        selectionState: selectionState,
+                        actionsHandler: _actionsHandler,
+                        scrollHandler: _scrollHandler,
+                      ),
+                    ],
+                  ),
+                  ChatContextMenuWrapper(
+                    screenSize: screenSize,
+                    isMobile: isMobile,
+                    overlayManager: _overlayManager,
+                    actionsHandler: _actionsHandler,
+                    onStateChanged: () => setState(() {}),
+                  ),
+                ],
               ),
             ),
           ),

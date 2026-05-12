@@ -144,178 +144,190 @@ class _MarriagefilePageState extends State<MarriagefilePage>
         initialUserProfile: widget.userProfile,
       )..loadProfile(),
       child: Builder(
-        builder: (context) => WillPopScope(
-          onWillPop: () async {
-            final cubit = context.read<MarriageProfileCubit>();
-            final state = cubit.state;
-
-            final hasSingleImage =
-                (state.profile?.userMedia?.singleImage != null &&
-                    state.profile!.userMedia!.singleImage!.isNotEmpty) ||
-                state.pendingSingleImage != null;
-            if (!hasSingleImage) {
-              _showMustAddImageDialog(context, cubit, state.profile!);
-              return false;
-            }
-
-            final hasUnsavedChanges =
-                state.pendingSingleImage != null ||
-                state.deletedSingleImageUrl != null ||
-                state.pendingImages.isNotEmpty ||
-                state.deletedImageUrls.isNotEmpty ||
-                state.pendingVideo != null ||
-                state.pendingDeleteVideo ||
-                state.pendingAudio != null ||
-                state.hasUnsavedFields ||
-                state.pendingDeleteAudio;
-
-            if (hasUnsavedChanges) {
-              _showUnsavedChangesDialog(context, cubit, state);
-              return false;
-            }
-
-            final progress = _calculateTotalProgress(state.profile!);
-            Navigator.pop(context, progress);
-            return false;
+        builder: (context) => BlocBuilder<MarriageProfileCubit, MarriageProfileState>(
+          buildWhen: (prev, curr) {
+            // نعيد البناء بس لما يتغير حالة الـ canPop
+            final prevCanPop = _canPopSafely(prev);
+            final currCanPop = _canPopSafely(curr);
+            return prevCanPop != currCanPop;
           },
-          child: Scaffold(
-            body: Stack(
-              children: [
-                // 1️⃣ Background
-                Positioned.fill(
-                  child: Image.asset(AssetsData.userBGImage, fit: BoxFit.cover),
-                ),
+          builder: (context, popState) => PopScope(
+            canPop: _canPopSafely(popState),
+            onPopInvokedWithResult: (didPop, result) async {
+              if (didPop) return;
+              final cubit = context.read<MarriageProfileCubit>();
+              final state = cubit.state;
 
-                // 2️⃣ Content — بيبدأ من أعلى لكن بيترك مساحة للـ AppBar
-                SafeArea(
-                  child: BlocConsumer<MarriageProfileCubit, MarriageProfileState>(
-                    listener: (context, state) {
-                      if (state.isLoading &&
-                          state.profile == null &&
-                          !_hasStartedLoadingGif) {
-                        _hasStartedLoadingGif = true;
-                        showGifOverlay(
-                          context,
-                          repeatCount: 99,
-                          gifDuration: const Duration(milliseconds: 900),
-                        );
-                      }
+              final hasSingleImage =
+                  (state.profile?.userMedia?.singleImage != null &&
+                      state.profile!.userMedia!.singleImage!.isNotEmpty) ||
+                  state.pendingSingleImage != null;
+              if (!hasSingleImage) {
+                _showMustAddImageDialog(context, cubit, state.profile!);
+                return;
+              }
 
-                      if (state.state == CubitStates.success &&
-                          state.profile != null &&
-                          !state.isLoading &&
-                          !_hasShownLoadGif) {
-                        _hasShownLoadGif = true;
-                        showGifOverlay(
-                          context,
-                          repeatCount: 1,
-                          gifDuration: const Duration(milliseconds: 900),
-                        );
-                      }
+              final hasUnsavedChanges =
+                  state.pendingSingleImage != null ||
+                  state.deletedSingleImageUrl != null ||
+                  state.pendingImages.isNotEmpty ||
+                  state.deletedImageUrls.isNotEmpty ||
+                  state.pendingVideo != null ||
+                  state.pendingDeleteVideo ||
+                  state.pendingAudio != null ||
+                  state.hasUnsavedFields ||
+                  state.pendingDeleteAudio;
 
-                      if (state.state == CubitStates.success &&
-                          state.successMessage != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          CustomSnackBar(
-                            context,
-                            text: state.successMessage!,
-                            isSuccess: true,
-                          ),
-                        );
-                      }
-                      if (state.state == CubitStates.failure &&
-                          state.errorMessage != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          CustomSnackBar(
-                            context,
-                            text: state.errorMessage!,
-                            isError: true,
-                          ),
-                        );
-                      }
-                    },
-                    builder: (context, state) {
-                      final cubit = context.read<MarriageProfileCubit>();
+              if (hasUnsavedChanges) {
+                _showUnsavedChangesDialog(context, cubit, state);
+                return;
+              }
 
-                      if (state.isLoading && state.profile == null) {
-                        // ✅ مساحة فاضية بحجم الـ AppBar بس — الـ AppBar هيظهر فوق
-                        return SizedBox(height: _appBarHeight());
-                      }
-
-                      if (state.state == CubitStates.failure &&
-                          state.profile == null) {
-                        return _buildError(context, state.errorMessage);
-                      }
-
-                      final profile = state.profile;
-                      if (profile == null) {
-                        return Center(
-                          child: Text(context.tr("data_load_error")),
-                        );
-                      }
-
-                      return Column(
-                        children: [
-                          // ✅ مساحة فاضية بحجم الـ AppBar عشان الـ content ميتغطيش
-                          SizedBox(height: _appBarHeight()),
-
-                          // ✅ Content
-                          Expanded(
-                            child: _selectedTabIndex == 1
-                                ? _buildViewContent(profile)
-                                : MediaQuery.removePadding(
-                                    context: context,
-                                    removeTop: true,
-                                    removeBottom: false,
-                                    child: MarriageProfileEditView(
-                                      profile: profile,
-                                      state: state,
-                                      cubit: cubit,
-                                      maxImages: _maxImages,
-                                      selectedTabIndex: _selectedTabIndex,
-                                      scrollToSection: _scrollToSection,
-                                      onTabChanged: (index) {
-                                        setState(() {
-                                          _selectedTabIndex = index;
-                                        });
-                                      },
-                                      onSaveSuccess: () {
-                                        if (mounted) {
-                                          showGifOverlay(
-                                            context,
-                                            repeatCount: 1,
-                                            gifDuration: const Duration(
-                                              milliseconds: 900,
-                                            ),
-                                          );
-                                        }
-                                      },
-                                    ),
-                                  ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-                
-                // 3️⃣ ✅ AppBar فوق كل حاجة — فوق الـ GIF overlay دايمًا
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 24.h,
-                        vertical: 10.h,
-                      ),
-                      child: _buildFixedHeader(context),
+              final progress = _calculateTotalProgress(state.profile!);
+              Navigator.pop(context, progress);
+            },
+            child: Scaffold(
+              body: Stack(
+                children: [
+                  // 1️⃣ Background
+                  Positioned.fill(
+                    child: Image.asset(
+                      AssetsData.userBGImage,
+                      fit: BoxFit.cover,
                     ),
                   ),
-                ),
-              ],
+
+                  // 2️⃣ Content — بيبدأ من أعلى لكن بيترك مساحة للـ AppBar
+                  SafeArea(
+                    child: BlocConsumer<MarriageProfileCubit, MarriageProfileState>(
+                      listener: (context, state) {
+                        if (state.isLoading &&
+                            state.profile == null &&
+                            !_hasStartedLoadingGif) {
+                          _hasStartedLoadingGif = true;
+                          showGifOverlay(
+                            context,
+                            repeatCount: 99,
+                            gifDuration: const Duration(milliseconds: 900),
+                          );
+                        }
+
+                        if (state.state == CubitStates.success &&
+                            state.profile != null &&
+                            !state.isLoading &&
+                            !_hasShownLoadGif) {
+                          _hasShownLoadGif = true;
+                          showGifOverlay(
+                            context,
+                            repeatCount: 1,
+                            gifDuration: const Duration(milliseconds: 900),
+                          );
+                        }
+
+                        if (state.state == CubitStates.success &&
+                            state.successMessage != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            CustomSnackBar(
+                              context,
+                              text: state.successMessage!,
+                              isSuccess: true,
+                            ),
+                          );
+                        }
+                        if (state.state == CubitStates.failure &&
+                            state.errorMessage != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            CustomSnackBar(
+                              context,
+                              text: state.errorMessage!,
+                              isError: true,
+                            ),
+                          );
+                        }
+                      },
+                      builder: (context, state) {
+                        final cubit = context.read<MarriageProfileCubit>();
+
+                        if (state.isLoading && state.profile == null) {
+                          // ✅ مساحة فاضية بحجم الـ AppBar بس — الـ AppBar هيظهر فوق
+                          return SizedBox(height: _appBarHeight());
+                        }
+
+                        if (state.state == CubitStates.failure &&
+                            state.profile == null) {
+                          return _buildError(context, state.errorMessage);
+                        }
+
+                        final profile = state.profile;
+                        if (profile == null) {
+                          return Center(
+                            child: Text(context.tr("data_load_error")),
+                          );
+                        }
+
+                        return Column(
+                          children: [
+                            // ✅ مساحة فاضية بحجم الـ AppBar عشان الـ content ميتغطيش
+                            SizedBox(height: _appBarHeight()),
+
+                            // ✅ Content
+                            Expanded(
+                              child: _selectedTabIndex == 1
+                                  ? _buildViewContent(profile)
+                                  : MediaQuery.removePadding(
+                                      context: context,
+                                      removeTop: true,
+                                      removeBottom: false,
+                                      child: MarriageProfileEditView(
+                                        profile: profile,
+                                        state: state,
+                                        cubit: cubit,
+                                        maxImages: _maxImages,
+                                        selectedTabIndex: _selectedTabIndex,
+                                        scrollToSection: _scrollToSection,
+                                        onTabChanged: (index) {
+                                          setState(() {
+                                            _selectedTabIndex = index;
+                                          });
+                                        },
+                                        onSaveSuccess: () {
+                                          if (mounted) {
+                                            showGifOverlay(
+                                              context,
+                                              repeatCount: 1,
+                                              gifDuration: const Duration(
+                                                milliseconds: 900,
+                                              ),
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+
+                  // 3️⃣ ✅ AppBar فوق كل حاجة — فوق الـ GIF overlay دايمًا
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: SafeArea(
+                      bottom: false,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 24.h,
+                          vertical: 10.h,
+                        ),
+                        child: _buildFixedHeader(context),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -326,6 +338,30 @@ class _MarriagefilePageState extends State<MarriagefilePage>
   // ✅ ارتفاع الـ AppBar بدون statusBar
   double _appBarHeight() {
     return 10.h + 56.h + 5.h + 46.h + 10.h;
+  }
+
+  /// يحدد إذا كان الـ swipe back مسموح — true لما مفيش unsaved changes وفي صورة رئيسية
+  bool _canPopSafely(MarriageProfileState state) {
+    if (state.profile == null) return false;
+
+    final hasSingleImage =
+        (state.profile?.userMedia?.singleImage != null &&
+            state.profile!.userMedia!.singleImage!.isNotEmpty) ||
+        state.pendingSingleImage != null;
+    if (!hasSingleImage) return false;
+
+    final hasUnsavedChanges =
+        state.pendingSingleImage != null ||
+        state.deletedSingleImageUrl != null ||
+        state.pendingImages.isNotEmpty ||
+        state.deletedImageUrls.isNotEmpty ||
+        state.pendingVideo != null ||
+        state.pendingDeleteVideo ||
+        state.pendingAudio != null ||
+        state.hasUnsavedFields ||
+        state.pendingDeleteAudio;
+
+    return !hasUnsavedChanges;
   }
 
   // ✅ الـ topOffset للـ GIF (بيشمل statusBar)
@@ -613,7 +649,10 @@ class _MarriagefilePageState extends State<MarriagefilePage>
               child: Center(
                 child: SizedBox(
                   width: context.width * 0.55,
-                  child: _buildRegardsOnlyCard(context, profile.regardsLeft ?? 0),
+                  child: _buildRegardsOnlyCard(
+                    context,
+                    profile.regardsLeft ?? 0,
+                  ),
                 ),
               ),
             ),
@@ -1053,7 +1092,8 @@ class _MarriagefilePageState extends State<MarriagefilePage>
       if (profile.professionalLife?.job != null)
         {
           'icon': AssetsData.kwritingIcon,
-          'label': "💼 ${context.tr(QuestionsData.genderedKey(profile.professionalLife!.job!))}",
+          'label':
+              "💼 ${context.tr(QuestionsData.genderedKey(profile.professionalLife!.job!))}",
         },
     ];
   }

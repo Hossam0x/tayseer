@@ -96,14 +96,19 @@ class _VideoSectionState extends State<VideoSection> {
 
     _controller = controller;
 
-    _controller?.addListener(() {
-      if (!mounted || _controller == null) return;
+    _controller?.addListener(_onControllerUpdate);
+  }
 
+  void _onControllerUpdate() {
+    if (!mounted || _controller == null) return;
+    try {
       final playing = _controller!.value.isPlaying;
       if (playing != isPlaying) {
         setState(() => isPlaying = playing);
       }
-    });
+    } catch (_) {
+      // controller قد يكون اتـ dispose — نتجاهل
+    }
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -112,22 +117,26 @@ class _VideoSectionState extends State<VideoSection> {
   void _handleVisibility(VisibilityInfo info) {
     if (!mounted || _controller == null) return;
 
-    if (info.visibleFraction > 0.6) {
-      if (_controller!.value.isInitialized && !_controller!.value.isPlaying) {
-        _controller!.play();
-        setState(() {
-          isPlaying = true;
-          showOverlay = false;
-        });
+    try {
+      if (info.visibleFraction > 0.6) {
+        if (_controller!.value.isInitialized && !_controller!.value.isPlaying) {
+          _controller!.play();
+          setState(() {
+            isPlaying = true;
+            showOverlay = false;
+          });
+        }
+      } else {
+        if (_controller!.value.isPlaying) {
+          _controller!.pause();
+          setState(() {
+            isPlaying = false;
+            showOverlay = true;
+          });
+        }
       }
-    } else {
-      if (_controller!.value.isPlaying) {
-        _controller!.pause();
-        setState(() {
-          isPlaying = false;
-          showOverlay = true;
-        });
-      }
+    } catch (_) {
+      // controller قد يكون اتـ dispose
     }
   }
 
@@ -207,27 +216,36 @@ class _VideoSectionState extends State<VideoSection> {
       children: [
         _circleButton(Icons.replay_10_rounded, () async {
           if (_controller == null || !_controller!.value.isInitialized) return;
-
-          final pos = _controller!.value.position - const Duration(seconds: 10);
-          await _controller!.seekTo(pos < Duration.zero ? Duration.zero : pos);
+          try {
+            final pos =
+                _controller!.value.position - const Duration(seconds: 10);
+            await _controller!.seekTo(
+              pos < Duration.zero ? Duration.zero : pos,
+            );
+          } catch (_) {}
         }),
         Gap(20.w),
         GestureDetector(
           onTap: () {
-            if (_controller == null || !_controller!.value.isInitialized)
+            if (_controller == null || !_controller!.value.isInitialized) {
               return;
-
-            if (_controller!.value.isPlaying) {
-              _controller!.pause();
-              setState(() => showOverlay = true);
-            } else {
-              _controller!.play();
-              Future.delayed(const Duration(seconds: 2), () {
-                if (mounted && _controller!.value.isPlaying && showOverlay) {
-                  setState(() => showOverlay = false);
-                }
-              });
             }
+            try {
+              if (_controller!.value.isPlaying) {
+                _controller!.pause();
+                setState(() => showOverlay = true);
+              } else {
+                _controller!.play();
+                Future.delayed(const Duration(seconds: 2), () {
+                  if (mounted &&
+                      _controller != null &&
+                      _controller!.value.isPlaying &&
+                      showOverlay) {
+                    setState(() => showOverlay = false);
+                  }
+                });
+              }
+            } catch (_) {}
           },
           child: Container(
             width: 60.w,
@@ -246,11 +264,12 @@ class _VideoSectionState extends State<VideoSection> {
         Gap(20.w),
         _circleButton(Icons.forward_10_rounded, () async {
           if (_controller == null || !_controller!.value.isInitialized) return;
-
-          final pos = _controller!.value.position + const Duration(seconds: 10);
-          final total = _controller!.value.duration;
-
-          await _controller!.seekTo(pos > total ? total : pos);
+          try {
+            final pos =
+                _controller!.value.position + const Duration(seconds: 10);
+            final total = _controller!.value.duration;
+            await _controller!.seekTo(pos > total ? total : pos);
+          } catch (_) {}
         }),
       ],
     );
@@ -277,13 +296,16 @@ class _VideoSectionState extends State<VideoSection> {
 
   @override
   void dispose() {
-    // Critical: Pause and dispose controller to prevent audio leaking
+    // ✅ VideoSection لا يعمل dispose على الـ controller
+    // AppVideo هو المسؤول عن الـ dispose — نحن بس نوقف الـ listener
     if (_controller != null) {
       try {
-        _controller!.pause();
-        _controller!.dispose();
-      } catch (e) {
-        debugPrint('⚠️ Error disposing video controller: $e');
+        if (_controller!.value.isInitialized && _controller!.value.isPlaying) {
+          _controller!.pause();
+        }
+        _controller!.removeListener(_onControllerUpdate);
+      } catch (_) {
+        // controller قد يكون اتـ dispose بالفعل من AppVideo
       }
     }
     _controller = null;

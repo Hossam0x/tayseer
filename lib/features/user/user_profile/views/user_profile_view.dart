@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
@@ -210,25 +212,45 @@ class _UserProfileViewState extends State<UserProfileView> {
     }
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => Scaffold(
-          backgroundColor: Colors.transparent,
-          body: Stack(
-            children: [
-              Positioned.fill(
-                child: Image.asset(
-                  AssetsData.homeBarBackgroundImage,
-                  fit: BoxFit.cover,
+      defaultTargetPlatform == TargetPlatform.iOS
+          ? CupertinoPageRoute(
+              builder: (_) => Scaffold(
+                backgroundColor: Colors.transparent,
+                body: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Image.asset(
+                        AssetsData.homeBarBackgroundImage,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    MarriagefilePage(
+                      userProfile: state.userProfile,
+                      initialTabIndex: state.isMarriageProfileComplete ? 0 : 1,
+                    ),
+                  ],
                 ),
               ),
-              MarriagefilePage(
-                userProfile: state.userProfile,
-                initialTabIndex: state.isMarriageProfileComplete ? 0 : 1,
+            )
+          : MaterialPageRoute(
+              builder: (_) => Scaffold(
+                backgroundColor: Colors.transparent,
+                body: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Image.asset(
+                        AssetsData.homeBarBackgroundImage,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    MarriagefilePage(
+                      userProfile: state.userProfile,
+                      initialTabIndex: state.isMarriageProfileComplete ? 0 : 1,
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
-      ),
+            ),
     ).then((result) {
       if (!context.mounted || result is! double) return;
       context.read<UserProfileCubit>().updateMarriageProgress(result >= 100);
@@ -255,10 +277,8 @@ class _UserProfileViewState extends State<UserProfileView> {
           fromContext: context,
           iconAsset: icon,
           overlay: overlay,
-          onComplete: () => cubit.updateSwitch(
-            'deactivate_the_marriage_section',
-            value,
-          ),
+          onComplete: () =>
+              cubit.updateSwitch('deactivate_the_marriage_section', value),
         );
       },
       onCancel: () {},
