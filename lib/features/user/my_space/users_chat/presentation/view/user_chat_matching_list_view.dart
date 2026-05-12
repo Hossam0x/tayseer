@@ -146,7 +146,6 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
                                         height: 80,
                                         fit: BoxFit.cover,
                                         memCacheWidth: 160,
-                                        memCacheHeight: 160,
                                         fadeInDuration: Duration.zero,
                                         fadeOutDuration: Duration.zero,
                                         placeholder: (_, __) => Container(

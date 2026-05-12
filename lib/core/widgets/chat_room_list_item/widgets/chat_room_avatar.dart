@@ -48,11 +48,9 @@ class ChatRoomAvatar extends StatelessWidget {
   Widget _buildImage() {
     if (imageUrl != null && imageUrl!.isNotEmpty) {
       return CachedNetworkImage(
-        
         imageUrl: imageUrl!,
         fit: BoxFit.cover,
-        memCacheWidth: 112, // 56 * 2x pixel ratio
-        memCacheHeight: 112,
+        memCacheWidth: 80, // 56 * 2x pixel ratio
         fadeInDuration: Duration.zero,
         fadeOutDuration: Duration.zero,
         placeholder: (_, __) =>

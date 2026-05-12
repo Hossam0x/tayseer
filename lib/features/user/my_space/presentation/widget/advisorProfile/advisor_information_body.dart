@@ -57,99 +57,92 @@ class _AdvisorInformationBodyState extends State<AdvisorInformationBody>
 
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: AdvisorBackground(
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          extendBody: true,
-          body: Column(
-            children: [
-              SafeArea(
-                bottom: false,
-                child: SizedBox(
-                  height: kToolbarHeight,
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: darkText,
-                          size: 20.sp,
-                        ),
-                        onPressed: () => Navigator.pop(context),
+    return AdvisorBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        extendBody: true,
+        body: Column(
+          children: [
+            SafeArea(
+              bottom: false,
+              child: SizedBox(
+                height: kToolbarHeight,
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: darkText,
+                        size: 20.sp,
                       ),
-                      Expanded(
-                        child: Center(
-                          child: Text(
-                            context.tr('advisor_data'),
-                            style: TextStyle(
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.bold,
-                              color: darkText,
-                            ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          context.tr('advisor_data'),
+                          style: TextStyle(
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.bold,
+                            color: darkText,
                           ),
                         ),
                       ),
-                      SizedBox(width: 48.w),
-                    ],
-                  ),
+                    ),
+                    SizedBox(width: 48.w),
+                  ],
                 ),
               ),
-              Expanded(
-                child: BlocConsumer<AdvisorProfileCubit, AdvisorProfileState>(
-                  listener: (context, state) {
-                    if (state.getadvisorchatprofileState ==
-                        CubitStates.success) {
+            ),
+            Expanded(
+              child: BlocConsumer<AdvisorProfileCubit, AdvisorProfileState>(
+                listener: (context, state) {
+                  if (state.getadvisorchatprofileState == CubitStates.success) {
+                    _animationController.forward();
+                  }
+                },
+                builder: (context, state) {
+                  if (state.getadvisorchatprofileState == CubitStates.loading) {
+                    return SafeArea(
+                      bottom: false,
+                      child: const AdvisorProfileShimmer(),
+                    );
+                  }
+
+                  if (state.getadvisorchatprofileState == CubitStates.failure) {
+                    return SafeArea(
+                      bottom: false,
+                      child: _buildErrorState(context),
+                    );
+                  }
+
+                  if (state.getadvisorchatprofileState == CubitStates.success) {
+                    if (_animationController.status ==
+                        AnimationStatus.dismissed) {
                       _animationController.forward();
                     }
-                  },
-                  builder: (context, state) {
-                    if (state.getadvisorchatprofileState ==
-                        CubitStates.loading) {
-                      return SafeArea(
-                        bottom: false,
-                        child: const AdvisorProfileShimmer(),
-                      );
-                    }
-
-                    if (state.getadvisorchatprofileState ==
-                        CubitStates.failure) {
-                      return SafeArea(
-                        bottom: false,
-                        child: _buildErrorState(context),
-                      );
-                    }
-
-                    if (state.getadvisorchatprofileState ==
-                        CubitStates.success) {
-                      if (_animationController.status ==
-                          AnimationStatus.dismissed) {
-                        _animationController.forward();
-                      }
-                      return FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: SlideTransition(
-                          position: _slideAnimation,
-                          child: _buildSuccessContent(
-                            state,
-                            primaryPink,
-                            lightPinkBg,
-                            darkText,
-                            blueText,
-                          ),
+                    return FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: _buildSuccessContent(
+                          state,
+                          primaryPink,
+                          lightPinkBg,
+                          darkText,
+                          blueText,
                         ),
-                      );
-                    }
+                      ),
+                    );
+                  }
 
-                    return const SizedBox();
-                  },
-                ),
+                  return const SizedBox();
+                },
               ),
-            ],
-          ),
-          bottomNavigationBar: _buildBottomBar(context, bottomPadding),
+            ),
+          ],
         ),
+        bottomNavigationBar: _buildBottomBar(context, bottomPadding),
       ),
     );
   }

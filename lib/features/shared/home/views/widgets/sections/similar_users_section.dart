@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:tayseer/core/models/pagination_model.dart';
 import 'package:tayseer/features/shared/home/model/similar_user_model.dart';
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
@@ -35,6 +36,27 @@ class _SimilarUsersSectionState extends State<SimilarUsersSection> {
   void initState() {
     super.initState();
     _pageController = PageController(viewportFraction: 0.85);
+    _precacheUserImages();
+  }
+
+  void _precacheUserImages() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      for (final user in widget.users) {
+        final url = user.image;
+        if (url != null && url.isNotEmpty) {
+          DefaultCacheManager().downloadFile(url);
+        }
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(SimilarUsersSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.users != widget.users) {
+      _precacheUserImages();
+    }
   }
 
   @override
@@ -205,6 +227,7 @@ class _SimilarUserCard extends StatelessWidget {
                         children: [
                           CachedNetworkImage(
                             imageUrl: user.image ?? '',
+                            memCacheWidth: 160,
                             width: 80.r,
                             height: 80.r,
                             fit: BoxFit.cover,

@@ -57,7 +57,6 @@ class _ConnectivityCachedImageState extends State<ConnectivityCachedImage> {
         width: widget.width,
         height: widget.height,
         memCacheWidth: widget.memCacheWidth,
-        memCacheHeight: widget.memCacheHeight,
         fadeInDuration: Duration.zero,
         fadeOutDuration: Duration.zero,
         placeholderFadeInDuration: Duration.zero,
