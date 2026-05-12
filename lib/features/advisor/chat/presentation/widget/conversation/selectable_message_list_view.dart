@@ -15,8 +15,7 @@ class SelectableMessageListView extends StatefulWidget {
   final List<ChatMessage> messages;
   final ScrollController scrollController;
   final Function(ChatMessage message, GlobalKey key)? onMessageLongPress;
-  final Function(String? replyMessageId, List<ChatMessage> messages)?
-  onReplyTap;
+  final Function(String? replyMessageId, List<ChatMessage> messages)? onReplyTap;
   final Function(String messageId, String emoji)? onReactionTap;
 
   const SelectableMessageListView({
@@ -37,10 +36,7 @@ class _SelectableMessageListViewState extends State<SelectableMessageListView> {
   final Map<String, GlobalKey> _messageKeys = {};
 
   GlobalKey _getOrCreateKey(String messageId) {
-    if (!_messageKeys.containsKey(messageId)) {
-      _messageKeys[messageId] = GlobalKey();
-    }
-    return _messageKeys[messageId]!;
+    return _messageKeys.putIfAbsent(messageId, () => GlobalKey());
   }
 
   @override
@@ -75,7 +71,10 @@ class _SelectableMessageListViewState extends State<SelectableMessageListView> {
               itemBuilder: (context, index) {
                 final msg = widget.messages[index];
                 final currentMsgId = msg.id;
-                final messageKey = currentMsgId.isNotEmpty
+                // ✅ فقط الرسائل الحقيقية (مش temp) تحصل على GlobalKey ثابت
+                // الـ temp messages بتاخد GlobalKey جديد كل مرة — مش مشكلة
+                // لأنها بتتبدل بالـ server message قبل ما تتعرض
+                final messageKey = currentMsgId.isNotEmpty && !currentMsgId.startsWith('temp_')
                     ? _getOrCreateKey(currentMsgId)
                     : GlobalKey();
                 final isHighlighted =
@@ -93,9 +92,7 @@ class _SelectableMessageListViewState extends State<SelectableMessageListView> {
                   isSystemMessage: msg.messageType == 'system',
                   onLongPress: () {
                     FocusScope.of(context).unfocus();
-
-                    HapticFeedback.mediumImpact(); // اهتزاز متوسط
-
+                    HapticFeedback.mediumImpact();
                     if (!selectionState.isSelectionMode) {
                       widget.onMessageLongPress?.call(msg, messageKey);
                     }
@@ -165,50 +162,42 @@ class _SelectableMessageItemState extends State<_SelectableMessageItem>
 
     // رسائل النظام لا تدعم التحديد
     if (widget.isSystemMessage) {
-      return KeyedSubtree(
-        key: widget.messageKey,
-        child: SystemMessageBubble(content: widget.message.content),
-      );
+      return SystemMessageBubble(content: widget.message.content);
     }
 
-    return KeyedSubtree(
-      key: widget.messageKey,
-      child: GestureDetector(
-        onLongPress: widget.onLongPress,
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: EdgeInsets.only(
-            left: widget.isSelectionMode ? 0 : 0,
-            right: 0,
-          ),
-          decoration: BoxDecoration(
-            color: widget.isSelected
-                ? Colors.blue.withOpacity(0.1)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Selection checkbox on the left
-              if (widget.isSelectionMode) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: _SelectionCircle(isSelected: widget.isSelected),
-                ),
-              ],
-              // Message bubble
-              Expanded(
-                child: MessageBubble(
-                  chatMessage: widget.message,
-                  isHighlighted: widget.isHighlighted,
-                  onReplyTap: widget.onReplyTap,
-                  onReactionTap: widget.onReactionTap,
-                ),
+    return GestureDetector(
+      onLongPress: widget.onLongPress,
+      onTap: widget.onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: widget.isSelected
+              ? Colors.blue.withOpacity(0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Selection checkbox on the left
+            if (widget.isSelectionMode) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: _SelectionCircle(isSelected: widget.isSelected),
               ),
             ],
-          ),
+            // ✅ الـ GlobalKey على MessageBubble مباشرة للـ context menu positioning
+            // بدل ما يكون على الـ root widget — يمنع مشكلة duplicate GlobalKey
+            Expanded(
+              child: MessageBubble(
+                key: widget.messageKey,
+                chatMessage: widget.message,
+                isHighlighted: widget.isHighlighted,
+                onReplyTap: widget.onReplyTap,
+                onReactionTap: widget.onReactionTap,
+              ),
+            ),
+          ],
         ),
       ),
     );

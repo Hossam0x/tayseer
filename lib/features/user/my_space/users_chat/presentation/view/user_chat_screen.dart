@@ -5,6 +5,7 @@ import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/widgets/chat_room_list_item/helpers/chat_room_dialog_helper.dart';
+import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/message_actions_handler.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/overlay_manager.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/scroll_behavior_handler.dart';
@@ -156,6 +157,29 @@ class _UserChatContentState extends State<_UserChatContent> {
     super.dispose();
   }
 
+  /// ✅ يحوّل الـ messageType لـ content مناسب للعرض في الـ chat list
+  /// بدل عرض الـ URL الفعلي للـ audio/image/video
+  static String _contentForDisplay(ChatMessage msg) {
+    switch (msg.messageType) {
+      case 'audio':
+      case 'record':
+      case 'voice':
+        return 'audio'; // ChatRoomListItem.formatLastMessage بيحوّله لـ 🎤
+      case 'image':
+      case 'photo':
+      case 'media':
+        return 'image'; // → 📷
+      case 'video':
+        return 'video'; // → 🎥
+      case 'file':
+      case 'document':
+        return 'file'; // → 📄
+      default:
+        // text أو system — ارجع الـ content الفعلي
+        return msg.contentList.isNotEmpty ? msg.contentList.first : '';
+    }
+  }
+
   /// ✅ يخرج من الشات ويبعت آخر رسالة حقيقية كـ result
   /// عشان الـ chat list يعرض الرسالة الصح بعد الحذف
   void _popWithLastMessage(BuildContext context) {
@@ -165,9 +189,7 @@ class _UserChatContentState extends State<_UserChatContent> {
     final messages = context.read<ChatMessagesCubit>().state.messagesOrEmpty;
     if (messages.isNotEmpty) {
       final lastMsg = messages.first; // مرتبة من الأحدث للأقدم
-      final content = lastMsg.contentList.isNotEmpty
-          ? lastMsg.contentList.first
-          : '';
+      final content = _contentForDisplay(lastMsg);
       final sentAt = DateTime.tryParse(lastMsg.createdAt) ?? DateTime.now();
       Navigator.pop(context, {
         'lastMessage': content,

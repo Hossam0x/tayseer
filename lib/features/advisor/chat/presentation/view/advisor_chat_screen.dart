@@ -7,6 +7,7 @@ import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/widgets/app_toast.dart';
+import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/message_actions_handler.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/overlay_manager.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/scroll_behavior_handler.dart';
@@ -195,9 +196,7 @@ class _ChatContentState extends State<_ChatContent> {
     final messages = context.read<ChatMessagesCubit>().state.messagesOrEmpty;
     if (messages.isNotEmpty) {
       final lastMsg = messages.first; // مرتبة من الأحدث للأقدم
-      final content = lastMsg.contentList.isNotEmpty
-          ? lastMsg.contentList.first
-          : '';
+      final content = _contentForDisplay(lastMsg);
       final sentAt = DateTime.tryParse(lastMsg.createdAt) ?? DateTime.now();
       Navigator.pop(context, {
         'lastMessage': content,
@@ -206,6 +205,28 @@ class _ChatContentState extends State<_ChatContent> {
       });
     } else {
       Navigator.pop(context);
+    }
+  }
+
+  /// ✅ يحوّل الـ messageType لـ keyword موحد للعرض في الـ chat list
+  static String _contentForDisplay(ChatMessage msg) {
+    switch (msg.messageType) {
+      case 'audio':
+      case 'record':
+      case 'voice':
+        return 'audio';
+      case 'image':
+      case 'photo':
+      case 'media':
+      case 'images/videos':
+        return 'image';
+      case 'video':
+        return 'video';
+      case 'file':
+      case 'document':
+        return 'file';
+      default:
+        return msg.contentList.isNotEmpty ? msg.contentList.first : '';
     }
   }
 

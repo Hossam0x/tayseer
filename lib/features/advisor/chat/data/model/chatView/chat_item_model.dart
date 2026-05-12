@@ -149,14 +149,41 @@ class LastMessage {
   LastMessage({required this.content, required this.sentAt});
 
   factory LastMessage.fromJson(Map<String, dynamic> json) {
+    final contentType = (json['contentType'] ?? json['messageType'])
+        ?.toString()
+        .toLowerCase() ?? '';
+    final rawContent = json['content'];
+
     return LastMessage(
-      content: _parseContent(json['content']),
+      content: _normalizeContent(rawContent, contentType),
       sentAt: json['sentAt'] != null
           ? DateTime.tryParse(json['sentAt'].toString())
           : (json['createdAt'] != null
               ? DateTime.tryParse(json['createdAt'].toString())
               : null),
     );
+  }
+
+  /// ✅ يحوّل الـ content لـ keyword موحد — الترجمة والـ emoji في formatLastMessage
+  static String _normalizeContent(dynamic contentData, String contentType) {
+    switch (contentType) {
+      case 'record':
+      case 'audio':
+      case 'voice':
+        return 'audio';
+      case 'image':
+      case 'photo':
+      case 'media':
+      case 'images/videos':
+        return 'image';
+      case 'video':
+        return 'video';
+      case 'file':
+      case 'document':
+        return 'file';
+      default:
+        return _parseContent(contentData);
+    }
   }
 
   static String _parseContent(dynamic contentData) {

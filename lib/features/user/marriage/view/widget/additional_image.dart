@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/screenshot_protected_image.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
@@ -41,30 +40,19 @@ class AdditionalImageSection extends StatelessWidget {
           child: Stack(
             children: [
               // ✅ الصورة مع دعم الـ blur والحماية من الـ screenshot
-              if (shouldBlur)
-                ImageFiltered(
-                  imageFilter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: context.height * 0.4,
-                    child: ScreenshotProtectedImage(
-                      imageUrl: imageUrl,
-                      fit: BoxFit.cover,
-                      shouldBlur: false,
-                      isAnimating: true, // ✅ يمنع Hero الداخلي
-                    ),
-                  ),
-                )
-              else
-                SizedBox(
-                  width: double.infinity,
-                  height: context.height * 0.4,
-                  child: ScreenshotProtectedImage(
-                    imageUrl: imageUrl,
-                    fit: BoxFit.cover,
-                    isAnimating: true, // ✅ يمنع Hero الداخلي
-                  ),
+              // shouldBlur بيتمرر لـ ScreenshotProtectedImage مباشرة
+              // على iOS: لما shouldBlur=true بيستخدم Flutter image + ImageFiltered
+              //          لما shouldBlur=false بيستخدم SecureImageWrapper (UiKitView)
+              SizedBox(
+                width: double.infinity,
+                height: context.height * 0.4,
+                child: ScreenshotProtectedImage(
+                  imageUrl: imageUrl,
+                  fit: BoxFit.cover,
+                  shouldBlur: shouldBlur,
+                  isAnimating: true,
                 ),
+              ),
 
               // ✅ طبقة تعتيم فوق الـ blur
               if (shouldBlur)

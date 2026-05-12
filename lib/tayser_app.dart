@@ -1,6 +1,7 @@
 import 'package:country_picker/country_picker.dart';
 import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
+import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/core/video/feed_video_preloader.dart';
 import 'package:tayseer/features/shared/splash_screen&&on_boarding/view/splash_screen.dart';
@@ -84,6 +85,12 @@ class _TayseerAppState extends State<TayseerApp> with WidgetsBindingObserver {
         break;
       case AppLifecycleState.resumed:
         AudioService.instance.onAppResumed();
+        // ✅ لما التطبيق يرجع من الخلفية، تحقق من الـ socket
+        // لو مش متصل (ممكن النت قطع وهو في الخلفية)، حاول reconnect
+        final socketHelper = getIt<tayseerSocketHelper>();
+        if (!socketHelper.isConnected) {
+          socketHelper.connect();
+        }
         break;
       case AppLifecycleState.detached:
         break;

@@ -522,29 +522,23 @@ class MySpaceCubit extends Cubit<MySpaceState> {
   }
 
   /// Extract content from message for display
+  /// ✅ يرجع keywords موحدة ('audio', 'image', 'video') — الترجمة والـ emoji في formatLastMessage
   String _extractContentForDisplay(dynamic content, String messageType) {
-    log(
-      '🔍 [$_listenerId] _extractContentForDisplay - messageType: $messageType',
-    );
+    log('🔍 [$_listenerId] _extractContentForDisplay - messageType: $messageType');
 
-    // معالجة أنواع الميديا
     if (messageType == 'image' || messageType == 'images/videos') {
-      log('✅ [$_listenerId] Detected image/video, returning "صورة"');
-      return 'صورة';
+      return 'image';
     } else if (messageType == 'video') {
-      log('✅ [$_listenerId] Detected video, returning "فيديو"');
-      return 'فيديو';
+      return 'video';
     } else if (messageType == 'audio' ||
         messageType == 'voice' ||
         messageType == 'record') {
-      log(
-        '✅ [$_listenerId] Detected audio/voice/record, returning "رسالة صوتية"',
-      );
-      return 'رسالة صوتية';
+      return 'audio';
+    } else if (messageType == 'file' || messageType == 'document') {
+      return 'file';
     }
 
     // للرسائل النصية والنظام
-    log('📝 [$_listenerId] Text/system message, extracting content');
     return _extractContent(content);
   }
 
@@ -552,26 +546,21 @@ class MySpaceCubit extends Cubit<MySpaceState> {
   String _extractContent(dynamic content) {
     if (content == null) return '';
     if (content is String) {
-      // Check if it's a media URL (audio/video/image)
+      // ✅ لو URL، حوّله لـ keyword موحد
       final lowerContent = content.toLowerCase();
-      if (lowerContent.contains('.mp3') ||
-          lowerContent.contains('.wav') ||
-          lowerContent.contains('.m4a') ||
-          lowerContent.contains('.aac') ||
-          lowerContent.contains('audio') ||
-          lowerContent.contains('record')) {
-        return 'رسالة صوتية';
-      } else if (lowerContent.contains('.mp4') ||
-          lowerContent.contains('.mov') ||
-          lowerContent.contains('.avi') ||
-          lowerContent.contains('video')) {
-        return 'فيديو';
-      } else if (lowerContent.contains('.jpg') ||
-          lowerContent.contains('.jpeg') ||
-          lowerContent.contains('.png') ||
-          lowerContent.contains('.gif') ||
-          lowerContent.contains('image')) {
-        return 'صورة';
+      if (lowerContent.startsWith('http://') || lowerContent.startsWith('https://')) {
+        if (lowerContent.contains('.mp3') || lowerContent.contains('.wav') ||
+            lowerContent.contains('.m4a') || lowerContent.contains('.aac') ||
+            lowerContent.contains('.ogg')) {
+          return 'audio';
+        } else if (lowerContent.contains('.mp4') || lowerContent.contains('.mov') ||
+            lowerContent.contains('.avi')) {
+          return 'video';
+        } else if (lowerContent.contains('.jpg') || lowerContent.contains('.jpeg') ||
+            lowerContent.contains('.png') || lowerContent.contains('.gif') ||
+            lowerContent.contains('.webp')) {
+          return 'image';
+        }
       }
       return content;
     } else if (content is List && content.isNotEmpty) {
@@ -580,22 +569,16 @@ class MySpaceCubit extends Cubit<MySpaceState> {
         final mediaUrl =
             first['media']?.toString() ?? first['url']?.toString() ?? '';
         if (mediaUrl.isNotEmpty) {
-          // Check media type from URL
           final lowerUrl = mediaUrl.toLowerCase();
-          if (lowerUrl.contains('.mp3') ||
-              lowerUrl.contains('.wav') ||
-              lowerUrl.contains('.m4a') ||
-              lowerUrl.contains('.aac')) {
-            return 'رسالة صوتية';
-          } else if (lowerUrl.contains('.mp4') ||
-              lowerUrl.contains('.mov') ||
+          if (lowerUrl.contains('.mp3') || lowerUrl.contains('.wav') ||
+              lowerUrl.contains('.m4a') || lowerUrl.contains('.aac')) {
+            return 'audio';
+          } else if (lowerUrl.contains('.mp4') || lowerUrl.contains('.mov') ||
               lowerUrl.contains('.avi')) {
-            return 'فيديو';
-          } else if (lowerUrl.contains('.jpg') ||
-              lowerUrl.contains('.jpeg') ||
-              lowerUrl.contains('.png') ||
-              lowerUrl.contains('.gif')) {
-            return 'صورة';
+            return 'video';
+          } else if (lowerUrl.contains('.jpg') || lowerUrl.contains('.jpeg') ||
+              lowerUrl.contains('.png') || lowerUrl.contains('.gif')) {
+            return 'image';
           }
         }
         return mediaUrl;

@@ -2,97 +2,165 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'package:tayseer/core/shared/network/local_network.dart';
 
 class tayseerSocketHelper {
   IO.Socket? _socket;
   bool _isConnected = false;
   bool _isConnecting = false;
-  bool _isReconnecting = false; // ✅ flag لتمييز الـ reconnect عن الـ connect الأول
   Completer<bool>? _connectionCompleter;
-  // ✅ الـ token المعتمد للـ session الحالية — يُعيَّن في resetAndConnect
-  // يمنع أي connect() تاني من استخدام token قديم من الـ cache
+
+  /// الـ token المعتمد للـ session الحالية
   String? _authorizedToken;
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // LISTENERS MAP
+  // ══════════════════════════════════════════════════════════════════════════
 
   final Map<String, Map<String, Function(dynamic)>> _listeners = {};
 
-  bool get isConnected => _isConnected && _socket != null && _socket!.connected;
+  // ══════════════════════════════════════════════════════════════════════════
+  // RECONNECT CALLBACKS — Map بدل callback واحد
+  // كل مكتبة/cubit يسجل نفسه بـ ID مستقل
+  // ══════════════════════════════════════════════════════════════════════════
+
+  final Map<String, Function()> _reconnectCallbacks = {};
+
+  void addReconnectCallback(String id, Function() callback) {
+    _reconnectCallbacks[id] = callback;
+    log('🔄 [Socket] addReconnectCallback: $id');
+  }
+
+  void removeReconnectCallback(String id) {
+    _reconnectCallbacks.remove(id);
+    log('🔕 [Socket] removeReconnectCallback: $id');
+  }
+
+  void _notifyReconnected() {
+    log('🔄 [Socket] notifying ${_reconnectCallbacks.length} reconnect callbacks');
+    final callbacks = Map<String, Function()>.from(_reconnectCallbacks);
+    callbacks.forEach((id, cb) {
+      try {
+        cb();
+      } catch (e) {
+        log('❌ [Socket] error in reconnect callback "$id": $e');
+      }
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // MESSAGE QUEUE — رسائل تتبعت وهو مقطوع
+  // ══════════════════════════════════════════════════════════════════════════
+
+  final List<_QueuedMessage> _messageQueue = [];
+
+  void _flushMessageQueue() {
+    if (_messageQueue.isEmpty) return;
+    log('📤 [Socket] flushing ${_messageQueue.length} queued messages');
+    final toSend = List<_QueuedMessage>.from(_messageQueue);
+    _messageQueue.clear();
+    for (final msg in toSend) {
+      _emitNow(msg.event, msg.data, msg.callback);
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // LEGACY CALLBACKS (backward compat)
+  // ══════════════════════════════════════════════════════════════════════════
+
   Function()? onDisconnected;
-  Function()? onReconnected; // ✅ NEW: callback لما الـ socket يرجع بعد انقطاع
   Function(String message)? onError;
+
+  // ✅ backward compat — يكتب على الـ map بـ key ثابت
+  // لا يزال يشتغل لكن الأفضل استخدام addReconnectCallback
+  set onReconnected(Function()? cb) {
+    if (cb == null) {
+      _reconnectCallbacks.remove('_legacy_');
+    } else {
+      _reconnectCallbacks['_legacy_'] = cb;
+    }
+  }
+
+  Function()? get onReconnected => _reconnectCallbacks['_legacy_'];
 
   void setErrorCallback(Function(String message) callback) {
     onError = callback;
   }
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // CONNECT
+  // ══════════════════════════════════════════════════════════════════════════
+
+  bool get isConnected => _isConnected && _socket != null && _socket!.connected;
+
   Future<bool> connect({String? token}) async {
     if (_socket != null && _socket!.connected) {
-      log('🔁 Already connected');
+      log('🔁 [Socket] Already connected');
       _isConnected = true;
       return true;
     }
 
-    // Guard: if a connection attempt is already in progress, wait for it
     if (_isConnecting && _connectionCompleter != null) {
-      log('⏳ Connection already in progress, waiting...');
+      log('⏳ [Socket] Connection already in progress, waiting...');
       return await _connectionCompleter!.future;
     }
 
     _isConnecting = true;
     _connectionCompleter = Completer<bool>();
-    log('🔧 Initializing socket connection...');
 
-    // ✅ الأولوية: token ممرر صراحةً > _authorizedToken > NOTHING
-    // لا نقرأ من الـ cache أبداً — التوكن لازم يجي من الـ caller صراحةً
     final String? tokenToUse = token ?? _authorizedToken;
     if (tokenToUse == null || tokenToUse.isEmpty) {
-      log('❌ No authorized token — refusing to connect');
+      log('❌ [Socket] No authorized token — refusing to connect');
       _isConnecting = false;
-      if (!(_connectionCompleter?.isCompleted ?? true)) {
-        _connectionCompleter?.complete(false);
-      }
+      _connectionCompleter?.complete(false);
       return false;
     }
+
+    log('🔧 [Socket] Initializing socket connection...');
 
     _socket = IO.io(
       'https://tayser-app.net',
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
-          .disableReconnection()
+          .disableReconnection() // ✅ نتحكم في الـ reconnect يدوياً
           .enableForceNew()
           .setExtraHeaders({'Authorization': 'Bearer $tokenToUse'})
           .build(),
     );
 
     _socket!.onConnect((_) {
-      log('✅ Connected to tayseer Game Socket');
+      log('✅ [Socket] Connected');
+      final wasReconnect = _isConnected == false && (_connectionCompleter?.isCompleted ?? true);
       _isConnected = true;
       _isConnecting = false;
+
       if (!(_connectionCompleter?.isCompleted ?? true)) {
-        // ✅ الـ connect الأول — complete الـ completer
+        // الـ connect الأول
         _connectionCompleter?.complete(true);
-      } else if (_isReconnecting) {
-        // ✅ reconnect بعد انقطاع — نادي الـ callback
-        log('🔄 Socket reconnected — notifying listeners');
-        _isReconnecting = false;
-        onReconnected?.call();
+      } else if (wasReconnect) {
+        // reconnect بعد انقطاع — أعد تسجيل الـ socket listeners ثم أبلّغ الـ callbacks
+        log('🔄 [Socket] Reconnected — re-registering socket listeners');
+        _reRegisterSocketListeners();
+        _notifyReconnected();
+        _flushMessageQueue();
       }
     });
 
     _socket!.onConnectError((error) {
-      log('❌ Connection Error: $error');
+      log('❌ [Socket] Connection Error: $error');
       onError?.call('فشل الاتصال: $error');
       _isConnecting = false;
       if (!(_connectionCompleter?.isCompleted ?? true)) {
         _connectionCompleter?.complete(false);
       }
+      // ✅ retry بعد فشل الاتصال
+      _scheduleReconnect();
     });
 
-    // ✅ Register via listenWithId so it's not wiped by legacy listen() calls
+    // ✅ تسجيل الـ fail listener عبر الـ map
     _listeners['fail'] ??= {};
     _listeners['fail']!['_global_fail_handler'] = (data) {
-      log('⚠️ fail: $data');
+      log('⚠️ [Socket] fail: $data');
       onError?.call(
         data is Map ? (data['message'] ?? 'فشل غير معروف') : 'فشل غير معروف',
       );
@@ -105,13 +173,13 @@ class tayseerSocketHelper {
         try {
           cb(data);
         } catch (e) {
-          log('❌ Error in fail listener "$id": $e');
+          log('❌ [Socket] Error in fail listener "$id": $e');
         }
       });
     });
 
     _socket!.on('error', (error) {
-      log('❌ Socket Error: $error');
+      log('❌ [Socket] Error: $error');
       onError?.call('خطأ: $error');
       _isConnecting = false;
       if (!(_connectionCompleter?.isCompleted ?? true)) {
@@ -120,48 +188,40 @@ class tayseerSocketHelper {
     });
 
     _socket!.onDisconnect((reason) {
-      log('❌ Disconnected from tayseer Game Socket. Reason: $reason');
+      log('❌ [Socket] Disconnected. Reason: $reason');
       _isConnected = false;
       onError?.call('تم قطع الاتصال: $reason');
       onDisconnected?.call();
 
       // ✅ auto-reconnect لو الانقطاع مش بسبب logout
       if (_authorizedToken != null && _authorizedToken!.isNotEmpty) {
-        log('🔄 Attempting auto-reconnect in 2s...');
-        _isReconnecting = true; // ✅ علّم إن ده reconnect مش connect أول مرة
-        Future.delayed(const Duration(seconds: 2), () {
-          if (!_isConnected && _authorizedToken != null) {
-            connect(token: _authorizedToken);
-          } else {
-            _isReconnecting = false; // ✅ لو اتصل بطريقة تانية، reset الـ flag
-          }
-        });
+        _scheduleReconnect();
       }
     });
 
     _socket!.onAny((dynamic event, [dynamic data]) {
       try {
         if (data != null) {
-          log('📡 Event from server: $event , Data: $data');
+          log('📡 [Socket] Event: $event , Data: $data');
         } else {
-          log('📡 Event from server: $event (no data)');
+          log('📡 [Socket] Event: $event (no data)');
         }
-      } catch (e, s) {
-        log('⚠️ Error while handling onAny event: $e');
-        log('StackTrace: $s');
+      } catch (e) {
+        log('⚠️ [Socket] Error in onAny: $e');
       }
     });
 
-    log('🚀 Attempting to connect...');
+    log('🚀 [Socket] Attempting to connect...');
     _socket!.connect();
 
     try {
       final bool connected = await _connectionCompleter!.future.timeout(
         const Duration(seconds: 10),
         onTimeout: () {
-          log('⏱️ Connection timeout');
+          log('⏱️ [Socket] Connection timeout');
           onError?.call('انتهت مهلة الاتصال');
           _isConnecting = false;
+          _scheduleReconnect();
           return false;
         },
       );
@@ -169,177 +229,246 @@ class tayseerSocketHelper {
       _isConnecting = false;
       return connected;
     } catch (e) {
-      log('❌ Error during connection: $e');
+      log('❌ [Socket] Error during connection: $e');
       _isConnecting = false;
       return false;
     }
   }
 
-  void send(String event, dynamic data, Function(dynamic ack)? callback) {
-    if (_isConnected && _socket != null) {
-      _socket!.emit(event, data);
-    } else {
-      log('⚠️ Socket not connected yet');
+  // ══════════════════════════════════════════════════════════════════════════
+  // RECONNECT — يستخدم نفس الـ socket instance بدل إنشاء واحد جديد
+  // ══════════════════════════════════════════════════════════════════════════
+
+  Timer? _reconnectTimer;
+  int _reconnectAttempts = 0;
+  static const int _maxReconnectAttempts = 10;
+
+  void _scheduleReconnect() {
+    if (_authorizedToken == null || _authorizedToken!.isEmpty) return;
+    if (_isConnecting) return;
+    if (_reconnectTimer?.isActive ?? false) return;
+
+    _reconnectAttempts++;
+    if (_reconnectAttempts > _maxReconnectAttempts) {
+      log('⚠️ [Socket] Max reconnect attempts reached');
+      _reconnectAttempts = 0;
+      return;
+    }
+
+    // Exponential backoff: 2s, 4s, 8s... max 30s
+    final delay = Duration(
+      seconds: (_reconnectAttempts * 2).clamp(2, 30),
+    );
+    log('🔄 [Socket] Scheduling reconnect in ${delay.inSeconds}s (attempt $_reconnectAttempts)');
+
+    _reconnectTimer = Timer(delay, () {
+      if (_isConnected || _isConnecting) return;
+      if (_authorizedToken == null || _authorizedToken!.isEmpty) return;
+
+      log('🔄 [Socket] Attempting reconnect...');
+
+      if (_socket != null) {
+        // ✅ استخدم نفس الـ socket instance — الـ listeners موجودة عليه
+        _isConnecting = true;
+        _connectionCompleter = Completer<bool>();
+        _socket!.connect();
+
+        // timeout للـ reconnect attempt
+        _connectionCompleter!.future.timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            _isConnecting = false;
+            _scheduleReconnect();
+            return false;
+          },
+        ).then((connected) {
+          _isConnecting = false;
+          if (connected) {
+            _reconnectAttempts = 0;
+          }
+        }).catchError((_) {
+          _isConnecting = false;
+        });
+      } else {
+        // الـ socket اتدمر (مثلاً بعد reset) — اعمل واحد جديد
+        connect(token: _authorizedToken);
+      }
+    });
+  }
+
+  void _cancelReconnect() {
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _reconnectAttempts = 0;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // RE-REGISTER SOCKET LISTENERS بعد reconnect
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /// بعد الـ reconnect، الـ socket.io بيحتفظ بالـ listeners تلقائياً
+  /// لكن لو الـ socket اتعمل جديد (بعد reset)، لازم نعيد تسجيلهم
+  void _reRegisterSocketListeners() {
+    if (_socket == null) return;
+    log('🔄 [Socket] Re-registering ${_listeners.length} event listeners');
+    for (final event in _listeners.keys) {
+      if (event == 'fail') continue; // fail بيتسجل في connect()
+      _setupSocketListener(event);
     }
   }
 
-  /// ✅ الـ listen القديم (للتوافق مع الكود القديم)
-  /// ⚠️ لا ينصح باستخدامه - استخدم listenWithId بدلاً منه
+  // ══════════════════════════════════════════════════════════════════════════
+  // SEND — مع queue للرسائل المعلقة
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /// الأحداث اللي ما تتحفظش في الـ queue (مثلاً join/leave/typing)
+  static const _noQueueEvents = {
+    'joinChatRoom',
+    'leaveChatRoom',
+    'typingStatus',
+  };
+
+  void send(String event, dynamic data, Function(dynamic ack)? callback) {
+    if (_isConnected && _socket != null && _socket!.connected) {
+      _emitNow(event, data, callback);
+    } else {
+      // ✅ احفظ الرسالة في الـ queue لو مش join/leave/typing
+      if (!_noQueueEvents.contains(event)) {
+        log('📦 [Socket] Queuing message for event "$event" (not connected)');
+        _messageQueue.add(_QueuedMessage(event: event, data: data, callback: callback));
+      } else {
+        log('⚠️ [Socket] Dropping "$event" — socket not connected (no queue for this event)');
+      }
+    }
+  }
+
+  void _emitNow(String event, dynamic data, Function(dynamic ack)? callback) {
+    if (_socket == null) return;
+    if (callback != null) {
+      _socket!.emitWithAck(event, data, ack: callback);
+    } else {
+      _socket!.emit(event, data);
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // LISTEN WITH ID
+  // ══════════════════════════════════════════════════════════════════════════
+
   void listen(String event, Function(dynamic data) callback) {
     if (_socket == null) {
-      log('⚠️ Socket not initialized yet');
+      log('⚠️ [Socket] Socket not initialized yet');
       return;
     }
-    log('📡 Listening to $event (legacy method)');
+    log('📡 [Socket] Listening to $event (legacy method)');
     _socket!.off(event);
     _socket!.on(event, (data) {
-      log('📥 Received event "$event" with data: $data');
+      log('📥 [Socket] Received "$event": $data');
       callback(data);
     });
   }
 
-  /// ✅ الـ listen الجديد مع Listener ID
-  /// كل listener له ID فريد، وممكن نشيله لوحده من غير ما نأثر على باقي الـ listeners
   void listenWithId(
     String event,
     String listenerId,
     Function(dynamic data) callback,
   ) {
     if (_socket == null) {
-      log('⚠️ Socket not initialized yet');
+      log('⚠️ [Socket] Socket not initialized yet');
       return;
     }
 
-    // إضافة الـ listener للـ Map
     _listeners[event] ??= {};
     _listeners[event]![listenerId] = callback;
 
-    log('📡 Added listener "$listenerId" for event "$event"');
-    log('📊 Total listeners for "$event": ${_listeners[event]!.length}');
+    log('📡 [Socket] Added listener "$listenerId" for "$event" (total: ${_listeners[event]!.length})');
 
-    // لو أول listener للـ event ده، نعمل setup للـ socket listener
     if (_listeners[event]!.length == 1) {
       _setupSocketListener(event);
     }
   }
 
-  /// ✅ Setup الـ socket listener للـ event
   void _setupSocketListener(String event) {
-    _socket!.off(event); // نشيل أي listener قديم
+    if (_socket == null) return;
+    _socket!.off(event);
     _socket!.on(event, (data) {
-      log('📥 Received event "$event" with data: $data');
-      log('📊 Broadcasting to ${_listeners[event]?.length ?? 0} listeners');
-
-      // نعمل copy من الـ listeners عشان لو حد اتشال وإحنا بنلف
+      log('📥 [Socket] Received "$event" → ${_listeners[event]?.length ?? 0} listeners');
       final listeners = Map<String, Function(dynamic)>.from(
         _listeners[event] ?? {},
       );
-
       listeners.forEach((listenerId, callback) {
         try {
-          log('📤 Calling listener "$listenerId"');
           callback(data);
         } catch (e) {
-          log('❌ Error in listener "$listenerId": $e');
+          log('❌ [Socket] Error in listener "$listenerId": $e');
         }
       });
     });
   }
 
-  /// ✅ إزالة listener معين بالـ ID
   void offWithId(String event, String listenerId) {
-    if (_listeners[event] == null) {
-      log('⚠️ No listeners found for event "$event"');
-      return;
-    }
-
+    if (_listeners[event] == null) return;
     _listeners[event]!.remove(listenerId);
-    log('🔕 Removed listener "$listenerId" for event "$event"');
-    log('📊 Remaining listeners for "$event": ${_listeners[event]!.length}');
+    log('🔕 [Socket] Removed listener "$listenerId" for "$event" (remaining: ${_listeners[event]!.length})');
 
-    // لو مفيش listeners تاني للـ event ده، نشيل الـ socket listener
     if (_listeners[event]!.isEmpty) {
       _socket?.off(event);
       _listeners.remove(event);
-      log('🔕 Removed socket listener for event "$event" (no more listeners)');
     }
   }
 
-  /// ✅ Rename all listeners from oldId to newId across all events
   void renameListenerId(String oldId, String newId) {
     _listeners.forEach((event, listeners) {
       if (listeners.containsKey(oldId)) {
         listeners[newId] = listeners.remove(oldId)!;
-        log('🔄 Renamed listener "$oldId" → "$newId" for event "$event"');
+        log('🔄 [Socket] Renamed listener "$oldId" → "$newId" for "$event"');
       }
     });
   }
 
-  /// ✅ إزالة كل الـ listeners لـ listener ID معين (في كل الـ events)
   void offAllForListener(String listenerId) {
-    log('🔕 Removing all listeners for "$listenerId"');
-
+    log('🔕 [Socket] Removing all listeners for "$listenerId"');
     final eventsToClean = <String>[];
-
     _listeners.forEach((event, listeners) {
       if (listeners.containsKey(listenerId)) {
         listeners.remove(listenerId);
-        log('🔕 Removed "$listenerId" from event "$event"');
-
-        if (listeners.isEmpty) {
-          eventsToClean.add(event);
-        }
+        if (listeners.isEmpty) eventsToClean.add(event);
       }
     });
-
-    // تنظيف الـ events الفاضية
     for (final event in eventsToClean) {
       _socket?.off(event);
       _listeners.remove(event);
-      log('🔕 Removed socket listener for event "$event" (no more listeners)');
     }
   }
 
-  /// ✅ إزالة كل الـ listeners لـ event معين
   void off(String event) {
     _socket?.off(event);
     _listeners.remove(event);
-    log('🔕 Removed all listeners for event "$event"');
   }
 
-  /// ✅ التحقق من وجود listener معين
   bool hasListener(String event, String listenerId) {
     return _listeners[event]?.containsKey(listenerId) ?? false;
   }
 
-  /// ✅ الحصول على عدد الـ listeners لـ event معين
   int getListenerCount(String event) {
     return _listeners[event]?.length ?? 0;
   }
 
-  /// ✅ طباعة كل الـ listeners (للـ debugging)
   void debugPrintListeners() {
     log('📊 ===== Current Listeners =====');
     _listeners.forEach((event, listeners) {
       log('📡 Event: $event');
-      listeners.forEach((id, _) {
-        log('   └── $id');
-      });
+      listeners.forEach((id, _) => log('   └── $id'));
     });
     log('📊 ==============================');
   }
 
   void listenOnce(String event, Function(dynamic) callback) {
-    if (_socket == null) {
-      log('⚠️ Socket not initialized yet');
-      return;
-    }
-
+    if (_socket == null) return;
     void handler(dynamic data) {
       callback(data);
       _socket!.off(event, handler);
     }
-
     _socket!.on(event, handler);
   }
 
@@ -347,21 +476,40 @@ class tayseerSocketHelper {
     onDisconnected = callback;
   }
 
+  // ══════════════════════════════════════════════════════════════════════════
+  // DISCONNECT / RESET
+  // ══════════════════════════════════════════════════════════════════════════
+
   void disconnect() {
+    _cancelReconnect();
     if (_socket != null) {
       _socket!.disconnect();
       _isConnected = false;
     }
   }
 
-  /// ✅ Full reset — call on logout to destroy socket and clear all listeners
-  void reset() {
+  void clearAuthorizedToken() {
+    _authorizedToken = null;
+    log('🔑 [Socket] Authorized token cleared');
+  }
+
+  void clearAllListeners() {
+    _listeners.forEach((event, _) => _socket?.off(event));
     _listeners.clear();
+    log('🧹 [Socket] Cleared all listeners');
+  }
+
+  /// Full reset — call on logout
+  void reset() {
+    _cancelReconnect();
+    _listeners.clear();
+    _reconnectCallbacks.clear();
+    _messageQueue.clear();
     _isConnecting = false;
-    _isReconnecting = false; // ✅ reset
     _connectionCompleter = null;
     _authorizedToken = null;
-    onReconnected = null;
+    onDisconnected = null;
+    onError = null;
     if (_socket != null) {
       _socket!.disconnect();
       _socket!.destroy();
@@ -370,40 +518,23 @@ class tayseerSocketHelper {
       _socket = null;
     }
     _isConnected = false;
-    log('🔄 Socket helper reset');
+    log('🔄 [Socket] Socket helper reset');
   }
 
-  /// ✅ امسح الـ authorized token فقط (بدون reset كامل)
-  /// يُستدعى قبل الـ logout عشان أي connect() تاني مش يستخدم token قديم
-  void clearAuthorizedToken() {
-    _authorizedToken = null;
-    log('🔑 Authorized token cleared');
-  }
-
-  /// ✅ تنظيف كل الـ listeners
-  void clearAllListeners() {
-    _listeners.forEach((event, _) {
-      _socket?.off(event);
-    });
-    _listeners.clear();
-    log('🧹 Cleared all listeners');
-  }
-
-  /// Full reset then connect for the new user — token must be passed explicitly
+  /// Full reset then connect for the new user
   Future<bool> resetAndConnect({String? token}) async {
-    // ✅ لو مفيش token صريح → فشل آمن، مش نقرأ من الـ cache
     if (token == null || token.isEmpty) {
-      log('❌ resetAndConnect called without explicit token — aborting');
+      log('❌ [Socket] resetAndConnect called without explicit token — aborting');
       _authorizedToken = null;
       return false;
     }
 
+    _cancelReconnect();
     _listeners.clear();
+    _reconnectCallbacks.clear();
+    _messageQueue.clear();
     _isConnecting = false;
-    _isReconnecting = false; // ✅ reset
     _connectionCompleter = null;
-    onReconnected = null;
-    // ✅ احفظ الـ token المعتمد للـ session الجديدة
     _authorizedToken = token;
 
     if (_socket != null) {
@@ -414,20 +545,36 @@ class tayseerSocketHelper {
       _socket = null;
     }
     _isConnected = false;
-    log('🔄 Socket fully reset — connecting for new user...');
+    log('🔄 [Socket] Fully reset — connecting for new user...');
 
     await Future.delayed(const Duration(milliseconds: 500));
-
     return await connect(token: _authorizedToken);
   }
 
-  /// ✅ Dispose كامل
   void dispose() {
+    _cancelReconnect();
     clearAllListeners();
+    _reconnectCallbacks.clear();
+    _messageQueue.clear();
     disconnect();
     _socket?.dispose();
     _socket = null;
-    onReconnected = null; // ✅ NEW
-    log('🗑️ Socket helper disposed');
+    log('🗑️ [Socket] Socket helper disposed');
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// QUEUED MESSAGE MODEL
+// ══════════════════════════════════════════════════════════════════════════
+
+class _QueuedMessage {
+  final String event;
+  final dynamic data;
+  final Function(dynamic)? callback;
+
+  const _QueuedMessage({
+    required this.event,
+    required this.data,
+    this.callback,
+  });
 }

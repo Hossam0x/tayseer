@@ -10,9 +10,10 @@ import 'package:tayseer/core/utils/helper/socket_helper.dart';
 class ChatSocketService {
   final tayseerSocketHelper _socket = getIt.get<tayseerSocketHelper>();
   static const _id = 'ChatSocketService';
+  static const _reconnectId = '${_id}_reconnect';
   bool _isInitialized = false;
 
-  // Streams للـ events
+  // Streams للـ events — broadcast عشان يشتغلوا مع أكتر من subscriber
   final _newMessage = StreamController<NewMessageSocketEvent>.broadcast();
   final _messageDeleted = StreamController<MessageDeletedSocketEvent>.broadcast();
   final _typing = StreamController<TypingSocketEvent>.broadcast();
@@ -32,17 +33,40 @@ class ChatSocketService {
   Stream<MessageReactionSocketEvent> get onMessageReaction => _messageReaction.stream;
   Stream<String> get onFailEvent => _failEvent.stream;
 
-  /// تهيئة الـ service وتسجيل الـ listeners
+  // ══════════════════════════════════════════════════════════════════════════
+  // INIT
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /// تهيئة الـ service — يُستدعى مرة واحدة بعد الـ socket connect
   void init() {
-    // منع التسجيل المزدوج — لو اتنادى init() قبل dispose()، نشيل القديم أولاً
     if (_isInitialized) {
+      // إعادة تهيئة — شيل الـ listeners القديمة وسجّل من جديد
       _socket.offAllForListener(_id);
-      log('🔄 [ChatSocketService] re-initializing — removed old listeners');
+      log('🔄 [ChatSocketService] re-initializing');
     }
     _isInitialized = true;
+
+    // ✅ سجّل reconnect callback مرة واحدة
+    // بيعيد تسجيل الـ socket listeners بعد كل reconnect
+    _socket.addReconnectCallback(_reconnectId, () {
+      if (!_isInitialized) return;
+      log('🔄 [ChatSocketService] reconnected — re-registering listeners');
+      _socket.offAllForListener(_id);
+      _registerSocketListeners();
+    });
+
+    _registerSocketListeners();
+    log('✅ [ChatSocketService] initialized');
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SOCKET LISTENERS
+  // ══════════════════════════════════════════════════════════════════════════
+
+  void _registerSocketListeners() {
     // New message
     _socket.listenWithId('newMessage', _id, (data) {
-      if (data is! Map) return;
+      if (data is! Map || _newMessage.isClosed) return;
       try {
         _newMessage.add(NewMessageSocketEvent.fromJson(data as Map<String, dynamic>));
       } catch (e) {
@@ -52,7 +76,7 @@ class ChatSocketService {
 
     // Message deleted
     _socket.listenWithId('messageDeleted', _id, (data) {
-      if (data is! Map) return;
+      if (data is! Map || _messageDeleted.isClosed) return;
       try {
         _messageDeleted.add(MessageDeletedSocketEvent.fromJson(data as Map<String, dynamic>));
       } catch (e) {
@@ -62,7 +86,7 @@ class ChatSocketService {
 
     // Typing status
     _socket.listenWithId('typingStatus', _id, (data) {
-      if (data is! Map) return;
+      if (data is! Map || _typing.isClosed) return;
       try {
         _typing.add(TypingSocketEvent.fromJson(data as Map<String, dynamic>));
       } catch (e) {
@@ -72,7 +96,7 @@ class ChatSocketService {
 
     // Message state
     _socket.listenWithId('newMessageState', _id, (data) {
-      if (data is! Map) return;
+      if (data is! Map || _messageState.isClosed) return;
       try {
         _messageState.add(MessageStateSocketEvent.fromJson(data as Map<String, dynamic>));
       } catch (e) {
@@ -82,14 +106,12 @@ class ChatSocketService {
 
     // Block status (blocker)
     _socket.listenWithId('blockerStatus', _id, (data) {
-      if (data is! Map) return;
+      if (data is! Map || _blockStatus.isClosed) return;
       try {
-        _blockStatus.add(
-          BlockStatusSocketEvent.fromJson(
-            data as Map<String, dynamic>,
-            BlockType.blocker,
-          ),
-        );
+        _blockStatus.add(BlockStatusSocketEvent.fromJson(
+          data as Map<String, dynamic>,
+          BlockType.blocker,
+        ));
       } catch (e) {
         log('❌ [ChatSocketService] blockerStatus parse error: $e');
       }
@@ -97,14 +119,12 @@ class ChatSocketService {
 
     // Block status (blocked)
     _socket.listenWithId('blockedStatus', _id, (data) {
-      if (data is! Map) return;
+      if (data is! Map || _blockStatus.isClosed) return;
       try {
-        _blockStatus.add(
-          BlockStatusSocketEvent.fromJson(
-            data as Map<String, dynamic>,
-            BlockType.blocked,
-          ),
-        );
+        _blockStatus.add(BlockStatusSocketEvent.fromJson(
+          data as Map<String, dynamic>,
+          BlockType.blocked,
+        ));
       } catch (e) {
         log('❌ [ChatSocketService] blockedStatus parse error: $e');
       }
@@ -112,7 +132,7 @@ class ChatSocketService {
 
     // Chat room joined
     _socket.listenWithId('chatRoomJoined', _id, (data) {
-      if (data is! Map) return;
+      if (data is! Map || _chatRoomJoined.isClosed) return;
       try {
         _chatRoomJoined.add(ChatRoomJoinedSocketEvent.fromJson(data as Map<String, dynamic>));
       } catch (e) {
@@ -122,7 +142,7 @@ class ChatSocketService {
 
     // Message reaction
     _socket.listenWithId('messageReaction', _id, (data) {
-      if (data is! Map) return;
+      if (data is! Map || _messageReaction.isClosed) return;
       try {
         _messageReaction.add(MessageReactionSocketEvent.fromJson(data as Map<String, dynamic>));
       } catch (e) {
@@ -132,7 +152,7 @@ class ChatSocketService {
 
     // Fail event
     _socket.listenWithId('fail', _id, (data) {
-      if (data is! Map) return;
+      if (data is! Map || _failEvent.isClosed) return;
       try {
         final message = data['message'] as String? ?? 'حدث خطأ غير معروف';
         _failEvent.add(message);
@@ -141,44 +161,46 @@ class ChatSocketService {
         log('❌ [ChatSocketService] fail parse error: $e');
       }
     });
-
-    log('✅ [ChatSocketService] initialized');
   }
 
-  /// إرسال reaction على رسالة
+  // ══════════════════════════════════════════════════════════════════════════
+  // SEND
+  // ══════════════════════════════════════════════════════════════════════════
+
   void reactToMessage({
     required String chatMessageId,
     required String emoji,
     Function(dynamic)? onAck,
   }) {
-    _socket.send('reactToMessage', {
-      'chatMessageId': chatMessageId,
-      'emoji': emoji,
-    }, onAck);
+    _socket.send('reactToMessage', {'chatMessageId': chatMessageId, 'emoji': emoji}, onAck);
     log('📤 [ChatSocketService] reactToMessage: $emoji on $chatMessageId');
   }
 
-  /// إزالة reaction من رسالة
   void unreactToMessage({
     required String chatMessageId,
     Function(dynamic)? onAck,
   }) {
-    _socket.send('unreactToMessage', {
-      'chatMessageId': chatMessageId,
-    }, onAck);
+    _socket.send('unreactToMessage', {'chatMessageId': chatMessageId}, onAck);
     log('📤 [ChatSocketService] unreactToMessage: $chatMessageId');
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // CLEANUP
+  // ══════════════════════════════════════════════════════════════════════════
 
   /// إزالة الـ socket listeners فقط (بدون إغلاق الـ streams)
   void removeListeners() {
     _socket.offAllForListener(_id);
+    _socket.removeReconnectCallback(_reconnectId);
     _isInitialized = false;
     log('🔕 [ChatSocketService] listeners removed');
   }
 
-  /// تنظيف الـ service
+  /// تنظيف الـ service الكامل
   void dispose() {
     _socket.offAllForListener(_id);
+    _socket.removeReconnectCallback(_reconnectId);
+    _isInitialized = false;
     _newMessage.close();
     _messageDeleted.close();
     _typing.close();

@@ -96,6 +96,15 @@ class UserChatCubit extends Cubit<UserChatState> {
         final lastMsgData = chatRoomData['lastMessage'] as Map<String, dynamic>?;
         if (roomId.isEmpty || lastMsgData == null) return;
 
+        // ✅ حوّل الـ contentType لـ display content مناسب
+        // السيرفر بيبعت الـ URL الفعلي في content لو audio/image/video
+        // لازم نحوّله لـ 'audio'/'image'/'video' عشان formatLastMessage يعرضه صح
+        final rawContent = lastMsgData['content']?.toString() ?? '';
+        final contentType = (lastMsgData['contentType'] ?? lastMsgData['messageType'])
+            ?.toString()
+            .toLowerCase() ?? '';
+        final displayContent = _normalizeContentForDisplay(rawContent, contentType);
+
         final updatedRooms = state.chatRooms.map((room) {
           if (room.id == roomId) {
             return UserChatRoomModel(
@@ -103,7 +112,7 @@ class UserChatCubit extends Cubit<UserChatState> {
               otherUser: room.otherUser,
               otherUserType: room.otherUserType,
               lastMessage: UserLastMessageModel(
-                content: lastMsgData['content']?.toString() ?? '',
+                content: displayContent,
                 sentAt: lastMsgData['sentAt'] != null
                     ? DateTime.tryParse(lastMsgData['sentAt'].toString())
                     : null,
@@ -128,6 +137,58 @@ class UserChatCubit extends Cubit<UserChatState> {
         _saveCacheFromCurrentState(updatedRooms);
       } catch (_) {}
     });
+  }
+
+  /// ✅ يحوّل الـ content الخام لـ display content مناسب للـ chat list
+  /// لو الـ contentType يدل على media، يرجع keyword بدل الـ URL
+  static String _normalizeContentForDisplay(String rawContent, String contentType) {
+    switch (contentType) {
+      case 'record':
+      case 'audio':
+      case 'voice':
+        return 'audio';
+      case 'image':
+      case 'photo':
+      case 'media':
+      case 'images/videos':
+        // تحقق إن الـ content مش URL — لو URL يبقى image/video
+        if (_looksLikeUrl(rawContent)) return 'image';
+        return rawContent.isEmpty ? 'image' : rawContent;
+      case 'video':
+        return 'video';
+      case 'file':
+      case 'document':
+        return 'file';
+      default:
+        // text — ارجع الـ content كما هو
+        // لكن لو بدو URL وهو مش text، حوّله
+        if (_looksLikeUrl(rawContent)) {
+          if (rawContent.contains('.mp3') ||
+              rawContent.contains('.m4a') ||
+              rawContent.contains('.wav') ||
+              rawContent.contains('.ogg') ||
+              rawContent.contains('.aac')) {
+            return 'audio';
+          }
+          if (rawContent.contains('.mp4') ||
+              rawContent.contains('.mov') ||
+              rawContent.contains('.avi')) {
+            return 'video';
+          }
+          if (rawContent.contains('.jpg') ||
+              rawContent.contains('.jpeg') ||
+              rawContent.contains('.png') ||
+              rawContent.contains('.gif') ||
+              rawContent.contains('.webp')) {
+            return 'image';
+          }
+        }
+        return rawContent;
+    }
+  }
+
+  static bool _looksLikeUrl(String content) {
+    return content.startsWith('http://') || content.startsWith('https://');
   }
 
   @override

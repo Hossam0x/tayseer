@@ -26,6 +26,9 @@ class ScreenshotProtectedImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (shouldBlur) {
+      // ✅ لما shouldBlur = true، نستخدم Flutter image عادي مع ImageFiltered
+      // على iOS: SecureImageWrapper (UiKitView) بيتجاهل الـ ImageFilter لأنه native
+      // الـ blur نفسه بيخفي الصورة — مش محتاجين SecureImageWrapper هنا
       return ImageFiltered(
         imageFilter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: _flutterImage(),

@@ -125,8 +125,10 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   }
 
   // ✅ سجّل callback في الـ socketHelper يتنادى لما الـ socket يرجع بعد انقطاع
+  // كل cubit له ID فريد — مش بيكتب على cubits تانية
   void _setupReconnectHandler() {
-    _socketHelper.onReconnected = () {
+    final reconnectId = 'ChatMessagesCubit_reconnect_$_currentChatRoomId';
+    _socketHelper.addReconnectCallback(reconnectId, () {
       if (isClosed || _currentChatRoomId == null) return;
 
       log('🔄 Socket reconnected — rejoining room: $_currentChatRoomId');
@@ -136,7 +138,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         isSystemChat: _isSystemChat,
         receiverId: _currentReceiverId ?? _originalReceiverId,
       );
-    };
+    });
   }
 
   Future<void> _waitForSocketAndJoin({
@@ -151,14 +153,16 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       return;
     }
 
-    // ✅ لو مش متصل، سجّل callback يتنادى أوتوماتيك لما يتصل
-    // بدل الانتظار الثابت اللي بيـ timeout لو الـ socket اتأخر
+    // ✅ لو مش متصل، سجّل callback بـ ID فريد يتنادى لما يتصل
+    final waitId = 'ChatMessagesCubit_wait_$_currentChatRoomId';
     log('⏳ Socket not ready — will join when connected (room: $_currentChatRoomId)');
-    _socketHelper.onReconnected = () {
+    _socketHelper.addReconnectCallback(waitId, () {
       if (isClosed || _hasJoinedRoom) return;
       log('🔄 Socket connected — joining room: $_currentChatRoomId');
+      // ✅ شيل الـ wait callback بعد ما اتنادى مرة واحدة
+      _socketHelper.removeReconnectCallback(waitId);
       _sendJoinRequest(isSystemChat: isSystemChat, receiverId: receiverId);
-    };
+    });
   }
 
   void _sendJoinRequest({required bool isSystemChat, String? receiverId}) {
@@ -633,6 +637,15 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         _updateCache(updatedMessages);
         return;
       }
+
+      // ✅ لو مفيش temp message، تحقق إن الرسالة مش موجودة بالفعل
+      // ده بيحل مشكلة الـ duplicate لما sendMediaMessage يبعت عبر HTTP
+      // والـ server يبعت newMessage socket event في نفس الوقت
+      final alreadyExists = currentMessages.any((m) => m.id == message.id);
+      if (alreadyExists) {
+        log('⚠️ Duplicate message ignored: ${message.id}');
+        return;
+      }
     }
 
     if (message.messageType == 'system') {
@@ -661,6 +674,12 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         _updateCache(updatedMessages);
         return;
       }
+    }
+
+    // ✅ تحقق عام من التكرار قبل الإضافة (لكل أنواع الرسائل)
+    if (currentMessages.any((m) => m.id == message.id)) {
+      log('⚠️ Duplicate message ignored (general check): ${message.id}');
+      return;
     }
 
     final updatedMessages = [message, ...currentMessages];
@@ -1064,11 +1083,11 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
 
   @override
   Future<void> close() {
-    // ✅ NEW: امسح الـ reconnect callback عشان ما يتنادىش بعد الـ close
-    _socketHelper.onReconnected = null;
+    // ✅ شيل الـ reconnect callbacks الخاصة بهذا الـ cubit
+    _socketHelper.removeReconnectCallback('ChatMessagesCubit_reconnect_$_currentChatRoomId');
+    _socketHelper.removeReconnectCallback('ChatMessagesCubit_wait_$_currentChatRoomId');
     leaveCurrentChatRoom();
     _listenersSetup = false;
-    // ✅ امسح الـ original receiver عند الـ close
     _originalReceiverId = null;
     return super.close();
   }

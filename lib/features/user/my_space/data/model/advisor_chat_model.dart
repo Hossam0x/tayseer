@@ -293,21 +293,18 @@ class LastMessageModel {
     final rawContent = json['content'];
     final messageType = extractString(json['contentType'] ?? json['messageType']);
     
-    // معالجة المحتوى بناءً على نوع الرسالة
+    // ✅ حوّل الـ messageType لـ keyword موحد — الترجمة والـ emoji تتم في formatLastMessage
     String content;
     if (messageType == 'image' || messageType == 'images/videos') {
-      content = 'صورة';
+      content = 'image';
     } else if (messageType == 'video') {
-      content = 'فيديو';
+      content = 'video';
     } else if (messageType == 'audio' || messageType == 'voice' || messageType == 'record') {
-      content = 'رسالة صوتية';
-    } else if (messageType == 'system') {
-      // للرسائل النظام، نعرض المحتوى كما هو
-      content = (rawContent is List)
-          ? (rawContent.isEmpty ? '' : rawContent.first.toString())
-          : extractString(rawContent);
+      content = 'audio';
+    } else if (messageType == 'file' || messageType == 'document') {
+      content = 'file';
     } else {
-      // للرسائل النصية العادية
+      // text أو system — ارجع الـ content الفعلي
       content = (rawContent is List)
           ? (rawContent.isEmpty ? '' : rawContent.first.toString())
           : extractString(rawContent);

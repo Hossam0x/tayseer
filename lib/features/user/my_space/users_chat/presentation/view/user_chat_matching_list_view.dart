@@ -379,7 +379,7 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
                             key: ValueKey('matching_room_${room.id}'),
                             id: room.id,
                             title: room.otherUser.name,
-                            subtitle: room.lastMessage?.content ?? '',
+                            subtitle: ChatRoomListItem.formatLastMessage(context, room.lastMessage?.content ?? ''),
                             imageUrl: room.otherUser.image,
                             lastUpdate: room.lastMessage?.sentAt,
                             unreadCount: room.unreadCount,

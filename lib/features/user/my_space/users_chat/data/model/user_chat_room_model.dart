@@ -66,7 +66,6 @@ class UserLastMessageModel {
 
   factory UserLastMessageModel.fromJson(Map<String, dynamic> json) {
     // ✅ نضمن إن الـ sentAt يتعامل معاه كـ UTC
-    // السيرفر بيبعت UTC بدون Z أحياناً، فـ DateTime.tryParse بيعتبره local
     DateTime? parseSentAt(dynamic value) {
       if (value == null) return null;
       String s = value.toString();
@@ -74,11 +73,54 @@ class UserLastMessageModel {
       return DateTime.tryParse(s)?.toLocal();
     }
 
+    // ✅ حوّل الـ content لـ display content مناسب
+    // السيرفر بيرجع الـ URL الفعلي للـ audio/image/video في الـ content
+    // لازم نحوّله لـ keyword عشان formatLastMessage يعرضه صح (🎤 / 📷 / 🎥)
+    final rawContent = json['content']?.toString() ?? '';
+    final contentType = (json['contentType'] ?? json['messageType'])
+        ?.toString()
+        .toLowerCase() ?? '';
+    final displayContent = _normalizeContent(rawContent, contentType);
+
     return UserLastMessageModel(
-      content: json['content']?.toString() ?? '',
+      content: displayContent,
       sentAt: parseSentAt(json['sentAt']),
       status: json['status']?.toString(),
     );
+  }
+
+  /// يحوّل الـ content الخام لـ keyword مناسب للعرض في الـ chat list
+  static String _normalizeContent(String rawContent, String contentType) {
+    switch (contentType) {
+      case 'record':
+      case 'audio':
+      case 'voice':
+        return 'audio';
+      case 'image':
+      case 'photo':
+      case 'media':
+      case 'images/videos':
+        return 'image';
+      case 'video':
+        return 'video';
+      case 'file':
+      case 'document':
+        return 'file';
+      default:
+        // text أو غير معروف — تحقق من الـ URL
+        if (rawContent.startsWith('http://') || rawContent.startsWith('https://')) {
+          final lower = rawContent.toLowerCase();
+          if (lower.contains('.mp3') || lower.contains('.m4a') ||
+              lower.contains('.wav') || lower.contains('.ogg') ||
+              lower.contains('.aac')) return 'audio';
+          if (lower.contains('.mp4') || lower.contains('.mov') ||
+              lower.contains('.avi')) return 'video';
+          if (lower.contains('.jpg') || lower.contains('.jpeg') ||
+              lower.contains('.png') || lower.contains('.gif') ||
+              lower.contains('.webp')) return 'image';
+        }
+        return rawContent;
+    }
   }
 }
 

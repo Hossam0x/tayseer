@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/services/connectivity_service.dart';
+import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/core/dependancy_injection/get_it.dart';
 
 /// حالة الاتصال
 class ConnectivityState extends Equatable {
@@ -29,7 +31,17 @@ class ConnectivityCubit extends Cubit<ConnectivityState> {
     _subscription = _connectivityService.onConnectivityChanged.listen((
       isConnected,
     ) {
+      final wasOffline = !state.isConnected;
       emit(state.copyWith(isConnected: isConnected));
+
+      // ✅ لما النت يرجع بعد انقطاع، حاول reconnect الـ socket لو مش متصل
+      // ده بيحل حالة إن الـ socket ما اكتشفش الانقطاع بنفسه (خصوصاً على موبايل)
+      if (wasOffline && isConnected) {
+        final socketHelper = getIt<tayseerSocketHelper>();
+        if (!socketHelper.isConnected) {
+          socketHelper.connect();
+        }
+      }
     });
   }
 

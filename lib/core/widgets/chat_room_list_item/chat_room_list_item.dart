@@ -55,10 +55,10 @@ class ChatRoomListItem extends StatelessWidget {
     if (lower == 'media' || lower == 'image' || lower == 'photo') {
       return '📷 ${context.tr('image_message')}';
     }
-    if (lower == 'audio' || lower == 'voice') {
+    if (lower == 'audio' || lower == 'voice' || lower == 'voice message') {
       return '🎤 ${context.tr('voice_message')}';
     }
-    if (lower == 'video') {
+    if (lower == 'video' || lower == 'video message') {
       return '🎥 ${context.tr('video_message')}';
     }
     if (lower == 'file' || lower == 'document') {
