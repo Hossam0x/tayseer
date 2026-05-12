@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/services.dart';
 import 'package:tayseer/core/models/pagination_model.dart';
@@ -273,29 +274,45 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
                           ),
                         ),
                         child: ClipOval(
-                          child: CachedNetworkImage(
-                            imageUrl: widget.advisor.image ?? '',
-                            width: 90.r,
-                            height: 90.r,
-                            fit: BoxFit.cover,
-                            placeholder: (_, __) => CircleAvatar(
-                              radius: 45.r,
-                              backgroundColor: Colors.grey.shade100,
-                              child: Icon(
-                                Icons.person,
-                                size: 40,
-                                color: Colors.grey.shade400,
+                          child: Stack(
+                            children: [
+                              CachedNetworkImage(
+                                imageUrl: widget.advisor.image ?? '',
+                                width: 90.r,
+                                height: 90.r,
+                                fit: BoxFit.cover,
+                                placeholder: (_, __) => CircleAvatar(
+                                  radius: 45.r,
+                                  backgroundColor: Colors.grey.shade100,
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 40,
+                                    color: Colors.grey.shade400,
+                                  ),
+                                ),
+                                errorWidget: (_, __, ___) => CircleAvatar(
+                                  radius: 45.r,
+                                  backgroundColor: Colors.grey.shade100,
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 40,
+                                    color: Colors.grey.shade400,
+                                  ),
+                                ),
                               ),
-                            ),
-                            errorWidget: (_, __, ___) => CircleAvatar(
-                              radius: 45.r,
-                              backgroundColor: Colors.grey.shade100,
-                              child: Icon(
-                                Icons.person,
-                                size: 40,
-                                color: Colors.grey.shade400,
-                              ),
-                            ),
+                              if (widget.advisor.imageBlur == true)
+                                Positioned.fill(
+                                  child: BackdropFilter(
+                                    filter: ImageFilter.blur(
+                                      sigmaX: 6,
+                                      sigmaY: 6,
+                                    ),
+                                    child: const ColoredBox(
+                                      color: Colors.transparent,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ),

@@ -48,6 +48,7 @@ class BestAdvisorModel {
   final String? yearsOfExperience;
   final List<String>? language;
   final bool? isFollowing;
+  final bool? imageBlur;
 
   BestAdvisorModel({
     this.id,
@@ -59,6 +60,7 @@ class BestAdvisorModel {
     this.yearsOfExperience,
     this.language,
     this.isFollowing,
+    this.imageBlur,
   });
 
   factory BestAdvisorModel.fromJson(Map<String, dynamic> json) {
@@ -74,6 +76,7 @@ class BestAdvisorModel {
           ? List<String>.from(json['language'])
           : null,
       isFollowing: json['isFollowing'],
+      imageBlur: json['imageBlur'],
     );
   }
 
@@ -87,6 +90,7 @@ class BestAdvisorModel {
     String? yearsOfExperience,
     List<String>? language,
     bool? isFollowing,
+    bool? imageBlur,
   }) {
     return BestAdvisorModel(
       id: id ?? this.id,
@@ -98,6 +102,7 @@ class BestAdvisorModel {
       yearsOfExperience: yearsOfExperience ?? this.yearsOfExperience,
       language: language ?? this.language,
       isFollowing: isFollowing ?? this.isFollowing,
+      imageBlur: imageBlur ?? this.imageBlur,
     );
   }
 }
