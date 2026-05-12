@@ -102,7 +102,6 @@ class _ConversationAppBarState extends State<ConversationAppBar> {
                             height: isMobile ? 40 : 48,
                             fit: BoxFit.cover,
                             memCacheWidth: 96,
-                            memCacheHeight: 96,
                             fadeInDuration: Duration.zero,
                             fadeOutDuration: Duration.zero,
                             placeholder: (_, __) => CircleAvatar(

@@ -399,7 +399,6 @@ class _UserChatContentState extends State<_UserChatContent> {
                           height: 40.r,
                           fit: BoxFit.cover,
                           memCacheWidth: 80,
-                          memCacheHeight: 80,
                           fadeInDuration: Duration.zero,
                           fadeOutDuration: Duration.zero,
                           placeholder: (_, __) => CircleAvatar(

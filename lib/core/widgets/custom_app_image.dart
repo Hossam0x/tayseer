@@ -358,7 +358,6 @@ class _ConnectivityNetworkImageState extends State<_ConnectivityNetworkImage> {
       child: CachedNetworkImage(
         key: ValueKey('${widget.imageUrl}_$_retryKey'),
         memCacheWidth: _memCacheWidth,
-        memCacheHeight: _memCacheHeight,
         imageUrl: widget.imageUrl,
         fit: widget.fit, // ✅ use widget.fit, not hardcoded cover
         height: widget.height,
