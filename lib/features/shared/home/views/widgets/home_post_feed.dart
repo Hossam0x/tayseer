@@ -384,6 +384,7 @@ class HomePostFeed extends StatelessWidget {
               users: state.similarUsers,
               pagination: homeCubit.state.similarUsersPagination,
               onLoadMore: () => homeCubit.loadMoreSimilarUsers(),
+              onUserVisited: (userId) => homeCubit.removeSimilarUser(userId),
               isLoadingMore: homeCubit.state.similarUsersIsLoadingMore,
             ),
           );

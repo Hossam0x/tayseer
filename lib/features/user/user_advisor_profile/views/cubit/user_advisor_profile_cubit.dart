@@ -289,6 +289,16 @@ class UserAdvisorProfileCubit
             isFollowAdded: !currentFollowState,
           ),
         );
+
+        // 🔔 أبلّغ الـ HomeCubit (والكروت والبوستات) بتغيير الـ follow
+        PostEventBus.instance.fire(
+          PostEvent(
+            type: PostEventType.followToggled,
+            postId: '', // مش مرتبط ببوست معين
+            advisorId: advisorId,
+            isFollowing: !currentFollowState,
+          ),
+        );
       },
     );
   }
@@ -474,7 +484,8 @@ class UserAdvisorProfileCubit
     });
 
     socketHelper.listenWithId('fail', listenerId, (data) {
-      if (!isClosed) _handleRoomCreationFailed(Map<String, dynamic>.from(data as Map));
+      if (!isClosed)
+        _handleRoomCreationFailed(Map<String, dynamic>.from(data as Map));
     });
 
     // إرسال طلب إنشاء room

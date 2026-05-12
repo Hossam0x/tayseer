@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:tayseer/core/models/pagination_model.dart';
 import 'package:tayseer/core/services/audio_service.dart';
+import 'package:tayseer/core/utils/post_event_bus.dart';
 import 'package:tayseer/features/shared/home/model/best_advisor_model.dart';
 import 'package:tayseer/core/utils/translation_helper.dart';
 import 'package:tayseer/my_import.dart';
@@ -44,15 +47,11 @@ class _BestAdvisorSectionState extends State<BestAdvisorSection> {
   void _onPageChanged(int index) {
     setState(() => _currentPage = index);
 
-    // Check if we need to load more when reaching 75% of current advisors
     if (widget.advisors.isNotEmpty &&
         index >= (widget.advisors.length * 0.75).floor() &&
         widget.onLoadMore != null &&
         !widget.isLoadingMore &&
         _hasMoreData()) {
-      print(
-        '🔄 Loading more advisors... Current: ${widget.advisors.length}, Page: $index',
-      );
       widget.onLoadMore!();
     }
   }
@@ -101,13 +100,13 @@ class _BestAdvisorSectionState extends State<BestAdvisorSection> {
               itemCount: widget.advisors.length,
               onPageChanged: _onPageChanged,
               itemBuilder: (context, index) => _AdvisorCarouselItem(
+                key: ValueKey(widget.advisors[index].id),
                 advisor: widget.advisors[index],
                 isSelected: _currentPage == index,
                 onFollowTap: widget.onFollowTap,
               ),
             ),
           ),
-          // Loading indicator for pagination
           if (widget.isLoadingMore)
             Padding(
               padding: EdgeInsets.only(top: 12.h),
@@ -130,6 +129,7 @@ class _BestAdvisorSectionState extends State<BestAdvisorSection> {
 
 class _AdvisorCarouselItem extends StatefulWidget {
   const _AdvisorCarouselItem({
+    super.key,
     required this.advisor,
     required this.isSelected,
     this.onFollowTap,
@@ -149,6 +149,9 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
   late Animation<double> _scaleAnim;
   late bool _isFollowing;
 
+  // 🔔 يسمع لـ follow events من البوستات أو الـ profile
+  StreamSubscription<PostEvent>? _followSub;
+
   @override
   void initState() {
     super.initState();
@@ -163,34 +166,52 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
       begin: 1.0,
       end: 0.85,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+    _subscribeToFollowEvents();
+  }
+
+  void _subscribeToFollowEvents() {
+    _followSub = PostEventBus.instance.onPostEvent.listen((event) {
+      if (!mounted) return;
+      if (event.type != PostEventType.followToggled) return;
+      if (event.advisorId != widget.advisor.id) return;
+      // تجاهل الـ events اللي الكارت ده نفسه بعتها (عبر onFollowTap → HomeCubit)
+      // لأن HomeCubit بيعمل optimistic update على الـ advisor model مباشرة
+      // وبيبعت sourceId = 'HomeCubit' — بس هنا نسمع كل حاجة تانية (من البروفايل)
+      if (event.sourceId == 'HomeCubit') return;
+      setState(() => _isFollowing = event.isFollowing ?? _isFollowing);
+    });
+  }
+
+  @override
+  void didUpdateWidget(_AdvisorCarouselItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // لما الـ HomeCubit يعمل optimistic update على الـ advisor model
+    // الـ widget بيتبني من جديد بـ isFollowing الجديد
+    if (oldWidget.advisor.isFollowing != widget.advisor.isFollowing) {
+      _isFollowing = widget.advisor.isFollowing ?? false;
+    }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _followSub?.cancel();
     super.dispose();
   }
 
   Future<void> _handleFollowTap() async {
     if (widget.onFollowTap == null) return;
 
-    // Play follow/unfollow sound effect
     AudioService.instance.playFollowSound(isFollowing: !_isFollowing);
-
-    // Heavy vibration on tap
     HapticFeedback.heavyImpact();
     await Future.delayed(const Duration(milliseconds: 60));
     HapticFeedback.heavyImpact();
 
-    // Scale-down then back animation
     await _controller.forward();
     await _controller.reverse();
 
-    // Toggle local state
-    setState(() {
-      _isFollowing = !_isFollowing;
-    });
-
+    setState(() => _isFollowing = !_isFollowing);
     widget.onFollowTap!(widget.advisor.id ?? '');
   }
 
@@ -201,7 +222,6 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
       scale: widget.isSelected ? 1.0 : 0.95,
       child: GestureDetector(
         onTap: () {
-          // Navigate to UserAdvisorProfileView
           context.pushNamed(
             AppRouter.kUserProfileView,
             arguments: {'advisorId': widget.advisor.id},
@@ -226,7 +246,6 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
             borderRadius: BorderRadius.circular(24.r),
             child: Stack(
               children: [
-                // Background Pattern or subtle gradient
                 Positioned(
                   top: -50,
                   right: -50,
@@ -241,7 +260,7 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
                   padding: EdgeInsets.all(16.w),
                   child: Row(
                     children: [
-                      // Avatar with border
+                      // ── Avatar ──
                       Container(
                         padding: EdgeInsets.all(3.w),
                         decoration: BoxDecoration(
@@ -253,28 +272,41 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
                             width: 1.5,
                           ),
                         ),
-                        child: CircleAvatar(
-                          radius: 45.r,
-                          backgroundColor: Colors.grey.shade100,
-                          backgroundImage: widget.advisor.image != null
-                              ? NetworkImage(widget.advisor.image!)
-                              : null,
-                          child: widget.advisor.image == null
-                              ? Icon(
-                                  Icons.person,
-                                  size: 40,
-                                  color: Colors.grey.shade400,
-                                )
-                              : null,
+                        child: ClipOval(
+                          child: CachedNetworkImage(
+                            imageUrl: widget.advisor.image ?? '',
+                            width: 90.r,
+                            height: 90.r,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => CircleAvatar(
+                              radius: 45.r,
+                              backgroundColor: Colors.grey.shade100,
+                              child: Icon(
+                                Icons.person,
+                                size: 40,
+                                color: Colors.grey.shade400,
+                              ),
+                            ),
+                            errorWidget: (_, __, ___) => CircleAvatar(
+                              radius: 45.r,
+                              backgroundColor: Colors.grey.shade100,
+                              child: Icon(
+                                Icons.person,
+                                size: 40,
+                                color: Colors.grey.shade400,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                       Gap(16.w),
-                      // Details
+                      // ── Details ──
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            // ── Name + verified badge ──
                             Row(
                               children: [
                                 Expanded(
@@ -288,6 +320,8 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
+                                Gap(4.w),
+                                // ── Rating badge ──
                                 Container(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: 8.w,
@@ -298,6 +332,7 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
                                     borderRadius: BorderRadius.circular(8.r),
                                   ),
                                   child: Row(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(
                                         Icons.star_rounded,
@@ -347,7 +382,7 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                // Follow button
+                                // ── Follow button ──
                                 if (widget.onFollowTap != null)
                                   GestureDetector(
                                     onTap: _handleFollowTap,

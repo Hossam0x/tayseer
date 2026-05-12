@@ -245,6 +245,22 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
           emit(state.copyWith(posts: [event.createdPost!, ...state.posts]));
         }
         break;
+
+      case PostEventType.followToggled:
+        // ProfileCubit (advisor's own profile) — حدّث isFollowing في البوستات
+        if (event.advisorId == null) return;
+        final isNowFollowing = event.isFollowing ?? false;
+        emit(
+          state.copyWith(
+            posts: state.posts.map((p) {
+              if (p.advisorId == event.advisorId) {
+                return p.copyWith(isFollowing: isNowFollowing);
+              }
+              return p;
+            }).toList(),
+          ),
+        );
+        break;
     }
   }
 

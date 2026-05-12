@@ -72,12 +72,13 @@ class HomeCubit extends Cubit<HomeState> {
     final postId = event.postId;
     // لو البوست مش موجود عندنا، مفيش حاجة نعملها
     if (_findPost(postId) == null) {
-      // للـ deleted/archived/hidden/blocked/created: مش محتاجين البوست موجود
+      // للـ deleted/archived/hidden/blocked/created/followToggled: مش محتاجين البوست موجود
       if (event.type != PostEventType.deleted &&
           event.type != PostEventType.archived &&
           event.type != PostEventType.hidden &&
           event.type != PostEventType.blocked &&
-          event.type != PostEventType.created)
+          event.type != PostEventType.created &&
+          event.type != PostEventType.followToggled)
         return;
     }
 
@@ -273,6 +274,40 @@ class HomeCubit extends Cubit<HomeState> {
           }
         }
         emit(state.copyWith(categoryPostsMap: createdMap));
+        break;
+
+      case PostEventType.followToggled:
+        if (event.advisorId == null) break;
+        final followAdvisorId = event.advisorId!;
+        final isNowFollowing = event.isFollowing ?? false;
+
+        // 1️⃣ حدّث isFollowing في كل البوستات اللي بتاعت الـ advisor ده
+        final followMap = <String?, CategoryPostsData>{};
+        for (final entry in state.categoryPostsMap.entries) {
+          followMap[entry.key] = entry.value.copyWith(
+            posts: entry.value.posts.map((p) {
+              if (p.advisorId == followAdvisorId) {
+                return p.copyWith(isFollowing: isNowFollowing);
+              }
+              return p;
+            }).toList(),
+          );
+        }
+
+        // 2️⃣ حدّث isFollowing في كروت BestAdvisors
+        final updatedAdvisors = state.bestAdvisors.map((a) {
+          if (a.id == followAdvisorId) {
+            return a.copyWith(isFollowing: isNowFollowing);
+          }
+          return a;
+        }).toList();
+
+        emit(
+          state.copyWith(
+            categoryPostsMap: followMap,
+            bestAdvisors: updatedAdvisors,
+          ),
+        );
         break;
     }
   }
@@ -672,7 +707,18 @@ class HomeCubit extends Cubit<HomeState> {
             );
             if (!isClosed) emit(state.copyWith(bestAdvisors: rollbackAdvisors));
           },
-          (_) {}, // success — optimistic update already applied
+          (_) {
+            // ✅ أبلّغ البوستات بتغيير الـ follow
+            PostEventBus.instance.fire(
+              PostEvent(
+                type: PostEventType.followToggled,
+                postId: '',
+                sourceId: 'HomeCubit',
+                advisorId: advisorId,
+                isFollowing: isAdding,
+              ),
+            );
+          },
         );
       },
     );
@@ -727,6 +773,14 @@ class HomeCubit extends Cubit<HomeState> {
     if (currentPage >= totalPages) return;
 
     await fetchSimilarUsers(page: currentPage + 1);
+  }
+
+  /// ✅ يشيل similar user من الـ list بعد ما اليوزر يدخل على البروفايل بتاعه
+  void removeSimilarUser(String userId) {
+    final updatedUsers = state.similarUsers
+        .where((u) => u.id != userId)
+        .toList();
+    emit(state.copyWith(similarUsers: updatedUsers));
   }
 
   Future<void> fetchPastMatches({int page = 1}) async {
@@ -1754,7 +1808,18 @@ class HomeCubit extends Cubit<HomeState> {
             }
             if (!isClosed) emit(state.copyWith(categoryPostsMap: rollbackMap));
           },
-          (_) {}, // success — optimistic update already applied
+          (_) {
+            // ✅ أبلّغ كروت BestAdvisors بتغيير الـ follow
+            PostEventBus.instance.fire(
+              PostEvent(
+                type: PostEventType.followToggled,
+                postId: '',
+                sourceId: 'HomeCubit',
+                advisorId: advisorId,
+                isFollowing: isAdding,
+              ),
+            );
+          },
         );
       },
     );
