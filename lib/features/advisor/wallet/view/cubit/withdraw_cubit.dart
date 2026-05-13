@@ -1,49 +1,109 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:tayseer/features/advisor/wallet/data/repos/wallet_repo.dart';
 import 'package:tayseer/features/advisor/wallet/view/cubit/withdraw_state.dart';
 import 'package:tayseer/features/advisor/wallet/data/models/withdraw_model.dart';
 import 'package:tayseer/my_import.dart';
 
 class WithdrawCubit extends Cubit<WithdrawState> {
-  // final ImagePicker _picker = ImagePicker();
+  final WalletRepo _walletRepo;
 
-  WithdrawCubit() : super(const WithdrawState());
+  WithdrawCubit(this._walletRepo) : super(const WithdrawState());
 
-  // ثوابت النظام
-  static const double minWithdrawAmount = 50.0;
-  static const double withdrawFeePercentage = 0.10; // 10%
+  // ── Sync wallet balance & currency from WalletCubit ──────────────────────
 
-  // تحديث المبلغ المطلوب سحبه
+  void syncWallet({required num balance, required String currency}) {
+    emit(state.copyWith(walletBalance: balance, walletCurrency: currency));
+  }
+
+  // ── Fetch available methods + fee percentage from API ─────────────────────
+
+  Future<void> fetchWithdrawMethods() async {
+    emit(state.copyWith(methodsStatus: WithdrawMethodsStatus.loading));
+
+    final result = await _walletRepo.getWithdrawMethods();
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          methodsStatus: WithdrawMethodsStatus.error,
+          errorMessage: failure.message,
+        ),
+      ),
+      (data) {
+        final firstMethod = data.methods.isNotEmpty ? data.methods.first : null;
+        emit(
+          state.copyWith(
+            methodsStatus: WithdrawMethodsStatus.loaded,
+            availableMethods: data.methods,
+            feePercentage: data.feePercentage,
+            method: firstMethod,
+            clearError: true,
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Submit withdrawal request ─────────────────────────────────────────────
+
+  Future<void> submitWithdraw() async {
+    if (!state.canSubmit) return;
+
+    emit(state.copyWith(isLoading: true, clearError: true));
+
+    final result = await _walletRepo.requestWithdraw(
+      method: state.method!,
+      amount: state.amount,
+      iban: state.isBank ? state.iban : null,
+      accountHolderName: state.isBank ? state.accountHolderName : null,
+      bankName: state.isBank ? state.bankName : null,
+      phone: !state.isBank ? state.phone : null,
+    );
+
+    result.fold(
+      (failure) =>
+          emit(state.copyWith(isLoading: false, errorMessage: failure.message)),
+      (withdrawModel) => emit(
+        state.copyWith(isLoading: false, lastWithdrawResult: withdrawModel),
+      ),
+    );
+  }
+
+  // ── Amount ────────────────────────────────────────────────────────────────
+
   void updateAmount(double amount) {
     if (amount < 0) amount = 0;
-
     final fees = _calculateFees(amount);
-    final netAmount = amount - fees;
-
     emit(
       state.copyWith(
         amount: amount,
         fees: fees,
-        netAmount: netAmount,
-        isValid: amount >= minWithdrawAmount,
+        netAmount: amount - fees,
+        isValid: amount >= WithdrawState.minWithdrawAmount,
       ),
     );
   }
 
-  Future<void> addImages(List<XFile> files) async {
-    final List<File> newFiles = [];
-    for (var file in files) {
-      newFiles.add(File(file.path));
-    }
+  // ── Method selection ──────────────────────────────────────────────────────
 
-    emit(
-      state.copyWith(
-        images: [...state.images, ...newFiles],
-        errorMessage: null,
-      ),
-    );
+  void changeMethod(WithdrawMethod method) {
+    // Reset phone when switching methods so hasPaymentDetails re-evaluates
+    emit(state.copyWith(method: method, phone: ''));
   }
 
-  // رفع الصور من المعرض
+  // ── Bank fields ───────────────────────────────────────────────────────────
+
+  void updateIban(String value) => emit(state.copyWith(iban: value));
+  void updateAccountHolderName(String value) =>
+      emit(state.copyWith(accountHolderName: value));
+  void updateBankName(String value) => emit(state.copyWith(bankName: value));
+
+  // ── Phone ─────────────────────────────────────────────────────────────────
+
+  void updatePhone(String value) => emit(state.copyWith(phone: value));
+
+  // ── Images ────────────────────────────────────────────────────────────────
+
   Future<void> pickImagesFromGallery() async {
     try {
       final result = await FilePicker.platform.pickFiles(
@@ -51,64 +111,29 @@ class WithdrawCubit extends Cubit<WithdrawState> {
         allowMultiple: true,
         allowCompression: true,
       );
-
       if (result != null && result.files.isNotEmpty) {
-        final files = result.paths.map((path) => XFile(path!)).toList();
-        await addImages(files);
+        final newFiles = result.paths.map((p) => File(p!)).toList();
+        emit(
+          state.copyWith(
+            images: [...state.images, ...newFiles],
+            clearError: true,
+          ),
+        );
       }
-    } catch (e) {
+    } catch (_) {
       emit(state.copyWith(errorMessage: 'حدث خطأ أثناء رفع الصور'));
     }
   }
 
-  // إزالة صورة
   void removeImage(int index) {
-    final newImages = List<File>.from(state.images);
-    newImages.removeAt(index);
-
-    emit(state.copyWith(images: newImages));
+    final updated = List<File>.from(state.images)..removeAt(index);
+    emit(state.copyWith(images: updated));
   }
 
-  // مسح جميع الصور
-  void clearImages() {
-    emit(state.copyWith(images: []));
-  }
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
-  // حساب الرسوم
-  double _calculateFees(double amount) {
-    return amount * withdrawFeePercentage;
-  }
+  /// feePercentage from API is e.g. 2.5 → divide by 100
+  double _calculateFees(double amount) => amount * (state.feePercentage / 100);
 
-  // تغيير طريقة السحب
-  void changeMethod(WithdrawMethod method) {
-    emit(
-      state.copyWith(
-        method: method,
-        accountNumber: method == WithdrawMethod.bankAccount
-            ? 'SAXXXXXXXXXXXXXXXXXXXXX'
-            : '+9665XXXXXXXXX',
-      ),
-    );
-  }
-
-  // تحديث رقم الحساب
-  void updateAccountNumber(String accountNumber) {
-    emit(state.copyWith(accountNumber: accountNumber));
-  }
-
-
-  // إعادة تعيين النموذج
-  void reset() {
-    emit(
-      state.copyWith(
-        amount: 0,
-        fees: 0,
-        netAmount: 0,
-        accountNumber: '',
-        errorMessage: null,
-        successMessage: null,
-        isValid: false,
-      ),
-    );
-  }
+  void clearResult() => emit(state.copyWith(clearResult: true));
 }
