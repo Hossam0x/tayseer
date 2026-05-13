@@ -1,9 +1,11 @@
 import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
 import 'package:tayseer/core/errors/failure.dart';
 import 'package:tayseer/features/advisor/wallet/data/datasources/wallet_remote_data_source.dart';
 import 'package:tayseer/features/advisor/wallet/data/models/wallet_model.dart';
 import 'package:tayseer/features/advisor/wallet/data/models/transaction_model.dart';
 import 'package:tayseer/features/advisor/wallet/data/models/balance_package_model.dart';
+import 'package:tayseer/features/advisor/wallet/data/models/withdraw_model.dart';
 
 class WalletRepo {
   final WalletRemoteDataSource _remoteDataSource;
@@ -111,6 +113,61 @@ class WalletRepo {
       return Left(ServerFailure(response['message'] ?? 'فشل بدء عملية الشراء'));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  /// Fetches the available withdraw methods + fee percentage from the API
+  Future<
+    Either<Failure, ({List<WithdrawMethod> methods, double feePercentage})>
+  >
+  getWithdrawMethods() async {
+    try {
+      final response = await _remoteDataSource.getWithdrawMethods();
+      if (response['success'] == true) {
+        final data = response['data'] as Map<String, dynamic>;
+        final methods = (data['methods'] as List)
+            .map((m) => WithdrawMethod.fromApiValue(m as String))
+            .toList();
+        final feePercentage =
+            (data['withdrawalFeePercentage'] as num?)?.toDouble() ?? 0.0;
+        return Right((methods: methods, feePercentage: feePercentage));
+      }
+      return Left(ServerFailure(response['message'] ?? 'فشل جلب طرق السحب'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('حدث خطأ غير متوقع'));
+    }
+  }
+
+  /// Submits a withdrawal request — returns the created WithdrawModel
+  Future<Either<Failure, WithdrawModel>> requestWithdraw({
+    required WithdrawMethod method,
+    required double amount,
+    // Bank fields
+    String? iban,
+    String? accountHolderName,
+    String? bankName,
+    // Mobile wallet field
+    String? phone,
+  }) async {
+    try {
+      final response = await _remoteDataSource.requestWithdraw(
+        method: method.toApiValue(),
+        amount: amount,
+        iban: iban,
+        accountHolderName: accountHolderName,
+        bankName: bankName,
+        phone: phone,
+      );
+      if (response['success'] == true) {
+        return Right(WithdrawModel.fromJson(response['data']));
+      }
+      return Left(ServerFailure(response['message'] ?? 'فشل طلب السحب'));
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure('حدث خطأ غير متوقع'));
     }
   }
 }

@@ -10,6 +10,17 @@ abstract class WalletRemoteDataSource {
     required String productId,
     required String platform,
   });
+  Future<Map<String, dynamic>> getWithdrawMethods();
+  Future<Map<String, dynamic>> requestWithdraw({
+    required String method,
+    required double amount,
+    // Bank fields
+    String? iban,
+    String? accountHolderName,
+    String? bankName,
+    // Mobile wallet field
+    String? phone,
+  });
 }
 
 class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
@@ -58,5 +69,32 @@ class WalletRemoteDataSourceImpl implements WalletRemoteDataSource {
       endPoint: ApiEndPoint.initiatePurchase,
       data: {'productId': productId, 'platform': platform},
     );
+  }
+
+  @override
+  Future<Map<String, dynamic>> getWithdrawMethods() async {
+    return await _apiService.get(endPoint: ApiEndPoint.withdrawMethods);
+  }
+
+  @override
+  Future<Map<String, dynamic>> requestWithdraw({
+    required String method,
+    required double amount,
+    String? iban,
+    String? accountHolderName,
+    String? bankName,
+    String? phone,
+  }) async {
+    final data = <String, dynamic>{
+      'amount': amount,
+      'withdrawalMethod': method,
+    };
+    if (iban != null) data['IBAN'] = iban;
+    if (accountHolderName != null)
+      data['accountHolderName'] = accountHolderName;
+    if (bankName != null) data['bankName'] = bankName;
+    if (phone != null) data['phone'] = phone;
+
+    return await _apiService.post(endPoint: ApiEndPoint.withdraw, data: data);
   }
 }

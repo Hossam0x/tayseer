@@ -3,78 +3,136 @@ import 'dart:io';
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/features/advisor/wallet/data/models/withdraw_model.dart';
 
+enum WithdrawMethodsStatus { initial, loading, loaded, error }
+
 class WithdrawState extends Equatable {
-  final double currentBalance;
+  final num walletBalance;
+  final String walletCurrency;
   final double amount;
   final double fees;
   final double netAmount;
-  final WithdrawMethod method;
-  final String accountNumber;
+  final WithdrawMethod? method;
   final bool isLoading;
   final bool isValid;
   final String? errorMessage;
-  final String? successMessage;
-  final List<WithdrawModel> withdrawHistory;
+  final WithdrawModel? lastWithdrawResult;
   final List<File> images;
 
+  // Available methods + fee from API
+  final WithdrawMethodsStatus methodsStatus;
+  final List<WithdrawMethod> availableMethods;
+  final double feePercentage; // e.g. 2.5 means 2.5%
+
+  // Bank account fields
+  final String iban;
+  final String accountHolderName;
+  final String bankName;
+
+  // Mobile wallet field
+  final String phone;
+
+  static const double minWithdrawAmount = 100.0;
+
   const WithdrawState({
-    this.currentBalance = 3250.0,
+    this.walletBalance = 0,
+    this.walletCurrency = 'USD',
     this.amount = 0,
     this.fees = 0,
     this.netAmount = 0,
-    this.method = WithdrawMethod.bankAccount,
-    this.accountNumber = 'SAXXXXXXXXXXXXXXXXXXXXX',
+    this.method,
     this.isLoading = false,
     this.isValid = false,
     this.errorMessage,
-    this.successMessage,
-    this.withdrawHistory = const [],
+    this.lastWithdrawResult,
     this.images = const [],
+    this.methodsStatus = WithdrawMethodsStatus.initial,
+    this.availableMethods = const [],
+    this.feePercentage = 0,
+    this.iban = '',
+    this.accountHolderName = '',
+    this.bankName = '',
+    this.phone = '',
   });
+
+  bool get isBank => method == WithdrawMethod.bankAccount;
+
+  /// True when the user has filled in all required payment details
+  bool get hasPaymentDetails => isBank
+      ? iban.isNotEmpty && accountHolderName.isNotEmpty && bankName.isNotEmpty
+      : phone.isNotEmpty;
+
+  /// Button is enabled only when:
+  /// 1. Wallet balance >= 100
+  /// 2. Entered amount is valid (>= 100)
+  /// 3. Payment details are filled
+  bool get canSubmit =>
+      walletBalance >= minWithdrawAmount && isValid && hasPaymentDetails;
 
   @override
   List<Object?> get props => [
-    currentBalance,
+    walletBalance,
+    walletCurrency,
     amount,
     fees,
     netAmount,
     method,
-    accountNumber,
     isLoading,
     isValid,
     errorMessage,
-    successMessage,
-    withdrawHistory,
+    lastWithdrawResult,
     images,
+    methodsStatus,
+    availableMethods,
+    feePercentage,
+    iban,
+    accountHolderName,
+    bankName,
+    phone,
   ];
 
   WithdrawState copyWith({
-    double? currentBalance,
+    num? walletBalance,
+    String? walletCurrency,
     double? amount,
     double? fees,
     double? netAmount,
     WithdrawMethod? method,
-    String? accountNumber,
     bool? isLoading,
     bool? isValid,
     String? errorMessage,
-    String? successMessage,
-    List<WithdrawModel>? withdrawHistory,
+    WithdrawModel? lastWithdrawResult,
     List<File>? images,
+    WithdrawMethodsStatus? methodsStatus,
+    List<WithdrawMethod>? availableMethods,
+    double? feePercentage,
+    String? iban,
+    String? accountHolderName,
+    String? bankName,
+    String? phone,
+    bool clearError = false,
+    bool clearResult = false,
   }) {
     return WithdrawState(
-      currentBalance: currentBalance ?? this.currentBalance,
+      walletBalance: walletBalance ?? this.walletBalance,
+      walletCurrency: walletCurrency ?? this.walletCurrency,
       amount: amount ?? this.amount,
       fees: fees ?? this.fees,
       netAmount: netAmount ?? this.netAmount,
       method: method ?? this.method,
-      accountNumber: accountNumber ?? this.accountNumber,
       isLoading: isLoading ?? this.isLoading,
       isValid: isValid ?? this.isValid,
-      errorMessage: errorMessage ?? this.errorMessage,
-      successMessage: successMessage ?? this.successMessage,
-      withdrawHistory: withdrawHistory ?? this.withdrawHistory,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      lastWithdrawResult: clearResult
+          ? null
+          : (lastWithdrawResult ?? this.lastWithdrawResult),
       images: images ?? this.images,
+      methodsStatus: methodsStatus ?? this.methodsStatus,
+      availableMethods: availableMethods ?? this.availableMethods,
+      feePercentage: feePercentage ?? this.feePercentage,
+      iban: iban ?? this.iban,
+      accountHolderName: accountHolderName ?? this.accountHolderName,
+      bankName: bankName ?? this.bankName,
+      phone: phone ?? this.phone,
     );
   }
 }

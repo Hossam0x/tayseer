@@ -62,8 +62,12 @@ class ApiService {
         onSendProgress: onSendProgress,
       );
       return response.data;
-    } on DioException {
-      rethrow;
+    } on DioException catch (e) {
+      if (e.response != null) {
+        return e.response!.data;
+      } else {
+        rethrow;
+      }
     }
   }
 
