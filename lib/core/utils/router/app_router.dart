@@ -901,6 +901,7 @@ abstract class AppRouter {
                   receiverId: userArgs?['receiverid'] as String?,
                   username: userArgs?['username'] as String?,
                   userimage: userArgs?['userimage'] as String?,
+                  isImageBlurred: userArgs?['imageBlur'] as bool? ?? false,
                   isBlocked: userArgs?['isBlocked'] as bool? ?? false,
                 ),
               )
@@ -911,6 +912,7 @@ abstract class AppRouter {
                   receiverId: userArgs?['receiverid'] as String?,
                   username: userArgs?['username'] as String?,
                   userimage: userArgs?['userimage'] as String?,
+                  isImageBlurred: userArgs?['imageBlur'] as bool? ?? false,
                   isBlocked: userArgs?['isBlocked'] as bool? ?? false,
                 ),
               );

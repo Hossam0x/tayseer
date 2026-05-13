@@ -84,6 +84,7 @@ class _MessageBubbleState extends State<MessageBubble> {
 
     final bgColor = isMe ? ChatColors.bubbleSender : ChatColors.bubbleReceiver;
     final textColor = isMe ? ChatColors.textSender : ChatColors.textReceiver;
+    final bool isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     final bool isMediaMessage =
         messageType == 'image' || messageType == 'video';
@@ -234,6 +235,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                                     textColor: textColor,
                                     fontSize: 14.sp,
                                     maxWidth: 236.w,
+                                    isArabic: isArabic,
                                   ),
                                 ),
                               )
@@ -258,6 +260,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                                 textColor: textColor,
                                 fontSize: 14.sp,
                                 maxWidth: maxBubbleWidth,
+                                isArabic: isArabic,
                               ),
 
                             SizedBox(height: 4.h),

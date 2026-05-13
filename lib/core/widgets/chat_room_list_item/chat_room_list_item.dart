@@ -14,6 +14,7 @@ class ChatRoomListItem extends StatelessWidget {
   final String title;
   final String subtitle;
   final String? imageUrl;
+  final bool isImageBlurred;
   final DateTime? lastUpdate;
   final int unreadCount;
   final bool isBlocked;
@@ -38,6 +39,7 @@ class ChatRoomListItem extends StatelessWidget {
     required this.fallbackAsset,
     this.subtitle = '',
     this.imageUrl,
+    this.isImageBlurred = false,
     this.lastUpdate,
     this.unreadCount = 0,
     this.isBlocked = false,
@@ -97,6 +99,7 @@ class ChatRoomListItem extends StatelessWidget {
                 children: [
                   ChatRoomAvatar(
                     imageUrl: imageUrl,
+                    isImageBlurred: isImageBlurred,
                     isBlocked: isBlocked,
                     fallbackAsset: fallbackAsset,
                   ),

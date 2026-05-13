@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
@@ -30,6 +31,7 @@ class UserChatScreen extends StatelessWidget {
   final String? receiverId;
   final String? username;
   final String? userimage;
+  final bool isImageBlurred;
   final bool isBlocked;
 
   const UserChatScreen({
@@ -38,6 +40,7 @@ class UserChatScreen extends StatelessWidget {
     this.receiverId,
     this.username,
     this.userimage,
+    this.isImageBlurred = false,
     this.isBlocked = false,
   });
 
@@ -80,6 +83,7 @@ class UserChatScreen extends StatelessWidget {
         receiverId: receiverId,
         username: username,
         userimage: userimage,
+        isImageBlurred: isImageBlurred,
         isBlocked: isBlocked,
       ),
     );
@@ -91,6 +95,7 @@ class _UserChatContent extends StatefulWidget {
   final String? receiverId;
   final String? username;
   final String? userimage;
+  final bool isImageBlurred;
   final bool isBlocked;
 
   const _UserChatContent({
@@ -98,6 +103,7 @@ class _UserChatContent extends StatefulWidget {
     this.receiverId,
     this.username,
     this.userimage,
+    this.isImageBlurred = false,
     this.isBlocked = false,
   });
 
@@ -408,25 +414,30 @@ class _UserChatContentState extends State<_UserChatContent> {
                   child: Row(
                     children: [
                       ClipOval(
-                        child: CachedNetworkImage(
-                          imageUrl: widget.userimage?.isNotEmpty == true
-                              ? widget.userimage!
-                              : AssetsData.defaultProfileImage,
-                          width: 40.r,
-                          height: 40.r,
-                          fit: BoxFit.cover,
-                          memCacheWidth: 80,
-                          fadeInDuration: Duration.zero,
-                          fadeOutDuration: Duration.zero,
-                          placeholder: (_, __) => CircleAvatar(
-                            radius: 20.r,
-                            backgroundColor: Colors.grey[200],
-                          ),
-                          errorWidget: (_, __, ___) => Image.asset(
-                            AssetsData.defaultProfileImage,
+                        child: ImageFiltered(
+                          imageFilter: widget.isImageBlurred
+                              ? ImageFilter.blur(sigmaX: 10, sigmaY: 10)
+                              : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+                          child: CachedNetworkImage(
+                            imageUrl: widget.userimage?.isNotEmpty == true
+                                ? widget.userimage!
+                                : AssetsData.defaultProfileImage,
                             width: 40.r,
                             height: 40.r,
                             fit: BoxFit.cover,
+                            memCacheWidth: 80,
+                            fadeInDuration: Duration.zero,
+                            fadeOutDuration: Duration.zero,
+                            placeholder: (_, __) => CircleAvatar(
+                              radius: 20.r,
+                              backgroundColor: Colors.grey[200],
+                            ),
+                            errorWidget: (_, __, ___) => Image.asset(
+                              AssetsData.defaultProfileImage,
+                              width: 40.r,
+                              height: 40.r,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
                       ),

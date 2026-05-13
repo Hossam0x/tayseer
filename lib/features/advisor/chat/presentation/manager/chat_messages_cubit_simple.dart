@@ -394,19 +394,28 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
 
     result.fold(
       (error) {
+        if (isClosed) return;
         log('❌ Media upload failed: $error');
         _updateMessageStatus(localId, MessageStatusEnum.failed);
         _uploadProgress.remove(localId);
       },
       (response) {
+        if (isClosed) return;
         log('✅ Media uploaded: ${response.message.id}');
-        _replaceOptimisticMessage(localId, response.message);
+        // ✅ لو الـ server message مش عندها contentList (URLs)، احتفظ بالـ localFilePaths
+        // عشان الـ VideoMessageWidget يشتغل من الـ local file لحد ما الـ URL يتحمّل
+        final serverMsg = response.message;
+        final msgToReplace = (serverMsg.contentList.isEmpty && localPaths.isNotEmpty)
+            ? serverMsg.copyWith(localFilePaths: localPaths)
+            : serverMsg;
+        _replaceOptimisticMessage(localId, msgToReplace);
         _uploadProgress.remove(localId);
       },
     );
   }
 
   void _emitProgressUpdate(String messageId, double progress) {
+    if (isClosed) return;
     final currentMessages = state.messagesOrEmpty;
     final index = currentMessages.indexWhere((m) => m.id == messageId);
     if (index == -1) return;
@@ -449,6 +458,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   }
 
   void _replaceOptimisticMessage(String localId, ChatMessage serverMessage) {
+    if (isClosed) return;
     final currentMessages = state.messagesOrEmpty;
     final index = currentMessages.indexWhere((m) => m.id == localId);
     if (index == -1) return;

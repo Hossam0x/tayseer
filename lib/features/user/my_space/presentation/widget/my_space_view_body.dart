@@ -29,7 +29,8 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody>
   void initState() {
     super.initState();
     _userProfileCubit = UserProfileCubit(getIt<UserProfileRepository>());
-    _userChatCubit = UserChatCubit(UserChatRepo(getIt<ApiService>()))..loadAll();
+    _userChatCubit = UserChatCubit(UserChatRepo(getIt<ApiService>()))
+      ..loadAll();
     WidgetsBinding.instance.addObserver(this);
     _loadMarriageStatus();
 
@@ -90,7 +91,10 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody>
                       alignment: Alignment.center,
                       children: [
                         Center(
-                          child: Text(context.tr('my_space_title'), style: Styles.textStyle22Bold),
+                          child: Text(
+                            context.tr('my_space_title'),
+                            style: Styles.textStyle22Bold,
+                          ),
                         ),
                         if (!isMarriageHidden && selectedIndex == 0)
                           Positioned.fill(
@@ -99,15 +103,18 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody>
                               children: [
                                 // ✅ يقرأ matchingCount من UserChatCubit مباشرة
                                 BlocBuilder<UserChatCubit, UserChatState>(
-                                  buildWhen: (p, c) => p.matchingCount != c.matchingCount,
+                                  buildWhen: (p, c) =>
+                                      p.matchingCount != c.matchingCount,
                                   builder: (context, chatState) {
-                                    final matchingCount = chatState.matchingCount;
+                                    final matchingCount =
+                                        chatState.matchingCount;
                                     return GestureDetector(
                                       onTap: () {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (_) => const UserChatMatchingListView(),
+                                            builder: (_) =>
+                                                const UserChatMatchingListView(),
                                           ),
                                         ).then((_) => _userChatCubit.loadAll());
                                       },
@@ -116,10 +123,16 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody>
                                         children: [
                                           Container(
                                             padding: EdgeInsets.all(8.w),
-                                            margin: EdgeInsets.only(right: 12.w, left: 12.w),
+                                            margin: EdgeInsets.only(
+                                              right: 12.w,
+                                              left: 12.w,
+                                            ),
                                             decoration: BoxDecoration(
-                                              color: HexColor('eb7a91').withOpacity(0.2),
-                                              borderRadius: BorderRadius.circular(16.r),
+                                              color: HexColor(
+                                                'eb7a91',
+                                              ).withOpacity(0.2),
+                                              borderRadius:
+                                                  BorderRadius.circular(16.r),
                                             ),
                                             child: AppImage(
                                               AssetsData.heartLockIcon,
@@ -142,7 +155,9 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody>
                                                   minHeight: 18.w,
                                                 ),
                                                 child: Text(
-                                                  matchingCount > 99 ? '99+' : '$matchingCount',
+                                                  matchingCount > 99
+                                                      ? '99+'
+                                                      : '$matchingCount',
                                                   style: TextStyle(
                                                     color: Colors.white,
                                                     fontSize: 10.sp,
@@ -158,13 +173,16 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody>
                                   },
                                 ),
                                 Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 8.w),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8.w,
+                                  ),
                                   child: IconButton(
                                     onPressed: () {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (_) => const PastMatchesView(),
+                                          builder: (_) =>
+                                              const PastMatchesView(),
                                         ),
                                       );
                                     },

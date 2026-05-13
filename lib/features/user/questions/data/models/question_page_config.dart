@@ -6,6 +6,7 @@ enum QuestionType {
   categorizedMultiSelectChips,
   categorizedSingleSelectChips,
   textInput,
+  datePicker, // ✅ تاريخ الميلاد
 }
 
 /// Configuration model for a single question page.

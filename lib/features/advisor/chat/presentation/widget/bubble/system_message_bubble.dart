@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tayseer/core/constant/constans.dart';
 import 'package:tayseer/core/utils/colors.dart';
 
 /// Widget لعرض رسائل النظام في منتصف الشاشة
@@ -12,6 +13,7 @@ class SystemMessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final isMobile = screenSize.width < 600;
+    // final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     return Center(
       child: Container(
@@ -35,13 +37,16 @@ class SystemMessageBubble extends StatelessWidget {
             ),
           ],
         ),
-        child: Text(
-          content,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: isMobile ? 13 : 14,
-            color: AppColors.kRedColor,
-            fontWeight: FontWeight.w500,
+        child: Directionality(
+          textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+          child: Text(
+            content,
+            textAlign: isArabic ? TextAlign.right : TextAlign.left,
+            style: TextStyle(
+              fontSize: isMobile ? 13 : 14,
+              color: AppColors.kRedColor,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ),

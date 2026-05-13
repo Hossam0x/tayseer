@@ -84,13 +84,10 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
         searchHintKey: 'search_country',
       ),
       QuestionPageConfig(
-        titleKey: 'choose_age',
+        titleKey: 'choose_birth_date',
         questionNumber: 4,
-        questionCategoryEnum: 'age',
-        type: QuestionType.picker,
-        minValue: 18,
-        maxValue: 100,
-        initialValue: 20,
+        questionCategoryEnum: 'birthDate',
+        type: QuestionType.datePicker,
       ),
       QuestionPageConfig(
         titleKey: 'enter_your_name',
@@ -149,8 +146,7 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
           type: QuestionType.selectableList,
         ),
       // ✅ يظهر فقط لو المستخدم اختار "yes" في سؤال hasChildren في الجلسة الحالية
-      if (!kCurrentUserData!.isSingle &&
-          _answers['hasChildren'] == 'yes')
+      if (!kCurrentUserData!.isSingle && _answers['hasChildren'] == 'yes')
         QuestionPageConfig(
           titleKey: 'children_number',
           questionNumber: 12,
@@ -160,8 +156,7 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
           dependsOnQuestion: 'hasChildren',
           requiredAnswer: 'yes',
         ),
-      if (!kCurrentUserData!.isSingle &&
-          _answers['hasChildren'] == 'yes')
+      if (!kCurrentUserData!.isSingle && _answers['hasChildren'] == 'yes')
         QuestionPageConfig(
           titleKey: 'children_living_status',
           questionNumber: 13,
@@ -383,13 +378,9 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
       answerKey = answer;
     }
 
-    // ✅ 1) نخزن الإجابة في الـ map
     _answers[config.questionCategoryEnum] = answerKey;
-
-    // ✅ 2) نعمل setState عشان _getQuestions() تتنفذ تاني بالشروط الجديدة
     setState(() {});
 
-    // 3) نجهز الإجابات للـ API
     List<Map<String, dynamic>> answers;
 
     if (answerKey is List<String>) {
@@ -397,12 +388,17 @@ class _QuestionsPageViewState extends State<QuestionsPageView> {
     } else if (answerKey is Map<String, String>) {
       answers = answerKey.values.map((value) => {'answer': value}).toList();
     } else {
+      // ✅ لو في displayKeyMapper → طبّقه على الـ answer قبل الإرسال
+      final rawAnswer = answerKey.toString();
+      final mappedAnswer = config.displayKeyMapper != null
+          ? config.displayKeyMapper!(rawAnswer)
+          : rawAnswer;
+
       answers = [
-        {'answer': answerKey.toString()},
+        {'answer': mappedAnswer},
       ];
     }
 
-    // 4) نبعت للـ API
     context.read<QuestionsCubit>().sendAnswerQuestions(
       question: context.tr(config.titleKey),
       questionCategoryEnum: config.questionCategoryEnum,

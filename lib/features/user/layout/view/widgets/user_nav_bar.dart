@@ -1,6 +1,7 @@
 // features/advisor/layout/views/widgets/a_nav_bar.dart
 import 'dart:math';
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/nav_bar_config.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/nav_animation_service.dart';
 import 'package:tayseer/my_import.dart';
@@ -20,10 +21,13 @@ class _UserNavBarState extends State<UserNavBar>
   late Animation<double> _rotateAnim;
   late Animation<double> _fadeAnim;
   final GlobalKey _navItem1Key = GlobalKey();
+  late final ChatSocketService _chatSocketService;
 
   @override
   void initState() {
     super.initState();
+    _chatSocketService = getIt<ChatSocketService>();
+    _chatSocketService.requestChatNotificationNumbers();
     NavAnimationService.instance.navItem1Key = _navItem1Key;
     _toggleController = AnimationController(
       vsync: this,
@@ -123,55 +127,66 @@ class _UserNavBarState extends State<UserNavBar>
           color: AppColors.kWhiteColor,
           child: SafeArea(
             top: false,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(visibleNavItems.length, (visibleIndex) {
-                final entry = visibleNavItems[visibleIndex];
-                final originalIndex = entry.originalIndex;
-                final navItem = entry.item;
-                final isActive = state.currentIndex == originalIndex;
+            child: ValueListenableBuilder<int>(
+              valueListenable: _chatSocketService.chatNotificationTotal,
+              builder: (context, chatNotificationTotal, child) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: List.generate(visibleNavItems.length, (
+                    visibleIndex,
+                  ) {
+                    final entry = visibleNavItems[visibleIndex];
+                    final originalIndex = entry.originalIndex;
+                    final navItem = entry.item;
+                    final isActive = state.currentIndex == originalIndex;
+                    final badgeNumber = navItem.labelKey == 'mySpace'
+                        ? chatNotificationTotal
+                        : 0;
 
-                // ⭐ index 1: يأخذ GlobalKey + toggle animation
-                if (originalIndex == 1) {
-                  return _AnimatedNavItem(
-                    key: _navItem1Key, // ⭐ GlobalKey
-                    icon: navItem.icon,
-                    activeIcon: navItem.activeIcon,
-                    label: context.tr(navItem.labelKey),
-                    isActive: isActive,
-                    scaleAnim: _scaleAnim,
-                    rotateAnim: _rotateAnim,
-                    fadeAnim: _fadeAnim,
-                    toggleController: _toggleController,
-                    onTap: () {
-                      if (originalIndex == state.currentIndex) {
-                        widget.onTabReselect?.call(originalIndex);
-                      } else {
-                        cubit.changeIndex(originalIndex);
-                      }
-                    },
-                  );
-                }
-
-                return _NavItem(
-                  icon: navItem.icon,
-                  activeIcon: navItem.activeIcon,
-                  label: context.tr(navItem.labelKey),
-                  isActive: isActive,
-                  onTap: () {
-                    if (originalIndex == state.currentIndex) {
-                      widget.onTabReselect?.call(originalIndex);
-                    } else {
-                      cubit.changeIndex(originalIndex);
-                      if (originalIndex == 3) {
-                        cubit.setNavVisibility(false);
-                      } else {
-                        cubit.setNavVisibility(true);
-                      }
+                    if (originalIndex == 1) {
+                      return _AnimatedNavItem(
+                        key: _navItem1Key, // ⭐ GlobalKey
+                        icon: navItem.icon,
+                        activeIcon: navItem.activeIcon,
+                        label: context.tr(navItem.labelKey),
+                        badgeNumber: badgeNumber,
+                        isActive: isActive,
+                        scaleAnim: _scaleAnim,
+                        rotateAnim: _rotateAnim,
+                        fadeAnim: _fadeAnim,
+                        toggleController: _toggleController,
+                        onTap: () {
+                          if (originalIndex == state.currentIndex) {
+                            widget.onTabReselect?.call(originalIndex);
+                          } else {
+                            cubit.changeIndex(originalIndex);
+                          }
+                        },
+                      );
                     }
-                  },
+
+                    return _NavItem(
+                      icon: navItem.icon,
+                      activeIcon: navItem.activeIcon,
+                      label: context.tr(navItem.labelKey),
+                      badgeNumber: badgeNumber,
+                      isActive: isActive,
+                      onTap: () {
+                        if (originalIndex == state.currentIndex) {
+                          widget.onTabReselect?.call(originalIndex);
+                        } else {
+                          cubit.changeIndex(originalIndex);
+                          if (originalIndex == 3) {
+                            cubit.setNavVisibility(false);
+                          } else {
+                            cubit.setNavVisibility(true);
+                          }
+                        }
+                      },
+                    );
+                  }),
                 );
-              }),
+              },
             ),
           ),
         );
@@ -187,6 +202,7 @@ class _AnimatedNavItem extends StatefulWidget {
   final String icon;
   final String activeIcon;
   final String label;
+  final int badgeNumber;
   final bool isActive;
   final Animation<double> scaleAnim;
   final Animation<double> rotateAnim;
@@ -199,6 +215,7 @@ class _AnimatedNavItem extends StatefulWidget {
     required this.icon,
     required this.activeIcon,
     required this.label,
+    this.badgeNumber = 0,
     required this.isActive,
     required this.scaleAnim,
     required this.rotateAnim,
@@ -306,6 +323,29 @@ class _AnimatedNavItemState extends State<_AnimatedNavItem>
                               ),
                             ),
                     ),
+                    if (widget.badgeNumber > 0) ...[
+                      Gap(4.h),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 2.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red[400],
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: Text(
+                          widget.badgeNumber > 99
+                              ? '99+'
+                              : '${widget.badgeNumber}',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -324,6 +364,7 @@ class _NavItem extends StatefulWidget {
   final String activeIcon;
   final String icon;
   final String label;
+  final int badgeNumber;
   final bool isActive;
   final VoidCallback onTap;
 
@@ -331,6 +372,7 @@ class _NavItem extends StatefulWidget {
     required this.icon,
     required this.activeIcon,
     required this.label,
+    this.badgeNumber = 0,
     required this.isActive,
     required this.onTap,
   });
@@ -396,13 +438,57 @@ class _NavItemState extends State<_NavItem>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Gap(8.h),
-                    AppImage(
-                      widget.isActive ? widget.activeIcon : widget.icon,
-                      width: context.responsiveWidth(widget.isActive ? 26 : 24),
-                      height: context.responsiveHeight(
-                        widget.isActive ? 26 : 24,
-                      ),
-                      fit: BoxFit.contain,
+                    // استخدم Stack هنا لتركيب الرقم فوق الصورة
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        AppImage(
+                          widget.isActive ? widget.activeIcon : widget.icon,
+                          width: context.responsiveWidth(
+                            widget.isActive ? 26 : 24,
+                          ),
+                          height: context.responsiveHeight(
+                            widget.isActive ? 26 : 24,
+                          ),
+                          fit: BoxFit.contain,
+                        ),
+                        if (widget.badgeNumber > 0)
+                          Positioned(
+                            top: -5.h, // تحكم في الارتفاع
+                            right: -8.w, // تحكم في البروز الجانبي
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 5.w,
+                                vertical: 2.h,
+                              ),
+                              constraints: BoxConstraints(
+                                minWidth: 16.w,
+                                minHeight: 16.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.red[400],
+                                shape: BoxShape.circle, // شكل دائري أرتب
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 1.5,
+                                ), // تحديد أبيض لإبرازه
+                              ),
+                              child: Center(
+                                child: Text(
+                                  widget.badgeNumber > 99
+                                      ? '99+'
+                                      : '${widget.badgeNumber}',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize:
+                                        8.sp, // نص أصغر قليلاً ليناسب الدائرة
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     Gap(context.responsiveHeight(6)),
                     AnimatedDefaultTextStyle(

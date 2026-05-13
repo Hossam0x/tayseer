@@ -12,6 +12,7 @@ class MessageContentBuilder extends StatelessWidget {
   final double fontSize;
   final double maxWidth;
   final double? uploadProgress;
+  final bool isArabic;
 
   const MessageContentBuilder({
     super.key,
@@ -22,6 +23,7 @@ class MessageContentBuilder extends StatelessWidget {
     required this.fontSize,
     required this.maxWidth,
     this.uploadProgress,
+    required this.isArabic,
   });
 
   @override
@@ -80,13 +82,16 @@ class MessageContentBuilder extends StatelessWidget {
         // Multiple emojis only → slightly larger
         final bool isAllEmojis = EmojiHelper.isOnlyEmojis(text);
 
-        return Text(
-          text,
-          style: TextStyle(
-            color: textColor,
-            fontSize: isAllEmojis ? fontSize * 1.7 : fontSize,
-            fontFamily: 'Cairo',
-            height: 1.4,
+        return Directionality(
+          textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+          child: Text(
+            text,
+            style: TextStyle(
+              color: textColor,
+              fontSize: isAllEmojis ? fontSize * 1.7 : fontSize,
+              fontFamily: 'Cairo',
+              height: 1.4,
+            ),
           ),
         );
     }

@@ -700,14 +700,19 @@ class MarriageBodyState extends State<MarriageBody>
               alignment: Alignment.center,
               children: [
                 Center(child: _buildToggle()),
+                // ✅ زر الرجوع: يمين في عربي، يسار في إنجليزي
                 Positioned(
-                  right: 0,
+                  right: isArabic ? 0 : null,
+                  left: isArabic ? null : 0,
                   child: showBackButton
                       ? GestureDetector(
                           onTap: () => Navigator.maybePop(context),
                           child: CircleAvatar(
-                            backgroundColor: Colors.black12,
-                            child: AppImage(AssetsData.backArrow, width: 19.w),
+                            backgroundColor: Colors.white.withOpacity(0.8),
+                            child: Transform.scale(
+                              scaleX: isArabic ? 1.0 : -1.0,
+                              child: AppImage(AssetsData.backArrow, width: 19.w),
+                            ),
                           ),
                         )
                       : GestureDetector(
@@ -724,8 +729,10 @@ class MarriageBodyState extends State<MarriageBody>
                           ),
                         ),
                 ),
+                // ✅ الأيقونة التانية: يسار في عربي، يمين في إنجليزي
                 Positioned(
-                  left: 0,
+                  left: isArabic ? 0 : null,
+                  right: isArabic ? null : 0,
                   child: showBackButton
                       ? const SizedBox.shrink()
                       : AnimatedBeFirstButton(
@@ -1126,16 +1133,21 @@ class MarriageBodyState extends State<MarriageBody>
                   alignment: Alignment.center,
                   children: [
                     Center(child: _buildToggle()),
+                    // ✅ زر الرجوع: يمين في عربي، يسار في إنجليزي
                     Positioned(
-                      right: 0,
+                      right: isArabic ? 0 : null,
+                      left: isArabic ? null : 0,
                       child: showBackButton
                           ? GestureDetector(
                               onTap: () => Navigator.maybePop(context),
                               child: CircleAvatar(
                                 backgroundColor: Colors.black12,
-                                child: AppImage(
-                                  AssetsData.backArrow,
-                                  width: 19.w,
+                                child: Transform.scale(
+                                  scaleX: isArabic ? 1.0 : -1.0,
+                                  child: AppImage(
+                                    AssetsData.backArrow,
+                                    width: 19.w,
+                                  ),
                                 ),
                               ),
                             )
@@ -1155,8 +1167,10 @@ class MarriageBodyState extends State<MarriageBody>
                               ),
                             ),
                     ),
+                    // ✅ الأيقونة التانية: يسار في عربي، يمين في إنجليزي
                     Positioned(
-                      left: 0,
+                      left: isArabic ? 0 : null,
+                      right: isArabic ? null : 0,
                       child: showBackButton
                           ? const SizedBox.shrink()
                           : AnimatedBeFirstButton(

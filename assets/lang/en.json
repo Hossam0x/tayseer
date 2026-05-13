@@ -69,6 +69,7 @@
   "country_canada": "Canada",
   "country_australia": "Australia",
   "choose_age": "Select your age",
+  "choose_birth_date": "Select your date of birth",
   "choose_social_status": "Choose your marital status",
   "social_single": "Single",
   "social_married": "Married",
@@ -2359,5 +2360,9 @@
   "subscription_cancelled_still_active": "Cancelled • Active until expiry",
   "subscription_active": "Active",
   "week": "week",
-  "downgrade": "Downgrade"
+  "downgrade": "Downgrade",
+  "image_message": "Image",
+"voice_message": "Voice message",
+"video_message": "Video",
+"file_message": "File"
 }

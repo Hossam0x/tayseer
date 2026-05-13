@@ -3,6 +3,7 @@ import 'package:tayseer/core/widgets/chat_room_list_item/helpers/chat_room_dialo
 import 'package:tayseer/features/user/my_space/data/model/advisor_chat_model.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_space_state.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
+import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/features/user/my_space/users_chat/data/model/regard_request_model.dart';
 import 'package:tayseer/features/user/my_space/users_chat/data/model/user_chat_room_model.dart';
 import 'package:tayseer/features/user/my_space/users_chat/data/repo/user_chat_repo.dart';
@@ -413,6 +414,7 @@ class _UserChatBody extends StatelessWidget {
       unreadCount: room.unreadCount,
       fallbackAsset: AssetsData.kAppLogotayseerImage,
       onTap: () {
+        getIt<ChatSocketService>().clearChatNotificationCount();
         mySpaceCubit.markChatAsRead(room.id);
         mySpaceCubit.setActiveChatRoom(room.id);
         mySpaceCubit.markMessageAsReadOnSocket(room.id);
@@ -506,9 +508,11 @@ class _UserChatBody extends StatelessWidget {
       imageUrl: room.otherUser.image,
       lastUpdate: room.lastMessage?.sentAt,
       unreadCount: room.unreadCount,
+      isImageBlurred: room.otherUser.imageBlur,
       isBlocked: room.blockExists,
       fallbackAsset: AssetsData.defaultProfileImage,
       onTap: () {
+        getIt<ChatSocketService>().clearChatNotificationCount();
         onEnterChat?.call(); // ✅ منع loadAll لما نكون جوه الشات
         context
             .pushNamed(
@@ -517,6 +521,7 @@ class _UserChatBody extends StatelessWidget {
                 'chatroomid': room.id,
                 'username': room.otherUser.name,
                 'userimage': room.otherUser.image,
+                'imageBlur': room.otherUser.imageBlur,
                 'isBlocked': room.blockExists,
                 'receiverid': room.otherUser.userId,
               },
