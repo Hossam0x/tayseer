@@ -395,111 +395,122 @@ class _RematchSheetState extends State<_RematchSheet> {
   }
 
   Widget _buildPackageCard(int index, ChatDurationPackageModel pkg) {
-    final isSelected = _selectedIndex == index;
+  final isSelected = _selectedIndex == index;
+  final bool isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    final daysLabel = pkg.durationInDays == 1
+  String daysLabel;
+  if (isArabic) {
+    daysLabel = pkg.durationInDays == 1
         ? 'يوم واحد'
         : pkg.durationInDays == 2
         ? 'يومان'
         : '${pkg.durationInDays} أيام';
+  } else {
+    daysLabel = pkg.durationInDays == 1
+        ? '1 Day'
+        : pkg.durationInDays == 2
+        ? '2 Days'
+        : '${pkg.durationInDays} Days';
+  }
 
-    return GestureDetector(
-      onTap: () => setState(() => _selectedIndex = index),
-      child: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            AnimatedContainer(
-              margin: EdgeInsets.symmetric(vertical: 4.w),
-              duration: const Duration(milliseconds: 200),
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary50 : Colors.white,
-                borderRadius: BorderRadius.circular(14.r),
-                border: Border.all(
-                  color: isSelected ? AppColors.primary300 : AppColors.secondary100,
-                  width: isSelected ? 1.5 : 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    daysLabel,
-                    style: Styles.textStyle16SemiBold.copyWith(
-                      color: AppColors.kscandryTextColor,
-                    ),
-                  ),
-                  const Spacer(),
-                  Directionality(
-                    textDirection: TextDirection.ltr,
-                    child: Text(
-                      '${pkg.price.toStringAsFixed(0)} ${pkg.currency}',
-                      style: Styles.textStyle14.copyWith(
-                        color: AppColors.secondary400,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                  Container(
-                    width: 24.w,
-                    height: 24.w,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.primary400
-                            : AppColors.secondary300,
-                        width: 2,
-                      ),
-                      color: isSelected ? AppColors.primary400 : Colors.white,
-                    ),
-                    child: isSelected
-                        ? Icon(Icons.check, size: 14.w, color: Colors.white)
-                        : null,
-                  ),
-                ],
+  return GestureDetector(
+    onTap: () => setState(() => _selectedIndex = index),
+    child: Directionality(
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          AnimatedContainer(
+            margin: EdgeInsets.symmetric(vertical: 4.w),
+            duration: const Duration(milliseconds: 200),
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.primary50 : Colors.white,
+              borderRadius: BorderRadius.circular(14.r),
+              border: Border.all(
+                color: isSelected
+                    ? AppColors.primary300
+                    : AppColors.secondary100,
+                width: isSelected ? 1.5 : 1,
               ),
             ),
-            if (pkg.savePercentage != null && pkg.savePercentage! > 0)
-              Positioned(
-                top: -6.h,
-                right: 0.w,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFFEB7A91),
-                        Color.fromRGBO(245, 192, 3, 1),
-                      ],
-                      begin: Alignment.centerRight,
-                      end: Alignment.centerLeft,
-                    ),
-                    borderRadius: BorderRadius.circular(18.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFEB7A91).withOpacity(0.3),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+            child: Row(
+              children: [
+                Text(
+                  daysLabel,
+                  style: Styles.textStyle16SemiBold.copyWith(
+                    color: AppColors.kscandryTextColor,
                   ),
-                  child: Text(
-                    context
-                        .tr('save_percent')
-                        .replaceAll('{percent}', '${pkg.savePercentage}'),
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                ),
+                const Spacer(),
+                Text(
+                  '${pkg.price.toStringAsFixed(0)} ${pkg.currency}',
+                  style: Styles.textStyle14.copyWith(
+                    color: AppColors.secondary400,
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Container(
+                  width: 24.w,
+                  height: 24.w,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.primary400
+                          : AppColors.secondary300,
+                      width: 2,
                     ),
+                    color: isSelected ? AppColors.primary400 : Colors.white,
+                  ),
+                  child: isSelected
+                      ? Icon(Icons.check, size: 14.w, color: Colors.white)
+                      : null,
+                ),
+              ],
+            ),
+          ),
+          if ((pkg.savePercentage ?? 0) > 0)
+            Positioned(
+              top: -6.h,
+              right: isArabic ? 0 : null,
+              left: isArabic ? null : 0,
+              child: Container(
+                padding:
+                    EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFFEB7A91),
+                      Color.fromRGBO(245, 192, 3, 1),
+                    ],
+                    begin: Alignment.centerRight,
+                    end: Alignment.centerLeft,
+                  ),
+                  borderRadius: BorderRadius.circular(18.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFEB7A91).withOpacity(0.3),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  context
+                      .tr('save_percent')
+                      .replaceAll('{percent}', '${pkg.savePercentage}'),
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
