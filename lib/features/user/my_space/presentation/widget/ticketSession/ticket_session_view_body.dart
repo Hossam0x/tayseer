@@ -30,11 +30,22 @@ class _TicketSessionViewBodyState extends State<TicketSessionViewBody> {
             );
 
             if (state.paySessionState == CubitStates.success) {
-              context.pushNamed(
-                AppRouter.sessionticketsuccessview,
-                arguments: widget.sessionData,
-              );
               context.read<TicketSessionCubit>().resetPayState();
+
+              if (state.paymentSucceededDespiteRejected) {
+                // ✅ اليوزر أغلق الـ sheet — روح لـ UserSessionsView
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  AppRouter.kUserLayoutView,
+                  (route) => false,
+                );
+                Navigator.of(context).pushNamed(AppRouter.kUserSessionsView);
+              } else {
+                // ✅ الدفع نجح بشكل طبيعي — روح لـ success screen
+                context.pushNamed(
+                  AppRouter.sessionticketsuccessview,
+                  arguments: widget.sessionData,
+                );
+              }
               return;
             }
 
@@ -51,7 +62,8 @@ class _TicketSessionViewBodyState extends State<TicketSessionViewBody> {
                         if (!mounted) return;
                         // بعد ما يضيف الرقم بنجاح، نعيد محاولة الدفع
                         context.read<TicketSessionCubit>().paySession(
-                          offeringId: widget.sessionData.id,
+                          offeringId: widget.sessionData.offeringId,
+                          sessionId: widget.sessionData.id,
                         );
                       },
                     ),

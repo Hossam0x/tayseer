@@ -16,6 +16,9 @@ class TicketSessionState {
   int? orderId;
   String? paymentResult; // "Successfull" / "Rejected" / "Pending"
 
+  // ✅ جديد - الدفع نجح رغم Rejected (اليوزر أغلق الـ sheet بعد الدفع)
+  bool paymentSucceededDespiteRejected;
+
   // بيانات الخصم
   DiscountResponseModel? discountResponse;
   int discountPercentage;
@@ -34,6 +37,7 @@ class TicketSessionState {
     this.paymentKey,
     this.orderId,
     this.paymentResult,
+    this.paymentSucceededDespiteRejected = false,
     this.discountResponse,
     this.discountPercentage = 0,
     this.appliedCode,
@@ -48,6 +52,7 @@ class TicketSessionState {
     String? paymentKey,
     int? orderId,
     String? paymentResult,
+    bool? paymentSucceededDespiteRejected,
     DiscountResponseModel? discountResponse,
     int? discountPercentage,
     String? appliedCode,
@@ -62,6 +67,9 @@ class TicketSessionState {
       paymentKey: paymentKey ?? this.paymentKey,
       orderId: orderId ?? this.orderId,
       paymentResult: paymentResult ?? this.paymentResult,
+      paymentSucceededDespiteRejected:
+          paymentSucceededDespiteRejected ??
+          this.paymentSucceededDespiteRejected,
       discountResponse: discountResponse ?? this.discountResponse,
       discountPercentage: discountPercentage ?? this.discountPercentage,
       appliedCode: appliedCode ?? this.appliedCode,

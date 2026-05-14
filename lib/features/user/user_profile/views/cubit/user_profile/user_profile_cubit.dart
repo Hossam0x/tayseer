@@ -194,6 +194,12 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         routeName: '',
       ),
       SettingItemModel(
+        id: 'my_sessions',
+        title: 'my_sessions',
+        iconAsset: AssetsData.consultatIcon,
+        routeName: AppRouter.kUserSessionsView,
+      ),
+      SettingItemModel(
         id: 'notifications',
         title: 'notifications_settings',
         iconAsset: AssetsData.icNotificationSettings,

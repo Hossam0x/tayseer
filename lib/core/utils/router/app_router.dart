@@ -143,6 +143,7 @@ import 'package:tayseer/features/user/user_profile/views/user_package_details_vi
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_cubit.dart';
 import '../../../my_import.dart';
 import 'package:tayseer/features/advisor/settings/view/order_management_view.dart';
+import 'package:tayseer/features/user/sessions/presentation/view/user_sessions_view.dart';
 
 abstract class AppRouter {
   // shared routes
@@ -282,6 +283,7 @@ abstract class AppRouter {
   static const kSelectCountryView = '/SelectCountryView';
   static const kSetupSummaryView = '/SetupSummaryView';
   static const kChooseSessionView = '/ChooseSessionView';
+  static const kUserSessionsView = '/user-sessions-view';
   ///// report screens /////
   static const kReportsView = '/reportsView';
   static const kReportDetailsView = '/reportDetailsView';
@@ -1272,6 +1274,12 @@ abstract class AppRouter {
             create: (context) => getIt<UserMembershipCubit>(),
             child: const MembershipManagementView(),
           ),
+          routeSettings: settings,
+        );
+
+      case AppRouter.kUserSessionsView:
+        return SlideLeftRoute(
+          page: const UserSessionsView(),
           routeSettings: settings,
         );
     }

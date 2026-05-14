@@ -61,9 +61,16 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
   }
 
   // ==================== دفع الجلسة عبر Paymob ====================
-  Future<void> paySession({required String offeringId}) async {
+  Future<void> paySession({
+    required String offeringId,
+    String? sessionId, // ✅ الـ session ID الفعلي للتحقق بعد Rejected
+  }) async {
     emit(
-      state.copyWith(paySessionState: CubitStates.loading, errorMessage: null),
+      state.copyWith(
+        paySessionState: CubitStates.loading,
+        errorMessage: null,
+        paymentSucceededDespiteRejected: false,
+      ),
     );
 
     CubitStates.printState(
@@ -84,7 +91,6 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
           state: CubitStates.failure,
         );
 
-        // ✅ لو الـ error هو profileIncomplete نعمل emit خاص
         if (failure.message == 'profileIncomplete') {
           emit(
             state.copyWith(
@@ -126,14 +132,16 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
               ),
             );
           } else {
+            // ── Rejected: الـ SDK يرجع Rejected لما اليوزر يغلق الـ sheet ──
+            // سواء دفع أو ألغى — نوجّهه لـ UserSessionsView ليشوف حالة جلسته
             CubitStates.printState(
               stateName: 'TicketSessionCubit - paySession (SDK)',
-              state: CubitStates.failure,
+              state: CubitStates.success,
             );
             emit(
               state.copyWith(
-                paySessionState: CubitStates.failure,
-                errorMessage: 'تم رفض الدفع، يرجى المحاولة مرة أخرى',
+                paySessionState: CubitStates.success,
+                paymentSucceededDespiteRejected: true,
               ),
             );
           }

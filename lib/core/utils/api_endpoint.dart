@@ -110,4 +110,7 @@ class ApiEndPoint {
 
   // Force Update
   static const String checkForUpdate = '/version/check-for-update';
+
+  // User Sessions
+  static const String getUserSessions = '/session/get-all-for-user';
 }

@@ -45,27 +45,30 @@ class EmptySessionsState extends StatelessWidget {
 
   // ✅ المحتوى الكامل (للصفحة الفارغة بالكامل)
   Widget _buildFullContent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        AppImage(AssetsData.noSessionHistoryIcon, width: 268.w),
-        SizedBox(height: 20.h),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[700],
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 50.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AppImage(AssetsData.noSessionHistoryIcon, width: 268.w),
+          SizedBox(height: 20.h),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[700],
+            ),
           ),
-        ),
-        SizedBox(height: 5.h),
-        Text(
-          subtitle,
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 12.sp, color: Colors.grey[400]),
-        ),
-      ],
+          SizedBox(height: 5.h),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12.sp, color: Colors.grey[400]),
+          ),
+        ],
+      ),
     );
   }
 
