@@ -411,8 +411,9 @@ class _RematchSheetState extends State<_RematchSheet> {
           clipBehavior: Clip.none,
           children: [
             AnimatedContainer(
+              margin: EdgeInsets.symmetric(vertical: 4.w),
               duration: const Duration(milliseconds: 200),
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
               decoration: BoxDecoration(
                 color: isSelected ? AppColors.primary50 : Colors.white,
                 borderRadius: BorderRadius.circular(14.r),
@@ -463,7 +464,7 @@ class _RematchSheetState extends State<_RematchSheet> {
             if (pkg.savePercentage != null && pkg.savePercentage! > 0)
               Positioned(
                 top: -6.h,
-                right: -6.w,
+                right: 0.w,
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                   decoration: BoxDecoration(
