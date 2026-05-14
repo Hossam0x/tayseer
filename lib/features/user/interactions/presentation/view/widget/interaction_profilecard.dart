@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:tayseer/core/constant/marriage_constants.dart';
+import 'package:tayseer/core/widgets/screenshot_protected_image.dart';
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/status_ribbon_widget.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/regards_purchase_sheet.dart';
@@ -102,24 +103,11 @@ class _InteractionProfileCardState extends State<InteractionProfileCard>
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
-                            shouldBlur
-                                ? ImageFiltered(
-                                    imageFilter: ImageFilter.blur(
-                                      sigmaX: 15,
-                                      sigmaY: 15,
-                                    ),
-                                    child: AppImage(
-                                      widget.item.image,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  )
-                                : AppImage(
-                                    widget.item.image,
-                                    fit: BoxFit.cover,
-                                  ),
-
-                            if (shouldBlur)
-                              Container(color: Colors.black.withOpacity(0.2)),
+                            ScreenshotProtectedImage(
+                              imageUrl: widget.item.image,
+                              fit: BoxFit.cover,
+                              shouldBlur: shouldBlur,
+                            ),
 
                             if (widget.showFavoriteIcon)
                               Positioned(

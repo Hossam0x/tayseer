@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:tayseer/core/constant/marriage_constants.dart';
+import 'package:tayseer/core/widgets/screenshot_protected_image.dart';
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
 import 'package:tayseer/features/user/questions/data/models/questions_data.dart';
@@ -89,34 +90,14 @@ class GreetingProfileCard extends StatelessWidget {
                 // Profile Image — بدون GestureDetector، الأب يتكفل
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16.r),
-                  child: Stack(
-                    children: [
-                      shouldBlur
-                          ? ImageFiltered(
-                              imageFilter: ImageFilter.blur(
-                                sigmaX: 15,
-                                sigmaY: 15,
-                              ),
-                              child: AppImage(
-                                item.image,
-                                width: imageWidth,
-                                height: imageHeight,
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                          : AppImage(
-                              item.image,
-                              width: imageWidth,
-                              height: imageHeight,
-                              fit: BoxFit.cover,
-                            ),
-                      if (shouldBlur)
-                        Positioned.fill(
-                          child: Container(
-                            color: Colors.black.withOpacity(0.2),
-                          ),
-                        ),
-                    ],
+                  child: SizedBox(
+                    width: imageWidth,
+                    height: imageHeight,
+                    child: ScreenshotProtectedImage(
+                      imageUrl: item.image,
+                      fit: BoxFit.cover,
+                      shouldBlur: shouldBlur,
+                    ),
                   ),
                 ),
                 SizedBox(width: 12.w),
