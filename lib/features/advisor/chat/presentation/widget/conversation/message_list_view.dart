@@ -50,59 +50,59 @@ class _MessageListViewState extends State<MessageListView> {
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final isMobile = screenSize.width < 600;
+    final bool isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     return BlocBuilder<ChatScrollCubit, ChatScrollState>(
       buildWhen: (previous, current) =>
           previous.highlightedMessageId != current.highlightedMessageId,
       builder: (context, scrollState) {
-        return ListView.builder(
-          reverse: true,
-          controller: widget.scrollController,
-          padding: EdgeInsets.symmetric(
-            horizontal: isMobile ? 10 : 12,
-            vertical: isMobile ? 6 : 8,
-          ),
-          itemCount: widget.messages.length,
-          // Keep items alive to prevent reload
-          addAutomaticKeepAlives: true,
-          // Cache items for better scroll performance
-          cacheExtent: 500,
-          itemBuilder: (context, index) {
-            // With reverse: true, index 0 is the last message (newest at bottom)
-            // So we access messages directly - newest messages are at the end of the list
-            final msg = widget.messages[widget.messages.length - 1 - index];
-            final currentMsgId = msg.id;
-            final messageKey = currentMsgId.isNotEmpty
-                ? _getOrCreateKey(currentMsgId)
-                : GlobalKey();
-            final isHighlighted =
-                scrollState.highlightedMessageId != null &&
-                currentMsgId == scrollState.highlightedMessageId;
+        return Directionality(
+          textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+          child: ListView.builder(
+            reverse: true,
+            controller: widget.scrollController,
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 10 : 12,
+              vertical: isMobile ? 6 : 8,
+            ),
+            itemCount: widget.messages.length,
+            addAutomaticKeepAlives: true,
+            cacheExtent: 500,
+            itemBuilder: (context, index) {
+              final msg = widget.messages[widget.messages.length - 1 - index];
+              final currentMsgId = msg.id;
+              final messageKey = currentMsgId.isNotEmpty
+                  ? _getOrCreateKey(currentMsgId)
+                  : GlobalKey();
+              final isHighlighted =
+                  scrollState.highlightedMessageId != null &&
+                  currentMsgId == scrollState.highlightedMessageId;
 
-            return _MessageItemKeepAlive(
-              key: ValueKey(currentMsgId),
-              messageKey: messageKey,
-              child: msg.messageType == 'system'
-                  ? SystemMessageBubble(content: msg.content)
-                  : GestureDetector(
-                      onLongPress: () =>
-                          widget.onMessageLongPress?.call(msg, messageKey),
-                      child: MessageBubble(
-                        chatMessage: msg,
-                        isHighlighted: isHighlighted,
-                        onReplyTap: (replyMessageId) {
-                          widget.onReplyTap?.call(
-                            replyMessageId,
-                            widget.messages,
-                          );
-                        },
-                        onReactionTap: (emoji) {
-                          widget.onReactionTap?.call(msg.id, emoji);
-                        },
+              return _MessageItemKeepAlive(
+                key: ValueKey(currentMsgId),
+                messageKey: messageKey,
+                child: msg.messageType == 'system'
+                    ? SystemMessageBubble(content: msg.content)
+                    : GestureDetector(
+                        onLongPress: () =>
+                            widget.onMessageLongPress?.call(msg, messageKey),
+                        child: MessageBubble(
+                          chatMessage: msg,
+                          isHighlighted: isHighlighted,
+                          onReplyTap: (replyMessageId) {
+                            widget.onReplyTap?.call(
+                              replyMessageId,
+                              widget.messages,
+                            );
+                          },
+                          onReactionTap: (emoji) {
+                            widget.onReactionTap?.call(msg.id, emoji);
+                          },
+                        ),
                       ),
-                    ),
-            );
-          },
+              );
+            },
+          ),
         );
       },
     );
@@ -131,9 +131,7 @@ class _MessageItemKeepAliveState extends State<_MessageItemKeepAlive>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
-    // Don't pass GlobalKey to Container - it's already on the parent widget
-    // The messageKey is only for external access (long press, etc.)
+    super.build(context);
     return KeyedSubtree(key: widget.messageKey, child: widget.child);
   }
 }

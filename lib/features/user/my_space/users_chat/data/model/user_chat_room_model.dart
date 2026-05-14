@@ -39,12 +39,14 @@ class OtherUserModel {
   final String name;
   final String? image;
   final bool imageBlur;
+  final DateTime? lastActiveAt;
 
   OtherUserModel({
     required this.userId,
     required this.name,
     this.image,
     required this.imageBlur,
+    this.lastActiveAt,
   });
 
   factory OtherUserModel.fromJson(Map<String, dynamic> json) {
@@ -53,7 +55,17 @@ class OtherUserModel {
       name: json['name']?.toString() ?? '',
       image: json['image']?.toString(),
       imageBlur: json['imageBlur'] ?? false,
+      lastActiveAt: _parseLastActiveAt(json['lastActiveAt'] ?? json['last_active_at']),
     );
+  }
+
+  static DateTime? _parseLastActiveAt(dynamic value) {
+    if (value == null) return null;
+    String text = value.toString();
+    if (!text.endsWith('Z') && !text.contains('+')) {
+      text = '${text}Z';
+    }
+    return DateTime.tryParse(text)?.toLocal();
   }
 }
 

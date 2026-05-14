@@ -44,7 +44,7 @@ class ChatListCubit extends Cubit<ChatListState> {
     final cachedRooms = _cacheService.getCachedChatRooms(userId: userId);
     if (cachedRooms != null && cachedRooms.isNotEmpty) {
       // تحويل من AdvisorChatRoomModel لـ ChatRoom
-      final chatRooms = cachedRooms.map((room) => _convertToChatRoom(room)).toList();
+      final chatRooms = _sortChatRooms(cachedRooms.map((room) => _convertToChatRoom(room)).toList());
       emit(ChatListState.loaded(chatRooms: chatRooms, pendingRequestsCount: 0));
     } else {
       emit(const ChatListState.loading());
@@ -60,14 +60,15 @@ class ChatListCubit extends Cubit<ChatListState> {
         }
       },
       (response) async {
+        final sortedRooms = _sortChatRooms(response.rooms);
         emit(ChatListState.loaded(
-          chatRooms: response.rooms,
+          chatRooms: sortedRooms,
           pendingRequestsCount: response.pendingRequestsCount,
         ));
         setupSocketListeners();
 
         // 3. حفظ في الكاش
-        final roomsToCache = response.rooms.map((room) => _convertToAdvisorChatRoom(room)).toList();
+        final roomsToCache = sortedRooms.map((room) => _convertToAdvisorChatRoom(room)).toList();
         await _cacheService.saveChatRooms(userId: userId, chatRooms: roomsToCache);
       },
     );
@@ -164,6 +165,25 @@ class ChatListCubit extends Cubit<ChatListState> {
     });
   }
 
+  List<ChatRoom> _sortChatRooms(List<ChatRoom> rooms) {
+    final systemRooms = rooms.where((room) => room.isSystemChat).toList();
+    final normalRooms = rooms.where((room) => !room.isSystemChat).toList();
+
+    normalRooms.sort((a, b) {
+      final aTime = a.lastMessage?.sentAt ?? DateTime(0);
+      final bTime = b.lastMessage?.sentAt ?? DateTime(0);
+      return bTime.compareTo(aTime);
+    });
+
+    systemRooms.sort((a, b) {
+      final aTime = a.lastMessage?.sentAt ?? DateTime(0);
+      final bTime = b.lastMessage?.sentAt ?? DateTime(0);
+      return bTime.compareTo(aTime);
+    });
+
+    return [...normalRooms, ...systemRooms];
+  }
+
   void _handleChatUnarchived(String chatRoomId) {
     // Reload chat rooms to get the unarchived chat
     loadChatRooms();
@@ -222,10 +242,15 @@ class ChatListCubit extends Cubit<ChatListState> {
         if (index != -1) {
           rooms.removeAt(index);
         }
-        rooms.insert(0, updatedRoom);
+
+        if (updatedRoom.isSystemChat) {
+          rooms.add(updatedRoom);
+        } else {
+          rooms.insert(0, updatedRoom);
+        }
 
         emit(ChatListState.loaded(
-          chatRooms: rooms,
+          chatRooms: _sortChatRooms(rooms),
           pendingRequestsCount: pendingRequestsCount,
         ));
       },
@@ -380,15 +405,8 @@ class ChatListCubit extends Cubit<ChatListState> {
       return room;
     }).toList();
 
-    // رتب الـ rooms بحيث الأحدث فوق
-    updatedRooms.sort((a, b) {
-      final aTime = a.lastMessage?.sentAt ?? DateTime(0);
-      final bTime = b.lastMessage?.sentAt ?? DateTime(0);
-      return bTime.compareTo(aTime);
-    });
-
     emit(ChatListState.loaded(
-      chatRooms: updatedRooms,
+      chatRooms: _sortChatRooms(updatedRooms),
       pendingRequestsCount: currentState.pendingRequestsCount,
     ));
   }

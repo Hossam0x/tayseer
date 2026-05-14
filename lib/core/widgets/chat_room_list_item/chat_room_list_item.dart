@@ -13,7 +13,10 @@ class ChatRoomListItem extends StatelessWidget {
   final String id;
   final String title;
   final String subtitle;
+  final String? statusText;
   final String? imageUrl;
+  final bool isOnline;
+  final bool showOnlineDot;
   final bool isImageBlurred;
   final DateTime? lastUpdate;
   final int unreadCount;
@@ -38,7 +41,10 @@ class ChatRoomListItem extends StatelessWidget {
     required this.title,
     required this.fallbackAsset,
     this.subtitle = '',
+    this.statusText,
     this.imageUrl,
+    this.isOnline = false,
+    this.showOnlineDot = false,
     this.isImageBlurred = false,
     this.lastUpdate,
     this.unreadCount = 0,
@@ -102,27 +108,61 @@ class ChatRoomListItem extends StatelessWidget {
                     isImageBlurred: isImageBlurred,
                     isBlocked: isBlocked,
                     fallbackAsset: fallbackAsset,
+                    showOnlineDot: showOnlineDot,
+                    isOnline: isOnline,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          title,
-                          style: Styles.textStyle16SemiBold,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                title,
+                                style: Styles.textStyle16SemiBold,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (statusText != null && statusText!.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isOnline
+                                      ? const Color(0xFFE2F7E8)
+                                      : Colors.grey.shade200,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  statusText!,
+                                  style: Styles.textStyle10.copyWith(
+                                    color: isOnline
+                                        ? const Color(0xFF1E7D3A)
+                                        : Colors.grey.shade700,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          subtitle,
-                          style: Styles.textStyle14.copyWith(
-                            color: AppColors.secondary600,
+                        if (subtitle.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle,
+                            style: Styles.textStyle14.copyWith(
+                              color: AppColors.secondary600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        ],
                       ],
                     ),
                   ),

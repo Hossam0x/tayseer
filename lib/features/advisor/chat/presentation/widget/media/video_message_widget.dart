@@ -73,6 +73,9 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
     });
 
     try {
+      debugPrint('📹 [DEBUG] Platform: Android=${Platform.isAndroid}, iOS=${Platform.isIOS}');
+      debugPrint('📹 [DEBUG] Starting video initialization: ${widget.videoUrl}');
+
       if (widget.isLocal) {
         debugPrint('📹 Using local video: ${widget.videoUrl}');
         _controller = VideoPlayerController.file(
@@ -85,10 +88,18 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
         // بسبب مشكلة buffer allocation في SynchronousMediaCodecAdapter
         if (Platform.isAndroid) {
           debugPrint('📹 Android: Loading video from network directly: ${widget.videoUrl}');
-          _controller = VideoPlayerController.networkUrl(
-            Uri.parse(widget.videoUrl),
-            videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
-          );
+          try {
+            final uri = Uri.parse(widget.videoUrl);
+            debugPrint('📹 [DEBUG] Parsed URI: $uri');
+            _controller = VideoPlayerController.networkUrl(
+              uri,
+              videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+            );
+            debugPrint('📹 [DEBUG] Controller created successfully');
+          } catch (e) {
+            debugPrint('❌ [DEBUG] Error creating controller: $e');
+            rethrow;
+          }
         } else {
           final cachedFile = await _videoCacheManager.getCachedFile(
             widget.videoUrl,
@@ -113,22 +124,28 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
         }
       }
 
+      debugPrint('📹 [DEBUG] Initializing controller...');
       await _controller!.initialize();
+      debugPrint('📹 [DEBUG] Controller initialized successfully');
 
       if (!mounted) {
+        debugPrint('📹 [DEBUG] Widget not mounted after initialize, disposing');
         _disposeController();
         return;
       }
 
+      debugPrint('📹 [DEBUG] Starting playback...');
       await _controller!.play();
+      debugPrint('📹 [DEBUG] Playback started');
 
       setState(() {
         _isInitialized = true;
         _isPlaying = true;
         _isLoading = false;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('❌ Error initializing video: $e');
+      debugPrint('❌ Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           _hasError = true;

@@ -1,3 +1,4 @@
+import 'package:tayseer/core/functions/formate_time.dart';
 import 'package:tayseer/core/widgets/chat_room_list_item/chat_room_list_item.dart';
 import 'package:tayseer/core/widgets/chat_room_list_item/helpers/chat_room_dialog_helper.dart';
 import 'package:tayseer/features/user/my_space/data/model/advisor_chat_model.dart';
@@ -505,7 +506,10 @@ class _UserChatBody extends StatelessWidget {
       id: room.id,
       title: room.otherUser.name,
       subtitle: _formatLastMessage(context, room.lastMessage?.content ?? ''),
+      statusText: _chatRoomStatusText(context, room),
       imageUrl: room.otherUser.image,
+      isOnline: room.otherUserOnlineStatus,
+      showOnlineDot: true,
       lastUpdate: room.lastMessage?.sentAt,
       unreadCount: room.unreadCount,
       isImageBlurred: room.otherUser.imageBlur,
@@ -589,6 +593,19 @@ class _UserChatBody extends StatelessWidget {
           ? context.tr('unblock_label')
           : context.tr('block_label'),
     );
+  }
+
+  String? _chatRoomStatusText(BuildContext context, UserChatRoomModel room) {
+    if (room.otherUserOnlineStatus) {
+      return isArabic ? 'متصل الآن' : 'Online now';
+    }
+
+    if (room.otherUser.lastActiveAt != null) {
+      final formatted = formatTime(room.otherUser.lastActiveAt!);
+      return isArabic ? 'آخر ظهور $formatted' : 'Last seen $formatted';
+    }
+
+    return null;
   }
 }
 

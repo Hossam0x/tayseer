@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:tayseer/my_import.dart';
 
 class AppVideo extends StatefulWidget {
@@ -37,30 +38,49 @@ class _AppVideoState extends State<AppVideo> with WidgetsBindingObserver {
   }
 
   void _initializeVideo() {
-    _controller =
-        VideoPlayerController.networkUrl(
-            Uri.parse(widget.url),
-            videoPlayerOptions: VideoPlayerOptions(
-              mixWithOthers: false,
-              allowBackgroundPlayback: false,
-            ),
-          )
-          ..initialize().then((_) {
-            if (mounted) {
-              setState(() => _isInitialized = true);
-              _controller.setLooping(widget.looping);
-              _controller.setVolume(widget.muted ? 0 : 1);
+    debugPrint('📹 [AppVideo] Starting initialization: ${widget.url}');
+    debugPrint('📹 [AppVideo] Platform: Android=${Platform.isAndroid}, iOS=${Platform.isIOS}');
+    
+    try {
+      final uri = Uri.parse(widget.url);
+      debugPrint('📹 [AppVideo] Parsed URI successfully: $uri');
+      
+      _controller = VideoPlayerController.networkUrl(
+        uri,
+        videoPlayerOptions: VideoPlayerOptions(
+          mixWithOthers: false,
+          allowBackgroundPlayback: false,
+        ),
+      );
+      
+      debugPrint('📹 [AppVideo] Controller created, starting initialize...');
+      _controller.initialize().then((_) {
+        debugPrint('📹 [AppVideo] Controller initialized successfully');
+        if (mounted) {
+          setState(() => _isInitialized = true);
+          _controller.setLooping(widget.looping);
+          _controller.setVolume(widget.muted ? 0 : 1);
 
-              if (widget.autoPlay) {
-                _controller.play();
-              }
+          if (widget.autoPlay) {
+            debugPrint('📹 [AppVideo] AutoPlay enabled, starting playback');
+            _controller.play();
+          }
 
-              // نرسل الكنترولر للأب بمجرد ما يجهز
-              if (widget.onControllerReady != null) {
-                widget.onControllerReady!(_controller);
-              }
-            }
-          });
+          // نرسل الكنترولر للأب بمجرد ما يجهز
+          if (widget.onControllerReady != null) {
+            widget.onControllerReady!(_controller);
+          }
+        }
+      }).catchError((error) {
+        debugPrint('❌ [AppVideo] Initialization error: $error');
+        if (mounted) {
+          setState(() => _isInitialized = false);
+        }
+      });
+    } catch (e, stackTrace) {
+      debugPrint('❌ [AppVideo] Error during initialization: $e');
+      debugPrint('❌ [AppVideo] Stack trace: $stackTrace');
+    }
   }
 
   // Pause video when app goes to background to prevent audio leaking
@@ -100,7 +120,14 @@ class _AppVideoState extends State<AppVideo> with WidgetsBindingObserver {
         child: SizedBox(
           width: _controller.value.size.width,
           height: _controller.value.size.height,
-          child: VideoPlayer(_controller),
+          child: _controller.value.isInitialized
+              ? VideoPlayer(_controller)
+              : Container(
+                  color: Colors.black,
+                  child: const Center(
+                    child: Icon(Icons.error_outline, color: Colors.red),
+                  ),
+                ),
         ),
       ),
     );

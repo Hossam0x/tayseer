@@ -10,6 +10,8 @@ class ChatRoomAvatar extends StatelessWidget {
   final bool isImageBlurred;
   final bool isBlocked;
   final String fallbackAsset;
+  final bool showOnlineDot;
+  final bool isOnline;
 
   const ChatRoomAvatar({
     super.key,
@@ -17,6 +19,8 @@ class ChatRoomAvatar extends StatelessWidget {
     this.isImageBlurred = false,
     this.isBlocked = false,
     required this.fallbackAsset,
+    this.showOnlineDot = false,
+    this.isOnline = false,
   });
 
   @override
@@ -33,6 +37,20 @@ class ChatRoomAvatar extends StatelessWidget {
           ),
           child: ClipOval(child: _buildImage()),
         ),
+        if (!isBlocked && showOnlineDot)
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: isOnline ? const Color(0xFF4CD964) : Colors.grey,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+            ),
+          ),
         if (isBlocked)
           Positioned.fill(
             child: Container(

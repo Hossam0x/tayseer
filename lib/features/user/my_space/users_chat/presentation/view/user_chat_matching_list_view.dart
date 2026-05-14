@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:tayseer/core/functions/formate_time.dart';
 import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/widgets/chat_room_list_item/chat_room_list_item.dart';
 import 'package:tayseer/core/widgets/custom_show_dialog.dart';
@@ -262,6 +263,19 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
     );
   }
 
+  String? _roomStatusText(BuildContext context, UserChatRoomModel room) {
+    if (room.otherUserOnlineStatus) {
+      return isArabic ? 'متصل الآن' : 'Online now';
+    }
+
+    if (room.otherUser.lastActiveAt != null) {
+      final formatted = formatTime(room.otherUser.lastActiveAt!);
+      return isArabic ? 'آخر ظهور $formatted' : 'Last seen $formatted';
+    }
+
+    return null;
+  }
+
   void _showUpgradeDialog(BuildContext context) {
     showLimitReachedDialog(
       context,
@@ -379,7 +393,10 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
                             id: room.id,
                             title: room.otherUser.name,
                             subtitle: ChatRoomListItem.formatLastMessage(context, room.lastMessage?.content ?? ''),
+                            statusText: _roomStatusText(context, room),
                             imageUrl: room.otherUser.image,
+                            isOnline: room.otherUserOnlineStatus,
+                            showOnlineDot: true,
                             lastUpdate: room.lastMessage?.sentAt,
                             unreadCount: room.unreadCount,
                             isImageBlurred: room.otherUser.imageBlur,
