@@ -407,55 +407,96 @@ class _RematchSheetState extends State<_RematchSheet> {
       onTap: () => setState(() => _selectedIndex = index),
       child: Directionality(
         textDirection: TextDirection.rtl,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary50 : Colors.white,
-            borderRadius: BorderRadius.circular(14.r),
-            border: Border.all(
-              color: isSelected ? AppColors.primary300 : AppColors.secondary100,
-              width: isSelected ? 1.5 : 1,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary50 : Colors.white,
+                borderRadius: BorderRadius.circular(14.r),
+                border: Border.all(
+                  color: isSelected ? AppColors.primary300 : AppColors.secondary100,
+                  width: isSelected ? 1.5 : 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    daysLabel,
+                    style: Styles.textStyle16SemiBold.copyWith(
+                      color: AppColors.kscandryTextColor,
+                    ),
+                  ),
+                  const Spacer(),
+                  Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Text(
+                      '${pkg.price.toStringAsFixed(0)} ${pkg.currency}',
+                      style: Styles.textStyle14.copyWith(
+                        color: AppColors.secondary400,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Container(
+                    width: 24.w,
+                    height: 24.w,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.primary400
+                            : AppColors.secondary300,
+                        width: 2,
+                      ),
+                      color: isSelected ? AppColors.primary400 : Colors.white,
+                    ),
+                    child: isSelected
+                        ? Icon(Icons.check, size: 14.w, color: Colors.white)
+                        : null,
+                  ),
+                ],
+              ),
             ),
-          ),
-          child: Row(
-            children: [
-              Text(
-                daysLabel,
-                style: Styles.textStyle16SemiBold.copyWith(
-                  color: AppColors.kscandryTextColor,
-                ),
-              ),
-              const Spacer(),
-              Directionality(
-                textDirection: TextDirection.ltr,
-                child: Text(
-                  '${pkg.price.toStringAsFixed(0)} ${pkg.currency}',
-                  style: Styles.textStyle14.copyWith(
-                    color: AppColors.secondary400,
+            if (pkg.savePercentage != null && pkg.savePercentage! > 0)
+              Positioned(
+                top: -6.h,
+                right: -6.w,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color(0xFFEB7A91),
+                        Color.fromRGBO(245, 192, 3, 1),
+                      ],
+                      begin: Alignment.centerRight,
+                      end: Alignment.centerLeft,
+                    ),
+                    borderRadius: BorderRadius.circular(18.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFEB7A91).withOpacity(0.3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    context
+                        .tr('save_percent')
+                        .replaceAll('{percent}', '${pkg.savePercentage}'),
+                    style: TextStyle(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
-              SizedBox(width: 12.w),
-              Container(
-                width: 24.w,
-                height: 24.w,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isSelected
-                        ? AppColors.primary400
-                        : AppColors.secondary300,
-                    width: 2,
-                  ),
-                  color: isSelected ? AppColors.primary400 : Colors.white,
-                ),
-                child: isSelected
-                    ? Icon(Icons.check, size: 14.w, color: Colors.white)
-                    : null,
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     );

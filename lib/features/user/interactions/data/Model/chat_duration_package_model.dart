@@ -4,6 +4,7 @@ class ChatDurationPackageModel {
   final int durationInDays;
   final num price;
   final String currency;
+  final int? savePercentage;
 
   const ChatDurationPackageModel({
     required this.id,
@@ -11,6 +12,7 @@ class ChatDurationPackageModel {
     required this.durationInDays,
     required this.price,
     required this.currency,
+    this.savePercentage,
   });
 
   factory ChatDurationPackageModel.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class ChatDurationPackageModel {
       durationInDays: (json['durationInDays'] as num?)?.toInt() ?? 0,
       price: json['price'] as num? ?? 0,
       currency: json['currency'] as String? ?? 'EGP',
+      savePercentage: (json['savePercentage'] as num?)?.toInt(),
     );
   }
 }
