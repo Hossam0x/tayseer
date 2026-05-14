@@ -93,27 +93,27 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
     return SettingsSectionContainer(
       title: context.tr('personal_info'),
       children: [
-        InkWell(
-          onTap: () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    AgeSelectionView(initialAge: userProfile?.age ?? 18),
-              ),
-            );
-            if (!mounted) return;
-            if (result != null && userProfile != null) {
-              await context.read<UserProfileCubit>().updateAge(
-                int.parse(result),
-              );
-            }
-          },
-          child: SettingsRowItem(
-            label: context.tr('age'),
-            value: userProfile?.age.toString() ?? '',
-          ),
-        ),
+        // InkWell(
+        //   onTap: () async {
+        //     final result = await Navigator.push(
+        //       context,
+        //       MaterialPageRoute(
+        //         builder: (context) =>
+        //             AgeSelectionView(initialAge: userProfile?.age ?? 18),
+        //       ),
+        //     );
+        //     if (!mounted) return;
+        //     if (result != null && userProfile != null) {
+        //       await context.read<UserProfileCubit>().updateAge(
+        //         int.parse(result),
+        //       );
+        //     }
+        //   },
+        //   child: SettingsRowItem(
+        //     label: context.tr('age'),
+        //     value: userProfile?.age.toString() ?? '',
+        //   ),
+        // ),
         InkWell(
           onTap: () async {
             await Navigator.push(
@@ -163,7 +163,6 @@ class _GeneralSettingsViewState extends State<GeneralSettingsView> {
     return SettingsSectionContainer(
       title: context.tr('privacy'),
       children: [
-        
         // ✅ زر تفعيل/إيقاف قسم الزواج — نفس لوجك الزر في البروفايل
         if (!hideMarriageToggle)
           BlocBuilder<UserProfileCubit, UserProfileState>(
