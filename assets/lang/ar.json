@@ -2376,5 +2376,17 @@
   "subscription_cancelled_still_active": "ملغي التجديد • نشط حتى انتهاء المدة",
   "subscription_active": "نشط",
   "week": "أسبوع",
-  "downgrade": "تخفيض"
+  "downgrade": "تخفيض",
+
+  "my_sessions": "جلساتي",
+  "filter_pending": "قيد الانتظار",
+  "filter_approved": "مقبولة",
+  "filter_completed": "مكتملة",
+  "filter_cancelled": "ملغاة",
+  "filter_payment_pending": "بانتظار الدفع",
+  "filter_paid": "مدفوعة",
+  "no_sessions": "لا توجد جلسات",
+  "no_sessions_subtitle": "لم تقم بحجز أي جلسات بعد. ابحث عن مستشار وابدأ رحلتك.",
+  "payment_pending": "بانتظار الدفع",
+  "cancelled": "ملغاة"
 }

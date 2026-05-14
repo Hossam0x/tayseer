@@ -102,13 +102,44 @@ class _ConsultationViewState extends State<ConsultationView> {
               bottom: false,
               child: SizedBox(
                 height: kToolbarHeight,
-                child: Center(
-                  child: Text(
-                    context.tr("consultation"),
-                    style: Styles.textStyle24Meduim.copyWith(
-                      color: AppColors.secondary700,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Center(
+                      child: Text(
+                        context.tr("consultation"),
+                        style: Styles.textStyle24Meduim.copyWith(
+                          color: AppColors.secondary700,
+                        ),
+                      ),
                     ),
-                  ),
+                    Positioned(
+                      left: isArabic ? 20.w : null,
+                      right: isArabic ? null : 20.w,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: GestureDetector(
+                          onTap: () => Navigator.pushNamed(
+                            context,
+                            AppRouter.kUserSessionsView,
+                          ),
+                          child: Container(
+                            padding: EdgeInsets.all(8.w),
+                            decoration: BoxDecoration(
+                              color: AppColors.kprimaryColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                            child: AppImage(
+                              AssetsData.consultatIcon,
+                              width: 24.w,
+                              height: 24.w,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

@@ -120,6 +120,7 @@ import 'package:tayseer/features/user/user_profile/views/cubit/phone/phone_edit_
 import 'package:tayseer/features/advisor/membership/presentation/cubit/membership_cubit.dart';
 import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/language_repository.dart';
+import 'package:tayseer/features/user/sessions/data/repo/user_sessions_repo.dart';
 
 import 'package:tayseer/core/services/groq_service.dart';
 import 'package:tayseer/features/advisor/notification/presentation/manager/notification_cubit.dart';
@@ -629,6 +630,13 @@ Future<void> setupGetIt() async {
   );
   getIt.registerFactory<ForceUpdateCubit>(
     () => ForceUpdateCubit(getIt<ForceUpdateRepo>()),
+  );
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // User Sessions
+  // ══════════════════════════════════════════════════════════════════════════
+  getIt.registerLazySingleton<UserSessionsRepo>(
+    () => UserSessionsRepo(getIt<ApiService>()),
   );
 }
 

@@ -196,6 +196,36 @@ class _MySpaceViewBodyState extends State<MySpaceViewBody>
                               ],
                             ),
                           ),
+                        // ✅ أيقونة "جلساتي" تظهر في تاب الاستشارات
+                        if (isMarriageHidden || selectedIndex == 1)
+                          Positioned(
+                            right: isArabic ? null : 20.w,
+                            left: isArabic ? 20.w : null,
+                            top: 0,
+                            bottom: 0,
+                            child: Center(
+                              child: GestureDetector(
+                                onTap: () => Navigator.pushNamed(
+                                  context,
+                                  AppRouter.kUserSessionsView,
+                                ),
+                                child: Container(
+                                  padding: EdgeInsets.all(8.w),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.kprimaryColor.withOpacity(
+                                      0.1,
+                                    ),
+                                    borderRadius: BorderRadius.circular(12.r),
+                                  ),
+                                  child: AppImage(
+                                    AssetsData.consultatIcon,
+                                    width: 28.w,
+                                    height: 28.w,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),

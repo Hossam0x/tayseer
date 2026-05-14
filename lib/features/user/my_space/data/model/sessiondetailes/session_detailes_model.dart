@@ -29,6 +29,7 @@ class SessionDetailsDataResponse {
   final String type;
   final AdvisorModel advisor;
   final String status;
+  final String paymentStatus; // ✅ جديد
   final DateTime date;
   final TimeRangeModel timeRange;
   final int duration;
@@ -42,6 +43,7 @@ class SessionDetailsDataResponse {
     required this.type,
     required this.advisor,
     required this.status,
+    this.paymentStatus = '',
     required this.date,
     required this.timeRange,
     required this.duration,
@@ -184,6 +186,7 @@ class SessionDetailsDataResponse {
       type: json['type'] ?? 'single',
       advisor: AdvisorModel.fromJson(json['advisor'] ?? {}),
       status: json['status'] ?? '',
+      paymentStatus: json['paymentStatus'] ?? '',
       date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
       timeRange: TimeRangeModel.fromJson(json['timeRange'] ?? {}),
       duration: json['duration'] ?? 0,
@@ -201,6 +204,7 @@ class SessionDetailsDataResponse {
     String? type,
     AdvisorModel? advisor,
     String? status,
+    String? paymentStatus,
     DateTime? date,
     TimeRangeModel? timeRange,
     int? duration,
@@ -214,6 +218,7 @@ class SessionDetailsDataResponse {
       type: type ?? this.type,
       advisor: advisor ?? this.advisor,
       status: status ?? this.status,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
       date: date ?? this.date,
       timeRange: timeRange ?? this.timeRange,
       duration: duration ?? this.duration,
