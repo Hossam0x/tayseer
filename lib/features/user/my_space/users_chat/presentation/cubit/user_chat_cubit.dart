@@ -152,7 +152,15 @@ class UserChatCubit extends Cubit<UserChatState> {
       case 'media':
       case 'images/videos':
         // تحقق إن الـ content مش URL — لو URL يبقى image/video
-        if (_looksLikeUrl(rawContent)) return 'image';
+        if (_looksLikeUrl(rawContent)) {
+          if (rawContent.toLowerCase().contains('.mp4') ||
+              rawContent.toLowerCase().contains('.mov') ||
+              rawContent.toLowerCase().contains('.avi') ||
+              rawContent.toLowerCase().contains('.webm')) {
+            return 'video';
+          }
+          return 'image';
+        }
         return rawContent.isEmpty ? 'image' : rawContent;
       case 'video':
         return 'video';

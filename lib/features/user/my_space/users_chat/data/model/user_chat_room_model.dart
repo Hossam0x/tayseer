@@ -100,6 +100,13 @@ class UserLastMessageModel {
       case 'photo':
       case 'media':
       case 'images/videos':
+        // ✅ تحقق من الـ URL نفسه عشان نعرف image أو video
+        if (rawContent.toLowerCase().contains('.mp4') ||
+            rawContent.toLowerCase().contains('.mov') ||
+            rawContent.toLowerCase().contains('.avi') ||
+            rawContent.toLowerCase().contains('.webm')) {
+          return 'video';
+        }
         return 'image';
       case 'video':
         return 'video';

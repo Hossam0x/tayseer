@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/constant/constans.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart';
+import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/utils/router/app_router.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/story_details_view.dart';
@@ -57,6 +58,7 @@ class NotificationHelper {
       case 'new_chat':
       case 'new_message':
         if (isAdvisor) {
+          getIt<ChatSocketService>().clearChatNotificationCount();
           navigatorKey.currentState!.pushNamed(
             AppRouter.kConversitionView,
             arguments: {
@@ -69,6 +71,7 @@ class NotificationHelper {
             },
           );
         } else {
+          getIt<ChatSocketService>().clearChatNotificationCount();
           navigatorKey.currentState!.pushNamed(
             AppRouter.kUserChatView,
             arguments: {

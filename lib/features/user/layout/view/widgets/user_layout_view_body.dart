@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/services/secure_window_service.dart';
 import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/offline_banner.dart';
@@ -183,6 +184,9 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
           } else {
             SecureWindowService.disable();
           }
+
+          // ✅ حدّث عداد الـ notifications لما يتغير الـ tab
+          getIt<ChatSocketService>().requestChatNotificationNumbers();
         },
         // ✅ Only rebuild for visual changes — not scroll/trigger state
         buildWhen: (prev, curr) =>

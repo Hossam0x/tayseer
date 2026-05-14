@@ -33,4 +33,30 @@ class SecureWindowService {
       }
     }
   }
+
+  /// ✅ شيل الحماية مؤقتاً لشاشة الشات (بغض النظر عن الـ count)
+  /// بيرجع true لو كانت الحماية مفعّلة قبل الشيل (عشان نعرف نرجعها)
+  static Future<bool> temporarilyDisableForChat() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return false;
+    if (_secureCount > 0) {
+      try {
+        await _channel.invokeMethod('disableSecure');
+      } catch (_) {}
+      return true; // كانت مفعّلة
+    }
+    return false; // مكانتش مفعّلة
+  }
+
+  /// ✅ أعد تفعيل الحماية بعد الشات (بس لو كانت مفعّلة قبله)
+  static Future<void> restoreAfterChat(bool wasEnabled) async {
+    if (defaultTargetPlatform != TargetPlatform.android) return;
+    if (wasEnabled && _secureCount > 0) {
+      try {
+        await _channel.invokeMethod('enableSecure');
+      } catch (_) {}
+    }
+  }
+
+  /// هل الحماية مفعّلة حالياً؟
+  static bool get isEnabled => _secureCount > 0;
 }

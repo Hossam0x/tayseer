@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
+import 'package:tayseer/core/services/secure_window_service.dart';
 import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/widgets/chat_room_list_item/helpers/chat_room_dialog_helper.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
@@ -119,18 +120,28 @@ class _UserChatContentState extends State<_UserChatContent> {
   StreamSubscription<String>? _failEventSubscription;
   bool _handlersInitialized = false;
   bool _isPopping = false; // ✅ guard ضد double pop
+  bool _wasSecureEnabled = false; // ✅ هل FLAG_SECURE كان مفعّل قبل فتح الشات
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     final chatSocketService = getIt<ChatSocketService>();
+    chatSocketService.clearChatNotificationCount();
     _failEventSubscription = chatSocketService.onFailEvent.listen((message) {
       // suppress join-related fail — server returns this when chatRoomId is sent
       // without targetId; the chat still works correctly after chatRoomJoined
       if (message.contains('طلب غير صالح')) return;
       if (mounted) AppToast.error(context, message);
     });
+    // ✅ شيل FLAG_SECURE مؤقتاً عشان ExoPlayer يقدر يعرض الفيديو
+    SecureWindowService.temporarilyDisableForChat().then((wasEnabled) {
+      _wasSecureEnabled = wasEnabled;
+    });
+    // ✅ أبلّغ السيرفر إن المستخدم قرأ رسائل الـ room ده عشان يصفّر الـ notification count
+    if (widget.chatRoomId != null) {
+      getIt<ChatSocketService>().markMessagesRead(widget.chatRoomId!);
+    }
   }
 
   @override
@@ -160,6 +171,10 @@ class _UserChatContentState extends State<_UserChatContent> {
     _failEventSubscription?.cancel();
     _scrollHandler.dispose();
     _scrollController.dispose();
+    // ✅ أعد تفعيل FLAG_SECURE بس لو كان مفعّل قبل فتح الشات
+    SecureWindowService.restoreAfterChat(_wasSecureEnabled);
+    // ✅ حدّث عداد الـ notifications بعد الخروج من الشات
+    getIt<ChatSocketService>().requestChatNotificationNumbers();
     super.dispose();
   }
 
@@ -177,11 +192,18 @@ class _UserChatContentState extends State<_UserChatContent> {
         return 'image'; // → 📷
       case 'video':
         return 'video'; // → 🎥
+      case 'images/videos':
+        // ✅ تحقق من الـ URL نفسه عشان نعرف image أو video
+        final url = msg.contentList.isNotEmpty ? msg.contentList.first.toLowerCase() : '';
+        if (url.contains('.mp4') || url.contains('.mov') ||
+            url.contains('.avi') || url.contains('.webm')) {
+          return 'video';
+        }
+        return 'image';
       case 'file':
       case 'document':
         return 'file'; // → 📄
       default:
-        // text أو system — ارجع الـ content الفعلي
         return msg.contentList.isNotEmpty ? msg.contentList.first : '';
     }
   }

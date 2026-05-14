@@ -232,6 +232,15 @@ class ChatSocketService {
     log('📤 [ChatSocketService] getChatNotificationNumbers requested');
   }
 
+  /// ✅ أبلّغ السيرفر إن المستخدم قرأ كل رسائل الـ chat room
+  /// بيصفّر الـ notification count للـ room ده
+  void markMessagesRead(String chatRoomId) {
+    _socket.send('mark_messages_read', {'chatRoomId': chatRoomId}, (ack) {
+      log('✅ [ChatSocketService] mark_messages_read ACK for $chatRoomId: $ack');
+    });
+    log('📤 [ChatSocketService] mark_messages_read: $chatRoomId');
+  }
+
   void clearChatNotificationCount() {
     if (chatNotificationTotal.value != 0) {
       chatNotificationTotal.value = 0;

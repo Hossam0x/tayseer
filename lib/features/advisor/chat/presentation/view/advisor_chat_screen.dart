@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/constant/constans.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
+import 'package:tayseer/core/services/secure_window_service.dart';
 import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/widgets/app_toast.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
@@ -136,12 +137,17 @@ class _ChatContentState extends State<_ChatContent> {
   StreamSubscription<String>? _failEventSubscription;
   bool _handlersInitialized = false;
   bool _isPopping = false; // ✅ guard ضد double pop
+  bool _wasSecureEnabled = false; // ✅ هل FLAG_SECURE كان مفعّل قبل فتح الشات
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _setupFailEventListener();
+    // ✅ شيل FLAG_SECURE مؤقتاً عشان ExoPlayer يقدر يعرض الفيديو
+    SecureWindowService.temporarilyDisableForChat().then((wasEnabled) {
+      _wasSecureEnabled = wasEnabled;
+    });
   }
 
   void _setupFailEventListener() {
@@ -185,6 +191,10 @@ class _ChatContentState extends State<_ChatContent> {
     _failEventSubscription?.cancel();
     _scrollHandler.dispose();
     _scrollController.dispose();
+    // ✅ أعد تفعيل FLAG_SECURE بس لو كان مفعّل قبل فتح الشات
+    SecureWindowService.restoreAfterChat(_wasSecureEnabled);
+    // ✅ حدّث عداد الـ notifications بعد الخروج من الشات
+    getIt<ChatSocketService>().requestChatNotificationNumbers();
     super.dispose();
   }
 
@@ -218,10 +228,17 @@ class _ChatContentState extends State<_ChatContent> {
       case 'image':
       case 'photo':
       case 'media':
-      case 'images/videos':
         return 'image';
       case 'video':
         return 'video';
+      case 'images/videos':
+        // ✅ تحقق من الـ URL نفسه عشان نعرف image أو video
+        final url = msg.contentList.isNotEmpty ? msg.contentList.first.toLowerCase() : '';
+        if (url.contains('.mp4') || url.contains('.mov') ||
+            url.contains('.avi') || url.contains('.webm')) {
+          return 'video';
+        }
+        return 'image';
       case 'file':
       case 'document':
         return 'file';

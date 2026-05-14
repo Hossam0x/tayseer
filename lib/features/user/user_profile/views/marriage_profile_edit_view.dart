@@ -536,9 +536,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView>
                 localFile: pendingSingle,
                 isMain: true,
                 onTap: null,
-                onRemove: hasSingleToShow
-                    ? () => _removeSingleImage(context, cubit)
-                    : null,
+                onRemove: null,
               ),
             );
           }

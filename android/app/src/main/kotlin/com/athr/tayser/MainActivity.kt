@@ -48,6 +48,8 @@ class MainActivity : FlutterActivity(), MethodCallHandler, PaymobSdkListener {
             .setMethodCallHandler(this)
 
         // ✅ FLAG_SECURE channel — لحماية شاشة الزواج من الـ screenshot
+        // ⚠️ ملاحظة: FLAG_SECURE يمنع ExoPlayer من عرض الفيديو على بعض الأجهزة
+        // لذلك يجب تفعيله فقط في الشاشات التي تحتاجه وليس بشكل عام
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SECURE_CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {

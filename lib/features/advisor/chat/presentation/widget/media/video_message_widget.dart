@@ -58,6 +58,7 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
 
   @override
   void dispose() {
+    _isLoading = false; // ✅ منع أي async operation من الاكتمال بعد dispose
     _disposeController();
     super.dispose();
   }
@@ -74,24 +75,41 @@ class _VideoMessageWidgetState extends State<VideoMessageWidget> {
     try {
       if (widget.isLocal) {
         debugPrint('📹 Using local video: ${widget.videoUrl}');
-        _controller = VideoPlayerController.file(File(widget.videoUrl));
-      } else {
-        final cachedFile = await _videoCacheManager.getCachedFile(
-          widget.videoUrl,
+        _controller = VideoPlayerController.file(
+          File(widget.videoUrl),
+          videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
         );
-
-        if (!mounted) return;
-
-        if (cachedFile != null) {
-          debugPrint('📹 Using cached video: ${widget.videoUrl}');
-          _controller = VideoPlayerController.file(cachedFile);
-        } else {
-          debugPrint('📹 Loading video from network: ${widget.videoUrl}');
+      } else {
+        // ✅ على Android نستخدم network URL مباشرة بدون cache
+        // لأن Huawei Kirin codec (OMX.hisi) بيفشل مع cached files
+        // بسبب مشكلة buffer allocation في SynchronousMediaCodecAdapter
+        if (Platform.isAndroid) {
+          debugPrint('📹 Android: Loading video from network directly: ${widget.videoUrl}');
           _controller = VideoPlayerController.networkUrl(
             Uri.parse(widget.videoUrl),
             videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
           );
-          _videoCacheManager.preloadVideoInBackground(widget.videoUrl);
+        } else {
+          final cachedFile = await _videoCacheManager.getCachedFile(
+            widget.videoUrl,
+          );
+
+          if (!mounted) return;
+
+          if (cachedFile != null) {
+            debugPrint('📹 iOS: Using cached video: ${widget.videoUrl}');
+            _controller = VideoPlayerController.file(
+              cachedFile,
+              videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+            );
+          } else {
+            debugPrint('📹 iOS: Loading video from network: ${widget.videoUrl}');
+            _controller = VideoPlayerController.networkUrl(
+              Uri.parse(widget.videoUrl),
+              videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+            );
+            _videoCacheManager.preloadVideoInBackground(widget.videoUrl);
+          }
         }
       }
 
@@ -351,23 +369,38 @@ class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
     try {
       if (widget.isLocal) {
         debugPrint('📹 FullScreen: Using local video');
-        _controller = VideoPlayerController.file(File(widget.videoUrl));
-      } else {
-        final cachedFile = await _videoCacheManager.getCachedFile(
-          widget.videoUrl,
+        _controller = VideoPlayerController.file(
+          File(widget.videoUrl),
+          videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
         );
-
-        if (!mounted) return;
-
-        if (cachedFile != null) {
-          debugPrint('📹 FullScreen: Using cached video');
-          _controller = VideoPlayerController.file(cachedFile);
-        } else {
-          debugPrint('📹 FullScreen: Loading video from network');
+      } else {
+        // ✅ على Android نستخدم network URL مباشرة — Huawei Kirin codec issue
+        if (Platform.isAndroid) {
+          debugPrint('📹 FullScreen Android: Loading from network directly');
           _controller = VideoPlayerController.networkUrl(
             Uri.parse(widget.videoUrl),
             videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
           );
+        } else {
+          final cachedFile = await _videoCacheManager.getCachedFile(
+            widget.videoUrl,
+          );
+
+          if (!mounted) return;
+
+          if (cachedFile != null) {
+            debugPrint('📹 FullScreen iOS: Using cached video');
+            _controller = VideoPlayerController.file(
+              cachedFile,
+              videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+            );
+          } else {
+            debugPrint('📹 FullScreen iOS: Loading video from network');
+            _controller = VideoPlayerController.networkUrl(
+              Uri.parse(widget.videoUrl),
+              videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+            );
+          }
         }
       }
 
