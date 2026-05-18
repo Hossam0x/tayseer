@@ -448,10 +448,10 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
         'desc': '$chatMins ${context.tr('minutes')}',
       },
       {'title': '$greetings ${context.tr('daily_greetings')}', 'desc': ''},
-      {
-        'title': '$reinforcements ${context.tr('free_weekly_reinforcements')}',
-        'desc': '',
-      },
+      // {
+      //   'title': '$reinforcements ${context.tr('free_weekly_reinforcements')}',
+      //   'desc': '',
+      // },
       {
         'title': '$renables ${context.tr('free_matching_renables')}',
         'desc': '',
@@ -490,10 +490,10 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
             'icon': AssetsData.youNotSeeWhoLiked,
             'title': 'you_cannot_see_who_liked',
           },
-          {
-            'icon': AssetsData.thereAreNoFreeBoosts,
-            'title': 'there_are_no_free_boosts',
-          },
+          // {
+          //   'icon': AssetsData.thereAreNoFreeBoosts,
+          //   'title': 'there_are_no_free_boosts',
+          // },
           {
             'icon': AssetsData.limitedNumberOfLikes,
             'title': 'limited_number_of_likes',
@@ -505,10 +505,10 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
             'icon': AssetsData.youCanSeeWhoLiked,
             'title': 'you_can_see_who_liked',
           },
-          {
-            'icon': AssetsData.twoFreeCondolencesEveryWeek,
-            'title': 'two_free_boosts_every_week',
-          },
+          // {
+          //   'icon': AssetsData.twoFreeCondolencesEveryWeek,
+          //   'title': 'two_free_boosts_every_week',
+          // },
           {
             'icon': AssetsData.unlimitedNumberOfLikes,
             'title': 'unlimited_number_of_likes',
