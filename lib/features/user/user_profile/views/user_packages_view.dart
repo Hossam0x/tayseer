@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -12,6 +13,7 @@ import 'package:tayseer/core/utils/router/app_router.dart';
 import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/core/utils/styles.dart';
 import 'package:tayseer/core/utils/colors.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:tayseer/features/shared/auth/view/widget/agreement_text.dart';
 import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
 import 'package:tayseer/features/shared/packages/domain/use_cases/get_package_display_data.dart';
@@ -1134,11 +1136,47 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
       } else {
         Navigator.pop(context);
       }
+      return;
+    }
+
+    // لو عنده اشتراك مدفوع → افتح Apple subscription management مباشرة
+    final currentPkg = context
+        .read<UserPackagesCubit>()
+        .currentSubscribedPackage;
+    if (currentPkg != null) {
+      _openSubscriptionManagement();
+      return;
+    }
+
+    Navigator.pushNamed(
+      context,
+      AppRouter.kUserSubscriptionView,
+      arguments: _mapToOldEnum(packageType),
+    );
+  }
+
+  Future<void> _openSubscriptionManagement() async {
+    if (Platform.isIOS) {
+      try {
+        const channel = MethodChannel('com.athr.tayser/iap_manage');
+        await channel.invokeMethod('showManageSubscriptions');
+        return;
+      } catch (_) {}
+      final itmUri = Uri.parse(
+        'itms-apps://apps.apple.com/account/subscriptions',
+      );
+      if (await canLaunchUrl(itmUri)) {
+        await launchUrl(itmUri, mode: LaunchMode.externalApplication);
+        return;
+      }
+      await launchUrl(
+        Uri.parse('https://apps.apple.com/account/subscriptions'),
+        mode: LaunchMode.externalApplication,
+      );
     } else {
-      Navigator.pushNamed(
-        context,
-        AppRouter.kUserSubscriptionView,
-        arguments: _mapToOldEnum(packageType),
+      await launchUrl(
+        Uri.parse('https://play.google.com/store/account/subscriptions'),
+        mode: LaunchMode.externalApplication,
       );
     }
   }
