@@ -29,6 +29,7 @@ class WalletCubit extends Cubit<WalletState> {
 
   void _listenToPointsUpdate() {
     _socketHelper.listenWithId(_walletEvent, _listenerId, (data) {
+      if (isClosed) return;
       try {
         final event = AdvisorWalletUpdateEvent.fromJson(
           Map<String, dynamic>.from(data as Map),
