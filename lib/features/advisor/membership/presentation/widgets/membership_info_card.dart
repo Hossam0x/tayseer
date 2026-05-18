@@ -24,11 +24,11 @@ class MembershipInfoCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _InfoRow(
-            label: context.tr('subscribed_since'),
-            value: _formatDate(sub.subscriptionActivatedAt),
-            isFirst: true,
-          ),
+          // _InfoRow(
+          //   label: context.tr('subscribed_since'),
+          //   value: _formatDate(sub.subscriptionActivatedAt),
+          //   isFirst: true,
+          // ),
           _Divider(),
           _InfoRow(
             label: context.tr('subscription_status_label'),
