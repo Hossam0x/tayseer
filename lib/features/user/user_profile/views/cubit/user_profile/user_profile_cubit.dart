@@ -313,7 +313,14 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       final profile = await _fetchUserProfile();
       final isNotificationEnabled = await _getNotificationStatus();
       final soundStatus = await _getSoundStatus();
-      final isMarriageDeactivated = await _getMarriageSectionDeactivated();
+
+      // ✅ دايماً اقرأ الحالة من الـ API (availableForMarry) — مصدر الحقيقة
+      // false = الزواج مفعّل، true = الزواج معطّل
+      final isMarriageDeactivated = !(profile?.availableForMarry ?? true);
+
+      // ✅ حفظ القيمة في SharedPreferences عشان الـ LayoutCubit يقرأها
+      await _saveMarriageSectionDeactivated(isMarriageDeactivated);
+      UserProfileCubit.marriageStatusStream.add(isMarriageDeactivated);
 
       // ⭐ اقرأ من SharedPreferences مش من dataCompleted
       final isMarriageComplete = await _getMarriageComplete();
@@ -899,6 +906,11 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
       await CachNetwork.clearCache();
       await getIt<CacheCleanupService>().clearAllUserCache();
+
+      // ✅ امسح الـ marriage section deactivated flag عشان اليوزر الجديد يبدأ بحالة نظيفة
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(kMarriageSectionDeactivatedKey);
+      await prefs.remove(kIsFemaleMarriedKey);
       if (getIt.isRegistered<ChatSocketService>()) {
         getIt<ChatSocketService>().removeListeners();
       }

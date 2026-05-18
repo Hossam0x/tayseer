@@ -24,6 +24,9 @@ import 'package:tayseer/firebase_options.dart';
 
 import '../../../../my_import.dart';
 import '../model/certificate_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tayseer/core/constant/constans_keys.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_cubit.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   AuthCubit(this._repo) : super(AuthState());
@@ -863,6 +866,15 @@ class AuthCubit extends Cubit<AuthState> {
         (verifyResponse) async {
           // ✅ احصل على الـ token من الـ response
           final newToken = verifyResponse.data?.token;
+
+          // ✅ احفظ avaliableForMarry في SharedPreferences فوراً بعد الـ login
+          final avaliableForMarry = verifyResponse.data?.avaliableForMarry;
+          if (avaliableForMarry != null) {
+            final prefs = await SharedPreferences.getInstance();
+            final isDeactivated = !avaliableForMarry;
+            await prefs.setBool(kMarriageSectionDeactivatedKey, isDeactivated);
+            UserProfileCubit.marriageStatusStream.add(isDeactivated);
+          }
 
           emit(
             state.copyWith(

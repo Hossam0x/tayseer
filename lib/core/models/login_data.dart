@@ -29,6 +29,7 @@ class LoginData {
   final String? name;
   final UserModel? user;
   final String? approvalKey;
+  final bool? avaliableForMarry; // ✅ حالة الزواج من الـ login response
 
   LoginData({
     this.token,
@@ -39,6 +40,7 @@ class LoginData {
     this.name,
     this.user,
     this.approvalKey,
+    this.avaliableForMarry,
   });
 
   factory LoginData.fromJson(Map<String, dynamic> json) {
@@ -51,6 +53,7 @@ class LoginData {
       name: json['name'],
       user: json['user'] != null ? UserModel.fromJson(json['user']) : null,
       approvalKey: json['approvalKey'],
+      avaliableForMarry: json['avaliableForMarry'] as bool?,
     );
   }
 
@@ -63,6 +66,7 @@ class LoginData {
       'userType': userType,
       'name': name,
       'user': user?.toJson(),
+      'avaliableForMarry': avaliableForMarry,
     };
   }
 }
