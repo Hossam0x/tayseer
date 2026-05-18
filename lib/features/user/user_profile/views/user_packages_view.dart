@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -12,6 +13,7 @@ import 'package:tayseer/core/utils/router/app_router.dart';
 import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/core/utils/styles.dart';
 import 'package:tayseer/core/utils/colors.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:tayseer/features/shared/auth/view/widget/agreement_text.dart';
 import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
 import 'package:tayseer/features/shared/packages/domain/use_cases/get_package_display_data.dart';
@@ -69,6 +71,8 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
   final _getPackageData = GetPackageDisplayData();
 
   bool _initialPageSet = false;
+  int?
+  _expandedSubIndex; // accordion: index of the currently expanded duration card
   // ✅ تم إزالة _subscriptionSubscription — الـ UserPackagesCubit بيعمل refresh تلقائياً
   // عن طريق SubscriptionEventBus listener الداخلي، مش محتاجين listener تاني هنا
 
@@ -295,7 +299,7 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
                 child: Column(
                   mainAxisSize: MainAxisSize.max,
                   children: [
-                    Expanded(flex: 6, child: _buildPageView()),
+                    Expanded(flex: 30, child: _buildPageView()),
                     const Spacer(),
                     _buildTabSelector(),
                     Gap(20.h),
@@ -349,41 +353,274 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
       return _buildBenefitsSection(context, selectedPackage);
     }
 
-    // ✅ لو Pro، اعرض محتوى صفحة "كل المزايا" بدون جملة "استمتع بمزايا أكثر"
+    // ✅ لو Pro، اعرض الـ 3 durations كـ accordion
     final subs = packagesState.subscriptions
         .where((s) => s.subscriptionType == 'gold')
         .toList();
-    final sub = subs.where((s) => s.isMonthly).firstOrNull ?? subs.firstOrNull;
+
+    final weekly = subs.where((s) => s.isWeekly).firstOrNull;
+    final monthly = subs.where((s) => s.isMonthly).firstOrNull;
+    final threeMonths = subs.where((s) => s.isThreeMonths).firstOrNull;
+
+    final orderedSubs = [
+      if (weekly != null) weekly,
+      if (monthly != null) monthly,
+      if (threeMonths != null) threeMonths,
+    ];
+
+    if (orderedSubs.isEmpty) {
+      final fallback = subs.firstOrNull;
+      return SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+        child: _buildDurationCard(
+          context,
+          fallback,
+          index: 0,
+          isExpanded: true,
+          isCurrentSub: fallback?.isCurrentSub ?? false,
+        ),
+      );
+    }
+
+    // افتح الـ current sub تلقائياً لو أول مرة بتفتح الصفحة
+    if (_expandedSubIndex == null) {
+      final currentIndex = orderedSubs.indexWhere((s) => s.isCurrentSub);
+      if (currentIndex >= 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _expandedSubIndex = currentIndex);
+        });
+      }
+      // لو مفيش current sub، كل الـ cards مقفولة
+    }
 
     return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
-      child: _buildFeaturesList(context, sub),
-    );
-  }
-
-  Widget _buildFeaturesList(BuildContext context, NewUserSubModel? sub) {
-    final features = _buildFeatures(context, sub);
-    return Column(
-      children: features
-          .map(
-            (f) => Padding(
-              padding: EdgeInsets.only(bottom: 16.h),
-              child: _buildFeatureItem(context, f['title']!, f['desc']!),
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+      child: Column(
+        children: List.generate(orderedSubs.length, (i) {
+          final sub = orderedSubs[i];
+          return Padding(
+            padding: EdgeInsets.only(bottom: 12.h),
+            child: _buildDurationCard(
+              context,
+              sub,
+              index: i,
+              isExpanded: _expandedSubIndex == i,
+              isCurrentSub: sub.isCurrentSub,
             ),
-          )
-          .toList(),
+          );
+        }),
+      ),
     );
   }
 
-  Widget _buildFeatureItem(
+  Widget _buildDurationCard(
     BuildContext context,
-    String title,
-    String description,
-  ) {
-    const checkColors = [Color(0xFFBD8F14), Color(0xFFF5C003)];
+    NewUserSubModel? sub, {
+    required int index,
+    required bool isExpanded,
+    required bool isCurrentSub,
+  }) {
+    const goldGradient = [Color(0xFFBD8F14), Color(0xFFF5C003)];
+    const goldLight = Color(0xFFFFF8E5);
+    const goldBorder = Color(0xFFE8C547);
 
+    final durationLabel = _getDurationLabel(
+      context,
+      sub?.subscriptionDurationType,
+    );
+    final price = sub?.price;
+    final pricePerMonth = sub?.pricePerMonth;
+    final currency = sub?.currency ?? '';
+    final savePercentage = sub?.savePercentage;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOutCubic,
+      decoration: BoxDecoration(
+        color: isCurrentSub ? const Color(0xFFFFF3CC) : Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(
+          color: isExpanded
+              ? goldBorder
+              : isCurrentSub
+              ? goldBorder
+              : const Color(0xFFEEEEEE),
+          width: isExpanded || isCurrentSub ? 2 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isExpanded || isCurrentSub
+                ? const Color(0xFFBD8F14).withOpacity(0.15)
+                : Colors.black.withOpacity(0.04),
+            blurRadius: isExpanded ? 16 : 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20.r),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Header (tap to toggle) ──
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _expandedSubIndex = isExpanded ? null : index;
+                });
+              },
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 14.h),
+                decoration: BoxDecoration(
+                  gradient: isCurrentSub || isExpanded
+                      ? const LinearGradient(
+                          colors: goldGradient,
+                          begin: Alignment.centerRight,
+                          end: Alignment.centerLeft,
+                        )
+                      : null,
+                  color: isCurrentSub || isExpanded ? null : goldLight,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            durationLabel,
+                            style: Styles.textStyle16SemiBold.copyWith(
+                              color: isCurrentSub || isExpanded
+                                  ? Colors.white
+                                  : const Color(0xFF8B6914),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (pricePerMonth != null) ...[
+                            Gap(2.h),
+                            Text(
+                              '${pricePerMonth.toStringAsFixed(0)} $currency / ${context.tr('month')}',
+                              style: Styles.textStyle12.copyWith(
+                                color: isCurrentSub || isExpanded
+                                    ? Colors.white.withOpacity(0.85)
+                                    : const Color(0xFFAA8820),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Gap(8.w),
+                    // Price + badges
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        if (price != null)
+                          Text(
+                            '${price.toStringAsFixed(0)} $currency',
+                            style: Styles.textStyle18Bold.copyWith(
+                              color: isCurrentSub || isExpanded
+                                  ? Colors.white
+                                  : const Color(0xFF8B6914),
+                            ),
+                          ),
+                        if (savePercentage != null) ...[
+                          Gap(4.h),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8.w,
+                              vertical: 3.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isCurrentSub || isExpanded
+                                  ? Colors.white.withOpacity(0.25)
+                                  : const Color(0xFFBD8F14),
+                              borderRadius: BorderRadius.circular(20.r),
+                            ),
+                            child: Text(
+                              '${context.tr('save')} $savePercentage%',
+                              style: Styles.textStyle10.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (isCurrentSub) ...[
+                          Gap(4.h),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8.w,
+                              vertical: 3.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.25),
+                              borderRadius: BorderRadius.circular(20.r),
+                            ),
+                            child: Text(
+                              context.tr('current_subscription'),
+                              style: Styles.textStyle10.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    Gap(8.w),
+                    // Chevron
+                    AnimatedRotation(
+                      turns: isExpanded ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOutCubic,
+                      child: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: isCurrentSub || isExpanded
+                            ? Colors.white
+                            : const Color(0xFF8B6914),
+                        size: 24.r,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // ── Expandable body ──
+            AnimatedCrossFade(
+              duration: const Duration(milliseconds: 300),
+              sizeCurve: Curves.easeInOutCubic,
+              firstCurve: Curves.easeOut,
+              secondCurve: Curves.easeIn,
+              crossFadeState: isExpanded
+                  ? CrossFadeState.showFirst
+                  : CrossFadeState.showSecond,
+              firstChild: Padding(
+                padding: EdgeInsets.fromLTRB(18.w, 14.h, 18.w, 16.h),
+                child: _buildFeaturesGrid(context, sub),
+              ),
+              secondChild: const SizedBox(width: double.infinity),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeaturesGrid(BuildContext context, NewUserSubModel? sub) {
+    final features = _buildFeatureItems(context, sub);
+    return Wrap(
+      spacing: 16.w,
+      runSpacing: 10.h,
+      children: features.map((f) => _buildFeatureChip(context, f)).toList(),
+    );
+  }
+
+  Widget _buildFeatureChip(BuildContext context, Map<String, String> feature) {
+    const checkColors = [Color(0xFFBD8F14), Color(0xFFF5C003)];
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         ShaderMask(
           shaderCallback: (bounds) => const LinearGradient(
@@ -393,33 +630,27 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
           ).createShader(bounds),
           child: SvgPicture.asset(
             AssetsData.checkPackageItems,
-            width: 24.w,
-            height: 24.h,
+            width: 16.w,
+            height: 16.h,
             colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
           ),
         ),
-        Gap(12.w),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        Gap(6.w),
+        RichText(
+          text: TextSpan(
             children: [
-              Text(
-                title,
-                style: Styles.textStyle14.copyWith(
-                  color: AppColors.secondary800,
-                  fontWeight: FontWeight.bold,
+              TextSpan(
+                text: feature['value']!,
+                style: Styles.textStyle12SemiBold.copyWith(
+                  color: const Color(0xFF8B6914),
                 ),
               ),
-              if (description.isNotEmpty) ...[
-                Gap(4.h),
-                Text(
-                  description,
-                  style: Styles.textStyle12.copyWith(
-                    color: AppColors.secondary600,
-                    height: 1.4,
-                  ),
+              TextSpan(
+                text: ' ${feature['label']!}',
+                style: Styles.textStyle12.copyWith(
+                  color: AppColors.secondary700,
                 ),
-              ],
+              ),
             ],
           ),
         ),
@@ -427,7 +658,7 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
     );
   }
 
-  List<Map<String, String>> _buildFeatures(
+  List<Map<String, String>> _buildFeatureItems(
     BuildContext context,
     NewUserSubModel? sub,
   ) {
@@ -435,28 +666,28 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
     final chatRooms = sub?.numberOfChatRooms ?? 0;
     final chatMins = sub?.numberOfChatRoomMins ?? 0;
     final greetings = sub?.numberOfDailyGreetings ?? 0;
-    final reinforcements = sub?.numberOfFreeWeeklyReinforcements ?? 0;
     final renables = sub?.numberOfFreeMatchingRenables ?? 0;
 
     return [
-      {
-        'title': '$likes ${context.tr('unlimited_number_of_likes')}',
-        'desc': context.tr('you_can_see_who_liked'),
-      },
-      {
-        'title': '$chatRooms ${context.tr('chat_rooms')}',
-        'desc': '$chatMins ${context.tr('minutes')}',
-      },
-      {'title': '$greetings ${context.tr('daily_greetings')}', 'desc': ''},
-      {
-        'title': '$reinforcements ${context.tr('free_weekly_reinforcements')}',
-        'desc': '',
-      },
-      {
-        'title': '$renables ${context.tr('free_matching_renables')}',
-        'desc': '',
-      },
+      {'value': '$likes', 'label': context.tr('unlimited_number_of_likes')},
+      {'value': '$chatRooms', 'label': context.tr('chat_rooms')},
+      {'value': '$chatMins', 'label': context.tr('minutes')},
+      {'value': '$greetings', 'label': context.tr('daily_greetings')},
+      {'value': '$renables', 'label': context.tr('free_matching_renables')},
     ];
+  }
+
+  String _getDurationLabel(BuildContext context, String? durationType) {
+    switch (durationType?.toLowerCase()) {
+      case 'weekly':
+        return context.tr('weekly');
+      case 'monthly':
+        return context.tr('monthly');
+      case 'threemonths':
+        return context.tr('three_months');
+      default:
+        return context.tr('monthly');
+    }
   }
 
   Widget _buildBenefitsSection(
@@ -490,10 +721,10 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
             'icon': AssetsData.youNotSeeWhoLiked,
             'title': 'you_cannot_see_who_liked',
           },
-          {
-            'icon': AssetsData.thereAreNoFreeBoosts,
-            'title': 'there_are_no_free_boosts',
-          },
+          // {
+          //   'icon': AssetsData.thereAreNoFreeBoosts,
+          //   'title': 'there_are_no_free_boosts',
+          // },
           {
             'icon': AssetsData.limitedNumberOfLikes,
             'title': 'limited_number_of_likes',
@@ -505,10 +736,10 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
             'icon': AssetsData.youCanSeeWhoLiked,
             'title': 'you_can_see_who_liked',
           },
-          {
-            'icon': AssetsData.twoFreeCondolencesEveryWeek,
-            'title': 'two_free_boosts_every_week',
-          },
+          // {
+          //   'icon': AssetsData.twoFreeCondolencesEveryWeek,
+          //   'title': 'two_free_boosts_every_week',
+          // },
           {
             'icon': AssetsData.unlimitedNumberOfLikes,
             'title': 'unlimited_number_of_likes',
@@ -905,11 +1136,47 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
       } else {
         Navigator.pop(context);
       }
+      return;
+    }
+
+    // لو عنده اشتراك مدفوع → افتح Apple subscription management مباشرة
+    final currentPkg = context
+        .read<UserPackagesCubit>()
+        .currentSubscribedPackage;
+    if (currentPkg != null) {
+      _openSubscriptionManagement();
+      return;
+    }
+
+    Navigator.pushNamed(
+      context,
+      AppRouter.kUserSubscriptionView,
+      arguments: _mapToOldEnum(packageType),
+    );
+  }
+
+  Future<void> _openSubscriptionManagement() async {
+    if (Platform.isIOS) {
+      try {
+        const channel = MethodChannel('com.athr.tayser/iap_manage');
+        await channel.invokeMethod('showManageSubscriptions');
+        return;
+      } catch (_) {}
+      final itmUri = Uri.parse(
+        'itms-apps://apps.apple.com/account/subscriptions',
+      );
+      if (await canLaunchUrl(itmUri)) {
+        await launchUrl(itmUri, mode: LaunchMode.externalApplication);
+        return;
+      }
+      await launchUrl(
+        Uri.parse('https://apps.apple.com/account/subscriptions'),
+        mode: LaunchMode.externalApplication,
+      );
     } else {
-      Navigator.pushNamed(
-        context,
-        AppRouter.kUserSubscriptionView,
-        arguments: _mapToOldEnum(packageType),
+      await launchUrl(
+        Uri.parse('https://play.google.com/store/account/subscriptions'),
+        mode: LaunchMode.externalApplication,
       );
     }
   }

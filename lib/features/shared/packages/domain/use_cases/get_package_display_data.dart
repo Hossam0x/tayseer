@@ -65,18 +65,18 @@ class GetPackageDisplayData {
           title: context.tr('3_messages_monthly'),
           iconPath: AssetsData.threeMessages,
         ),
-        PackageFeatureModel(
-          title: context.tr('normal_appearance'),
-          iconPath: AssetsData.normalApperance,
-        ),
+        // PackageFeatureModel(
+        //   title: context.tr('normal_appearance'),
+        //   iconPath: AssetsData.normalApperance,
+        // ),
         PackageFeatureModel(
           title: context.tr('no_events'),
           iconPath: AssetsData.noEvents,
         ),
-        PackageFeatureModel(
-          title: context.tr('1_boost_monthly'),
-          iconPath: AssetsData.oneBoost,
-        ),
+        // PackageFeatureModel(
+        //   title: context.tr('1_boost_monthly'),
+        //   iconPath: AssetsData.oneBoost,
+        // ),
         PackageFeatureModel(
           title: context.tr('basic_support'),
           iconPath: AssetsData.essentialSupport,
@@ -128,10 +128,10 @@ class GetPackageDisplayData {
           title: context.tr('basic_stats'),
           iconPath: AssetsData.essentialStats,
         ),
-        PackageFeatureModel(
-          title: '$boosts ${context.tr('boosts_monthly')}',
-          iconPath: AssetsData.oneBoost,
-        ),
+        // PackageFeatureModel(
+        //   title: '$boosts ${context.tr('boosts_monthly')}',
+        //   iconPath: AssetsData.oneBoost,
+        // ),
         PackageFeatureModel(
           title: sessions,
           iconPath: AssetsData.graySessionIcon,
@@ -175,10 +175,10 @@ class GetPackageDisplayData {
       backgroundGradient: const [Color(0xFFFFFFFF), Color(0xFFE5F1FF)],
       features: [
         PackageFeatureModel(title: chats, iconPath: AssetsData.threeMessages),
-        PackageFeatureModel(
-          title: '$boosts ${context.tr('boosts_monthly')}',
-          iconPath: AssetsData.oneBoost,
-        ),
+        // PackageFeatureModel(
+        //   title: '$boosts ${context.tr('boosts_monthly')}',
+        //   iconPath: AssetsData.oneBoost,
+        // ),
         PackageFeatureModel(
           title: context.tr('basic_stats'),
           iconPath: AssetsData.essentialStats,
