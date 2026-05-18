@@ -16,6 +16,7 @@ class MessageBubble extends StatefulWidget {
   final ChatMessage? chatMessage;
   final bool isOverlay;
   final bool isHighlighted;
+final bool enableLinks;
   final Function(String? replyMessageId)? onReplyTap;
   final Function(String emoji)? onReactionTap;
 
@@ -25,6 +26,7 @@ class MessageBubble extends StatefulWidget {
     this.chatMessage,
     this.isOverlay = false,
     this.isHighlighted = false,
+    this.enableLinks = false,
     this.onReplyTap,
     this.onReactionTap,
   });
@@ -81,6 +83,8 @@ class _MessageBubbleState extends State<MessageBubble> {
         widget.chatMessage?.status ?? MessageStatusEnum.sent;
     final String messageType = widget.chatMessage?.messageType ?? 'text';
     final ReplyInfo? reply = widget.chatMessage?.reply;
+    // ✅ اللينكات بس لو enableLinks = true (system chat)
+    final bool enableLinks = widget.enableLinks;
 
     final bgColor = isMe ? ChatColors.bubbleSender : ChatColors.bubbleReceiver;
     final textColor = isMe ? ChatColors.textSender : ChatColors.textReceiver;
@@ -236,6 +240,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                                     fontSize: 14.sp,
                                     maxWidth: 236.w,
                                     isArabic: isArabic,
+                                    enableLinks: enableLinks,
                                   ),
                                 ),
                               )
@@ -261,6 +266,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                                 fontSize: 14.sp,
                                 maxWidth: maxBubbleWidth,
                                 isArabic: isArabic,
+                                enableLinks: enableLinks,
                               ),
 
                             SizedBox(height: 4.h),

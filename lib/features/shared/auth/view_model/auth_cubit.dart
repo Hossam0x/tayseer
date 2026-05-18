@@ -97,6 +97,10 @@ class AuthCubit extends Cubit<AuthState> {
 
       if (connected) {
         chatSocketService.init();
+        // ✅ اطلب الرقم الجديد بعد الـ login مباشرة
+        Future.delayed(const Duration(milliseconds: 500), () {
+          chatSocketService.requestChatNotificationNumbers();
+        });
       } else {
         debugPrint('⚠️ Socket connection failed for new user');
       }

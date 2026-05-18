@@ -1,4 +1,6 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../media/image_message_widget.dart';
 import '../media/video_message_widget.dart';
 import '../media/audio_message_widget.dart';
@@ -13,6 +15,8 @@ class MessageContentBuilder extends StatelessWidget {
   final double maxWidth;
   final double? uploadProgress;
   final bool isArabic;
+  // ✅ تفعيل اللينكات بس في system chat
+  final bool enableLinks;
 
   const MessageContentBuilder({
     super.key,
@@ -24,6 +28,7 @@ class MessageContentBuilder extends StatelessWidget {
     required this.maxWidth,
     this.uploadProgress,
     required this.isArabic,
+    this.enableLinks = false,
   });
 
   @override
@@ -84,15 +89,32 @@ class MessageContentBuilder extends StatelessWidget {
 
         return Directionality(
           textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
-          child: Text(
-            text,
-            style: TextStyle(
-              color: textColor,
-              fontSize: isAllEmojis ? fontSize * 1.7 : fontSize,
-              fontFamily: 'Cairo',
-              height: 1.4,
-            ),
-          ),
+          child: isAllEmojis
+              ? Text(
+                  text,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: fontSize * 1.7,
+                    fontFamily: 'Cairo',
+                    height: 1.4,
+                  ),
+                )
+              : enableLinks
+                  ? _LinkableText(
+                      text: text,
+                      textColor: textColor,
+                      fontSize: fontSize,
+                      isArabic: isArabic,
+                    )
+                  : Text(
+                      text,
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: fontSize,
+                        fontFamily: 'Cairo',
+                        height: 1.4,
+                      ),
+                    ),
         );
     }
   }
@@ -141,6 +163,128 @@ class MessageContentBuilder extends StatelessWidget {
           }).toList(),
         ),
       ),
+    );
+  }
+}
+
+
+/// Widget لعرض نص مع دعم اللينكات القابلة للضغط
+class _LinkableText extends StatefulWidget {
+  final String text;
+  final Color textColor;
+  final double fontSize;
+  final bool isArabic;
+
+  const _LinkableText({
+    required this.text,
+    required this.textColor,
+    required this.fontSize,
+    required this.isArabic,
+  });
+
+  @override
+  State<_LinkableText> createState() => _LinkableTextState();
+}
+
+class _LinkableTextState extends State<_LinkableText> {
+  final List<TapGestureRecognizer> _recognizers = [];
+
+  @override
+  void dispose() {
+    for (final r in _recognizers) {
+      r.dispose();
+    }
+    _recognizers.clear();
+    super.dispose();
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri != null && await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  List<InlineSpan> _buildSpans() {
+    for (final r in _recognizers) r.dispose();
+    _recognizers.clear();
+
+    // ✅ regex للـ URLs والـ emails معاً
+    final urlRegex = RegExp(
+      r'https?://[^\s]+|[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}',
+      caseSensitive: false,
+    );
+
+    final spans = <InlineSpan>[];
+    int lastEnd = 0;
+
+    for (final match in urlRegex.allMatches(widget.text)) {
+      if (match.start > lastEnd) {
+        spans.add(TextSpan(
+          text: widget.text.substring(lastEnd, match.start),
+          style: TextStyle(
+            fontSize: widget.fontSize,
+            color: widget.textColor,
+            fontFamily: 'Cairo',
+            height: 1.4,
+          ),
+        ));
+      }
+
+      final matched = match.group(0)!;
+      final isEmail = matched.contains('@') && !matched.startsWith('http');
+      final recognizer = TapGestureRecognizer()
+        ..onTap = () => _launchUrl(isEmail ? 'mailto:$matched' : matched);
+      _recognizers.add(recognizer);
+
+      spans.add(TextSpan(
+        text: matched,
+        style: TextStyle(
+          fontSize: widget.fontSize,
+          color: Colors.blue,
+          decoration: TextDecoration.underline,
+          decorationColor: Colors.blue,
+          fontFamily: 'Cairo',
+          height: 1.4,
+        ),
+        recognizer: recognizer,
+      ));
+
+      lastEnd = match.end;
+    }
+
+    if (lastEnd < widget.text.length) {
+      spans.add(TextSpan(
+        text: widget.text.substring(lastEnd),
+        style: TextStyle(
+          fontSize: widget.fontSize,
+          color: widget.textColor,
+          fontFamily: 'Cairo',
+          height: 1.4,
+        ),
+      ));
+    }
+
+    if (spans.isEmpty) {
+      spans.add(TextSpan(
+        text: widget.text,
+        style: TextStyle(
+          fontSize: widget.fontSize,
+          color: widget.textColor,
+          fontFamily: 'Cairo',
+          height: 1.4,
+        ),
+      ));
+    }
+
+    return spans;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RichText(
+      textDirection: widget.isArabic ? TextDirection.rtl : TextDirection.ltr,
+      text: TextSpan(children: _buildSpans()),
     );
   }
 }

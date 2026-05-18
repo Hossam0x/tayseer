@@ -6,6 +6,10 @@ class UserChatRoomModel {
   final bool otherUserOnlineStatus;
   final int unreadCount;
   final bool blockExists;
+  // ✅ بييجي على مستوى الـ room مش جوه otherUser
+  // false = سمحنا لهذا الشخص يشوف صورتنا (exception مفعّل)
+  // true  = صورتنا مبلورة عنده (exception مش مفعّل)
+  final bool blurMyImageFromOtherUser;
 
   UserChatRoomModel({
     required this.id,
@@ -15,6 +19,7 @@ class UserChatRoomModel {
     required this.otherUserOnlineStatus,
     required this.unreadCount,
     required this.blockExists,
+    this.blurMyImageFromOtherUser = true,
   });
 
   factory UserChatRoomModel.fromJson(Map<String, dynamic> json) {
@@ -30,6 +35,8 @@ class UserChatRoomModel {
       otherUserOnlineStatus: json['otherUserOnlineStatus'] ?? false,
       unreadCount: json['unreadCount'] ?? 0,
       blockExists: json['blockExists'] ?? false,
+      // ✅ على مستوى الـ room — null يعني مش مفعّل (true = مبلور)
+      blurMyImageFromOtherUser: json['blurMyImageFromOtherUser'] ?? true,
     );
   }
 }
@@ -39,6 +46,8 @@ class OtherUserModel {
   final String name;
   final String? image;
   final bool imageBlur;
+  // ✅ globalImageBlur = true يعني صورته مبلورة للكل (بغض النظر عن الـ exceptions)
+  final bool globalImageBlur;
   final DateTime? lastActiveAt;
 
   OtherUserModel({
@@ -46,6 +55,7 @@ class OtherUserModel {
     required this.name,
     this.image,
     required this.imageBlur,
+    this.globalImageBlur = false,
     this.lastActiveAt,
   });
 
@@ -55,6 +65,7 @@ class OtherUserModel {
       name: json['name']?.toString() ?? '',
       image: json['image']?.toString(),
       imageBlur: json['imageBlur'] ?? false,
+      globalImageBlur: json['globalImageBlur'] ?? json['imageBlur'] ?? false,
       lastActiveAt: _parseLastActiveAt(json['lastActiveAt'] ?? json['last_active_at']),
     );
   }
@@ -148,12 +159,14 @@ class UserChatRoomsResponse {
   final int pendingRequestsCount;
   final int slotLimit;
   final int totalCount;
+  final bool myImageBlur; // ✅ added
 
   UserChatRoomsResponse({
     required this.chatRooms,
     required this.pendingRequestsCount,
     this.slotLimit = 3,
     this.totalCount = 0,
+    this.myImageBlur = false, // ✅ added
   });
 
   factory UserChatRoomsResponse.fromJson(Map<String, dynamic> json) {
@@ -163,27 +176,29 @@ class UserChatRoomsResponse {
     List<dynamic> chatRoomsList = [];
     Map<String, dynamic> paginationData = {};
     int slotLimit = 4;
+    bool myImageBlur = false; // ✅ added
 
     if (innerData is List) {
       chatRoomsList = innerData;
       paginationData = data['pagination'] as Map<String, dynamic>? ?? {};
       slotLimit = data['slotLimit'] ?? 4;
+      myImageBlur = data['myImageBlur'] ?? false; // ✅ added
     } else if (innerData is Map<String, dynamic>) {
       chatRoomsList =
           innerData['chatRooms'] as List? ?? innerData['data'] as List? ?? [];
       paginationData = innerData['pagination'] as Map<String, dynamic>? ?? {};
       slotLimit = innerData['slotLimit'] ?? data['slotLimit'] ?? 4;
+      myImageBlur = innerData['myImageBlur'] ?? data['myImageBlur'] ?? false; // ✅ added
     } else {
       chatRoomsList = data['chatRooms'] as List? ?? [];
       paginationData = data['pagination'] as Map<String, dynamic>? ?? {};
       slotLimit = data['slotLimit'] ?? 4;
+      myImageBlur = data['myImageBlur'] ?? false; // ✅ added
     }
 
     final totalCount =
         paginationData['totalCount'] as int? ?? chatRoomsList.length;
 
-    // ✅ فلتر الـ system chats — دي مش من مسؤولية UserChatCubit
-    // الـ system chats بتتعرض من MySpaceCubit في الـ Marriage tab
     final userOnlyRooms = chatRoomsList
         .where((e) => e is Map<String, dynamic> && e['systemChat'] != true)
         .toList();
@@ -198,6 +213,7 @@ class UserChatRoomsResponse {
           0,
       slotLimit: slotLimit,
       totalCount: totalCount,
+      myImageBlur: myImageBlur, // ✅ added
     );
   }
 }

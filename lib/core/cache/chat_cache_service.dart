@@ -108,7 +108,7 @@ class ChatCacheService {
       'otherUserType': room.otherUserType,
       'lastMessage': room.lastMessage != null ? {
         'content': room.lastMessage!.content,
-        'sentAt': room.lastMessage!.sentAt?.toIso8601String(),
+        'sentAt': room.lastMessage!.sentAt?.toUtc().toIso8601String(),
         'status': room.lastMessage!.status,
       } : null,
       'otherUserOnlineStatus': room.otherUserOnlineStatus,

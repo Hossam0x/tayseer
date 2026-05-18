@@ -20,6 +20,8 @@ class ChatMessagesArea extends StatelessWidget {
   final VoidCallback onStateChanged;
   final bool showFreeChatBanner;
   final String? advisorId;
+  // ✅ تفعيل اللينكات بس في system chat
+  final bool enableLinks;
 
   const ChatMessagesArea({
     super.key,
@@ -30,6 +32,7 @@ class ChatMessagesArea extends StatelessWidget {
     required this.onStateChanged,
     this.showFreeChatBanner = true,
     this.advisorId,
+    this.enableLinks = false,
   });
 
   @override
@@ -74,6 +77,7 @@ class ChatMessagesArea extends StatelessWidget {
                   child: SelectableMessageListView(
                     messages: state.messages,
                     scrollController: scrollController,
+                    enableLinks: enableLinks,
                     onMessageLongPress: (message, key) {
                       overlayManager.showOverlay(
                         message: message,

@@ -304,6 +304,7 @@ class _ChatContentState extends State<_ChatContent> {
                                   scrollHandler: _scrollHandler,
                                   overlayManager: _overlayManager,
                                   onStateChanged: () => setState(() {}),
+                                  enableLinks: widget.isSystemChat,
                                 ),
                                 _buildScrollToBottomButton(),
                               ],

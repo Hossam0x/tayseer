@@ -904,6 +904,8 @@ abstract class AppRouter {
                   username: userArgs?['username'] as String?,
                   userimage: userArgs?['userimage'] as String?,
                   isImageBlurred: userArgs?['imageBlur'] as bool? ?? false,
+                  myImageBlur: userArgs?['myImageBlur'] as bool? ?? false,
+                  blurMyImageFromOtherUser: userArgs?['blurMyImageFromOtherUser'] as bool? ?? true,
                   isBlocked: userArgs?['isBlocked'] as bool? ?? false,
                 ),
               )
@@ -915,6 +917,8 @@ abstract class AppRouter {
                   username: userArgs?['username'] as String?,
                   userimage: userArgs?['userimage'] as String?,
                   isImageBlurred: userArgs?['imageBlur'] as bool? ?? false,
+                  myImageBlur: userArgs?['myImageBlur'] as bool? ?? false,
+                  blurMyImageFromOtherUser: userArgs?['blurMyImageFromOtherUser'] as bool? ?? true,
                   isBlocked: userArgs?['isBlocked'] as bool? ?? false,
                 ),
               );

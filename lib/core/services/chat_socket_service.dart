@@ -28,6 +28,8 @@ class ChatSocketService {
   final _chatNotificationNumbers =
       StreamController<ChatNotificationNumbersSocketEvent>.broadcast();
   final _failEvent = StreamController<String>.broadcast();
+  final _imageBlurExceptionToggled =
+      StreamController<Map<String, dynamic>>.broadcast();
   final ValueNotifier<int> chatNotificationTotal = ValueNotifier<int>(0);
 
   // Public streams
@@ -44,6 +46,8 @@ class ChatSocketService {
   Stream<ChatNotificationNumbersSocketEvent> get onChatNotificationNumbers =>
       _chatNotificationNumbers.stream;
   Stream<String> get onFailEvent => _failEvent.stream;
+  Stream<Map<String, dynamic>> get onImageBlurExceptionToggled =>
+      _imageBlurExceptionToggled.stream;
 
   // ══════════════════════════════════════════════════════════════════════════
   // INIT
@@ -201,6 +205,13 @@ class ChatSocketService {
         log('❌ [ChatSocketService] fail parse error: $e');
       }
     });
+
+    // imageBlurExceptionToggled — confirmation after toggleImageBlurException
+    _socket.listenWithId('imageBlurExceptionToggled', _id, (data) {
+      if (data is! Map) return;
+      log('📥 [ChatSocketService] imageBlurExceptionToggled: $data');
+      _imageBlurExceptionToggled.add(data as Map<String, dynamic>);
+    });
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -247,6 +258,22 @@ class ChatSocketService {
     }
   }
 
+  /// ✅ بعت toggleImageBlurException للسيرفر
+  /// blur: false = اسمح للـ userId ده يشوف صورتي
+  /// blur: true  = ارجع للحالة الافتراضية (مش مسموح)
+  void toggleImageBlurException({
+    required String userId,
+    required bool blur,
+    Function(dynamic)? onAck,
+  }) {
+    _socket.send(
+      'toggleImageBlurException',
+      {'blur': blur, 'userId': userId},
+      onAck,
+    );
+    log('📤 [ChatSocketService] toggleImageBlurException: userId=$userId, blur=$blur');
+  }
+
   // ══════════════════════════════════════════════════════════════════════════
   // CLEANUP
   // ══════════════════════════════════════════════════════════════════════════
@@ -256,6 +283,8 @@ class ChatSocketService {
     _socket.offAllForListener(_id);
     _socket.removeReconnectCallback(_reconnectId);
     _isInitialized = false;
+    // ✅ صفّر الـ notification count عند الـ logout
+    chatNotificationTotal.value = 0;
     log('🔕 [ChatSocketService] listeners removed');
   }
 
@@ -273,6 +302,7 @@ class ChatSocketService {
     _messageReaction.close();
     _chatNotificationNumbers.close();
     _failEvent.close();
+    _imageBlurExceptionToggled.close();
     log('🗑️ [ChatSocketService] disposed');
   }
 }

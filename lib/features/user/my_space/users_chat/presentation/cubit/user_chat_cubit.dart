@@ -18,6 +18,7 @@ class UserChatState {
   final List<RegardRequestModel> requests;
   final int slotLimit;
   final int matchingCount;
+  final bool myImageBlur;
   final String? errorMessage;
 
   const UserChatState({
@@ -26,6 +27,7 @@ class UserChatState {
     this.requests = const [],
     this.slotLimit = 4,
     this.matchingCount = 0,
+    this.myImageBlur = false,
     this.errorMessage,
   });
 
@@ -35,6 +37,7 @@ class UserChatState {
     List<RegardRequestModel>? requests,
     int? slotLimit,
     int? matchingCount,
+    bool? myImageBlur,
     String? errorMessage,
   }) {
     return UserChatState(
@@ -43,6 +46,7 @@ class UserChatState {
       requests: requests ?? this.requests,
       slotLimit: slotLimit ?? this.slotLimit,
       matchingCount: matchingCount ?? this.matchingCount,
+      myImageBlur: myImageBlur ?? this.myImageBlur,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
@@ -337,6 +341,7 @@ class UserChatCubit extends Cubit<UserChatState> {
     final requests = requestsResult.fold((_) => <RegardRequestModel>[], (r) => r as List<RegardRequestModel>);
     final slotLimit = roomsResult.fold((_) => 4, (r) => (r as dynamic).slotLimit as int? ?? 4);
     final matchingCount = matchingResult.fold((_) => 0, (r) => (r as dynamic).totalCount as int? ?? 0);
+    final myImageBlur = roomsResult.fold((_) => state.myImageBlur, (r) => (r as dynamic).myImageBlur as bool? ?? false);
 
     emit(state.copyWith(
       status: CubitStates.success,
@@ -344,6 +349,7 @@ class UserChatCubit extends Cubit<UserChatState> {
       requests: requests,
       slotLimit: slotLimit,
       matchingCount: matchingCount,
+      myImageBlur: myImageBlur,
     ));
 
     // ✅ حفظ في الكاش دايماً بعد الـ API (حتى لو فاضي عشان يمسح الـ cache القديم)

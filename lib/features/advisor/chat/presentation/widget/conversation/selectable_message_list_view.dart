@@ -17,6 +17,8 @@ class SelectableMessageListView extends StatefulWidget {
   final Function(ChatMessage message, GlobalKey key)? onMessageLongPress;
   final Function(String? replyMessageId, List<ChatMessage> messages)? onReplyTap;
   final Function(String messageId, String emoji)? onReactionTap;
+  // ✅ تفعيل اللينكات بس في system chat
+  final bool enableLinks;
 
   const SelectableMessageListView({
     super.key,
@@ -25,6 +27,7 @@ class SelectableMessageListView extends StatefulWidget {
     this.onMessageLongPress,
     this.onReplyTap,
     this.onReactionTap,
+    this.enableLinks = false,
   });
 
   @override
@@ -52,6 +55,18 @@ class _SelectableMessageListViewState extends State<SelectableMessageListView> {
     final screenSize = MediaQuery.of(context).size;
     final isMobile = screenSize.width < 600;
 
+    // ✅ افصل system messages وحطها في الأول (أعلى الشاشة)
+    // reverse: true → index 0 = أسفل، آخر index = أعلى
+    // عشان system messages تظهر أعلى كل حاجة، لازم تكون في آخر الـ list
+    final systemMessages = widget.messages
+        .where((m) => m.messageType == 'system')
+        .toList();
+    final regularMessages = widget.messages
+        .where((m) => m.messageType != 'system')
+        .toList();
+    // الترتيب: regular أولاً (أسفل)، system في الآخر (أعلى)
+    final orderedMessages = [...regularMessages, ...systemMessages];
+
     return BlocBuilder<MessageSelectionCubit, MessageSelectionState>(
       builder: (context, selectionState) {
         return BlocBuilder<ChatScrollCubit, ChatScrollState>(
@@ -65,15 +80,12 @@ class _SelectableMessageListViewState extends State<SelectableMessageListView> {
                 horizontal: isMobile ? 10 : 12,
                 vertical: isMobile ? 6 : 8,
               ),
-              itemCount: widget.messages.length,
+              itemCount: orderedMessages.length,
               addAutomaticKeepAlives: true,
               cacheExtent: 500,
               itemBuilder: (context, index) {
-                final msg = widget.messages[index];
+                final msg = orderedMessages[index];
                 final currentMsgId = msg.id;
-                // ✅ فقط الرسائل الحقيقية (مش temp) تحصل على GlobalKey ثابت
-                // الـ temp messages بتاخد GlobalKey جديد كل مرة — مش مشكلة
-                // لأنها بتتبدل بالـ server message قبل ما تتعرض
                 final messageKey = currentMsgId.isNotEmpty && !currentMsgId.startsWith('temp_')
                     ? _getOrCreateKey(currentMsgId)
                     : GlobalKey();
@@ -81,6 +93,15 @@ class _SelectableMessageListViewState extends State<SelectableMessageListView> {
                     scrollState.highlightedMessageId != null &&
                     currentMsgId == scrollState.highlightedMessageId;
                 final isSelected = selectionState.isSelected(currentMsgId);
+
+                // ✅ system messages خارج _SelectableMessageItem تماماً
+                // عشان AutomaticKeepAliveClientMixin ما يمنعش الـ TapGestureRecognizer
+                if (msg.messageType == 'system') {
+                  return SystemMessageBubble(
+                    key: ValueKey(currentMsgId),
+                    content: msg.contentList.join('\n'),
+                  );
+                }
 
                 return _SelectableMessageItem(
                   key: ValueKey(currentMsgId),
@@ -90,6 +111,7 @@ class _SelectableMessageListViewState extends State<SelectableMessageListView> {
                   isSelected: isSelected,
                   isSelectionMode: selectionState.isSelectionMode,
                   isSystemMessage: msg.messageType == 'system',
+                  enableLinks: widget.enableLinks,
                   onLongPress: () {
                     FocusScope.of(context).unfocus();
                     HapticFeedback.mediumImpact();
@@ -128,6 +150,7 @@ class _SelectableMessageItem extends StatefulWidget {
   final bool isSelected;
   final bool isSelectionMode;
   final bool isSystemMessage;
+  final bool enableLinks;
   final VoidCallback onLongPress;
   final VoidCallback onTap;
   final Function(String?) onReplyTap;
@@ -141,6 +164,7 @@ class _SelectableMessageItem extends StatefulWidget {
     required this.isSelected,
     required this.isSelectionMode,
     required this.isSystemMessage,
+    this.enableLinks = false,
     required this.onLongPress,
     required this.onTap,
     required this.onReplyTap,
@@ -162,7 +186,7 @@ class _SelectableMessageItemState extends State<_SelectableMessageItem>
 
     // رسائل النظام لا تدعم التحديد
     if (widget.isSystemMessage) {
-      return SystemMessageBubble(content: widget.message.content);
+      return SystemMessageBubble(content: widget.message.contentList.join('\n'));
     }
 
     return GestureDetector(
@@ -195,6 +219,7 @@ class _SelectableMessageItemState extends State<_SelectableMessageItem>
                 isHighlighted: widget.isHighlighted,
                 onReplyTap: widget.onReplyTap,
                 onReactionTap: widget.onReactionTap,
+                enableLinks: widget.enableLinks,
               ),
             ),
           ],

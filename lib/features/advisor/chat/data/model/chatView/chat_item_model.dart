@@ -86,11 +86,18 @@ class ChatRoom {
               json['lastMessage'] is Map<String, dynamic>
           ? LastMessage.fromJson(json['lastMessage'] as Map<String, dynamic>)
           : null,
-      createdAt: json['lastMessage']?['sentAt'] != null
-          ? DateTime.tryParse(json['lastMessage']['sentAt'].toString())
-          : (json['createdAt'] != null
-              ? DateTime.tryParse(json['createdAt'].toString())
-              : null),
+      createdAt: () {
+        DateTime? parseSentAt(dynamic value) {
+          if (value == null) return null;
+          String s = value.toString();
+          if (!s.endsWith('Z') && !s.contains('+') && !s.contains('-', 10)) {
+            s = '${s}Z';
+          }
+          return DateTime.tryParse(s)?.toLocal();
+        }
+        return parseSentAt(json['lastMessage']?['sentAt']) ??
+            parseSentAt(json['createdAt']);
+      }(),
       unreadCount: json['unreadCount'] ?? 0,
       isBlocked: json['blockExists'] ?? json['isBlocked'] ?? false,
       isSystemChat: json['systemChat'] ?? false,
@@ -154,13 +161,20 @@ class LastMessage {
         .toLowerCase() ?? '';
     final rawContent = json['content'];
 
+    // ✅ helper يضمن إن الـ DateTime دايماً UTC ثم local
+    DateTime? parseSentAt(dynamic value) {
+      if (value == null) return null;
+      String s = value.toString();
+      // لو مفيش Z أو offset، افترض إنه UTC وأضف Z
+      if (!s.endsWith('Z') && !s.contains('+') && !s.contains('-', 10)) {
+        s = '${s}Z';
+      }
+      return DateTime.tryParse(s)?.toLocal();
+    }
+
     return LastMessage(
       content: _normalizeContent(rawContent, contentType),
-      sentAt: json['sentAt'] != null
-          ? DateTime.tryParse(json['sentAt'].toString())
-          : (json['createdAt'] != null
-              ? DateTime.tryParse(json['createdAt'].toString())
-              : null),
+      sentAt: parseSentAt(json['sentAt']) ?? parseSentAt(json['createdAt']),
     );
   }
 

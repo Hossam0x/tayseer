@@ -93,11 +93,11 @@ class _UserChatContentState extends State<UserChatContent>
   }
 }
 
-class _UserChatBody extends StatelessWidget {
+class _UserChatBody extends StatefulWidget {
   final bool readSystemRoomsFromContext;
   final VoidCallback? onReturnFromSystemChat;
-  final VoidCallback? onEnterChat;   // ✅ جديد
-  final VoidCallback? onExitChat;    // ✅ جديد
+  final VoidCallback? onEnterChat;
+  final VoidCallback? onExitChat;
 
   const _UserChatBody({
     this.readSystemRoomsFromContext = false,
@@ -106,6 +106,14 @@ class _UserChatBody extends StatelessWidget {
     this.onExitChat,
   });
 
+  @override
+  State<_UserChatBody> createState() => _UserChatBodyState();
+}
+
+class _UserChatBodyState extends State<_UserChatBody> {
+  // ✅ نحفظ آخر قيمة للـ system rooms عشان ما تختفيش أثناء loading
+  List<AdvisorChatRoomModel> _lastSystemRooms = [];
+
   /// ✅ ترجمة الـ content type لنص مناسب للعرض في الـ list
   String _formatLastMessage(BuildContext context, String content) {
     return ChatRoomListItem.formatLastMessage(context, content);
@@ -113,18 +121,22 @@ class _UserChatBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ نبني BlocBuilder<UserChatCubit> في الخارج عشان يشمل كل الـ rebuilds
     return BlocBuilder<UserChatCubit, UserChatState>(
       builder: (context, userChatState) {
-        if (readSystemRoomsFromContext) {
+        if (widget.readSystemRoomsFromContext) {
           return BlocBuilder<MySpaceCubit, MySpaceState>(
             builder: (context, mySpaceState) {
-              final systemRooms =
+              final freshSystemRooms =
                   mySpaceState.advisorChatModel?.data.chatRooms
                       .where((r) => r.isSystemChat)
                       .toList() ??
                   [];
-              return _buildContent(context, systemRooms, userChatState);
+              // ✅ لو جاءت rooms جديدة، حدّث الـ cache المحلي
+              // لو فاضية (loading)، استخدم آخر قيمة محفوظة
+              if (freshSystemRooms.isNotEmpty) {
+                _lastSystemRooms = freshSystemRooms;
+              }
+              return _buildContent(context, _lastSystemRooms, userChatState);
             },
           );
         }
@@ -145,7 +157,7 @@ class _UserChatBody extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final allRooms = [...state.chatRooms, ...systemRooms]; // ✅ system chat في الآخر دايماً
+        final allRooms = [...systemRooms, ...state.chatRooms]; // ✅ system chat في الأول دايماً
         final hasConversations = allRooms.isNotEmpty;
 
         return RefreshIndicator(
@@ -230,13 +242,13 @@ class _UserChatBody extends StatelessWidget {
               else
                 SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
-                    // ✅ الـ user rooms أولاً، ثم الـ system rooms في الآخر
-                    if (index < state.chatRooms.length) {
-                      return _buildChatRoom(context, state.chatRooms[index]);
+                    // ✅ system rooms في الأول، ثم user rooms
+                    if (index < systemRooms.length) {
+                      return _buildSystemChatRoom(context, systemRooms[index]);
                     }
-                    return _buildSystemChatRoom(
+                    return _buildChatRoom(
                       context,
-                      systemRooms[index - state.chatRooms.length],
+                      state.chatRooms[index - systemRooms.length],
                     );
                   }, childCount: allRooms.length),
                 ),
@@ -419,7 +431,7 @@ class _UserChatBody extends StatelessWidget {
         mySpaceCubit.markChatAsRead(room.id);
         mySpaceCubit.setActiveChatRoom(room.id);
         mySpaceCubit.markMessageAsReadOnSocket(room.id);
-        onEnterChat?.call(); // ✅ منع loadAll لما نكون جوه الشات
+        widget.onEnterChat?.call(); // ✅ منع loadAll لما نكون جوه الشات
         context
             .pushNamed(
               AppRouter.kConversitionView,
@@ -446,7 +458,7 @@ class _UserChatBody extends StatelessWidget {
               }
               // ✅ دايماً اعمل touchState لما ترجع من system chat
               // عشان الـ BlocBuilder<MySpaceCubit> يعمل rebuild ويعرض الـ system chat
-              onReturnFromSystemChat?.call();
+              widget.onReturnFromSystemChat?.call();
             });
       },
       onArchive: () => ChatRoomDialogHelper.showArchiveDialog(
@@ -501,6 +513,7 @@ class _UserChatBody extends StatelessWidget {
   }
 
   Widget _buildChatRoom(BuildContext context, UserChatRoomModel room) {
+    final myImageBlur = context.read<UserChatCubit>().state.myImageBlur;
     return ChatRoomListItem(
       key: ValueKey('user_chat_${room.id}'),
       id: room.id,
@@ -517,7 +530,7 @@ class _UserChatBody extends StatelessWidget {
       fallbackAsset: AssetsData.defaultProfileImage,
       onTap: () {
         getIt<ChatSocketService>().clearChatNotificationCount();
-        onEnterChat?.call(); // ✅ منع loadAll لما نكون جوه الشات
+        widget.onEnterChat?.call(); // ✅ منع loadAll لما نكون جوه الشات
         context
             .pushNamed(
               AppRouter.kUserChatView,
@@ -526,12 +539,14 @@ class _UserChatBody extends StatelessWidget {
                 'username': room.otherUser.name,
                 'userimage': room.otherUser.image,
                 'imageBlur': room.otherUser.imageBlur,
+                'myImageBlur': myImageBlur,
+                'blurMyImageFromOtherUser': room.blurMyImageFromOtherUser,
                 'isBlocked': room.blockExists,
                 'receiverid': room.otherUser.userId,
               },
             )
             .then((result) {
-              onExitChat?.call(); // ✅ reset الـ flag لما نرجع
+              widget.onExitChat?.call(); // ✅ reset الـ flag لما نرجع
               if (!context.mounted) return;
               // ✅ reset الـ unreadCount فوراً عشان مش يظهر الـ badge
               context.read<UserChatCubit>().resetUnreadCount(room.id);

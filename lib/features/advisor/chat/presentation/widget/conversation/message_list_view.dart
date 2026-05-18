@@ -52,6 +52,16 @@ class _MessageListViewState extends State<MessageListView> {
     final isMobile = screenSize.width < 600;
     final bool isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
+    // ✅ افصل system messages وحطها في الأول (أعلى الشاشة)
+    // reverse: true → index 0 = أسفل، آخر index = أعلى
+    final systemMessages = widget.messages
+        .where((m) => m.messageType == 'system')
+        .toList();
+    final regularMessages = widget.messages
+        .where((m) => m.messageType != 'system')
+        .toList();
+    final orderedMessages = [...regularMessages, ...systemMessages];
+
     return BlocBuilder<ChatScrollCubit, ChatScrollState>(
       buildWhen: (previous, current) =>
           previous.highlightedMessageId != current.highlightedMessageId,
@@ -65,11 +75,11 @@ class _MessageListViewState extends State<MessageListView> {
               horizontal: isMobile ? 10 : 12,
               vertical: isMobile ? 6 : 8,
             ),
-            itemCount: widget.messages.length,
+            itemCount: orderedMessages.length,
             addAutomaticKeepAlives: true,
             cacheExtent: 500,
             itemBuilder: (context, index) {
-              final msg = widget.messages[widget.messages.length - 1 - index];
+              final msg = orderedMessages[index];
               final currentMsgId = msg.id;
               final messageKey = currentMsgId.isNotEmpty
                   ? _getOrCreateKey(currentMsgId)
@@ -78,12 +88,19 @@ class _MessageListViewState extends State<MessageListView> {
                   scrollState.highlightedMessageId != null &&
                   currentMsgId == scrollState.highlightedMessageId;
 
+              // ✅ system messages لا تحتاج keep alive — إخراجها مباشرة
+              // عشان الـ GestureRecognizer للـ links يشتغل صح
+              if (msg.messageType == 'system') {
+                return SystemMessageBubble(
+                  key: ValueKey(currentMsgId),
+                  content: msg.contentList.join('\n'),
+                );
+              }
+
               return _MessageItemKeepAlive(
                 key: ValueKey(currentMsgId),
                 messageKey: messageKey,
-                child: msg.messageType == 'system'
-                    ? SystemMessageBubble(content: msg.content)
-                    : GestureDetector(
+                child: GestureDetector(
                         onLongPress: () =>
                             widget.onMessageLongPress?.call(msg, messageKey),
                         child: MessageBubble(

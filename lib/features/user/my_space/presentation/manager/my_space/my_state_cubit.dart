@@ -212,18 +212,37 @@ class MySpaceCubit extends Cubit<MySpaceState> {
           state: CubitStates.success,
         );
 
-        // ✅ دايماً حط lastUpdateTime جديد عشان Equatable يشوف فرق ويعمل rebuild
+        // ✅ ثبّت system chat في الأول دايماً
+        final sortedRooms = List<AdvisorChatRoomModel>.from(
+          advisorChatModel.data.chatRooms,
+        )..sort((a, b) {
+          if (a.isSystemChat && !b.isSystemChat) return -1;
+          if (!a.isSystemChat && b.isSystemChat) return 1;
+          final aTime = a.lastMessageAt ?? DateTime(1970);
+          final bTime = b.lastMessageAt ?? DateTime(1970);
+          return bTime.compareTo(aTime);
+        });
+
+        final sortedModel = AdvisorChatModel(
+          success: advisorChatModel.success,
+          message: advisorChatModel.message,
+          data: AdvisorChatData(
+            chatRooms: sortedRooms,
+            pagination: advisorChatModel.data.pagination,
+          ),
+        );
+
         _safeEmit(
           state.copyWith(
             advisorChatState: CubitStates.success,
-            advisorChatModel: advisorChatModel,
+            advisorChatModel: sortedModel,
             lastUpdateTime: DateTime.now(),
           ),
         );
 
         await _cacheService.saveUserChatRooms(
           userId: userId,
-          chatRooms: advisorChatModel.data.chatRooms,
+          chatRooms: sortedRooms,
         );
       },
     );
@@ -399,8 +418,12 @@ class MySpaceCubit extends Cubit<MySpaceState> {
       return room;
     }).toList();
 
-    // Sort by latest message
+    // ✅ Sort: system chat دايماً في الأول، باقي الـ rooms حسب آخر رسالة
     updatedRooms.sort((a, b) {
+      final aIsSystem = a.isSystemChat;
+      final bIsSystem = b.isSystemChat;
+      if (aIsSystem && !bIsSystem) return -1;
+      if (!aIsSystem && bIsSystem) return 1;
       final aTime = a.lastMessageAt ?? DateTime(1970);
       final bTime = b.lastMessageAt ?? DateTime(1970);
       return bTime.compareTo(aTime);

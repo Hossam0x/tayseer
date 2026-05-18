@@ -40,76 +40,78 @@ class UserPublicProfileView extends StatelessWidget {
           body: AdvisorBackground(
             child: SafeArea(child: _UserPublicProfileContent()),
           ),
-          floatingActionButton: _buildFloatingActionButton(),
+          // floatingActionButton: _buildFloatingActionButton(),
         ),
       ),
     );
   }
 
-  Widget _buildFloatingActionButton() {
-    return BlocBuilder<UserPublicProfileCubit, UserPublicProfileState>(
-      buildWhen: (prev, curr) =>
-          prev.state != curr.state ||
-          prev.profile?.isBlockedByMe != curr.profile?.isBlockedByMe,
-      builder: (context, state) {
-        final isBlocked = state.profile?.isBlockedByMe ?? false;
-        if (state.profile?.isMe == true ||
-            state.state != CubitStates.success ||
-            state.profile == null ||
-            isBlocked ||
-            isConsultant ||
-            state.profile?.gender == kCurrentUserData?.gender) {
-          return const SizedBox.shrink();
-        }
+  // Widget _buildFloatingActionButton() {
+  //   return BlocBuilder<UserPublicProfileCubit, UserPublicProfileState>(
+  //     buildWhen: (prev, curr) =>
+  //         prev.state != curr.state ||
+  //         prev.profile?.isBlockedByMe != curr.profile?.isBlockedByMe,
+  //     builder: (context, state) {
+  //       final isBlocked = state.profile?.isBlockedByMe ?? false;
+  //       if (state.profile?.isMe == true ||
+  //           state.state != CubitStates.success ||
+  //           state.profile == null ||
+  //           isBlocked ||
+  //           isConsultant ||
+  //           state.profile?.gender == kCurrentUserData?.gender) {
+  //         return const SizedBox.shrink();
+  //       }
 
-        return Padding(
-          padding: EdgeInsets.only(bottom: 10.h),
-          child: CustomClick(
-            onTap: () {
-              final cubit = context.read<UserPublicProfileCubit>();
-              SendGreetingDialog.show(
-                context,
-                receiverName: state.profile!.name,
-                receiverId: state.profile!.id,
-                cubit: cubit,
-              );
-            },
-            child: FloatingActionButton(
-              onPressed: null,
-              backgroundColor: AppColors.kprimaryColor,
-              shape: const CircleBorder(),
-              elevation: 4,
-              child: Container(
-                width: 56.w,
-                height: 56.w,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      AppColors.kprimaryColor.withOpacity(0.9),
-                      AppColors.kprimaryColor,
-                    ],
-                  ),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(10.w),
-                  child: SvgPicture.asset(
-                    AssetsData.icSendGreeting,
-                    width: 26.w,
-                    height: 26.w,
-                    color: Colors.white,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  //       return Padding(
+  //         padding: EdgeInsets.only(bottom: 10.h),
+  //         child: CustomClick(
+  //           onTap: () {
+  //             final cubit = context.read<UserPublicProfileCubit>();
+  //             SendGreetingDialog.show(
+  //               context,
+  //               receiverName: state.profile!.name,
+  //               receiverId: state.profile!.id,
+  //               cubit: cubit,
+  //             );
+  //           },
+  //           child: FloatingActionButton(
+  //             onPressed: null,
+  //             backgroundColor: AppColors.kprimaryColor,
+  //             shape: const CircleBorder(),
+  //             elevation: 4,
+  //             child: Container(
+  //               width: 56.w,
+  //               height: 56.w,
+  //               decoration: BoxDecoration(
+  //                 shape: BoxShape.circle,
+  //                 gradient: LinearGradient(
+  //                   begin: Alignment.topCenter,
+  //                   end: Alignment.bottomCenter,
+  //                   colors: [
+  //                     AppColors.kprimaryColor.withOpacity(0.9),
+  //                     AppColors.kprimaryColor,
+  //                   ],
+  //                 ),
+  //               ),
+  //               child: Padding(
+  //                 padding: EdgeInsets.all(10.w),
+  //                 child: SvgPicture.asset(
+  //                   AssetsData.icSendGreeting,
+  //                   width: 26.w,
+  //                   height: 26.w,
+  //                   color: Colors.white,
+  //                   fit: BoxFit.contain,
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+
+
 }
 
 class _UserPublicProfileContent extends StatelessWidget {

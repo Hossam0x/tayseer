@@ -26,16 +26,11 @@ class AdvisorChatModel {
   }
 }
 
-
-
 class AdvisorChatData {
   final List<AdvisorChatRoomModel> chatRooms;
   final PaginationModel pagination;
 
-  AdvisorChatData({
-    required this.chatRooms,
-    required this.pagination,
-  });
+  AdvisorChatData({required this.chatRooms, required this.pagination});
 
   factory AdvisorChatData.fromJson(Map<String, dynamic> json) {
     // Handle nested data structure: data.data.chatRooms or data.chatRooms
@@ -75,7 +70,7 @@ class AdvisorChatRoomModel {
   final LastMessageModel? lastMessage;
   final DateTime? lastMessageAt;
   final String status;
-  final ChatUserModel sender; // <--- هنا
+  final ChatUserModel sender;
   final DateTime createdAt;
   final DateTime updatedAt;
   final int unreadCount;
@@ -132,8 +127,10 @@ class AdvisorChatRoomModel {
 
     // New API format uses 'otherUser'
     final otherUserJson = json['otherUser'] as Map<String, dynamic>?;
-    final otherUser = otherUserJson != null ? ChatUserModel.fromJson(otherUserJson) : null;
-    
+    final otherUser = otherUserJson != null
+        ? ChatUserModel.fromJson(otherUserJson)
+        : null;
+
     // Fallback for older systems
     final users = (json['users'] as List? ?? [])
         .map((e) => ChatUserModel.fromJson(e is Map<String, dynamic> ? e : {}))
@@ -152,9 +149,11 @@ class AdvisorChatRoomModel {
         userType: 'System',
       );
     } else {
-      senderUser = otherUser ?? ChatUserModel.fromJson(
-        json['sender'] is Map<String, dynamic> ? json['sender'] : {},
-      );
+      senderUser =
+          otherUser ??
+          ChatUserModel.fromJson(
+            json['sender'] is Map<String, dynamic> ? json['sender'] : {},
+          );
     }
 
     return AdvisorChatRoomModel(
@@ -167,16 +166,16 @@ class AdvisorChatRoomModel {
           : null,
       lastMessageAt: json['lastMessageAt'] != null
           ? _parseUtc(json['lastMessageAt'].toString())
-          : (json['lastMessage']?['sentAt'] != null 
-             ? _parseUtc(json['lastMessage']['sentAt'].toString())
-             : null),
+          : (json['lastMessage']?['sentAt'] != null
+                ? _parseUtc(json['lastMessage']['sentAt'].toString())
+                : null),
       status: extractString(json['status']),
       sender: senderUser,
       createdAt: json['sentAt'] != null
           ? _parseUtc(json['sentAt'].toString()) ?? DateTime.now()
           : (json['createdAt'] != null
-              ? _parseUtc(json['createdAt'].toString()) ?? DateTime.now()
-              : DateTime.now()),
+                ? _parseUtc(json['createdAt'].toString()) ?? DateTime.now()
+                : DateTime.now()),
       updatedAt: json['updatedAt'] != null
           ? _parseUtc(json['updatedAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -195,11 +194,11 @@ class AdvisorChatRoomModel {
       'isHaveSession': isHaveSession,
       'users': users.map((u) => u.toJson()).toList(),
       'lastMessage': lastMessage?.toJson(),
-      'lastMessageAt': lastMessageAt?.toIso8601String(),
+      'lastMessageAt': lastMessageAt?.toUtc().toIso8601String(), // ✅ UTC
       'status': status,
       'sender': sender.toJson(),
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'createdAt': createdAt.toUtc().toIso8601String(), // ✅ UTC
+      'updatedAt': updatedAt.toUtc().toIso8601String(), // ✅ UTC
       'unreadCount': unreadCount,
       'systemChat': isSystemChat,
       'systemChatData': isSystemChat && systemChatImage != null
@@ -208,9 +207,6 @@ class AdvisorChatRoomModel {
     };
   }
 }
-
-
-
 
 class ChatUserModel {
   final String id;
@@ -253,8 +249,6 @@ class ChatUserModel {
   }
 }
 
-
-
 class LastMessageModel {
   final String id;
   final String sender;
@@ -266,7 +260,7 @@ class LastMessageModel {
   final DateTime updatedAt;
   final String senderName;
   final String timeAgo;
-  final String? status; // SENT, DELIVERED, READ
+  final String? status;
 
   LastMessageModel({
     required this.id,
@@ -291,15 +285,19 @@ class LastMessageModel {
     }
 
     final rawContent = json['content'];
-    final messageType = extractString(json['contentType'] ?? json['messageType']);
-    
+    final messageType = extractString(
+      json['contentType'] ?? json['messageType'],
+    );
+
     // ✅ حوّل الـ messageType لـ keyword موحد — الترجمة والـ emoji تتم في formatLastMessage
     String content;
     if (messageType == 'image' || messageType == 'images/videos') {
       content = 'image';
     } else if (messageType == 'video') {
       content = 'video';
-    } else if (messageType == 'audio' || messageType == 'voice' || messageType == 'record') {
+    } else if (messageType == 'audio' ||
+        messageType == 'voice' ||
+        messageType == 'record') {
       content = 'audio';
     } else if (messageType == 'file' || messageType == 'document') {
       content = 'file';
@@ -340,15 +338,14 @@ class LastMessageModel {
       'messageType': messageType,
       'contentType': messageType,
       'chatRoom': chatRoom,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'createdAt': createdAt.toUtc().toIso8601String(), // ✅ UTC
+      'updatedAt': updatedAt.toUtc().toIso8601String(), // ✅ UTC
       'senderName': senderName,
       'timeAgo': timeAgo,
       'status': status,
     };
   }
 }
-
 
 class PaginationModel {
   final int totalCount;

@@ -33,6 +33,8 @@ class UserChatScreen extends StatelessWidget {
   final String? username;
   final String? userimage;
   final bool isImageBlurred;
+  final bool myImageBlur;
+  final bool blurMyImageFromOtherUser;
   final bool isBlocked;
 
   const UserChatScreen({
@@ -42,6 +44,8 @@ class UserChatScreen extends StatelessWidget {
     this.username,
     this.userimage,
     this.isImageBlurred = false,
+    this.myImageBlur = false,
+    this.blurMyImageFromOtherUser = true,
     this.isBlocked = false,
   });
 
@@ -85,6 +89,8 @@ class UserChatScreen extends StatelessWidget {
         username: username,
         userimage: userimage,
         isImageBlurred: isImageBlurred,
+        myImageBlur: myImageBlur,
+        blurMyImageFromOtherUser: blurMyImageFromOtherUser,
         isBlocked: isBlocked,
       ),
     );
@@ -97,6 +103,8 @@ class _UserChatContent extends StatefulWidget {
   final String? username;
   final String? userimage;
   final bool isImageBlurred;
+  final bool myImageBlur;
+  final bool blurMyImageFromOtherUser;
   final bool isBlocked;
 
   const _UserChatContent({
@@ -105,6 +113,8 @@ class _UserChatContent extends StatefulWidget {
     this.username,
     this.userimage,
     this.isImageBlurred = false,
+    this.myImageBlur = false,
+    this.blurMyImageFromOtherUser = true,
     this.isBlocked = false,
   });
 
@@ -118,13 +128,20 @@ class _UserChatContentState extends State<_UserChatContent> {
   late final OverlayManager _overlayManager;
   late final MessageActionsHandler _actionsHandler;
   StreamSubscription<String>? _failEventSubscription;
+  StreamSubscription<Map<String, dynamic>>? _blurExceptionSubscription;
   bool _handlersInitialized = false;
-  bool _isPopping = false; // ✅ guard ضد double pop
-  bool _wasSecureEnabled = false; // ✅ هل FLAG_SECURE كان مفعّل قبل فتح الشات
+  bool _isPopping = false;
+  bool _wasSecureEnabled = false;
+  // ✅ هل المستخدم ده مسموحله يشوف صورتي (blur exception مفعّل)
+  late bool _isBlurExceptionEnabled;
 
   @override
   void initState() {
     super.initState();
+    // ✅ الـ initial value من blurMyImageFromOtherUser فقط
+    // blurMyImageFromOtherUser: false = سمحنا له يشوف صورتنا (exception مفعّل) → true
+    // blurMyImageFromOtherUser: true  = صورتنا مبلورة عنده (exception مش مفعّل) → false
+    _isBlurExceptionEnabled = !widget.blurMyImageFromOtherUser;
     _scrollController = ScrollController();
     final chatSocketService = getIt<ChatSocketService>();
     chatSocketService.clearChatNotificationCount();
@@ -142,6 +159,23 @@ class _UserChatContentState extends State<_UserChatContent> {
     if (widget.chatRoomId != null) {
       getIt<ChatSocketService>().markMessagesRead(widget.chatRoomId!);
     }
+    // ✅ استمع لـ imageBlurExceptionToggled عشان تحدّث الـ UI
+    _blurExceptionSubscription = getIt<ChatSocketService>()
+        .onImageBlurExceptionToggled
+        .listen((data) {
+      if (!mounted) return;
+      // السيرفر بيبعت: {blur: false/true, userWithBlurredImage: ..., exceptedUserId: ...}
+      // blur: false = سمحنا له يشوف صورتنا (exception مفعّل) → _isBlurExceptionEnabled = true
+      // blur: true  = صورتنا مبلورة عنده (exception مش مفعّل) → _isBlurExceptionEnabled = false
+      final blur = data['blur'] as bool? ?? true;
+      setState(() => _isBlurExceptionEnabled = !blur);
+      AppToast.success(
+        context,
+        blur
+            ? (isArabic ? 'تم إلغاء السماح برؤية صورتك' : 'Image blur restored')
+            : (isArabic ? 'تم السماح برؤية صورتك' : 'Image blur removed for this user'),
+      );
+    });
   }
 
   @override
@@ -169,6 +203,7 @@ class _UserChatContentState extends State<_UserChatContent> {
   @override
   void dispose() {
     _failEventSubscription?.cancel();
+    _blurExceptionSubscription?.cancel();
     _scrollHandler.dispose();
     _scrollController.dispose();
     // ✅ أعد تفعيل FLAG_SECURE بس لو كان مفعّل قبل فتح الشات
@@ -385,7 +420,7 @@ class _UserChatContentState extends State<_UserChatContent> {
 
   Widget _buildAppBar(BuildContext context) {
     return BlocBuilder<ChatMessagesCubit, ChatMessagesState>(
-      buildWhen: (p, c) => p.isBlocked != c.isBlocked,
+      // ✅ نسمح بالـ rebuild دايماً عشان setState للـ _isBlurExceptionEnabled يشتغل
       builder: (context, chatState) {
         return Container(
           padding: EdgeInsets.only(
@@ -427,6 +462,7 @@ class _UserChatContentState extends State<_UserChatContent> {
                             image: widget.userimage ?? '',
                             isverified: false, // غير متاح في الشات
                             isImageBlurred: false, // غير متاح في الشات
+
                           ),
                         },
                       );
@@ -545,6 +581,16 @@ class _UserChatContentState extends State<_UserChatContent> {
                         );
                       }
                       break;
+                    case 'toggle_blur':
+                      if (widget.receiverId != null) {
+                        // لو مفعّل → نرجعه (blur: true)، لو مش مفعّل → نشيله (blur: false)
+                        final newBlur = _isBlurExceptionEnabled;
+                        getIt<ChatSocketService>().toggleImageBlurException(
+                          userId: widget.receiverId!,
+                          blur: newBlur,
+                        );
+                      }
+                      break;
                   }
                 },
                 itemBuilder: (_) => [
@@ -589,6 +635,28 @@ class _UserChatContentState extends State<_UserChatContent> {
                       ],
                     ),
                   ),
+                  // ✅ شيل/أضف البلور لهذا المستخدم — بس لو صورته مبلورة أصلاً
+                  if (widget.myImageBlur)
+                    PopupMenuItem(
+                      value: 'toggle_blur',
+                      child: Row(
+                        children: [
+                          Icon(
+                            _isBlurExceptionEnabled
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            size: 20,
+                          ),
+                          SizedBox(width: 8.w),
+                          Text(
+                            _isBlurExceptionEnabled
+                                ? (isArabic ? 'إخفاء صورتي' : 'Hide my photo')
+                                : (isArabic ? 'إظهار صورتي له' : 'Show my photo'),
+                            style: TextStyle(fontSize: 14.sp),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ],
