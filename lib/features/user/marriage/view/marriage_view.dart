@@ -6,6 +6,7 @@ import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
 import 'package:tayseer/features/user/questions/presentation/manager/questions_cubit.dart';
 import 'package:tayseer/features/user/questions/presentation/manager/questions_state.dart';
 import 'package:tayseer/core/services/secure_window_service.dart';
+import 'package:tayseer/core/utils/router/route_observers.dart';
 import 'package:tayseer/my_import.dart';
 
 class MarriageView extends StatefulWidget {
@@ -28,7 +29,7 @@ class MarriageView extends StatefulWidget {
   State<MarriageView> createState() => _MarriageViewState();
 }
 
-class _MarriageViewState extends State<MarriageView> {
+class _MarriageViewState extends State<MarriageView> with RouteAware {
   @override
   void initState() {
     super.initState();
@@ -36,15 +37,30 @@ class _MarriageViewState extends State<MarriageView> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) videoRouteObserver.subscribe(this, route);
+  }
+
+  @override
   void dispose() {
+    videoRouteObserver.unsubscribe(this);
     SecureWindowService.disable();
     super.dispose();
+  }
+
+  /// بيتنادى لما الـ user يرجع لهذه الصفحة من صفحة فوقيها
+  @override
+  void didPopNext() {
+    // أعد بناء الـ widget عشان يقرأ kCurrentUserData من جديد
+    if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     final completed = kCurrentUserData?.compeletedData == true;
-       final bool isDirectProfile = widget.personId != null;
+    final bool isDirectProfile = widget.personId != null;
     return PopScope(
       canPop: isDirectProfile,
       child: Scaffold(
@@ -75,23 +91,35 @@ class _MarriageViewState extends State<MarriageView> {
                     if (state.lastQuestionNumberState == CubitStates.success) {
                       context.pop();
                       final lastQuestionNumber =
-                          state.lastQuestionNumberResponse?.lastQuestionNumber ??
+                          state
+                              .lastQuestionNumberResponse
+                              ?.lastQuestionNumber ??
                           0;
-                      if (lastQuestionNumber >= 0 && lastQuestionNumber <= 25) {
-                        context.pushNamed(
-                          AppRouter.kQuestionsPageView,
-                          arguments: {'lastQuestionNumber': lastQuestionNumber},
-                        );
-                      } else if (lastQuestionNumber <= 26) {
-                        context.pushNamed(AppRouter.kPersonalInfoView);
-                      } else if (lastQuestionNumber <= 27) {
-                        context.pushNamed(AppRouter.kCommitmentView);
-                      } else if (lastQuestionNumber >= 29) {
-                        context.pushNamed(
-                          AppRouter.kUserPackagesView,
-                          arguments: {'fromOnboarding': true},
-                        );
+                      Future<void> navigate() async {
+                        if (lastQuestionNumber >= 0 &&
+                            lastQuestionNumber <= 25) {
+                          await context.pushNamed(
+                            AppRouter.kQuestionsPageView,
+                            arguments: {
+                              'lastQuestionNumber': lastQuestionNumber,
+                            },
+                          );
+                        } else if (lastQuestionNumber <= 26) {
+                          await context.pushNamed(AppRouter.kPersonalInfoView);
+                        } else if (lastQuestionNumber <= 27) {
+                          await context.pushNamed(AppRouter.kCommitmentView);
+                        } else if (lastQuestionNumber >= 29) {
+                          await context.pushNamed(
+                            AppRouter.kUserPackagesView,
+                            arguments: {'fromOnboarding': true},
+                          );
+                        }
+                        // بعد ما الـ user يرجع من الـ survey، نعمل rebuild
+                        // عشان نقرأ kCurrentUserData من جديد
+                        if (mounted) setState(() {});
                       }
+
+                      navigate();
                     } else if (state.lastQuestionNumberState ==
                         CubitStates.failure) {
                       context.pop();

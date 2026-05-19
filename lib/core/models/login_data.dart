@@ -155,7 +155,7 @@ class UserModel {
       inreview: json['inreview'],
       notifyCount: json['notifyCount'],
       active: json['active'],
-      compeletedData: json['compeletedData'],
+      compeletedData: json['compeletedData'] ?? json['dataCompleted'],
       lastQuestionNumber: json['lastQuestionNumber'] ?? 0,
       nationalIdImages: json['nationalIdImages'] ?? [],
       createdAt: json['createdAt'],

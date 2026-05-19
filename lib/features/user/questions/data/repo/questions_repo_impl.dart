@@ -94,12 +94,36 @@ class QuestionsRepoImpl implements QuestionsRepo {
         log(">>>>>>>>>>>>>>>>>> hasChildren ${kCurrentUserData?.hasChildren}");
       }
       if (answerCompleted == true) {
+        // ✅ الـ response من /answer-questions مش بيرجع compeletedData
+        // فنحدث kCurrentUserData يدوياً بـ compeletedData = true
+        final updatedUser = (kCurrentUserData ?? data).copyWith(
+          compeletedData: true,
+        );
         await CachNetwork.setData(
           key: kuserData,
-          value: jsonEncode(data.toJson()),
+          value: jsonEncode(updatedUser.toJson()),
         );
-        kCurrentUserData = data;
+        kCurrentUserData = updatedUser;
       }
+
+      // ✅ لو آخر سؤال (commitment = 29)، احفظ إن الـ onboarding اكتمل
+      // عشان MarriageView يشوف compeletedData = true حتى لو answerCompleted مش بيتبعت
+      if (questionNumber == 29) {
+        final updatedUser = (kCurrentUserData ?? data).copyWith(
+          compeletedData: true,
+        );
+        await CachNetwork.setData(
+          key: kuserData,
+          value: jsonEncode(updatedUser.toJson()),
+        );
+        kCurrentUserData = updatedUser;
+
+        // احفظ في SharedPreferences عشان UserProfileCubit يقرأه
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('marriage_profile_complete', true);
+        log('✅ Onboarding complete — marriage_profile_complete saved');
+      }
+
       return right(data);
     });
   }
