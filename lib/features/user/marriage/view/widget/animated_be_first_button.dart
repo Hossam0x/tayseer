@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:tayseer/core/utils/subscription_event_bus.dart';
+import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class AnimatedBeFirstButton extends StatefulWidget {
@@ -11,10 +13,27 @@ class AnimatedBeFirstButton extends StatefulWidget {
 class _AnimatedBeFirstButtonState extends State<AnimatedBeFirstButton> {
   bool _isExpanded = true;
   Timer? _timer;
+  bool _isSubscribed = false;
+  late final StreamSubscription<SubscriptionChangedEvent> _subSubscription;
 
   @override
   void initState() {
     super.initState();
+    // تحقق من حالة الاشتراك الحالية
+    final subType = getIt<InteractionsCubit>().state.subscriptionType;
+    _isSubscribed = subType == 'gold' || subType == 'ultra';
+
+    // استمع لأي تغيير في الاشتراك
+    _subSubscription = SubscriptionEventBus.instance.onSubscriptionChanged
+        .listen((event) {
+          if (!mounted) return;
+          setState(() {
+            _isSubscribed =
+                event.subscriptionType == 'gold' ||
+                event.subscriptionType == 'ultra';
+          });
+        });
+
     _startAnimationLoop();
   }
 
@@ -31,11 +50,15 @@ class _AnimatedBeFirstButtonState extends State<AnimatedBeFirstButton> {
   @override
   void dispose() {
     _timer?.cancel();
+    _subSubscription.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // لو المستخدم مشترك، الزرار مش محتاج يظهر
+    if (_isSubscribed) return const SizedBox.shrink();
+
     return GestureDetector(
       onTap: widget.onTap,
       child: AnimatedContainer(
