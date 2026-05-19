@@ -268,7 +268,7 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
       log(
         '[UserSub] 🆔 uuid from cache  : ${uuid.isNotEmpty ? uuid : "⚠️ EMPTY — uuid not cached yet"}',
       );
-      log('[UserSub] 📲 applicationUserName → Apple: $uuid');
+      log('[UserSub] 📤 Will call initiate-purchase next...');
       log('[UserSub] ════════════════════════════════════════');
 
       if (uuid.isEmpty) {
@@ -281,10 +281,43 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
         return;
       }
 
-      // ── Step 2: Apple IAP ─────────────────────────────────────────────────
+      // ── Step 2: Initiate purchase on backend → get pendingId ──────────────
+      log('[UserSub] 📤 Calling /iap/initiate-purchase...');
+      final initiateResult = await _membershipRepository.initiatePurchase(
+        productId: productId,
+        platform: platform,
+      );
+      if (isClosed) return;
+
+      final String pendingId;
+      final initiateCheck = initiateResult.fold<String?>(
+        (f) {
+          log('[UserSub] ❌ initiate-purchase failed: ${f.message}');
+          return null;
+        },
+        (id) {
+          log('[UserSub] ✅ pendingId: $id');
+          return id;
+        },
+      );
+      if (initiateCheck == null) {
+        emit(
+          state.copyWith(
+            status: UserSubStatus.error,
+            error: 'فشل تسجيل عملية الشراء',
+          ),
+        );
+        return;
+      }
+      pendingId = initiateCheck;
+
+      log('[UserSub] 📲 applicationUserName → Apple: $pendingId');
+      log('[UserSub] ════════════════════════════════════════');
+
+      // ── Step 3: Apple IAP ─────────────────────────────────────────────────
       final purchase = await _iapService.buyProduct(
         productId,
-        uniqueNumber: uuid,
+        uniqueNumber: pendingId,
       );
       if (isClosed) return;
 

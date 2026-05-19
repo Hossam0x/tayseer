@@ -1128,6 +1128,11 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
   void _onActionButtonPressed(BuildContext context, PackageType packageType) {
     if (packageType == PackageType.basic) {
       if (widget.fromPartnerFilter || widget.fromOnboarding) {
+        // ✅ حدّث kCurrentUserData بـ compeletedData = true قبل الانتقال
+        // عشان MarriageView يشوف إن البيانات اكتملت
+        if (widget.fromOnboarding) {
+          kCurrentUserData = kCurrentUserData?.copyWith(compeletedData: true);
+        }
         Navigator.pushNamedAndRemoveUntil(
           context,
           AppRouter.kUserLayoutView,

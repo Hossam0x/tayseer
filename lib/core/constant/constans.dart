@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:tayseer/core/enum/advisor_status.dart';
 import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
@@ -10,7 +11,9 @@ const kAppFont = 'ibmp';
 String? selectedLanguage;
 bool get isArabic => selectedLanguage == 'ar';
 bool kIsUserGuest = false;
-const String kbaseUrl = 'https://tayser-app.net/api/v1';
+String get kbaseUrl => kReleaseMode
+    ? 'https://tayser-app.net/api/v1'
+    : 'https://dev.tayser-app.net/api/v1';
 // bool kShowOnBoarding = false;
 UserModel? kCurrentUserData;
 Gender? selectedGender;
