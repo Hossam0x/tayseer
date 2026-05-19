@@ -35,7 +35,9 @@ class ChooseGenderBody extends StatelessWidget {
                         Padding(
                           padding: const EdgeInsets.only(right: 25),
                           child: Align(
-                            alignment: Alignment.centerRight,
+                            alignment: isArabic
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
                             child: IconButton(
                               onPressed: () => context.pop(),
                               icon: const Icon(

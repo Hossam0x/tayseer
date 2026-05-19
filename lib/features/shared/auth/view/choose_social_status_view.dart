@@ -41,7 +41,9 @@ class _ChooseSocialStatusBodyState extends State<_ChooseSocialStatusBody> {
               Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: Align(
-                  alignment: Alignment.centerRight,
+                  alignment: isArabic
+                      ? Alignment.centerRight
+                      : Alignment.centerLeft,
                   child: IconButton(
                     onPressed: () => context.pop(),
                     icon: const Icon(
@@ -128,10 +130,7 @@ class _ChooseSocialStatusBodyState extends State<_ChooseSocialStatusBody> {
               key: kMarriageSectionDeactivatedKey,
               value: true,
             );
-            await CachNetwork.setBool(
-              key: kIsFemaleMarriedKey,
-              value: true,
-            );
+            await CachNetwork.setBool(key: kIsFemaleMarriedKey, value: true);
             if (!mounted) return;
             context.pushNamedAndRemoveUntil(
               AppRouter.kUserLayoutView,
@@ -139,10 +138,7 @@ class _ChooseSocialStatusBodyState extends State<_ChooseSocialStatusBody> {
             );
           } else {
             // ✅ مش أنثى متزوجة — امسح الـ flag لو كان موجود
-            await CachNetwork.setBool(
-              key: kIsFemaleMarriedKey,
-              value: false,
-            );
+            await CachNetwork.setBool(key: kIsFemaleMarriedKey, value: false);
             context.pushReplacementNamed(AppRouter.kPurposeSelectionView);
           }
         } else if (state.setSocialStatusState == CubitStates.failure) {
@@ -166,8 +162,8 @@ class _ChooseSocialStatusBodyState extends State<_ChooseSocialStatusBody> {
           isLoading: isLoading,
           onPressed: isEnabled && !isLoading
               ? () => context.read<AuthCubit>().setSocialStatus(
-                    socialStatus: _selectedKey!,
-                  )
+                  socialStatus: _selectedKey!,
+                )
               : null,
         );
       },
