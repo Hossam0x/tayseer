@@ -43,12 +43,11 @@ class _TextInputQuestionState extends State<TextInputQuestion> {
         }
 
         // Handle AI errors (previously shown via BuildContext in cubit)
-        if (state.aiErrorMessage != null &&
-            state.aiErrorMessage!.isNotEmpty) {
+        if (state.aiErrorMessage != null && state.aiErrorMessage!.isNotEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
-              text: state.aiErrorMessage!,
+              text: context.tr(state.aiErrorMessage!),
               isError: true,
             ),
           );
@@ -60,7 +59,9 @@ class _TextInputQuestionState extends State<TextInputQuestion> {
           children: [
             const SizedBox(height: 20),
             CustomTextField(
-              hintText: context.tr(widget.hintKey ?? 'tell_us_more_about_yourself'),
+              hintText: context.tr(
+                widget.hintKey ?? 'tell_us_more_about_yourself',
+              ),
               controller: widget.controller,
               maxLines: widget.maxLines,
               showBorder: widget.maxLines == 1,

@@ -88,7 +88,10 @@ class _CommitmentViewBodyState extends State<CommitmentViewBody> {
             );
           } else if (state.answerQuestionsState == CubitStates.success) {
             if (Navigator.canPop(context)) Navigator.pop(context);
-            context.pushReplacementNamed(AppRouter.kAccountReviewUserView);
+            context.pushReplacementNamed(
+              AppRouter.kUserPackagesView,
+              arguments: {'fromOnboarding': true},
+            );
           } else if (state.answerQuestionsState == CubitStates.failure) {
             if (Navigator.canPop(context)) Navigator.pop(context);
             ScaffoldMessenger.of(context).showSnackBar(
