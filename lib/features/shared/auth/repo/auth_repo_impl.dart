@@ -126,11 +126,11 @@ class AuthRepoImpl implements AuthRepo {
               final profileData =
                   profileResponse['data'] as Map<String, dynamic>?;
               if (profileData != null) {
-                final socialStatus =
-                    profileData['socialStatus']?.toString();
+                final socialStatus = profileData['socialStatus']?.toString();
                 if (socialStatus != null) {
-                  kCurrentUserData =
-                      kCurrentUserData?.copyWith(socialStatus: socialStatus);
+                  kCurrentUserData = kCurrentUserData?.copyWith(
+                    socialStatus: socialStatus,
+                  );
                   await CachNetwork.setData(
                     key: kuserData,
                     value: jsonEncode(kCurrentUserData?.toJson() ?? {}),
@@ -219,6 +219,36 @@ class AuthRepoImpl implements AuthRepo {
         await CachNetwork.setBool(key: 'userGuest', value: false);
         kIsUserGuest = false;
 
+        // ✅ جيب الـ profile كامل عشان تاخد socialStatus محدّث
+        if (selectedUserType != UserTypeEnum.asConsultant) {
+          try {
+            final profileResponse = await apiService.get(
+              endPoint: '/user/profile',
+            );
+            if (profileResponse['success'] == true) {
+              final profileData =
+                  profileResponse['data'] as Map<String, dynamic>?;
+              if (profileData != null) {
+                final socialStatus = profileData['socialStatus']?.toString();
+                if (socialStatus != null) {
+                  kCurrentUserData = kCurrentUserData?.copyWith(
+                    socialStatus: socialStatus,
+                  );
+                  await CachNetwork.setData(
+                    key: kuserData,
+                    value: jsonEncode(kCurrentUserData?.toJson() ?? {}),
+                  );
+                }
+              }
+            }
+          } catch (_) {
+            // مش مشكلة لو فشل — الـ flag هيتحسب من الـ user data المتاح
+          }
+        }
+
+        // ✅ حفظ flag الأنثى المتزوجة عشان يُخفى قسم الزواج تلقائياً
+        await CachNetwork.syncFemaleMarriedFlag();
+
         // ✅ حفظ الاسم والصورة في الكاش عشان الـ HomeCubit يلاقيهم فوراً
         await CachNetwork.setData(
           key: kMyProfileImage,
@@ -293,6 +323,36 @@ class AuthRepoImpl implements AuthRepo {
         kCurrentUserData = authAppleResponse.data?.user;
 
         kIsUserGuest = false;
+
+        // ✅ جيب الـ profile كامل عشان تاخد socialStatus محدّث
+        if (selectedUserType != UserTypeEnum.asConsultant) {
+          try {
+            final profileResponse = await apiService.get(
+              endPoint: '/user/profile',
+            );
+            if (profileResponse['success'] == true) {
+              final profileData =
+                  profileResponse['data'] as Map<String, dynamic>?;
+              if (profileData != null) {
+                final socialStatus = profileData['socialStatus']?.toString();
+                if (socialStatus != null) {
+                  kCurrentUserData = kCurrentUserData?.copyWith(
+                    socialStatus: socialStatus,
+                  );
+                  await CachNetwork.setData(
+                    key: kuserData,
+                    value: jsonEncode(kCurrentUserData?.toJson() ?? {}),
+                  );
+                }
+              }
+            }
+          } catch (_) {
+            // مش مشكلة لو فشل — الـ flag هيتحسب من الـ user data المتاح
+          }
+        }
+
+        // ✅ حفظ flag الأنثى المتزوجة عشان يُخفى قسم الزواج تلقائياً
+        await CachNetwork.syncFemaleMarriedFlag();
 
         // ✅ حفظ الاسم والصورة في الكاش عشان الـ HomeCubit يلاقيهم فوراً
         await CachNetwork.setData(

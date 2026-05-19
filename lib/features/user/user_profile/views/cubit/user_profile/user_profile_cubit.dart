@@ -314,9 +314,13 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       final isNotificationEnabled = await _getNotificationStatus();
       final soundStatus = await _getSoundStatus();
 
-      // ✅ دايماً اقرأ الحالة من الـ API (availableForMarry) — مصدر الحقيقة
+      // ✅ لو أنثى متزوجة → قسم الزواج معطّل دايماً بغض النظر عن avaliableForMarry
+      final prefs = await SharedPreferences.getInstance();
+      final isFemaleMarried = prefs.getBool(kIsFemaleMarriedKey) ?? false;
+
       // false = الزواج مفعّل، true = الزواج معطّل
-      final isMarriageDeactivated = !(profile?.availableForMarry ?? true);
+      final isMarriageDeactivated =
+          isFemaleMarried || !(profile?.availableForMarry ?? true);
 
       // ✅ حفظ القيمة في SharedPreferences عشان الـ LayoutCubit يقرأها
       await _saveMarriageSectionDeactivated(isMarriageDeactivated);
