@@ -1,3 +1,4 @@
+import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/main.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -16,17 +17,21 @@ class _PurposeSelectionViewState extends State<PurposeSelectionView> {
   Future<void> _onConfirm() async {
     if (_selectedKey == null) return;
 
-    if (_selectedKey == 'purpose_marriage') {
-      await CachNetwork.setBool(
-        key: kMarriageSectionDeactivatedKey,
-        value: false,
-      );
-    } else {
-      await CachNetwork.setBool(
-        key: kMarriageSectionDeactivatedKey,
-        value: true,
-      );
-    }
+    final isMarriage = _selectedKey == 'purpose_marriage';
+
+    // ✅ احفظ اختيار المستخدم محلياً
+    await CachNetwork.setData(
+      key: kUserSelectedPurposeKey,
+      value: _selectedKey!,
+    );
+    await CachNetwork.setBool(
+      key: kMarriageSectionDeactivatedKey,
+      value: !isMarriage,
+    );
+
+    // ✅ احفظ الاختيار على الـ server عشان يتذكره بعد الـ re-login
+    // بنبعت في الـ background ومش بننتظر النتيجة عشان مانعطلش الـ UX
+    getIt<UserProfileRepository>().toggleMarriageStatus(isMarriage).ignore();
 
     if (!mounted) return;
     context.pushNamedAndRemoveUntil(

@@ -7,6 +7,9 @@ const String ktoken = "token";
 const String kuserData = "user_data";
 const String kMarriageSectionDeactivatedKey = 'marriage_section_deactivated';
 const String kIsFemaleMarriedKey = 'is_female_married';
+// ✅ يحفظ اختيار المستخدم اليدوي من PurposeSelectionView
+// القيم: 'purpose_marriage' أو 'purpose_consultation' أو null (لم يختر بعد)
+const String kUserSelectedPurposeKey = 'user_selected_purpose';
 
 const String kAdvisorProfileCache = 'advisor_profile_cache';
 const String kAdvisorStatus = 'advisor_status';

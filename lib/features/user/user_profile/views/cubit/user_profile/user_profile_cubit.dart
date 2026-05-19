@@ -318,9 +318,16 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       final prefs = await SharedPreferences.getInstance();
       final isFemaleMarried = prefs.getBool(kIsFemaleMarriedKey) ?? false;
 
+      // ✅ لو المستخدم اختار يدوياً من PurposeSelectionView، احترم اختياره
+      final userSelectedPurpose = prefs.getString(kUserSelectedPurposeKey);
+      final userChoseConsultation =
+          userSelectedPurpose == 'purpose_consultation';
+
       // false = الزواج مفعّل، true = الزواج معطّل
       final isMarriageDeactivated =
-          isFemaleMarried || !(profile?.availableForMarry ?? true);
+          isFemaleMarried ||
+          userChoseConsultation ||
+          !(profile?.availableForMarry ?? true);
 
       // ✅ حفظ القيمة في SharedPreferences عشان الـ LayoutCubit يقرأها
       await _saveMarriageSectionDeactivated(isMarriageDeactivated);
@@ -915,6 +922,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(kMarriageSectionDeactivatedKey);
       await prefs.remove(kIsFemaleMarriedKey);
+      await prefs.remove(kUserSelectedPurposeKey);
       if (getIt.isRegistered<ChatSocketService>()) {
         getIt<ChatSocketService>().removeListeners();
       }
