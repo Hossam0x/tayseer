@@ -662,14 +662,13 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
     BuildContext context,
     NewUserSubModel? sub,
   ) {
-    final likes = sub?.numberOfLikes ?? 0;
     final chatRooms = sub?.numberOfChatRooms ?? 0;
     final chatMins = sub?.numberOfChatRoomMins ?? 0;
     final greetings = sub?.numberOfDailyGreetings ?? 0;
     final renables = sub?.numberOfFreeMatchingRenables ?? 0;
 
     return [
-      {'value': '$likes', 'label': context.tr('unlimited_number_of_likes')},
+      {'value': '', 'label': context.tr('unlimited_number_of_likes')},
       {'value': '$chatRooms', 'label': context.tr('chat_rooms')},
       {'value': '$chatMins', 'label': context.tr('minutes')},
       {'value': '$greetings', 'label': context.tr('daily_greetings')},

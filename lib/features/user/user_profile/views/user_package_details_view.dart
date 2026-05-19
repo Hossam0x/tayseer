@@ -226,7 +226,6 @@ class _UserPackageDetailsContent extends StatelessWidget {
       ];
     }
 
-    final likes = sub?.numberOfLikes ?? 0;
     final chatRooms = sub?.numberOfChatRooms ?? 0;
     final chatMins = sub?.numberOfChatRoomMins ?? 0;
     final greetings = sub?.numberOfDailyGreetings ?? 0;
@@ -235,7 +234,7 @@ class _UserPackageDetailsContent extends StatelessWidget {
 
     return [
       {
-        'title': '$likes ${context.tr('unlimited_number_of_likes')}',
+        'title': context.tr('unlimited_number_of_likes'),
         'desc': context.tr('you_can_see_who_liked'),
       },
       {
