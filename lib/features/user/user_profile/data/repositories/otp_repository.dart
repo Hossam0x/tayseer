@@ -22,7 +22,6 @@ abstract class OtpRepository {
 
 class OtpRepositoryImpl implements OtpRepository {
   final Dio _dio;
-  final String _baseUrl = 'https://tayser-app.net/api/v1';
 
   OtpRepositoryImpl(this._dio) {
     _dio.options.validateStatus = (status) {
@@ -38,7 +37,7 @@ class OtpRepositoryImpl implements OtpRepository {
       print('🔑 Token: ${token.isNotEmpty ? "موجود" : "غير موجود"}');
 
       final response = await _dio.request(
-        '$_baseUrl/user/verfiy-phone', // ⭐⭐ endpoint تعديل الهاتف
+        '$kbaseUrl/user/verfiy-phone', // ⭐⭐ endpoint تعديل الهاتف
         options: Options(
           method: 'POST',
           headers: {
@@ -94,7 +93,7 @@ class OtpRepositoryImpl implements OtpRepository {
       print('📞 phone: $phoneNumber');
 
       final response = await _dio.request(
-        '$_baseUrl/user/update-phone-number', // ⭐⭐ endpoint تعديل الهاتف
+        '$kbaseUrl/user/update-phone-number', // ⭐⭐ endpoint تعديل الهاتف
         options: Options(
           method: 'POST',
           headers: {
@@ -142,7 +141,7 @@ class OtpRepositoryImpl implements OtpRepository {
       print('🔐 محاولة التحقق من OTP الإيميل: $otpCode');
 
       final response = await _dio.request(
-        '$_baseUrl/user/verfiy-email', // ⭐⭐ endpoint تعديل الإيميل
+        '$kbaseUrl/user/verfiy-email', // ⭐⭐ endpoint تعديل الإيميل
         options: Options(
           method: 'POST',
           headers: {
@@ -188,7 +187,7 @@ class OtpRepositoryImpl implements OtpRepository {
       print('🔄 إعادة إرسال OTP للإيميل: $email');
 
       final response = await _dio.request(
-        '$_baseUrl/user/update-email', // ⭐⭐ endpoint تعديل الإيميل
+        '$kbaseUrl/user/update-email', // ⭐⭐ endpoint تعديل الإيميل
         options: Options(
           method: 'POST',
           headers: {
