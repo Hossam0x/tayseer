@@ -61,8 +61,8 @@ class CustomDropdownFormField<T> extends StatelessWidget {
         fillColor: AppColors.kWhiteColor,
         isDense: true,
         contentPadding: EdgeInsets.symmetric(
-          vertical: context.height * .022,
-          horizontal: 12,
+          vertical: context.height * .02,
+          // horizontal: 12,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
