@@ -121,9 +121,7 @@ class _SelectSessionDurationBodyState extends State<SelectSessionDurationBody> {
                     final countryKey = state.selectedCountryKey ?? '';
                     final countryFlag = state.selectedCountryFlag ?? '';
                     final currencySymbol = countryKey.isNotEmpty
-                        ? CurrencyHelper.getCurrencySymbolByCountryKey(
-                            countryKey,
-                          )
+                        ? CurrencyHelper.getCurrencySymbolLocalized(countryKey)
                         : CurrencyHelper.getCurrencySymbolFromContext(context);
                     final bool showForm =
                         _isIndividualSelected || _isPackageSelected;

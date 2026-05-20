@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:tayseer/core/constant/constans.dart';
 
 class CurrencyHelper {
   CurrencyHelper._(); // ✅ منع إنشاء instance
@@ -140,7 +141,7 @@ class CurrencyHelper {
     }
   }
 
-  /// ★ جلب رمز العملة بناءً على مفتاح الدولة الخاص بالتطبيق
+  /// ★ جلب رمز العملة بناءً على مفتاح الدولة الخاص بالتطبيق (عربي)
   static String getCurrencySymbolByCountryKey(String countryKey) {
     switch (countryKey) {
       case 'country_saudi':
@@ -166,6 +167,41 @@ class CurrencyHelper {
       default:
         return getCurrencySymbol();
     }
+  }
+
+  /// ★ جلب رمز العملة بناءً على مفتاح الدولة (إنجليزي)
+  static String getCurrencySymbolEnByCountryKey(String countryKey) {
+    switch (countryKey) {
+      case 'country_saudi':
+        return 'SAR';
+      case 'country_egypt':
+        return 'EGP';
+      case 'country_emirati':
+        return 'AED';
+      case 'country_kuwait':
+        return 'KWD';
+      case 'country_qatar':
+        return 'QAR';
+      case 'country_bahrain':
+        return 'BHD';
+      case 'country_jordan':
+        return 'JOD';
+      case 'country_palestine':
+        return 'ILS';
+      case 'country_morocco':
+        return 'MAD';
+      case 'country_tunisia':
+        return 'TND';
+      default:
+        return getCurrencyCode();
+    }
+  }
+
+  /// ★ جلب رمز العملة حسب اللغة الحالية للتطبيق
+  static String getCurrencySymbolLocalized(String countryKey) {
+    return isArabic
+        ? getCurrencySymbolByCountryKey(countryKey)
+        : getCurrencySymbolEnByCountryKey(countryKey);
   }
 
   // ═══════════════════════════════════════════════════════════
