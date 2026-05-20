@@ -11,15 +11,17 @@ class ForceUpdateRepo {
 
   ForceUpdateRepo(this._apiService);
 
-  /// يجيب الـ version الحالية من الجهاز ويبعتها للـ API
-  /// يرجع [AppVersionModel] لو الـ API نجح، أو null لو فشل
   Future<AppVersionModel?> fetchVersionInfo() async {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
 
+      final endpoint = Platform.isAndroid
+          ? ApiEndPoint.checkForUpdateAndroid
+          : ApiEndPoint.checkForUpdateIos;
+
       final response = await _apiService.post(
-        endPoint: ApiEndPoint.checkForUpdate,
+        endPoint: endpoint,
         data: {'currentVersion': currentVersion},
       );
       return AppVersionModel.fromJson(response);
@@ -29,7 +31,6 @@ class ForceUpdateRepo {
     }
   }
 
-  /// يرجع true لو الـ API قال status = force_update
   Future<bool> isUpdateRequired() async {
     try {
       final versionInfo = await fetchVersionInfo();
@@ -42,7 +43,6 @@ class ForceUpdateRepo {
     }
   }
 
-  /// يرجع رابط الـ store المناسب للـ platform
   Future<String> getStoreUrl() async {
     try {
       final versionInfo = await fetchVersionInfo();

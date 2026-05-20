@@ -109,7 +109,9 @@ class ApiEndPoint {
   static const String confirmSubscriptionPurchase = '/iap/confirm-purchase';
 
   // Force Update
-  static const String checkForUpdate = '/version/check-for-update';
+  static const String checkForUpdateIos = '/version/check-for-update';
+  static const String checkForUpdateAndroid =
+      '/version/check-for-update-android';
 
   // User Sessions
   static const String getUserSessions = '/session/get-all-for-user';
