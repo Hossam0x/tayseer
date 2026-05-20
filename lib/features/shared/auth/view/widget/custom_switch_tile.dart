@@ -106,7 +106,8 @@ class TimeRangeFields extends StatelessWidget {
   String _format(TimeOfDay time) {
     final now = DateTime.now();
     final date = DateTime(now.year, now.month, now.day, time.hour, time.minute);
-    return DateFormat('hh:mm a', 'ar').format(date);
+    final locale = isArabic ? 'ar' : 'en';
+    return DateFormat('hh:mm a', locale).format(date);
   }
 
   @override
@@ -145,7 +146,7 @@ class TimeField extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: EdgeInsets.symmetric(
-          horizontal: context.responsiveWidth(20),
+          horizontal: context.responsiveWidth(10),
           vertical: context.responsiveHeight(12),
         ),
         margin: const EdgeInsets.symmetric(horizontal: 4),

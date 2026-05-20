@@ -10,13 +10,7 @@ class SelectLanguagesBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final authCubit = getIt<AuthCubit>();
 
-    final allLanguages = {
-      'ar': 'arabic',
-      'en': 'english',
-      'fr': 'french',
-      'rs': 'serbian',
-      'gr': 'greek',
-    };
+    final allLanguages = {'ar': 'arabic', 'en': 'english', 'fr': 'french'};
 
     return Scaffold(
       body: CustomBackground(
@@ -30,7 +24,9 @@ class SelectLanguagesBody extends StatelessWidget {
                 children: [
                   /// Back
                   Align(
-                    alignment:isArabic? Alignment.centerRight: Alignment.centerLeft,
+                    alignment: isArabic
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
                     child: IconButton(
                       onPressed: () => context.pop(),
                       icon: const Icon(Icons.arrow_back),
