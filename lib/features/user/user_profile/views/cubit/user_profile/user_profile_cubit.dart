@@ -672,7 +672,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
   Future<void> _shareAppLink() async {
     try {
       const String playStoreLink =
-          'https://play.google.com/store/apps/details?id=com.tayseer.app';
+          'https://play.google.com/store/apps/details?id=com.athr.tayser';
       const String appStoreLink =
           'https://apps.apple.com/eg/app/tayseer-community/id6756886227';
       const String message =

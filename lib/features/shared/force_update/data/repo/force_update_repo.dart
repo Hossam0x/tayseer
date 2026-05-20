@@ -61,6 +61,6 @@ class ForceUpdateRepo {
     if (Platform.isIOS) {
       return 'https://apps.apple.com/eg/app/tayseer-community/id6756886227';
     }
-    return 'https://play.google.com/store/apps/details?id=com.tayseer.app';
+    return 'https://play.google.com/store/apps/details?id=com.athr.tayser';
   }
 }
