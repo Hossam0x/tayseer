@@ -48,13 +48,14 @@ class VideoManager {
     _isRefreshing = true;
     debugPrint('🔒 VideoManager: Refresh lock ON');
 
-    // ✅ إيقاف الـ notifier فوراً عشان كل الـ listeners يوقفوا
+    // ✅ تعيين null بدون إطلاق الـ listeners — الـ listeners هتتجاهل الـ event
+    // لأن isRefreshing = true، لكن نضمن إن الـ value محدّث قبل disposeAll
     currentlyPlayingPostId.value = null;
 
     await _controllerManager.disposeAll();
     debugPrint('⏹️ VideoManager: Stopped and disposed all');
 
-    // ✅ رفع الـ lock بعد تأخير قصير عشان الـ widgets تتحدث
+    // ✅ رفع الـ lock بعد تأخير كافٍ عشان الـ widgets تتحدث وتعيد البناء
     Future.delayed(const Duration(milliseconds: 300), () {
       _isRefreshing = false;
       debugPrint('🔓 VideoManager: Refresh lock OFF');

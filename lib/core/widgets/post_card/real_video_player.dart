@@ -355,8 +355,14 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
     // ✅ لو التطبيق بيرجع من الخلفية، تجاهل أي pause من الـ VideoManager
     if (_isAppInBackground) return;
 
+    // ✅ لو الـ VideoManager بيعمل refresh/stopAll، تجاهل — الـ controllers
+    // هتتعمل dispose من disposeAll() مباشرة، مش من هنا
+    if (VideoManager.instance.isRefreshing) return;
+
     if (VideoManager.instance.currentlyPlayingPostId.value != widget.postId) {
       try {
+        // ✅ تحقق إن الـ controller لسه valid قبل أي عملية
+        if (!controller.value.isInitialized) return;
         if (controller.value.isPlaying) {
           _savePosition();
           controller.setVolume(0.0);
@@ -378,6 +384,8 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
     final controller = _controller;
     if (controller == null) return;
     try {
+      // ✅ تحقق إن الـ controller لسه valid قبل أي عملية
+      if (!controller.value.isInitialized) return;
       if (controller.value.isPlaying) {
         _savePosition();
         // ✅ إيقاف الصوت والفيديو (synchronous)
@@ -725,6 +733,10 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
     // الـ VisibilityDetector بيبعت visibleFraction = 0 خطأ في اللحظة دي
     if (_isAppInBackground) return;
 
+    // ✅ تجاهل أي visibility events أثناء الـ refresh — الـ controllers بتتعمل
+    // dispose من disposeAll() مباشرة، ومحاولة pause هنا بتسبب crash
+    if (VideoManager.instance.isRefreshing) return;
+
     final visibleFraction = info.visibleFraction;
 
     if (visibleFraction > 0.7) {
@@ -739,26 +751,30 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
 
         if (_controller == null && !_hasError) {
           _initializeVideo().then((_) {
-            if (_canPlay &&
-                _isInitialized &&
-                !VideoManager.instance.isRefreshing) {
+            if (!_canPlay || _isDisposed || VideoManager.instance.isRefreshing)
+              return;
+            final ctrl = _controller;
+            if (ctrl == null || !_isInitialized) return;
+            try {
+              if (!ctrl.value.isInitialized) return;
               VideoManager.instance.playVideo(widget.postId);
-              _controller?.play();
+              if (!ctrl.value.isPlaying) ctrl.play();
+            } catch (e) {
+              debugPrint('⚠️ Cannot play after init, controller disposed');
             }
           });
-        } else if (_controller != null &&
-            _isInitialized &&
-            !_isEnded &&
-            !_hasError) {
-          try {
-            if (_isPageActive && !VideoManager.instance.isRefreshing) {
-              VideoManager.instance.playVideo(widget.postId);
-              if (!_controller!.value.isPlaying) {
-                _controller!.play();
+        } else {
+          final ctrl = _controller;
+          if (ctrl != null && _isInitialized && !_isEnded && !_hasError) {
+            try {
+              if (!ctrl.value.isInitialized) return;
+              if (_isPageActive && !VideoManager.instance.isRefreshing) {
+                VideoManager.instance.playVideo(widget.postId);
+                if (!ctrl.value.isPlaying) ctrl.play();
               }
+            } catch (e) {
+              debugPrint('⚠️ Cannot play, controller disposed');
             }
-          } catch (e) {
-            debugPrint('⚠️ Cannot play, controller disposed');
           }
         }
       }

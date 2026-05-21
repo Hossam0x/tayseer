@@ -261,7 +261,7 @@ class VideoControllerManager {
   }
 
   /// إيقاف مؤقت وتدمير الـ active controller
-  Future<void> _pauseAndDisposeActive() async {
+  Future<void> _pauseAndDisposeActive({bool notifyListeners = true}) async {
     if (_activeController != null) {
       try {
         // ✅ iOS fix: إيقاف الصوت أولاً بشكل قوي
@@ -280,7 +280,10 @@ class VideoControllerManager {
       }
       _activeController = null;
       _activeVideoId = null;
-      currentlyPlayingVideoId.value = null;
+      // ✅ فقط أطلق الـ notifier لو مطلوب — نتجنب إطلاقه بعد dispose
+      if (notifyListeners) {
+        currentlyPlayingVideoId.value = null;
+      }
     }
   }
 
@@ -378,7 +381,7 @@ class VideoControllerManager {
     await Future.delayed(const Duration(milliseconds: 100));
 
     // تدمير الـ active controller
-    await _pauseAndDisposeActive();
+    await _pauseAndDisposeActive(notifyListeners: false);
 
     // تدمير كل الـ preloaded controllers
     for (var entry in _preloadedControllers.entries) {
