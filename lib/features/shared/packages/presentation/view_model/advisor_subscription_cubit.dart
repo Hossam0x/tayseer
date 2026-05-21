@@ -3,13 +3,14 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/services/iap_service.dart';
-import 'package:tayseer/core/services/paymob_service/paymob_service.dart';
+import 'package:tayseer/core/services/paymob_service/paymob_webview_screen.dart';
 import 'package:tayseer/core/shared/network/local_network.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/advisor/membership/data/models/restore_purchase_result.dart';
@@ -516,10 +517,11 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
   /// يغير قيمة save card toggle على Android
   void setSaveCard(bool value) => emit(state.copyWith(saveCard: value));
 
-  /// Android flow: يبدأ دفع الباقة عبر Paymob SDK
+  /// Android flow: يبدأ دفع الباقة عبر Paymob WebView
   Future<void> purchaseSubscriptionAndroid(
-    List<NewAdvisorSubModel> allSubs,
-  ) async {
+    List<NewAdvisorSubModel> allSubs, {
+    required BuildContext context,
+  }) async {
     final subs = getSubscriptionsForPackage(allSubs);
     if (subs.isEmpty) return;
 
@@ -549,12 +551,11 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
     }
 
     log('[AdvisorSub-Android] ════════════════════════════════════════');
-    log('[AdvisorSub-Android] 🛒 ANDROID PAYMOB FLOW');
+    log('[AdvisorSub-Android] 🌐 ANDROID WEBVIEW FLOW');
     log('[AdvisorSub-Android]   subscriptionId   : ${targetSub.id}');
     log(
       '[AdvisorSub-Android]   subscriptionType : ${targetSub.subscriptionType}',
     );
-    log('[AdvisorSub-Android]   saveCard         : ${state.saveCard}');
     log('[AdvisorSub-Android] ════════════════════════════════════════');
 
     emit(state.copyWith(status: AdvisorSubStatus.purchasing));
@@ -581,55 +582,58 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
           );
         },
         (paymentData) async {
-          // Step 2: Open Paymob SDK
-          try {
-            final sdkResult = await PaymobService.pay(
-              clientSecret: paymentData.clientSecret,
-              publicKey: paymentData.publicKey,
-            );
-
-            log('[AdvisorSub-Android] SDK result: ${sdkResult.status}');
-            if (sdkResult.cardToken != null) {
-              log('[AdvisorSub-Android] 💳 Card token: ${sdkResult.cardToken}');
-            }
-
-            if (isClosed) return;
-
-            if (sdkResult.isSuccess) {
-              // دفع ناجح → بعث event + إظهار dialog النجاح
-              SubscriptionEventBus.instance.fire(
-                SubscriptionChangedEvent(
-                  subscriptionType: targetSub.subscriptionType,
-                ),
-              );
-              emit(state.copyWith(status: AdvisorSubStatus.success));
-            } else if (sdkResult.isPending) {
-              emit(
-                state.copyWith(
-                  status: AdvisorSubStatus.error,
-                  error: 'payment_pending',
-                ),
-              );
-            } else {
-              // Rejected — المستخدم أغلق الـ SDK
-              // Paymob بيرجع Rejected حتى لو دفع ناجح وأغلق الـ sheet
-              // نعتبره success لأن الباك-إند عنده الـ transaction
-              SubscriptionEventBus.instance.fire(
-                SubscriptionChangedEvent(
-                  subscriptionType: targetSub.subscriptionType,
-                ),
-              );
-              emit(state.copyWith(status: AdvisorSubStatus.success));
-            }
-          } on PlatformException catch (e) {
-            log('[AdvisorSub-Android] ❌ SDK PlatformException: ${e.message}');
-            if (isClosed) return;
+          if (paymentData.webviewUrl.isEmpty) {
+            log('[AdvisorSub-Android] ❌ webviewUrl is empty');
             emit(
               state.copyWith(
                 status: AdvisorSubStatus.error,
                 error: 'payment_sdk_error',
               ),
             );
+            return;
+          }
+
+          // Step 2: Open Paymob WebView
+          if (!context.mounted) return;
+          final webResult = await Navigator.of(context)
+              .push<PaymobWebViewResult>(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      PaymobWebViewScreen(webviewUrl: paymentData.webviewUrl),
+                ),
+              );
+
+          log('[AdvisorSub-Android] WebView result: $webResult');
+
+          if (isClosed) return;
+
+          if (webResult == PaymobWebViewResult.success) {
+            SubscriptionEventBus.instance.fire(
+              SubscriptionChangedEvent(
+                subscriptionType: targetSub.subscriptionType,
+              ),
+            );
+            emit(state.copyWith(status: AdvisorSubStatus.success));
+          } else if (webResult == PaymobWebViewResult.pending) {
+            emit(
+              state.copyWith(
+                status: AdvisorSubStatus.error,
+                error: 'payment_pending',
+              ),
+            );
+          } else if (webResult == PaymobWebViewResult.closed ||
+              webResult == null) {
+            // المستخدم أغلق الـ WebView — نعمل reload من الباك-إند
+            // لو الدفع نجح فعلاً، الـ webhook هيكون وصل للباك-إند
+            SubscriptionEventBus.instance.fire(
+              SubscriptionChangedEvent(
+                subscriptionType: targetSub.subscriptionType,
+              ),
+            );
+            emit(state.copyWith(status: AdvisorSubStatus.success));
+          } else {
+            // Rejected — المستخدم ألغى الدفع
+            emit(state.copyWith(status: AdvisorSubStatus.canceled));
           }
         },
       );

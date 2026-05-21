@@ -3,13 +3,14 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/services/iap_service.dart';
-import 'package:tayseer/core/services/paymob_service/paymob_service.dart';
+import 'package:tayseer/core/services/paymob_service/paymob_webview_screen.dart';
 import 'package:tayseer/core/shared/network/local_network.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
@@ -504,10 +505,11 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
   /// يغير قيمة save card toggle على Android
   void setSaveCard(bool value) => emit(state.copyWith(saveCard: value));
 
-  /// Android flow: يبدأ دفع الباقة عبر Paymob SDK
+  /// Android flow: يبدأ دفع الباقة عبر Paymob WebView
   Future<void> purchaseSubscriptionAndroid(
-    List<NewUserSubModel> allSubs,
-  ) async {
+    List<NewUserSubModel> allSubs, {
+    required BuildContext context,
+  }) async {
     final subs = getSubscriptionsForPackage(allSubs);
     if (subs.isEmpty) return;
 
@@ -537,10 +539,9 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
     }
 
     log('[UserSub-Android] ════════════════════════════════════════');
-    log('[UserSub-Android] 🛒 ANDROID PAYMOB FLOW');
+    log('[UserSub-Android] 🌐 ANDROID WEBVIEW FLOW');
     log('[UserSub-Android]   subscriptionId   : ${targetSub.id}');
     log('[UserSub-Android]   subscriptionType : ${targetSub.subscriptionType}');
-    log('[UserSub-Android]   saveCard         : ${state.saveCard}');
     log('[UserSub-Android] ════════════════════════════════════════');
 
     emit(state.copyWith(status: UserSubStatus.purchasing));
@@ -564,57 +565,57 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
           );
         },
         (paymentData) async {
-          // Step 2: Open Paymob SDK
-          try {
-            final sdkResult = await PaymobService.pay(
-              clientSecret: paymentData.clientSecret,
-              publicKey: paymentData.publicKey,
-            );
-
-            log('[UserSub-Android] SDK result: ${sdkResult.status}');
-            if (sdkResult.cardToken != null) {
-              log('[UserSub-Android] 💳 Card token: ${sdkResult.cardToken}');
-            }
-
-            if (isClosed) return;
-
-            if (isClosed) return;
-
-            if (sdkResult.isSuccess) {
-              // دفع ناجح → بعث event + إظهار dialog النجاح
-              SubscriptionEventBus.instance.fire(
-                SubscriptionChangedEvent(
-                  subscriptionType: targetSub.subscriptionType,
-                ),
-              );
-              emit(state.copyWith(status: UserSubStatus.success));
-            } else if (sdkResult.isPending) {
-              emit(
-                state.copyWith(
-                  status: UserSubStatus.error,
-                  error: 'payment_pending',
-                ),
-              );
-            } else {
-              // Rejected — المستخدم أغلق الـ SDK
-              // Paymob بيرجع Rejected حتى لو دفع ناجح وأغلق الـ sheet
-              // نعتبره success لأن الباك-إند عنده الـ transaction
-              SubscriptionEventBus.instance.fire(
-                SubscriptionChangedEvent(
-                  subscriptionType: targetSub.subscriptionType,
-                ),
-              );
-              emit(state.copyWith(status: UserSubStatus.success));
-            }
-          } on PlatformException catch (e) {
-            log('[UserSub-Android] ❌ SDK PlatformException: ${e.message}');
-            if (isClosed) return;
+          if (paymentData.webviewUrl.isEmpty) {
+            log('[UserSub-Android] ❌ webviewUrl is empty');
             emit(
               state.copyWith(
                 status: UserSubStatus.error,
                 error: 'payment_sdk_error',
               ),
             );
+            return;
+          }
+
+          // Step 2: Open Paymob WebView
+          if (!context.mounted) return;
+          final webResult = await Navigator.of(context)
+              .push<PaymobWebViewResult>(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      PaymobWebViewScreen(webviewUrl: paymentData.webviewUrl),
+                ),
+              );
+
+          log('[UserSub-Android] WebView result: $webResult');
+
+          if (isClosed) return;
+
+          if (webResult == PaymobWebViewResult.success) {
+            SubscriptionEventBus.instance.fire(
+              SubscriptionChangedEvent(
+                subscriptionType: targetSub.subscriptionType,
+              ),
+            );
+            emit(state.copyWith(status: UserSubStatus.success));
+          } else if (webResult == PaymobWebViewResult.pending) {
+            emit(
+              state.copyWith(
+                status: UserSubStatus.error,
+                error: 'payment_pending',
+              ),
+            );
+          } else if (webResult == PaymobWebViewResult.closed ||
+              webResult == null) {
+            // المستخدم أغلق الـ WebView — نعمل reload من الباك-إند
+            SubscriptionEventBus.instance.fire(
+              SubscriptionChangedEvent(
+                subscriptionType: targetSub.subscriptionType,
+              ),
+            );
+            emit(state.copyWith(status: UserSubStatus.success));
+          } else {
+            // Rejected — المستخدم ألغى الدفع
+            emit(state.copyWith(status: UserSubStatus.canceled));
           }
         },
       );

@@ -264,6 +264,7 @@ class UserSubscriptionView extends StatelessWidget {
                                                     .purchaseSubscriptionAndroid(
                                                       packagesState
                                                           .subscriptions,
+                                                      context: context,
                                                     );
                                               } else {
                                                 cubit.purchaseSubscription(

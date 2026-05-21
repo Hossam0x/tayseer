@@ -297,9 +297,9 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
   void _onPayGold(BuildContext context, List<NewUserSubModel> allSubs) {
     final cubit = context.read<UserSubscriptionCubit>();
     cubit.selectDuration(_selectedIndex, allSubs);
-    // ✅ Android → Paymob flow  |  iOS → Apple IAP flow
+    // ✅ Android → Paymob WebView  |  iOS → Apple IAP flow
     if (Platform.isAndroid) {
-      cubit.purchaseSubscriptionAndroid(allSubs);
+      cubit.purchaseSubscriptionAndroid(allSubs, context: context);
     } else {
       cubit.purchaseSubscription(allSubs);
     }
