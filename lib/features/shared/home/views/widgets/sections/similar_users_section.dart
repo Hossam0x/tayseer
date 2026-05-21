@@ -4,6 +4,8 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:tayseer/core/models/pagination_model.dart';
 import 'package:tayseer/features/shared/home/model/similar_user_model.dart';
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
+import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/regards_purchase_sheet.dart';
 import 'package:tayseer/my_import.dart';
 
 class SimilarUsersSection extends StatefulWidget {
@@ -167,12 +169,20 @@ class _SimilarUserCard extends StatelessWidget {
       scale: isSelected ? 1.0 : 0.95,
       child: GestureDetector(
         onTap: () async {
+          // ✅ تحقق من الاشتراك قبل الدخول على البروفايل
+          final isSubscribed = getIt<InteractionsCubit>().state.isSubscribed;
+          if (!isSubscribed) {
+            showGoldPurchaseSheet(context);
+            return;
+          }
+
           await context.pushNamed(
             AppRouter.kMarriageView,
             arguments: {
               'personId': user.id,
-              'fromInteractions': false,
+              'fromInteractions': true,
               'isFavorite': false,
+              'popAfterInteraction': false,
               'interactionUser': InteractionUserModel(
                 userId: user.id ?? '',
                 name: user.name ?? '',

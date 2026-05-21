@@ -3,6 +3,7 @@ import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:tayseer/core/cache/chat_cache_service.dart';
@@ -97,6 +98,16 @@ void main() async {
   }
 
   Bloc.observer = SimpleBlocObserver();
+
+  // ✅ تجاهل PlatformException(unknown_view) — بيجي من UiKitView على iOS
+  // لما الـ gesture arena يبعت events لـ platform view اتـدispose بالفعل
+  // ده race condition معروف في Flutter ومش بيأثر على الـ UX
+  PlatformDispatcher.instance.onError = (error, stack) {
+    if (error is PlatformException && error.code == 'unknown_view') {
+      return true; // تجاهل بصمت
+    }
+    return false; // اتركه للـ default handler
+  };
 
   // ✅ زود حجم الـ ImageCache — الـ default (100 صورة / 100MB) قليل جداً
   // للـ social media feed. بدونها الصور بتتطرد من الـ memory cache

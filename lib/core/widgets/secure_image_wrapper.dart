@@ -61,6 +61,7 @@ class _IosSecureImage extends StatefulWidget {
 class _IosSecureImageState extends State<_IosSecureImage> {
   bool _ready = false;
   bool _nativeLoaded = false;
+  bool _disposed = false;
   // debounce flag لمنع PlatformException(recreating_view)
   Timer? _readyTimer;
 
@@ -77,6 +78,7 @@ class _IosSecureImageState extends State<_IosSecureImage> {
 
   @override
   void dispose() {
+    _disposed = true;
     _readyTimer?.cancel();
     super.dispose();
   }
@@ -94,7 +96,7 @@ class _IosSecureImageState extends State<_IosSecureImage> {
         ),
 
         // الـ UiKitView بيبدأ بـ opacity 0 ويتظهر تدريجياً
-        if (_ready)
+        if (_ready && !_disposed)
           AnimatedOpacity(
             opacity: _nativeLoaded ? 1.0 : 0.0,
             duration: const Duration(milliseconds: 300),
@@ -109,7 +111,8 @@ class _IosSecureImageState extends State<_IosSecureImage> {
                   const <Factory<OneSequenceGestureRecognizer>>{},
               onPlatformViewCreated: (_) {
                 Future.delayed(const Duration(milliseconds: 250), () {
-                  if (mounted) setState(() => _nativeLoaded = true);
+                  if (mounted && !_disposed)
+                    setState(() => _nativeLoaded = true);
                 });
               },
             ),

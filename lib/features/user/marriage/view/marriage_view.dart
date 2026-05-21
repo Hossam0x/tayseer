@@ -17,6 +17,7 @@ class MarriageView extends StatefulWidget {
     this.initialIsFavorite = false,
     this.interactionUser,
     this.onScroll,
+    this.popAfterInteraction = true,
   });
 
   final String? personId;
@@ -24,6 +25,7 @@ class MarriageView extends StatefulWidget {
   final bool fromInteractions;
   final bool initialIsFavorite;
   final InteractionUserModel? interactionUser;
+  final bool popAfterInteraction;
 
   @override
   State<MarriageView> createState() => _MarriageViewState();
@@ -80,6 +82,7 @@ class _MarriageViewState extends State<MarriageView> with RouteAware {
                       fromInteractions: widget.fromInteractions,
                       initialIsFavorite: widget.initialIsFavorite,
                       onScroll: widget.onScroll,
+                      popAfterInteraction: widget.popAfterInteraction,
                     ),
                   ),
                 ),

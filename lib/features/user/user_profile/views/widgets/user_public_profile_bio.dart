@@ -1,7 +1,9 @@
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
+import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/models/user_profile_model.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profile/user_public_profile_state.dart';
+import 'package:tayseer/features/user/user_profile/views/widgets/regards_purchase_sheet.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
@@ -157,12 +159,20 @@ class UserPublicProfileBio extends StatelessWidget {
                       onPressed: isBlocked
                           ? null
                           : () {
+                              // ✅ تحقق من الاشتراك قبل الدخول على البروفايل
+                              final isSubscribed =
+                                  getIt<InteractionsCubit>().state.isSubscribed;
+                              if (!isSubscribed) {
+                                showGoldPurchaseSheet(context);
+                                return;
+                              }
                               context.pushNamed(
                                 AppRouter.kMarriageView,
                                 arguments: {
                                   'personId': profile.id,
-                                  'fromInteractions': false,
+                                  'fromInteractions': true,
                                   'isFavorite': false,
+                                  'popAfterInteraction': false,
                                   'interactionUser': InteractionUserModel(
                                     userId: profile.id,
                                     name: profile.name,

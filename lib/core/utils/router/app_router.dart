@@ -905,7 +905,8 @@ abstract class AppRouter {
                   userimage: userArgs?['userimage'] as String?,
                   isImageBlurred: userArgs?['imageBlur'] as bool? ?? false,
                   myImageBlur: userArgs?['myImageBlur'] as bool? ?? false,
-                  blurMyImageFromOtherUser: userArgs?['blurMyImageFromOtherUser'] as bool? ?? true,
+                  blurMyImageFromOtherUser:
+                      userArgs?['blurMyImageFromOtherUser'] as bool? ?? true,
                   isBlocked: userArgs?['isBlocked'] as bool? ?? false,
                 ),
               )
@@ -918,7 +919,8 @@ abstract class AppRouter {
                   userimage: userArgs?['userimage'] as String?,
                   isImageBlurred: userArgs?['imageBlur'] as bool? ?? false,
                   myImageBlur: userArgs?['myImageBlur'] as bool? ?? false,
-                  blurMyImageFromOtherUser: userArgs?['blurMyImageFromOtherUser'] as bool? ?? true,
+                  blurMyImageFromOtherUser:
+                      userArgs?['blurMyImageFromOtherUser'] as bool? ?? true,
                   isBlocked: userArgs?['isBlocked'] as bool? ?? false,
                 ),
               );
@@ -1165,6 +1167,7 @@ abstract class AppRouter {
             fromInteractions: args?['fromInteractions'] ?? false, // ✅
             initialIsFavorite: args?['isFavorite'] ?? false, // ✅
             interactionUser: args?['interactionUser'], // ✅
+            popAfterInteraction: args?['popAfterInteraction'] ?? true, // ✅
           ),
         );
       case AppRouter.kOrderManagementView:
