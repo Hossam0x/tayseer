@@ -198,6 +198,43 @@ class MembershipCubit extends Cubit<MembershipState> {
     }
   }
 
+  // ── Android Cancel Auto-Renewal ─────────────────────────────────────────────
+
+  /// يلغي التجديد التلقائي على Android عبر Paymob backend مباشرة.
+  Future<void> cancelAndroidAutoRenewal() async {
+    final current = state;
+    if (current is! MembershipLoaded) return;
+
+    emit(current.copyWith(isCancelLoading: true));
+
+    final result = await _repository.cancelAndroidAutoRenewal();
+    if (isClosed) return;
+
+    result.fold(
+      (failure) {
+        log('[Cancel-Android] ❌ ${failure.message}');
+        emit(
+          current.copyWith(
+            isCancelLoading: false,
+            actionError: failure.message,
+            timestamp: DateTime.now().millisecondsSinceEpoch,
+          ),
+        );
+      },
+      (_) {
+        log('[Cancel-Android] ✅ Auto-renewal cancelled');
+        emit(
+          current.copyWith(
+            isCancelLoading: false,
+            actionSuccess: 'cancel_auto_renew_success',
+            timestamp: DateTime.now().millisecondsSinceEpoch,
+          ),
+        );
+        loadMembership();
+      },
+    );
+  }
+
   // ── Restore Purchase ────────────────────────────────────────────────────────
 
   /// Restores purchases via Apple, then sends the JWS receipt to the backend.

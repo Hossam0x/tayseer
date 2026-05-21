@@ -118,13 +118,13 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
           );
 
           // ── Step 3: التعامل مع النتيجة ──
-          if (sdkResult == 'Successfull') {
+          if (sdkResult.isSuccess) {
             CubitStates.printState(
               stateName: 'TicketSessionCubit - paySession (SDK)',
               state: CubitStates.success,
             );
             emit(state.copyWith(paySessionState: CubitStates.success));
-          } else if (sdkResult == 'Pending') {
+          } else if (sdkResult.isPending) {
             emit(
               state.copyWith(
                 paySessionState: CubitStates.failure,

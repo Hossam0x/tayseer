@@ -174,8 +174,12 @@ class MainActivity : FlutterActivity(), MethodCallHandler, PaymobSdkListener {
     }
 
     override fun onSuccess(payResponse: HashMap<String, String?>) {
-        Log.d("PaymobSDK", "🟢 Success!")
-        SDKResult?.success("Successfull")
+        Log.d("PaymobSDK", "🟢 Success! payResponse keys: ${payResponse.keys}")
+        // نبعت الـ payResponse كاملاً للـ Flutter عشان الباك-إند يقدر يشوف الـ card token
+        val result = HashMap<String, Any?>()
+        result["status"] = "Successfull"
+        result.putAll(payResponse)
+        SDKResult?.success(result)
         SDKResult = null
     }
 

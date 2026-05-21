@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/features/advisor/membership/data/models/my_subscription_model.dart';
 import 'package:tayseer/features/advisor/membership/data/models/restore_purchase_result.dart';
+import 'package:tayseer/features/user/my_space/data/model/paymob/payment_intention_model.dart';
 import 'package:tayseer/my_import.dart';
 
 abstract class MembershipRepository {
@@ -19,6 +20,18 @@ abstract class MembershipRepository {
     required String productId,
     required String platform,
   });
+
+  /// Initiates a Google/Paymob subscription payment.
+  /// Returns [PaymentIntentionData] with clientSecret and publicKey for the SDK.
+  Future<Either<Failure, PaymentIntentionData>>
+  initiateGoogleSubscriptionPayment({
+    required String subscriptionId,
+    required String subscriptionType,
+    required bool saveCard,
+  });
+
+  /// Cancels Android auto-renewal via Paymob backend.
+  Future<Either<Failure, void>> cancelAndroidAutoRenewal();
 }
 
 class MembershipRepositoryImpl implements MembershipRepository {
@@ -173,6 +186,68 @@ class MembershipRepositoryImpl implements MembershipRepository {
       return Left(
         ServerFailure(
           response['message']?.toString() ?? 'فشل بدء عملية الشراء',
+        ),
+      );
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, PaymentIntentionData>>
+  initiateGoogleSubscriptionPayment({
+    required String subscriptionId,
+    required String subscriptionType,
+    required bool saveCard,
+  }) async {
+    try {
+      log('[MembershipRepo] initiateGoogleSubscriptionPayment');
+      log('[MembershipRepo]   subscriptionId   : $subscriptionId');
+      log('[MembershipRepo]   subscriptionType : $subscriptionType');
+      log('[MembershipRepo]   saveCard         : $saveCard');
+
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.initiateGoogleSubscriptionPayment,
+        data: {
+          'subscriptionId': subscriptionId,
+          'subscriptionType': subscriptionType,
+          'saveCard': saveCard,
+        },
+      );
+
+      if (response['success'] == true) {
+        return Right(
+          PaymentIntentionData.fromJson(
+            response['data'] as Map<String, dynamic>,
+          ),
+        );
+      }
+      return Left(
+        ServerFailure(response['message']?.toString() ?? 'فشل بدء عملية الدفع'),
+      );
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> cancelAndroidAutoRenewal() async {
+    try {
+      log('[MembershipRepo] cancelAndroidAutoRenewal');
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.cancelAndroidAutoRenewal,
+        data: {},
+      );
+      if (response['success'] == true) {
+        return const Right(null);
+      }
+      return Left(
+        ServerFailure(
+          response['message']?.toString() ?? 'فشل إلغاء التجديد التلقائي',
         ),
       );
     } on DioException catch (e) {

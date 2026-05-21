@@ -1076,6 +1076,14 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
               if (currentPkg != null) return const SizedBox.shrink();
             }
 
+            // Android: لو عنده اشتراك نشط → مفيش زرار تغيير الباقة من هنا
+            if (Platform.isAndroid &&
+                !isLoading &&
+                currentPkg != null &&
+                selectedPackage != PackageType.basic) {
+              return const SizedBox.shrink();
+            }
+
             final isCurrentSub =
                 selectedPackage != PackageType.basic &&
                 currentPkg == selectedPackage;

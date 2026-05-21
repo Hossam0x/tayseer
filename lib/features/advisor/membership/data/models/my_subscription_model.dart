@@ -40,7 +40,7 @@ class MySubscriptionModel {
   bool get isActive => subscriptionStatus == 'active';
 
   /// الاشتراك ملغي auto-renew — إما من الـ status أو من الـ autoRenewal flag
-  bool get isCancelled => subscriptionStatus == 'cancelled' || !autoRenewal;
+  bool get isCancelled => subscriptionStatus == 'cancelled';
 
   bool get isExpired => subscriptionStatus == 'expired';
   bool get isUnlimited => subscriptionDurationType == 'unlimited';

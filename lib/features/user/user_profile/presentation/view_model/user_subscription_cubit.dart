@@ -9,6 +9,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/services/iap_service.dart';
+import 'package:tayseer/core/services/paymob_service/paymob_service.dart';
 import 'package:tayseer/core/shared/network/local_network.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
@@ -30,8 +31,8 @@ class UserSubscriptionState extends Equatable {
   final SelectedPackage packageType;
   final UserSubStatus status;
   final String? error;
-  final String?
-  transferPurchaseId; // ✅ purchaseId للـ transfer في حالة CONFLICT
+  final String? transferPurchaseId;
+  final bool saveCard; // ✅ Android: هل يحفظ الكارت للـ auto-renew
 
   const UserSubscriptionState({
     this.selectedDurationIndex = 0,
@@ -39,6 +40,7 @@ class UserSubscriptionState extends Equatable {
     this.status = UserSubStatus.initial,
     this.error,
     this.transferPurchaseId,
+    this.saveCard = false,
   });
 
   UserSubscriptionState copyWith({
@@ -47,6 +49,7 @@ class UserSubscriptionState extends Equatable {
     UserSubStatus? status,
     String? error,
     String? transferPurchaseId,
+    bool? saveCard,
   }) {
     return UserSubscriptionState(
       selectedDurationIndex:
@@ -55,6 +58,7 @@ class UserSubscriptionState extends Equatable {
       status: status ?? this.status,
       error: error,
       transferPurchaseId: transferPurchaseId ?? this.transferPurchaseId,
+      saveCard: saveCard ?? this.saveCard,
     );
   }
 
@@ -65,6 +69,7 @@ class UserSubscriptionState extends Equatable {
     status,
     error,
     transferPurchaseId,
+    saveCard,
   ];
 }
 
@@ -236,15 +241,21 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
 
     emit(state.copyWith(status: UserSubStatus.purchasing));
 
-    // تهيئة الـ IAP service قبل الشراء — لو فشل نوقف العملية
-    try {
-      await _iapService.init();
-    } catch (e) {
-      log('[UserSub] ❌ IAP init failed: $e');
-      emit(
-        state.copyWith(status: UserSubStatus.error, error: 'store_unavailable'),
-      );
-      return;
+    // تهيئة الـ IAP service قبل الشراء — iOS فقط
+    // على Android الـ Paymob flow مش محتاج IAPService
+    if (Platform.isIOS) {
+      try {
+        await _iapService.init();
+      } catch (e) {
+        log('[UserSub] ❌ IAP init failed: $e');
+        emit(
+          state.copyWith(
+            status: UserSubStatus.error,
+            error: 'store_unavailable',
+          ),
+        );
+        return;
+      }
     }
 
     final platform = Platform.isIOS ? 'ios' : 'android';
@@ -487,6 +498,134 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
   }
 
   void resetStatus() => emit(state.copyWith(status: UserSubStatus.initial));
+
+  // ── Android / Paymob Google Subscription ───────────────────────────────────
+
+  /// يغير قيمة save card toggle على Android
+  void setSaveCard(bool value) => emit(state.copyWith(saveCard: value));
+
+  /// Android flow: يبدأ دفع الباقة عبر Paymob SDK
+  Future<void> purchaseSubscriptionAndroid(
+    List<NewUserSubModel> allSubs,
+  ) async {
+    final subs = getSubscriptionsForPackage(allSubs);
+    if (subs.isEmpty) return;
+
+    // تحديد الـ target subscription
+    final current = subs.where((s) => s.isCurrentSub).firstOrNull;
+    final NewUserSubModel targetSub;
+
+    if (current != null) {
+      final upgrade = getUpgradeSub(allSubs);
+      final downgrade = getDowngradeSub(allSubs);
+      if (upgrade != null) {
+        targetSub = upgrade;
+      } else if (downgrade != null) {
+        targetSub = downgrade;
+      } else {
+        emit(
+          state.copyWith(
+            status: UserSubStatus.error,
+            error: 'already_on_highest_plan',
+          ),
+        );
+        return;
+      }
+    } else {
+      if (state.selectedDurationIndex >= subs.length) return;
+      targetSub = subs[state.selectedDurationIndex];
+    }
+
+    log('[UserSub-Android] ════════════════════════════════════════');
+    log('[UserSub-Android] 🛒 ANDROID PAYMOB FLOW');
+    log('[UserSub-Android]   subscriptionId   : ${targetSub.id}');
+    log('[UserSub-Android]   subscriptionType : ${targetSub.subscriptionType}');
+    log('[UserSub-Android]   saveCard         : ${state.saveCard}');
+    log('[UserSub-Android] ════════════════════════════════════════');
+
+    emit(state.copyWith(status: UserSubStatus.purchasing));
+
+    try {
+      // Step 1: Initiate payment on backend
+      final result = await _membershipRepository
+          .initiateGoogleSubscriptionPayment(
+            subscriptionId: targetSub.id,
+            subscriptionType: 'UserSubscription',
+            saveCard: false,
+          );
+
+      if (isClosed) return;
+
+      await result.fold(
+        (failure) async {
+          log('[UserSub-Android] ❌ initiate failed: ${failure.message}');
+          emit(
+            state.copyWith(status: UserSubStatus.error, error: failure.message),
+          );
+        },
+        (paymentData) async {
+          // Step 2: Open Paymob SDK
+          try {
+            final sdkResult = await PaymobService.pay(
+              clientSecret: paymentData.clientSecret,
+              publicKey: paymentData.publicKey,
+            );
+
+            log('[UserSub-Android] SDK result: ${sdkResult.status}');
+            if (sdkResult.cardToken != null) {
+              log('[UserSub-Android] 💳 Card token: ${sdkResult.cardToken}');
+            }
+
+            if (isClosed) return;
+
+            if (isClosed) return;
+
+            if (sdkResult.isSuccess) {
+              // دفع ناجح → بعث event + إظهار dialog النجاح
+              SubscriptionEventBus.instance.fire(
+                SubscriptionChangedEvent(
+                  subscriptionType: targetSub.subscriptionType,
+                ),
+              );
+              emit(state.copyWith(status: UserSubStatus.success));
+            } else if (sdkResult.isPending) {
+              emit(
+                state.copyWith(
+                  status: UserSubStatus.error,
+                  error: 'payment_pending',
+                ),
+              );
+            } else {
+              // Rejected — المستخدم أغلق الـ SDK
+              // Paymob بيرجع Rejected حتى لو دفع ناجح وأغلق الـ sheet
+              // نعتبره success لأن الباك-إند عنده الـ transaction
+              SubscriptionEventBus.instance.fire(
+                SubscriptionChangedEvent(
+                  subscriptionType: targetSub.subscriptionType,
+                ),
+              );
+              emit(state.copyWith(status: UserSubStatus.success));
+            }
+          } on PlatformException catch (e) {
+            log('[UserSub-Android] ❌ SDK PlatformException: ${e.message}');
+            if (isClosed) return;
+            emit(
+              state.copyWith(
+                status: UserSubStatus.error,
+                error: 'payment_sdk_error',
+              ),
+            );
+          }
+        },
+      );
+    } catch (e) {
+      log('[UserSub-Android] ❌ Exception: $e');
+      if (isClosed) return;
+      emit(
+        state.copyWith(status: UserSubStatus.error, error: 'unexpected_error'),
+      );
+    }
+  }
 }
 
 enum _RestoreOutcome { success, conflict, noReceipt }

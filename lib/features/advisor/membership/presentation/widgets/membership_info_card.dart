@@ -63,7 +63,7 @@ class MembershipInfoCard extends StatelessWidget {
 
   String _statusText(BuildContext context) {
     if (sub.isExpired) return context.tr('status_ended');
-    if (!sub.autoRenewal) return context.tr('status_cancelled_auto_renew');
+    if (sub.isActive) return context.tr('status_active');
     if (sub.isCancelled) return context.tr('status_cancelled');
     return context.tr('status_active');
   }

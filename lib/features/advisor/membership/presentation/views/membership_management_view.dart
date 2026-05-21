@@ -262,7 +262,14 @@ class _LoadedBody extends StatelessWidget {
           else
             MembershipActionButtons(
               sub: sub,
-              onCancelTap: () => _showCancelDialog(context),
+              onCancelTap: () => Platform.isAndroid
+                  ? showAndroidCancelAutoRenewalDialog(
+                      context,
+                      onConfirm: () => context
+                          .read<MembershipCubit>()
+                          .cancelAndroidAutoRenewal(),
+                    )
+                  : _showCancelDialog(context),
             ),
         ],
       ),

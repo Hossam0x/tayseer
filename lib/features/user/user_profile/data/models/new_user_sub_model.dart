@@ -3,6 +3,7 @@ import 'package:tayseer/features/shared/packages/data/models/new_advisor_sub_mod
 class NewUserSubModel {
   final String id;
   final String appleProductId;
+  final String androidProductId; // Google Play product ID
   final String subscriptionType; // "gold" | "ultra"
   final String subscriptionDurationType; // "monthly" | "weekly" | "threeMonths"
   final bool isCurrentSub;
@@ -22,6 +23,7 @@ class NewUserSubModel {
   NewUserSubModel({
     required this.id,
     required this.appleProductId,
+    this.androidProductId = '',
     required this.subscriptionType,
     required this.subscriptionDurationType,
     required this.isCurrentSub,
@@ -43,6 +45,7 @@ class NewUserSubModel {
     return NewUserSubModel(
       id: json['id'] ?? '',
       appleProductId: json['appleProductId'] ?? '',
+      androidProductId: json['androidProductId'] ?? '',
       subscriptionType: (json['subscriptionType'] ?? '')
           .toString()
           .toLowerCase(),
@@ -90,6 +93,7 @@ class NewUserSubModel {
     return NewAdvisorSubModel(
       id: id,
       appleProductId: appleProductId,
+      androidProductId: androidProductId,
       subscriptionType: subscriptionType,
       subscriptionDurationType: subscriptionDurationType,
       isCurrentSub: isCurrentSub,

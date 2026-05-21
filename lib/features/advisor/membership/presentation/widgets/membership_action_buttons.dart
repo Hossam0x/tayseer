@@ -37,32 +37,38 @@ class MembershipActionButtons extends StatelessWidget {
     // نشط
     return Column(
       children: [
-        // ── تغيير الباقة ──────────────────────────────────────────────────
-        _PrimaryButton(
-          label: context.tr('change_plan'),
-          onPressed: () => _pushAndRefetch(
-            context,
-            packagesRoute,
-            args: {'initialPage': initialPage},
+        // ── تغيير الباقة — iOS فقط ────────────────────────────────────────
+        if (Platform.isIOS) ...[
+          _PrimaryButton(
+            label: context.tr('change_plan'),
+            onPressed: () => _pushAndRefetch(
+              context,
+              packagesRoute,
+              args: {'initialPage': initialPage},
+            ),
           ),
-        ),
-        Gap(12.h),
+          Gap(12.h),
+        ],
 
-        // ── إدارة الاشتراك (Manage) — يفتح Apple sheet مباشرة ────────────
-        _ManageButton(
-          onTap: () => context.read<MembershipCubit>().cancelMembership(),
-        ),
+        // ── إدارة الاشتراك (Manage) — iOS فقط ────────────────────────────
+        if (Platform.isIOS) ...[
+          _ManageButton(
+            onTap: () => context.read<MembershipCubit>().cancelMembership(),
+          ),
+          Gap(12.h),
+        ],
 
         // ── طلب استرداد (Refund) — iOS 15+ native sheet ───────────────────
         if (Platform.isIOS) ...[
-          Gap(12.h),
           _RefundButton(
             onTap: () => context.read<MembershipCubit>().requestRefund(),
           ),
+          Gap(12.h),
         ],
 
         // ── إلغاء التجديد التلقائي — يظهر بس لو autoRenewal = true ────────
-        if (sub.autoRenewal) ...[Gap(12.h), _CancelButton(onTap: onCancelTap)],
+        // iOS: يفتح Apple sheet | Android: يكلم الباك مباشرة
+        if (sub.autoRenewal) _CancelButton(onTap: onCancelTap),
       ],
     );
   }

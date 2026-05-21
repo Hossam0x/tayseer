@@ -6,6 +6,7 @@ import 'package:tayseer/features/advisor/membership/data/models/restore_purchase
 import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
 import 'package:tayseer/features/advisor/membership/presentation/widgets/membership_restore_conflict_dialog.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
+import 'package:tayseer/features/shared/packages/presentation/widgets/save_card_note.dart';
 import 'package:tayseer/features/user/marriage/model/regards_package_model.dart';
 import 'package:tayseer/features/user/marriage/view_model/regards_packages_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/models/new_user_sub_model.dart';
@@ -295,10 +296,13 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
 
   void _onPayGold(BuildContext context, List<NewUserSubModel> allSubs) {
     final cubit = context.read<UserSubscriptionCubit>();
-    // ✅ نبعت الـ allSubs مع الـ selectedIndex — الـ cubit هيحدد الـ target بنفسه
-    // لكن لازم نحدد الـ selectedDurationIndex أولاً عشان الـ purchaseSubscription يستخدمه
     cubit.selectDuration(_selectedIndex, allSubs);
-    cubit.purchaseSubscription(allSubs);
+    // ✅ Android → Paymob flow  |  iOS → Apple IAP flow
+    if (Platform.isAndroid) {
+      cubit.purchaseSubscriptionAndroid(allSubs);
+    } else {
+      cubit.purchaseSubscription(allSubs);
+    }
   }
 
   // ════════════════════════════════════
@@ -591,12 +595,19 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                   ),
                   SizedBox(height: 10.h),
 
-                  // ── تجديد تلقائي ──
-                  Text(
-                    context.tr('auto_renew_note'),
-                    style: TextStyle(fontSize: 11.sp, color: Colors.black38),
-                    textAlign: TextAlign.center,
-                  ),
+                  // ── تجديد تلقائي (iOS only) ──
+                  if (Platform.isIOS)
+                    Text(
+                      context.tr('auto_renew_note'),
+                      style: TextStyle(fontSize: 11.sp, color: Colors.black38),
+                      textAlign: TextAlign.center,
+                    ),
+
+                  // ── Save Card Note (Android only) ──
+                  if (Platform.isAndroid) ...[
+                    SizedBox(height: 4.h),
+                    SaveCardNote(),
+                  ],
 
                   // ── Restore Purchases ──
                   if (Platform.isIOS) ...[

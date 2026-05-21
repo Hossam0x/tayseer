@@ -8,6 +8,7 @@ import 'package:tayseer/features/shared/packages/presentation/view_model/advisor
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/current_sub_card.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/restore_purchases_button.dart';
+import 'package:tayseer/features/shared/packages/presentation/widgets/save_card_note.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/selectable_sub_card.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/subscription_purchasing_button.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/subscription_success_dialog.dart';
@@ -103,7 +104,9 @@ class AdvisorSubscriptionView extends StatelessWidget {
             final downgradeSub = isLoading
                 ? null
                 : cubit.getDowngradeSub(packagesState.subscriptions);
-            final changeSub = upgradeSub ?? downgradeSub;
+            final changeSub = Platform.isAndroid
+                ? null
+                : (upgradeSub ?? downgradeSub);
             final isUpgradeAction = upgradeSub != null;
             final hasCurrentSub = currentSub != null;
 
@@ -233,6 +236,13 @@ class AdvisorSubscriptionView extends StatelessWidget {
                                     ),
                                   ),
                                 Gap(30.h),
+                                // ── Save Card Note (Android only) ──
+                                if (Platform.isAndroid &&
+                                    !isPurchasing &&
+                                    !(hasCurrentSub && changeSub == null)) ...[
+                                  const SaveCardNote(),
+                                  Gap(16.h),
+                                ],
                                 if (isPurchasing)
                                   SubscriptionPurchasingButton(
                                     backgroundColor: accentDark,
@@ -247,9 +257,19 @@ class AdvisorSubscriptionView extends StatelessWidget {
                                           (isLoading ||
                                               (!hasCurrentSub && subs.isEmpty))
                                           ? null
-                                          : () => cubit.purchaseSubscription(
-                                              packagesState.subscriptions,
-                                            ),
+                                          : () {
+                                              if (Platform.isAndroid) {
+                                                cubit
+                                                    .purchaseSubscriptionAndroid(
+                                                      packagesState
+                                                          .subscriptions,
+                                                    );
+                                              } else {
+                                                cubit.purchaseSubscription(
+                                                  packagesState.subscriptions,
+                                                );
+                                              }
+                                            },
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: accentDark,
                                         foregroundColor: Colors.white,
@@ -277,98 +297,101 @@ class AdvisorSubscriptionView extends StatelessWidget {
                                     ),
                                   ),
                                 Gap(12.h),
-                                Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 8.w,
-                                  ),
-                                  child: Text(
-                                    context.tr('auto_renew_note'),
-                                    style: TextStyle(
-                                      fontSize: 12.sp,
-                                      color: Colors.white.withOpacity(0.9),
+                                // ── auto-renew note + EULA (iOS only) ──
+                                if (Platform.isIOS) ...[
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8.w,
                                     ),
-                                    textAlign: TextAlign.center,
+                                    child: Text(
+                                      context.tr('auto_renew_note'),
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        color: Colors.white.withOpacity(0.9),
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
                                   ),
-                                ),
-                                Gap(10.h),
-                                // ── EULA link مطلوب من Apple لـ auto-renewable subscriptions ──
-                                Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 8.w,
-                                  ),
-                                  child: Text.rich(
-                                    TextSpan(
-                                      children: [
-                                        TextSpan(
-                                          text: context.tr(
-                                            'subscription_eula_prefix',
-                                          ),
-                                          style: TextStyle(
-                                            fontSize: 12.sp,
-                                            color: Colors.white.withOpacity(
-                                              0.85,
+                                  Gap(10.h),
+                                  // ── EULA link مطلوب من Apple لـ auto-renewable subscriptions ──
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8.w,
+                                    ),
+                                    child: Text.rich(
+                                      TextSpan(
+                                        children: [
+                                          TextSpan(
+                                            text: context.tr(
+                                              'subscription_eula_prefix',
+                                            ),
+                                            style: TextStyle(
+                                              fontSize: 12.sp,
+                                              color: Colors.white.withOpacity(
+                                                0.85,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                        TextSpan(
-                                          text: context.tr(
-                                            'subscription_eula_link',
+                                          TextSpan(
+                                            text: context.tr(
+                                              'subscription_eula_link',
+                                            ),
+                                            style: TextStyle(
+                                              fontSize: 12.sp,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              decoration:
+                                                  TextDecoration.underline,
+                                              decorationColor: Colors.white,
+                                            ),
+                                            recognizer: TapGestureRecognizer()
+                                              ..onTap = () {
+                                                ApplaunchUrl(
+                                                  Uri.parse(
+                                                    'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
+                                                  ),
+                                                );
+                                              },
                                           ),
-                                          style: TextStyle(
-                                            fontSize: 12.sp,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            decoration:
-                                                TextDecoration.underline,
-                                            decorationColor: Colors.white,
-                                          ),
-                                          recognizer: TapGestureRecognizer()
-                                            ..onTap = () {
-                                              ApplaunchUrl(
-                                                Uri.parse(
-                                                  'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
-                                                ),
-                                              );
-                                            },
-                                        ),
-                                        TextSpan(
-                                          text: context.tr(
-                                            'subscription_eula_separator',
-                                          ),
-                                          style: TextStyle(
-                                            fontSize: 12.sp,
-                                            color: Colors.white.withOpacity(
-                                              0.85,
+                                          TextSpan(
+                                            text: context.tr(
+                                              'subscription_eula_separator',
+                                            ),
+                                            style: TextStyle(
+                                              fontSize: 12.sp,
+                                              color: Colors.white.withOpacity(
+                                                0.85,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                        TextSpan(
-                                          text: context.tr(
-                                            'subscription_privacy_link',
+                                          TextSpan(
+                                            text: context.tr(
+                                              'subscription_privacy_link',
+                                            ),
+                                            style: TextStyle(
+                                              fontSize: 12.sp,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              decoration:
+                                                  TextDecoration.underline,
+                                              decorationColor: Colors.white,
+                                            ),
+                                            recognizer: TapGestureRecognizer()
+                                              ..onTap = () {
+                                                ApplaunchUrl(
+                                                  Uri.parse(
+                                                    'https://m.tayser-app.com/privacy-policy-2/',
+                                                  ),
+                                                );
+                                              },
                                           ),
-                                          style: TextStyle(
-                                            fontSize: 12.sp,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            decoration:
-                                                TextDecoration.underline,
-                                            decorationColor: Colors.white,
-                                          ),
-                                          recognizer: TapGestureRecognizer()
-                                            ..onTap = () {
-                                              ApplaunchUrl(
-                                                Uri.parse(
-                                                  'https://m.tayser-app.com/privacy-policy-2/',
-                                                ),
-                                              );
-                                            },
-                                        ),
-                                      ],
+                                        ],
+                                      ),
+                                      textAlign: TextAlign.center,
                                     ),
-                                    textAlign: TextAlign.center,
                                   ),
-                                ),
-                                Gap(8.h),
+                                  Gap(8.h),
+                                ],
                                 Padding(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: 8.w,

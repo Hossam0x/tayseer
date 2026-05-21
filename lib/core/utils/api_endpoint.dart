@@ -108,6 +108,12 @@ class ApiEndPoint {
   static const String iapTransferSubscription = '/iap/transfer-subscription';
   static const String confirmSubscriptionPurchase = '/iap/confirm-purchase';
 
+  // Google / Paymob Android subscriptions
+  static const String initiateGoogleSubscriptionPayment =
+      '/new-paymob/initiate-google-subscription-payment';
+  static const String cancelAndroidAutoRenewal =
+      '/new-paymob/cancel-auto-renewal';
+
   // Force Update
   static const String checkForUpdateIos = '/version/check-for-update';
   static const String checkForUpdateAndroid =

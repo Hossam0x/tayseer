@@ -23,12 +23,14 @@ class PaymentIntentionData {
   final String paymentKey;
   final int orderId;
   final String publicKey;
+  final String webviewUrl;
 
   PaymentIntentionData({
     required this.clientSecret,
     required this.paymentKey,
     required this.orderId,
     required this.publicKey,
+    this.webviewUrl = '',
   });
 
   factory PaymentIntentionData.fromJson(Map<String, dynamic> json) {
@@ -37,6 +39,7 @@ class PaymentIntentionData {
       paymentKey: json['paymentKey'] ?? '',
       orderId: json['orderId'] ?? 0,
       publicKey: json['publicKey'] ?? '',
+      webviewUrl: json['webviewUrl'] ?? '',
     );
   }
 }

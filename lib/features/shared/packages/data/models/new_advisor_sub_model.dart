@@ -1,6 +1,7 @@
 class NewAdvisorSubModel {
   final String id;
   final String appleProductId;
+  final String androidProductId; // Google Play product ID
   final String subscriptionType; // "gold" | "ultra"
   final String subscriptionDurationType; // "monthly" | "weekly"
   final bool isCurrentSub;
@@ -21,6 +22,7 @@ class NewAdvisorSubModel {
   NewAdvisorSubModel({
     required this.id,
     required this.appleProductId,
+    this.androidProductId = '',
     required this.subscriptionType,
     required this.subscriptionDurationType,
     required this.isCurrentSub,
@@ -43,6 +45,7 @@ class NewAdvisorSubModel {
     return NewAdvisorSubModel(
       id: json['id'] ?? '',
       appleProductId: json['appleProductId'] ?? '',
+      androidProductId: json['androidProductId'] ?? '',
       subscriptionType: (json['subscriptionType'] ?? '')
           .toString()
           .toLowerCase(),
