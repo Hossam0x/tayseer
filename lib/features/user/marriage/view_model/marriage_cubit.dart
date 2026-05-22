@@ -994,6 +994,39 @@ class MarriageCubit extends Cubit<MarriageState> {
   }
 
   // ═══════════════════════════════════════════════════════════════
+  // MOVE TO NEXT AFTER REGARD (بدون animation)
+  // ═══════════════════════════════════════════════════════════════
+  void moveToNextAfterRegard({required String personId}) {
+    final removedUser = state.allUsers.firstWhere(
+      (u) => u.user?.id == personId,
+      orElse: () => UserItem(user: User(id: personId), answers: null),
+    );
+    final updatedHistory = [...state.userHistory, removedUser];
+    final updatedUsers = state.allUsers
+        .where((u) => u.user?.id != personId)
+        .toList();
+    final newLength = updatedUsers.length;
+
+    if (newLength <= 5) loadMoreUsers();
+    if (newLength == 0) refreshProfileSilently(showLoadingIfEmpty: true);
+    if (newLength > 0 && newLength <= 2) _preloadNextBatch();
+
+    int newIndex = state.currentIndex;
+    if (newIndex >= newLength) {
+      newIndex = newLength > 0 ? newLength - 1 : 0;
+    }
+
+    emit(
+      state.copyWith(
+        allUsers: updatedUsers,
+        userHistory: updatedHistory,
+        currentIndex: newIndex,
+        isScrollingDown: false,
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   // HISTORY
   // ═══════════════════════════════════════════════════════════════
   void hideHistoryView() => emit(state.copyWith(showHistory: false));

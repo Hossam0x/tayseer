@@ -959,7 +959,26 @@ class MarriageBodyState extends State<MarriageBody>
             },
           );
           Future.delayed(const Duration(seconds: 4), () {
-            if (context.mounted) context.pop();
+            if (!context.mounted) return;
+            context.pop(); // ✅ اقفل الـ animation dialog
+            // ✅ بعد التحية، روح للبروفايل اللي بعده زي الـ like
+            if (widget.fromInteractions) {
+              if (widget.popAfterInteraction) context.pop();
+            } else if (widget.personId == null) {
+              final cubit = context.read<MarriageCubit>();
+              final currentState = cubit.state;
+              final currentPersonId =
+                  currentState.allUsers
+                      .elementAtOrNull(currentState.currentIndex)
+                      ?.user
+                      ?.id ??
+                  '';
+              cubit.moveToNextAfterRegard(personId: currentPersonId);
+              _resetScrollTracking();
+              scrollToTop();
+            } else {
+              context.pop();
+            }
           });
           context.read<MarriageCubit>().resetState();
         }
