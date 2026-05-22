@@ -188,16 +188,14 @@ class _MarriageFullScreenImageViewState
     if (widget.imageFile != null) {
       return Image.file(widget.imageFile!, fit: BoxFit.contain);
     }
-    // iOS  → UiKitView(secure_image_view) بـ instanceId مختلف عن الـ card
-    //        عشان يمنع PlatformException(recreating_view)
-    // Android → PlatformViewLink مع fade من أسود للصورة
-    // showFallbackUntilReady: false → يبدأ بـ container أسود بدل الـ Flutter image
-    // ده بيمنع الـ "صورة صغيرة → كبيرة" effect في الـ full screen
+    // iOS: UiKitView مباشرة بدون fallback — بيبدأ فوراً ومفيش double build
+    // Android: PlatformViewLink مع container أسود لحد ما يجهز
+    // showFallbackUntilReady: false → مفيش AppImage في الـ tree خالص
     return SecureImageWrapper(
       imageUrl: widget.imageUrl,
       instanceId: 'fullscreen',
       showFallbackUntilReady: false,
-      child: AppImage(widget.imageUrl, fit: BoxFit.contain),
+      child: const SizedBox.shrink(), // مش بيتستخدم في full screen mode
     );
   }
 

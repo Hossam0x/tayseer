@@ -6,14 +6,9 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 /// Wraps an image URL with a native secure layer.
-/// The image is loaded INSIDE the native secure SurfaceView (Android)
-/// or UITextField secure container (iOS).
 /// [instanceId] — optional suffix للـ key عشان يمنع recreating_view
-/// لما نفس الـ URL يتعرض في أكتر من مكان في نفس الوقت (مثلاً card + full screen)
-/// [showFallbackUntilReady] — لو true بيعرض الـ Flutter fallback لحد ما الـ native view يجهز
-///   استخدمه في الـ cards العادية.
-///   لو false (الـ default الجديد) بيبدأ بـ placeholder أسود وبيعرض الصورة لما تجهز —
-///   مناسب للـ full screen عشان يمنع الـ "صورة صغيرة → كبيرة" effect.
+/// [showFallbackUntilReady] — لو true بيعرض الـ Flutter fallback لحد ما الـ native view يجهز (للـ cards)
+///   لو false بيبدأ بـ container أسود بدون fallback (للـ full screen)
 class SecureImageWrapper extends StatelessWidget {
   final String? imageUrl;
   final Widget child;
@@ -40,7 +35,6 @@ class SecureImageWrapper extends StatelessWidget {
       }
 
       if (defaultTargetPlatform == TargetPlatform.iOS) {
-        // Key = url + instanceId عشان card وfull screen يكون ليهم views مستقلة
         return _IosSecureImage(
           key: ValueKey('${imageUrl}_$instanceId'),
           imageUrl: imageUrl!,
@@ -80,12 +74,19 @@ class _IosSecureImageState extends State<_IosSecureImage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // تأخير بسيط يمنع recreating_view لما الـ widget يتبني بسرعة
-      _readyTimer = Timer(const Duration(milliseconds: 100), () {
+    if (!widget.showFallbackUntilReady) {
+      // full screen mode: ابدأ الـ UiKitView فوراً بدون delay
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) setState(() => _ready = true);
       });
-    });
+    } else {
+      // card mode: تأخير بسيط يمنع recreating_view
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _readyTimer = Timer(const Duration(milliseconds: 100), () {
+          if (mounted) setState(() => _ready = true);
+        });
+      });
+    }
   }
 
   @override
@@ -97,20 +98,38 @@ class _IosSecureImageState extends State<_IosSecureImage> {
 
   @override
   Widget build(BuildContext context) {
-    // لو showFallbackUntilReady = false (full screen mode):
-    // نبدأ بـ Container أسود وبعدين نعرض الصورة لما تجهز
-    final fallback = widget.showFallbackUntilReady
-        ? widget.flutterFallback
-        : Container(color: Colors.black);
+    // full screen mode: UiKitView فقط بدون أي fallback في الـ tree
+    // الـ container الأسود بيتعرض لحد ما الـ native يجهز ثم بيتشال
+    if (!widget.showFallbackUntilReady) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          if (!_nativeLoaded) Container(color: Colors.black),
+          if (_ready && !_disposed)
+            UiKitView(
+              viewType: 'secure_image_view',
+              layoutDirection: TextDirection.ltr,
+              creationParams: {'url': widget.imageUrl},
+              creationParamsCodec: const StandardMessageCodec(),
+              gestureRecognizers:
+                  const <Factory<OneSequenceGestureRecognizer>>{},
+              onPlatformViewCreated: (_) {
+                Future.delayed(const Duration(milliseconds: 150), () {
+                  if (mounted && !_disposed) {
+                    setState(() => _nativeLoaded = true);
+                  }
+                });
+              },
+            ),
+        ],
+      );
+    }
 
+    // card mode: fallback يتعرض لحد ما الـ native يجهز ثم بيتشال من الـ tree
     return Stack(
       fit: StackFit.expand,
       children: [
-        // الـ fallback — بيتشال من الـ render tree خالص لما الـ native يجهز
-        // لو فضل في الـ tree بـ opacity 0 بيتصور في الـ iOS screenshot
-        if (!_nativeLoaded) fallback,
-
-        // الـ UiKitView — بيتبني بعد 100ms ويظهر لما الـ native يجهز
+        if (!_nativeLoaded) widget.flutterFallback,
         if (_ready && !_disposed)
           AnimatedOpacity(
             opacity: _nativeLoaded ? 1.0 : 0.0,
