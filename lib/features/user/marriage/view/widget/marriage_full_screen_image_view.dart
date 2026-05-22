@@ -195,7 +195,8 @@ class _MarriageFullScreenImageViewState
       imageUrl: widget.imageUrl,
       instanceId: 'fullscreen',
       showFallbackUntilReady: false,
-      child: const SizedBox.shrink(), // مش بيتستخدم في full screen mode
+      fit: 'contain',
+      child: const SizedBox.shrink(),
     );
   }
 

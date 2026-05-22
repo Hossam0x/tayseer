@@ -29,6 +29,8 @@ class SecureImagePlatformView(
 
     private var currentBitmap: Bitmap? = null
     private var isSurfaceReady = false
+    // ✅ fit: 'contain' → scaleAspectFit | 'cover' → scaleAspectFill (default)
+    private val fitContain: Boolean = (args?.get("fit") as? String) == "contain"
 
     private val channel = MethodChannel(messenger, "secure_image_view_$id")
 
@@ -108,9 +110,32 @@ class SecureImagePlatformView(
         try {
             canvas = holder.lockCanvas()
             if (canvas != null) {
-                val src = Rect(0, 0, bitmap.width, bitmap.height)
-                val dst = Rect(0, 0, canvas.width, canvas.height)
-                canvas.drawBitmap(bitmap, src, dst, null)
+                val cw = canvas.width.toFloat()
+                val ch = canvas.height.toFloat()
+                val bw = bitmap.width.toFloat()
+                val bh = bitmap.height.toFloat()
+
+                canvas.drawColor(android.graphics.Color.BLACK)
+
+                val dst = if (fitContain) {
+                    // ✅ scaleAspectFit (contain) — يحافظ على النسبة مع letterbox
+                    val scale = minOf(cw / bw, ch / bh)
+                    val scaledW = bw * scale
+                    val scaledH = bh * scale
+                    val left = (cw - scaledW) / 2f
+                    val top  = (ch - scaledH) / 2f
+                    android.graphics.RectF(left, top, left + scaledW, top + scaledH)
+                } else {
+                    // ✅ scaleAspectFill (cover) — يملأ المساحة مع crop
+                    val scale = maxOf(cw / bw, ch / bh)
+                    val scaledW = bw * scale
+                    val scaledH = bh * scale
+                    val left = (cw - scaledW) / 2f
+                    val top  = (ch - scaledH) / 2f
+                    android.graphics.RectF(left, top, left + scaledW, top + scaledH)
+                }
+
+                canvas.drawBitmap(bitmap, null, dst, null)
             }
         } catch (e: Exception) {
             e.printStackTrace()

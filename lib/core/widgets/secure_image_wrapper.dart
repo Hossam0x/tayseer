@@ -9,11 +9,13 @@ import 'dart:async';
 /// [instanceId] — optional suffix للـ key عشان يمنع recreating_view
 /// [showFallbackUntilReady] — لو true بيعرض الـ Flutter fallback لحد ما الـ native view يجهز (للـ cards)
 ///   لو false بيبدأ بـ container أسود بدون fallback (للـ full screen)
+/// [fit] — 'cover' (default للـ cards) أو 'contain' (للـ full screen)
 class SecureImageWrapper extends StatelessWidget {
   final String? imageUrl;
   final Widget child;
   final String instanceId;
   final bool showFallbackUntilReady;
+  final String fit; // 'cover' | 'contain'
 
   const SecureImageWrapper({
     super.key,
@@ -21,6 +23,7 @@ class SecureImageWrapper extends StatelessWidget {
     this.imageUrl,
     this.instanceId = 'default',
     this.showFallbackUntilReady = true,
+    this.fit = 'cover',
   });
 
   @override
@@ -29,6 +32,7 @@ class SecureImageWrapper extends StatelessWidget {
       if (defaultTargetPlatform == TargetPlatform.android) {
         return _AndroidSecureImage(
           imageUrl: imageUrl!,
+          fit: fit,
           showFallbackUntilReady: showFallbackUntilReady,
           flutterFallback: child,
         );
@@ -38,6 +42,7 @@ class SecureImageWrapper extends StatelessWidget {
         return _IosSecureImage(
           key: ValueKey('${imageUrl}_$instanceId'),
           imageUrl: imageUrl!,
+          fit: fit,
           flutterFallback: child,
           showFallbackUntilReady: showFallbackUntilReady,
         );
@@ -48,15 +53,20 @@ class SecureImageWrapper extends StatelessWidget {
   }
 }
 
-/// iOS: StatefulWidget مع key على الـ URL لضمان dispose صحيح
+// ─────────────────────────────────────────────────────────────────────────────
+// iOS
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _IosSecureImage extends StatefulWidget {
   final String imageUrl;
+  final String fit;
   final Widget flutterFallback;
   final bool showFallbackUntilReady;
 
   const _IosSecureImage({
     super.key,
     required this.imageUrl,
+    required this.fit,
     required this.flutterFallback,
     required this.showFallbackUntilReady,
   });
@@ -75,7 +85,7 @@ class _IosSecureImageState extends State<_IosSecureImage> {
   void initState() {
     super.initState();
     if (!widget.showFallbackUntilReady) {
-      // full screen mode: ابدأ الـ UiKitView فوراً بدون delay
+      // full screen: ابدأ الـ UiKitView فوراً بدون delay
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) setState(() => _ready = true);
       });
@@ -96,31 +106,34 @@ class _IosSecureImageState extends State<_IosSecureImage> {
     super.dispose();
   }
 
+  UiKitView _buildUiKitView() {
+    return UiKitView(
+      viewType: 'secure_image_view',
+      layoutDirection: TextDirection.ltr,
+      // ✅ بنبعت الـ fit للـ native عشان يعرف يستخدم scaleAspectFit أو scaleAspectFill
+      creationParams: {'url': widget.imageUrl, 'fit': widget.fit},
+      creationParamsCodec: const StandardMessageCodec(),
+      gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{},
+      onPlatformViewCreated: (_) {
+        final delay = widget.showFallbackUntilReady ? 250 : 150;
+        Future.delayed(Duration(milliseconds: delay), () {
+          if (mounted && !_disposed) {
+            setState(() => _nativeLoaded = true);
+          }
+        });
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // full screen mode: UiKitView فقط بدون أي fallback في الـ tree
-    // الـ container الأسود بيتعرض لحد ما الـ native يجهز ثم بيتشال
+    // full screen: UiKitView فقط — container أسود لحد ما يجهز ثم بيتشال
     if (!widget.showFallbackUntilReady) {
       return Stack(
         fit: StackFit.expand,
         children: [
           if (!_nativeLoaded) Container(color: Colors.black),
-          if (_ready && !_disposed)
-            UiKitView(
-              viewType: 'secure_image_view',
-              layoutDirection: TextDirection.ltr,
-              creationParams: {'url': widget.imageUrl},
-              creationParamsCodec: const StandardMessageCodec(),
-              gestureRecognizers:
-                  const <Factory<OneSequenceGestureRecognizer>>{},
-              onPlatformViewCreated: (_) {
-                Future.delayed(const Duration(milliseconds: 150), () {
-                  if (mounted && !_disposed) {
-                    setState(() => _nativeLoaded = true);
-                  }
-                });
-              },
-            ),
+          if (_ready && !_disposed) _buildUiKitView(),
         ],
       );
     }
@@ -134,35 +147,26 @@ class _IosSecureImageState extends State<_IosSecureImage> {
           AnimatedOpacity(
             opacity: _nativeLoaded ? 1.0 : 0.0,
             duration: const Duration(milliseconds: 200),
-            child: UiKitView(
-              viewType: 'secure_image_view',
-              layoutDirection: TextDirection.ltr,
-              creationParams: {'url': widget.imageUrl},
-              creationParamsCodec: const StandardMessageCodec(),
-              gestureRecognizers:
-                  const <Factory<OneSequenceGestureRecognizer>>{},
-              onPlatformViewCreated: (_) {
-                Future.delayed(const Duration(milliseconds: 250), () {
-                  if (mounted && !_disposed) {
-                    setState(() => _nativeLoaded = true);
-                  }
-                });
-              },
-            ),
+            child: _buildUiKitView(),
           ),
       ],
     );
   }
 }
 
-/// Android: uses Hybrid Composition so SurfaceView renders correctly
+// ─────────────────────────────────────────────────────────────────────────────
+// Android
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _AndroidSecureImage extends StatefulWidget {
   final String imageUrl;
+  final String fit;
   final bool showFallbackUntilReady;
   final Widget flutterFallback;
 
   const _AndroidSecureImage({
     required this.imageUrl,
+    required this.fit,
     required this.showFallbackUntilReady,
     required this.flutterFallback,
   });
@@ -174,9 +178,8 @@ class _AndroidSecureImage extends StatefulWidget {
 class _AndroidSecureImageState extends State<_AndroidSecureImage> {
   bool _nativeLoaded = false;
 
-  @override
-  Widget build(BuildContext context) {
-    final nativeView = PlatformViewLink(
+  PlatformViewLink _buildPlatformView() {
+    return PlatformViewLink(
       viewType: 'secure_image_view',
       surfaceFactory: (context, controller) {
         return AndroidViewSurface(
@@ -190,13 +193,13 @@ class _AndroidSecureImageState extends State<_AndroidSecureImage> {
             id: params.id,
             viewType: 'secure_image_view',
             layoutDirection: TextDirection.ltr,
-            creationParams: {'url': widget.imageUrl},
+            // ✅ بنبعت الـ fit للـ native
+            creationParams: {'url': widget.imageUrl, 'fit': widget.fit},
             creationParamsCodec: const StandardMessageCodec(),
             onFocus: () => params.onFocusChanged(true),
           )
           ..addOnPlatformViewCreatedListener((id) {
             params.onPlatformViewCreated(id);
-            // تأخير بسيط عشان الـ SurfaceView يكمل الـ render
             Future.delayed(const Duration(milliseconds: 200), () {
               if (mounted) setState(() => _nativeLoaded = true);
             });
@@ -204,9 +207,13 @@ class _AndroidSecureImageState extends State<_AndroidSecureImage> {
           ..create();
       },
     );
+  }
 
-    // لو showFallbackUntilReady = false (full screen):
-    // نبدأ بـ container أسود وبعدين نعرض الصورة لما تجهز
+  @override
+  Widget build(BuildContext context) {
+    final nativeView = _buildPlatformView();
+
+    // full screen: container أسود لحد ما يجهز
     if (!widget.showFallbackUntilReady) {
       return Stack(
         fit: StackFit.expand,
@@ -221,8 +228,7 @@ class _AndroidSecureImageState extends State<_AndroidSecureImage> {
       );
     }
 
-    // الـ cards العادية: نعرض الـ Flutter fallback لحد ما الـ native يجهز
-    // الـ fallback بيتشال من الـ tree خالص لما الـ native يجهز
+    // card mode: fallback لحد ما الـ native يجهز ثم بيتشال من الـ tree
     return Stack(
       fit: StackFit.expand,
       children: [

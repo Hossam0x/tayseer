@@ -15,27 +15,29 @@ class SecureImageView: NSObject, FlutterPlatformView {
         textField.isSecureTextEntry = true
         textField.frame = frame
 
-        // ✅ الـ secure container هو الـ subview الأول للـ UITextField
         let container = textField.subviews.first ?? UIView(frame: frame)
         container.frame = frame
         container.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         container.isUserInteractionEnabled = false
         secureContainer = container
 
-        // ✅ ImageView جوه الـ secure container مباشرة
         imageView = UIImageView(frame: container.bounds)
-        imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
+        imageView.backgroundColor = .clear
         imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         container.addSubview(imageView)
 
         super.init()
 
-        // ✅ حمّل الصورة من الـ args
-        if let argsDict = args as? [String: Any],
-           let urlString = argsDict["url"] as? String,
-           let url = URL(string: urlString) {
-            loadImage(from: url)
+        if let argsDict = args as? [String: Any] {
+            // ✅ fit: 'contain' → scaleAspectFit | 'cover' → scaleAspectFill (default)
+            let fit = argsDict["fit"] as? String ?? "cover"
+            imageView.contentMode = (fit == "contain") ? .scaleAspectFit : .scaleAspectFill
+
+            if let urlString = argsDict["url"] as? String,
+               let url = URL(string: urlString) {
+                loadImage(from: url)
+            }
         }
     }
 
