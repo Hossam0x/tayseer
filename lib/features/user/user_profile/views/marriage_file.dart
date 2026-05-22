@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
+import 'package:tayseer/core/widgets/screenshot_protected_image.dart';
 import 'package:tayseer/features/user/marriage/view/widget/marriage_full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/gif_overlay.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
@@ -747,24 +748,34 @@ class _MarriagefilePageState extends State<MarriagefilePage>
     return SliverPadding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
       sliver: SliverToBoxAdapter(
-        child: GestureDetector(
-          onTap: () => MarriageFullScreenImageView.show(
-            context,
-            imageUrl: imageUrl,
-            heroTag: heroTag,
-            userName: context.tr("my_profile"),
-          ),
-          child: Hero(
-            tag: heroTag,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16.r),
-              child: AppImage(
-                imageUrl,
-                height: 400.h,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                radius: 16.r,
-              ),
+        child: Hero(
+          tag: heroTag,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16.r),
+            child: Stack(
+              children: [
+                SizedBox(
+                  height: 400.h,
+                  width: double.infinity,
+                  child: ScreenshotProtectedImage(
+                    imageUrl: imageUrl,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                // GestureDetector فوق الـ UiKitView عشان يمسك الـ tap على iOS
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onTap: () => MarriageFullScreenImageView.show(
+                      context,
+                      imageUrl: imageUrl,
+                      heroTag: heroTag,
+                      userName: context.tr("my_profile"),
+                    ),
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -778,36 +789,40 @@ class _MarriagefilePageState extends State<MarriagefilePage>
     return SliverToBoxAdapter(
       child: Column(
         children: [
-          GestureDetector(
-            onTap: mainImage != _defaultImageUrl
-                ? () => MarriageFullScreenImageView.show(
-                    context,
-                    imageUrl: mainImage,
-                    heroTag: 'profile_main_image',
-                    userName: context.tr("my_profile"),
-                  )
-                : null,
-            child: Hero(
-              tag: 'profile_main_image',
-              child: Container(
-                height: 650.h,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(33.r),
-                  ),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(33.r),
-                  ),
-                  child: AppImage(
-                    mainImage,
-                    height: 650.h,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
+          Hero(
+            tag: 'profile_main_image',
+            child: Container(
+              height: 650.h,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(33.r)),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(33.r)),
+                child: Stack(
+                  children: [
+                    SizedBox.expand(
+                      child: ScreenshotProtectedImage(
+                        imageUrl: mainImage,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    // GestureDetector فوق الـ UiKitView عشان يمسك الـ tap على iOS
+                    if (mainImage != _defaultImageUrl)
+                      Positioned.fill(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.translucent,
+                          onTap: () => MarriageFullScreenImageView.show(
+                            context,
+                            imageUrl: mainImage,
+                            heroTag: 'profile_main_image',
+                            userName: context.tr("my_profile"),
+                          ),
+                          child: const SizedBox.expand(),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),

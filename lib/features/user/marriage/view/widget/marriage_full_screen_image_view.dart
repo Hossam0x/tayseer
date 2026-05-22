@@ -190,10 +190,13 @@ class _MarriageFullScreenImageViewState
     }
     // iOS  → UiKitView(secure_image_view) بـ instanceId مختلف عن الـ card
     //        عشان يمنع PlatformException(recreating_view)
-    // Android → AppImage عادي، الحماية من FLAG_SECURE على الـ Window
+    // Android → PlatformViewLink مع fade من أسود للصورة
+    // showFallbackUntilReady: false → يبدأ بـ container أسود بدل الـ Flutter image
+    // ده بيمنع الـ "صورة صغيرة → كبيرة" effect في الـ full screen
     return SecureImageWrapper(
       imageUrl: widget.imageUrl,
       instanceId: 'fullscreen',
+      showFallbackUntilReady: false,
       child: AppImage(widget.imageUrl, fit: BoxFit.contain),
     );
   }
