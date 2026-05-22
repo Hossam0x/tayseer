@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:tayseer/core/enum/report_type.dart';
-import 'package:tayseer/core/widgets/full_screen_image_view.dart';
+import 'package:tayseer/features/user/marriage/view/widget/marriage_full_screen_image_view.dart';
 import 'package:tayseer/my_import.dart';
 
 class ImageViewerGallery extends StatefulWidget {
@@ -51,7 +51,7 @@ class _ImageViewerGalleryState extends State<ImageViewerGallery> {
               });
             },
             itemBuilder: (context, index) {
-              return FullScreenImageView(
+              return MarriageFullScreenImageView(
                 imageUrl: widget.images[index],
                 heroTag: 'gallery_${index}_${widget.personId}',
               );

@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/core/widgets/custom_toggle_tab_bar.dart';
-import 'package:tayseer/core/widgets/full_screen_image_view.dart';
+import 'package:tayseer/features/user/marriage/view/widget/marriage_full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/gif_overlay.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
@@ -748,7 +748,7 @@ class _MarriagefilePageState extends State<MarriagefilePage>
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
       sliver: SliverToBoxAdapter(
         child: GestureDetector(
-          onTap: () => FullScreenImageView.show(
+          onTap: () => MarriageFullScreenImageView.show(
             context,
             imageUrl: imageUrl,
             heroTag: heroTag,
@@ -780,7 +780,7 @@ class _MarriagefilePageState extends State<MarriagefilePage>
         children: [
           GestureDetector(
             onTap: mainImage != _defaultImageUrl
-                ? () => FullScreenImageView.show(
+                ? () => MarriageFullScreenImageView.show(
                     context,
                     imageUrl: mainImage,
                     heroTag: 'profile_main_image',

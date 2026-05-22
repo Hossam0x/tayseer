@@ -1,12 +1,16 @@
+import 'package:tayseer/core/services/secure_window_service.dart';
+import 'package:tayseer/core/widgets/secure_image_wrapper.dart';
 import 'package:tayseer/my_import.dart';
 
-class FullScreenImageView extends StatefulWidget {
+/// نسخة الـ FullScreenImageView الخاصة بـ Marriage
+/// بتفعّل SecureWindowService + SecureImageWrapper لحماية الصور من الـ screenshot
+class MarriageFullScreenImageView extends StatefulWidget {
   final String? imageUrl;
   final File? imageFile;
   final String heroTag;
   final String? userName;
 
-  const FullScreenImageView({
+  const MarriageFullScreenImageView({
     super.key,
     this.imageUrl,
     this.imageFile,
@@ -26,7 +30,7 @@ class FullScreenImageView extends StatefulWidget {
       PageRouteBuilder(
         opaque: false,
         barrierColor: Colors.transparent,
-        pageBuilder: (_, __, ___) => FullScreenImageView(
+        pageBuilder: (_, __, ___) => MarriageFullScreenImageView(
           imageUrl: imageUrl,
           imageFile: imageFile,
           heroTag: heroTag,
@@ -41,10 +45,12 @@ class FullScreenImageView extends StatefulWidget {
   }
 
   @override
-  State<FullScreenImageView> createState() => _FullScreenImageViewState();
+  State<MarriageFullScreenImageView> createState() =>
+      _MarriageFullScreenImageViewState();
 }
 
-class _FullScreenImageViewState extends State<FullScreenImageView>
+class _MarriageFullScreenImageViewState
+    extends State<MarriageFullScreenImageView>
     with TickerProviderStateMixin {
   final TransformationController _transformationController =
       TransformationController();
@@ -62,6 +68,11 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
   @override
   void initState() {
     super.initState();
+
+    // ✅ تفعيل الحماية
+    // Android: FLAG_SECURE على الـ Window
+    // iOS: الحماية عبر SecureImageWrapper (UiKitView)
+    SecureWindowService.enable();
 
     _snapBackController =
         AnimationController(
@@ -111,6 +122,8 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
 
   @override
   void dispose() {
+    // ✅ يشيل الحماية — SecureWindowService بيتتبع العداد تلقائياً
+    SecureWindowService.disable();
     _transformationController.removeListener(_clampScale);
     _transformationController.dispose();
     _snapBackController.dispose();
@@ -171,6 +184,20 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
     }
   }
 
+  Widget _buildImage() {
+    if (widget.imageFile != null) {
+      return Image.file(widget.imageFile!, fit: BoxFit.contain);
+    }
+    // iOS  → UiKitView(secure_image_view) بـ instanceId مختلف عن الـ card
+    //        عشان يمنع PlatformException(recreating_view)
+    // Android → AppImage عادي، الحماية من FLAG_SECURE على الـ Window
+    return SecureImageWrapper(
+      imageUrl: widget.imageUrl,
+      instanceId: 'fullscreen',
+      child: AppImage(widget.imageUrl, fit: BoxFit.contain),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final progress = (_dragY.abs() / 350).clamp(0.0, 1.0);
@@ -180,64 +207,55 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
     final borderRadius = progress * (screenW * scale / 2);
 
     return Scaffold(
-      backgroundColor: Colors.black.withOpacity(bgOpacity),
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
+          // خلفية سوداء
+          Positioned.fill(
+            child: Container(color: Colors.black.withOpacity(bgOpacity)),
+          ),
+
           // الصورة
-          Listener(
-            onPointerDown: (_) {
-              if (!_isZoomed) _handleDragStart();
-            },
-            onPointerMove: (e) {
-              if (!_isZoomed) _handleDragMove(e.delta.dy);
-            },
-            onPointerUp: (_) {
-              if (!_isZoomed) _handleDragEnd();
-            },
-            child: GestureDetector(
-              onDoubleTapDown: _onDoubleTapDown,
-              onDoubleTap: () {},
-              child: Transform.translate(
-                offset: Offset(0, _dragY),
-                child: Transform.scale(
-                  scale: scale,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(borderRadius),
-                    child: Container(
-                      color: Colors.black,
-                      width: double.infinity,
-                      height: double.infinity,
-                      child: Hero(
-                        tag: widget.heroTag,
-                        child: InteractiveViewer(
-                          transformationController: _transformationController,
-                          minScale: 1.0,
-                          maxScale: 4.0,
-                          panEnabled: true,
-                          scaleEnabled: true,
-                          constrained: true,
-                          boundaryMargin: EdgeInsets.zero,
-                          child: SizedBox.expand(
-                            child: widget.imageFile != null
-                                ? Image.file(
-                                    widget.imageFile!,
-                                    fit: BoxFit.contain,
-                                  )
-                                : AppImage(
-                                    widget.imageUrl,
-                                    fit: BoxFit.contain,
-                                  ),
-                          ),
-                        ),
-                      ),
-                    ),
+          GestureDetector(
+            onDoubleTapDown: _onDoubleTapDown,
+            onDoubleTap: () {},
+            child: Transform.translate(
+              offset: Offset(0, _dragY),
+              child: Transform.scale(
+                scale: scale,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(borderRadius),
+                  child: InteractiveViewer(
+                    transformationController: _transformationController,
+                    minScale: 1.0,
+                    maxScale: 4.0,
+                    panEnabled: true,
+                    scaleEnabled: true,
+                    constrained: true,
+                    boundaryMargin: EdgeInsets.zero,
+                    onInteractionStart: (details) {
+                      if (details.pointerCount == 1 && !_isZoomed) {
+                        _handleDragStart();
+                      }
+                    },
+                    onInteractionUpdate: (details) {
+                      if (details.pointerCount == 1 && !_isZoomed) {
+                        _handleDragMove(details.focalPointDelta.dy);
+                      }
+                    },
+                    onInteractionEnd: (details) {
+                      if (!_isZoomed && _dragY != 0) {
+                        _handleDragEnd();
+                      }
+                    },
+                    child: SizedBox.expand(child: _buildImage()),
                   ),
                 ),
               ),
             ),
           ),
 
-          // سهم الإغلاق مع hint animation وسحب
+          // سهم الإغلاق
           Positioned(
             bottom: 10.h,
             left: 0,
@@ -256,10 +274,10 @@ class _FullScreenImageViewState extends State<FullScreenImageView>
                     child: child,
                   ),
                   child: Container(
-                    height: 80,
+                    height: 80.h,
                     alignment: Alignment.center,
                     child: Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(12.h),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.15),
                         shape: BoxShape.circle,

@@ -1,8 +1,9 @@
-import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/screenshot_protected_image.dart';
+import 'package:tayseer/features/user/marriage/view/widget/marriage_full_screen_image_view.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/regards_purchase_sheet.dart';
 import 'package:tayseer/my_import.dart';
+
 class AdditionalImageSection extends StatelessWidget {
   final String imageUrl;
   final String? personId;
@@ -28,7 +29,7 @@ class AdditionalImageSection extends StatelessWidget {
     return GestureDetector(
       onTap: shouldBlur
           ? null // ✅ لو الصورة مبلورة متفتحش
-          : () => FullScreenImageView.show(
+          : () => MarriageFullScreenImageView.show(
               context,
               imageUrl: imageUrl,
               heroTag: heroTag,
@@ -80,8 +81,10 @@ class AdditionalImageSection extends StatelessWidget {
                         ),
                         onPressed: () {
                           if (personId == null) return;
-                          final regardsLeft =
-                              context.read<MarriageCubit>().state.regardsLeft;
+                          final regardsLeft = context
+                              .read<MarriageCubit>()
+                              .state
+                              .regardsLeft;
                           if (regardsLeft == 0) {
                             showRegardsPurchaseSheet(context);
                             return;

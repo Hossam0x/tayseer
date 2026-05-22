@@ -2,8 +2,8 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:tayseer/core/constant/marriage_constants.dart';
 import 'package:tayseer/core/widgets/custom_video_and_edit/custom_uploaded_video_preview.dart';
-import 'package:tayseer/core/widgets/full_screen_image_view.dart';
 import 'package:tayseer/core/widgets/gif_overlay.dart';
+import 'package:tayseer/features/user/marriage/view/widget/marriage_full_screen_image_view.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
 import 'package:tayseer/features/user/questions/data/models/questions_data.dart';
 import 'package:tayseer/features/user/questions/presentation/widgets/image_guidelines_bottom_sheet.dart';
@@ -153,7 +153,7 @@ class _MarriageProfileEditViewState extends State<MarriageProfileEditView>
   }
 
   void _openFullScreen(BuildContext context, String imageUrl, String heroTag) {
-    FullScreenImageView.show(
+    MarriageFullScreenImageView.show(
       context,
       imageUrl: imageUrl,
       heroTag: heroTag,
