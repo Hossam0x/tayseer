@@ -75,12 +75,14 @@ class SessionCard extends StatelessWidget {
           Row(
             children: [
               GestureDetector(
-                onTap: () => FullScreenImageView.show(
-                  context,
-                  imageUrl: imageUrl,
-                  heroTag:
-                      'session_card_image_${imageUrl}_${DateTime.now().microsecondsSinceEpoch}',
-                ),
+                onTap: isBlur
+                    ? null
+                    : () => FullScreenImageView.show(
+                        context,
+                        imageUrl: imageUrl,
+                        heroTag:
+                            'session_card_image_${imageUrl}_${DateTime.now().microsecondsSinceEpoch}',
+                      ),
                 child: MyProfileImage(
                   width: 60.r,
                   imageUrl: imageUrl,
