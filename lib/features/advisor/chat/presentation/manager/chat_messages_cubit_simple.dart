@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/cache/chat_cache_service.dart';
 import 'package:tayseer/core/enum/message_status_enum.dart';
+import 'package:tayseer/core/services/appsflyer_events/appsflyer_events.dart';
 import 'package:tayseer/core/services/socket_events/chat_socket_events.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
@@ -55,7 +56,7 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     _currentChatRoomId = chatRoomId;
     _currentReceiverId = receiverId;
     _originalReceiverId = receiverId; // ✅ احفظ نسخة ثابتة من الـ receiverId
-    _isSystemChat = isSystemChat;     // ✅ NEW: احفظ نوع الـ chat
+    _isSystemChat = isSystemChat; // ✅ NEW: احفظ نوع الـ chat
 
     _joinAttempts = 0;
     _hasJoinedRoom = false;
@@ -155,7 +156,9 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
 
     // ✅ لو مش متصل، سجّل callback بـ ID فريد يتنادى لما يتصل
     final waitId = 'ChatMessagesCubit_wait_$_currentChatRoomId';
-    log('⏳ Socket not ready — will join when connected (room: $_currentChatRoomId)');
+    log(
+      '⏳ Socket not ready — will join when connected (room: $_currentChatRoomId)',
+    );
     _socketHelper.addReconnectCallback(waitId, () {
       if (isClosed || _hasJoinedRoom) return;
       log('🔄 Socket connected — joining room: $_currentChatRoomId');
@@ -206,8 +209,10 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     // ده بيمنع المشكلة اللي بتحصل لما الـ widget يتعمل dispose
     // قبل ما chatRoomJoined يرجع من السيرفر
     if (!_hasJoinedRoom) {
-      log('⚠️ leaveCurrentChatRoom: skipping leaveChatRoom — never joined successfully'
-          ' (roomId: $_currentChatRoomId)');
+      log(
+        '⚠️ leaveCurrentChatRoom: skipping leaveChatRoom — never joined successfully'
+        ' (roomId: $_currentChatRoomId)',
+      );
       // بس شيل الـ listeners عشان ما تتراكمش
       final listenerId = 'ChatMessagesCubit_$_currentChatRoomId';
       _socketHelper.offAllForListener(listenerId);
@@ -225,7 +230,9 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       }, null);
       log('👋 Sent leaveChatRoom for $_currentChatRoomId');
     } else {
-      log('⚠️ Skipped leaveChatRoom — socket not connected (post-logout cleanup)');
+      log(
+        '⚠️ Skipped leaveChatRoom — socket not connected (post-logout cleanup)',
+      );
     }
 
     final listenerId = 'ChatMessagesCubit_$_currentChatRoomId';
@@ -312,6 +319,9 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     _socketHelper.send('sendTextMessage', socketData, (ack) {
       log('✅ sendTextMessage ACK: $ack');
     });
+
+    // 📊 AF: message sent
+    unawaited(AppsFlyerEvents.messageSent(sessionType: 'chat'));
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -405,7 +415,8 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         // ✅ لو الـ server message مش عندها contentList (URLs)، احتفظ بالـ localFilePaths
         // عشان الـ VideoMessageWidget يشتغل من الـ local file لحد ما الـ URL يتحمّل
         final serverMsg = response.message;
-        final msgToReplace = (serverMsg.contentList.isEmpty && localPaths.isNotEmpty)
+        final msgToReplace =
+            (serverMsg.contentList.isEmpty && localPaths.isNotEmpty)
             ? serverMsg.copyWith(localFilePaths: localPaths)
             : serverMsg;
         _replaceOptimisticMessage(localId, msgToReplace);
@@ -552,9 +563,11 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       // ✅ FIX 2: السيرفر ممكن يرجع roomId مختلف (لو لقى room قديم بين نفس الـ users)
       // في الحالتين نقبل الـ roomId اللي السيرفر رجعه
       if (receivedRoomId != null && receivedRoomId != _currentChatRoomId) {
-        log('⚠️ chatRoomJoined: server returned different roomId!'
-            ' expected: $_currentChatRoomId, got: $receivedRoomId'
-            ' — accepting server room WITHOUT sending leaveChatRoom for old room');
+        log(
+          '⚠️ chatRoomJoined: server returned different roomId!'
+          ' expected: $_currentChatRoomId, got: $receivedRoomId'
+          ' — accepting server room WITHOUT sending leaveChatRoom for old room',
+        );
 
         // انقل الـ listeners للـ room ID الجديد
         final oldListenerId = 'ChatMessagesCubit_$_currentChatRoomId';
@@ -565,8 +578,10 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         _currentChatRoomId = receivedRoomId;
       }
 
-      log('✅ chatRoomJoined: blockExists=$blockExists, isMe=$isMe, '
-          'freeChatMinsLeft=$_freeChatMinsLeft, roomId=$receivedRoomId');
+      log(
+        '✅ chatRoomJoined: blockExists=$blockExists, isMe=$isMe, '
+        'freeChatMinsLeft=$_freeChatMinsLeft, roomId=$receivedRoomId',
+      );
 
       _joinAttempts = 0;
       // ✅ FIX 2: بعد chatRoomJoined الناجح، عيّن _hasJoinedRoom = true
@@ -863,7 +878,10 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   // ══════════════════════════════════════════════════════════════════════════
 
   void typingStart(String chatRoomId) {
-    if (!_hasJoinedRoom || _currentReceiverId == null || _currentChatRoomId == null) return;
+    if (!_hasJoinedRoom ||
+        _currentReceiverId == null ||
+        _currentChatRoomId == null)
+      return;
     _socketHelper.send('typingStatus', {
       'chatRoomId': _currentChatRoomId,
       'receiverId': _currentReceiverId,
@@ -872,7 +890,10 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   }
 
   void typingStop(String chatRoomId) {
-    if (!_hasJoinedRoom || _currentReceiverId == null || _currentChatRoomId == null) return;
+    if (!_hasJoinedRoom ||
+        _currentReceiverId == null ||
+        _currentChatRoomId == null)
+      return;
     _socketHelper.send('typingStatus', {
       'chatRoomId': _currentChatRoomId,
       'receiverId': _currentReceiverId,
@@ -1094,8 +1115,12 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   @override
   Future<void> close() {
     // ✅ شيل الـ reconnect callbacks الخاصة بهذا الـ cubit
-    _socketHelper.removeReconnectCallback('ChatMessagesCubit_reconnect_$_currentChatRoomId');
-    _socketHelper.removeReconnectCallback('ChatMessagesCubit_wait_$_currentChatRoomId');
+    _socketHelper.removeReconnectCallback(
+      'ChatMessagesCubit_reconnect_$_currentChatRoomId',
+    );
+    _socketHelper.removeReconnectCallback(
+      'ChatMessagesCubit_wait_$_currentChatRoomId',
+    );
     leaveCurrentChatRoom();
     _listenersSetup = false;
     _originalReceiverId = null;

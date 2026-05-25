@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/models/comment_model.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/services/appsflyer_events/appsflyer_events.dart';
 import 'package:tayseer/features/shared/home/reposiotry/home_repository.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -366,6 +369,9 @@ class PostDetailsCubit extends Cubit<PostDetailsState> {
             isAnonymousLocked: true,
           ),
         );
+
+        // 📊 AF: comment added
+        unawaited(AppsFlyerEvents.commentAdded(postId: postId));
 
         // ✅ زيادة العدد في البوست عبر الـ Delta
         _emitCommentCountDelta(1);

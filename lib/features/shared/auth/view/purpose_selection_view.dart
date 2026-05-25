@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:tayseer/core/services/appsflyer_events/appsflyer_events.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/main.dart';
 import 'package:tayseer/my_import.dart';
@@ -32,6 +35,9 @@ class _PurposeSelectionViewState extends State<PurposeSelectionView> {
     // ✅ احفظ الاختيار على الـ server عشان يتذكره بعد الـ re-login
     // بنبعت في الـ background ومش بننتظر النتيجة عشان مانعطلش الـ UX
     getIt<UserProfileRepository>().toggleMarriageStatus(isMarriage).ignore();
+
+    // 📊 AF: user selected their intent
+    unawaited(AppsFlyerEvents.intentSelected(intent: _selectedKey!));
 
     if (!mounted) return;
     context.pushNamedAndRemoveUntil(

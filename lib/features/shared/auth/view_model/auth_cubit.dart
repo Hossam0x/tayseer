@@ -11,6 +11,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/functions/set_advisor_status.dart';
+import 'package:tayseer/core/services/appsflyer_events/appsflyer_events.dart';
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
@@ -324,6 +325,9 @@ class AuthCubit extends Cubit<AuthState> {
       );
     }
 
+    // 📊 AF: user started signup via email
+    unawaited(AppsFlyerEvents.signupStarted(method: 'email'));
+
     final response = await _repo.logInUser(
       email: email ?? emailController.text.trim(),
     );
@@ -385,6 +389,8 @@ class AuthCubit extends Cubit<AuthState> {
         );
       },
       (_) {
+        // 📊 AF: consultant submitted their application
+        unawaited(AppsFlyerEvents.consultantApplicationSubmitted());
         emit(state.copyWith(personalDataState: CubitStates.success));
       },
     );
@@ -577,6 +583,8 @@ class AuthCubit extends Cubit<AuthState> {
           // success -> clear front/back
           nationalIdFront = null;
           nationalIdBack = null;
+          // 📊 AF: consultant uploaded verification documents
+          unawaited(AppsFlyerEvents.consultantDocumentsUploaded());
           emit(state.copyWith(addNationalImageState: CubitStates.success));
         },
       );
@@ -602,6 +610,9 @@ class AuthCubit extends Cubit<AuthState> {
         currentAuthUserType: userType,
       ),
     );
+
+    // 📊 AF: user started signup via Google
+    unawaited(AppsFlyerEvents.signupStarted(method: 'google'));
 
     try {
       await _googleSignIn.signOut();
@@ -683,6 +694,17 @@ class AuthCubit extends Cubit<AuthState> {
           setAdvisorStatus(result.data?.approvalKey);
           // ✅ احصل على الـ token من الـ response
           final newToken = result.data?.token;
+          final isNew = result.data?.user?.isNew ?? true;
+
+          // 📊 AF: signup completed via Google (new users only)
+          if (isNew) {
+            unawaited(
+              AppsFlyerEvents.signupCompleted(
+                method: 'google',
+                userType: userType.name,
+              ),
+            );
+          }
 
           emit(
             state.copyWith(
@@ -690,7 +712,7 @@ class AuthCubit extends Cubit<AuthState> {
               signInWithGoogleState: CubitStates.success,
               fromScreen: 'registration',
               currentAuthUserType: userType,
-              isNew: result.data?.user?.isNew ?? true,
+              isNew: isNew,
             ),
           );
           // ✅ مرر الـ token صراحةً
@@ -720,6 +742,9 @@ class AuthCubit extends Cubit<AuthState> {
         currentAuthUserType: userType,
       ),
     );
+
+    // 📊 AF: user started signup via Apple
+    unawaited(AppsFlyerEvents.signupStarted(method: 'apple'));
 
     try {
       final rawNonce = _generateNonce();
@@ -809,6 +834,17 @@ class AuthCubit extends Cubit<AuthState> {
           setAdvisorStatus(result.data?.approvalKey);
           // ✅ احصل على الـ token من الـ response
           final newToken = result.data?.token;
+          final isNew = result.data?.user?.isNew ?? true;
+
+          // 📊 AF: signup completed via Apple (new users only)
+          if (isNew) {
+            unawaited(
+              AppsFlyerEvents.signupCompleted(
+                method: 'apple',
+                userType: userType.name,
+              ),
+            );
+          }
 
           emit(
             state.copyWith(
@@ -816,7 +852,7 @@ class AuthCubit extends Cubit<AuthState> {
               signInWithAppleState: CubitStates.success,
               fromScreen: 'registration',
               currentAuthUserType: userType,
-              isNew: result.data?.user?.isNew ?? true,
+              isNew: isNew,
             ),
           );
           // ✅ مرر الـ token صراحةً
@@ -866,6 +902,7 @@ class AuthCubit extends Cubit<AuthState> {
         (verifyResponse) async {
           // ✅ احصل على الـ token من الـ response
           final newToken = verifyResponse.data?.token;
+          final isNew = verifyResponse.data?.user?.isNew ?? true;
 
           // ✅ احفظ avaliableForMarry في SharedPreferences فوراً بعد الـ login
           final avaliableForMarry = verifyResponse.data?.avaliableForMarry;
@@ -876,11 +913,18 @@ class AuthCubit extends Cubit<AuthState> {
             UserProfileCubit.marriageStatusStream.add(isDeactivated);
           }
 
+          // 📊 AF: signup completed via email (new users only)
+          if (isNew) {
+            unawaited(
+              AppsFlyerEvents.signupCompleted(
+                method: 'email',
+                userType: selectedUserType?.name ?? 'user',
+              ),
+            );
+          }
+
           emit(
-            state.copyWith(
-              verifyOtpState: CubitStates.success,
-              isNew: verifyResponse.data?.user?.isNew ?? true,
-            ),
+            state.copyWith(verifyOtpState: CubitStates.success, isNew: isNew),
           );
           // ✅ مرر الـ token صراحةً لـ _connectSocketForNewUser
           await _connectSocketForNewUser(token: newToken);

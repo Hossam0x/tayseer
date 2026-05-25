@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:tayseer/core/constant/constans_keys.dart';
+import 'package:tayseer/core/services/appsflyer_events/appsflyer_events.dart';
 import 'package:tayseer/core/services/iap_service.dart';
 import 'package:tayseer/core/services/paymob_service/paymob_webview_screen.dart';
 import 'package:tayseer/core/shared/network/local_network.dart';
@@ -370,6 +371,14 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
       SubscriptionEventBus.instance.fire(
         SubscriptionChangedEvent(subscriptionType: newType),
       );
+      // 📊 AF: subscription purchased (iOS)
+      unawaited(
+        AppsFlyerEvents.subscriptionPurchased(
+          planId: targetSub.id,
+          revenue: targetSub.price?.toDouble() ?? 0,
+          currency: targetSub.currency ?? 'USD',
+        ),
+      );
       emit(state.copyWith(status: AdvisorSubStatus.success));
     } catch (e) {
       final err = IAPErrorHandler.handle(e);
@@ -611,6 +620,14 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
             SubscriptionEventBus.instance.fire(
               SubscriptionChangedEvent(
                 subscriptionType: targetSub.subscriptionType,
+              ),
+            );
+            // 📊 AF: subscription purchased (Android)
+            unawaited(
+              AppsFlyerEvents.subscriptionPurchased(
+                planId: targetSub.id,
+                revenue: targetSub.price?.toDouble() ?? 0,
+                currency: targetSub.currency ?? 'USD',
               ),
             );
             emit(state.copyWith(status: AdvisorSubStatus.success));

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:dartz/dartz.dart';
+import 'package:tayseer/core/services/appsflyer_events/appsflyer_events.dart';
 import 'package:tayseer/features/advisor/stories/data/models/stories_response_model.dart';
 import 'package:tayseer/features/advisor/stories/data/repository/stories_repository.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_state.dart';
@@ -638,6 +639,10 @@ class StoriesCubit extends Cubit<StoriesState> {
         .firstOrNull;
 
     if (originalStory != null && !originalStory.isViewedByMe) {
+      // 📊 AF: story viewed (first time only)
+      unawaited(
+        AppsFlyerEvents.storyViewed(storyId: storyId, authorId: userId),
+      );
       storiesRepository.markStoryAsViewed(storyId: storyId);
     }
   }

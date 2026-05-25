@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:tayseer/core/services/appsflyer_events/appsflyer_events.dart';
 import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/booking/booking_state.dart';
 import 'package:tayseer/my_import.dart';
@@ -22,6 +25,13 @@ class BookingCubit extends Cubit<BookingState> {
         );
       },
       (data) {
+        // 📊 AF: user started the session booking flow
+        unawaited(
+          AppsFlyerEvents.sessionBookingStarted(
+            advisorId: advisorId,
+            sessionType: 'session',
+          ),
+        );
         emit(
           state.copyWith(
             getOfferingsState: CubitStates.success,

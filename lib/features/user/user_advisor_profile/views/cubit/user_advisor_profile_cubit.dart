@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/models/post_model.dart';
+import 'package:tayseer/core/services/appsflyer_events/appsflyer_events.dart';
 import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/core/utils/post_event_bus.dart';
@@ -104,6 +105,11 @@ class UserAdvisorProfileCubit
         // ⭐ تحديث state بالـ room من الـ profile
         final room = profileModel.room;
         final chatRoomId = room?.chatRoomId;
+
+        // 📊 AF: consultant profile viewed
+        unawaited(
+          AppsFlyerEvents.consultantProfileViewed(advisorId: advisorId),
+        );
 
         emit(
           state.copyWith(
@@ -281,6 +287,12 @@ class UserAdvisorProfileCubit
         );
 
         AudioService.instance.playFollowSound(isFollowing: !currentFollowState);
+
+        // 📊 AF: consultant followed (only when adding follow, not unfollowing)
+        if (!currentFollowState) {
+          unawaited(AppsFlyerEvents.consultantFollowed(advisorId: advisorId));
+        }
+
         emit(
           state.copyWith(
             profile: updatedProfile,

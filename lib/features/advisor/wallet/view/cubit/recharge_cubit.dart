@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:tayseer/core/services/appsflyer_events/appsflyer_events.dart';
 import 'package:tayseer/core/services/iap_service.dart';
 import 'package:tayseer/features/advisor/wallet/data/repos/wallet_repo.dart';
 import 'package:tayseer/features/advisor/wallet/view/cubit/recharge_state.dart';
@@ -75,6 +76,13 @@ class RechargeCubit extends Cubit<RechargeState> {
     try {
       await _iapService.buyProduct(productId, uniqueNumber: pendingId);
       // Purchase confirmed by Apple — success
+      // 📊 AF: wallet recharged
+      unawaited(
+        AppsFlyerEvents.walletRecharged(
+          amount: package.price.toDouble(),
+          currency: package.currency,
+        ),
+      );
       emit(state.copyWith(status: RechargeStatus.success, clearSelected: true));
     } catch (e) {
       final err = IAPErrorHandler.handle(e);

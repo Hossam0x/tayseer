@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/functions/set_advisor_status.dart';
+import 'package:tayseer/core/services/appsflyer_events/appsflyer_events.dart';
 import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
@@ -1274,6 +1275,10 @@ class HomeCubit extends Cubit<HomeState> {
             },
             (_) {
               log('>>>>>>>>>>>>>>>>> React To Post Success');
+              // 📊 AF: post liked (only when adding reaction, not removing)
+              if (!isRemoving) {
+                unawaited(AppsFlyerEvents.postLiked(postId: postId));
+              }
               _syncPostToCacheById(postId);
               PostEventBus.instance.fire(
                 PostEvent(
@@ -1346,6 +1351,15 @@ class HomeCubit extends Cubit<HomeState> {
       (message) {
         log('>>>>>>>>>>>>>>>>>Share Post Success: $message');
         _syncPostToCacheById(postId);
+        // 📊 AF: content shared (only when adding share, not removing)
+        if (!isRemoving) {
+          unawaited(
+            AppsFlyerEvents.shareContent(
+              contentType: 'post',
+              contentId: postId,
+            ),
+          );
+        }
         PostEventBus.instance.fire(
           PostEvent(
             sourceId: 'HomeCubit',

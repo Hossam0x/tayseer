@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:geolocator/geolocator.dart';
+import 'package:tayseer/core/services/appsflyer_events/appsflyer_events.dart';
 import 'package:tayseer/features/user/marriage/repositories/marriage_repository.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -106,10 +109,13 @@ class MarriageLocationCubit extends Cubit<MarriageLocationState> {
       );
       if (isClosed) return;
 
-      result.fold(
-        (failure) => emit(MarriageLocationError(failure.message)),
-        (_) => emit(MarriageLocationSuccess()),
-      );
+      result.fold((failure) => emit(MarriageLocationError(failure.message)), (
+        _,
+      ) {
+        // 📊 AF: user granted location permission
+        unawaited(AppsFlyerEvents.locationEnabled());
+        emit(MarriageLocationSuccess());
+      });
     } catch (e) {
       if (isClosed) return;
       emit(MarriageLocationError('location_fetch_error'));

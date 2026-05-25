@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 
 import 'package:dartz/dartz.dart';
 import 'package:tayseer/core/functions/upload_imageandvideo_to_api.dart';
 import 'package:tayseer/core/models/login_data.dart';
+import 'package:tayseer/core/services/appsflyer_events/appsflyer_events.dart';
 import 'package:tayseer/features/user/questions/data/repo/questions_repo.dart';
 import 'package:tayseer/features/user/questions/data/models/last_question_number_model.dart';
 import 'package:tayseer/my_import.dart';
@@ -104,6 +106,8 @@ class QuestionsRepoImpl implements QuestionsRepo {
           value: jsonEncode(updatedUser.toJson()),
         );
         kCurrentUserData = updatedUser;
+        // 📊 AF: user completed their profile
+        unawaited(AppsFlyerEvents.completedProfile());
       }
 
       // ✅ لو آخر سؤال (commitment = 29)، احفظ إن الـ onboarding اكتمل
@@ -117,6 +121,8 @@ class QuestionsRepoImpl implements QuestionsRepo {
           value: jsonEncode(updatedUser.toJson()),
         );
         kCurrentUserData = updatedUser;
+        // 📊 AF: profile completed via last question
+        unawaited(AppsFlyerEvents.completedProfile());
 
         // احفظ في SharedPreferences عشان UserProfileCubit يقرأه
         final prefs = await SharedPreferences.getInstance();

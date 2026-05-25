@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
+import 'package:tayseer/core/services/appsflyer_events/appsflyer_events.dart';
 import 'package:tayseer/features/user/my_space/data/model/create_session/get_available_day.dart';
 import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/create_session/create_session_state.dart';
@@ -167,6 +168,16 @@ class AvailableSlotsCubit extends Cubit<AvailableSlotsState> {
         CubitStates.printState(
           stateName: 'AvailableSlotsCubit - createSession',
           state: CubitStates.success,
+        );
+        // 📊 AF: session booked successfully
+        unawaited(
+          AppsFlyerEvents.sessionBooked(
+            advisorId: advisorId,
+            sessionType: type,
+            price:
+                0, // price not available here — fire purchase event separately
+            currency: 'EGP',
+          ),
         );
         emit(
           state.copyWith(

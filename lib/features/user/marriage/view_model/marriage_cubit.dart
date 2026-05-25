@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/animation.dart';
+import 'package:tayseer/core/services/appsflyer_events/appsflyer_events.dart';
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/marriage/model/user_marriage_model.dart';
@@ -900,6 +901,11 @@ class MarriageCubit extends Cubit<MarriageState> {
       interactionType: 'like',
       countView: !hasSinglePerson,
     );
+
+    // 📊 AF: user liked a marriage profile
+    if (state.userInteractionState == CubitStates.success) {
+      unawaited(AppsFlyerEvents.matchLikeSent(targetUserId: personId));
+    }
 
     // ✅ لو فشل بسبب likesLeft = 0 من الـ API response → ارجع بدون ما تشيل اليوزر
     if (state.userInteractionState == CubitStates.failure &&

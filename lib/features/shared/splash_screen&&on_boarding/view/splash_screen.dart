@@ -1,8 +1,8 @@
 import 'dart:developer';
-import 'dart:io';
 import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/notifications/notificationHelper.dart';
+import 'package:tayseer/core/services/appsflyer_events/appsflyer_events.dart';
 import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/services/deep_link_service.dart';
@@ -73,6 +73,7 @@ class _SplashScreenState extends State<SplashScreen>
     _initializeHomeData();
     _navigateBasedOnToken();
     _playSoundAfterHalfAnimation();
+    _trackFirstOpen();
     // ✅ طلب إذن App Tracking Transparency على iOS
     if (Platform.isIOS) {
       _requestTrackingPermission();
@@ -83,6 +84,18 @@ class _SplashScreenState extends State<SplashScreen>
   void dispose() {
     _badgeController.dispose();
     super.dispose();
+  }
+
+  /// Sends [first_open] to AppsFlyer once — on the very first app launch after install.
+  /// Uses a SharedPreferences flag so it never fires again on subsequent opens.
+  Future<void> _trackFirstOpen() async {
+    const flagKey = 'af_first_open_tracked';
+    final alreadyTracked = CachNetwork.getBoolData(key: flagKey) ?? false;
+    if (alreadyTracked) return;
+
+    await AppsFlyerEvents.firstOpen();
+    await CachNetwork.setBool(key: flagKey, value: true);
+    log('✅ AppsFlyer: first_open event sent');
   }
 
   /// ✅ طلب إذن App Tracking Transparency (iOS 14+)
