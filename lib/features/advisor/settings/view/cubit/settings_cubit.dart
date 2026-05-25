@@ -444,7 +444,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     _loadSettings();
   }
 
-  void logoutFromSever() {
-    _userProfileRepository.logout(isAdvisor: true);
+  Future<void> logoutFromSever() async {
+    await _userProfileRepository.logout(isAdvisor: true);
   }
 }

@@ -1,10 +1,21 @@
-import 'package:tayseer/core/shared/network/local_network.dart';
 import 'package:dio/dio.dart';
 import '../constant/constans.dart';
 
+/// HTTP client wrapper.
+///
+/// The [AuthInterceptor] (registered on the [Dio] instance in get_it.dart)
+/// automatically attaches `Authorization: Bearer <accessToken>` to every
+/// request and handles 401 token-refresh transparently.
+///
+/// IMPORTANT: We do NOT set a custom validateStatus here.
+/// Dio's default behaviour (2xx = success, else = DioException) is required
+/// so that the AuthInterceptor's onError hook fires on 401 responses and can
+/// trigger the refresh-token flow.
 class ApiService {
   final Dio _dio;
   ApiService(this._dio);
+
+  // ─── GET ────────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> get({
     required String endPoint,
@@ -12,26 +23,25 @@ class ApiService {
     Map<String, dynamic>? data,
   }) async {
     try {
-      final headers = <String, dynamic>{'lang': selectedLanguage ?? 'ar'};
-      headers['Authorization'] =
-          'Bearer ${CachNetwork.getStringData(key: 'token')}';
-      headers["Accept"] = "application/json";
       final response = await _dio.get(
         "$kbaseUrl$endPoint",
         queryParameters: query,
-        options: Options(headers: headers),
+        options: Options(
+          headers: {
+            'lang': selectedLanguage ?? 'ar',
+            'Accept': 'application/json',
+          },
+        ),
         data: data,
       );
-
       return response.data;
     } on DioException catch (e) {
-      if (e.response != null) {
-        return e.response!.data;
-      } else {
-        rethrow;
-      }
+      if (e.response != null) return e.response!.data;
+      rethrow;
     }
   }
+
+  // ─── POST ───────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> post({
     bool isFromData = false,
@@ -40,36 +50,29 @@ class ApiService {
     bool? isAuth,
     Map<String, dynamic>? headers,
     void Function(int, int)? onSendProgress,
-    Map<String, dynamic>? query, // 👈 كويري
+    Map<String, dynamic>? query,
   }) async {
     try {
-      final mergedHeaders = {
-        // 'Accept-Language': selectedLanguage ?? 'ar',
-        // 'Accept': 'application/json',
-        "lang": selectedLanguage ?? 'ar',
-        'Authorization': 'Bearer ${CachNetwork.getStringData(key: 'token')}',
+      final mergedHeaders = <String, dynamic>{
+        'lang': selectedLanguage ?? 'ar',
         ...?headers,
       };
 
-      var response = await _dio.post(
+      final response = await _dio.post(
         "$kbaseUrl$endPoint",
         data: isFromData ? FormData.fromMap(data) : data,
-        queryParameters: query, // 👈 هنا
-        options: Options(
-          headers: mergedHeaders,
-          validateStatus: (status) => status! >= 200 && status < 300,
-        ),
+        queryParameters: query,
+        options: Options(headers: mergedHeaders),
         onSendProgress: onSendProgress,
       );
       return response.data;
     } on DioException catch (e) {
-      if (e.response != null) {
-        return e.response!.data;
-      } else {
-        rethrow;
-      }
+      if (e.response != null) return e.response!.data;
+      rethrow;
     }
   }
+
+  // ─── PATCH ──────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> patch({
     bool isFromData = false,
@@ -79,35 +82,28 @@ class ApiService {
     void Function(int, int)? onSendProgress,
   }) async {
     try {
-      final mergedHeaders = <String, dynamic>{'lang': selectedLanguage ?? 'ar'};
-      mergedHeaders['Authorization'] =
-          'Bearer ${CachNetwork.getStringData(key: 'token')}';
-      mergedHeaders["Accept"] = "application/json";
+      final mergedHeaders = <String, dynamic>{
+        'lang': selectedLanguage ?? 'ar',
+        'Accept': 'application/json',
+        ...?headers,
+      };
 
-      if (headers != null) {
-        mergedHeaders.addAll(headers);
-      }
-
-      var response = await _dio.patch(
+      final response = await _dio.patch(
         "$kbaseUrl$endPoint",
         data: isFromData
             ? (data is FormData ? data : FormData.fromMap(data))
             : data,
-        options: Options(
-          headers: mergedHeaders,
-          validateStatus: (status) => status! >= 200 && status < 300,
-        ),
+        options: Options(headers: mergedHeaders),
         onSendProgress: onSendProgress,
       );
       return response.data;
     } on DioException catch (e) {
-      if (e.response != null) {
-        return e.response!.data;
-      } else {
-        rethrow;
-      }
+      if (e.response != null) return e.response!.data;
+      rethrow;
     }
   }
+
+  // ─── DELETE ─────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> delete({
     required String endPoint,
@@ -117,26 +113,19 @@ class ApiService {
     try {
       final mergedHeaders = <String, dynamic>{
         'lang': selectedLanguage ?? 'ar',
-        'Authorization': 'Bearer ${CachNetwork.getStringData(key: 'token')}',
         'Accept': 'application/json',
         ...?headers,
       };
 
-      var response = await _dio.delete(
+      final response = await _dio.delete(
         "$kbaseUrl$endPoint",
         data: data,
-        options: Options(
-          headers: mergedHeaders,
-          validateStatus: (status) => status! >= 200 && status < 300,
-        ),
+        options: Options(headers: mergedHeaders),
       );
       return response.data;
     } on DioException catch (e) {
-      if (e.response != null) {
-        return e.response!.data;
-      } else {
-        rethrow;
-      }
+      if (e.response != null) return e.response!.data;
+      rethrow;
     }
   }
 }

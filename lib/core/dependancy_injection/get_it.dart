@@ -4,6 +4,7 @@ import 'package:tayseer/core/services/connectivity_service.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/cache/chat_cache_service.dart';
+import 'package:tayseer/core/utils/auth_interceptor.dart';
 import 'package:tayseer/core/utils/hive_service.dart';
 import 'package:tayseer/features/advisor/notification/data/repo/NotificationRepo.dart';
 import 'package:tayseer/features/user/marriage/view_model/regards_packages_cubit.dart';
@@ -74,7 +75,9 @@ import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/repo/auth_repo_impl.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+import 'package:tayseer/core/utils/app_navigator.dart';
 import 'package:tayseer/features/shared/reports/data/repo/reports_repo.dart';
 import 'package:tayseer/features/shared/reports/data/repo/reports_repo_impl.dart';
 import 'package:tayseer/features/shared/reports/presentation/manager/cubit/reports_cubit.dart';
@@ -145,6 +148,24 @@ Future<void> setupGetIt() async {
         ),
       );
     }
+
+    // ✅ Auth interceptor: attaches accessToken, handles 401 → refresh → retry
+    dio.interceptors.add(
+      AuthInterceptor(
+        dio: dio,
+        onForceLogout: () async {
+          // Clear all local data
+          await CachNetwork.clearCache();
+          // Navigate to registration screen using the global navigator key
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            navigatorKey.currentState?.pushNamedAndRemoveUntil(
+              AppRouter.kRegisrationView,
+              (route) => false,
+            );
+          });
+        },
+      ),
+    );
 
     return dio;
   });

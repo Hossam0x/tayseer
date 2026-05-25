@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/functions/upload_imageandvideo_to_api.dart';
+import 'package:tayseer/core/services/secure_token_storage.dart';
 import 'package:tayseer/features/shared/auth/model/guest_response_model.dart';
 import 'package:tayseer/features/shared/auth/model/last_login_model.dart';
 import 'package:tayseer/core/models/login_data.dart';
@@ -100,9 +101,21 @@ class AuthRepoImpl implements AuthRepo {
       if (success) {
         final registerResponse = RegisterResponse.fromJson(response);
 
+        // ✅ Save dual tokens to secure storage (full session after OTP)
+        final accessToken = registerResponse.data?.accessToken ?? '';
+        final refreshToken = registerResponse.data?.refreshToken ?? '';
+        if (accessToken.isNotEmpty && refreshToken.isNotEmpty) {
+          await SecureTokenStorage.saveBothTokens(
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+          );
+        }
+        // Legacy fallback: keep ktoken in SharedPrefs for any code still reading it
         await CachNetwork.setData(
           key: ktoken,
-          value: registerResponse.data?.token ?? '',
+          value: accessToken.isNotEmpty
+              ? accessToken
+              : (registerResponse.data?.token ?? ''),
         );
         await CachNetwork.setData(
           key: kUserType,
@@ -201,9 +214,22 @@ class AuthRepoImpl implements AuthRepo {
 
       if (success == true) {
         final authGoogleResponse = RegisterResponse.fromJson(response);
+
+        // ✅ Save dual tokens to secure storage (social login = full session)
+        final accessToken = authGoogleResponse.data?.accessToken ?? '';
+        final refreshToken = authGoogleResponse.data?.refreshToken ?? '';
+        if (accessToken.isNotEmpty && refreshToken.isNotEmpty) {
+          await SecureTokenStorage.saveBothTokens(
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+          );
+        }
+        // Legacy fallback
         await CachNetwork.setData(
           key: ktoken,
-          value: authGoogleResponse.data?.token ?? '',
+          value: accessToken.isNotEmpty
+              ? accessToken
+              : (authGoogleResponse.data?.token ?? ''),
         );
         await CachNetwork.setData(
           key: kUserType,
@@ -305,9 +331,22 @@ class AuthRepoImpl implements AuthRepo {
 
       if (success == true) {
         final authAppleResponse = RegisterResponse.fromJson(response);
+
+        // ✅ Save dual tokens to secure storage (social login = full session)
+        final accessToken = authAppleResponse.data?.accessToken ?? '';
+        final refreshToken = authAppleResponse.data?.refreshToken ?? '';
+        if (accessToken.isNotEmpty && refreshToken.isNotEmpty) {
+          await SecureTokenStorage.saveBothTokens(
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+          );
+        }
+        // Legacy fallback
         await CachNetwork.setData(
           key: ktoken,
-          value: authAppleResponse.data?.token ?? '',
+          value: accessToken.isNotEmpty
+              ? accessToken
+              : (authAppleResponse.data?.token ?? ''),
         );
         await CachNetwork.setData(
           key: kUserType,
@@ -578,9 +617,14 @@ class AuthRepoImpl implements AuthRepo {
       final success = response['success'] ?? false;
       if (success) {
         final guestResponse = GuestResponseModel.fromJson(response);
+        // Guest login returns a single token (not dual-token per spec)
         await CachNetwork.setData(
           key: ktoken,
           value: guestResponse.data?.token ?? '',
+        );
+        // Also save as accessToken so the interceptor can attach it
+        await SecureTokenStorage.saveAccessToken(
+          guestResponse.data?.token ?? '',
         );
         await CachNetwork.setData(
           key: kUserType,
@@ -741,17 +785,31 @@ class AuthRepoImpl implements AuthRepo {
         data: body,
       );
       final registerResponse = RegisterResponse.fromJson(response);
+
+      // ✅ Save dual tokens (advisor offerings = full session completion)
+      final accessToken = registerResponse.data?.accessToken ?? '';
+      final refreshToken = registerResponse.data?.refreshToken ?? '';
+      if (accessToken.isNotEmpty && refreshToken.isNotEmpty) {
+        await SecureTokenStorage.saveBothTokens(
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+        );
+      }
+      // Legacy fallback
+      await CachNetwork.setData(
+        key: ktoken,
+        value: accessToken.isNotEmpty
+            ? accessToken
+            : (registerResponse.data?.token ?? ''),
+      );
+
       await CachNetwork.setData(
         key: kuserData,
         value: jsonEncode(registerResponse.data?.user?.toJson()),
       );
       kCurrentUserData = registerResponse.data?.user;
-      await CachNetwork.setData(
-        key: ktoken,
-        value: registerResponse.data?.token ?? '',
-      );
       debugPrint(
-        'setCountryOfferings response: ${registerResponse.data?.token}',
+        'setCountryOfferings response: ${registerResponse.data?.accessToken}',
       );
       return right(registerResponse);
     } catch (e) {

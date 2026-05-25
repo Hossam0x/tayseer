@@ -80,6 +80,7 @@ dependencies:
   reorderable_grid_view: ^2.2.8
   share_plus: ^12.0.1
   shared_preferences: ^2.5.3
+  flutter_secure_storage: ^9.2.4
   shimmer: ^3.0.0
   sign_in_with_apple: ^6.1.0
   skeletonizer: ^2.1.2

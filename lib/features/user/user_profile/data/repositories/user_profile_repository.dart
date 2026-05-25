@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:tayseer/core/services/secure_token_storage.dart';
 import 'package:tayseer/my_import.dart';
 import '../models/user_profile_model.dart';
 
@@ -19,7 +22,7 @@ abstract class UserProfileRepository {
   Future<Either<Failure, void>> toggleMarriageStatus(bool enable);
   Future<Either<Failure, void>> updateImageBlur(bool blurEnabled);
   Future<Either<Failure, void>> rateApp(int rating);
-  void logout({bool? isAdvisor = false});
+  Future<void> logout({bool? isAdvisor = false});
 }
 
 class UserProfileRepositoryImpl implements UserProfileRepository {
@@ -202,9 +205,46 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
   }
 
   @override
-  void logout({bool? isAdvisor = false}) {
-    _apiService.post(
-      endPoint: isAdvisor == true ? '/advisor/logout' : '/auth/logout',
-    );
+  Future<void> logout({bool? isAdvisor = false}) async {
+    final body = await _buildLogoutBody();
+    try {
+      await _apiService.post(
+        endPoint: isAdvisor == true ? '/advisor/logout' : '/auth/logout',
+        data: body,
+      );
+      debugPrint('✅ logout API call succeeded');
+    } catch (e) {
+      // Non-fatal — we still clear local data even if the API call fails
+      debugPrint('⚠️ logout API call failed (non-fatal): $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> _buildLogoutBody() async {
+    try {
+      final deviceInfo = DeviceInfoPlugin();
+      String deviceId = '';
+      if (Platform.isAndroid) {
+        deviceId = (await deviceInfo.androidInfo).id;
+      } else if (Platform.isIOS) {
+        deviceId = (await deviceInfo.iosInfo).identifierForVendor ?? '';
+      }
+      final fcmToken = await FirebaseMessaging.instance.getToken() ?? '';
+
+      // refreshToken is only available after the dual-token migration login.
+      // Legacy users won't have it — send empty string (backend handles gracefully).
+      final refreshToken = await SecureTokenStorage.getRefreshToken() ?? '';
+
+      debugPrint(
+        '🚪 logout body — refreshToken: ${refreshToken.isEmpty ? "EMPTY (legacy user)" : "present"}',
+      );
+
+      return {
+        'fcmToken': fcmToken,
+        'deviceId': deviceId,
+        'refreshToken': refreshToken,
+      };
+    } catch (_) {
+      return {};
+    }
   }
 }

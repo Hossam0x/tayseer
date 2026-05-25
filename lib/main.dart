@@ -16,6 +16,7 @@ import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/services/screenshot_detector.dart';
 import 'package:tayseer/core/utils/global_mute_manager.dart';
 import 'package:tayseer/firebase_options.dart';
+import 'package:tayseer/core/utils/app_navigator.dart';
 import 'package:tayseer/tayser_app.dart';
 import 'package:tayseer/core/utils/simple_bloc_observer.dart';
 import 'package:tayseer/core/video/video_controller_manager.dart';
@@ -25,8 +26,9 @@ import 'package:tayseer/my_import.dart';
 // Globals
 // ─────────────────────────────────────────────
 
-/// Global navigator key
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+// navigatorKey is defined in app_navigator.dart and re-exported here
+// for backward compatibility with existing code that imports from main.dart.
+export 'package:tayseer/core/utils/app_navigator.dart' show navigatorKey;
 
 /// الـ URI الخام — يُحفظ هنا فقط، الـ SplashScreen هو اللي يتعامل معه
 Uri? pendingDeepLinkUri;

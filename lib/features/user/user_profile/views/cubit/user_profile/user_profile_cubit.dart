@@ -913,7 +913,9 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       await CachNetwork.removeData(key: kMyProfileImage);
       await CachNetwork.removeData(key: kMyProfileName);
 
-      _userProfileRepository.logout();
+      // ✅ await the logout API BEFORE clearing cache/tokens
+      // (clearCache deletes the token from SharedPrefs which the interceptor needs)
+      await _userProfileRepository.logout();
 
       await CachNetwork.clearCache();
       await getIt<CacheCleanupService>().clearAllUserCache();

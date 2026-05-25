@@ -14,6 +14,7 @@ import 'package:tayseer/core/functions/set_advisor_status.dart';
 import 'package:tayseer/core/services/appsflyer_events/appsflyer_events.dart';
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
+import 'package:tayseer/core/services/secure_token_storage.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/shared/auth/model/day_time_range_model.dart';
@@ -22,6 +23,8 @@ import 'package:tayseer/features/shared/auth/repo/auth_repo.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
 import 'package:crypto/crypto.dart';
 import 'package:tayseer/firebase_options.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 import '../../../../my_import.dart';
 import '../model/certificate_model.dart';
@@ -1012,6 +1015,13 @@ class AuthCubit extends Cubit<AuthState> {
     bool googleLoggedOut = false;
     bool cacheCleared = false;
 
+    // ✅ بعت الـ logout API قبل ما نمسح الـ tokens
+    try {
+      await _callLogoutApi();
+    } catch (e) {
+      debugPrint('Logout API error (non-fatal): $e');
+    }
+
     try {
       await _googleSignIn.signOut();
       await _firebaseAuth.signOut();
@@ -1022,16 +1032,9 @@ class AuthCubit extends Cubit<AuthState> {
 
     // Disconnect socket on logout
     try {
-      // ✅ الترتيب الصحيح:
-      // 1. امسح الـ listeners
-      // 2. امسح الـ authorized token فوراً (قبل أي حاجة تانية)
-      // 3. reset الـ socket
-      // 4. امسح الـ cache
       getIt<ChatSocketService>().removeListeners();
-      // ✅ امسح الـ authorized token قبل الـ reset عشان أي connect() تاني مش يستخدم token قديم
       getIt<tayseerSocketHelper>().clearAuthorizedToken();
       getIt<tayseerSocketHelper>().reset();
-      // ✅ reset InteractionsCubit state عشان بعد login جديد يجيب subscription صح
       getIt<InteractionsCubit>().resetState();
     } catch (e) {
       debugPrint('Socket disconnect error: $e');
@@ -1049,12 +1052,11 @@ class AuthCubit extends Cubit<AuthState> {
     if (googleLoggedOut && cacheCleared) {
       emit(state.copyWith(logoutState: CubitStates.success));
 
-      // تأخير ثم الانتقال لصفحة تسجيل الدخول
       await Future.delayed(const Duration(milliseconds: 500));
 
       if (context.mounted) {
         context.pushNamedAndRemoveUntil(
-          AppRouter.kRegisterView,
+          AppRouter.kRegisrationView,
           predicate: (route) => false,
         );
       }
@@ -1070,6 +1072,37 @@ class AuthCubit extends Cubit<AuthState> {
 
       await Future.delayed(const Duration(seconds: 3));
       emit(state.copyWith(logoutState: CubitStates.initial));
+    }
+  }
+
+  /// Builds and sends the logout API request with refreshToken + fcmToken + deviceId.
+  Future<void> _callLogoutApi() async {
+    try {
+      final deviceInfo = DeviceInfoPlugin();
+      String deviceId = '';
+      if (Platform.isAndroid) {
+        deviceId = (await deviceInfo.androidInfo).id;
+      } else if (Platform.isIOS) {
+        deviceId = (await deviceInfo.iosInfo).identifierForVendor ?? '';
+      }
+      final fcmToken = await FirebaseMessaging.instance.getToken() ?? '';
+      final refreshToken = await SecureTokenStorage.getRefreshToken() ?? '';
+      final isAdvisor = selectedUserType == UserTypeEnum.asConsultant;
+
+      debugPrint(
+        '🚪 _callLogoutApi — refreshToken: ${refreshToken.isEmpty ? "EMPTY" : "present"}',
+      );
+
+      await getIt<ApiService>().post(
+        endPoint: isAdvisor ? '/advisor/logout' : '/auth/logout',
+        data: {
+          'fcmToken': fcmToken,
+          'deviceId': deviceId,
+          'refreshToken': refreshToken,
+        },
+      );
+    } catch (e) {
+      debugPrint('_callLogoutApi error: $e');
     }
   }
 

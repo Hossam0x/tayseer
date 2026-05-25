@@ -19,6 +19,7 @@ class GuestResponseModel {
 }
 
 class GuestData {
+  /// Guest login returns a single token (not dual-token).
   final String token;
   final String id;
   final String name;

@@ -21,7 +21,18 @@ class RegisterResponse {
 }
 
 class LoginData {
+  /// Partial/OTP token — returned by /auth/login and /auth/register.
+  /// Short-lived (1 hour). Used only to authorize the OTP verification step.
   final String? token;
+
+  /// Full session access token — returned after OTP verification, social login,
+  /// guest login, and advisor offerings. Valid for 1 hour.
+  final String? accessToken;
+
+  /// Full session refresh token — returned alongside accessToken.
+  /// Valid for 7 days. Used to obtain a new accessToken when it expires.
+  final String? refreshToken;
+
   final String? id;
   final bool? verify;
   final bool? isNew; // ✅ أضف هذا
@@ -33,6 +44,8 @@ class LoginData {
 
   LoginData({
     this.token,
+    this.accessToken,
+    this.refreshToken,
     this.id,
     this.verify,
     this.isNew, // ✅
@@ -46,6 +59,8 @@ class LoginData {
   factory LoginData.fromJson(Map<String, dynamic> json) {
     return LoginData(
       token: json['token'],
+      accessToken: json['accessToken'],
+      refreshToken: json['refreshToken'],
       id: json['id'],
       verify: json['verify'],
       isNew: json['isNew'], // ✅
@@ -60,6 +75,8 @@ class LoginData {
   Map<String, dynamic> toJson() {
     return {
       'token': token,
+      'accessToken': accessToken,
+      'refreshToken': refreshToken,
       'id': id,
       'verify': verify,
       'isNew': isNew, // ✅

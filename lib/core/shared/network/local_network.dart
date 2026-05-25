@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:tayseer/core/enum/advisor_status.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/models/login_data.dart';
+import 'package:tayseer/core/services/secure_token_storage.dart';
 import 'package:tayseer/my_import.dart';
 
 class CachNetwork {
@@ -131,6 +132,7 @@ class CachNetwork {
       removeData(key: kMyProfileName),
       removeData(key: kGuestName),
       removeData(key: kGuestImage),
+      SecureTokenStorage.clearTokens(),
     ]);
   }
 
@@ -152,6 +154,8 @@ class CachNetwork {
     if (savedLanguage != null) {
       await sharedPref.setString(kAppLanguage, savedLanguage);
     }
+    // ✅ مسح الـ secure tokens عند الـ logout
+    await SecureTokenStorage.clearTokens();
     kCurrentUserData = null;
     selectedUserType = UserTypeEnum.user;
     // selectedLanguage بتفضل زي ما هي - مش بنريسيتها
