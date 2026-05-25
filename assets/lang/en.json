@@ -2393,5 +2393,9 @@
   "no_sessions": "No Sessions",
   "no_sessions_subtitle": "You haven't booked any sessions yet. Find an advisor and start your journey.",
   "payment_pending": "Awaiting Payment",
-  "cancelled": "Cancelled"
+  "cancelled": "Cancelled",
+  "force_update_title": "Update Required",
+  "force_update_description": "A new version of the app is available with improvements and new features.\nPlease update to continue using the app.",
+  "force_update_button_app_store": "Update from App Store",
+  "force_update_button_google_play": "Update from Google Play"
 }

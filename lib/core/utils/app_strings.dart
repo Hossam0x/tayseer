@@ -170,4 +170,12 @@ class AppStrings {
 
   static const String comments = "comments";
   static const String loadMore = "load_more";
+
+  // Force Update
+  static const String forceUpdateTitle = "force_update_title";
+  static const String forceUpdateDescription = "force_update_description";
+  static const String forceUpdateButtonAppStore =
+      "force_update_button_app_store";
+  static const String forceUpdateButtonGooglePlay =
+      "force_update_button_google_play";
 }

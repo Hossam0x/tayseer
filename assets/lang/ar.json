@@ -2393,5 +2393,9 @@
   "no_sessions": "لا توجد جلسات",
   "no_sessions_subtitle": "لم تقم بحجز أي جلسات بعد. ابحث عن مستشار وابدأ رحلتك.",
   "payment_pending": "بانتظار الدفع",
-  "cancelled": "ملغاة"
+  "cancelled": "ملغاة",
+  "force_update_title": "تحديث مطلوب",
+  "force_update_description": "يوجد إصدار جديد من التطبيق يحتوي على تحسينات وميزات جديدة.\nيرجى التحديث للاستمرار في استخدام التطبيق.",
+  "force_update_button_app_store": "تحديث من App Store",
+  "force_update_button_google_play": "تحديث من Google Play"
 }

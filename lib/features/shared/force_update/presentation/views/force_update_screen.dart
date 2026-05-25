@@ -1,9 +1,4 @@
-import 'dart:io';
-
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:tayseer/core/utils/assets.dart';
-import 'package:tayseer/core/utils/colors.dart';
+import 'package:tayseer/my_import.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// شاشة الـ Force Update — تغطي كل الشاشة ولا يمكن تجاوزها
@@ -75,7 +70,7 @@ class ForceUpdateScreen extends StatelessWidget {
 
                   // العنوان
                   Text(
-                    'تحديث مطلوب',
+                    context.tr(AppStrings.forceUpdateTitle),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 26.sp,
@@ -89,7 +84,7 @@ class ForceUpdateScreen extends StatelessWidget {
 
                   // الوصف
                   Text(
-                    'يوجد إصدار جديد من التطبيق يحتوي على تحسينات وميزات جديدة.\nيرجى التحديث للاستمرار في استخدام التطبيق.',
+                    context.tr(AppStrings.forceUpdateDescription),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 15.sp,
@@ -128,8 +123,12 @@ class ForceUpdateScreen extends StatelessWidget {
                           SizedBox(width: 8.w),
                           Text(
                             Platform.isIOS
-                                ? 'تحديث من App Store'
-                                : 'تحديث من Google Play',
+                                ? context.tr(
+                                    AppStrings.forceUpdateButtonAppStore,
+                                  )
+                                : context.tr(
+                                    AppStrings.forceUpdateButtonGooglePlay,
+                                  ),
                             style: TextStyle(
                               fontSize: 16.sp,
                               fontWeight: FontWeight.w700,
