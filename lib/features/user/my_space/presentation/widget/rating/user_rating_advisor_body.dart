@@ -1,9 +1,3 @@
-// lib/features/user/my_space/presentation/widget/rating/user_rating_advisor_body.dart
-
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/session_detailes_model.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/user_rate_advisor/user_rate_advisor_cubit.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/user_rate_advisor/user_rate_advisor_state.dart';

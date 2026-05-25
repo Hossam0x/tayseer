@@ -8,7 +8,7 @@ import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user
 import 'package:tayseer/features/user/user_profile/views/marriage_file.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/nav_animation_service.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/user_profile_body.dart';
-import 'package:tayseer/features/shared/settings/widgets/settings_rate_dialog.dart';
+import 'package:tayseer/features/shared/rating/services/rating_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserProfileView extends StatefulWidget {
@@ -194,12 +194,13 @@ class _UserProfileViewState extends State<UserProfileView> {
   }
 
   void _showRateAppDialog() {
-    showDialog(
-      context: context,
-      builder: (_) => SettingsRateDialog(
-        onSubmit: (rating) async => _cubit.rateApp(rating),
-      ),
-    );
+    // Trigger native review immediately — no custom dialog.
+    // Backend receives rating=5 as a signal that the user engaged with the prompt.
+    // Apple/Google do not return the actual star rating to the app.
+    RatingService.instance.requestNativeReview().then((_) {
+      _cubit.rateApp(5);
+      RatingService.instance.markAsRated();
+    });
   }
 
   // ─── Marriage methods — DO NOT MODIFY ───────────────────────────────────────

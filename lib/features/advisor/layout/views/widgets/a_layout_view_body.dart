@@ -5,8 +5,11 @@ import 'package:tayseer/features/advisor/chat/presentation/view/chat_view.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/a_nav_bar.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/add_post_button.dart';
 import 'package:tayseer/features/advisor/profille/views/profile_view.dart';
+import 'package:tayseer/features/advisor/settings/view/cubit/settings_cubit.dart';
+import 'package:tayseer/features/shared/rating/services/rating_service.dart';
 import 'package:tayseer/features/shared/reels/views/reels_nav_view.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/main.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -35,6 +38,34 @@ class _ALayOutViewBodyState extends State<ALayOutViewBody> {
     // ✅ الـ layout جاهز — افتح أي pending deep link
     isMainLayoutReady = true;
     _consumePendingDeepLink();
+    // Auto-review eligibility check — delayed so the UI settles first.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(seconds: 3), () {
+        if (!mounted) return;
+        _maybeShowAutoReview();
+      });
+    });
+  }
+
+  /// Checks eligibility and triggers the native in-app review directly if conditions
+  /// are met.
+  Future<void> _maybeShowAutoReview() async {
+    final eligible = await RatingService.instance.isEligibleForReview();
+    if (!eligible || !mounted) return;
+
+    // Record the request timestamp to enforce the cooldown period.
+    await RatingService.instance.recordReviewRequest();
+
+    // Mark as rated locally so we don't prompt again.
+    await RatingService.instance.markAsRated();
+
+    // Send rating to backend in background (5 stars for auto-review qualification).
+    try {
+      await getIt<UserProfileRepository>().rateApp(5);
+    } catch (_) {}
+
+    // Trigger native review.
+    await RatingService.instance.requestNativeReview();
   }
 
   void _consumePendingDeepLink() {

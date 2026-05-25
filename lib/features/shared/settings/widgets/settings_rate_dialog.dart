@@ -1,9 +1,14 @@
 import 'package:tayseer/core/cubits/toggle_cubit.dart';
+import 'package:tayseer/features/shared/rating/services/rating_service.dart';
 import 'package:tayseer/features/shared/settings/cubit/rating_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 /// Shared rate-app dialog used by both advisor and user settings.
-/// [onSubmit] receives the selected rating (1–5) and returns a Future.
+///
+/// [onSubmit] sends the rating to the backend and returns a Future.
+/// After a successful submit:
+///   - rating ≥ 4 → triggers native InAppReview (with store fallback)
+///   - rating < 4 → closes dialog politely without opening the store
 class SettingsRateDialog extends StatelessWidget {
   final Future<void> Function(int rating) onSubmit;
 
@@ -30,7 +35,7 @@ class SettingsRateDialog extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Header
+                // ── Header ──────────────────────────────────────────────────
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -48,26 +53,35 @@ class SettingsRateDialog extends StatelessWidget {
                   ],
                 ),
                 Gap(25.h),
-                // Stars
+
+                // ── Animated stars ──────────────────────────────────────────
                 BlocBuilder<RatingCubit, int>(
                   builder: (context, rating) => Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(5, (i) {
+                      final filled = i < rating;
                       return GestureDetector(
                         onTap: () =>
                             context.read<RatingCubit>().setRating(i + 1),
-                        child: Icon(
-                          Icons.star_rounded,
-                          color: i < rating
-                              ? AppColors.kprimaryColor
-                              : AppColors.secondary100,
-                          size: 56.w,
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          transitionBuilder: (child, anim) =>
+                              ScaleTransition(scale: anim, child: child),
+                          child: Icon(
+                            Icons.star_rounded,
+                            key: ValueKey('$i-$filled'),
+                            color: filled
+                                ? AppColors.kprimaryColor
+                                : AppColors.secondary100,
+                            size: 56.w,
+                          ),
                         ),
                       );
                     }),
                   ),
                 ),
-                // Selected rating text
+
+                // ── Rating label ────────────────────────────────────────────
                 BlocBuilder<RatingCubit, int>(
                   builder: (context, rating) {
                     if (rating == 0) return const SizedBox.shrink();
@@ -84,6 +98,7 @@ class SettingsRateDialog extends StatelessWidget {
                     );
                   },
                 ),
+
                 Gap(24.h),
                 Text(
                   context.tr('rate_app_message'),
@@ -93,7 +108,8 @@ class SettingsRateDialog extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 Gap(32.h),
-                // Submit button
+
+                // ── Submit button ────────────────────────────────────────────
                 BlocBuilder<ToggleCubit, bool>(
                   builder: (loadingCtx, isLoading) {
                     if (isLoading) {
@@ -108,22 +124,7 @@ class SettingsRateDialog extends StatelessWidget {
                         title: context.tr('send_rating'),
                         onPressed: rating == 0
                             ? null
-                            : () async {
-                                loadingCtx.read<ToggleCubit>().set(true);
-                                try {
-                                  await onSubmit(rating);
-                                  if (loadingCtx.mounted) {
-                                    Navigator.of(
-                                      loadingCtx,
-                                      rootNavigator: true,
-                                    ).pop();
-                                  }
-                                } catch (_) {
-                                  if (loadingCtx.mounted) {
-                                    loadingCtx.read<ToggleCubit>().set(false);
-                                  }
-                                }
-                              },
+                            : () => _submit(loadingCtx, rating),
                         width: double.infinity,
                         height: 54.h,
                         useGradient: true,
@@ -137,5 +138,29 @@ class SettingsRateDialog extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _submit(BuildContext ctx, int rating) async {
+    final navigator = Navigator.of(ctx, rootNavigator: true);
+    final toggleCubit = ctx.read<ToggleCubit>();
+    toggleCubit.set(true);
+
+    try {
+      // 1. Send to backend (always).
+      await onSubmit(rating);
+
+      // 2. Persist rating state.
+      await RatingService.instance.markAsRated();
+
+      // 3. Close dialog before triggering native sheet.
+      navigator.pop();
+
+      // 4. For high ratings, trigger native review.
+      if (rating >= 4) {
+        await RatingService.instance.requestNativeReview();
+      }
+    } catch (_) {
+      toggleCubit.set(false);
+    }
   }
 }

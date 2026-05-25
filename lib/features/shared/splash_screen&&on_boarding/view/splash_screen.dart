@@ -11,6 +11,7 @@ import 'package:tayseer/features/shared/force_update/data/repo/force_update_repo
 import 'package:tayseer/features/shared/force_update/presentation/views/force_update_screen.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/advisor/stories/presentation/view_model/stories_cubit/stories_cubit.dart';
+import 'package:tayseer/features/shared/rating/services/app_usage_tracker_service.dart';
 import 'package:tayseer/main.dart';
 import '../../../../my_import.dart';
 
@@ -250,6 +251,8 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (token.isNotEmpty) {
       _navigateLoggedInUser();
+      // Track launch for rating eligibility (only for authenticated users).
+      AppUsageTrackerService.instance.onAppLaunch();
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.delayed(const Duration(milliseconds: 300), () {

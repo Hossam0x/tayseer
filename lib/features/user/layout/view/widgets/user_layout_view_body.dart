@@ -4,6 +4,7 @@ import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/services/secure_window_service.dart';
 import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/offline_banner.dart';
+import 'package:tayseer/features/shared/rating/services/rating_service.dart';
 import 'package:tayseer/features/shared/reels/views/reels_nav_view.dart';
 import 'package:tayseer/features/shared/home/view_model/home_cubit.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
@@ -15,6 +16,7 @@ import 'package:tayseer/features/user/marriage/view/widget/marriage_body.dart';
 import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/my_space/my_state_cubit.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/my_space_view.dart';
+import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/features/user/user_profile/views/user_profile_view.dart';
 import 'package:tayseer/main.dart';
 import 'package:tayseer/my_import.dart';
@@ -53,6 +55,11 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
     // عشان تضمن إن الـ flag اتحفظ بعد الـ login
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _cubit.refreshMarriageVisibility();
+      // Auto-review eligibility check — delayed so the UI settles first.
+      Future.delayed(const Duration(seconds: 3), () {
+        if (!mounted) return;
+        _maybeShowAutoReview();
+      });
     });
 
     // User pages
@@ -90,6 +97,27 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
     // ✅ الـ layout جاهز — افتح أي pending deep link
     isMainLayoutReady = true;
     _consumePendingDeepLink();
+  }
+
+  /// Checks eligibility and triggers the native in-app review directly if conditions
+  /// are met.
+  Future<void> _maybeShowAutoReview() async {
+    final eligible = await RatingService.instance.isEligibleForReview();
+    if (!eligible || !mounted) return;
+
+    // Record the request timestamp to enforce the cooldown period.
+    await RatingService.instance.recordReviewRequest();
+
+    // Mark as rated locally so we don't prompt again.
+    await RatingService.instance.markAsRated();
+
+    // Send rating to backend in background (5 stars for auto-review qualification).
+    try {
+      await getIt<UserProfileRepository>().rateApp(5);
+    } catch (_) {}
+
+    // Trigger native review.
+    await RatingService.instance.requestNativeReview();
   }
 
   void _consumePendingDeepLink() {

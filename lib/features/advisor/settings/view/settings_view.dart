@@ -9,7 +9,7 @@ import 'package:tayseer/features/advisor/settings/view/cubit/settings_cubit.dart
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_state.dart';
 import 'package:tayseer/features/shared/the_list/view_model/language_cubit.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
-import 'package:tayseer/features/advisor/settings/view/widgets/settings/settings_rate_dialog.dart';
+import 'package:tayseer/features/shared/rating/services/rating_service.dart';
 import 'package:tayseer/features/advisor/settings/view/widgets/settings_body.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -164,10 +164,13 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   void _showRateAppDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => AdvisorSettingsRateDialog(settingsCubit: _settingsCubit),
-    );
+    // Trigger native review immediately — no custom dialog.
+    // Backend receives rating=5 as a signal that the user engaged with the prompt.
+    // Apple/Google do not return the actual star rating to the app.
+    RatingService.instance.requestNativeReview().then((_) {
+      _settingsCubit.rateApp(5);
+      RatingService.instance.markAsRated();
+    });
   }
 
   Future<void> _handleSettingTap(
