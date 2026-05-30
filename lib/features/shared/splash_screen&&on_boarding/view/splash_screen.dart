@@ -160,10 +160,9 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 2400));
     if (!mounted) return;
     try {
-      // استخدام AudioService عشان يحترم إعداد الصوت
       await AudioService.instance.playSound(
         AudioService.splashSound,
-        forcePlay: false,
+        forcePlay: true,
       );
     } catch (e) {
       log('🔊 Sound error: $e');

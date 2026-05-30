@@ -55,14 +55,14 @@ class SettingsCubit extends Cubit<SettingsState> {
             );
           },
         ),
-        SettingItemModel(
-          id: 'sound_in_app',
-          title: 'sound_in_app',
-          iconAsset: AssetsData.icSoundSettings,
-          hasSwitch: true,
-          routeName: '',
-          switchValue: soundStatus,
-        ),
+        // SettingItemModel(
+        //   id: 'sound_in_app',
+        //   title: 'sound_in_app',
+        //   iconAsset: AssetsData.icSoundSettings,
+        //   hasSwitch: true,
+        //   routeName: '',
+        //   switchValue: soundStatus,
+        // ),
         SettingItemModel(
           id: 'events',
           title: 'events',

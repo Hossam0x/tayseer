@@ -47,13 +47,14 @@ class _SoundSettingsWidgetState extends State<SoundSettingsWidget> {
   }
 
   Future<void> _toggleSound(bool enabled) async {
-    await AudioService.instance.setSoundEffectsEnabled(enabled);
-    setState(() => _soundEnabled = enabled);
+    // TODO: re-enable sound toggle when needed
+    // await AudioService.instance.setSoundEffectsEnabled(enabled);
+    // setState(() => _soundEnabled = enabled);
 
-    // Play test sound if enabling
-    if (enabled) {
-      AudioService.instance.playSuccessSound();
-    }
+    // // Play test sound if enabling
+    // if (enabled) {
+    //   AudioService.instance.playSuccessSound();
+    // }
   }
 
   Future<void> _setVolume(double volume) async {
@@ -399,18 +400,19 @@ class _SoundToggleButtonState extends State<SoundToggleButton>
   }
 
   Future<void> _toggleSound() async {
+    // TODO: re-enable sound toggle when needed
     // Animate button press
     await _animationController.forward();
     await _animationController.reverse();
 
-    final newValue = !_soundEnabled;
-    await AudioService.instance.setSoundEffectsEnabled(newValue);
-    setState(() => _soundEnabled = newValue);
+    // final newValue = !_soundEnabled;
+    // await AudioService.instance.setSoundEffectsEnabled(newValue);
+    // setState(() => _soundEnabled = newValue);
 
-    // Play test sound if enabling
-    if (newValue) {
-      AudioService.instance.playSuccessSound();
-    }
+    // // Play test sound if enabling
+    // if (newValue) {
+    //   AudioService.instance.playSuccessSound();
+    // }
   }
 
   @override
