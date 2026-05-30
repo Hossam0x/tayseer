@@ -1,11 +1,12 @@
 import 'dart:ui';
 import 'package:tayseer/core/constant/marriage_constants.dart';
+import 'package:tayseer/core/widgets/screenshot_protected_image.dart';
 import 'package:tayseer/my_import.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/regards_purchase_sheet.dart';
 import '../../../data/Model/interaction_usermodel .dart';
 
 import '../../Interactions_cubit/interactions_cubit.dart';
-import '../../Interactions_cubit/interactions_state.dart';
+
 class RecentlyJoined extends StatelessWidget {
   final InteractionUserModel item;
   final bool forceBlur;
@@ -31,14 +32,16 @@ class RecentlyJoined extends StatelessWidget {
     final cardHeight = isTablet
         ? screenWidth * 0.28
         : (isCompact ? 170.h : 190.h);
-    final imageHeight = isTablet ? screenWidth * 0.16 : (isCompact ? 80.h : 100.h);
     final fontSize = isTablet ? 11.0 : (isCompact ? 12.sp : 14.sp);
     final iconSize = isTablet ? 12.0 : (isCompact ? 13.sp : 16.sp);
 
     return GestureDetector(
       onTap: () {
         // لو مش مشترك — اعرض sheet الاشتراك
-        final isSubscribed = context.read<InteractionsCubit>().state.isSubscribed;
+        final isSubscribed = context
+            .read<InteractionsCubit>()
+            .state
+            .isSubscribed;
         if (!isSubscribed) {
           showGoldPurchaseSheet(context);
           return;
@@ -65,7 +68,6 @@ class RecentlyJoined extends StatelessWidget {
           width: cardWidth,
           child: Directionality(
             textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
-
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -75,23 +77,12 @@ class RecentlyJoined extends StatelessWidget {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        shouldBlur
-                            ? ImageFiltered(
-                                imageFilter: ImageFilter.blur(
-                                  sigmaX: 15,
-                                  sigmaY: 15,
-                                ),
-                                child: AppImage(
-                                  item.image,
-                                  fit: BoxFit.cover,
-                                  height: imageHeight,
-                                ),
-                              )
-                            : AppImage(
-                                item.image,
-                                fit: BoxFit.cover,
-                                height: imageHeight,
-                              ),
+                        // ✅ ScreenshotProtectedImage بدل AppImage عشان تخفي الصورة في الـ screenshot على iOS
+                        ScreenshotProtectedImage(
+                          imageUrl: item.image,
+                          fit: BoxFit.cover,
+                          shouldBlur: shouldBlur,
+                        ),
                         if (shouldBlur)
                           Container(color: Colors.black.withOpacity(0.2)),
                       ],
@@ -148,7 +139,11 @@ class RecentlyJoined extends StatelessWidget {
                           isCompact: isCompact || isTablet,
                         ),
                       ] else ...[
-                        _buildBadge(text: "", icon: "", isCompact: isCompact || isTablet),
+                        _buildBadge(
+                          text: "",
+                          icon: "",
+                          isCompact: isCompact || isTablet,
+                        ),
                       ],
                     ],
                   ),
