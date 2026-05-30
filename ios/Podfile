@@ -28,7 +28,7 @@ flutter_ios_podfile_setup
 target 'Runner' do
   use_frameworks!
 
-  pod 'DiditSDK', :podspec => 'https://raw.githubusercontent.com/didit-protocol/sdk-ios/main/DiditSDK.podspec'
+  pod 'DiditSDK', :podspec => 'https://raw.githubusercontent.com/didit-protocol/sdk-ios/3.6.2/DiditSDK.podspec'
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 

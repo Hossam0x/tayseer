@@ -30,7 +30,7 @@ PODS:
     - Flutter
   - connectivity_plus (0.0.1):
     - Flutter
-  - CryptoSwift (1.8.4)
+  - CryptoSwift (1.10.0)
   - device_info_plus (0.0.1):
     - Flutter
   - didit_sdk (3.4.5):
@@ -309,7 +309,7 @@ DEPENDENCIES:
   - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - didit_sdk (from `.symlinks/plugins/didit_sdk/ios`)
-  - DiditSDK (from `https://raw.githubusercontent.com/didit-protocol/sdk-ios/main/DiditSDK.podspec`)
+  - DiditSDK (from `https://raw.githubusercontent.com/didit-protocol/sdk-ios/3.6.2/DiditSDK.podspec`)
   - emoji_picker_flutter (from `.symlinks/plugins/emoji_picker_flutter/ios`)
   - file_picker (from `.symlinks/plugins/file_picker/ios`)
   - firebase_auth (from `.symlinks/plugins/firebase_auth/ios`)
@@ -414,7 +414,7 @@ EXTERNAL SOURCES:
   didit_sdk:
     :path: ".symlinks/plugins/didit_sdk/ios"
   DiditSDK:
-    :podspec: https://raw.githubusercontent.com/didit-protocol/sdk-ios/main/DiditSDK.podspec
+    :podspec: https://raw.githubusercontent.com/didit-protocol/sdk-ios/3.6.2/DiditSDK.podspec
   emoji_picker_flutter:
     :path: ".symlinks/plugins/emoji_picker_flutter/ios"
   file_picker:
@@ -519,7 +519,7 @@ SPEC CHECKSUMS:
   audioplayers_darwin: 4f9ca89d92d3d21cec7ec580e78ca888e5fb68bd
   camera_avfoundation: be3be85408cd4126f250386828e9b1dfa40ab436
   connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
-  CryptoSwift: e64e11850ede528a02a0f3e768cec8e9d92ecb90
+  CryptoSwift: e2e7776512f250e66205955da748e7a4e4abffe0
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   didit_sdk: a93cb7274623cc192c040f75455953e2d0acf1c9
   DiditSDK: 7b3a5a73adab49b0ba5d39d88346f0fe73cbeb47
@@ -600,6 +600,6 @@ SPEC CHECKSUMS:
   ZIPFoundation: dfd3d681c4053ff7e2f7350bc4e53b5dba3f5351
   ZPNs: 73bad0046a74e37315201053f9a0e7ac625d9436
 
-PODFILE CHECKSUM: da9b7fe7559e68c90a732af93843f7037309a1f7
+PODFILE CHECKSUM: 34fd693f8f1d637337faf9f55b374d8531b6e45f
 
 COCOAPODS: 1.16.2
