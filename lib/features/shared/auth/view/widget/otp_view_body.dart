@@ -2,7 +2,7 @@ import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/widgets/custom_otp_timer.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
-import 'package:tayseer/main.dart'; // ✅ consumePendingDeepLink
+import 'package:tayseer/main.dart';
 import '../../../../../my_import.dart';
 
 class OtpViewBody extends StatefulWidget {
@@ -17,37 +17,18 @@ class _OtpViewBodyState extends State<OtpViewBody> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthCubit, AuthState>(
+    return BlocConsumer<AuthCubit, AuthState>(
       listenWhen: (previous, current) =>
-      previous.verifyOtpState != current.verifyOtpState ||
+          previous.verifyOtpState != current.verifyOtpState ||
           previous.resendCodeState != current.resendCodeState,
-
       listener: (context, state) {
-        // ─── OTP Loading ───
-        if (state.verifyOtpState == CubitStates.loading) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (_) => const Center(child: CustomloadingApp()),
-          );
-
-          // ─── OTP Success ───
-        } else if (state.verifyOtpState == CubitStates.success) {
-          context.pop(); // إغلاق الـ loading
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('otp_verify_success'),
-              isSuccess: true,
-            ),
-          );
+        // ─── OTP verify ───
+        if (state.verifyOtpState == CubitStates.success) {
+          AppToast.success(context, context.tr('otp_verify_success'));
 
           if (selectedUserType == UserTypeEnum.asConsultant) {
-            // ─── Consultant ───
             if (kCurrentUserData?.compeletedData == true) {
               context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
-              // ✅ المستشار مش بيستخدم deep link للزواج
             } else if (kCurrentUserData?.compeletedData == false &&
                 kCurrentUserData?.lastQuestionNumber == 1) {
               context.pushReplacementNamed(
@@ -76,13 +57,9 @@ class _OtpViewBodyState extends State<OtpViewBody> {
               );
             }
           } else if (selectedUserType == UserTypeEnum.user) {
-            // ─── User ───
             if (state.isNew == true) {
-              // ✅ مستخدم جديد — يكمل الـ onboarding الأول
-              // لا نفتح الـ deep link هنا
               context.pushReplacementNamed(AppRouter.kChooseGenderView);
             } else {
-              // ✅ مستخدم موجود — روح الـ layout وافتح الـ deep link
               context.pushNamedAndRemoveUntil(
                 AppRouter.kUserLayoutView,
                 predicate: (route) => false,
@@ -90,120 +67,116 @@ class _OtpViewBodyState extends State<OtpViewBody> {
               consumePendingDeepLink();
             }
           }
-
-          // ─── OTP Failure ───
         } else if (state.verifyOtpState == CubitStates.failure) {
-          context.pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: state.errorMessage ?? context.tr('otp_verify_failed'),
-              isError: true,
-            ),
+          AppToast.error(
+            context,
+            state.errorMessage ?? context.tr('otp_verify_failed'),
           );
         }
 
-        // ─── Resend Loading ───
-        if (state.resendCodeState == CubitStates.loading) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (_) => const Center(child: CustomloadingApp()),
-          );
-          // ─── Resend Success ───
-        } else if (state.resendCodeState == CubitStates.success) {
-          context.pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: context.tr('otp_sent_success'),
-              isSuccess: true,
-            ),
-          );
-          // ─── Resend Failure ───
+        // ─── Resend ───
+        if (state.resendCodeState == CubitStates.success) {
+          AppToast.success(context, context.tr('otp_sent_success'));
         } else if (state.resendCodeState == CubitStates.failure) {
-          context.pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            CustomSnackBar(
-              context,
-              text: state.errorMessage ?? context.tr('otp_error_general'),
-              isError: true,
-            ),
+          AppToast.error(
+            context,
+            state.errorMessage ?? context.tr('otp_error_general'),
           );
         }
       },
+      builder: (context, state) {
+        final isLoading = state.verifyOtpState == CubitStates.loading;
 
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            SizedBox(height: context.height * 0.05),
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        SizedBox(height: context.height * 0.02),
 
-            // Back button
-            Padding(
-              padding: const EdgeInsets.only(right: 25),
-              child: Align(
-                alignment: isArabic
-                    ? Alignment.centerRight
-                    : Alignment.centerLeft,
-                child: IconButton(
-                  onPressed: () {
-                    context.pop();
-                  },
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.black,
-                    size: 25,
+                        // Back button
+                        Padding(
+                          padding: const EdgeInsetsDirectional.only(start: 25),
+                          child: Align(
+                            alignment: isArabic
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
+                            child: IconButton(
+                              onPressed: () => context.pop(),
+                              icon: const Icon(
+                                Icons.arrow_back,
+                                color: Colors.black,
+                                size: 25,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: context.height * 0.08),
+
+                        // Title
+                        Text(
+                          context.tr('otp_title'),
+                          style: Styles.textStyle24.copyWith(
+                            color: HexColor('590d1c'),
+                          ),
+                        ),
+
+                        SizedBox(height: context.height * 0.02),
+
+                        // OTP input + resend timer
+                        CustomOtpTimer(
+                          onOtpSubmitted: (value) {
+                            setState(() => _verificationCode = value);
+                          },
+                        ),
+
+                        SizedBox(height: context.height * 0.03),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+
+                // Submit button — always visible above keyboard
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    context.width * 0.05,
+                    8,
+                    context.width * 0.05,
+                    24,
+                  ),
+                  child: CustomBotton(
+                    width: double.infinity,
+                    useGradient: true,
+                    title: isLoading
+                        ? context.tr('verifying')
+                        : context.tr('next'),
+                    onPressed: isLoading
+                        ? null
+                        : () {
+                            if (_verificationCode.length < 6) {
+                              AppToast.error(
+                                context,
+                                context.tr('otp_enter_first'),
+                              );
+                              return;
+                            }
+                            context.read<AuthCubit>().verifyOtp(
+                              otp: _verificationCode,
+                            );
+                          },
+                  ),
+                ),
+              ],
             ),
-
-            SizedBox(height: context.height * 0.1),
-
-            // Title
-            Text(
-              context.tr('otp_title'),
-              style: Styles.textStyle24.copyWith(color: HexColor('590d1c')),
-            ),
-
-            SizedBox(height: context.height * 0.02),
-
-            // OTP input
-            CustomOtpTimer(
-              onOtpSubmitted: (verificationCode) {
-                setState(() {
-                  _verificationCode = verificationCode;
-                });
-              },
-            ),
-
-            SizedBox(height: context.height * 0.06),
-
-            // Submit button
-            CustomBotton(
-              width: context.width * 0.9,
-              useGradient: true,
-              title: context.tr('next'),
-              onPressed: () {
-                if (_verificationCode.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    CustomSnackBar(
-                      context,
-                      text: context.tr('otp_enter_first'),
-                      isError: true,
-                    ),
-                  );
-                  return;
-                }
-
-                context.read<AuthCubit>().verifyOtp(otp: _verificationCode);
-              },
-            ),
-
-            SizedBox(height: context.height * 0.03),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

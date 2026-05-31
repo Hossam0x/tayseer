@@ -40,7 +40,6 @@ export 'package:dio/dio.dart';
 export 'package:flutter_animate/flutter_animate.dart';
 export 'package:shared_preferences/shared_preferences.dart';
 export 'package:flutter_svg/flutter_svg.dart';
-export 'package:pinput/pinput.dart';
 export 'package:tayseer/core/widgets/custom_background.dart';
 export 'package:tayseer/core/widgets/custom_drop_down_formfield.dart';
 export 'package:tayseer/features/shared/view_model/layout_cubit.dart';

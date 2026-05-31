@@ -1,5 +1,4 @@
 import 'package:tayseer/features/shared/auth/view/widget/otp_view_body.dart';
-
 import '../../../../my_import.dart';
 
 class OtpView extends StatelessWidget {
@@ -7,7 +6,7 @@ class OtpView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       resizeToAvoidBottomInset: false,
       body: CustomBackground(child: OtpViewBody()),
     );

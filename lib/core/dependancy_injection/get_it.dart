@@ -601,7 +601,7 @@ Future<void> setupGetIt() async {
   // ══════════════════════════════════════════════════════════════════════════
 
   getIt.registerLazySingleton<OtpRepository>(
-    () => OtpRepositoryImpl(getIt<Dio>()),
+    () => OtpRepositoryImpl(getIt<ApiService>()),
   );
 
   getIt.registerLazySingleton<UserSettingsRepository>(

@@ -1,19 +1,15 @@
 import 'dart:async';
+import 'package:tayseer/core/widgets/custom_otp_field.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import '../../my_import.dart';
 
 class CustomOtpTimer extends StatefulWidget {
   final Function(String) onOtpSubmitted;
-  final bool isphone;
 
-  const CustomOtpTimer({
-    super.key,
-    required this.onOtpSubmitted,
-    this.isphone = false,
-  });
+  const CustomOtpTimer({super.key, required this.onOtpSubmitted});
 
   @override
-  _CustomOtpTimerState createState() => _CustomOtpTimerState();
+  State<CustomOtpTimer> createState() => _CustomOtpTimerState();
 }
 
 class _CustomOtpTimerState extends State<CustomOtpTimer> {
@@ -59,9 +55,9 @@ class _CustomOtpTimerState extends State<CustomOtpTimer> {
   }
 
   String _formatTime(int seconds) {
-    final minutes = (seconds ~/ 60);
-    final secondsRemaining = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${secondsRemaining.toString().padLeft(2, '0')}';
+    final minutes = seconds ~/ 60;
+    final remaining = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remaining.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -70,96 +66,43 @@ class _CustomOtpTimerState extends State<CustomOtpTimer> {
       padding: const EdgeInsets.all(8.0),
       child: Column(
         children: [
-          if (!widget.isphone)
-            Text(context.tr('otp_sub_title'), style: Styles.textStyle14),
+          Text(context.tr('otp_sub_title'), style: Styles.textStyle14),
           SizedBox(height: context.height * 0.05),
 
-          Directionality(
-            textDirection: TextDirection.ltr,
-            child: Pinput(
-              length: 6,
-              defaultPinTheme: PinTheme(
-                width: 50,
-                height: 50,
-                textStyle: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(17),
-                  border: Border.all(
-                    color: const Color(0xfff8d3da),
-                    width: 1.4,
-                  ),
-                ),
-              ),
-              focusedPinTheme: PinTheme(
-                width: 50,
-                height: 50,
-                textStyle: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(17),
-                  border: Border.all(
-                    color: AppColors.kprimaryColor,
-                    width: 1.4,
-                  ),
-                ),
-              ),
-              submittedPinTheme: PinTheme(
-                width: 50,
-                height: 50,
-                textStyle: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(17),
-                  border: Border.all(
-                    color: const Color(0xfff8d3da),
-                    width: 1.4,
-                  ),
-                ),
-              ),
-              onCompleted: (value) => widget.onOtpSubmitted(value),
-            ),
+          CustomOtpField(
+            onChanged: widget.onOtpSubmitted,
+            onCompleted: widget.onOtpSubmitted,
           ),
 
           SizedBox(height: context.height * 0.03),
 
-          if (!widget.isphone)
-            _isTimerActive
-                ? Column(
-                    children: [
-                      Text(
-                        context.tr('resend_code_after'),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      Text(
-                        _formatTime(_start),
-                        style: Styles.textStyle12.copyWith(
-                          color: HexColor('4d81e7'),
-                        ),
-                      ),
-                    ],
-                  )
-                : TextButton(
-                    onPressed: _resetAndResend,
-                    child: Text(
-                      context.tr('resend_code'),
+          _isTimerActive
+              ? Column(
+                  children: [
+                    Text(
+                      context.tr('resend_code_after'),
+                      style: const TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                    Text(
+                      _formatTime(_start),
                       style: Styles.textStyle12.copyWith(
                         color: HexColor('4d81e7'),
-                        decoration: TextDecoration.underline,
-                        decorationColor: HexColor('4d81e7'),
-                        decorationThickness: 1.5,
                       ),
                     ),
+                  ],
+                )
+              : TextButton(
+                  onPressed: _resetAndResend,
+                  child: Text(
+                    context.tr('resend_code'),
+                    style: Styles.textStyle12.copyWith(
+                      color: HexColor('4d81e7'),
+                      decoration: TextDecoration.underline,
+                      decorationColor: HexColor('4d81e7'),
+                      decorationThickness: 1.5,
+                    ),
                   ),
+                ),
         ],
       ),
     );
