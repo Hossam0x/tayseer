@@ -1,6 +1,7 @@
 class RegardsPackageModel {
   final String id;
   final String appleProductId;
+  final String androidProductId;
   final int amount;
   final double price;
   final String currency;
@@ -10,6 +11,7 @@ class RegardsPackageModel {
   const RegardsPackageModel({
     required this.id,
     required this.appleProductId,
+    this.androidProductId = '',
     required this.amount,
     required this.price,
     required this.currency,
@@ -21,6 +23,7 @@ class RegardsPackageModel {
     return RegardsPackageModel(
       id: json['id'] as String? ?? '',
       appleProductId: json['appleProductId'] as String? ?? '',
+      androidProductId: json['androidProductId'] as String? ?? '',
       amount: (json['amount'] as num?)?.toInt() ?? 0,
       price: (json['price'] as num?)?.toDouble() ?? 0,
       currency: json['currency'] as String? ?? 'EGP',

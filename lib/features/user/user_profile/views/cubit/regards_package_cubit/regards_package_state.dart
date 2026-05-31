@@ -1,12 +1,12 @@
 import 'package:equatable/equatable.dart';
 
-
 enum RegardsPackagePurchaseStatus {
   initial,
   purchasing,
   success,
   canceled,
   error,
+  profileIncomplete, // ✅ الـ profile ناقص (phoneRequired)
 }
 
 class RegardsPackagePurchaseState extends Equatable {

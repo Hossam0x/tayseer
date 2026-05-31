@@ -1,14 +1,22 @@
 import 'dart:developer';
-import 'dart:io';
 
 import 'package:tayseer/core/services/iap_service.dart';
+import 'package:tayseer/core/services/one_time_payment/one_time_payment_cubit.dart';
 import 'package:tayseer/features/user/interactions/data/model/chat_duration_package_model.dart';
 import 'package:tayseer/features/user/interactions/view_model/chat_duration_packages_cubit.dart';
+import 'package:tayseer/features/user/questions/presentation/views/add_phone_view.dart';
 import 'package:tayseer/my_import.dart';
 
 // ─── Purchase state ──────────────────────────────────────────────────────────
 
-enum _PurchaseStatus { initial, purchasing, success, canceled, error }
+enum _PurchaseStatus {
+  initial,
+  purchasing,
+  success,
+  canceled,
+  error,
+  profileIncomplete,
+}
 
 class _PurchaseState {
   final _PurchaseStatus status;
@@ -30,6 +38,91 @@ class _PurchaseCubit extends Cubit<_PurchaseState> {
   void reset() => emit(const _PurchaseState());
 
   Future<void> purchase(
+    ChatDurationPackageModel package, {
+    required String chatRoomId,
+    BuildContext? context,
+  }) async {
+    if (Platform.isAndroid) {
+      await _purchaseAndroid(package, chatRoomId: chatRoomId, context: context);
+    } else {
+      await _purchaseIOS(package, chatRoomId: chatRoomId);
+    }
+  }
+
+  // ── Android: Paymob WebView ───────────────────────────────────────────────
+
+  Future<void> _purchaseAndroid(
+    ChatDurationPackageModel package, {
+    required String chatRoomId,
+    BuildContext? context,
+  }) async {
+    if (context == null || !context.mounted) {
+      emit(
+        state.copyWith(
+          status: _PurchaseStatus.error,
+          error: 'unexpected_error',
+        ),
+      );
+      return;
+    }
+
+    emit(state.copyWith(status: _PurchaseStatus.purchasing));
+
+    log('[RematchPurchase-Android] ════════════════════════════════════════');
+    log('[RematchPurchase-Android] 🌐 ANDROID PAYMOB FLOW');
+    log('[RematchPurchase-Android]   packageId  : ${package.id}');
+    log('[RematchPurchase-Android]   chatRoomId : $chatRoomId');
+    log('[RematchPurchase-Android] ════════════════════════════════════════');
+
+    final oneTimeCubit = OneTimePaymentCubit(_apiService);
+
+    await oneTimeCubit.pay(
+      context: context,
+      productId: package.id,
+      productType: OneTimeProductType.chatDurationExtension,
+      chatRoomId: chatRoomId,
+    );
+
+    if (isClosed) {
+      oneTimeCubit.close();
+      return;
+    }
+
+    final result = oneTimeCubit.state;
+    oneTimeCubit.close();
+
+    switch (result.status) {
+      case OneTimePaymentStatus.success:
+        emit(state.copyWith(status: _PurchaseStatus.success));
+
+      case OneTimePaymentStatus.canceled:
+        emit(state.copyWith(status: _PurchaseStatus.canceled));
+
+      case OneTimePaymentStatus.profileIncomplete:
+        emit(state.copyWith(status: _PurchaseStatus.profileIncomplete));
+
+      case OneTimePaymentStatus.error:
+        emit(
+          state.copyWith(
+            status: _PurchaseStatus.error,
+            error: result.error ?? 'unexpected_error',
+          ),
+        );
+
+      case OneTimePaymentStatus.initial:
+      case OneTimePaymentStatus.loading:
+        emit(
+          state.copyWith(
+            status: _PurchaseStatus.error,
+            error: 'unexpected_error',
+          ),
+        );
+    }
+  }
+
+  // ── iOS: Apple IAP (SK2 native consumable) ────────────────────────────────
+
+  Future<void> _purchaseIOS(
     ChatDurationPackageModel package, {
     required String chatRoomId,
   }) async {
@@ -64,7 +157,7 @@ class _PurchaseCubit extends Cubit<_PurchaseState> {
       final uuid = CachNetwork.getStringData(key: kUuid);
 
       log('[RematchPurchase] ════════════════════════════════════════');
-      log('[RematchPurchase] 🛒 PURCHASE FLOW START');
+      log('[RematchPurchase] 🛒 iOS PURCHASE FLOW START');
       log('[RematchPurchase]   productId  : $productId');
       log('[RematchPurchase]   chatRoomId : $chatRoomId');
       log(
@@ -90,7 +183,7 @@ class _PurchaseCubit extends Cubit<_PurchaseState> {
           endPoint: '/iap/initiate-purchase',
           data: {
             'productId': productId,
-            'platform': Platform.isIOS ? 'ios' : 'android',
+            'platform': 'ios',
             'chatRoomId': chatRoomId,
           },
         );
@@ -236,6 +329,8 @@ class _RematchSheetState extends State<_RematchSheet> {
     context.read<_PurchaseCubit>().purchase(
       packages[idx],
       chatRoomId: widget.chatRoomId,
+      // ✅ Android → Paymob WebView يحتاج context  |  iOS → Apple IAP لا يحتاجه
+      context: Platform.isAndroid ? context : null,
     );
   }
 
@@ -253,6 +348,36 @@ class _RematchSheetState extends State<_RematchSheet> {
               isSuccess: true,
             ),
           );
+        } else if (state.status == _PurchaseStatus.profileIncomplete) {
+          // ✅ الـ profile ناقص → روح لصفحة إضافة رقم الموبايل
+          context.read<_PurchaseCubit>().reset();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            final packages = context
+                .read<ChatDurationPackagesCubit>()
+                .state
+                .packages;
+            final idx = _selectedIndex.clamp(
+              0,
+              packages.isEmpty ? 0 : packages.length - 1,
+            );
+            final selectedPkg = packages.isEmpty ? null : packages[idx];
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AddPhoneViewFromTicket(
+                  onPhoneAdded: () {
+                    if (!mounted || selectedPkg == null) return;
+                    context.read<_PurchaseCubit>().purchase(
+                      selectedPkg,
+                      chatRoomId: widget.chatRoomId,
+                      context: Platform.isAndroid ? context : null,
+                    );
+                  },
+                ),
+              ),
+            );
+          });
         } else if (state.status == _PurchaseStatus.canceled) {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(context, text: context.tr('purchase_cancelled')),

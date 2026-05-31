@@ -25,6 +25,7 @@ enum UserSubStatus {
   canceled,
   error,
   needsTransfer, // ✅ Apple purchase نجح لكن الاشتراك على account تاني
+  profileIncomplete, // ✅ الـ profile ناقص (phoneRequired)
 }
 
 class UserSubscriptionState extends Equatable {
@@ -560,9 +561,16 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
       await result.fold(
         (failure) async {
           log('[UserSub-Android] ❌ initiate failed: ${failure.message}');
-          emit(
-            state.copyWith(status: UserSubStatus.error, error: failure.message),
-          );
+          if (failure.message == 'profileIncomplete') {
+            emit(state.copyWith(status: UserSubStatus.profileIncomplete));
+          } else {
+            emit(
+              state.copyWith(
+                status: UserSubStatus.error,
+                error: failure.message,
+              ),
+            );
+          }
         },
         (paymentData) async {
           if (paymentData.webviewUrl.isEmpty) {

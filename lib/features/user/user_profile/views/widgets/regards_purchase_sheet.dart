@@ -15,6 +15,7 @@ import 'package:tayseer/features/user/user_profile/presentation/view_model/user_
 import 'package:tayseer/features/user/user_profile/presentation/view_model/user_subscription_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/regards_package_cubit/regards_package_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/regards_package_cubit/regards_package_state.dart';
+import 'package:tayseer/features/user/questions/presentation/views/add_phone_view.dart';
 import 'package:tayseer/my_import.dart';
 
 // ═══════════════════════════════════════
@@ -354,7 +355,11 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
       currency: selected.currency,
       priceForOne: selected.priceForOne,
     );
-    context.read<RegardsPackagePurchaseCubit>().purchasePackage(rawPackage);
+    // ✅ Android → Paymob WebView  |  iOS → Apple IAP (SK2 consumable)
+    context.read<RegardsPackagePurchaseCubit>().purchasePackage(
+      rawPackage,
+      context: Platform.isAndroid ? context : null,
+    );
   }
 
   void _onPayGold(BuildContext context, List<NewUserSubModel> allSubs) {
@@ -390,6 +395,37 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
               isSuccess: true,
             ),
           );
+        } else if (state.status ==
+            RegardsPackagePurchaseStatus.profileIncomplete) {
+          // ✅ الـ profile ناقص → روح لصفحة إضافة رقم الموبايل
+          context.read<RegardsPackagePurchaseCubit>().resetStatus();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            // احفظ الـ selected package عشان نعيد المحاولة بعد إضافة الرقم
+            final packages = context
+                .read<RegardsPackagesCubit>()
+                .state
+                .packages;
+            final idx = _selectedIndex.clamp(
+              0,
+              packages.isEmpty ? 0 : packages.length - 1,
+            );
+            final selectedPkg = packages.isEmpty ? null : packages[idx];
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AddPhoneViewFromTicket(
+                  onPhoneAdded: () {
+                    if (!mounted || selectedPkg == null) return;
+                    context.read<RegardsPackagePurchaseCubit>().purchasePackage(
+                      selectedPkg,
+                      context: context,
+                    );
+                  },
+                ),
+              ),
+            );
+          });
         } else if (state.status == RegardsPackagePurchaseStatus.canceled) {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(context, text: context.tr('purchase_cancelled')),
@@ -474,6 +510,29 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                 .read<UserSubscriptionCubit>()
                 .transferSubscription(purchaseId),
           );
+        } else if (state.status == UserSubStatus.profileIncomplete) {
+          // ✅ الـ profile ناقص → روح لصفحة إضافة رقم الموبايل
+          context.read<UserSubscriptionCubit>().resetStatus();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AddPhoneViewFromTicket(
+                  onPhoneAdded: () {
+                    if (!mounted) return;
+                    final allSubs = context
+                        .read<UserPackagesCubit>()
+                        .state
+                        .subscriptions;
+                    context
+                        .read<UserSubscriptionCubit>()
+                        .purchaseSubscriptionAndroid(allSubs, context: context);
+                  },
+                ),
+              ),
+            );
+          });
         } else if (state.status == UserSubStatus.error && state.error != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(

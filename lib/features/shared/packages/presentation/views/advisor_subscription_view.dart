@@ -13,6 +13,7 @@ import 'package:tayseer/features/shared/packages/presentation/widgets/selectable
 import 'package:tayseer/features/shared/packages/presentation/widgets/subscription_purchasing_button.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/subscription_success_dialog.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/upgrade_sub_card.dart';
+import 'package:tayseer/features/user/questions/presentation/views/add_phone_view.dart';
 import 'package:tayseer/my_import.dart';
 
 // ── ألوان Gold ──
@@ -60,6 +61,31 @@ class AdvisorSubscriptionView extends StatelessWidget {
                 .read<AdvisorSubscriptionCubit>()
                 .transferSubscription(purchaseId),
           );
+        } else if (state.status == AdvisorSubStatus.profileIncomplete) {
+          // ✅ الـ profile ناقص → روح لصفحة إضافة رقم الموبايل
+          context.read<AdvisorSubscriptionCubit>().resetStatus();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final navContext = context;
+            Navigator.push(
+              navContext,
+              MaterialPageRoute(
+                builder: (_) => AddPhoneViewFromTicket(
+                  onPhoneAdded: () {
+                    final allSubs = navContext
+                        .read<PackagesCubit>()
+                        .state
+                        .subscriptions;
+                    navContext
+                        .read<AdvisorSubscriptionCubit>()
+                        .purchaseSubscriptionAndroid(
+                          allSubs,
+                          context: navContext,
+                        );
+                  },
+                ),
+              ),
+            );
+          });
         } else if (state.status == AdvisorSubStatus.error &&
             state.error != null) {
           AppToast.error(context, context.tr(state.error!));

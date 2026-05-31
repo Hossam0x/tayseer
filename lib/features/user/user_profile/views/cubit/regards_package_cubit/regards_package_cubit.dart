@@ -1,7 +1,8 @@
 import 'dart:developer';
-import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:tayseer/core/services/iap_service.dart';
+import 'package:tayseer/core/services/one_time_payment/one_time_payment_cubit.dart';
 import 'package:tayseer/features/user/marriage/model/regards_package_model.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_event_bus.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/regards_package_cubit/regards_package_state.dart';
@@ -16,7 +17,93 @@ class RegardsPackagePurchaseCubit extends Cubit<RegardsPackagePurchaseState> {
 
   void resetStatus() => emit(const RegardsPackagePurchaseState());
 
-  Future<void> purchasePackage(RegardsPackageModel package) async {
+  Future<void> purchasePackage(
+    RegardsPackageModel package, {
+    BuildContext? context,
+  }) async {
+    if (Platform.isAndroid) {
+      await _purchaseAndroid(package, context: context);
+    } else {
+      await _purchaseIOS(package);
+    }
+  }
+
+  // ── Android: Paymob WebView ───────────────────────────────────────────────
+
+  Future<void> _purchaseAndroid(
+    RegardsPackageModel package, {
+    BuildContext? context,
+  }) async {
+    if (context == null || !context.mounted) {
+      emit(
+        state.copyWith(
+          status: RegardsPackagePurchaseStatus.error,
+          error: 'unexpected_error',
+        ),
+      );
+      return;
+    }
+
+    emit(state.copyWith(status: RegardsPackagePurchaseStatus.purchasing));
+
+    log('[RegardsPurchase-Android] ════════════════════════════════════════');
+    log('[RegardsPurchase-Android] 🌐 ANDROID PAYMOB FLOW');
+    log('[RegardsPurchase-Android]   packageId : ${package.id}');
+    log('[RegardsPurchase-Android] ════════════════════════════════════════');
+
+    final oneTimeCubit = OneTimePaymentCubit(_apiService);
+
+    await oneTimeCubit.pay(
+      context: context,
+      productId: package.id,
+      productType: OneTimeProductType.regardsPackage,
+    );
+
+    if (isClosed) {
+      oneTimeCubit.close();
+      return;
+    }
+
+    final result = oneTimeCubit.state;
+    oneTimeCubit.close();
+
+    switch (result.status) {
+      case OneTimePaymentStatus.success:
+        MarriageEventBus.instance.refreshRegards();
+        emit(state.copyWith(status: RegardsPackagePurchaseStatus.success));
+
+      case OneTimePaymentStatus.canceled:
+        emit(state.copyWith(status: RegardsPackagePurchaseStatus.canceled));
+
+      case OneTimePaymentStatus.profileIncomplete:
+        emit(
+          state.copyWith(
+            status: RegardsPackagePurchaseStatus.profileIncomplete,
+          ),
+        );
+
+      case OneTimePaymentStatus.error:
+        emit(
+          state.copyWith(
+            status: RegardsPackagePurchaseStatus.error,
+            error: result.error ?? 'unexpected_error',
+          ),
+        );
+
+      case OneTimePaymentStatus.initial:
+      case OneTimePaymentStatus.loading:
+        emit(
+          state.copyWith(
+            status: RegardsPackagePurchaseStatus.error,
+            error: 'unexpected_error',
+          ),
+        );
+    }
+  }
+
+  // ── iOS: Apple IAP (SK2 native consumable) ────────────────────────────────
+
+  Future<void> _purchaseIOS(RegardsPackageModel package) async {
     final productId = package.appleProductId;
     if (productId.isEmpty) {
       emit(
@@ -44,14 +131,11 @@ class RegardsPackagePurchaseCubit extends Cubit<RegardsPackagePurchaseState> {
       return;
     }
 
-    final platform = Platform.isIOS ? 'ios' : 'android';
-
     try {
       log('[RegardsPurchase] ════════════════════════════════════════');
-      log('[RegardsPurchase] 🛒 PURCHASE FLOW START');
+      log('[RegardsPurchase] 🛒 iOS PURCHASE FLOW START');
       log('[RegardsPurchase]   productId : $productId');
       log('[RegardsPurchase]   packageId : ${package.id}');
-      log('[RegardsPurchase]   platform  : $platform');
       log('[RegardsPurchase] ────────────────────────────────────────');
 
       // 1️⃣ Initiate purchase on backend → get pendingId
@@ -60,7 +144,7 @@ class RegardsPackagePurchaseCubit extends Cubit<RegardsPackagePurchaseState> {
       try {
         initiateResponse = await _apiService.post(
           endPoint: '/iap/initiate-purchase',
-          data: {'productId': productId, 'platform': platform},
+          data: {'productId': productId, 'platform': 'ios'},
         );
       } catch (e) {
         log('[RegardsPurchase] ❌ initiate-purchase failed: $e');

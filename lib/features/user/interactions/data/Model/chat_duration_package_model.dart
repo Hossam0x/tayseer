@@ -1,6 +1,7 @@
 class ChatDurationPackageModel {
   final String id;
   final String appleProductId;
+  final String androidProductId;
   final int durationInDays;
   final num price;
   final String currency;
@@ -9,6 +10,7 @@ class ChatDurationPackageModel {
   const ChatDurationPackageModel({
     required this.id,
     required this.appleProductId,
+    this.androidProductId = '',
     required this.durationInDays,
     required this.price,
     required this.currency,
@@ -19,6 +21,7 @@ class ChatDurationPackageModel {
     return ChatDurationPackageModel(
       id: json['id'] as String? ?? '',
       appleProductId: json['appleProductId'] as String? ?? '',
+      androidProductId: json['androidProductId'] as String? ?? '',
       durationInDays: (json['durationInDays'] as num?)?.toInt() ?? 0,
       price: json['price'] as num? ?? 0,
       currency: json['currency'] as String? ?? 'EGP',
@@ -36,7 +39,9 @@ class ChatDurationPackagesResponse {
     final list = json['data'] as List<dynamic>? ?? [];
     return ChatDurationPackagesResponse(
       packages: list
-          .map((e) => ChatDurationPackageModel.fromJson(e as Map<String, dynamic>))
+          .map(
+            (e) => ChatDurationPackageModel.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
     );
   }

@@ -224,10 +224,22 @@ class MembershipRepositoryImpl implements MembershipRepository {
           ),
         );
       }
+      // ✅ لو الـ backend رجّع phoneRequired: true نرجع كود خاص
+      final data = response['data'];
+      if (data != null && data['phoneRequired'] == true) {
+        return Left(ServerFailure('profileIncomplete'));
+      }
       return Left(
         ServerFailure(response['message']?.toString() ?? 'فشل بدء عملية الدفع'),
       );
     } on DioException catch (e) {
+      // ✅ لو الـ backend رجّع 400 مع phoneRequired: true
+      final data = e.response?.data;
+      if (data != null &&
+          data['data'] != null &&
+          data['data']['phoneRequired'] == true) {
+        return Left(ServerFailure('profileIncomplete'));
+      }
       return Left(ServerFailure.fromDioError(e));
     } catch (e) {
       return Left(ServerFailure(e.toString()));

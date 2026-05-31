@@ -114,6 +114,10 @@ class ApiEndPoint {
   static const String cancelAndroidAutoRenewal =
       '/new-paymob/cancel-auto-renewal';
 
+  // Paymob Android one-time purchases (regards, chat duration, etc.)
+  static const String initiateOneTimePayment =
+      '/new-paymob/initiate-one-time-payment';
+
   // Force Update
   static const String checkForUpdateIos = '/version/check-for-update';
   static const String checkForUpdateAndroid =

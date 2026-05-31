@@ -6,6 +6,7 @@ import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/cache/chat_cache_service.dart';
 import 'package:tayseer/core/utils/auth_interceptor.dart';
 import 'package:tayseer/core/utils/hive_service.dart';
+import 'package:tayseer/core/services/one_time_payment/one_time_payment_cubit.dart';
 import 'package:tayseer/features/advisor/notification/data/repo/NotificationRepo.dart';
 import 'package:tayseer/features/user/marriage/view_model/regards_packages_cubit.dart';
 import 'package:tayseer/features/user/interactions/view_model/chat_duration_packages_cubit.dart';
@@ -641,6 +642,9 @@ Future<void> setupGetIt() async {
   );
   getIt.registerFactory<ChatDurationPackagesCubit>(
     () => ChatDurationPackagesCubit(getIt<ApiService>()),
+  );
+  getIt.registerFactory<OneTimePaymentCubit>(
+    () => OneTimePaymentCubit(getIt<ApiService>()),
   );
 
   // ══════════════════════════════════════════════════════════════════════════

@@ -27,6 +27,7 @@ enum AdvisorSubStatus {
   error,
   needsTransfer, // ✅ Apple purchase نجح لكن الاشتراك على account تاني
   awaitingSaveCardChoice, // ✅ Android: ننتظر اختيار المستخدم لـ save card
+  profileIncomplete, // ✅ الـ profile ناقص (phoneRequired)
 }
 
 class AdvisorSubscriptionState extends Equatable {
@@ -583,12 +584,16 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
       await result.fold(
         (failure) async {
           log('[AdvisorSub-Android] ❌ initiate failed: ${failure.message}');
-          emit(
-            state.copyWith(
-              status: AdvisorSubStatus.error,
-              error: failure.message,
-            ),
-          );
+          if (failure.message == 'profileIncomplete') {
+            emit(state.copyWith(status: AdvisorSubStatus.profileIncomplete));
+          } else {
+            emit(
+              state.copyWith(
+                status: AdvisorSubStatus.error,
+                error: failure.message,
+              ),
+            );
+          }
         },
         (paymentData) async {
           if (paymentData.webviewUrl.isEmpty) {
