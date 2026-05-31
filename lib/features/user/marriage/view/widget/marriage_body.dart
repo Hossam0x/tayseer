@@ -890,7 +890,7 @@ class MarriageBodyState extends State<MarriageBody>
         if (state.regardsLeft == 0) {
           if (state.sendRegardState == CubitStates.failure ||
               state.sendRegardTextState == CubitStates.failure) {
-            showRegardsPurchaseSheet(context);
+            showRegardsPurchaseSheet(context, regardsLeft: state.regardsLeft);
             context.read<MarriageCubit>().resetState();
             return;
           }
@@ -2229,7 +2229,10 @@ class MarriageBodyState extends State<MarriageBody>
                         return;
                       }
                       if (state.regardsLeft == 0) {
-                        showRegardsPurchaseSheet(context);
+                        showRegardsPurchaseSheet(
+                          context,
+                          regardsLeft: state.regardsLeft,
+                        );
                         return;
                       }
                       _showRegardInputSheet(

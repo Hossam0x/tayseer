@@ -1,6 +1,6 @@
 import 'dart:async';
+import 'package:tayseer/core/utils/subscription_cache.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
-import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class AnimatedBeFirstButton extends StatefulWidget {
@@ -19,19 +19,19 @@ class _AnimatedBeFirstButtonState extends State<AnimatedBeFirstButton> {
   @override
   void initState() {
     super.initState();
-    // تحقق من حالة الاشتراك الحالية
-    final subType = getIt<InteractionsCubit>().state.subscriptionType;
-    _isSubscribed = subType == 'gold' || subType == 'ultra';
+    // ✅ اقرأ من الـ cache مباشرة — متأثرش بـ InteractionsCubit
+    _isSubscribed = SubscriptionCache.isSubscribed;
 
-    // استمع لأي تغيير في الاشتراك
+    // ✅ استمع لأي تغيير في الاشتراك (purchase أو getNameAndImage)
     _subSubscription = SubscriptionEventBus.instance.onSubscriptionChanged
         .listen((event) {
           if (!mounted) return;
-          setState(() {
-            _isSubscribed =
-                event.subscriptionType == 'gold' ||
-                event.subscriptionType == 'ultra';
-          });
+          final subscribed =
+              event.subscriptionType == 'gold' ||
+              event.subscriptionType == 'ultra';
+          if (_isSubscribed != subscribed) {
+            setState(() => _isSubscribed = subscribed);
+          }
         });
 
     _startAnimationLoop();
@@ -56,8 +56,18 @@ class _AnimatedBeFirstButtonState extends State<AnimatedBeFirstButton> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ تحقق من الـ cache في كل build عشان تلتقط أي تغيير
+    // (مثلاً لو getNameAndImage رجع بـ subscription جديد)
+    final currentIsSubscribed = SubscriptionCache.isSubscribed;
+    if (currentIsSubscribed != _isSubscribed) {
+      // schedule setState بعد الـ build الحالي
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _isSubscribed = currentIsSubscribed);
+      });
+    }
+
     // لو المستخدم مشترك، الزرار مش محتاج يظهر
-    if (_isSubscribed) return const SizedBox.shrink();
+    if (_isSubscribed || currentIsSubscribed) return const SizedBox.shrink();
 
     return GestureDetector(
       onTap: widget.onTap,

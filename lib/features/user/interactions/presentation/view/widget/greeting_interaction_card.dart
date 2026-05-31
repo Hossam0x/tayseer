@@ -59,7 +59,7 @@ class GreetingProfileCard extends StatelessWidget {
           });
         } else if (state.actionState == CubitStates.failure) {
           if (state.regardsLeft == 0) {
-            showRegardsPurchaseSheet(context);
+            showRegardsPurchaseSheet(context, regardsLeft: state.regardsLeft);
           } else {
             // ✅ أي failure تاني يظهر snackbar عادي
             ScaffoldMessenger.of(context).showSnackBar(
@@ -174,13 +174,22 @@ class GreetingProfileCard extends StatelessWidget {
                     // ✅ اقرأ regardsLeft من InteractionsCubit أو MarriageCubit
                     int? regardsLeft;
                     try {
-                      regardsLeft = context.read<MarriageCubit>().state.regardsLeft;
+                      regardsLeft = context
+                          .read<MarriageCubit>()
+                          .state
+                          .regardsLeft;
                     } catch (_) {}
                     // fallback: InteractionsCubit
-                    regardsLeft ??= context.read<InteractionsCubit>().state.regardsLeft;
+                    regardsLeft ??= context
+                        .read<InteractionsCubit>()
+                        .state
+                        .regardsLeft;
 
                     if (regardsLeft == 0) {
-                      showRegardsPurchaseSheet(context);
+                      showRegardsPurchaseSheet(
+                        context,
+                        regardsLeft: regardsLeft,
+                      );
                       return;
                     }
                     showRegardInputSheet(

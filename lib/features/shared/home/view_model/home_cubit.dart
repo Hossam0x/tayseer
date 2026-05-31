@@ -6,6 +6,8 @@ import 'package:tayseer/core/services/appsflyer_events/appsflyer_events.dart';
 import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
+import 'package:tayseer/core/utils/subscription_cache.dart';
+import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
 import 'package:tayseer/features/shared/home/model/image_and_name_model.dart';
 import 'package:tayseer/features/shared/home/model/best_advisor_model.dart';
@@ -572,6 +574,18 @@ class HomeCubit extends Cubit<HomeState> {
         if (!isGuest) {
           CachNetwork.setData(key: kMyProfileImage, value: data.image);
           CachNetwork.setData(key: kMyProfileName, value: data.name);
+
+          // ✅ حفظ الـ subscription type في الـ cache وإطلاق الـ event bus
+          // عشان كل الـ widgets تسمع التغيير فوراً (حتى لو الاشتراك خلص أو اتجدد)
+          final newSubType = data.subscriptionType;
+          final cachedSubType = SubscriptionCache.subscriptionType;
+          if (newSubType != cachedSubType) {
+            SubscriptionCache.save(newSubType);
+            SubscriptionEventBus.instance.fire(
+              SubscriptionChangedEvent(subscriptionType: newSubType),
+            );
+            log('[Home] 🔔 subscription changed: $cachedSubType → $newSubType');
+          }
         }
 
         if (isAdvisor) {

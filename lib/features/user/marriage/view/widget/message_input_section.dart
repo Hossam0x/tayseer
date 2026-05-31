@@ -41,7 +41,7 @@ class _MessageInputSectionState extends State<MessageInputSection> {
         } else if (state.sendRegardTextState == CubitStates.failure) {
           if (state.regardsLeft == 0) {
             context.read<MarriageCubit>().resetState();
-            showRegardsPurchaseSheet(context);
+            showRegardsPurchaseSheet(context, regardsLeft: state.regardsLeft);
             return;
           }
           context.read<MarriageCubit>().resetState();
@@ -51,82 +51,86 @@ class _MessageInputSectionState extends State<MessageInputSection> {
         onTap: () => FocusScope.of(context).unfocus(),
         behavior: HitTestBehavior.translucent,
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            context.tr('messge_profil_title').replaceAll('{name}', widget.name),
-            style: Styles.textStyle14Bold,
-          ),
-          Text(
-            context
-                .tr('messge_profil_sub_title')
-                .replaceAll('{name}', widget.name),
-            style: Styles.textStyle10.copyWith(color: Colors.grey),
-          ),
-          Gap(10.h),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 15.h),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(25.r),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              context
+                  .tr('messge_profil_title')
+                  .replaceAll('{name}', widget.name),
+              style: Styles.textStyle14Bold,
             ),
-            child: Column(
-              children: [
-                TextField(
-                  controller: _controller,
-                  maxLines: 4,
-                  scrollPadding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).viewInsets.bottom + 100,
-                  ),
-                  decoration: InputDecoration(
-                    fillColor: HexColor('f9f8ec'),
-                    filled: true,
-                    hintText: context.tr('type_your_message'),
-                    hintStyle:
-                        Styles.textStyle12.copyWith(color: Colors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(25.r),
-                      borderSide: BorderSide.none,
+            Text(
+              context
+                  .tr('messge_profil_sub_title')
+                  .replaceAll('{name}', widget.name),
+              style: Styles.textStyle10.copyWith(color: Colors.grey),
+            ),
+            Gap(10.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 15.h),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(25.r),
+              ),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _controller,
+                    maxLines: 4,
+                    scrollPadding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom + 100,
+                    ),
+                    decoration: InputDecoration(
+                      fillColor: HexColor('f9f8ec'),
+                      filled: true,
+                      hintText: context.tr('type_your_message'),
+                      hintStyle: Styles.textStyle12.copyWith(
+                        color: Colors.grey,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25.r),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
-                ),
-                Gap(20.h),
-                ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: _controller,
-                  builder: (context, value, _) {
-                    final enabled = _hasText(value.text);
-                    return BlocBuilder<MarriageCubit, MarriageState>(
-                      buildWhen: (prev, curr) =>
-                          prev.sendRegardTextState != curr.sendRegardTextState,
-                      builder: (context, state) {
-                        final isLoading =
-                            state.sendRegardTextState == CubitStates.loading;
-                        return CustomBotton(
-                          backGroundcolor: AppColors.kgreyColor,
-                          useGradient: enabled && !isLoading,
-                          title: context.tr('send_reply'),
-                          onPressed: enabled && !isLoading
-                              ? () {
-                                  context
-                                      .read<MarriageCubit>()
-                                      .sendRegardText(
-                                        personId: widget.personId,
-                                        text: value.text.trim(),
-                                        countView: true,
-                                      );
-                                  _controller.clear();
-                                }
-                              : null,
-                        );
-                      },
-                    );
-                  },
-                ),
-              ],
+                  Gap(20.h),
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _controller,
+                    builder: (context, value, _) {
+                      final enabled = _hasText(value.text);
+                      return BlocBuilder<MarriageCubit, MarriageState>(
+                        buildWhen: (prev, curr) =>
+                            prev.sendRegardTextState !=
+                            curr.sendRegardTextState,
+                        builder: (context, state) {
+                          final isLoading =
+                              state.sendRegardTextState == CubitStates.loading;
+                          return CustomBotton(
+                            backGroundcolor: AppColors.kgreyColor,
+                            useGradient: enabled && !isLoading,
+                            title: context.tr('send_reply'),
+                            onPressed: enabled && !isLoading
+                                ? () {
+                                    context
+                                        .read<MarriageCubit>()
+                                        .sendRegardText(
+                                          personId: widget.personId,
+                                          text: value.text.trim(),
+                                          countView: true,
+                                        );
+                                    _controller.clear();
+                                  }
+                                : null,
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }

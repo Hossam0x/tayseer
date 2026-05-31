@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/core/errors/failure.dart';
+import 'package:tayseer/core/utils/subscription_cache.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/user/interactions/data/repos/interactions_repository.dart';
 import '../../data/Model/interaction_usermodel .dart';
@@ -17,7 +18,15 @@ class InteractionsCubit extends Cubit<InteractionsState> {
 
   late final StreamSubscription<SubscriptionChangedEvent> _subEventSubscription;
 
-  InteractionsCubit(this.repository) : super(const InteractionsState()) {
+  InteractionsCubit(this.repository)
+    : super(
+        // ✅ ابدأ بالـ subscription type المحفوظ في الـ cache (sync)
+        // عشان لو الـ API لسه مرجعش، الـ state يكون صح من أول لحظة
+        InteractionsState(
+          subscriptionType: SubscriptionCache.subscriptionType,
+          isSubscribed: SubscriptionCache.isSubscribed,
+        ),
+      ) {
     // ✅ استمع لأي تغيير في الاشتراك وحدّث الـ state فوراً
     _subEventSubscription = SubscriptionEventBus.instance.onSubscriptionChanged
         .listen((event) {
@@ -25,6 +34,8 @@ class InteractionsCubit extends Cubit<InteractionsState> {
           final isSubscribed =
               event.subscriptionType == 'gold' ||
               event.subscriptionType == 'ultra';
+          // ✅ احفظ في الـ cache عشان الـ restart التاني يقرأ الصح
+          SubscriptionCache.save(event.subscriptionType);
           emit(
             state.copyWith(
               isSubscribed: isSubscribed,
@@ -58,6 +69,7 @@ class InteractionsCubit extends Cubit<InteractionsState> {
 
     result.fold((failure) => null, (response) {
       if (response.isSubscribed != state.isSubscribed) {
+        SubscriptionCache.save(response.userSubscription);
         emit(
           state.copyWith(
             isSubscribed: response.isSubscribed,
@@ -151,6 +163,9 @@ class InteractionsCubit extends Cubit<InteractionsState> {
         final bool isSubscribed = response.isSubscribed;
         final String subscriptionType = response.userSubscription;
         final section = response.sections[filter];
+
+        // ✅ احفظ في الـ cache عند كل API response
+        SubscriptionCache.save(subscriptionType);
 
         if (section == null) {
           emit(
@@ -517,6 +532,7 @@ class InteractionsCubit extends Cubit<InteractionsState> {
   // ═══════════════════════════════════════════════════════════════════
 
   void resetState() {
+    SubscriptionCache.clear();
     emit(const InteractionsState());
   }
 }

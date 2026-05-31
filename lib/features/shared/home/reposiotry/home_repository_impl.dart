@@ -426,6 +426,8 @@ class HomeRepositoryImpl implements HomeRepository {
       final image = data['image'] as String? ?? '';
       final approvalKey = data['approvalKey'] as String? ?? '';
       final uuid = data['uuid'] as String? ?? '';
+      final subscriptionType =
+          (data['subscriptionType'] as String?)?.toLowerCase() ?? 'free';
 
       // حفظ الاسم والصورة في الكاش عند النجاح لضمان العرض في وضع عدم الاتصال (أوفلاين)
       await CachNetwork.setData(key: kMyProfileName, value: name);
@@ -446,6 +448,7 @@ class HomeRepositoryImpl implements HomeRepository {
           notifications: notifications,
           approvalKey: approvalKey,
           uuid: uuid,
+          subscriptionType: subscriptionType,
         ),
       );
     } on DioException catch (e) {

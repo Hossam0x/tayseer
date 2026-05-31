@@ -642,7 +642,10 @@ class _MarriagefilePageState extends State<MarriagefilePage>
                     context.pushNamed(AppRouter.kUserPackagesView);
                   },
                 ),
-                onResultsTap: () => showRegardsPurchaseSheet(context),
+                onResultsTap: () => showRegardsPurchaseSheet(
+                  context,
+                  regardsLeft: profile.regardsLeft,
+                ),
               ),
             )
           else
@@ -1052,7 +1055,8 @@ class _MarriagefilePageState extends State<MarriagefilePage>
           CustomBotton(
             title: context.tr('upgrade'),
             height: 48.h,
-            onPressed: () => showRegardsPurchaseSheet(context),
+            onPressed: () =>
+                showRegardsPurchaseSheet(context, regardsLeft: regardsLeft),
           ),
         ],
       ),

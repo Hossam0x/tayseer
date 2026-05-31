@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:tayseer/core/services/iap_service.dart';
+import 'package:tayseer/core/utils/subscription_cache.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
 import 'package:tayseer/features/advisor/membership/data/models/restore_purchase_result.dart';
 import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
@@ -117,7 +118,24 @@ enum PurchaseType { regards, likes, gold }
 // ═══════════════════════════════════════
 // SHOW FUNCTIONS
 // ═══════════════════════════════════════
-void showRegardsPurchaseSheet(BuildContext context) {
+
+/// [isGoldSubscribed] — لو false يظهر gold sheet الأول بدل regards sheet.
+/// لو مش متمرر، بيقرأ من الـ SubscriptionCache تلقائياً.
+/// [regardsLeft]      — لو 0 يُخفي عنوان "رصيدك خلص" (لأن الرصيد فعلاً صفر)
+void showRegardsPurchaseSheet(
+  BuildContext context, {
+  bool? isGoldSubscribed,
+  int? regardsLeft,
+}) {
+  // ✅ لو مش متمرر → اقرأ من الـ cache مباشرة
+  final subscribed = isGoldSubscribed ?? SubscriptionCache.isSubscribed;
+
+  // ✅ لو مش مشترك → اعرض gold sheet بدل regards sheet
+  if (!subscribed) {
+    showGoldPurchaseSheet(context);
+    return;
+  }
+
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -131,19 +149,39 @@ void showRegardsPurchaseSheet(BuildContext context) {
         ),
         BlocProvider(create: (_) => getIt<RegardsPackagePurchaseCubit>()),
       ],
-      child: const _PurchaseSheet(type: PurchaseType.regards),
+      child: _PurchaseSheet(
+        type: PurchaseType.regards,
+        regardsLeft: regardsLeft,
+      ),
     ),
   );
 }
 
-void showLikesPurchaseSheet(BuildContext context) {
+/// [isGoldSubscribed] — لو false يظهر gold sheet الأول بدل likes sheet.
+/// لو مش متمرر، بيقرأ من الـ SubscriptionCache تلقائياً.
+/// [likesLeft]        — لو 0 يُخفي عنوان "رصيدك خلص"
+void showLikesPurchaseSheet(
+  BuildContext context, {
+  bool? isGoldSubscribed,
+  int? likesLeft,
+}) {
+  // ✅ لو مش متمرر → اقرأ من الـ cache مباشرة
+  final subscribed = isGoldSubscribed ?? SubscriptionCache.isSubscribed;
+
+  // ✅ لو مش مشترك → اعرض gold sheet بدل likes sheet
+  if (!subscribed) {
+    showGoldPurchaseSheet(context);
+    return;
+  }
+
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     isDismissible: false,
     enableDrag: false,
     backgroundColor: Colors.transparent,
-    builder: (_) => const _PurchaseSheet(type: PurchaseType.likes),
+    builder: (_) =>
+        _PurchaseSheet(type: PurchaseType.likes, likesLeft: likesLeft),
   );
 }
 
@@ -209,7 +247,19 @@ class _PurchaseSheet extends StatefulWidget {
   final String? titleKey;
   final String? subtitleKey;
 
-  const _PurchaseSheet({required this.type, this.titleKey, this.subtitleKey});
+  /// رصيد التحيات — 0 = خلص، >0 = فيه رصيد، null = مش متمرر
+  final int? regardsLeft;
+
+  /// رصيد الإعجابات — 0 = خلص، >0 = فيه رصيد، null = مش متمرر
+  final int? likesLeft;
+
+  const _PurchaseSheet({
+    required this.type,
+    this.titleKey,
+    this.subtitleKey,
+    this.regardsLeft,
+    this.likesLeft,
+  });
 
   @override
   State<_PurchaseSheet> createState() => _PurchaseSheetState();
@@ -224,6 +274,19 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
 
   bool get _isRegards => widget.type == PurchaseType.regards;
   bool get _isGold => widget.type == PurchaseType.gold;
+
+  // ── helper: اختار الـ isMostPopular تلقائياً لما الـ packages تتحمل ──
+  bool _autoSelectedOnce = false;
+  void _autoSelectMostPopular(List<PurchasePackage> packages) {
+    if (_autoSelectedOnce || packages.isEmpty) return;
+    _autoSelectedOnce = true;
+    final idx = packages.indexWhere((p) => p.isMostPopular);
+    if (idx != -1 && idx != _selectedIndex) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _selectedIndex = idx);
+      });
+    }
+  }
 
   // ── ألوان الذهب ──
   static const _goldDark = Color(0xFF8B6914);
@@ -363,6 +426,8 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                     final packages = state.status == CubitStates.success
                         ? PurchasePackage.fromApiPackages(state.packages)
                         : <PurchasePackage>[];
+                    // ✅ اختار الـ isMostPopular تلقائياً أول ما الـ packages تتحمل
+                    _autoSelectMostPopular(packages);
                     return _buildContent(
                       context,
                       packages: packages,
@@ -433,6 +498,8 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
             final packages = isLoading
                 ? <PurchasePackage>[]
                 : PurchasePackage.fromGoldSubs(allSubs, context);
+            // ✅ اختار الـ isMostPopular تلقائياً أول ما الـ packages تتحمل
+            _autoSelectMostPopular(packages);
             final isPurchasing = subState.status == UserSubStatus.purchasing;
             final selectedPkg = packages.isNotEmpty
                 ? packages[_selectedIndex.clamp(0, packages.length - 1)]
@@ -869,25 +936,78 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
           ],
         ),
         SizedBox(height: 16.h),
-        Text(
-          _isRegards
-              ? context.tr('regards_balance_finished')
-              : context.tr('likes_balance_finished'),
-          style: Styles.textStyle20Meduim.copyWith(
-            color: AppColors.kscandryTextColor,
-            fontWeight: FontWeight.w700,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        SizedBox(height: 8.h),
-        Text(
-          _isRegards
-              ? context.tr('regards_balance_finished_desc')
-              : context.tr('likes_balance_finished_desc'),
-          style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
-          textAlign: TextAlign.center,
-        ),
-        SizedBox(height: 20.h),
+        // ✅ لو الرصيد صفر → "رصيدك خلص"
+        // ✅ لو الرصيد > 0 → "عندك رصيد، اشتري أكتر"
+        // ✅ لو null → مش متمرر، مش هيظهر حاجة
+        if (_isRegards) ...[
+          if (widget.regardsLeft == 0) ...[
+            Text(
+              context.tr('regards_balance_finished'),
+              style: Styles.textStyle20Meduim.copyWith(
+                color: AppColors.kscandryTextColor,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              context.tr('regards_balance_finished_desc'),
+              style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 20.h),
+          ] else if (widget.regardsLeft != null && widget.regardsLeft! > 0) ...[
+            Text(
+              context.tr('regards_balance_available'),
+              style: Styles.textStyle20Meduim.copyWith(
+                color: AppColors.kscandryTextColor,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              context.tr('regards_balance_available_desc'),
+              style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 20.h),
+          ],
+        ] else ...[
+          if (widget.likesLeft == 0) ...[
+            Text(
+              context.tr('likes_balance_finished'),
+              style: Styles.textStyle20Meduim.copyWith(
+                color: AppColors.kscandryTextColor,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              context.tr('likes_balance_finished_desc'),
+              style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 20.h),
+          ] else if (widget.likesLeft != null && widget.likesLeft! > 0) ...[
+            Text(
+              context.tr('likes_balance_available'),
+              style: Styles.textStyle20Meduim.copyWith(
+                color: AppColors.kscandryTextColor,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              context.tr('likes_balance_available_desc'),
+              style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 20.h),
+          ],
+        ],
         if (_remainingSeconds > 0) ...[
           _buildCountdown(),
           SizedBox(height: 20.h),

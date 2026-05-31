@@ -91,7 +91,10 @@ class AdditionalImageSection extends StatelessWidget {
                             .state
                             .regardsLeft;
                         if (regardsLeft == 0) {
-                          showRegardsPurchaseSheet(context);
+                          showRegardsPurchaseSheet(
+                            context,
+                            regardsLeft: regardsLeft,
+                          );
                           return;
                         }
                         showRegardInputSheet(

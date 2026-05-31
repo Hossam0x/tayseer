@@ -23,3 +23,7 @@ const String kGuestImage = 'guest_image';
 const String kAppLanguage = 'app_language';
 
 const String kUuid = 'uuid';
+
+/// ✅ subscription type cache — 'free' | 'gold' | 'ultra'
+/// يتحفظ عند كل تغيير في الاشتراك ويتقرأ sync من الـ SharedPreferences
+const String kSubscriptionType = 'subscription_type';
