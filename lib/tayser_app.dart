@@ -1,4 +1,3 @@
-import 'package:country_picker/country_picker.dart';
 import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
@@ -129,7 +128,6 @@ class _TayseerAppState extends State<TayseerApp> with WidgetsBindingObserver {
                   locale: state,
                   supportedLocales: const [Locale('ar'), Locale('en')],
                   localizationsDelegates: [
-                    CountryLocalizations.delegate,
                     AppLocalizations.delegate,
                     GlobalCupertinoLocalizations.delegate,
                     GlobalMaterialLocalizations.delegate,

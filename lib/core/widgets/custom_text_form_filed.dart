@@ -1,8 +1,10 @@
-import 'package:country_picker/country_picker.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import '../../my_import.dart';
 
+/// حقل نص عام للتطبيق.
+///
+/// لإدخال رقم الهاتف مع اختيار الدولة استخدم [PhoneInputField] بدلاً من هذا.
 class CustomTextFormField extends StatefulWidget {
   const CustomTextFormField({
     super.key,
@@ -13,10 +15,8 @@ class CustomTextFormField extends StatefulWidget {
     this.isAccountName = false,
     this.isPasswordFiled = false,
     this.isConfirmPasswordFiled = false,
-    this.isPhoneWithCountryCode = false,
     this.isNumber = false,
     this.controller,
-    this.countryCodeController,
     this.maxLines = 1,
     this.enable = true,
     this.hintText,
@@ -30,8 +30,8 @@ class CustomTextFormField extends StatefulWidget {
     this.onChanged,
     this.onTap,
     this.readOnly = false,
-    this.maxLength, // ✅ الجديد
-    this.autofillHints, // ✅ keyboard suggestions
+    this.maxLength,
+    this.autofillHints,
   });
 
   final bool isName;
@@ -41,11 +41,9 @@ class CustomTextFormField extends StatefulWidget {
   final bool isPhone;
   final bool isCity;
   final bool isAccountName;
-  final bool isPhoneWithCountryCode;
   final bool isNumber;
 
   final TextEditingController? controller;
-  final TextEditingController? countryCodeController;
 
   final int maxLines;
   final bool enable;
@@ -61,11 +59,7 @@ class CustomTextFormField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final VoidCallback? onTap;
   final bool readOnly;
-
-  /// ✅ الحد الأقصى للحروف
   final int? maxLength;
-
-  /// ✅ autofill hints للـ keyboard suggestions
   final Iterable<String>? autofillHints;
 
   @override
@@ -74,15 +68,6 @@ class CustomTextFormField extends StatefulWidget {
 
 class _CustomTextFormFieldState extends State<CustomTextFormField> {
   bool _showPassword = true;
-  Country _selectedCountry = Country.parse('SA');
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.isPhoneWithCountryCode) {
-      widget.countryCodeController?.text = '+${_selectedCountry.phoneCode}';
-    }
-  }
 
   void _toggleVisibility() {
     setState(() => _showPassword = !_showPassword);
@@ -92,9 +77,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
     if (widget.keyboardType != null) return widget.keyboardType!;
     if (widget.isNumber) return TextInputType.number;
     if (widget.isMail) return TextInputType.emailAddress;
-    if (widget.isPhone || widget.isPhoneWithCountryCode) {
-      return TextInputType.phone;
-    }
+    if (widget.isPhone) return TextInputType.phone;
     if (widget.isName || widget.isAccountName) return TextInputType.name;
     return TextInputType.text;
   }
@@ -104,9 +87,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
     if (widget.isMail) return [AutofillHints.email];
     if (widget.isName) return [AutofillHints.name];
     if (widget.isAccountName) return [AutofillHints.username];
-    if (widget.isPhone || widget.isPhoneWithCountryCode) {
-      return [AutofillHints.telephoneNumber];
-    }
+    if (widget.isPhone) return [AutofillHints.telephoneNumber];
     if (widget.isPasswordFiled) return [AutofillHints.password];
     if (widget.isConfirmPasswordFiled) return [AutofillHints.newPassword];
     return [];
@@ -117,21 +98,17 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
     return TextFormField(
       autovalidateMode: widget.autovalidateMode ?? AutovalidateMode.disabled,
       autofillHints: _resolveAutofillHints(),
-
-      /// ✅ دمج formatter القديم + منع تجاوز الحد
       inputFormatters: widget.maxLength != null
           ? [
               ...?widget.inputFormatters,
               LengthLimitingTextInputFormatter(widget.maxLength),
             ]
           : widget.inputFormatters,
-
-      onTapOutside: (event) {
+      onTapOutside: (_) {
         SchedulerBinding.instance.addPostFrameCallback((_) {
           FocusScope.of(context).unfocus();
         });
       },
-
       autocorrect: false,
       controller: widget.controller,
       keyboardType: _resolveKeyboardType(),
@@ -145,7 +122,6 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       obscureText: widget.isPasswordFiled || widget.isConfirmPasswordFiled
           ? _showPassword
           : false,
-
       decoration: InputDecoration(
         filled: true,
         fillColor: AppColors.kWhiteColor,
@@ -176,33 +152,11 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
           borderSide: const BorderSide(color: Colors.red),
         ),
         errorStyle: Styles.textStyle10.copyWith(color: Colors.red),
-
-        prefixIcon: widget.isPhoneWithCountryCode
-            ? GestureDetector(
-                onTap: _openCountryPicker,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(width: 8),
-                    Text(
-                      _selectedCountry.flagEmoji,
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '+${_selectedCountry.phoneCode}',
-                      style: Styles.textStyle10,
-                    ),
-                    const Icon(Icons.arrow_drop_down),
-                  ],
-                ),
-              )
-            : widget.prefixIcon == null
+        prefixIcon: widget.prefixIcon == null
             ? null
             : widget.prefixIcon is IconData
-            ? Icon(widget.prefixIcon)
+            ? Icon(widget.prefixIcon as IconData)
             : widget.prefixIcon as Widget,
-
         suffixIcon:
             widget.suffixIcon ??
             ((widget.isPasswordFiled || widget.isConfirmPasswordFiled)
@@ -214,7 +168,6 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                     onPressed: _toggleVisibility,
                   )
                 : null),
-
         hintText:
             widget.hintText ??
             (widget.isMail
@@ -227,31 +180,16 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                 ? context.tr('password')
                 : widget.isConfirmPasswordFiled
                 ? context.tr('confirm_password')
-                : widget.isPhone || widget.isPhoneWithCountryCode
+                : widget.isPhone
                 ? context.tr('enter_phone')
                 : widget.isCity
                 ? context.tr('enter_city')
                 : context.tr('enter_text')),
-
         hintStyle: Styles.textStyle14.copyWith(
           color: AppColors.kprimaryColor.withOpacity(0.5),
         ),
       ),
-
       validator: widget.validator ?? _defaultValidator,
-    );
-  }
-
-  void _openCountryPicker() {
-    showCountryPicker(
-      context: context,
-      showPhoneCode: true,
-      onSelect: (country) {
-        setState(() {
-          _selectedCountry = country;
-          widget.countryCodeController?.text = '+${country.phoneCode}';
-        });
-      },
     );
   }
 
@@ -259,49 +197,36 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
     final text = value?.trim() ?? '';
 
     if (widget.isMail) {
-      if (text.isEmpty) return context.tr("email_required");
-      final regex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$');
-      if (!regex.hasMatch(text)) {
-        return context.tr("invalid_email");
+      if (text.isEmpty) return context.tr('email_required');
+      if (!RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$').hasMatch(text)) {
+        return context.tr('invalid_email');
       }
-
-      /// ✅ إضافة الحد الأقصى هنا بدون حذف القديم
       if (widget.maxLength != null && text.length > widget.maxLength!) {
-        return "${context.tr("max_length_exceeded")} ${widget.maxLength}";
+        return '${context.tr("max_length_exceeded")} ${widget.maxLength}';
       }
-
       return null;
     }
 
     if (widget.isPasswordFiled || widget.isConfirmPasswordFiled) {
-      if (text.length < 8) {
-        return context.tr("password_min_length");
-      }
-
+      if (text.length < 8) return context.tr('password_min_length');
       if (widget.maxLength != null && text.length > widget.maxLength!) {
-        return "${context.tr("max_length_exceeded")} ${widget.maxLength}";
+        return '${context.tr("max_length_exceeded")} ${widget.maxLength}';
       }
-
       return null;
     }
 
-    if (widget.isPhone || widget.isPhoneWithCountryCode) {
-      if (text.length < 7) return context.tr("invalid_phone");
-
+    if (widget.isPhone) {
+      if (text.length < 7) return context.tr('invalid_phone');
       if (widget.maxLength != null && text.length > widget.maxLength!) {
-        return "${context.tr("max_length_exceeded")} ${widget.maxLength}";
+        return '${context.tr("max_length_exceeded")} ${widget.maxLength}';
       }
-
       return null;
     }
 
-    if (text.isEmpty) return context.tr("field_required");
-
-    /// ✅ إضافة عامة لباقي الحالات
+    if (text.isEmpty) return context.tr('field_required');
     if (widget.maxLength != null && text.length > widget.maxLength!) {
-      return "${context.tr("max_length_exceeded")} ${widget.maxLength}";
+      return '${context.tr("max_length_exceeded")} ${widget.maxLength}';
     }
-
     return null;
   }
 }

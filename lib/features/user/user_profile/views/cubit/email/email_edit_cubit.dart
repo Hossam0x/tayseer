@@ -9,8 +9,15 @@ class EmailEditCubit extends Cubit<EmailEditState> {
 
   EmailEditCubit(this._repository) : super(EmailEditInitial());
 
-  void updateEmail(String email) {
-    emit(state.copyWith(email: email.trim(), emailError: ''));
+  /// يُستدعى عند تغيير المستخدم للنص — يضبط isDirty ويعرض الـ error
+  void updateEmail(String email, {bool markDirty = false}) {
+    emit(
+      state.copyWith(
+        email: email.trim(),
+        emailError: '',
+        isDirty: markDirty ? true : state.isDirty,
+      ),
+    );
     _validate();
   }
 
@@ -28,9 +35,7 @@ class EmailEditCubit extends Cubit<EmailEditState> {
   }
 
   Future<void> updateEmailRequest() async {
-    if (state.email.isEmpty || state.emailError.isNotEmpty) {
-      return;
-    }
+    if (state.email.isEmpty || state.emailError.isNotEmpty) return;
 
     emit(
       state.copyWith(
@@ -45,21 +50,20 @@ class EmailEditCubit extends Cubit<EmailEditState> {
     final result = await _repository.updateEmail(email: state.email);
 
     result.fold(
-      (failure) {
-        emit(
-          state.copyWith(status: CubitStates.failure, errorMessage: failure.message),
-        );
-      },
-      (_) {
-        emit(
-          state.copyWith(
-            status: CubitStates.success,
-            fullEmail: state.email,
-            successMessage: 'otp_sent_success',
-            errorMessage: '',
-          ),
-        );
-      },
+      (failure) => emit(
+        state.copyWith(
+          status: CubitStates.failure,
+          errorMessage: failure.message,
+        ),
+      ),
+      (_) => emit(
+        state.copyWith(
+          status: CubitStates.success,
+          fullEmail: state.email,
+          successMessage: 'otp_sent_success',
+          errorMessage: '',
+        ),
+      ),
     );
   }
 

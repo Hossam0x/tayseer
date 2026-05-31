@@ -13,6 +13,7 @@ export 'package:tayseer/core/constant/constans_keys.dart';
 export 'package:tayseer/core/widgets/custom_text_button.dart';
 export 'package:tayseer/core/widgets/custom_button.dart';
 export 'package:tayseer/core/widgets/custom_text_form_filed.dart';
+export 'package:tayseer/core/widgets/phone_input_field.dart';
 export 'package:tayseer/core/utils/api_service.dart';
 export 'package:tayseer/core/utils/api_endpoint.dart';
 export 'package:tayseer/core/widgets/custom_app_image.dart';

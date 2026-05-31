@@ -3,50 +3,51 @@ part of 'phone_edit_cubit.dart';
 class PhoneEditState {
   final String phoneNumber;
   final String phoneError;
-  final String selectedCountryCode;
-  final String selectedCountryFlag;
-  final String selectedCountryName;
+  final CountryData selectedCountry;
   final CubitStates updatePhoneStatus;
   final String successMessage;
   final String errorMessage;
   final String fullPhoneNumber;
 
+  /// true بعد أول تعديل من المستخدم — الـ error ميظهرش قبلها
+  final bool isDirty;
+
   PhoneEditState({
     this.phoneNumber = '',
     this.phoneError = '',
-    this.selectedCountryCode = '+966',
-    this.selectedCountryFlag = '🇸🇦',
-    this.selectedCountryName = 'السعودية',
+    this.selectedCountry = kDefaultCountry,
     this.updatePhoneStatus = CubitStates.initial,
     this.successMessage = '',
     this.errorMessage = '',
     this.fullPhoneNumber = '',
+    this.isDirty = false,
   });
 
   bool get isLoading => updatePhoneStatus == CubitStates.loading;
   bool get canProceed => phoneNumber.isNotEmpty && phoneError.isEmpty;
 
+  /// الـ error المعروض للـ UI — فارغ لو المستخدم لم يبدأ الكتابة بعد
+  String get visibleError => isDirty ? phoneError : '';
+
   PhoneEditState copyWith({
     String? phoneNumber,
     String? phoneError,
-    String? selectedCountryCode,
-    String? selectedCountryFlag,
-    String? selectedCountryName,
+    CountryData? selectedCountry,
     CubitStates? updatePhoneStatus,
     String? successMessage,
     String? errorMessage,
     String? fullPhoneNumber,
+    bool? isDirty,
   }) {
     return PhoneEditState(
       phoneNumber: phoneNumber ?? this.phoneNumber,
       phoneError: phoneError ?? this.phoneError,
-      selectedCountryCode: selectedCountryCode ?? this.selectedCountryCode,
-      selectedCountryFlag: selectedCountryFlag ?? this.selectedCountryFlag,
-      selectedCountryName: selectedCountryName ?? this.selectedCountryName,
+      selectedCountry: selectedCountry ?? this.selectedCountry,
       updatePhoneStatus: updatePhoneStatus ?? this.updatePhoneStatus,
       successMessage: successMessage ?? this.successMessage,
       errorMessage: errorMessage ?? this.errorMessage,
       fullPhoneNumber: fullPhoneNumber ?? this.fullPhoneNumber,
+      isDirty: isDirty ?? this.isDirty,
     );
   }
 }

@@ -8,6 +8,9 @@ class EmailEditState {
   final String errorMessage;
   final String fullEmail;
 
+  /// true بعد أول تعديل من المستخدم — الـ error ميظهرش قبلها
+  final bool isDirty;
+
   EmailEditState({
     this.email = '',
     this.emailError = '',
@@ -15,10 +18,14 @@ class EmailEditState {
     this.successMessage = '',
     this.errorMessage = '',
     this.fullEmail = '',
+    this.isDirty = false,
   });
 
   bool get isLoading => status == CubitStates.loading;
   bool get canProceed => email.isNotEmpty && emailError.isEmpty;
+
+  /// الـ error المعروض للـ UI — فارغ لو المستخدم لم يبدأ الكتابة بعد
+  String get visibleError => isDirty ? emailError : '';
 
   EmailEditState copyWith({
     String? email,
@@ -27,6 +34,7 @@ class EmailEditState {
     String? successMessage,
     String? errorMessage,
     String? fullEmail,
+    bool? isDirty,
   }) {
     return EmailEditState(
       email: email ?? this.email,
@@ -35,6 +43,7 @@ class EmailEditState {
       successMessage: successMessage ?? this.successMessage,
       errorMessage: errorMessage ?? this.errorMessage,
       fullEmail: fullEmail ?? this.fullEmail,
+      isDirty: isDirty ?? this.isDirty,
     );
   }
 }

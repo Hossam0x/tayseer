@@ -15,14 +15,35 @@ class WithdrawView extends StatefulWidget {
 }
 
 class _WithdrawViewState extends State<WithdrawView> {
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _countryCodeController = TextEditingController();
+  late final TextEditingController _phoneController;
+  late CountryData _selectedCountry;
+
+  @override
+  void initState() {
+    super.initState();
+    _phoneController = TextEditingController();
+    // السعودية كـ default مؤقت — يُحدَّث في didChangeDependencies
+    _selectedCountry = kDefaultCountry;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // نكتشف دولة الجهاز — آمن هنا لأن didChangeDependencies يُستدعى بعد initState
+    _selectedCountry = resolveDefaultCountry();
+  }
 
   @override
   void dispose() {
     _phoneController.dispose();
-    _countryCodeController.dispose();
     super.dispose();
+  }
+
+  void _onCountryChanged(CountryData country) {
+    setState(() => _selectedCountry = country);
+    // نعيد حساب الرقم الكامل بعد تغيير الدولة
+    final fullPhone = '${country.code}${_phoneController.text}';
+    context.read<WithdrawCubit>().updatePhone(fullPhone);
   }
 
   @override
@@ -66,9 +87,11 @@ class _WithdrawViewState extends State<WithdrawView> {
                     child: BlocListener<WithdrawCubit, WithdrawState>(
                       listenWhen: (prev, curr) => prev.method != curr.method,
                       listener: (context, state) {
-                        // Clear phone field when switching methods
+                        // إعادة تعيين حقل الهاتف عند تغيير طريقة السحب
                         _phoneController.clear();
-                        _countryCodeController.text = '+966';
+                        setState(() {
+                          _selectedCountry = resolveDefaultCountry();
+                        });
                       },
                       child: Column(
                         children: [
@@ -78,7 +101,6 @@ class _WithdrawViewState extends State<WithdrawView> {
                             child: SimpleAppBar(title: context.tr('withdraw')),
                           ),
                           Gap(16.h),
-                          // Content
                           Expanded(
                             child: SingleChildScrollView(
                               padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -88,25 +110,18 @@ class _WithdrawViewState extends State<WithdrawView> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.center,
                                     children: [
-                                      // Current Balance
                                       BalanceCard(),
                                       SizedBox(height: 30.h),
-                                      // Amount Input
                                       _buildAmountInput(context, state),
                                       SizedBox(height: 10.h),
-                                      // Fees Section
                                       _buildFeesSection(context, state),
                                       SizedBox(height: 20.h),
-                                      // Withdraw Method
                                       _buildWithdrawMethod(context, state),
                                       SizedBox(height: 24.h),
-                                      // Account Details
                                       _buildAccountDetails(state, context),
                                       SizedBox(height: 24.h),
-                                      // Notes
                                       _buildNotesSection(context, state),
                                       SizedBox(height: 20.h),
-                                      // Submit Button
                                       _buildSubmitButton(context, state),
                                       SizedBox(height: 40.h),
                                     ],
@@ -116,15 +131,15 @@ class _WithdrawViewState extends State<WithdrawView> {
                             ),
                           ),
                         ],
-                      ), // BlocListener<WithdrawCubit> child
-                    ), // BlocListener<WithdrawCubit>
-                  ), // BlocListener<WalletCubit> child
-                ), // BlocListener<WalletCubit>
-              ], // Stack children
-            ), // Stack
-          ), // AdvisorBackground
-        ), // Scaffold
-      ), // GestureDetector
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -449,12 +464,16 @@ class _WithdrawViewState extends State<WithdrawView> {
           style: Styles.textStyle16.copyWith(color: AppColors.primaryText),
         ),
         SizedBox(height: 12.h),
-        CustomTextFormField(
-          isPhoneWithCountryCode: true,
+        PhoneInputField(
           controller: _phoneController,
-          countryCodeController: _countryCodeController,
-          onChanged: (value) {
-            final fullPhone = '${_countryCodeController.text}$value';
+          selectedCountry: _selectedCountry,
+          onCountryTap: () => showCountryPickerSheet(
+            context,
+            currentCode: _selectedCountry.code,
+            onSelected: _onCountryChanged,
+          ),
+          onPhoneChanged: (value) {
+            final fullPhone = '${_selectedCountry.code}$value';
             context.read<WithdrawCubit>().updatePhone(fullPhone);
           },
         ),

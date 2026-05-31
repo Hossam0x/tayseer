@@ -9,62 +9,40 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
 
   PhoneEditCubit(this._repository) : super(PhoneEditInitial());
 
-  final List<Map<String, String>> countries = [
-    {"name": "السعودية", "code": "+966", "flag": "🇸🇦"},
-    {"name": "مصر", "code": "+20", "flag": "🇪🇬"},
-    {"name": "الإمارات", "code": "+971", "flag": "🇦🇪"},
-    {"name": "الكويت", "code": "+965", "flag": "🇰🇼"},
-    {"name": "قطر", "code": "+974", "flag": "🇶🇦"},
-    {"name": "عُمان", "code": "+968", "flag": "🇴🇲"},
-    {"name": "البحرين", "code": "+973", "flag": "🇧🇭"},
-    {"name": "الأردن", "code": "+962", "flag": "🇯🇴"},
-    {"name": "لبنان", "code": "+961", "flag": "🇱🇧"},
-    {"name": "العراق", "code": "+964", "flag": "🇮🇶"},
-    {"name": "المغرب", "code": "+212", "flag": "🇲🇦"},
-    {"name": "الجزائر", "code": "+213", "flag": "🇩🇿"},
-    {"name": "تونس", "code": "+216", "flag": "🇹🇳"},
-  ];
-
-  void initializePhone(String initialPhone) {
+  /// يُهيئ الحقل بناءً على رقم موجود مسبقاً.
+  /// لو الرقم فارغ يستخدم الدولة الافتراضية (السعودية).
+  void initializePhone(String initialPhone, {CountryData? deviceCountry}) {
     if (initialPhone.isNotEmpty) {
-      for (var country in countries) {
-        if (initialPhone.startsWith(country['code']!)) {
+      for (final country in kSupportedCountries) {
+        if (initialPhone.startsWith(country.code)) {
           emit(
             state.copyWith(
-              selectedCountryCode: country['code']!,
-              selectedCountryFlag: country['flag']!,
-              selectedCountryName: country['name']!,
-              phoneNumber: initialPhone.substring(country['code']!.length),
+              selectedCountry: country,
+              phoneNumber: initialPhone.substring(country.code.length),
             ),
           );
-          break;
+          validatePhoneNumber();
+          return;
         }
       }
-    } else {
-      emit(
-        state.copyWith(
-          selectedCountryCode: "+966",
-          selectedCountryFlag: "🇸🇦",
-          selectedCountryName: "السعودية",
-        ),
-      );
     }
+
+    // لو ما لقيناش match أو الرقم فارغ → نستخدم دولة الجهاز أو السعودية
+    emit(state.copyWith(selectedCountry: deviceCountry ?? kDefaultCountry));
     validatePhoneNumber();
   }
 
-  void updateCountry(Map<String, String> country) {
-    emit(
-      state.copyWith(
-        selectedCountryCode: country['code']!,
-        selectedCountryFlag: country['flag']!,
-        selectedCountryName: country['name']!,
-      ),
-    );
+  void updateCountry(CountryData country) {
+    emit(state.copyWith(selectedCountry: country));
     validatePhoneNumber();
   }
 
   void updatePhoneNumber(String phone) {
-    emit(state.copyWith(phoneNumber: phone));
+    // لو بدأ بصفر وفيه أرقام بعده → نشيل الصفر (المستخدم حاطه عادةً قبل الرقم)
+    final cleaned = (phone.startsWith('0') && phone.length > 1)
+        ? phone.substring(1)
+        : phone;
+    emit(state.copyWith(phoneNumber: cleaned, isDirty: true));
     validatePhoneNumber();
   }
 
@@ -81,9 +59,10 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
     } else if (phone.length > 15) {
       error = 'invalid_phone';
     } else {
-      if (state.selectedCountryCode == "+966" && !phone.startsWith('5')) {
+      if (state.selectedCountry.code == '+966' && !phone.startsWith('5')) {
         error = 'invalid_phone';
-      } else if (state.selectedCountryCode == "+20" && !phone.startsWith('1')) {
+      } else if (state.selectedCountry.code == '+20' &&
+          !phone.startsWith('1')) {
         error = 'invalid_phone';
       }
     }
@@ -92,9 +71,7 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
   }
 
   Future<void> updatePhone() async {
-    if (state.phoneNumber.isEmpty || state.phoneError.isNotEmpty) {
-      return;
-    }
+    if (state.phoneNumber.isEmpty || state.phoneError.isNotEmpty) return;
 
     emit(
       state.copyWith(
@@ -105,33 +82,28 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
     );
 
     final cleanedPhone = state.phoneNumber.replaceAll(RegExp(r'\D'), '');
-    log('طلب تحديث الهاتف: ${state.selectedCountryCode}$cleanedPhone');
+    log('طلب تحديث الهاتف: ${state.selectedCountry.code}$cleanedPhone');
 
     final result = await _repository.updatePhoneNumber(
-      countryCode: state.selectedCountryCode,
+      countryCode: state.selectedCountry.code,
       phoneNumber: cleanedPhone,
     );
 
     result.fold(
-      (failure) {
-        emit(
-          state.copyWith(
-            updatePhoneStatus: CubitStates.failure,
-            errorMessage: failure.message,
-          ),
-        );
-      },
-      (_) {
-        final fullPhoneNumber = '${state.selectedCountryCode}$cleanedPhone';
-        emit(
-          state.copyWith(
-            updatePhoneStatus: CubitStates.success,
-            fullPhoneNumber: fullPhoneNumber,
-            successMessage: 'otp_sent_success',
-            errorMessage: '',
-          ),
-        );
-      },
+      (failure) => emit(
+        state.copyWith(
+          updatePhoneStatus: CubitStates.failure,
+          errorMessage: failure.message,
+        ),
+      ),
+      (_) => emit(
+        state.copyWith(
+          updatePhoneStatus: CubitStates.success,
+          fullPhoneNumber: '${state.selectedCountry.code}$cleanedPhone',
+          successMessage: 'otp_sent_success',
+          errorMessage: '',
+        ),
+      ),
     );
   }
 

@@ -17,7 +17,6 @@ dependencies:
   camera: ^0.10.0
   chewie: ^1.13.0
   connectivity_plus: ^6.0.5
-  country_picker: ^2.0.25
   cupertino_icons: ^1.0.8
   dartz: ^0.10.1
   debounce_throttle: ^2.0.0
