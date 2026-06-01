@@ -39,8 +39,6 @@ class NotificationService: UNNotificationServiceExtension {
     }
 
     override func serviceExtensionTimeWillExpire() {
-        // Called just before the extension is terminated by the system.
-        // Deliver whatever content we have so far.
         if let contentHandler = contentHandler,
            let bestAttemptContent = bestAttemptContent {
             contentHandler(bestAttemptContent)
@@ -59,11 +57,9 @@ class NotificationService: UNNotificationServiceExtension {
                 return
             }
 
-            // Move the downloaded file to a temp location with the correct extension
             let fileExtension = url.pathExtension.isEmpty ? "jpg" : url.pathExtension
             let tempUrl = location.deletingLastPathComponent()
-                .appendingPathComponent(url.lastPathComponent)
-                .deletingPathExtension()
+                .appendingPathComponent(UUID().uuidString)
                 .appendingPathExtension(fileExtension)
 
             do {
