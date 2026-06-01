@@ -194,13 +194,12 @@ class _UserProfileViewState extends State<UserProfileView> {
   }
 
   void _showRateAppDialog() {
-    // Trigger native review immediately — no custom dialog.
-    // Backend receives rating=5 as a signal that the user engaged with the prompt.
-    // Apple/Google do not return the actual star rating to the app.
-    RatingService.instance.requestNativeReview().then((_) {
-      _cubit.rateApp(5);
-      RatingService.instance.markAsRated();
-    });
+    RatingService.instance.showRateConfirmationAndReview(
+      context,
+      onConfirmed: () {
+        _cubit.rateApp(5);
+      },
+    );
   }
 
   // ─── Marriage methods — DO NOT MODIFY ───────────────────────────────────────

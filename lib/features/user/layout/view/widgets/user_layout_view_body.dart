@@ -99,8 +99,8 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
     _consumePendingDeepLink();
   }
 
-  /// Checks eligibility and triggers the native in-app review directly if conditions
-  /// are met.
+  /// Checks eligibility and shows a confirmation dialog before triggering
+  /// the native in-app review.
   Future<void> _maybeShowAutoReview() async {
     final eligible = await RatingService.instance.isEligibleForReview();
     if (!eligible || !mounted) return;
@@ -108,16 +108,18 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
     // Record the request timestamp to enforce the cooldown period.
     await RatingService.instance.recordReviewRequest();
 
-    // Mark as rated locally so we don't prompt again.
-    await RatingService.instance.markAsRated();
+    if (!mounted) return;
 
-    // Send rating to backend in background (5 stars for auto-review qualification).
-    try {
-      await getIt<UserProfileRepository>().rateApp(5);
-    } catch (_) {}
-
-    // Trigger native review.
-    await RatingService.instance.requestNativeReview();
+    // Show confirmation dialog — user decides whether to go to the store.
+    RatingService.instance.showRateConfirmationAndReview(
+      context,
+      onConfirmed: () async {
+        // Send to backend only when user confirms.
+        try {
+          await getIt<UserProfileRepository>().rateApp(5);
+        } catch (_) {}
+      },
+    );
   }
 
   void _consumePendingDeepLink() {

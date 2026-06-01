@@ -164,13 +164,12 @@ class _SettingsViewState extends State<SettingsView> {
   }
 
   void _showRateAppDialog(BuildContext context) {
-    // Trigger native review immediately — no custom dialog.
-    // Backend receives rating=5 as a signal that the user engaged with the prompt.
-    // Apple/Google do not return the actual star rating to the app.
-    RatingService.instance.requestNativeReview().then((_) {
-      _settingsCubit.rateApp(5);
-      RatingService.instance.markAsRated();
-    });
+    RatingService.instance.showRateConfirmationAndReview(
+      context,
+      onConfirmed: () {
+        _settingsCubit.rateApp(5);
+      },
+    );
   }
 
   Future<void> _handleSettingTap(
