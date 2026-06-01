@@ -149,10 +149,16 @@ class CachNetwork {
   static Future<void> clearCache() async {
     // حفظ اللغة قبل المسح عشان متتأثرش
     final savedLanguage = sharedPref.getString(kAppLanguage);
+    // ✅ حفظ الـ keys اللي لازم تفضل حتى بعد الـ logout
+    final tutorialShown = sharedPref.getBool('marriage_tutorial_shown');
     await sharedPref.clear();
     // إعادة حفظ اللغة بعد المسح
     if (savedLanguage != null) {
       await sharedPref.setString(kAppLanguage, savedLanguage);
+    }
+    // ✅ إعادة حفظ الـ tutorial flag — يظهر مرة واحدة فقط طول عمر التطبيق
+    if (tutorialShown == true) {
+      await sharedPref.setBool('marriage_tutorial_shown', true);
     }
     // ✅ مسح الـ secure tokens عند الـ logout
     await SecureTokenStorage.clearTokens();

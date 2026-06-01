@@ -2416,5 +2416,21 @@
   "sounds_enabled": "Sounds enabled",
   "sounds_disabled": "Sounds disabled",
   "sounds_currently_disabled_hint": "Sounds are currently disabled. Enable them to enjoy sound effects.",
-  "edit_data": "Edit Data"
+  "edit_data": "Edit Data",
+  "tutorial_skip": "Skip",
+  "tutorial_next": "Next",
+  "tutorial_finish": "Get Started",
+  "tutorial_step": "Step {current} of {total}",
+  "tutorial_toggle_title": "Switch Sections",
+  "tutorial_toggle_desc": "Toggle between daily marriage recommendations and your interaction history (likes, regards, matches).",
+  "tutorial_filter_title": "Filter Profiles",
+  "tutorial_filter_desc": "Refine match criteria by age, location, education, job, and religious commitment.",
+  "tutorial_befirst_title": "Be Visible First",
+  "tutorial_befirst_desc": "Upgrade to Gold or Elite packages to appear first in recommendations and accelerate your marriage journey.",
+  "tutorial_like_title": "Like / Accept",
+  "tutorial_like_desc": "Tap the checkmark to like a profile. If they like you back, you'll match and can chat immediately.",
+  "tutorial_regard_title": "Send a Regard",
+  "tutorial_regard_desc": "Send a direct message greeting to capture their attention instantly and unlock direct chat.",
+  "tutorial_dislike_title": "Skip / Dislike",
+  "tutorial_dislike_desc": "Tap the cross button to skip this profile and see the next recommendation."
 }

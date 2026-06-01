@@ -22,6 +22,7 @@ import 'package:tayseer/features/user/marriage/view_model/marriage_state.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/dash_border.dart';
 import 'package:tayseer/features/user/user_profile/views/widgets/regards_purchase_sheet.dart';
 import 'package:tayseer/my_import.dart';
+import 'package:tayseer/features/user/marriage/view/widget/marriage_tutorial_overlay.dart';
 import 'package:tayseer/features/user/marriage/view/widget/about_me.dart';
 import 'package:tayseer/features/user/marriage/view/widget/additional_image.dart';
 import 'package:tayseer/features/user/marriage/view/widget/bio_voice_section.dart';
@@ -73,6 +74,7 @@ class MarriageBodyState extends State<MarriageBody>
   static const Duration _scrollIdleDelay = Duration(milliseconds: 800);
   bool _isActionInProgress = false;
   bool _navHiddenByMarriage = false;
+  bool _showTutorial = false;
   StreamSubscription? _layoutSubscription;
   bool _isInLayout = false;
   bool _isShowingGoldSheet = false; // ✅ true لو الـ widget جوه الـ UserLayout
@@ -178,6 +180,8 @@ class MarriageBodyState extends State<MarriageBody>
         // LayoutCubit مش موجود — الـ widget مفتوح كـ route مستقل
         _isInLayout = false;
       }
+      // ✅ نتحقق من الـ tutorial بعد ما نعرف _isInLayout
+      _checkTutorialStatus();
     });
 
     if (_isConsultantViewingProfile) {
@@ -187,6 +191,31 @@ class MarriageBodyState extends State<MarriageBody>
           _showConsultantBlockedDialog();
         });
       });
+    }
+  }
+
+  void _checkTutorialStatus() {
+    // ✅ بيتنادى من جوا postFrameCallback بعد ما _isInLayout يتحدد
+    if (!mounted) return;
+    final completed = kCurrentUserData?.compeletedData == true;
+    final isGuest = selectedUserType == UserTypeEnum.guest;
+    final isConsultant = selectedUserType == UserTypeEnum.asConsultant;
+    final alreadyShown =
+        CachNetwork.getBoolData(key: 'marriage_tutorial_shown') ?? false;
+
+    // ✅ الـ tutorial يظهر بس لو:
+    // 1. المستخدم كمّل بياناته
+    // 2. مش guest أو consultant
+    // 3. لم يظهر من قبل (SharedPreferences)
+    // 4. مش بيشوف profile شخص معين
+    // 5. جوه الـ UserLayout (مش route مستقل)
+    if (completed &&
+        !isGuest &&
+        !isConsultant &&
+        !alreadyShown &&
+        widget.personId == null &&
+        _isInLayout) {
+      setState(() => _showTutorial = true);
     }
   }
 
@@ -2022,6 +2051,32 @@ class MarriageBodyState extends State<MarriageBody>
                         profile: profile,
                         canInteract: canInteract,
                         bottom: 30.h,
+                      ),
+              if (_showTutorial)
+                _isInLayout
+                    ? BlocBuilder<LayoutCubit, LayoutState>(
+                        buildWhen: (p, c) => p.isNavVisible != c.isNavVisible,
+                        builder: (context, layoutState) {
+                          return MarriageTutorialOverlay(
+                            isNavVisible: layoutState.isNavVisible,
+                            onFinish: () {
+                              setState(() => _showTutorial = false);
+                              CachNetwork.setBool(
+                                key: 'marriage_tutorial_shown',
+                                value: true,
+                              );
+                            },
+                          );
+                        },
+                      )
+                    : MarriageTutorialOverlay(
+                        onFinish: () {
+                          setState(() => _showTutorial = false);
+                          CachNetwork.setBool(
+                            key: 'marriage_tutorial_shown',
+                            value: true,
+                          );
+                        },
                       ),
             ],
           ),
