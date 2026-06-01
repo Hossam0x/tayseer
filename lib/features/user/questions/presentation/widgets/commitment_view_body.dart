@@ -137,7 +137,8 @@ class _CommitmentViewBodyState extends State<CommitmentViewBody> {
   Widget _buildBackButton(BuildContext context) {
     return Positioned(
       top: context.height * 0.03,
-      right: context.width * 0.04,
+      right: isArabic ? context.width * 0.04 : null,
+      left: isArabic ? null : context.width * 0.04,
       child: SafeArea(
         child: GestureDetector(
           onTap: () => context.pop(),

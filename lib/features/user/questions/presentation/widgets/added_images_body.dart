@@ -11,69 +11,68 @@ class AddedImagesBody extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<QuestionsCubit>();
 
-        return Directionality(
-          textDirection: TextDirection.rtl,
-          child: Scaffold(
-            body: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Gap(context.height * 0.02),
+        return Scaffold(
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Gap(context.height * 0.02),
 
-                    // زر الرجوع
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.black87,
-                          size: 25,
-                        ),
+                  // زر الرجوع
+                  Align(
+                    alignment: isArabic
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
+                    child: GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.black87,
+                        size: 25,
                       ),
                     ),
+                  ),
 
-                    Gap(context.height * 0.02),
+                  Gap(context.height * 0.02),
 
-                    // العنوان
-                    Text(
-                      context.tr("add_images"),
-                      style: Styles.textStyle20Bold.copyWith(
-                        color: AppColors.kscandryTextColor,
-                      ),
-                      textAlign: TextAlign.center,
+                  // العنوان
+                  Text(
+                    context.tr("add_images"),
+                    style: Styles.textStyle20Bold.copyWith(
+                      color: AppColors.kscandryTextColor,
                     ),
+                    textAlign: TextAlign.center,
+                  ),
 
-                    Gap(context.height * 0.08),
+                  Gap(context.height * 0.08),
 
-                    // الصورة العلوية (الرئيسية)
-                    Center(child: _buildMainImage(state)),
+                  // الصورة العلوية (الرئيسية)
+                  Center(child: _buildMainImage(state)),
 
-                    Gap(context.height * 0.02),
+                  Gap(context.height * 0.02),
 
-                    // قائمة الصور السفلية
-                    ImagesListView(images: state.images),
+                  // قائمة الصور السفلية
+                  ImagesListView(images: state.images),
 
-                    Gap(context.height * 0.02),
+                  Gap(context.height * 0.02),
 
-                    // زر التبديل (Switch) والنصوص
-                    _buildBlurToggle(state, cubit, context),
+                  // زر التبديل (Switch) والنصوص
+                  _buildBlurToggle(state, cubit, context),
 
-                    const Spacer(),
+                  const Spacer(),
 
-                    // زر التحقق
-                    CustomBotton(
-                      useGradient: true,
-                      onPressed: () {
-                        context.pushNamed(AppRouter.kAddPhoneView);
-                      },
-                      title: context.tr("verify"),
-                    ),
-                    Gap(context.height * 0.03),
-                  ],
-                ),
+                  // زر التحقق
+                  CustomBotton(
+                    useGradient: true,
+                    onPressed: () {
+                      context.pushNamed(AppRouter.kCommitmentView);
+                    },
+                    title: context.tr("verify"),
+                  ),
+                  Gap(context.height * 0.03),
+                ],
               ),
             ),
           ),
