@@ -273,8 +273,6 @@ class QuestionsCubit extends Cubit<QuestionsState> {
   // ─────────────────────────────────────────────────────
 
   Future<void> sendPhoneNumber() async {
-    if (!phoneFormKey.currentState!.validate()) return;
-
     emit(state.copyWith(phoneNumberState: CubitStates.loading));
 
     final result = await _repo.phoneNumber(

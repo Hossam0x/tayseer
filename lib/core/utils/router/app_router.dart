@@ -1099,11 +1099,13 @@ abstract class AppRouter {
           ),
         );
       case kOtpPhoneUserQuestion:
+        final otpArgs = settings.arguments as Map<String, dynamic>?;
+        final isOnboarding = otpArgs?['isOnboarding'] as bool? ?? false;
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => BlocProvider.value(
             value: getIt<QuestionsCubit>(),
-            child: OtpPhoneUserQuestion(),
+            child: OtpPhoneUserQuestion(isOnboarding: isOnboarding),
           ),
         );
       // case kPartnerFilterView:

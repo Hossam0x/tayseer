@@ -9,7 +9,11 @@ class AddPhoneView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: const AddPhoneBody());
+    return const Scaffold(
+      backgroundColor: Colors.transparent,
+      resizeToAvoidBottomInset: false,
+      body: AddPhoneBody(),
+    );
   }
 }
 

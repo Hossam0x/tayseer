@@ -58,7 +58,7 @@ class _OtpViewBodyState extends State<OtpViewBody> {
             }
           } else if (selectedUserType == UserTypeEnum.user) {
             if (state.isNew == true) {
-              context.pushReplacementNamed(AppRouter.kChooseGenderView);
+              context.pushReplacementNamed(AppRouter.kAddPhoneView);
             } else {
               context.pushNamedAndRemoveUntil(
                 AppRouter.kUserLayoutView,

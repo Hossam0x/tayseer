@@ -118,8 +118,8 @@ class _RegisrationViewState extends State<RegisrationView> {
                         context.pushReplacementNamed(AppRouter.kUserLayoutView);
                         consumePendingDeepLink();
                       } else {
-                        // ✅ مستخدم جديد — روح اختيار الجنس
-                        context.pushNamed(AppRouter.kChooseGenderView);
+                        // ✅ مستخدم جديد — روح إضافة رقم الموبايل أولاً
+                        context.pushNamed(AppRouter.kAddPhoneView);
                         // لا نفتح الـ deep link هنا — ننتظر ما يكمل الـ onboarding
                       }
                     }
@@ -148,8 +148,8 @@ class _RegisrationViewState extends State<RegisrationView> {
                         context.pushReplacementNamed(AppRouter.kUserLayoutView);
                         consumePendingDeepLink();
                       } else {
-                        // ✅ مستخدم جديد — روح اختيار الجنس
-                        context.pushNamed(AppRouter.kChooseGenderView);
+                        // ✅ مستخدم جديد — روح إضافة رقم الموبايل أولاً
+                        context.pushNamed(AppRouter.kAddPhoneView);
                       }
                     }
 

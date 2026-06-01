@@ -5,7 +5,10 @@ import 'package:tayseer/features/user/questions/presentation/manager/questions_s
 import 'package:tayseer/my_import.dart';
 
 class OtpPhoneBodyInUser extends StatefulWidget {
-  const OtpPhoneBodyInUser({super.key});
+  /// لو [isOnboarding] == true، بعد التحقق يروح لاختيار الجنس
+  final bool isOnboarding;
+
+  const OtpPhoneBodyInUser({super.key, this.isOnboarding = false});
 
   @override
   State<OtpPhoneBodyInUser> createState() => _OtpPhoneBodyInUserState();
@@ -22,6 +25,14 @@ class _OtpPhoneBodyInUserState extends State<OtpPhoneBodyInUser> {
       listener: (context, state) {
         if (state.verifyOtpState == CubitStates.success) {
           if (!mounted) return;
+
+          // ✅ لو في الـ onboarding — روح مباشرة لاختيار الجنس
+          if (widget.isOnboarding) {
+            context.pushReplacementNamed(AppRouter.kChooseGenderView);
+            return;
+          }
+
+          // الـ flow القديم — بعد التحقق من الرقم في منتصف الـ survey
           CustomshowDialogWithImage(
             context,
             title: context.tr('head_phone'),
@@ -73,8 +84,10 @@ class _OtpPhoneBodyInUserState extends State<OtpPhoneBodyInUser> {
             behavior: HitTestBehavior.opaque,
             onTap: () => FocusScope.of(context).unfocus(),
             child: SafeArea(
+              bottom: false,
               child: Column(
                 children: [
+                  // ── Scrollable content ──
                   Expanded(
                     child: SingleChildScrollView(
                       child: Column(
@@ -141,13 +154,15 @@ class _OtpPhoneBodyInUserState extends State<OtpPhoneBodyInUser> {
                     ),
                   ),
 
-                  // Submit button — always visible above keyboard
+                  // ── Fixed button at bottom ──
                   Padding(
                     padding: EdgeInsets.fromLTRB(
                       context.width * 0.05,
                       8,
                       context.width * 0.05,
-                      24,
+                      MediaQuery.of(context).viewInsets.bottom > 0
+                          ? MediaQuery.of(context).viewInsets.bottom + 12
+                          : 24,
                     ),
                     child: CustomBotton(
                       width: double.infinity,
