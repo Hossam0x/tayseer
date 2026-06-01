@@ -98,7 +98,7 @@ class _FaceVerificationBodyState extends State<FaceVerificationBody> {
       alignment: AlignmentDirectional.centerStart,
       child: IconButton(
         onPressed: () => context.pop(),
-        icon: Icon(isArabic ? Icons.arrow_forward : Icons.arrow_back, size: 20),
+        icon: Icon(Icons.arrow_back, size: 20),
       ),
     );
   }
