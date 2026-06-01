@@ -58,29 +58,35 @@ const List<CountryData> kSupportedCountries = [
   CountryData(nameAr: "تونس", nameEn: "Tunisia", code: "+216", flag: "🇹🇳"),
 ];
 
-/// الدولة الافتراضية (السعودية)
+/// الدولة الافتراضية (مصر)
 const CountryData kDefaultCountry = CountryData(
-  nameAr: "السعودية",
-  nameEn: "Saudi Arabia",
-  code: "+966",
-  flag: "🇸🇦",
+  nameAr: "مصر",
+  nameEn: "Egypt",
+  code: "+20",
+  flag: "🇪🇬",
 );
 
 /// يحدد الدولة الافتراضية بناءً على locale الجهاز.
 /// آمنة للاستدعاء من initState وcreate callbacks — لا تحتاج context.
 /// لو الدولة مش موجودة في القائمة يرجع السعودية.
 CountryData resolveDefaultCountry([BuildContext? context]) {
-  dev.log('=== [DEBUG resolveDefaultCountry] Starting country code detection ===');
+  dev.log(
+    '=== [DEBUG resolveDefaultCountry] Starting country code detection ===',
+  );
   String countryCode = '';
 
   // 1. محاولة جلب كود الدولة من الـ context لو متوفر
   if (context != null) {
     try {
       final locale = Localizations.localeOf(context);
-      dev.log('[DEBUG resolveDefaultCountry] 1. context locale: $locale, countryCode: ${locale.countryCode}');
+      dev.log(
+        '[DEBUG resolveDefaultCountry] 1. context locale: $locale, countryCode: ${locale.countryCode}',
+      );
       if (locale.countryCode != null && locale.countryCode!.isNotEmpty) {
         countryCode = locale.countryCode!.toUpperCase();
-        dev.log('[DEBUG resolveDefaultCountry] 1. Set countryCode from context: $countryCode');
+        dev.log(
+          '[DEBUG resolveDefaultCountry] 1. Set countryCode from context: $countryCode',
+        );
       }
     } catch (e) {
       dev.log('[DEBUG resolveDefaultCountry] 1. Context check failed: $e');
@@ -91,11 +97,15 @@ CountryData resolveDefaultCountry([BuildContext? context]) {
   if (countryCode.isEmpty) {
     try {
       final locales = WidgetsBinding.instance.platformDispatcher.locales;
-      dev.log('[DEBUG resolveDefaultCountry] 2. platformDispatcher.locales: $locales');
+      dev.log(
+        '[DEBUG resolveDefaultCountry] 2. platformDispatcher.locales: $locales',
+      );
       for (final locale in locales) {
         if (locale.countryCode != null && locale.countryCode!.isNotEmpty) {
           countryCode = locale.countryCode!.toUpperCase();
-          dev.log('[DEBUG resolveDefaultCountry] 2. Found countryCode in locales list: $countryCode');
+          dev.log(
+            '[DEBUG resolveDefaultCountry] 2. Found countryCode in locales list: $countryCode',
+          );
           break;
         }
       }
@@ -108,7 +118,9 @@ CountryData resolveDefaultCountry([BuildContext? context]) {
   if (countryCode.isEmpty) {
     try {
       final String localeName = Platform.localeName;
-      dev.log('[DEBUG resolveDefaultCountry] 3. Platform.localeName: $localeName');
+      dev.log(
+        '[DEBUG resolveDefaultCountry] 3. Platform.localeName: $localeName',
+      );
       final parts = localeName.split(RegExp(r'[-_]'));
       dev.log('[DEBUG resolveDefaultCountry] 3. Split parts: $parts');
       if (parts.length >= 2) {
@@ -117,13 +129,17 @@ CountryData resolveDefaultCountry([BuildContext? context]) {
           final cleaned = parts[i].trim().toUpperCase();
           if (cleaned.length == 2 && RegExp(r'^[A-Z]{2}$').hasMatch(cleaned)) {
             countryCode = cleaned;
-            dev.log('[DEBUG resolveDefaultCountry] 3. Parsed countryCode from localeName: $countryCode');
+            dev.log(
+              '[DEBUG resolveDefaultCountry] 3. Parsed countryCode from localeName: $countryCode',
+            );
             break;
           }
         }
       }
     } catch (e) {
-      dev.log('[DEBUG resolveDefaultCountry] 3. Platform.localeName check failed: $e');
+      dev.log(
+        '[DEBUG resolveDefaultCountry] 3. Platform.localeName check failed: $e',
+      );
     }
   }
 
@@ -131,15 +147,23 @@ CountryData resolveDefaultCountry([BuildContext? context]) {
   if (countryCode.isEmpty) {
     try {
       final primaryLocale = WidgetsBinding.instance.platformDispatcher.locale;
-      dev.log('[DEBUG resolveDefaultCountry] 4. platformDispatcher.locale: $primaryLocale');
+      dev.log(
+        '[DEBUG resolveDefaultCountry] 4. platformDispatcher.locale: $primaryLocale',
+      );
       countryCode = primaryLocale.countryCode?.toUpperCase() ?? '';
-      dev.log('[DEBUG resolveDefaultCountry] 4. Fallback primary countryCode: $countryCode');
+      dev.log(
+        '[DEBUG resolveDefaultCountry] 4. Fallback primary countryCode: $countryCode',
+      );
     } catch (e) {
-      dev.log('[DEBUG resolveDefaultCountry] 4. Primary locale check failed: $e');
+      dev.log(
+        '[DEBUG resolveDefaultCountry] 4. Primary locale check failed: $e',
+      );
     }
   }
 
-  dev.log('[DEBUG resolveDefaultCountry] Final detected countryCode = "$countryCode"');
+  dev.log(
+    '[DEBUG resolveDefaultCountry] Final detected countryCode = "$countryCode"',
+  );
 
   const localeToDialCode = <String, String>{
     'SA': '+966',
@@ -161,7 +185,9 @@ CountryData resolveDefaultCountry([BuildContext? context]) {
   dev.log('[DEBUG resolveDefaultCountry] Mapped dialCode = "$dialCode"');
 
   if (dialCode == null) {
-    dev.log('[DEBUG resolveDefaultCountry] dialCode is null, returning kDefaultCountry: ${kDefaultCountry.nameAr}');
+    dev.log(
+      '[DEBUG resolveDefaultCountry] dialCode is null, returning kDefaultCountry: ${kDefaultCountry.nameAr}',
+    );
     return kDefaultCountry;
   }
 
@@ -170,7 +196,9 @@ CountryData resolveDefaultCountry([BuildContext? context]) {
     orElse: () => kDefaultCountry,
   );
 
-  dev.log('[DEBUG resolveDefaultCountry] Returning final resolved country: ${result.nameAr} (${result.code})');
+  dev.log(
+    '[DEBUG resolveDefaultCountry] Returning final resolved country: ${result.nameAr} (${result.code})',
+  );
   return result;
 }
 
