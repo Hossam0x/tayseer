@@ -209,10 +209,16 @@ class CurrencyHelper {
   // ═══════════════════════════════════════════════════════════
   static String getDeviceCountryCode() {
     try {
-      final String locale = Platform.localeName; // مثلاً: ar_SA, en_US
-      final parts = locale.split('_');
+      final String locale = Platform.localeName; // مثلاً: ar_SA, en_US أو ar-EG
+      final parts = locale.split(RegExp(r'[-_]'));
       if (parts.length >= 2) {
-        return parts.last.toUpperCase(); // SA, US, EG...
+        // نبدأ من المعرّف الثاني لتخطي كود اللغة (مثل 'ar') ونبحث عن كود الدولة المكون من حرفين
+        for (int i = 1; i < parts.length; i++) {
+          final cleaned = parts[i].trim().toUpperCase();
+          if (cleaned.length == 2 && RegExp(r'^[A-Z]{2}$').hasMatch(cleaned)) {
+            return cleaned;
+          }
+        }
       }
     } catch (_) {}
     return 'SA'; // القيمة الافتراضية

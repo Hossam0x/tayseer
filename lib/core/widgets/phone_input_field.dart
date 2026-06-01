@@ -1,3 +1,5 @@
+import 'dart:developer' as dev;
+import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -68,8 +70,76 @@ const CountryData kDefaultCountry = CountryData(
 /// آمنة للاستدعاء من initState وcreate callbacks — لا تحتاج context.
 /// لو الدولة مش موجودة في القائمة يرجع السعودية.
 CountryData resolveDefaultCountry([BuildContext? context]) {
-  final locale = WidgetsBinding.instance.platformDispatcher.locale;
-  final countryCode = locale.countryCode?.toUpperCase() ?? '';
+  dev.log('=== [DEBUG resolveDefaultCountry] Starting country code detection ===');
+  String countryCode = '';
+
+  // 1. محاولة جلب كود الدولة من الـ context لو متوفر
+  if (context != null) {
+    try {
+      final locale = Localizations.localeOf(context);
+      dev.log('[DEBUG resolveDefaultCountry] 1. context locale: $locale, countryCode: ${locale.countryCode}');
+      if (locale.countryCode != null && locale.countryCode!.isNotEmpty) {
+        countryCode = locale.countryCode!.toUpperCase();
+        dev.log('[DEBUG resolveDefaultCountry] 1. Set countryCode from context: $countryCode');
+      }
+    } catch (e) {
+      dev.log('[DEBUG resolveDefaultCountry] 1. Context check failed: $e');
+    }
+  }
+
+  // 2. محاولة جلب كود الدولة من قائمة اللغات المفضلة للجهاز (locales list)
+  if (countryCode.isEmpty) {
+    try {
+      final locales = WidgetsBinding.instance.platformDispatcher.locales;
+      dev.log('[DEBUG resolveDefaultCountry] 2. platformDispatcher.locales: $locales');
+      for (final locale in locales) {
+        if (locale.countryCode != null && locale.countryCode!.isNotEmpty) {
+          countryCode = locale.countryCode!.toUpperCase();
+          dev.log('[DEBUG resolveDefaultCountry] 2. Found countryCode in locales list: $countryCode');
+          break;
+        }
+      }
+    } catch (e) {
+      dev.log('[DEBUG resolveDefaultCountry] 2. Locales list check failed: $e');
+    }
+  }
+
+  // 3. محاولة جلب كود الدولة وتحليله من Platform.localeName (أكثر دقة في الأندرويد مثل ar-EG أو en-SA)
+  if (countryCode.isEmpty) {
+    try {
+      final String localeName = Platform.localeName;
+      dev.log('[DEBUG resolveDefaultCountry] 3. Platform.localeName: $localeName');
+      final parts = localeName.split(RegExp(r'[-_]'));
+      dev.log('[DEBUG resolveDefaultCountry] 3. Split parts: $parts');
+      if (parts.length >= 2) {
+        // نتخطى الجزء الأول لأنه عادةً كود اللغة مثل 'ar' أو 'en' ونبحث في الأجزاء الأخرى عن كود الدولة المكون من حرفين
+        for (int i = 1; i < parts.length; i++) {
+          final cleaned = parts[i].trim().toUpperCase();
+          if (cleaned.length == 2 && RegExp(r'^[A-Z]{2}$').hasMatch(cleaned)) {
+            countryCode = cleaned;
+            dev.log('[DEBUG resolveDefaultCountry] 3. Parsed countryCode from localeName: $countryCode');
+            break;
+          }
+        }
+      }
+    } catch (e) {
+      dev.log('[DEBUG resolveDefaultCountry] 3. Platform.localeName check failed: $e');
+    }
+  }
+
+  // 4. ملاذ أخير: كود دولة الـ locale الرئيسي من platformDispatcher
+  if (countryCode.isEmpty) {
+    try {
+      final primaryLocale = WidgetsBinding.instance.platformDispatcher.locale;
+      dev.log('[DEBUG resolveDefaultCountry] 4. platformDispatcher.locale: $primaryLocale');
+      countryCode = primaryLocale.countryCode?.toUpperCase() ?? '';
+      dev.log('[DEBUG resolveDefaultCountry] 4. Fallback primary countryCode: $countryCode');
+    } catch (e) {
+      dev.log('[DEBUG resolveDefaultCountry] 4. Primary locale check failed: $e');
+    }
+  }
+
+  dev.log('[DEBUG resolveDefaultCountry] Final detected countryCode = "$countryCode"');
 
   const localeToDialCode = <String, String>{
     'SA': '+966',
@@ -88,12 +158,20 @@ CountryData resolveDefaultCountry([BuildContext? context]) {
   };
 
   final dialCode = localeToDialCode[countryCode];
-  if (dialCode == null) return kDefaultCountry;
+  dev.log('[DEBUG resolveDefaultCountry] Mapped dialCode = "$dialCode"');
 
-  return kSupportedCountries.firstWhere(
+  if (dialCode == null) {
+    dev.log('[DEBUG resolveDefaultCountry] dialCode is null, returning kDefaultCountry: ${kDefaultCountry.nameAr}');
+    return kDefaultCountry;
+  }
+
+  final result = kSupportedCountries.firstWhere(
     (c) => c.code == dialCode,
     orElse: () => kDefaultCountry,
   );
+
+  dev.log('[DEBUG resolveDefaultCountry] Returning final resolved country: ${result.nameAr} (${result.code})');
+  return result;
 }
 
 /// Shared phone input widget — يُستخدم في جميع شاشات إدخال رقم الهاتف.

@@ -33,9 +33,9 @@ class _AddPhoneBodyState extends State<AddPhoneBody> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) =>
+      create: (context) =>
           getIt<PhoneEditCubit>()
-            ..initializePhone('', deviceCountry: resolveDefaultCountry()),
+            ..initializePhone('', deviceCountry: resolveDefaultCountry(context)),
       child: CustomBackground(
         child: GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),

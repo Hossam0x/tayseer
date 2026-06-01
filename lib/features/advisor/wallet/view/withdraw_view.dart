@@ -30,7 +30,7 @@ class _WithdrawViewState extends State<WithdrawView> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // نكتشف دولة الجهاز — آمن هنا لأن didChangeDependencies يُستدعى بعد initState
-    _selectedCountry = resolveDefaultCountry();
+    _selectedCountry = resolveDefaultCountry(context);
   }
 
   @override
@@ -90,7 +90,7 @@ class _WithdrawViewState extends State<WithdrawView> {
                         // إعادة تعيين حقل الهاتف عند تغيير طريقة السحب
                         _phoneController.clear();
                         setState(() {
-                          _selectedCountry = resolveDefaultCountry();
+                          _selectedCountry = resolveDefaultCountry(context);
                         });
                       },
                       child: Column(

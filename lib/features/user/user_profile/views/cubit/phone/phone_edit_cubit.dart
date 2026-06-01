@@ -9,12 +9,12 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
 
   PhoneEditCubit(this._repository) : super(PhoneEditInitial());
 
-  /// يُهيئ الحقل بناءً على رقم موجود مسبقاً.
-  /// لو الرقم فارغ يستخدم الدولة الافتراضية (السعودية).
   void initializePhone(String initialPhone, {CountryData? deviceCountry}) {
+    log('PhoneEditCubit.initializePhone: initialPhone = "$initialPhone", deviceCountry = "${deviceCountry?.nameAr} (${deviceCountry?.code})"');
     if (initialPhone.isNotEmpty) {
       for (final country in kSupportedCountries) {
         if (initialPhone.startsWith(country.code)) {
+          log('PhoneEditCubit.initializePhone: matched existing country prefix: ${country.nameAr} (${country.code})');
           emit(
             state.copyWith(
               selectedCountry: country,
@@ -28,7 +28,9 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
     }
 
     // لو ما لقيناش match أو الرقم فارغ → نستخدم دولة الجهاز أو السعودية
-    emit(state.copyWith(selectedCountry: deviceCountry ?? kDefaultCountry));
+    final selected = deviceCountry ?? kDefaultCountry;
+    log('PhoneEditCubit.initializePhone: no matching prefix or empty. Selecting deviceCountry/default: ${selected.nameAr} (${selected.code})');
+    emit(state.copyWith(selectedCountry: selected));
     validatePhoneNumber();
   }
 

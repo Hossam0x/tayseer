@@ -12,8 +12,8 @@ class PhoneEditScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<PhoneEditCubit>()
-        ..initializePhone(initialPhone, deviceCountry: resolveDefaultCountry()),
+      create: (context) => getIt<PhoneEditCubit>()
+        ..initializePhone(initialPhone, deviceCountry: resolveDefaultCountry(context)),
       child: const _PhoneEditBody(),
     );
   }
