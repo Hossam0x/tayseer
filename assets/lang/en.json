@@ -2401,5 +2401,16 @@
   "force_update_title": "Update Required",
   "force_update_description": "A new version of the app is available with improvements and new features.\nPlease update to continue using the app.",
   "force_update_button_app_store": "Update from App Store",
-  "force_update_button_google_play": "Update from Google Play"
+  "force_update_button_google_play": "Update from Google Play",
+  "no_added_images": "No added images",
+  "blocked_contacts_success_title": "Your contacts have been successfully blocked!",
+  "blocked_contacts_success_subtitle": "Thank you, it will be reviewed and considered.",
+  "write_description_here": "Write the description here...",
+  "today": "Today",
+  "swipe_to_close": "Swipe to close",
+  "control_sounds_effects": "Control sounds and effects",
+  "sounds_enabled": "Sounds enabled",
+  "sounds_disabled": "Sounds disabled",
+  "sounds_currently_disabled_hint": "Sounds are currently disabled. Enable them to enjoy sound effects.",
+  "edit_data": "Edit Data"
 }

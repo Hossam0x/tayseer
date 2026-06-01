@@ -176,7 +176,7 @@ class AddedImagesBody extends StatelessWidget {
                       context,
                       title: context.tr("title_blur_dilog"),
                       supTitle: context.tr("blur_dialog_text"),
-                      bottonText: 'تأكيد',
+                      bottonText: context.tr("confirm"),
                       imageUrl: AssetsData.kblurImage,
                       onPressed: () {
                         cubit.toggleImageBlur(enable: true);
@@ -215,10 +215,10 @@ class ImagesListView extends StatelessWidget {
     if (images.isEmpty) {
       return SizedBox(
         height: height,
-        child: const Center(
+        child: Center(
           child: Text(
-            'لا توجد صور مضافة',
-            style: TextStyle(color: Colors.grey),
+            context.tr("no_added_images"),
+            style: const TextStyle(color: Colors.grey),
           ),
         ),
       );

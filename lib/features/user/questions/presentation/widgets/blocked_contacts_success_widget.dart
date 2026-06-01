@@ -32,7 +32,7 @@ class _BlockedContactsSuccessScreenState
                   children: [
                     /// Title
                     Text(
-                      'تم حظر جهات اتصالك بنجاح !',
+                      context.tr('blocked_contacts_success_title'),
                       style: Styles.textStyle18Bold.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.kscandryTextColor,
@@ -48,9 +48,9 @@ class _BlockedContactsSuccessScreenState
                     const SizedBox(height: 24),
 
                     /// Subtitle
-                    const Text(
-                      'شكراً لك سيتم مراجعته والنظر فيه.',
-                      style: TextStyle(fontSize: 14, color: Colors.black54),
+                    Text(
+                      context.tr('blocked_contacts_success_subtitle'),
+                      style: const TextStyle(fontSize: 14, color: Colors.black54),
                       textAlign: TextAlign.center,
                     ),
                   ],

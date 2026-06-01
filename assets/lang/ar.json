@@ -2401,5 +2401,16 @@
   "force_update_title": "تحديث مطلوب",
   "force_update_description": "يوجد إصدار جديد من التطبيق يحتوي على تحسينات وميزات جديدة.\nيرجى التحديث للاستمرار في استخدام التطبيق.",
   "force_update_button_app_store": "تحديث من App Store",
-  "force_update_button_google_play": "تحديث من Google Play"
+  "force_update_button_google_play": "تحديث من Google Play",
+  "no_added_images": "لا توجد صور مضافة",
+  "blocked_contacts_success_title": "تم حظر جهات اتصالك بنجاح !",
+  "blocked_contacts_success_subtitle": "شكراً لك سيتم مراجعته والنظر فيه.",
+  "write_description_here": "اكتب الوصف هنا...",
+  "today": "اليوم",
+  "swipe_to_close": "اسحب للإغلاق",
+  "control_sounds_effects": "تحكم في الأصوات والمؤثرات",
+  "sounds_enabled": "الأصوات مُفعلة",
+  "sounds_disabled": "الأصوات مُعطلة",
+  "sounds_currently_disabled_hint": "الأصوات معطلة حالياً. قم بتفعيلها للاستمتاع بالمؤثرات الصوتية.",
+  "edit_data": "تعديل البيانات"
 }
