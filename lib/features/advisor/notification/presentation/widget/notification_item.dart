@@ -244,6 +244,15 @@ class _NotificationItemState extends State<NotificationItem>
 
   // ─── Avatar + type icon ────────────────────────────────────
   Widget _buildAvatarArea() {
+    // For auto/suggested_match, show matchImage as the avatar
+    final bool isSuggestedMatch =
+        widget.notification.type == NotificationType.auto &&
+        widget.notification.data?.subType == 'suggested_match';
+
+    final String? avatarUrl = isSuggestedMatch
+        ? widget.notification.data?.matchImage
+        : widget.notification.senderImage;
+
     return SizedBox(
       width: 55,
       height: 55,
@@ -254,8 +263,8 @@ class _NotificationItemState extends State<NotificationItem>
             child: CircleAvatar(
               radius: 24,
               backgroundColor: Colors.grey[200],
-              backgroundImage: widget.notification.senderImage != null
-                  ? NetworkImage(widget.notification.senderImage!)
+              backgroundImage: avatarUrl != null
+                  ? NetworkImage(avatarUrl)
                   : const AssetImage(AssetsData.defaultProfileImage)
                         as ImageProvider,
             ),
@@ -306,6 +315,8 @@ class _NotificationItemState extends State<NotificationItem>
         return AssetsData.heartLockIcon;
       case NotificationType.system:
         return AssetsData.careIcon;
+      case NotificationType.auto:
+        return AssetsData.heartLockIcon;
       default:
         return AssetsData.careIcon;
     }

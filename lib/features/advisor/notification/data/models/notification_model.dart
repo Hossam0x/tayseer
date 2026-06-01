@@ -99,6 +99,9 @@ class NotificationData {
     required this.eventId,
     required this.senderId,
     required this.regardRequestId,
+    this.subType,
+    this.matchId,
+    this.matchImage,
   });
 
   final String? postId;
@@ -110,6 +113,11 @@ class NotificationData {
   final String? eventId;
   final String? senderId;
   final String? regardRequestId;
+
+  /// For type=auto notifications
+  final String? subType;
+  final String? matchId;
+  final String? matchImage;
 
   factory NotificationData.fromJson(Map<String, dynamic> json) {
     return NotificationData(
@@ -123,6 +131,9 @@ class NotificationData {
       senderId: json["senderId"],
       regardRequestId: (json["requestId"] ?? json["regardRequestId"])
           ?.toString(),
+      subType: json["subType"]?.toString(),
+      matchId: json["matchId"]?.toString(),
+      matchImage: json["matchImage"]?.toString(),
     );
   }
 }

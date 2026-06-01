@@ -164,6 +164,25 @@ class NotificationHelper {
         navigatorKey.currentState!.pushNamed(AppRouter.notification);
         break;
 
+      // ─── AUTO ────────────────────────────────────────────
+
+      case 'auto':
+        final subType = data['subType'] as String?;
+        if (subType == 'suggested_match') {
+          final matchId = data['matchId'] as String?;
+          if (matchId != null && matchId.isNotEmpty) {
+            navigatorKey.currentState!.pushNamed(
+              AppRouter.kMarriageView,
+              arguments: {'personId': matchId},
+            );
+          } else {
+            navigatorKey.currentState!.pushNamed(AppRouter.notification);
+          }
+        } else {
+          navigatorKey.currentState!.pushNamed(AppRouter.notification);
+        }
+        break;
+
       // ─── IGNORED ────────────────────────────────────────
 
       case 'user_blocked':

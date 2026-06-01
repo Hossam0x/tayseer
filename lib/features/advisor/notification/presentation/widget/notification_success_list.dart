@@ -230,6 +230,17 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
         AppRouter.kEventDetailView,
         arguments: {'eventId': notification.data!.eventId},
       );
+    } else if (notification.type == NotificationType.auto) {
+      final subType = notification.data?.subType;
+      if (subType == 'suggested_match') {
+        final matchId = notification.data?.matchId;
+        if (matchId != null && matchId.isNotEmpty) {
+          context.pushNamed(
+            AppRouter.kMarriageView,
+            arguments: {'personId': matchId},
+          );
+        }
+      }
     }
   }
 

@@ -14,8 +14,19 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print("Title: ${message.notification?.title}");
   print("Data: ${message.data}");
 
+  // If there's a notification payload, the system will show it automatically.
+  // Never show a local notification in this case — it would be a duplicate.
   if (message.notification != null) {
-    print("System will show notification automatically");
+    print("System will show notification automatically — skipping local");
+    return;
+  }
+
+  // Data-only message: show a local notification manually.
+  final title = (message.data['title'] ?? '').toString().trim();
+  final body = (message.data['body'] ?? '').toString().trim();
+
+  if (title.isEmpty && body.isEmpty) {
+    print("⚠️ Data-only message with empty title+body — skipping");
     return;
   }
 
@@ -44,8 +55,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
   await plugin.show(
     DateTime.now().millisecondsSinceEpoch.remainder(100000),
-    message.notification?.title ?? 'Notification',
-    message.notification?.body ?? '',
+    title.isNotEmpty ? title : 'Notification',
+    body,
     details,
   );
 }
@@ -114,15 +125,28 @@ class LocalNotification {
       // 🔔 Notify HomeCubit (and any other listener) to refresh notification count
       NotificationEventBus.instance.fire();
 
-      // Only show local notification if there's no system notification
-      // This prevents duplicate notifications
-      if (message.notification == null) {
-        await _displayNotification(
-          message.data['title'] ?? 'Notification',
-          message.data['body'] ?? '',
-          payload: jsonEncode(message.data),
-        );
-      }
+      // On Android, Firebase does NOT show notifications automatically when the
+      // app is in the foreground — we must show a local notification ourselves.
+      // On iOS, setForegroundNotificationPresentationOptions handles this, but
+      // showing a local notification is harmless (iOS deduplicates them).
+      final notifTitle = message.notification?.title?.trim() ?? '';
+      final notifBody = message.notification?.body?.trim() ?? '';
+
+      // Prefer notification payload title/body; fall back to data fields.
+      final title = notifTitle.isNotEmpty
+          ? notifTitle
+          : (message.data['title'] ?? '').toString().trim();
+      final body = notifBody.isNotEmpty
+          ? notifBody
+          : (message.data['body'] ?? '').toString().trim();
+
+      if (title.isEmpty && body.isEmpty) return;
+
+      await _displayNotification(
+        title.isNotEmpty ? title : 'Notification',
+        body,
+        payload: jsonEncode(message.data),
+      );
     });
 
     /// 🚀 Background click
@@ -175,9 +199,9 @@ class LocalNotification {
     await messaging.subscribeToTopic("all");
 
     await messaging.setForegroundNotificationPresentationOptions(
-      alert: true,
+      alert: false,
       badge: true,
-      sound: true,
+      sound: false,
     );
   }
 
