@@ -84,6 +84,7 @@ enum NotificationType {
       case 'system':
         return NotificationType.system;
       case 'auto':
+      case 'auto_notification':
         return NotificationType.auto;
       default:
         return NotificationType.unknown;

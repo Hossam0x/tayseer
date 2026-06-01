@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -142,10 +144,14 @@ class LocalNotification {
 
       if (title.isEmpty && body.isEmpty) return;
 
+      // For suggested_match, show the match's image in the notification banner
+      final String? imageUrl = message.data['matchImage'] as String?;
+
       await _displayNotification(
         title.isNotEmpty ? title : 'Notification',
         body,
         payload: jsonEncode(message.data),
+        imageUrl: imageUrl,
       );
     });
 
@@ -228,19 +234,55 @@ class LocalNotification {
     String title,
     String body, {
     String? payload,
+    String? imageUrl,
   }) async {
-    const androidDetails = AndroidNotificationDetails(
-      'high_importance_channel',
-      'High Importance Notifications',
-      importance: Importance.high,
-      priority: Priority.high,
-      playSound: true,
-      icon: '@mipmap/ic_launcher',
-    );
+    AndroidNotificationDetails androidDetails;
 
-    const platformDetails = NotificationDetails(
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      // Download image and show as big picture on Android
+      try {
+        final ByteArrayAndroidBitmap bitmap = await _downloadBitmap(imageUrl);
+        androidDetails = AndroidNotificationDetails(
+          'high_importance_channel',
+          'High Importance Notifications',
+          importance: Importance.high,
+          priority: Priority.high,
+          playSound: true,
+          icon: '@mipmap/ic_launcher',
+          largeIcon: bitmap,
+          styleInformation: BigPictureStyleInformation(
+            bitmap,
+            largeIcon: bitmap,
+            contentTitle: title,
+            summaryText: body,
+            hideExpandedLargeIcon: false,
+          ),
+        );
+      } catch (_) {
+        // Fallback to plain notification if image download fails
+        androidDetails = const AndroidNotificationDetails(
+          'high_importance_channel',
+          'High Importance Notifications',
+          importance: Importance.high,
+          priority: Priority.high,
+          playSound: true,
+          icon: '@mipmap/ic_launcher',
+        );
+      }
+    } else {
+      androidDetails = const AndroidNotificationDetails(
+        'high_importance_channel',
+        'High Importance Notifications',
+        importance: Importance.high,
+        priority: Priority.high,
+        playSound: true,
+        icon: '@mipmap/ic_launcher',
+      );
+    }
+
+    final platformDetails = NotificationDetails(
       android: androidDetails,
-      iOS: DarwinNotificationDetails(
+      iOS: const DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
@@ -254,6 +296,15 @@ class LocalNotification {
       platformDetails,
       payload: payload,
     );
+  }
+
+  Future<ByteArrayAndroidBitmap> _downloadBitmap(String url) async {
+    final dio = Dio();
+    final response = await dio.get<List<int>>(
+      url,
+      options: Options(responseType: ResponseType.bytes),
+    );
+    return ByteArrayAndroidBitmap(Uint8List.fromList(response.data ?? []));
   }
 
   Future<String?> getFCMToken() async {

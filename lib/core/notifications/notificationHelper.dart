@@ -167,6 +167,7 @@ class NotificationHelper {
       // ─── AUTO ────────────────────────────────────────────
 
       case 'auto':
+      case 'auto_notification':
         final subType = data['subType'] as String?;
         if (subType == 'suggested_match') {
           final matchId = data['matchId'] as String?;
