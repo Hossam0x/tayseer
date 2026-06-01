@@ -16,19 +16,31 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print("Title: ${message.notification?.title}");
   print("Data: ${message.data}");
 
-  // If there's a notification payload, the system will show it automatically.
-  // Never show a local notification in this case — it would be a duplicate.
-  if (message.notification != null) {
+  final String? matchImage = message.data['matchImage'] as String?;
+  final bool hasSuggestedMatch =
+      message.data['subType'] == 'suggested_match' &&
+      matchImage != null &&
+      matchImage.isNotEmpty;
+  // Non-nullable alias used inside the if block below
+  final String matchImageUrl = matchImage ?? '';
+
+  // If there's a notification payload AND no special image to show,
+  // let the system handle it automatically to avoid duplicates.
+  if (message.notification != null && !hasSuggestedMatch) {
     print("System will show notification automatically — skipping local");
     return;
   }
 
-  // Data-only message: show a local notification manually.
-  final title = (message.data['title'] ?? '').toString().trim();
-  final body = (message.data['body'] ?? '').toString().trim();
+  // Get title/body from notification payload or data fields
+  final title = (message.notification?.title ?? message.data['title'] ?? '')
+      .toString()
+      .trim();
+  final body = (message.notification?.body ?? message.data['body'] ?? '')
+      .toString()
+      .trim();
 
   if (title.isEmpty && body.isEmpty) {
-    print("⚠️ Data-only message with empty title+body — skipping");
+    print("⚠️ Empty title+body — skipping");
     return;
   }
 
@@ -39,16 +51,63 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
   await plugin.initialize(const InitializationSettings(android: initSettings));
 
-  const details = NotificationDetails(
-    android: AndroidNotificationDetails(
+  AndroidNotificationDetails androidDetails;
+
+  if (hasSuggestedMatch) {
+    try {
+      final dio = Dio();
+      final response = await dio.get<List<int>>(
+        matchImageUrl,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final bitmap = ByteArrayAndroidBitmap(
+        Uint8List.fromList(response.data ?? []),
+      );
+      androidDetails = AndroidNotificationDetails(
+        'high_importance_channel',
+        'High Importance Notifications',
+        importance: Importance.high,
+        priority: Priority.high,
+        playSound: true,
+        icon: '@mipmap/ic_launcher',
+        largeIcon: bitmap,
+        styleInformation: BigPictureStyleInformation(
+          bitmap,
+          largeIcon: bitmap,
+          contentTitle: title,
+          summaryText: body,
+          hideExpandedLargeIcon: false,
+        ),
+      );
+      // Cancel any system notification Firebase may have already shown
+      // before we show our local one with the image
+      await plugin.cancelAll();
+      print("✅ Background notification with image");
+    } catch (e) {
+      print("⚠️ Failed to load image, falling back: $e");
+      androidDetails = const AndroidNotificationDetails(
+        'high_importance_channel',
+        'High Importance Notifications',
+        importance: Importance.high,
+        priority: Priority.high,
+        playSound: true,
+        icon: '@mipmap/ic_launcher',
+      );
+    }
+  } else {
+    androidDetails = const AndroidNotificationDetails(
       'high_importance_channel',
       'High Importance Notifications',
       importance: Importance.high,
       priority: Priority.high,
       playSound: true,
       icon: '@mipmap/ic_launcher',
-    ),
-    iOS: DarwinNotificationDetails(
+    );
+  }
+
+  final details = NotificationDetails(
+    android: androidDetails,
+    iOS: const DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
@@ -60,6 +119,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     title.isNotEmpty ? title : 'Notification',
     body,
     details,
+    payload: jsonEncode(message.data),
   );
 }
 
@@ -127,10 +187,13 @@ class LocalNotification {
       // 🔔 Notify HomeCubit (and any other listener) to refresh notification count
       NotificationEventBus.instance.fire();
 
+      // On iOS in foreground: setForegroundNotificationPresentationOptions
+      // already shows the system notification banner — skip local notification
+      // to avoid duplicates. iOS handles the display natively.
+      if (Platform.isIOS) return;
+
       // On Android, Firebase does NOT show notifications automatically when the
       // app is in the foreground — we must show a local notification ourselves.
-      // On iOS, setForegroundNotificationPresentationOptions handles this, but
-      // showing a local notification is harmless (iOS deduplicates them).
       final notifTitle = message.notification?.title?.trim() ?? '';
       final notifBody = message.notification?.body?.trim() ?? '';
 
@@ -205,9 +268,9 @@ class LocalNotification {
     await messaging.subscribeToTopic("all");
 
     await messaging.setForegroundNotificationPresentationOptions(
-      alert: false,
+      alert: true,
       badge: true,
-      sound: false,
+      sound: true,
     );
   }
 
