@@ -87,14 +87,11 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     implementation("androidx.multidex:multidex:2.0.1")
 
-    // ✅ Paymob SDK (Maven style زي الدكيومنت)
-    implementation("com.paymob.sdk:Paymob-SDK:1.8.1")
-
     // ✅ SDP + SSP
     implementation("com.intuit.sdp:sdp-android:1.1.0")
     implementation("com.intuit.ssp:ssp-android:1.1.0")
 
-    // ✅ SDK Dependencies
+    // ✅ Material + AppCompat
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")

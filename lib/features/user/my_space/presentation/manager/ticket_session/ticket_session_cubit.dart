@@ -1,7 +1,9 @@
-import 'package:flutter/services.dart';
+import 'dart:developer';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
-import 'package:tayseer/core/services/paymob_service/paymob_service.dart';
+import 'package:tayseer/core/services/paymob_service/paymob_webview_screen.dart';
 import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/ticket_session/ticket_session_state.dart';
 
@@ -60,17 +62,13 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
     );
   }
 
-  // ==================== دفع الجلسة عبر Paymob ====================
+  // ==================== دفع الجلسة عبر Paymob WebView ====================
   Future<void> paySession({
     required String offeringId,
-    String? sessionId, // ✅ الـ session ID الفعلي للتحقق بعد Rejected
+    required BuildContext context,
   }) async {
     emit(
-      state.copyWith(
-        paySessionState: CubitStates.loading,
-        errorMessage: null,
-        paymentSucceededDespiteRejected: false,
-      ),
+      state.copyWith(paySessionState: CubitStates.loading, errorMessage: null),
     );
 
     CubitStates.printState(
@@ -78,14 +76,20 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
       state: CubitStates.loading,
     );
 
-    // ── Step 1: جلب paymentKey من Backend ──
+    log('[TicketSession] ════════════════════════════════════════');
+    log('[TicketSession] 🌐 PAYMOB WEBVIEW FLOW');
+    log('[TicketSession]   offeringId : $offeringId');
+    log('[TicketSession]   discountCode: ${state.appliedCode ?? 'none'}');
+    log('[TicketSession] ════════════════════════════════════════');
+
+    // ── Step 1: جلب webviewUrl من Backend ──
     final result = await mySpaceRepo.initiatePayment(
       sessionId: offeringId,
       discountCode: state.appliedCode,
     );
 
     await result.fold(
-      (failure) {
+      (failure) async {
         CubitStates.printState(
           stateName: 'TicketSessionCubit - paySession (Backend)',
           state: CubitStates.failure,
@@ -110,48 +114,71 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
         }
       },
       (paymentIntention) async {
-        // ── Step 2: فتح Paymob SDK ──
-        try {
-          final sdkResult = await PaymobService.pay(
-            clientSecret: paymentIntention.data.clientSecret,
-            publicKey: paymentIntention.data.publicKey,
+        if (paymentIntention.data.webviewUrl.isEmpty) {
+          log('[TicketSession] ❌ webviewUrl is empty');
+          emit(
+            state.copyWith(
+              paySessionState: CubitStates.failure,
+              errorMessage: 'payment_sdk_error',
+            ),
           );
+          return;
+        }
 
-          // ── Step 3: التعامل مع النتيجة ──
-          if (sdkResult.isSuccess) {
+        log('[TicketSession] ✅ Got webviewUrl, opening WebView...');
+
+        // ── Step 2: فتح Paymob WebView ──
+        if (!context.mounted) return;
+        final webResult = await Navigator.of(context).push<PaymobWebViewResult>(
+          MaterialPageRoute(
+            builder: (_) => PaymobWebViewScreen(
+              webviewUrl: paymentIntention.data.webviewUrl,
+            ),
+          ),
+        );
+
+        if (isClosed) return;
+
+        log('[TicketSession] WebView result: $webResult');
+
+        // ── Step 3: التعامل مع النتيجة ──
+        switch (webResult) {
+          case PaymobWebViewResult.success:
             CubitStates.printState(
-              stateName: 'TicketSessionCubit - paySession (SDK)',
+              stateName: 'TicketSessionCubit - paySession (WebView)',
               state: CubitStates.success,
             );
             emit(state.copyWith(paySessionState: CubitStates.success));
-          } else if (sdkResult.isPending) {
+
+          case PaymobWebViewResult.pending:
             emit(
               state.copyWith(
                 paySessionState: CubitStates.failure,
                 errorMessage: 'الدفع قيد المعالجة، سيتم إخطارك قريباً',
               ),
             );
-          } else {
-            // ── Rejected: الـ SDK يرجع Rejected لما اليوزر يغلق الـ sheet ──
-            // سواء دفع أو ألغى — نوجّهه لـ UserSessionsView ليشوف حالة جلسته
+
+          case PaymobWebViewResult.closed:
+          case null:
+            // اليوزر أغلق الـ WebView — الـ webhook على الباك-إند هو المرجع
+            // نعتبره success ونوجّهه لشاشة الجلسات عشان يشوف الحالة الفعلية
+            log(
+              '[TicketSession] WebView closed — treating as success (webhook handles confirmation)',
+            );
             CubitStates.printState(
-              stateName: 'TicketSessionCubit - paySession (SDK)',
+              stateName: 'TicketSessionCubit - paySession (WebView closed)',
               state: CubitStates.success,
             );
+            emit(state.copyWith(paySessionState: CubitStates.success));
+
+          case PaymobWebViewResult.rejected:
+            // اليوزر ألغى الدفع صراحةً
             emit(
               state.copyWith(
-                paySessionState: CubitStates.success,
-                paymentSucceededDespiteRejected: true,
+                paySessionState: CubitStates.failure,
+                errorMessage: 'تم إلغاء عملية الدفع',
               ),
             );
-          }
-        } on PlatformException catch (e) {
-          emit(
-            state.copyWith(
-              paySessionState: CubitStates.failure,
-              errorMessage: 'خطأ في الدفع: ${e.message}',
-            ),
-          );
         }
       },
     );

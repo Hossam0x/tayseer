@@ -8,16 +8,8 @@ class TicketSessionState {
   // حالة الدفع
   CubitStates paySessionState;
 
-  // ✅ جديد - حالة profileIncomplete
+  // حالة profileIncomplete (رقم الهاتف مطلوب)
   bool profileIncomplete;
-
-  // ✅ جديد - حالة Paymob SDK
-  String? paymentKey;
-  int? orderId;
-  String? paymentResult; // "Successfull" / "Rejected" / "Pending"
-
-  // ✅ جديد - الدفع نجح رغم Rejected (اليوزر أغلق الـ sheet بعد الدفع)
-  bool paymentSucceededDespiteRejected;
 
   // بيانات الخصم
   DiscountResponseModel? discountResponse;
@@ -34,10 +26,6 @@ class TicketSessionState {
     this.validateDiscountState = CubitStates.initial,
     this.paySessionState = CubitStates.initial,
     this.profileIncomplete = false,
-    this.paymentKey,
-    this.orderId,
-    this.paymentResult,
-    this.paymentSucceededDespiteRejected = false,
     this.discountResponse,
     this.discountPercentage = 0,
     this.appliedCode,
@@ -49,10 +37,6 @@ class TicketSessionState {
     CubitStates? validateDiscountState,
     CubitStates? paySessionState,
     bool? profileIncomplete,
-    String? paymentKey,
-    int? orderId,
-    String? paymentResult,
-    bool? paymentSucceededDespiteRejected,
     DiscountResponseModel? discountResponse,
     int? discountPercentage,
     String? appliedCode,
@@ -64,12 +48,6 @@ class TicketSessionState {
           validateDiscountState ?? this.validateDiscountState,
       paySessionState: paySessionState ?? this.paySessionState,
       profileIncomplete: profileIncomplete ?? this.profileIncomplete,
-      paymentKey: paymentKey ?? this.paymentKey,
-      orderId: orderId ?? this.orderId,
-      paymentResult: paymentResult ?? this.paymentResult,
-      paymentSucceededDespiteRejected:
-          paymentSucceededDespiteRejected ??
-          this.paymentSucceededDespiteRejected,
       discountResponse: discountResponse ?? this.discountResponse,
       discountPercentage: discountPercentage ?? this.discountPercentage,
       appliedCode: appliedCode ?? this.appliedCode,

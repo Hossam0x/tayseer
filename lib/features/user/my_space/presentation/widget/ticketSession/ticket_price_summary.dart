@@ -122,7 +122,7 @@ class TicketPriceSummary extends StatelessWidget {
               if (!isLoading) {
                 context.read<TicketSessionCubit>().paySession(
                   offeringId: sessionData.offeringId,
-                  sessionId: sessionData.id, // ✅ الـ session ID الفعلي للتحقق
+                  context: context,
                 );
               }
             },
