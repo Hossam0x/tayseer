@@ -6,7 +6,7 @@ abstract class AssetsData {
   static const String cancelDialogIcon = "assets/icons/cancel_dialog_icon.png";
   static const String defaultProfileImage =
       "assets/images/default_profile_image.png";
-  static const String eliteBackgroundPng = "assets/images/eliteBackground.png";
+  static const String eliteBackgroundPng = "assets/images/Ultra.png";
   static const String eliteIcon = "assets/icons/Elite.png";
   static const String emptyBoxImage = "assets/images/EmptyBox.png";
   static const String errorIcon = "assets/icons/error.png";
@@ -77,7 +77,7 @@ abstract class AssetsData {
   static const String archiveIcon = "assets/icons/archive.svg";
   static const String backArrow = "assets/icons/backArrow.svg";
   static const String bankAccountIcon = "assets/icons/bankaccount.svg";
-  static const String basicBackground = "assets/icons/basicBackground.svg";
+  static const String basicBackground = "assets/images/Basic.png";
   static const String boostFinish = "assets/icons/boostFinish.svg";
   static const String boostIcon = "assets/icons/boost_icon.svg";
   static const String calenderIcon = "assets/icons/calenderIcon.svg";
@@ -194,7 +194,7 @@ abstract class AssetsData {
   static const String phoneIcon = "assets/icons/phone_icon.svg";
   static const String postsEndIcon = "assets/icons/posts_end_icon.svg";
   static const String premiumSupport = "assets/icons/premiumSupport.svg";
-  static const String proBackground = "assets/icons/proBackground.svg";
+  static const String proBackground = "assets/images/Pro.png";
   static const String profileIcon = "assets/icons/profile.svg";
   static const String rateIcon = "assets/icons/rate.svg";
   static const String readMessageIcon = "assets/icons/read_message.svg";
