@@ -11,6 +11,7 @@ class OtpCubit extends Cubit<OtpState> {
   final OtpRepository _otpRepository;
   Timer? _resendTimer;
   final OtpSource _otpSource;
+  final String _otpMethod;
 
   OtpCubit({
     required String phoneNumber,
@@ -18,8 +19,10 @@ class OtpCubit extends Cubit<OtpState> {
     bool isEmailUpdate = false,
     required OtpRepository otpRepository,
     OtpSource otpSource = OtpSource.phone,
+    String otpMethod = 'whatsapp',
   }) : _otpRepository = otpRepository,
        _otpSource = otpSource,
+       _otpMethod = otpMethod,
        super(
          OtpInitial(
            phoneNumber: phoneNumber,
@@ -99,7 +102,8 @@ class OtpCubit extends Cubit<OtpState> {
         email: state.phoneNumber,
       );
       _handleResendResult(result);
-    } else if (_otpSource == OtpSource.editPhone || _otpSource == OtpSource.phone) {
+    } else if (_otpSource == OtpSource.editPhone ||
+        _otpSource == OtpSource.phone) {
       final phoneParts = _extractPhoneParts(state.phoneNumber);
       if (phoneParts == null || phoneParts.countryCode.isEmpty) {
         emit(
@@ -115,6 +119,7 @@ class OtpCubit extends Cubit<OtpState> {
       final result = await _otpRepository.resendEditPhoneOtp(
         countryCode: phoneParts.countryCode,
         phoneNumber: phoneParts.phoneNumber,
+        otpMethod: _otpMethod,
       );
       _handleResendResult(result);
     } else {

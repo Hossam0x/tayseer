@@ -49,6 +49,8 @@ export 'package:gap/gap.dart';
 export 'package:tayseer/features/shared/view_model/layout_state.dart';
 export 'package:cached_network_image/cached_network_image.dart';
 export 'package:tayseer/core/widgets/advisor_background.dart';
+export 'package:tayseer/core/widgets/unified_otp_screen.dart';
+export 'package:tayseer/core/widgets/unified_phone_screen.dart';
 export 'package:video_player/video_player.dart';
 export 'package:visibility_detector/visibility_detector.dart';
 export 'package:photo_manager/photo_manager.dart';

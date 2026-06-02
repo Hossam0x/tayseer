@@ -9,6 +9,9 @@ class PhoneEditState {
   final String errorMessage;
   final String fullPhoneNumber;
 
+  /// 'sms' | 'whatsapp'
+  final String otpMethod;
+
   /// true بعد أول تعديل من المستخدم — الـ error ميظهرش قبلها
   final bool isDirty;
 
@@ -20,6 +23,7 @@ class PhoneEditState {
     this.successMessage = '',
     this.errorMessage = '',
     this.fullPhoneNumber = '',
+    this.otpMethod = 'whatsapp',
     this.isDirty = false,
   });
 
@@ -37,6 +41,7 @@ class PhoneEditState {
     String? successMessage,
     String? errorMessage,
     String? fullPhoneNumber,
+    String? otpMethod,
     bool? isDirty,
   }) {
     return PhoneEditState(
@@ -47,6 +52,7 @@ class PhoneEditState {
       successMessage: successMessage ?? this.successMessage,
       errorMessage: errorMessage ?? this.errorMessage,
       fullPhoneNumber: fullPhoneNumber ?? this.fullPhoneNumber,
+      otpMethod: otpMethod ?? this.otpMethod,
       isDirty: isDirty ?? this.isDirty,
     );
   }

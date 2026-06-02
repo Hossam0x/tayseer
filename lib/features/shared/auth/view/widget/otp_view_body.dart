@@ -1,5 +1,5 @@
 import 'package:tayseer/core/enum/user_type.dart';
-import 'package:tayseer/core/widgets/custom_otp_timer.dart';
+import 'package:tayseer/core/widgets/custom_otp_field.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_cubit.dart';
 import 'package:tayseer/features/shared/auth/view_model/auth_state.dart';
 import 'package:tayseer/main.dart';
@@ -86,6 +86,7 @@ class _OtpViewBodyState extends State<OtpViewBody> {
       },
       builder: (context, state) {
         final isLoading = state.verifyOtpState == CubitStates.loading;
+        final isResendLoading = state.resendCodeState == CubitStates.loading;
 
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -117,7 +118,7 @@ class _OtpViewBodyState extends State<OtpViewBody> {
                           ),
                         ),
 
-                        SizedBox(height: context.height * 0.08),
+                        SizedBox(height: context.height * 0.06),
 
                         // Title
                         Text(
@@ -129,12 +130,36 @@ class _OtpViewBodyState extends State<OtpViewBody> {
 
                         SizedBox(height: context.height * 0.02),
 
-                        // OTP input + resend timer
-                        CustomOtpTimer(
-                          onOtpSubmitted: (value) {
-                            setState(() => _verificationCode = value);
-                          },
+                        // Subtitle
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            context.tr('otp_sub_title'),
+                            textAlign: TextAlign.center,
+                            style: Styles.textStyle14.copyWith(
+                              color: Colors.grey,
+                            ),
+                          ),
                         ),
+
+                        SizedBox(height: context.height * 0.04),
+
+                        // OTP input — CustomOtpField مباشرة بدل CustomOtpTimer
+                        // عشان الـ keyboard ميتقفلش على Android
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: CustomOtpField(
+                            onChanged: (v) =>
+                                setState(() => _verificationCode = v),
+                            onCompleted: (v) =>
+                                setState(() => _verificationCode = v),
+                          ),
+                        ),
+
+                        SizedBox(height: context.height * 0.03),
+
+                        // Resend section
+                        _ResendSection(isLoading: isResendLoading),
 
                         SizedBox(height: context.height * 0.03),
                       ],
@@ -142,7 +167,7 @@ class _OtpViewBodyState extends State<OtpViewBody> {
                   ),
                 ),
 
-                // Submit button — always visible above keyboard
+                // Submit button — stays above keyboard
                 Padding(
                   padding: EdgeInsets.fromLTRB(
                     context.width * 0.05,
@@ -177,6 +202,91 @@ class _OtpViewBodyState extends State<OtpViewBody> {
           ),
         );
       },
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Resend Section — مستقلة عن أي cubit خارجي، تستخدم AuthCubit
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ResendSection extends StatefulWidget {
+  final bool isLoading;
+  const _ResendSection({required this.isLoading});
+
+  @override
+  State<_ResendSection> createState() => _ResendSectionState();
+}
+
+class _ResendSectionState extends State<_ResendSection> {
+  static const _initialSeconds = 300;
+  int _seconds = _initialSeconds;
+  bool _canResend = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return false;
+      if (_seconds > 0) {
+        setState(() => _seconds--);
+        return true;
+      }
+      setState(() => _canResend = true);
+      return false;
+    });
+  }
+
+  void _resend() {
+    if (widget.isLoading) return;
+    context.read<AuthCubit>().resendCode();
+    setState(() {
+      _seconds = _initialSeconds;
+      _canResend = false;
+    });
+    _startTimer();
+  }
+
+  String _formatTime(int s) {
+    final m = s ~/ 60;
+    final sec = s % 60;
+    return '${m.toString().padLeft(2, '0')}:${sec.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_canResend) {
+      return TextButton(
+        onPressed: widget.isLoading ? null : _resend,
+        child: Text(
+          context.tr('resend_code'),
+          style: Styles.textStyle12.copyWith(
+            color: HexColor('4d81e7'),
+            decoration: TextDecoration.underline,
+            decorationColor: HexColor('4d81e7'),
+            decorationThickness: 1.5,
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        Text(
+          context.tr('resend_code_in'),
+          style: const TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          _formatTime(_seconds),
+          style: Styles.textStyle12.copyWith(color: HexColor('4d81e7')),
+        ),
+      ],
     );
   }
 }

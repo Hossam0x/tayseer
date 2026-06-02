@@ -1454,6 +1454,8 @@
   "otp_digit_6_error": "يجب إدخال الرمز المكون من 6 أرقام",
   "resend_code_in": "إعادة إرسال الرمز خلال",
   "otp_sent_to_number": "تم إرسال رمز التحقق إلى {}",
+  "sent_via_whatsapp": "تم إرسال رمز التحقق عبر WhatsApp إلى {}",
+  "otp_receive_via": "استقبال الرمز عبر",
   "no_events_title_user": "لا يوجد احداث حاليا",
   "no_events_sub_title_user": "لم يقم احد المستشارين بانشاء احداث انتظر وسوف تظهرلك تلقائيًا",
   "book_ticket": "حجز تذكرة",

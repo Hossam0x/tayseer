@@ -5,6 +5,9 @@ import 'package:tayseer/my_import.dart';
 
 /// شاشة إضافة رقم الهاتف في الـ onboarding.
 ///
+/// تستخدم [PhoneEditCubit] لإدارة إدخال الرقم واختيار الدولة
+/// وتستدعي [QuestionsCubit.sendPhoneNumber] عند الضغط على التالي.
+///
 /// [onSuccessOverride] : لو مش null يُستدعى بدل الـ navigation الافتراضي.
 class AddPhoneBody extends StatefulWidget {
   final VoidCallback? onSuccessOverride;
@@ -90,7 +93,7 @@ class _AddPhoneBodyState extends State<AddPhoneBody> {
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
-                                Gap(context.height * 0.05),
+                                Gap(context.height * 0.04),
                                 PhoneInputField(
                                   controller: _phoneController,
                                   selectedCountry: phoneState.selectedCountry,
@@ -109,6 +112,13 @@ class _AddPhoneBodyState extends State<AddPhoneBody> {
                                       .read<PhoneEditCubit>()
                                       .updatePhoneNumber(value),
                                 ),
+                                Gap(context.height * 0.02),
+
+                                // ── OTP Method Selector ──
+                                _OtpMethodSelector(
+                                  selectedMethod: phoneState.otpMethod,
+                                ),
+
                                 Gap(context.height * 0.03),
                               ],
                             ),
@@ -190,5 +200,99 @@ class _AddPhoneBodyState extends State<AddPhoneBody> {
         builder: (_) => const Center(child: CustomloadingApp()),
       );
     }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OTP Method Selector
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _OtpMethodSelector extends StatelessWidget {
+  final String selectedMethod;
+  const _OtpMethodSelector({required this.selectedMethod});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          context.tr('otp_receive_via'),
+          style: Styles.textStyle14.copyWith(color: AppColors.primary800),
+        ),
+        const Gap(8),
+        Row(
+          children: [
+            _MethodTile(
+              icon: Icons.chat_bubble_outline,
+              label: 'WhatsApp',
+              value: 'whatsapp',
+              selected: selectedMethod == 'whatsapp',
+              color: const Color(0xFF25D366),
+            ),
+            const Gap(12),
+            _MethodTile(
+              icon: Icons.sms_outlined,
+              label: 'SMS',
+              value: 'sms',
+              selected: selectedMethod == 'sms',
+              color: AppColors.kprimaryColor,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _MethodTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final bool selected;
+  final Color color;
+
+  const _MethodTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.selected,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => context.read<PhoneEditCubit>().selectOtpMethod(value),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? color.withOpacity(0.1) : Colors.white,
+            border: Border.all(
+              color: selected ? color : const Color(0xFFE0E0E0),
+              width: selected ? 1.8 : 1,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: selected ? color : Colors.grey, size: 18),
+              const Gap(6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: selected ? color : Colors.grey,
+                  fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

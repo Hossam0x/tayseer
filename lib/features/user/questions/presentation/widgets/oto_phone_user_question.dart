@@ -4,8 +4,10 @@ import 'package:tayseer/features/user/questions/presentation/manager/questions_c
 import 'package:tayseer/features/user/questions/presentation/manager/questions_state.dart';
 import 'package:tayseer/my_import.dart';
 
+/// شاشة OTP للـ onboarding / questions flow.
+/// تستخدم [QuestionsCubit] الموجود في الـ tree.
 class OtpPhoneBodyInUser extends StatefulWidget {
-  /// لو [isOnboarding] == true، بعد التحقق يروح لاختيار الجنس
+  /// لو [isOnboarding] == true، بعد التحقق يروح مباشرةً لاختيار الجنس
   final bool isOnboarding;
 
   const OtpPhoneBodyInUser({super.key, this.isOnboarding = false});
@@ -20,62 +22,8 @@ class _OtpPhoneBodyInUserState extends State<OtpPhoneBodyInUser> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<QuestionsCubit, QuestionsState>(
-      listenWhen: (previous, current) =>
-          previous.verifyOtpState != current.verifyOtpState,
-      listener: (context, state) {
-        if (state.verifyOtpState == CubitStates.success) {
-          if (!mounted) return;
-
-          // ✅ لو في الـ onboarding — روح مباشرة لاختيار الجنس
-          if (widget.isOnboarding) {
-            context.pushReplacementNamed(AppRouter.kChooseGenderView);
-            return;
-          }
-
-          // الـ flow القديم — بعد التحقق من الرقم في منتصف الـ survey
-          CustomshowDialogWithImage(
-            context,
-            title: context.tr('head_phone'),
-            supTitle: context.tr('head_phone_subtitle'),
-            bottonText: 'تأكيد',
-            imageUrl: AssetsData.kmapImage,
-            onPressed: () {
-              context.read<QuestionsCubit>().sendAnswerQuestions(
-                question: AuthEnum.phone.name,
-                questionCategoryEnum: AuthEnum.phone.name,
-                questionNumber: 28,
-                answers: [
-                  {'answer': 'تم'},
-                ],
-              );
-              context.pushReplacementNamed(
-                AppRouter.kBlockedContactsSuccessScreen,
-              );
-            },
-            onCancel: () {
-              context.read<QuestionsCubit>().sendAnswerQuestions(
-                question: AuthEnum.phone.name,
-                questionCategoryEnum: AuthEnum.phone.name,
-                questionNumber: 28,
-                answers: [
-                  {'answer': 'تم'},
-                ],
-              );
-              Future.delayed(const Duration(milliseconds: 500), () {
-                if (mounted) {
-                  context.pushReplacementNamed(AppRouter.kCommitmentView);
-                }
-              });
-            },
-            showCancelButton: true,
-          );
-        } else if (state.verifyOtpState == CubitStates.failure) {
-          AppToast.error(
-            context,
-            state.errorMessage ?? context.tr('otp_failed'),
-          );
-        }
-      },
+      listenWhen: (prev, curr) => prev.verifyOtpState != curr.verifyOtpState,
+      listener: _handleOtpState,
       builder: (context, state) {
         final isLoading = state.verifyOtpState == CubitStates.loading;
 
@@ -114,7 +62,7 @@ class _OtpPhoneBodyInUserState extends State<OtpPhoneBodyInUser> {
                             ),
                           ),
 
-                          SizedBox(height: context.height * 0.08),
+                          SizedBox(height: context.height * 0.06),
 
                           // Title
                           Text(
@@ -122,29 +70,33 @@ class _OtpPhoneBodyInUserState extends State<OtpPhoneBodyInUser> {
                             style: Styles.textStyle20Bold.copyWith(
                               color: AppColors.kscandryTextColor,
                             ),
+                            textAlign: TextAlign.center,
                           ),
 
-                          SizedBox(height: context.height * 0.05),
+                          SizedBox(height: context.height * 0.02),
+
+                          // Subtitle
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
+                            child: Text(
+                              context.tr('otp_sup_title_phone'),
+                              textAlign: TextAlign.center,
+                              style: Styles.textStyle14.copyWith(
+                                color: AppColors.kgreyColor,
+                              ),
+                            ),
+                          ),
+
+                          SizedBox(height: context.height * 0.04),
 
                           // OTP input
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: CustomOtpField(
-                              onChanged: (value) {
-                                setState(() => _verificationCode = value);
-                              },
-                              onCompleted: (value) {
-                                setState(() => _verificationCode = value);
-                              },
-                            ),
-                          ),
-
-                          Gap(context.height * 0.03),
-
-                          Text(
-                            context.tr('otp_sup_title_phone'),
-                            style: Styles.textStyle14.copyWith(
-                              color: AppColors.kgreyColor,
+                              onChanged: (v) =>
+                                  setState(() => _verificationCode = v),
+                              onCompleted: (v) =>
+                                  setState(() => _verificationCode = v),
                             ),
                           ),
 
@@ -193,5 +145,54 @@ class _OtpPhoneBodyInUserState extends State<OtpPhoneBodyInUser> {
         );
       },
     );
+  }
+
+  void _handleOtpState(BuildContext context, QuestionsState state) {
+    if (state.verifyOtpState == CubitStates.success) {
+      if (!mounted) return;
+
+      if (widget.isOnboarding) {
+        context.pushReplacementNamed(AppRouter.kChooseGenderView);
+        return;
+      }
+
+      // الـ flow القديم — عرض dialog بعد التحقق
+      CustomshowDialogWithImage(
+        context,
+        title: context.tr('head_phone'),
+        supTitle: context.tr('head_phone_subtitle'),
+        bottonText: 'تأكيد',
+        imageUrl: AssetsData.kmapImage,
+        onPressed: () {
+          context.read<QuestionsCubit>().sendAnswerQuestions(
+            question: AuthEnum.phone.name,
+            questionCategoryEnum: AuthEnum.phone.name,
+            questionNumber: 28,
+            answers: [
+              {'answer': 'تم'},
+            ],
+          );
+          context.pushReplacementNamed(AppRouter.kBlockedContactsSuccessScreen);
+        },
+        onCancel: () {
+          context.read<QuestionsCubit>().sendAnswerQuestions(
+            question: AuthEnum.phone.name,
+            questionCategoryEnum: AuthEnum.phone.name,
+            questionNumber: 28,
+            answers: [
+              {'answer': 'تم'},
+            ],
+          );
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              context.pushReplacementNamed(AppRouter.kCommitmentView);
+            }
+          });
+        },
+        showCancelButton: true,
+      );
+    } else if (state.verifyOtpState == CubitStates.failure) {
+      AppToast.error(context, state.errorMessage ?? context.tr('otp_failed'));
+    }
   }
 }

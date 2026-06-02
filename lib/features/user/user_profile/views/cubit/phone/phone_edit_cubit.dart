@@ -10,11 +10,15 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
   PhoneEditCubit(this._repository) : super(PhoneEditInitial());
 
   void initializePhone(String initialPhone, {CountryData? deviceCountry}) {
-    log('PhoneEditCubit.initializePhone: initialPhone = "$initialPhone", deviceCountry = "${deviceCountry?.nameAr} (${deviceCountry?.code})"');
+    log(
+      'PhoneEditCubit.initializePhone: initialPhone = "$initialPhone", deviceCountry = "${deviceCountry?.nameAr} (${deviceCountry?.code})"',
+    );
     if (initialPhone.isNotEmpty) {
       for (final country in kSupportedCountries) {
         if (initialPhone.startsWith(country.code)) {
-          log('PhoneEditCubit.initializePhone: matched existing country prefix: ${country.nameAr} (${country.code})');
+          log(
+            'PhoneEditCubit.initializePhone: matched existing country prefix: ${country.nameAr} (${country.code})',
+          );
           emit(
             state.copyWith(
               selectedCountry: country,
@@ -29,7 +33,9 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
 
     // لو ما لقيناش match أو الرقم فارغ → نستخدم دولة الجهاز أو السعودية
     final selected = deviceCountry ?? kDefaultCountry;
-    log('PhoneEditCubit.initializePhone: no matching prefix or empty. Selecting deviceCountry/default: ${selected.nameAr} (${selected.code})');
+    log(
+      'PhoneEditCubit.initializePhone: no matching prefix or empty. Selecting deviceCountry/default: ${selected.nameAr} (${selected.code})',
+    );
     emit(state.copyWith(selectedCountry: selected));
     validatePhoneNumber();
   }
@@ -84,11 +90,14 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
     );
 
     final cleanedPhone = state.phoneNumber.replaceAll(RegExp(r'\D'), '');
-    log('طلب تحديث الهاتف: ${state.selectedCountry.code}$cleanedPhone');
+    log(
+      'طلب تحديث الهاتف: ${state.selectedCountry.code}$cleanedPhone (${state.otpMethod})',
+    );
 
     final result = await _repository.updatePhoneNumber(
       countryCode: state.selectedCountry.code,
       phoneNumber: cleanedPhone,
+      otpMethod: state.otpMethod,
     );
 
     result.fold(
@@ -107,6 +116,10 @@ class PhoneEditCubit extends Cubit<PhoneEditState> {
         ),
       ),
     );
+  }
+
+  void selectOtpMethod(String method) {
+    emit(state.copyWith(otpMethod: method));
   }
 
   void clearMessages() {

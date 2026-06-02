@@ -7,6 +7,7 @@ abstract class OtpRepository {
   Future<Either<Failure, bool>> resendEditPhoneOtp({
     required String countryCode,
     required String phoneNumber,
+    String otpMethod,
   });
 
   Future<Either<Failure, bool>> verifyEmailOtp(String otpCode);
@@ -40,11 +41,16 @@ class OtpRepositoryImpl implements OtpRepository {
   Future<Either<Failure, bool>> resendEditPhoneOtp({
     required String countryCode,
     required String phoneNumber,
+    String otpMethod = 'sms',
   }) async {
     return _safeCall(() async {
       final data = await _apiService.post(
         endPoint: '/user/update-phone-number',
-        data: {'countryCode': countryCode, 'phone': phoneNumber},
+        data: {
+          'countryCode': countryCode,
+          'phone': phoneNumber,
+          'otpMethod': otpMethod,
+        },
       );
       return _parseSuccess(data);
     });

@@ -1450,6 +1450,8 @@
   "otp_digit_6_error": "Please enter the 6-digit code",
   "resend_code_in": "Resend code in",
   "otp_sent_to_number": "Verification code sent to {}",
+  "sent_via_whatsapp": "Verification code sent via WhatsApp to {}",
+  "otp_receive_via": "Receive code via",
   "delete_main_image": "Delete Profile Picture",
   "must_upload_new_main_image": "You must upload a new profile picture before deleting the current one",
   "choose_new_image": "Choose New Image",

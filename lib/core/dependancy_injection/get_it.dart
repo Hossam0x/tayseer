@@ -624,6 +624,7 @@ Future<void> setupGetIt() async {
       isEmailUpdate: params.isEmailUpdate,
       otpRepository: getIt<OtpRepository>(),
       otpSource: params.otpSource,
+      otpMethod: params.otpMethod,
     ),
   );
 
@@ -670,11 +671,13 @@ class OtpCubitParams {
   final bool isPhoneUpdate;
   final bool isEmailUpdate;
   final OtpSource otpSource;
+  final String otpMethod;
 
   OtpCubitParams({
     required this.phoneNumber,
     required this.isPhoneUpdate,
     required this.isEmailUpdate,
     required this.otpSource,
+    this.otpMethod = 'whatsapp',
   });
 }

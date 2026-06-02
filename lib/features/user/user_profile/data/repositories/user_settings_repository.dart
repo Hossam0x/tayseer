@@ -5,6 +5,7 @@ abstract class UserSettingsRepository {
   Future<Either<Failure, bool>> updatePhoneNumber({
     required String countryCode,
     required String phoneNumber,
+    String otpMethod,
   });
   Future<Either<Failure, bool>> updateEmail({required String email});
 }
@@ -18,11 +19,16 @@ class UserSettingsRepositoryImpl implements UserSettingsRepository {
   Future<Either<Failure, bool>> updatePhoneNumber({
     required String countryCode,
     required String phoneNumber,
+    String otpMethod = 'sms',
   }) async {
     try {
       final response = await _apiService.post(
         endPoint: '/user/update-phone-number',
-        data: {'countryCode': countryCode, 'phone': phoneNumber},
+        data: {
+          'countryCode': countryCode,
+          'phone': phoneNumber,
+          'otpMethod': otpMethod,
+        },
       );
 
       if (response['success'] == true) {
