@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -12,46 +11,14 @@ import 'package:tayseer/core/utils/notification_event_bus.dart';
 
 // ─── Shared blur helper (works in both isolates) ─────────────────────────────
 
-/// Downloads [url] and returns the raw PNG bytes.
-/// If [blur] is true the image is rendered with a Gaussian blur (sigma 8)
-/// before encoding so the notification thumbnail is blurred on both
-/// Android and iOS.
-Future<Uint8List> _fetchImageBytes(String url, {bool blur = false}) async {
+/// Downloads [url] and returns the raw bytes.
+Future<Uint8List> _fetchImageBytes(String url) async {
   final dio = Dio();
   final response = await dio.get<List<int>>(
     url,
     options: Options(responseType: ResponseType.bytes),
   );
-  final Uint8List raw = Uint8List.fromList(response.data ?? []);
-
-  if (!blur) return raw;
-
-  // Decode → render through a blur ImageFilter → re-encode as PNG
-  final ui.Codec codec = await ui.instantiateImageCodec(raw);
-  final ui.FrameInfo frame = await codec.getNextFrame();
-  final ui.Image original = frame.image;
-
-  final ui.PictureRecorder recorder = ui.PictureRecorder();
-  final Canvas canvas = Canvas(recorder);
-
-  final Paint paint = Paint()
-    ..imageFilter = ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8);
-
-  canvas.drawImage(original, Offset.zero, paint);
-  final ui.Picture picture = recorder.endRecording();
-
-  final ui.Image blurred = await picture.toImage(
-    original.width,
-    original.height,
-  );
-  original.dispose();
-
-  final ByteData? byteData = await blurred.toByteData(
-    format: ui.ImageByteFormat.png,
-  );
-  blurred.dispose();
-
-  return byteData?.buffer.asUint8List() ?? raw;
+  return Uint8List.fromList(response.data ?? []);
 }
 
 // ─── Background handler ───────────────────────────────────────────────────────
@@ -104,12 +71,10 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
   AndroidNotificationDetails androidDetails;
 
-  if (hasSuggestedMatch) {
+  if (hasSuggestedMatch && !matchBlur) {
+    // matchBlur == true → show plain notification without image
     try {
-      final Uint8List imageBytes = await _fetchImageBytes(
-        matchImageUrl,
-        blur: matchBlur,
-      );
+      final Uint8List imageBytes = await _fetchImageBytes(matchImageUrl);
       final bitmap = ByteArrayAndroidBitmap(imageBytes);
       androidDetails = AndroidNotificationDetails(
         'high_importance_channel',
@@ -130,9 +95,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       // Cancel any system notification Firebase may have already shown
       // before we show our local one with the image
       await plugin.cancelAll();
-      print(
-        "✅ Background notification with image${matchBlur ? ' (blurred)' : ''}",
-      );
+      print("✅ Background notification with image");
     } catch (e) {
       print("⚠️ Failed to load image, falling back: $e");
       androidDetails = const AndroidNotificationDetails(
@@ -358,13 +321,10 @@ class LocalNotification {
   }) async {
     AndroidNotificationDetails androidDetails;
 
-    if (imageUrl != null && imageUrl.isNotEmpty) {
-      // Download image (with optional blur) and show as big picture on Android
+    // blurImage == true → don't show the image in the notification
+    if (imageUrl != null && imageUrl.isNotEmpty && !blurImage) {
       try {
-        final Uint8List imageBytes = await _fetchImageBytes(
-          imageUrl,
-          blur: blurImage,
-        );
+        final Uint8List imageBytes = await _fetchImageBytes(imageUrl);
         final bitmap = ByteArrayAndroidBitmap(imageBytes);
         androidDetails = AndroidNotificationDetails(
           'high_importance_channel',
@@ -383,7 +343,6 @@ class LocalNotification {
           ),
         );
       } catch (_) {
-        // Fallback to plain notification if image download fails
         androidDetails = const AndroidNotificationDetails(
           'high_importance_channel',
           'High Importance Notifications',
