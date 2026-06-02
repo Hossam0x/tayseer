@@ -17,20 +17,25 @@ import 'package:tayseer/my_import.dart';
 // ✅ هذا الـ widget هو نقطة الدخول — بيوفر الـ BlocProvider
 // استخدمه في الـ layout بدل ConsultationView مباشرة
 class ConsultationStandalonePage extends StatelessWidget {
-  const ConsultationStandalonePage({super.key});
+  /// لما بييجي من الـ settings يبقى true عشان يظهر زرار الرجوع
+  final bool showBackButton;
+
+  const ConsultationStandalonePage({super.key, this.showBackButton = false});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => ConsultationCubit(repo: ConsultationFiltterRepoImpl()),
-      child: const ConsultationView(),
+      child: ConsultationView(showBackButton: showBackButton),
     );
   }
 }
 
 // ✅ الـ view الفعلية — محتاجة ConsultationCubit فوقها
 class ConsultationView extends StatefulWidget {
-  const ConsultationView({super.key});
+  final bool showBackButton;
+
+  const ConsultationView({super.key, this.showBackButton = false});
 
   @override
   State<ConsultationView> createState() => _ConsultationViewState();
@@ -139,6 +144,23 @@ class _ConsultationViewState extends State<ConsultationView> {
                         ),
                       ),
                     ),
+                    if (widget.showBackButton)
+                      Positioned(
+                        left: isArabic ? null : 20.w,
+                        right: isArabic ? 20.w : null,
+                        top: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              size: 20.w,
+                              color: AppColors.secondary700,
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),

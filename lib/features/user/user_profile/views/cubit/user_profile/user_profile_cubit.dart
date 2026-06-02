@@ -170,6 +170,12 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         iconAsset: AssetsData.icEditSettings,
         routeName: '',
       ),
+      SettingItemModel(
+        id: 'book_session',
+        title: 'book_session',
+        iconAsset: AssetsData.consultatIcon,
+        routeName: AppRouter.kConsultationStandaloneView,
+      ),
       if (!isMarriageDeactivated)
         SettingItemModel(
           id: 'edit_marriage_profile',
