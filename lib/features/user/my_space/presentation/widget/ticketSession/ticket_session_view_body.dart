@@ -20,132 +20,123 @@ class TicketSessionViewBody extends StatefulWidget {
 class _TicketSessionViewBodyState extends State<TicketSessionViewBody> {
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: SafeArea(
-        child: BlocListener<TicketSessionCubit, TicketSessionState>(
-          listener: (context, state) {
-            debugPrint(
-              '🎯 Listener fired: payState=${state.paySessionState}, profileIncomplete=${state.profileIncomplete}, errorMsg=${state.errorMessage}',
+    return SafeArea(
+      child: BlocListener<TicketSessionCubit, TicketSessionState>(
+        listener: (context, state) {
+          debugPrint(
+            '🎯 Listener fired: payState=${state.paySessionState}, profileIncomplete=${state.profileIncomplete}, errorMsg=${state.errorMessage}',
+          );
+
+          if (state.paySessionState == CubitStates.success) {
+            context.read<TicketSessionCubit>().resetPayState();
+
+            // ✅ الدفع نجح أو اليوزر أغلق الـ WebView
+            // في كلتا الحالتين نوجّهه لـ success screen
+            // الـ webhook على الباك-إند هو المرجع الحقيقي لتأكيد الدفع
+            context.pushNamed(
+              AppRouter.sessionticketsuccessview,
+              arguments: widget.sessionData,
             );
+            return;
+          }
 
-            if (state.paySessionState == CubitStates.success) {
-              context.read<TicketSessionCubit>().resetPayState();
-
-              // ✅ الدفع نجح أو اليوزر أغلق الـ WebView
-              // في كلتا الحالتين نوجّهه لـ success screen
-              // الـ webhook على الباك-إند هو المرجع الحقيقي لتأكيد الدفع
-              context.pushNamed(
-                AppRouter.sessionticketsuccessview,
-                arguments: widget.sessionData,
+          // ✅ لو الـ profile ناقص → روح لصفحة إضافة رقم الموبايل
+          if (state.profileIncomplete) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              context.read<TicketSessionCubit>().resetProfileIncomplete();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AddPhoneViewFromTicket(
+                    onPhoneAdded: () {
+                      if (!mounted) return;
+                      // بعد ما يضيف الرقم بنجاح، نعيد محاولة الدفع
+                      context.read<TicketSessionCubit>().paySession(
+                        offeringId: widget.sessionData.offeringId,
+                        context: context,
+                      );
+                    },
+                  ),
+                ),
               );
-              return;
-            }
+            });
+            return;
+          }
 
-            // ✅ لو الـ profile ناقص → روح لصفحة إضافة رقم الموبايل
-            if (state.profileIncomplete) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (!mounted) return;
-                context.read<TicketSessionCubit>().resetProfileIncomplete();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AddPhoneViewFromTicket(
-                      onPhoneAdded: () {
-                        if (!mounted) return;
-                        // بعد ما يضيف الرقم بنجاح، نعيد محاولة الدفع
-                        context.read<TicketSessionCubit>().paySession(
-                          offeringId: widget.sessionData.offeringId,
-                          context: context,
-                        );
-                      },
-                    ),
-                  ),
-                );
-              });
-              return;
-            }
-
-            // نعرض الـ error بس لو مش profileIncomplete
-            if (state.paySessionState == CubitStates.failure &&
-                state.errorMessage != null) {
-              AppToast.error(context, state.errorMessage.toString());
-            }
-          },
-          child: Stack(
-            children: [
-              CustomScrollView(
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20.w),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: 10.h),
-                          TicketHeader(
-                            title: context.tr("booking_details"),
-                            showicon: false,
-                          ),
-                          SizedBox(height: 25.h),
-                          Text(
-                            context.tr("consultation_details"),
-                            style: TextStyle(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          SizedBox(height: 12.h),
-                          TicketConsultationCard(
-                            sessionData: widget.sessionData,
-                          ),
-                          SizedBox(height: 25.h),
-                          Text(
-                            context.tr("discount_code"),
-                            style: TextStyle(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          SizedBox(height: 12.h),
-                          const TicketPromoCode(),
-                          SizedBox(height: 20.h),
-                        ],
-                      ),
-                    ),
-                  ),
-                  SliverFillRemaining(
-                    hasScrollBody: false,
+          // نعرض الـ error بس لو مش profileIncomplete
+          if (state.paySessionState == CubitStates.failure &&
+              state.errorMessage != null) {
+            AppToast.error(context, state.errorMessage.toString());
+          }
+        },
+        child: Stack(
+          children: [
+            CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20.w),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Spacer(),
-                        BlocSelector<
-                          TicketSessionCubit,
-                          TicketSessionState,
-                          int
-                        >(
-                          selector: (state) => state.discountPercentage,
-                          builder: (context, discountPercentage) {
-                            return TicketPriceSummary(
-                              isLoading: context.select(
-                                (TicketSessionCubit cubit) =>
-                                    cubit.state.paySessionState ==
-                                    CubitStates.loading,
-                              ),
-                              sessionData: widget.sessionData,
-                              discountPercentage: discountPercentage,
-                            );
-                          },
+                        SizedBox(height: 10.h),
+                        TicketHeader(
+                          title: context.tr("booking_details"),
+                          showicon: false,
                         ),
+                        SizedBox(height: 25.h),
+                        Text(
+                          context.tr("consultation_details"),
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        SizedBox(height: 12.h),
+                        TicketConsultationCard(sessionData: widget.sessionData),
+                        SizedBox(height: 25.h),
+                        Text(
+                          context.tr("discount_code"),
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        SizedBox(height: 12.h),
+                        const TicketPromoCode(),
+                        SizedBox(height: 20.h),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Column(
+                    children: [
+                      const Spacer(),
+                      BlocSelector<TicketSessionCubit, TicketSessionState, int>(
+                        selector: (state) => state.discountPercentage,
+                        builder: (context, discountPercentage) {
+                          return TicketPriceSummary(
+                            isLoading: context.select(
+                              (TicketSessionCubit cubit) =>
+                                  cubit.state.paySessionState ==
+                                  CubitStates.loading,
+                            ),
+                            sessionData: widget.sessionData,
+                            discountPercentage: discountPercentage,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

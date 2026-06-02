@@ -60,6 +60,48 @@ class OneTimePaymentCubit extends Cubit<OneTimePaymentState> {
 
   void resetStatus() => emit(const OneTimePaymentState());
 
+  /// يتحقق من حالة الدفع من الباك-إند ويعمل emit للـ state المناسب
+  Future<void> _checkAndEmitStatus(int orderId) async {
+    if (isClosed) return;
+    try {
+      final response = await _apiService.get(
+        endPoint: ApiEndPoint.paymobPurchaseStatus(orderId),
+      );
+      if (isClosed) return;
+
+      if (response['success'] == true) {
+        final status = response['data']?['status'] as String? ?? '';
+        log('[OneTimePayment] 📊 Purchase status: $status');
+        switch (status) {
+          case 'completed':
+            emit(state.copyWith(status: OneTimePaymentStatus.success));
+          case 'pending':
+          case 'processing':
+            emit(
+              state.copyWith(
+                status: OneTimePaymentStatus.error,
+                error: 'payment_pending',
+              ),
+            );
+          case 'failed':
+          case 'canceled':
+          case 'refunded':
+          default:
+            emit(state.copyWith(status: OneTimePaymentStatus.canceled));
+        }
+      } else {
+        log('[OneTimePayment] ⚠️ Status check failed — treating as canceled');
+        emit(state.copyWith(status: OneTimePaymentStatus.canceled));
+      }
+    } catch (e) {
+      log(
+        '[OneTimePayment] ❌ Status check exception: $e — treating as canceled',
+      );
+      if (isClosed) return;
+      emit(state.copyWith(status: OneTimePaymentStatus.canceled));
+    }
+  }
+
   /// [productId]   — الـ database ID للمنتج (مش الـ Apple/Android store ID)
   /// [productType] — نوع المنتج (RegardsPackage / ChatDurationExtension)
   /// [chatRoomId]  — مطلوب فقط لو [productType] == ChatDurationExtension
@@ -162,8 +204,12 @@ class OneTimePaymentCubit extends Cubit<OneTimePaymentState> {
 
         case PaymobWebViewResult.closed:
         case null:
-          // المستخدم أغلق الـ WebView — نعتبره canceled
-          emit(state.copyWith(status: OneTimePaymentStatus.canceled));
+          // المستخدم أغلق الـ WebView — نتحقق من الباك-إند عن الحالة الفعلية
+          log(
+            '[OneTimePayment] 🔍 Checking purchase status for orderId: ${intentionData.orderId}',
+          );
+          emit(state.copyWith(status: OneTimePaymentStatus.loading));
+          await _checkAndEmitStatus(intentionData.orderId);
       }
     } catch (e) {
       log('[OneTimePayment] ❌ Exception: $e');

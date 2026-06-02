@@ -29,7 +29,7 @@ class BookingSuccessView extends StatelessWidget {
                 ),
                 SizedBox(height: 40.h),
                 Text(
-                  "تم حجز الاستشارة بنجاح",
+                  context.tr('consultation_booked_successfully'),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 24.sp,
@@ -46,7 +46,7 @@ class BookingSuccessView extends StatelessWidget {
                 ),
                 SizedBox(height: 20.h),
                 Text(
-                  ". شكراً لك سيتم مراجعته والنظر فيه",
+                  context.tr('will_be_reviewed'),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16.sp,
@@ -60,7 +60,6 @@ class BookingSuccessView extends StatelessWidget {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      // امسح الـ stack وروح للـ layout ثم افتح صفحة الجلسات
                       Navigator.of(context).pushNamedAndRemoveUntil(
                         AppRouter.kUserLayoutView,
                         (route) => false,
@@ -78,7 +77,7 @@ class BookingSuccessView extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      "عرض جلساتي",
+                      context.tr('view_my_sessions'),
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.bold,
@@ -104,7 +103,7 @@ class BookingSuccessView extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      "الرئيسية",
+                      context.tr('home_page'),
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.bold,

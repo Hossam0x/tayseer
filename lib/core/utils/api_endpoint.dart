@@ -118,6 +118,10 @@ class ApiEndPoint {
   static const String initiateOneTimePayment =
       '/new-paymob/initiate-one-time-payment';
 
+  // Paymob: check purchase status by orderId
+  static String paymobPurchaseStatus(int orderId) =>
+      '/new-paymob/purchase-status/$orderId';
+
   // Force Update
   static const String checkForUpdateIos = '/version/check-for-update';
   static const String checkForUpdateAndroid =

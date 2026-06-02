@@ -29,12 +29,9 @@ class _TicketPromoCodeState extends State<TicketPromoCode> {
       listenWhen: (previous, current) =>
           previous.validateDiscountState != current.validateDiscountState,
       listener: (context, state) {
-        if (state.validateDiscountState == CubitStates.success &&
-            state.successMessage != null) {}
-
         if (state.validateDiscountState == CubitStates.failure &&
             state.errorMessage != null) {
-          AppToast.warning(context, '${state.errorMessage!}');
+          AppToast.warning(context, state.errorMessage!);
         }
       },
       builder: (context, state) {
@@ -65,7 +62,6 @@ class _TicketPromoCodeState extends State<TicketPromoCode> {
                     width: 20.sp,
                   ),
                   SizedBox(width: 10.w),
-
                   Expanded(
                     child: TextField(
                       controller: _controller,
@@ -78,7 +74,7 @@ class _TicketPromoCodeState extends State<TicketPromoCode> {
                       decoration: InputDecoration(
                         hintText: isApplied
                             ? state.appliedCode
-                            : "أدخل كود الخصم",
+                            : context.tr('enter_discount_code'),
                         hintStyle: TextStyle(
                           fontSize: 12.sp,
                           color: isApplied
@@ -93,7 +89,7 @@ class _TicketPromoCodeState extends State<TicketPromoCode> {
                     ),
                   ),
 
-                  // زر التطبيق/الإزالة أو Loading - بحجم ثابت
+                  // زر التطبيق/الإزالة أو Loading
                   SizedBox(
                     width: 70.w,
                     height: 40.h,
@@ -114,17 +110,13 @@ class _TicketPromoCodeState extends State<TicketPromoCode> {
                                       .read<TicketSessionCubit>()
                                       .removeDiscountCode();
                                   _controller.clear();
-                                  setState(() {
-                                    hasText = false;
-                                  });
-                                } else {
-                                  if (hasText) {
-                                    context
-                                        .read<TicketSessionCubit>()
-                                        .validateDiscountCode(
-                                          _controller.text.trim(),
-                                        );
-                                  }
+                                  setState(() => hasText = false);
+                                } else if (hasText) {
+                                  context
+                                      .read<TicketSessionCubit>()
+                                      .validateDiscountCode(
+                                        _controller.text.trim(),
+                                      );
                                 }
                               },
                               style: TextButton.styleFrom(
@@ -133,7 +125,9 @@ class _TicketPromoCodeState extends State<TicketPromoCode> {
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               ),
                               child: Text(
-                                isApplied ? "إزالة" : "تطبيق",
+                                isApplied
+                                    ? context.tr('remove_code')
+                                    : context.tr('apply_code'),
                                 style: TextStyle(
                                   color: isApplied
                                       ? Colors.red
@@ -159,7 +153,9 @@ class _TicketPromoCodeState extends State<TicketPromoCode> {
                   Icon(Icons.check_circle, color: Colors.green, size: 16.sp),
                   SizedBox(width: 6.w),
                   Text(
-                    'تم تطبيق خصم ${state.discountPercentage}%',
+                    context
+                        .tr('discount_applied')
+                        .replaceAll('%s', '${state.discountPercentage}'),
                     style: TextStyle(
                       fontSize: 12.sp,
                       color: Colors.green,

@@ -32,6 +32,10 @@ abstract class MembershipRepository {
 
   /// Cancels Android auto-renewal via Paymob backend.
   Future<Either<Failure, void>> cancelAndroidAutoRenewal();
+
+  /// Checks Paymob payment status by orderId.
+  /// Returns status string: pending | processing | completed | failed | canceled | refunded
+  Future<Either<Failure, String>> checkPaymobPurchaseStatus(int orderId);
 }
 
 class MembershipRepositoryImpl implements MembershipRepository {
@@ -260,6 +264,32 @@ class MembershipRepositoryImpl implements MembershipRepository {
       return Left(
         ServerFailure(
           response['message']?.toString() ?? 'فشل إلغاء التجديد التلقائي',
+        ),
+      );
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> checkPaymobPurchaseStatus(int orderId) async {
+    try {
+      log('[MembershipRepo] checkPaymobPurchaseStatus orderId: $orderId');
+      final response = await _apiService.get(
+        endPoint: ApiEndPoint.paymobPurchaseStatus(orderId),
+      );
+      if (response['success'] == true) {
+        final status = response['data']?['status'] as String?;
+        if (status == null || status.isEmpty) {
+          return Left(ServerFailure('status غير موجود في الاستجابة'));
+        }
+        return Right(status);
+      }
+      return Left(
+        ServerFailure(
+          response['message']?.toString() ?? 'فشل التحقق من حالة الدفع',
         ),
       );
     } on DioException catch (e) {

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/enum/cubit_states.dart';
 import 'package:tayseer/core/services/paymob_service/paymob_webview_screen.dart';
+import 'package:tayseer/core/utils/api_endpoint.dart';
 import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/ticket_session/ticket_session_state.dart';
 
@@ -160,16 +161,17 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
 
           case PaymobWebViewResult.closed:
           case null:
-            // اليوزر أغلق الـ WebView — الـ webhook على الباك-إند هو المرجع
-            // نعتبره success ونوجّهه لشاشة الجلسات عشان يشوف الحالة الفعلية
+            // اليوزر أغلق الـ WebView — نتحقق من الباك-إند عن الحالة الفعلية
             log(
-              '[TicketSession] WebView closed — treating as success (webhook handles confirmation)',
+              '[TicketSession] 🔍 WebView closed — checking purchase status for orderId: ${paymentIntention.data.orderId}',
             );
-            CubitStates.printState(
-              stateName: 'TicketSessionCubit - paySession (WebView closed)',
-              state: CubitStates.success,
+            emit(
+              state.copyWith(
+                paySessionState: CubitStates.loading,
+                errorMessage: null,
+              ),
             );
-            emit(state.copyWith(paySessionState: CubitStates.success));
+            await _checkAndEmitStatus(paymentIntention.data.orderId);
 
           case PaymobWebViewResult.rejected:
             // اليوزر ألغى الدفع صراحةً
@@ -213,5 +215,67 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
   // ==================== إعادة تعيين الحالة ====================
   void reset() {
     emit(TicketSessionState());
+  }
+
+  // ==================== التحقق من حالة الدفع من الباك-إند ====================
+  Future<void> _checkAndEmitStatus(int orderId) async {
+    if (isClosed) return;
+    try {
+      final svc = mySpaceRepo.apiService;
+      final response = await svc.get(
+        endPoint: ApiEndPoint.paymobPurchaseStatus(orderId),
+      );
+      if (isClosed) return;
+
+      if (response['success'] == true) {
+        final status = response['data']?['status'] as String? ?? '';
+        log('[TicketSession] 📊 Purchase status: $status');
+        switch (status) {
+          case 'completed':
+            CubitStates.printState(
+              stateName: 'TicketSessionCubit - paySession (status: completed)',
+              state: CubitStates.success,
+            );
+            emit(state.copyWith(paySessionState: CubitStates.success));
+          case 'pending':
+          case 'processing':
+            emit(
+              state.copyWith(
+                paySessionState: CubitStates.failure,
+                errorMessage: 'الدفع قيد المعالجة، سيتم إخطارك قريباً',
+              ),
+            );
+          case 'failed':
+          case 'canceled':
+          case 'refunded':
+          default:
+            emit(
+              state.copyWith(
+                paySessionState: CubitStates.failure,
+                errorMessage: 'تم إلغاء عملية الدفع',
+              ),
+            );
+        }
+      } else {
+        log('[TicketSession] ⚠️ Status check failed — treating as canceled');
+        emit(
+          state.copyWith(
+            paySessionState: CubitStates.failure,
+            errorMessage: 'تم إلغاء عملية الدفع',
+          ),
+        );
+      }
+    } catch (e) {
+      log(
+        '[TicketSession] ❌ Status check exception: $e — treating as canceled',
+      );
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          paySessionState: CubitStates.failure,
+          errorMessage: 'تم إلغاء عملية الدفع',
+        ),
+      );
+    }
   }
 }

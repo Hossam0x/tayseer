@@ -275,6 +275,9 @@ class _UserRescheduleViewBodyState extends State<UserRescheduleViewBody> {
   // ════════════════════════════════════════
   void _blocListener(BuildContext context, AvailableSlotsState state) {
     if (state.createSessionState == CubitStates.success) {
+      // Guard: لا تعمل navigation لو الـ route دي مش active
+      if (ModalRoute.of(context)?.isCurrent != true) return;
+
       widget.fromWallet == false
           ? context.pushNamed(
               AppRouter.userticketSessionView,

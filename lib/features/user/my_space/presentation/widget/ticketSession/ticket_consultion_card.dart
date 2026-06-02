@@ -1,8 +1,3 @@
-// lib/features/user/my_space/presentation/widget/ticketSession/ticket_consultion_card.dart
-
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:intl/intl.dart';
 import 'package:tayseer/features/user/my_space/data/model/create_session/create_session_response.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -27,7 +22,10 @@ class TicketConsultationCard extends StatelessWidget {
           SizedBox(height: 10.h),
 
           // التاريخ
-          _buildRow(AssetsData.calenderIcon, _formatDate(sessionData.date)),
+          _buildRow(
+            AssetsData.calenderIcon,
+            _formatDate(context, sessionData.date),
+          ),
           SizedBox(height: 10.h),
 
           // الوقت
@@ -40,12 +38,15 @@ class TicketConsultationCard extends StatelessWidget {
           SizedBox(height: 10.h),
 
           // المدة
-          _buildRow(AssetsData.chatIcon, _formatDuration(sessionData.duration)),
+          _buildRow(
+            AssetsData.chatIcon,
+            _formatDuration(context, sessionData.duration),
+          ),
           SizedBox(height: 10.h),
 
           // مجهول الهوية
           if (sessionData.isAnonymous)
-            _buildRow(AssetsData.anonIcon, "مجهول الهوية"),
+            _buildRow(AssetsData.anonIcon, context.tr('anonymous_identity')),
         ],
       ),
     );
@@ -69,12 +70,16 @@ class TicketConsultationCard extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
-    // تنسيق التاريخ بالعربي
-    final dayName = _getArabicDayName(date.weekday);
-    final day = date.day;
-    final monthName = _getArabicMonthName(date.month);
-    return '$dayName، $day $monthName';
+  String _formatDate(BuildContext context, DateTime date) {
+    if (isArabic) {
+      final dayName = _getArabicDayName(date.weekday);
+      final monthName = _getArabicMonthName(date.month);
+      return '$dayName، ${date.day} $monthName';
+    } else {
+      final dayName = _getEnglishDayName(date.weekday);
+      final monthName = _getEnglishMonthName(date.month);
+      return '$dayName, ${date.day} $monthName';
+    }
   }
 
   String _getArabicDayName(int weekday) {
@@ -87,7 +92,20 @@ class TicketConsultationCard extends StatelessWidget {
       'السبت',
       'الأحد',
     ];
-    return days[weekday - 1];
+    return days[(weekday - 1).clamp(0, 6)];
+  }
+
+  String _getEnglishDayName(int weekday) {
+    const days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    return days[(weekday - 1).clamp(0, 6)];
   }
 
   String _getArabicMonthName(int month) {
@@ -105,17 +123,35 @@ class TicketConsultationCard extends StatelessWidget {
       'نوفمبر',
       'ديسمبر',
     ];
-    return months[month - 1];
+    return months[(month - 1).clamp(0, 11)];
   }
 
-  String _formatDuration(String duration) {
-    // تحويل المدة لنص عربي
+  String _getEnglishMonthName(int month) {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return months[(month - 1).clamp(0, 11)];
+  }
+
+  String _formatDuration(BuildContext context, String duration) {
     if (duration == '30') {
-      return 'جلسة 30 دقيقة';
+      return context.tr('session_30_minutes');
     } else if (duration == '60') {
-      return 'جلسة ساعة كاملة';
+      return context.tr('session_60_minutes');
     } else {
-      return 'جلسة $duration دقيقة';
+      // fallback لأي مدة تانية
+      return context.tr('session_n_minutes').replaceAll('%s', duration);
     }
   }
 }

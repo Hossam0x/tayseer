@@ -645,14 +645,55 @@ class AdvisorSubscriptionCubit extends Cubit<AdvisorSubscriptionState> {
             );
           } else if (webResult == PaymobWebViewResult.closed ||
               webResult == null) {
-            // المستخدم أغلق الـ WebView — نعمل reload من الباك-إند
-            // لو الدفع نجح فعلاً، الـ webhook هيكون وصل للباك-إند
-            SubscriptionEventBus.instance.fire(
-              SubscriptionChangedEvent(
-                subscriptionType: targetSub.subscriptionType,
-              ),
+            // المستخدم أغلق الـ WebView — نتحقق من الباك-إند عن الحالة الفعلية
+            log(
+              '[AdvisorSub-Android] 🔍 Checking purchase status for orderId: ${paymentData.orderId}',
             );
-            emit(state.copyWith(status: AdvisorSubStatus.success));
+            emit(state.copyWith(status: AdvisorSubStatus.purchasing));
+            final statusResult = await _membershipRepository
+                .checkPaymobPurchaseStatus(paymentData.orderId);
+            if (isClosed) return;
+
+            statusResult.fold(
+              (failure) {
+                log(
+                  '[AdvisorSub-Android] ⚠️ Status check failed: ${failure.message} — treating as canceled',
+                );
+                emit(state.copyWith(status: AdvisorSubStatus.canceled));
+              },
+              (status) {
+                log('[AdvisorSub-Android] 📊 Purchase status: $status');
+                switch (status) {
+                  case 'completed':
+                    SubscriptionEventBus.instance.fire(
+                      SubscriptionChangedEvent(
+                        subscriptionType: targetSub.subscriptionType,
+                      ),
+                    );
+                    unawaited(
+                      AppsFlyerEvents.subscriptionPurchased(
+                        planId: targetSub.id,
+                        revenue: targetSub.price?.toDouble() ?? 0,
+                        currency: targetSub.currency ?? 'USD',
+                      ),
+                    );
+                    emit(state.copyWith(status: AdvisorSubStatus.success));
+                  case 'pending':
+                  case 'processing':
+                    emit(
+                      state.copyWith(
+                        status: AdvisorSubStatus.error,
+                        error: 'payment_pending',
+                      ),
+                    );
+                  case 'failed':
+                  case 'canceled':
+                  case 'refunded':
+                  default:
+                    emit(state.copyWith(status: AdvisorSubStatus.canceled));
+                }
+              },
+            );
           } else {
             // Rejected — المستخدم ألغى الدفع
             emit(state.copyWith(status: AdvisorSubStatus.canceled));

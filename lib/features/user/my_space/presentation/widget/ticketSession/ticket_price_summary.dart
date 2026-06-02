@@ -112,7 +112,32 @@ class TicketPriceSummary extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 25.h),
+          SizedBox(height: 12.h),
+
+          // ملاحظة السعر غير شامل بعض الخدمات
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 14.sp,
+                color: Colors.grey.shade400,
+              ),
+              SizedBox(width: 6.w),
+              Expanded(
+                child: Text(
+                  context.tr('price_excludes_additional_services'),
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    color: Colors.grey.shade400,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: 20.h),
 
           // زر الدفع
           CustomBotton(

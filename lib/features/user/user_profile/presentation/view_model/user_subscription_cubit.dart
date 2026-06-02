@@ -614,13 +614,48 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
             );
           } else if (webResult == PaymobWebViewResult.closed ||
               webResult == null) {
-            // المستخدم أغلق الـ WebView — نعمل reload من الباك-إند
-            SubscriptionEventBus.instance.fire(
-              SubscriptionChangedEvent(
-                subscriptionType: targetSub.subscriptionType,
-              ),
+            // المستخدم أغلق الـ WebView — نتحقق من الباك-إند عن الحالة الفعلية
+            log(
+              '[UserSub-Android] 🔍 Checking purchase status for orderId: ${paymentData.orderId}',
             );
-            emit(state.copyWith(status: UserSubStatus.success));
+            emit(state.copyWith(status: UserSubStatus.purchasing));
+            final statusResult = await _membershipRepository
+                .checkPaymobPurchaseStatus(paymentData.orderId);
+            if (isClosed) return;
+
+            statusResult.fold(
+              (failure) {
+                log(
+                  '[UserSub-Android] ⚠️ Status check failed: ${failure.message} — treating as canceled',
+                );
+                emit(state.copyWith(status: UserSubStatus.canceled));
+              },
+              (status) {
+                log('[UserSub-Android] 📊 Purchase status: $status');
+                switch (status) {
+                  case 'completed':
+                    SubscriptionEventBus.instance.fire(
+                      SubscriptionChangedEvent(
+                        subscriptionType: targetSub.subscriptionType,
+                      ),
+                    );
+                    emit(state.copyWith(status: UserSubStatus.success));
+                  case 'pending':
+                  case 'processing':
+                    emit(
+                      state.copyWith(
+                        status: UserSubStatus.error,
+                        error: 'payment_pending',
+                      ),
+                    );
+                  case 'failed':
+                  case 'canceled':
+                  case 'refunded':
+                  default:
+                    emit(state.copyWith(status: UserSubStatus.canceled));
+                }
+              },
+            );
           } else {
             // Rejected — المستخدم ألغى الدفع
             emit(state.copyWith(status: UserSubStatus.canceled));
