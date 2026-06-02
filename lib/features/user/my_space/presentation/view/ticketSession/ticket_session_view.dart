@@ -1,7 +1,6 @@
 // lib/features/user/my_space/presentation/view/ticket_session_view.dart
 
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayseer/core/utils/router/app_router.dart';
 import 'package:tayseer/features/user/my_space/data/model/create_session/create_session_response.dart';
 import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/ticket_session/ticket_session_cubit.dart';
@@ -15,11 +14,22 @@ class TicketSessionView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => TicketSessionCubit(getIt.get<MySpaceRepo>()),
-      child: Scaffold(
-        body: AdvisorBackground(
-          child: TicketSessionViewBody(sessionData: sessionData),
+    return PopScope(
+      // منع الـ back العادي
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        // لو اليوزر حاول يروج، روحه للـ home وامسح كل الـ stack
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(AppRouter.kUserLayoutView, (route) => false);
+      },
+      child: BlocProvider(
+        create: (context) => TicketSessionCubit(getIt.get<MySpaceRepo>()),
+        child: Scaffold(
+          body: AdvisorBackground(
+            child: TicketSessionViewBody(sessionData: sessionData),
+          ),
         ),
       ),
     );

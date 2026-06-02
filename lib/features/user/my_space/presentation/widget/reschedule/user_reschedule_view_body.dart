@@ -279,8 +279,10 @@ class _UserRescheduleViewBodyState extends State<UserRescheduleViewBody> {
       if (ModalRoute.of(context)?.isCurrent != true) return;
 
       widget.fromWallet == false
-          ? context.pushNamed(
+          ? Navigator.of(context).pushNamedAndRemoveUntil(
               AppRouter.userticketSessionView,
+              // شيل كل الصفحات من stack إلا الـ home layout
+              (route) => route.isFirst,
               arguments: state.createdSession,
             )
           : CustomshowDialogWithImage(

@@ -83,7 +83,13 @@ class _TicketSessionViewBodyState extends State<TicketSessionViewBody> {
                         SizedBox(height: 10.h),
                         TicketHeader(
                           title: context.tr("booking_details"),
-                          showicon: false,
+                          showicon: true,
+                          onBackPressed: () {
+                            Navigator.of(context).pushNamedAndRemoveUntil(
+                              AppRouter.kUserLayoutView,
+                              (route) => false,
+                            );
+                          },
                         ),
                         SizedBox(height: 25.h),
                         Text(

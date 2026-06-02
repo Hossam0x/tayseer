@@ -191,7 +191,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
       SettingItemModel(
         id: 'book_session',
         title: 'book_session',
-        iconAsset: AssetsData.consultatIcon,
+        iconAsset: AssetsData.consultationIcon,
         routeName: AppRouter.kConsultationStandaloneView,
       ),
       SettingItemModel(
