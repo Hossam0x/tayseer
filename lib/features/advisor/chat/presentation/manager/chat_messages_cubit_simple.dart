@@ -139,6 +139,11 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         isSystemChat: _isSystemChat,
         receiverId: _currentReceiverId ?? _originalReceiverId,
       );
+
+      // ✅ retry pending messages after rejoining (wait for chatRoomJoined)
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (!isClosed) _retryPendingMessages();
+      });
     });
   }
 
@@ -256,6 +261,45 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   // ══════════════════════════════════════════════════════════════════════════
   // SEND TEXT MESSAGE
   // ══════════════════════════════════════════════════════════════════════════
+
+  /// Resend any messages currently stuck in [MessageStatusEnum.pending].
+  /// Called automatically after [chatRoomJoined] succeeds or on socket reconnect.
+  void _retryPendingMessages() {
+    if (isClosed || _currentChatRoomId == null) return;
+
+    final pending = state.messagesOrEmpty
+        .where(
+          (m) =>
+              m.status == MessageStatusEnum.pending &&
+              m.id.startsWith('temp_') &&
+              m.messageType == 'text' &&
+              m.tempId != null,
+        )
+        .toList();
+
+    if (pending.isEmpty) return;
+
+    log('🔄 Retrying ${pending.length} pending message(s)...');
+
+    for (final msg in pending.reversed) {
+      // بعت بنفس الـ tempId عشان السيرفر يتجنب الـ duplicates
+      final payload = <String, dynamic>{
+        'chatRoomId': _currentChatRoomId,
+        'text': msg.contentList.isNotEmpty ? msg.contentList.first : '',
+        'tempId': msg.tempId,
+      };
+
+      if (msg.reply?.replyMessageId != null &&
+          !msg.reply!.replyMessageId!.startsWith('temp_')) {
+        payload['replyToMessageId'] = msg.reply!.replyMessageId;
+      }
+
+      log('📤 Retrying pending message tempId=${msg.tempId}');
+      _socketHelper.send('sendTextMessage', payload, (ack) {
+        log('✅ Retry ACK for tempId=${msg.tempId}: $ack');
+      });
+    }
+  }
 
   Future<void> sendMessage(
     String receiverId,
@@ -588,6 +632,9 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       // من الآن leaveCurrentChatRoom() مسموح تبعت leaveChatRoom للسيرفر
       _hasJoinedRoom = true;
       _emitCurrentState();
+
+      // ✅ retry any messages that were stuck in pending state
+      _retryPendingMessages();
     });
 
     _socketHelper.listenWithId('chatRoomLeft', listenerId, (data) {

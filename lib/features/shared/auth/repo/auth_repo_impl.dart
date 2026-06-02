@@ -617,27 +617,37 @@ class AuthRepoImpl implements AuthRepo {
       final success = response['success'] ?? false;
       if (success) {
         final guestResponse = GuestResponseModel.fromJson(response);
-        // Guest login returns a single token (not dual-token per spec)
-        await CachNetwork.setData(
-          key: ktoken,
-          value: guestResponse.data?.token ?? '',
-        );
-        // Also save as accessToken so the interceptor can attach it
-        await SecureTokenStorage.saveAccessToken(
-          guestResponse.data?.token ?? '',
-        );
+        final guestData = guestResponse.data;
+        final accessToken = guestData?.accessToken ?? '';
+        final refreshToken = guestData?.refreshToken;
+
+        // Save tokens — support both single-token and dual-token server responses
+        if (accessToken.isNotEmpty) {
+          if (refreshToken != null && refreshToken.isNotEmpty) {
+            await SecureTokenStorage.saveBothTokens(
+              accessToken: accessToken,
+              refreshToken: refreshToken,
+            );
+          } else {
+            await SecureTokenStorage.saveAccessToken(accessToken);
+          }
+        }
+
+        // Legacy cache key (used by splash navigation + socket initialisation)
+        await CachNetwork.setData(key: ktoken, value: accessToken);
+
         await CachNetwork.setData(
           key: kUserType,
           value: UserTypeEnum.guest.name,
         );
-        // Cache guest name and image to be used in home app bar
+        // Cache guest name and image for the home app bar
         await CachNetwork.setData(
           key: kGuestName,
-          value: guestResponse.data?.name ?? '',
+          value: guestData?.name ?? '',
         );
         await CachNetwork.setData(
           key: kGuestImage,
-          value: guestResponse.data?.image ?? '',
+          value: guestData?.image ?? '',
         );
         return right(guestResponse);
       } else {

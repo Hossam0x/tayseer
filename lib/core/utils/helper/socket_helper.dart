@@ -1,7 +1,12 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:tayseer/core/constant/constans.dart';
+import 'package:tayseer/core/constant/constans_keys.dart';
+import 'package:tayseer/core/services/secure_token_storage.dart';
 
 class tayseerSocketHelper {
   IO.Socket? _socket;
@@ -36,7 +41,9 @@ class tayseerSocketHelper {
   }
 
   void _notifyReconnected() {
-    log('🔄 [Socket] notifying ${_reconnectCallbacks.length} reconnect callbacks');
+    log(
+      '🔄 [Socket] notifying ${_reconnectCallbacks.length} reconnect callbacks',
+    );
     final callbacks = Map<String, Function()>.from(_reconnectCallbacks);
     callbacks.forEach((id, cb) {
       try {
@@ -118,7 +125,7 @@ class tayseerSocketHelper {
     log('🔧 [Socket] Initializing socket connection...');
 
     _socket = IO.io(
-      'https://tayser-app.net',
+      kbaseUrlebSocket,
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
@@ -130,7 +137,8 @@ class tayseerSocketHelper {
 
     _socket!.onConnect((_) {
       log('✅ [Socket] Connected');
-      final wasReconnect = _isConnected == false && (_connectionCompleter?.isCompleted ?? true);
+      final wasReconnect =
+          _isConnected == false && (_connectionCompleter?.isCompleted ?? true);
       _isConnected = true;
       _isConnecting = false;
 
@@ -148,11 +156,23 @@ class tayseerSocketHelper {
 
     _socket!.onConnectError((error) {
       log('❌ [Socket] Connection Error: $error');
-      onError?.call('فشل الاتصال: $error');
       _isConnecting = false;
       if (!(_connectionCompleter?.isCompleted ?? true)) {
         _connectionCompleter?.complete(false);
       }
+
+      // ✅ JWT expired on the socket — fetch a fresh token and reconnect
+      final errorStr = error.toString().toLowerCase();
+      if (errorStr.contains('jwt expired') ||
+          errorStr.contains('authentication error') ||
+          errorStr.contains('token expired') ||
+          errorStr.contains('unauthorized')) {
+        log('🔑 [Socket] JWT expired on connect — attempting token refresh...');
+        _handleJwtExpiry();
+        return;
+      }
+
+      onError?.call('فشل الاتصال: $error');
       // ✅ retry بعد فشل الاتصال
       _scheduleReconnect();
     });
@@ -180,11 +200,23 @@ class tayseerSocketHelper {
 
     _socket!.on('error', (error) {
       log('❌ [Socket] Error: $error');
-      onError?.call('خطأ: $error');
       _isConnecting = false;
       if (!(_connectionCompleter?.isCompleted ?? true)) {
         _connectionCompleter?.complete(false);
       }
+
+      // ✅ JWT expired sent as 'error' event (not connect_error) by this server
+      final errorStr = error.toString().toLowerCase();
+      if (errorStr.contains('jwt expired') ||
+          errorStr.contains('authentication error') ||
+          errorStr.contains('token expired') ||
+          errorStr.contains('unauthorized')) {
+        log('🔑 [Socket] JWT error event — attempting token refresh...');
+        _handleJwtExpiry();
+        return;
+      }
+
+      onError?.call('خطأ: $error');
     });
 
     _socket!.onDisconnect((reason) {
@@ -256,10 +288,10 @@ class tayseerSocketHelper {
     }
 
     // Exponential backoff: 2s, 4s, 8s... max 30s
-    final delay = Duration(
-      seconds: (_reconnectAttempts * 2).clamp(2, 30),
+    final delay = Duration(seconds: (_reconnectAttempts * 2).clamp(2, 30));
+    log(
+      '🔄 [Socket] Scheduling reconnect in ${delay.inSeconds}s (attempt $_reconnectAttempts)',
     );
-    log('🔄 [Socket] Scheduling reconnect in ${delay.inSeconds}s (attempt $_reconnectAttempts)');
 
     _reconnectTimer = Timer(delay, () {
       if (_isConnected || _isConnecting) return;
@@ -274,21 +306,24 @@ class tayseerSocketHelper {
         _socket!.connect();
 
         // timeout للـ reconnect attempt
-        _connectionCompleter!.future.timeout(
-          const Duration(seconds: 10),
-          onTimeout: () {
-            _isConnecting = false;
-            _scheduleReconnect();
-            return false;
-          },
-        ).then((connected) {
-          _isConnecting = false;
-          if (connected) {
-            _reconnectAttempts = 0;
-          }
-        }).catchError((_) {
-          _isConnecting = false;
-        });
+        _connectionCompleter!.future
+            .timeout(
+              const Duration(seconds: 10),
+              onTimeout: () {
+                _isConnecting = false;
+                _scheduleReconnect();
+                return false;
+              },
+            )
+            .then((connected) {
+              _isConnecting = false;
+              if (connected) {
+                _reconnectAttempts = 0;
+              }
+            })
+            .catchError((_) {
+              _isConnecting = false;
+            });
       } else {
         // الـ socket اتدمر (مثلاً بعد reset) — اعمل واحد جديد
         connect(token: _authorizedToken);
@@ -300,6 +335,100 @@ class tayseerSocketHelper {
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     _reconnectAttempts = 0;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // JWT EXPIRY — call /auth/refresh-token then reconnect with fresh token
+  // Same logic as AuthInterceptor but for the socket layer.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  bool _isHandlingJwtExpiry = false;
+
+  /// Called when the socket server rejects the connection with a JWT error.
+  /// Calls /auth/refresh-token directly (bare Dio, no interceptors to avoid
+  /// circular calls), saves the new tokens, then reconnects the socket.
+  Future<void> _handleJwtExpiry() async {
+    if (_isHandlingJwtExpiry) return;
+    _isHandlingJwtExpiry = true;
+
+    try {
+      log('🔑 [Socket] JWT error — refreshing token...');
+      final newToken = await _doTokenRefresh();
+      if (newToken != null) {
+        log('✅ [Socket] JWT refreshed — reconnecting...');
+        _authorizedToken = newToken;
+        await resetAndConnect(token: newToken);
+      } else {
+        log('❌ [Socket] JWT refresh failed — no refresh token or API error');
+        onError?.call('انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى');
+      }
+    } on DioException catch (e) {
+      log('❌ [Socket] JWT refresh DioException: ${e.response?.statusCode}');
+      onError?.call('انتهت الجلسة، يرجى تسجيل الدخول مرة أخرى');
+    } catch (e) {
+      log('❌ [Socket] JWT refresh error: $e');
+      _scheduleReconnect();
+    } finally {
+      _isHandlingJwtExpiry = false;
+    }
+  }
+
+  /// Shared helper: calls /auth/refresh-token and persists the new tokens.
+  /// Returns the new accessToken, or null on failure.
+  Future<String?> _doTokenRefresh() async {
+    final refreshToken = await SecureTokenStorage.getRefreshToken();
+    if (refreshToken == null || refreshToken.isEmpty) return null;
+
+    final bareDio = Dio();
+    final response = await bareDio.post(
+      '$kbaseUrl/auth/refresh-token',
+      data: {'refreshToken': refreshToken},
+      options: Options(headers: {'lang': selectedLanguage ?? 'ar'}),
+    );
+
+    if (response.statusCode == 200 && response.data['success'] == true) {
+      final data = response.data['data'] as Map<String, dynamic>;
+      final newAccess = data['accessToken'] as String;
+      final newRefresh = data['refreshToken'] as String;
+
+      await SecureTokenStorage.saveBothTokens(
+        accessToken: newAccess,
+        refreshToken: newRefresh,
+      );
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(ktoken, newAccess);
+
+      return newAccess;
+    }
+    return null;
+  }
+
+  /// Connect with automatic JWT refresh on first failure.
+  /// Use this from feature cubits instead of [resetAndConnect] directly.
+  /// Returns true when fully connected and ready to use.
+  Future<bool> connectWithAutoRefresh({required String token}) async {
+    // First attempt with the given token
+    final connected = await resetAndConnect(token: token);
+    if (connected) return true;
+
+    // First attempt failed — try refreshing the JWT once and retry
+    log('🔑 [Socket] connectWithAutoRefresh: retrying after JWT refresh...');
+    try {
+      final newToken = await _doTokenRefresh();
+      if (newToken != null) {
+        log(
+          '✅ [Socket] connectWithAutoRefresh: JWT refreshed, reconnecting...',
+        );
+        return await resetAndConnect(token: newToken);
+      }
+    } on DioException catch (e) {
+      log(
+        '❌ [Socket] connectWithAutoRefresh refresh error: ${e.response?.statusCode}',
+      );
+    } catch (e) {
+      log('❌ [Socket] connectWithAutoRefresh error: $e');
+    }
+    return false;
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -335,9 +464,13 @@ class tayseerSocketHelper {
       // ✅ احفظ الرسالة في الـ queue لو مش join/leave/typing
       if (!_noQueueEvents.contains(event)) {
         log('📦 [Socket] Queuing message for event "$event" (not connected)');
-        _messageQueue.add(_QueuedMessage(event: event, data: data, callback: callback));
+        _messageQueue.add(
+          _QueuedMessage(event: event, data: data, callback: callback),
+        );
       } else {
-        log('⚠️ [Socket] Dropping "$event" — socket not connected (no queue for this event)');
+        log(
+          '⚠️ [Socket] Dropping "$event" — socket not connected (no queue for this event)',
+        );
       }
     }
   }
@@ -381,7 +514,9 @@ class tayseerSocketHelper {
     _listeners[event] ??= {};
     _listeners[event]![listenerId] = callback;
 
-    log('📡 [Socket] Added listener "$listenerId" for "$event" (total: ${_listeners[event]!.length})');
+    log(
+      '📡 [Socket] Added listener "$listenerId" for "$event" (total: ${_listeners[event]!.length})',
+    );
 
     if (_listeners[event]!.length == 1) {
       _setupSocketListener(event);
@@ -392,7 +527,9 @@ class tayseerSocketHelper {
     if (_socket == null) return;
     _socket!.off(event);
     _socket!.on(event, (data) {
-      log('📥 [Socket] Received "$event" → ${_listeners[event]?.length ?? 0} listeners');
+      log(
+        '📥 [Socket] Received "$event" → ${_listeners[event]?.length ?? 0} listeners',
+      );
       final listeners = Map<String, Function(dynamic)>.from(
         _listeners[event] ?? {},
       );
@@ -409,7 +546,9 @@ class tayseerSocketHelper {
   void offWithId(String event, String listenerId) {
     if (_listeners[event] == null) return;
     _listeners[event]!.remove(listenerId);
-    log('🔕 [Socket] Removed listener "$listenerId" for "$event" (remaining: ${_listeners[event]!.length})');
+    log(
+      '🔕 [Socket] Removed listener "$listenerId" for "$event" (remaining: ${_listeners[event]!.length})',
+    );
 
     if (_listeners[event]!.isEmpty) {
       _socket?.off(event);
@@ -469,6 +608,7 @@ class tayseerSocketHelper {
       callback(data);
       _socket!.off(event, handler);
     }
+
     _socket!.on(event, handler);
   }
 
@@ -524,7 +664,9 @@ class tayseerSocketHelper {
   /// Full reset then connect for the new user
   Future<bool> resetAndConnect({String? token}) async {
     if (token == null || token.isEmpty) {
-      log('❌ [Socket] resetAndConnect called without explicit token — aborting');
+      log(
+        '❌ [Socket] resetAndConnect called without explicit token — aborting',
+      );
       _authorizedToken = null;
       return false;
     }

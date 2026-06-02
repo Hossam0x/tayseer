@@ -14,6 +14,8 @@ bool kIsUserGuest = false;
 String get kbaseUrl => kReleaseMode
     ? 'https://tayser-app.net/api/v1'
     : 'https://dev.tayser-app.net/api/v1';
+String get kbaseUrlebSocket =>
+    kReleaseMode ? 'https://tayser-app.net' : 'https://dev.tayser-app.net';
 // bool kShowOnBoarding = false;
 UserModel? kCurrentUserData;
 Gender? selectedGender;

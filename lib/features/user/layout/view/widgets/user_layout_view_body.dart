@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/services/secure_window_service.dart';
+import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/widgets/offline_banner.dart';
 import 'package:tayseer/features/shared/rating/services/rating_service.dart';
@@ -60,6 +61,11 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
         if (!mounted) return;
         _maybeShowAutoReview();
       });
+      // ✅ Ensure socket is connected when the home layout opens.
+      // Guests don't use the socket.
+      if (selectedUserType != UserTypeEnum.guest) {
+        _ensureSocketConnected();
+      }
     });
 
     // User pages
@@ -120,6 +126,24 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
         } catch (_) {}
       },
     );
+  }
+
+  /// Ensures the socket is connected when the home layout is active.
+  /// If the socket is already connected, this is a no-op.
+  Future<void> _ensureSocketConnected() async {
+    final socketHelper = getIt<tayseerSocketHelper>();
+    final chatSocketService = getIt<ChatSocketService>();
+
+    if (socketHelper.isConnected) return;
+
+    final token = CachNetwork.getStringData(key: ktoken);
+    if (token.isEmpty) return;
+
+    final connected = await socketHelper.connectWithAutoRefresh(token: token);
+    if (connected) {
+      chatSocketService.init();
+      chatSocketService.requestChatNotificationNumbers();
+    }
   }
 
   void _consumePendingDeepLink() {

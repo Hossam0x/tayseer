@@ -3,10 +3,12 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/constant/constans.dart';
+import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/services/secure_window_service.dart';
 import 'package:tayseer/core/utils/assets.dart';
+import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/core/widgets/app_toast.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/message_actions_handler.dart';
@@ -25,6 +27,7 @@ import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/c
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/chat_context_menu_wrapper.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/chat_messages_area.dart';
 import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/scroll_to_bottom_button.dart';
+import 'package:tayseer/my_import.dart';
 
 class AdvisorChatScreen extends StatelessWidget {
   final String? chatRoomId;
@@ -57,8 +60,10 @@ class AdvisorChatScreen extends StatelessWidget {
             log('🚀 Creating ChatMessagesCubit for room: $chatRoomId');
             final cubit = getIt<ChatMessagesCubit>(param1: chatRoomId);
             cubit.setInitialBlocked(isBlocked);
-            // ✅ FIX: Only call loadInitialMessages - it handles setupSocketListeners internally
-            // Do NOT call cubit.setupSocketListeners() here separately
+            // ✅ Ensure socket is connected before joining the room.
+            // Fire-and-forget — loadInitialMessages registers a reconnect
+            // callback internally so it will join once connected.
+            _ensureSocketConnected();
             cubit.loadInitialMessages(
               chatRoomId!,
               receiverId: receiverId,
@@ -101,6 +106,24 @@ class AdvisorChatScreen extends StatelessWidget {
         onBlockStatusChanged: onBlockStatusChanged,
       ),
     );
+  }
+
+  /// Ensures the socket is connected when the chat screen opens.
+  /// Uses [connectWithAutoRefresh] to handle expired JWT automatically.
+  /// Fire-and-forget — [ChatMessagesCubit] registers a reconnect callback
+  /// internally so the room join happens automatically once connected.
+  Future<void> _ensureSocketConnected() async {
+    final socketHelper = getIt<tayseerSocketHelper>();
+    if (socketHelper.isConnected) return;
+
+    final chatSocketService = getIt<ChatSocketService>();
+    final token = CachNetwork.getStringData(key: ktoken);
+    if (token.isEmpty) return;
+
+    final connected = await socketHelper.connectWithAutoRefresh(token: token);
+    if (connected) {
+      chatSocketService.init();
+    }
   }
 }
 
@@ -233,9 +256,13 @@ class _ChatContentState extends State<_ChatContent> {
         return 'video';
       case 'images/videos':
         // ✅ تحقق من الـ URL نفسه عشان نعرف image أو video
-        final url = msg.contentList.isNotEmpty ? msg.contentList.first.toLowerCase() : '';
-        if (url.contains('.mp4') || url.contains('.mov') ||
-            url.contains('.avi') || url.contains('.webm')) {
+        final url = msg.contentList.isNotEmpty
+            ? msg.contentList.first.toLowerCase()
+            : '';
+        if (url.contains('.mp4') ||
+            url.contains('.mov') ||
+            url.contains('.avi') ||
+            url.contains('.webm')) {
           return 'video';
         }
         return 'image';

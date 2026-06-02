@@ -4,6 +4,7 @@ import 'package:tayseer/core/functions/calculate_top_reactions.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/services/appsflyer_events/appsflyer_events.dart';
 import 'package:tayseer/core/services/audio_service.dart';
+import 'package:tayseer/core/services/secure_token_storage.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/core/utils/post_event_bus.dart';
 import 'package:tayseer/core/utils/post_event_listener_mixin.dart';
@@ -451,7 +452,15 @@ class UserAdvisorProfileCubit
     // ⭐ إلغاء أي timer سابق
     _chatTimeoutTimer?.cancel();
 
-    // ⭐ 2. التأكد من اتصال السوكيت
+    // ⭐ لو الـ profile عنده room بالفعل، روح عليه مباشرة بدون socket
+    if (state.profile?.hasRoom == true &&
+        state.profile?.room != null &&
+        state.profile!.chatRoomId != null) {
+      emit(state.copyWith(shouldNavigateToChat: true));
+      return;
+    }
+
+    // ⭐ التأكد من اتصال السوكيت — مع دعم تحديث الـ JWT
     bool connected = socketHelper.isConnected;
     if (!connected) {
       log('📡 Socket not connected, attempting to connect...');
@@ -461,7 +470,23 @@ class UserAdvisorProfileCubit
           chatActionState: CubitStates.loading,
         ),
       );
-      connected = await socketHelper.connect();
+
+      // Use the same token source as the splash screen (ktoken in SharedPrefs).
+      // SecureTokenStorage may hold a stale guest/old-session token, so we
+      // prefer the authoritative CachNetwork value and only fall back to
+      // SecureTokenStorage when SharedPrefs is empty.
+      final sharedToken = CachNetwork.getStringData(key: ktoken);
+      final freshToken = sharedToken.isNotEmpty
+          ? sharedToken
+          : await SecureTokenStorage.getAccessToken();
+
+      if (freshToken != null && freshToken.isNotEmpty) {
+        connected = await socketHelper.connectWithAutoRefresh(
+          token: freshToken,
+        );
+      } else {
+        connected = await socketHelper.connect();
+      }
 
       if (!connected) {
         log('❌ Failed to connect to socket');
