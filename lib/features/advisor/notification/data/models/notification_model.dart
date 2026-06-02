@@ -102,6 +102,7 @@ class NotificationData {
     this.subType,
     this.matchId,
     this.matchImage,
+    this.matchBlur = false,
   });
 
   final String? postId;
@@ -119,7 +120,15 @@ class NotificationData {
   final String? matchId;
   final String? matchImage;
 
+  /// If true the match image should be displayed blurred (privacy mode)
+  final bool matchBlur;
+
   factory NotificationData.fromJson(Map<String, dynamic> json) {
+    // matchBlur can arrive as bool true/false or as the string "true"
+    final dynamic rawBlur = json["matchBlur"];
+    final bool matchBlur =
+        rawBlur == true || rawBlur?.toString().toLowerCase() == 'true';
+
     return NotificationData(
       postId: json["postId"],
       storyId: json["storyId"],
@@ -134,6 +143,7 @@ class NotificationData {
       subType: json["subType"]?.toString(),
       matchId: json["matchId"]?.toString(),
       matchImage: json["matchImage"]?.toString(),
+      matchBlur: matchBlur,
     );
   }
 }

@@ -253,6 +253,9 @@ class _NotificationItemState extends State<NotificationItem>
         ? widget.notification.data?.matchImage
         : widget.notification.senderImage;
 
+    final bool shouldBlur =
+        isSuggestedMatch && (widget.notification.data?.matchBlur ?? false);
+
     return SizedBox(
       width: 55,
       height: 55,
@@ -260,20 +263,42 @@ class _NotificationItemState extends State<NotificationItem>
         children: [
           Align(
             alignment: Alignment.topLeft,
-            child: CircleAvatar(
-              radius: 24,
-              backgroundColor: Colors.grey[200],
-              backgroundImage: avatarUrl != null
-                  ? NetworkImage(avatarUrl)
-                  : const AssetImage(AssetsData.defaultProfileImage)
-                        as ImageProvider,
-            ),
+            child: _buildAvatar(avatarUrl, shouldBlur),
           ),
           Align(
             alignment: Alignment.bottomRight,
             child: Container(
               padding: const EdgeInsets.all(4),
               child: _buildTypeIcon(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatar(String? avatarUrl, bool shouldBlur) {
+    final avatar = CircleAvatar(
+      radius: 24,
+      backgroundColor: Colors.grey[200],
+      backgroundImage: avatarUrl != null
+          ? NetworkImage(avatarUrl)
+          : const AssetImage(AssetsData.defaultProfileImage) as ImageProvider,
+    );
+
+    if (!shouldBlur) return avatar;
+
+    return ClipOval(
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          avatar,
+          Positioned.fill(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+              child: const DecoratedBox(
+                decoration: BoxDecoration(color: Colors.transparent),
+              ),
             ),
           ),
         ],

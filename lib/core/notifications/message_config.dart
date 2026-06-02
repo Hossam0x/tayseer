@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -8,6 +9,52 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:tayseer/core/notifications/notificationHelper.dart';
 import 'package:tayseer/core/utils/notification_event_bus.dart';
+
+// ─── Shared blur helper (works in both isolates) ─────────────────────────────
+
+/// Downloads [url] and returns the raw PNG bytes.
+/// If [blur] is true the image is rendered with a Gaussian blur (sigma 8)
+/// before encoding so the notification thumbnail is blurred on both
+/// Android and iOS.
+Future<Uint8List> _fetchImageBytes(String url, {bool blur = false}) async {
+  final dio = Dio();
+  final response = await dio.get<List<int>>(
+    url,
+    options: Options(responseType: ResponseType.bytes),
+  );
+  final Uint8List raw = Uint8List.fromList(response.data ?? []);
+
+  if (!blur) return raw;
+
+  // Decode → render through a blur ImageFilter → re-encode as PNG
+  final ui.Codec codec = await ui.instantiateImageCodec(raw);
+  final ui.FrameInfo frame = await codec.getNextFrame();
+  final ui.Image original = frame.image;
+
+  final ui.PictureRecorder recorder = ui.PictureRecorder();
+  final Canvas canvas = Canvas(recorder);
+
+  final Paint paint = Paint()
+    ..imageFilter = ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8);
+
+  canvas.drawImage(original, Offset.zero, paint);
+  final ui.Picture picture = recorder.endRecording();
+
+  final ui.Image blurred = await picture.toImage(
+    original.width,
+    original.height,
+  );
+  original.dispose();
+
+  final ByteData? byteData = await blurred.toByteData(
+    format: ui.ImageByteFormat.png,
+  );
+  blurred.dispose();
+
+  return byteData?.buffer.asUint8List() ?? raw;
+}
+
+// ─── Background handler ───────────────────────────────────────────────────────
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -21,8 +68,12 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       message.data['subType'] == 'suggested_match' &&
       matchImage != null &&
       matchImage.isNotEmpty;
-  // Non-nullable alias used inside the if block below
   final String matchImageUrl = matchImage ?? '';
+
+  // Parse matchBlur — backend sends bool or the string "true"
+  final dynamic rawBlur = message.data['matchBlur'];
+  final bool matchBlur =
+      rawBlur == true || rawBlur?.toString().toLowerCase() == 'true';
 
   // If there's a notification payload AND no special image to show,
   // let the system handle it automatically to avoid duplicates.
@@ -55,14 +106,11 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
   if (hasSuggestedMatch) {
     try {
-      final dio = Dio();
-      final response = await dio.get<List<int>>(
+      final Uint8List imageBytes = await _fetchImageBytes(
         matchImageUrl,
-        options: Options(responseType: ResponseType.bytes),
+        blur: matchBlur,
       );
-      final bitmap = ByteArrayAndroidBitmap(
-        Uint8List.fromList(response.data ?? []),
-      );
+      final bitmap = ByteArrayAndroidBitmap(imageBytes);
       androidDetails = AndroidNotificationDetails(
         'high_importance_channel',
         'High Importance Notifications',
@@ -82,7 +130,9 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       // Cancel any system notification Firebase may have already shown
       // before we show our local one with the image
       await plugin.cancelAll();
-      print("✅ Background notification with image");
+      print(
+        "✅ Background notification with image${matchBlur ? ' (blurred)' : ''}",
+      );
     } catch (e) {
       print("⚠️ Failed to load image, falling back: $e");
       androidDetails = const AndroidNotificationDetails(
@@ -122,6 +172,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     payload: jsonEncode(message.data),
   );
 }
+
+// ─── LocalNotification class ─────────────────────────────────────────────────
 
 class LocalNotification {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -207,14 +259,18 @@ class LocalNotification {
 
       if (title.isEmpty && body.isEmpty) return;
 
-      // For suggested_match, show the match's image in the notification banner
+      // For suggested_match, show the match's image (optionally blurred) in the banner
       final String? imageUrl = message.data['matchImage'] as String?;
+      final dynamic rawBlur = message.data['matchBlur'];
+      final bool matchBlur =
+          rawBlur == true || rawBlur?.toString().toLowerCase() == 'true';
 
       await _displayNotification(
         title.isNotEmpty ? title : 'Notification',
         body,
         payload: jsonEncode(message.data),
         imageUrl: imageUrl,
+        blurImage: matchBlur,
       );
     });
 
@@ -298,13 +354,18 @@ class LocalNotification {
     String body, {
     String? payload,
     String? imageUrl,
+    bool blurImage = false,
   }) async {
     AndroidNotificationDetails androidDetails;
 
     if (imageUrl != null && imageUrl.isNotEmpty) {
-      // Download image and show as big picture on Android
+      // Download image (with optional blur) and show as big picture on Android
       try {
-        final ByteArrayAndroidBitmap bitmap = await _downloadBitmap(imageUrl);
+        final Uint8List imageBytes = await _fetchImageBytes(
+          imageUrl,
+          blur: blurImage,
+        );
+        final bitmap = ByteArrayAndroidBitmap(imageBytes);
         androidDetails = AndroidNotificationDetails(
           'high_importance_channel',
           'High Importance Notifications',
@@ -359,15 +420,6 @@ class LocalNotification {
       platformDetails,
       payload: payload,
     );
-  }
-
-  Future<ByteArrayAndroidBitmap> _downloadBitmap(String url) async {
-    final dio = Dio();
-    final response = await dio.get<List<int>>(
-      url,
-      options: Options(responseType: ResponseType.bytes),
-    );
-    return ByteArrayAndroidBitmap(Uint8List.fromList(response.data ?? []));
   }
 
   Future<String?> getFCMToken() async {
