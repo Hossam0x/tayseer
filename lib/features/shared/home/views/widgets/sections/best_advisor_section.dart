@@ -117,7 +117,7 @@ class _BestAdvisorSectionState extends State<BestAdvisorSection> {
           ),
           Gap(16.h),
           SizedBox(
-            height: 200.h,
+            height: 240.h,
             child: PageView.builder(
               controller: _pageController,
               itemCount: widget.advisors.length,
@@ -161,7 +161,6 @@ class _AdvisorCarouselItem extends StatefulWidget {
   final BestAdvisorModel advisor;
   final bool isSelected;
   final Function(String advisorId)? onFollowTap;
-
   @override
   State<_AdvisorCarouselItem> createState() => _AdvisorCarouselItemState();
 }
@@ -500,6 +499,52 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
                                     ),
                                   ),
                               ],
+                            ),
+                            Gap(6.h),
+                            // ── Book Session button ──
+                            GestureDetector(
+                              onTap: () {
+                                context.pushNamed(
+                                  AppRouter.kChooseSessionView,
+                                  arguments: {
+                                    'title': context.tr('book_session'),
+                                    'advisorId': widget.advisor.id ?? '',
+                                  },
+                                );
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                padding: EdgeInsets.symmetric(vertical: 6.h),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      AppColors.kprimaryColor,
+                                      AppColors.kprimaryColor.withValues(
+                                        alpha: 0.8,
+                                      ),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12.r),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.calendar_month_rounded,
+                                      color: Colors.white,
+                                      size: 13.sp,
+                                    ),
+                                    Gap(4.w),
+                                    Text(
+                                      context.tr('book_session'),
+                                      style: Styles.textStyle10.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ],
                         ),

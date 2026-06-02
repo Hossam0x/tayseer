@@ -170,12 +170,7 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         iconAsset: AssetsData.icEditSettings,
         routeName: '',
       ),
-      SettingItemModel(
-        id: 'book_session',
-        title: 'book_session',
-        iconAsset: AssetsData.consultatIcon,
-        routeName: AppRouter.kConsultationStandaloneView,
-      ),
+
       if (!isMarriageDeactivated)
         SettingItemModel(
           id: 'edit_marriage_profile',
@@ -194,10 +189,10 @@ class UserProfileCubit extends Cubit<UserProfileState> {
           hasSwitch: true,
         ),
       SettingItemModel(
-        id: 'settings',
-        title: 'general_settings',
-        iconAsset: AssetsData.icSettingsProf,
-        routeName: '',
+        id: 'book_session',
+        title: 'book_session',
+        iconAsset: AssetsData.consultatIcon,
+        routeName: AppRouter.kConsultationStandaloneView,
       ),
       SettingItemModel(
         id: 'my_sessions',
@@ -205,6 +200,13 @@ class UserProfileCubit extends Cubit<UserProfileState> {
         iconAsset: AssetsData.consultatIcon,
         routeName: AppRouter.kUserSessionsView,
       ),
+      SettingItemModel(
+        id: 'settings',
+        title: 'general_settings',
+        iconAsset: AssetsData.icSettingsProf,
+        routeName: '',
+      ),
+
       SettingItemModel(
         id: 'notifications',
         title: 'notifications_settings',

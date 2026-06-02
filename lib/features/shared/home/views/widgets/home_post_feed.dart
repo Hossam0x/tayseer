@@ -372,8 +372,8 @@ class HomePostFeed extends StatelessWidget {
         continue;
       }
 
-      // Inject Similar Users after 5 items
-      if (showMarriageContent && items.length == 5) {
+      // Inject Similar Users after 8 items (= 5 posts after BestAdvisorSection)
+      if (showMarriageContent && items.length == 8) {
         if (state.similarUsers.isNotEmpty) {
           items.add(
             SimilarUsersSection(
@@ -404,7 +404,7 @@ class HomePostFeed extends StatelessWidget {
         );
         currentPostIndex++;
       } else if ((showAdvisors && items.length < 2) ||
-          (showMarriageContent && items.length < 5)) {
+          (showMarriageContent && items.length < 8)) {
         // If we still need to reach injection points but posts are exhausted, add something or just break?
         // Usually we want to show sections even if feed is empty or short.
         // But the user said "after 2 posts". If 0 posts, "after 2 posts" is undefined.
