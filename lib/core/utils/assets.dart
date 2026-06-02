@@ -35,12 +35,6 @@ abstract class AssetsData {
   static const String kLangImage = "assets/images/lang_imge.png";
   static const String kMaleImage = "assets/images/male_image.png";
   static const String kmapImage = "assets/images/map_image.png";
-  static const String kOnboarding1 = "assets/images/1_onboarding.png";
-  static const String kOnboarding2 = "assets/images/2_onboarding.png";
-  static const String kOnboarding3 = "assets/images/3_onboarding.png";
-  static const String kOnboarding4 = "assets/images/4_onboarding.png";
-  static const String kOnboardingBackgroundImage =
-      "assets/images/onboarding_background.png";
   static const String kpersonOutlineIcon = "assets/images/person_outline.png";
   static const String kSinventoryOutlinedIcon =
       "assets/images/inventory_2_outlined.png";
