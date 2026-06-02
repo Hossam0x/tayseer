@@ -34,6 +34,8 @@ class ChatAppBarWrapper extends StatelessWidget {
           phoneIcon: AssetsData.phoneIcon,
           receiverId: receiverId,
           isBlocked: chatState.isBlocked,
+          isSystemChat: isSystemChat,
+          amIBlocker: context.read<ChatMessagesCubit>().amIBlocker,
           onProfileTap: isSystemChat
               ? null
               : isUser
@@ -45,18 +47,22 @@ class ChatAppBarWrapper extends StatelessWidget {
                   );
                 }
               : null,
-          onBlockUser: (blockedId) async {
-            await context.read<ChatMessagesCubit>().blockUser(
-                  blockedId: blockedId,
-                );
-            onBlockStatusChanged?.call(true);
-          },
-          onUnblockUser: (blockedId) async {
-            await context.read<ChatMessagesCubit>().unblockUser(
-                  blockedId: blockedId,
-                );
-            onBlockStatusChanged?.call(false);
-          },
+          onBlockUser: isSystemChat
+              ? null
+              : (blockedId) async {
+                  await context.read<ChatMessagesCubit>().blockUser(
+                    blockedId: blockedId,
+                  );
+                  onBlockStatusChanged?.call(true);
+                },
+          onUnblockUser: isSystemChat
+              ? null
+              : (blockedId) async {
+                  await context.read<ChatMessagesCubit>().unblockUser(
+                    blockedId: blockedId,
+                  );
+                  onBlockStatusChanged?.call(false);
+                },
         );
       },
     );

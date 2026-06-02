@@ -1,3 +1,5 @@
+import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/functions/formate_time.dart';
 import 'package:tayseer/core/widgets/chat_room_list_item/chat_room_list_item.dart';
 import 'package:tayseer/core/widgets/chat_room_list_item/helpers/chat_room_dialog_helper.dart';
@@ -150,28 +152,34 @@ class _UserChatBodyState extends State<_UserChatBody> {
     List<AdvisorChatRoomModel> systemRooms,
     UserChatState state,
   ) {
-        // ✅ اعرض loading بس لو مفيش أي محتوى خالص (initial state)
-        if (state.status == CubitStates.loading &&
-            state.chatRooms.isEmpty &&
-            systemRooms.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    // ✅ اعرض loading بس لو مفيش أي محتوى خالص (initial state)
+    if (state.status == CubitStates.loading &&
+        state.chatRooms.isEmpty &&
+        systemRooms.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-        final allRooms = [...systemRooms, ...state.chatRooms]; // ✅ system chat في الأول دايماً
-        final hasConversations = allRooms.isNotEmpty;
+    final allRooms = [
+      ...systemRooms,
+      ...state.chatRooms,
+    ]; // ✅ system chat في الأول دايماً
+    final hasConversations = allRooms.isNotEmpty;
 
-        return RefreshIndicator(
-          onRefresh: () => context.read<UserChatCubit>().loadAll(),
-          child: StreamBuilder<InteractionsState>(
-            stream: getIt<InteractionsCubit>().stream,
-            initialData: getIt<InteractionsCubit>().state,
-            builder: (context, snapshot) {
-              final subType = snapshot.data?.subscriptionType ?? 'free';
-              final showBanner = subType.isEmpty || subType.toLowerCase() == 'free';
-              return CustomScrollView(
-                slivers: [
-                  if (showBanner)
-                    SliverToBoxAdapter(child: _buildBanner(context, state.slotLimit)),
+    return RefreshIndicator(
+      onRefresh: () => context.read<UserChatCubit>().loadAll(),
+      child: SlidableAutoCloseBehavior(
+        child: StreamBuilder<InteractionsState>(
+          stream: getIt<InteractionsCubit>().stream,
+          initialData: getIt<InteractionsCubit>().state,
+        builder: (context, snapshot) {
+          final subType = snapshot.data?.subscriptionType ?? 'free';
+          final showBanner = subType.isEmpty || subType.toLowerCase() == 'free';
+          return CustomScrollView(
+            slivers: [
+              if (showBanner)
+                SliverToBoxAdapter(
+                  child: _buildBanner(context, state.slotLimit),
+                ),
 
               // ✅ Requests section
               if (state.requests.isNotEmpty) ...[
@@ -262,6 +270,7 @@ class _UserChatBodyState extends State<_UserChatBody> {
             ],
           );
         },
+        ),
       ),
     );
   }
@@ -431,7 +440,7 @@ class _UserChatBodyState extends State<_UserChatBody> {
         mySpaceCubit.markChatAsRead(room.id);
         mySpaceCubit.setActiveChatRoom(room.id);
         mySpaceCubit.markMessageAsReadOnSocket(room.id);
-        widget.onEnterChat?.call(); // ✅ منع loadAll لما نكون جوه الشات
+        widget.onEnterChat?.call();
         context
             .pushNamed(
               AppRouter.kConversitionView,
@@ -456,28 +465,10 @@ class _UserChatBodyState extends State<_UserChatBody> {
                   sentAt: result['sentAt'] as DateTime? ?? DateTime.now(),
                 );
               }
-              // ✅ دايماً اعمل touchState لما ترجع من system chat
-              // عشان الـ BlocBuilder<MySpaceCubit> يعمل rebuild ويعرض الـ system chat
               widget.onReturnFromSystemChat?.call();
             });
       },
-      onArchive: () => ChatRoomDialogHelper.showArchiveDialog(
-        context: context,
-        onConfirm: () async {
-          final success = await mySpaceCubit.archiveChatRoom(room.id);
-          if (context.mounted) {
-            success
-                ? AppToast.success(
-                    context,
-                    context.tr('consultation_archived_success'),
-                  )
-                : AppToast.error(
-                    context,
-                    context.tr('consultation_archive_failed'),
-                  );
-          }
-        },
-      ),
+      // ✅ System chat: Delete فقط — لا Archive ولا Report ولا Block
       onDelete: () => ChatRoomDialogHelper.showDeleteDialog(
         context: context,
         onConfirm: () async {
@@ -489,26 +480,6 @@ class _UserChatBodyState extends State<_UserChatBody> {
           }
         },
       ),
-      onReport: () => ChatRoomDialogHelper.showReportDialog(
-        context: context,
-        onConfirm: () {},
-      ),
-      onBlock: () {
-        if (room.isBlocked) {
-          ChatRoomDialogHelper.showUnblockDialog(
-            context: context,
-            onConfirm: () {},
-          );
-        } else {
-          ChatRoomDialogHelper.showBlockDialog(
-            context: context,
-            onConfirm: () {},
-          );
-        }
-      },
-      blockLabel: room.isBlocked
-          ? context.tr('unblock_label')
-          : context.tr('block_label'),
     );
   }
 
@@ -527,10 +498,11 @@ class _UserChatBodyState extends State<_UserChatBody> {
       unreadCount: room.unreadCount,
       isImageBlurred: room.otherUser.imageBlur,
       isBlocked: room.blockExists,
+      amIBlocker: room.amIBlocker,
       fallbackAsset: AssetsData.defaultProfileImage,
       onTap: () {
         getIt<ChatSocketService>().clearChatNotificationCount();
-        widget.onEnterChat?.call(); // ✅ منع loadAll لما نكون جوه الشات
+        widget.onEnterChat?.call();
         context
             .pushNamed(
               AppRouter.kUserChatView,
@@ -542,36 +514,53 @@ class _UserChatBodyState extends State<_UserChatBody> {
                 'myImageBlur': myImageBlur,
                 'blurMyImageFromOtherUser': room.blurMyImageFromOtherUser,
                 'isBlocked': room.blockExists,
+                'amIBlocker': room.amIBlocker,
                 'receiverid': room.otherUser.userId,
               },
             )
             .then((result) {
-              widget.onExitChat?.call(); // ✅ reset الـ flag لما نرجع
+              widget.onExitChat?.call();
               if (!context.mounted) return;
-              // ✅ reset الـ unreadCount فوراً عشان مش يظهر الـ badge
               context.read<UserChatCubit>().resetUnreadCount(room.id);
-              // لو رجع بآخر رسالة، حدّث بدون reload كامل
-              if (result is Map<String, dynamic> &&
-                  result['lastMessage'] != null) {
-                context.read<UserChatCubit>().updateLastMessage(
-                  chatRoomId: room.id,
-                  content: result['lastMessage'] as String,
-                  sentAt: result['sentAt'] as DateTime? ?? DateTime.now(),
-                  status: result['status'] as String?,
-                );
+              if (result is Map<String, dynamic>) {
+                if (result['deleted'] == true) {
+                  context.read<UserChatCubit>().removeChatRoomLocally(room.id);
+                } else if (result['lastMessage'] != null) {
+                  context.read<UserChatCubit>().updateLastMessage(
+                    chatRoomId: room.id,
+                    content: result['lastMessage'] as String,
+                    sentAt: result['sentAt'] as DateTime? ?? DateTime.now(),
+                    status: result['status'] as String?,
+                  );
+                } else {
+                  context.read<UserChatCubit>().loadAll();
+                }
               } else {
-                // fallback: reload كامل
                 context.read<UserChatCubit>().loadAll();
               }
             });
       },
       onDelete: () => ChatRoomDialogHelper.showDeleteDialog(
         context: context,
-        onConfirm: () {},
+        onConfirm: () async {
+          final success = await context.read<UserChatCubit>().deleteChatRoom(
+            room.id,
+          );
+          if (context.mounted) {
+            success
+                ? AppToast.success(context, context.tr('chat_deleted_success'))
+                : AppToast.error(context, context.tr('chat_delete_failed'));
+          }
+        },
       ),
       onReport: () => ChatRoomDialogHelper.showReportDialog(
         context: context,
-        onConfirm: () {},
+        onConfirm: () {
+          context.pushNamed(
+            AppRouter.kReportsView,
+            arguments: {'type': ReportType.user, 'id': room.otherUser.userId},
+          );
+        },
       ),
       onArchive: () {
         ChatRoomDialogHelper.showArchiveDialog(
@@ -582,29 +571,51 @@ class _UserChatBodyState extends State<_UserChatBody> {
             final cubit = context.read<UserChatCubit>();
             final success = await cubit.archiveChatRoom(room.id);
             if (context.mounted) {
-              if (success) {
-                AppToast.success(context, context.tr('chat_archived_success'));
-              } else {
-                AppToast.error(context, context.tr('chat_archive_failed'));
-              }
+              success
+                  ? AppToast.success(
+                      context,
+                      context.tr('chat_archived_success'),
+                    )
+                  : AppToast.error(context, context.tr('chat_archive_failed'));
             }
           },
         );
       },
+      // ✅ نمرر onBlock دايماً — الـ ChatRoomListItem بيحسب الـ visibility حسب amIBlocker + isBlocked
       onBlock: () {
-        if (room.blockExists) {
+        if (room.amIBlocker) {
           ChatRoomDialogHelper.showUnblockDialog(
             context: context,
-            onConfirm: () {},
+            onConfirm: () async {
+              final success = await context.read<UserChatCubit>().unblockUser(
+                blockedId: room.otherUser.userId,
+                chatRoomId: room.id,
+              );
+              if (context.mounted) {
+                success
+                    ? AppToast.success(context, context.tr('unblock_success'))
+                    : AppToast.error(context, context.tr('unblock_failed'));
+              }
+            },
           );
-        } else {
+        } else if (!room.blockExists) {
           ChatRoomDialogHelper.showBlockDialog(
             context: context,
-            onConfirm: () {},
+            onConfirm: () async {
+              final success = await context.read<UserChatCubit>().blockUser(
+                blockedId: room.otherUser.userId,
+                chatRoomId: room.id,
+              );
+              if (context.mounted) {
+                success
+                    ? AppToast.success(context, context.tr('block_success'))
+                    : AppToast.error(context, context.tr('block_failed'));
+              }
+            },
           );
         }
       },
-      blockLabel: room.blockExists
+      blockLabel: room.amIBlocker
           ? context.tr('unblock_label')
           : context.tr('block_label'),
     );

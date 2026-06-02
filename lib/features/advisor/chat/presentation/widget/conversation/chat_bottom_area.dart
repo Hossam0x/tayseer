@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/utils/extensions/extensions.dart';
+import 'package:tayseer/core/widgets/chat_room_list_item/helpers/chat_room_dialog_helper.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/message_actions_handler.dart';
 import 'package:tayseer/features/advisor/chat/presentation/handler/scroll_behavior_handler.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_messages_cubit_simple.dart';
@@ -22,6 +23,7 @@ class ChatBottomArea extends StatelessWidget {
   final MessageActionsHandler actionsHandler;
   final ScrollBehaviorHandler scrollHandler;
   final void Function(bool isBlocked)? onBlockStatusChanged;
+  final VoidCallback? onDeleteChat;
 
   const ChatBottomArea({
     super.key,
@@ -32,6 +34,7 @@ class ChatBottomArea extends StatelessWidget {
     required this.actionsHandler,
     required this.scrollHandler,
     this.onBlockStatusChanged,
+    this.onDeleteChat,
   });
 
   @override
@@ -66,7 +69,12 @@ class ChatBottomArea extends StatelessWidget {
                 }
               },
               onDeleteChatTap: () {
-                // TODO: Implement delete chat
+                ChatRoomDialogHelper.showDeleteDialog(
+                  context: context,
+                  onConfirm: () {
+                    onDeleteChat?.call();
+                  },
+                );
               },
             );
           } else {

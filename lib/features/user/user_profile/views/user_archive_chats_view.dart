@@ -280,19 +280,21 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
               onRefresh: () => context.read<ArchivedChatsCubit>().refresh(),
               color: AppColors.kprimaryColor,
               backgroundColor: AppColors.kWhiteColor,
-              child: ListView.separated(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-                itemCount: state.chatRooms.length + (state.hasMore ? 1 : 0),
-                separatorBuilder: (context, index) =>
-                    Divider(color: AppColors.secondary100, height: 1),
-                itemBuilder: (context, index) {
-                  if (index == state.chatRooms.length) {
-                    return _buildLoadMoreIndicator(state);
-                  }
-
-                  final chatRoom = state.chatRooms[index];
-                  return _buildChatItem(context, chatRoom);
-                },
+              child: SlidableAutoCloseBehavior(
+                child: ListView.separated(
+                  padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+                  itemCount: state.chatRooms.length + (state.hasMore ? 1 : 0),
+                  separatorBuilder: (context, index) =>
+                      Divider(color: AppColors.secondary100, height: 1),
+                  itemBuilder: (context, index) {
+                    if (index == state.chatRooms.length) {
+                      return _buildLoadMoreIndicator(state);
+                    }
+  
+                    final chatRoom = state.chatRooms[index];
+                    return _buildChatItem(context, chatRoom);
+                  },
+                ),
               ),
             ),
           ),
@@ -457,7 +459,7 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
                                 context.read<ArchivedChatsCubit>().unblockUser(
                                   userId: otherUser?.id ?? '',
                                   chatId: chatRoom.id,
-                                );
+                                  );
                               },
                             );
                           } else {
@@ -490,6 +492,7 @@ class _UserArchiveChatsViewState extends State<UserArchiveChatsView> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
+            Slidable.of(context)?.close();
             showConfirmationDialog(
               context: context,
               imagePath: AssetsData.chatArchiveIcon,

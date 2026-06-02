@@ -12,10 +12,14 @@ class ChatMessagesState with _$ChatMessagesState {
   const ChatMessagesState._();
 
   /// Initial state before loading
-  const factory ChatMessagesState.initial() = ChatMessagesInitial;
+  const factory ChatMessagesState.initial({
+    @Default(false) bool isBlocked,
+  }) = ChatMessagesInitial;
 
   /// Loading state for initial messages
-  const factory ChatMessagesState.loading() = ChatMessagesLoading;
+  const factory ChatMessagesState.loading({
+    @Default(false) bool isBlocked,
+  }) = ChatMessagesLoading;
 
   /// Loaded state with all chat data
   const factory ChatMessagesState.loaded({
@@ -106,6 +110,8 @@ class ChatMessagesState with _$ChatMessagesState {
 
   /// Check if in blocked state
   bool get isBlockedStatus => maybeMap(
+    initial: (state) => state.isBlocked,
+    loading: (state) => state.isBlocked,
     loaded: (state) => state.isBlocked,
     loadingMore: (state) => state.isBlocked,
     orElse: () => false,

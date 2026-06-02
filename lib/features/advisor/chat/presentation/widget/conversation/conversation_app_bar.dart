@@ -14,6 +14,8 @@ class ConversationAppBar extends StatefulWidget {
   final String? receiverId;
   final VoidCallback? onProfileTap;
   final bool isBlocked;
+  final bool isSystemChat;
+  final bool amIBlocker;
   final Function(String blockedId)? onBlockUser;
   final Function(String blockedId)? onUnblockUser;
 
@@ -27,6 +29,8 @@ class ConversationAppBar extends StatefulWidget {
     this.onBlockUser,
     this.onUnblockUser,
     this.isBlocked = false,
+    this.isSystemChat = false,
+    this.amIBlocker = false,
   });
 
   @override
@@ -188,114 +192,118 @@ class _ConversationAppBarState extends State<ConversationAppBar> {
                   splashColor: Colors.transparent,
                   highlightColor: Colors.transparent,
                 ),
-                child: PopupMenuButton<String>(
-                  offset: const Offset(20, 50),
-                  icon: const Icon(
-                    Icons.more_vert,
-                    color: Colors.black87,
-                    size: 24,
-                  ),
-                  color: const Color(0xFFF5F6F8),
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  onSelected: (value) {
-                    if (value == 'report') {
-                      if (widget.receiverId != null) {
-                        context.pushNamed(
-                          AppRouter.kReportsView,
-                          arguments: {
-                            'type': ReportType.user,
-                            'id': widget.receiverId!,
-                          },
-                        );
-                      }
-                    } else if (value == 'block') {
-                      if (widget.receiverId != null &&
-                          widget.onBlockUser != null) {
-                        ChatRoomDialogHelper.showBlockDialog(
-                          context: context,
-                          onConfirm: () {
-                            widget.onBlockUser!(widget.receiverId!);
-                          },
-                        );
-                      }
-                    } else if (value == 'unblock') {
-                      if (widget.receiverId != null &&
-                          widget.onUnblockUser != null) {
-                        ChatRoomDialogHelper.showUnblockDialog(
-                          context: context,
-                          onConfirm: () {
-                            widget.onUnblockUser!(widget.receiverId!);
-                          },
-                        );
-                      }
-                    }
-                  },
-                  itemBuilder: (BuildContext context) =>
-                      <PopupMenuEntry<String>>[
-                        PopupMenuItem<String>(
-                          value: 'report',
-                          height: 45,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Text(
-                                context.tr('report'),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black87,
+                // ✅ System chat: مفيش popup menu (لا report ولا block)
+                child: widget.isSystemChat
+                    ? const SizedBox.shrink()
+                    : PopupMenuButton<String>(
+                        offset: const Offset(20, 50),
+                        icon: const Icon(
+                          Icons.more_vert,
+                          color: Colors.black87,
+                          size: 24,
+                        ),
+                        color: const Color(0xFFF5F6F8),
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        onSelected: (value) {
+                          if (value == 'report') {
+                            if (widget.receiverId != null) {
+                              context.pushNamed(
+                                AppRouter.kReportsView,
+                                arguments: {
+                                  'type': ReportType.user,
+                                  'id': widget.receiverId!,
+                                },
+                              );
+                            }
+                          } else if (value == 'block') {
+                            if (widget.receiverId != null &&
+                                widget.onBlockUser != null) {
+                              ChatRoomDialogHelper.showBlockDialog(
+                                context: context,
+                                onConfirm: () {
+                                  widget.onBlockUser!(widget.receiverId!);
+                                },
+                              );
+                            }
+                          } else if (value == 'unblock') {
+                            if (widget.receiverId != null &&
+                                widget.onUnblockUser != null) {
+                              ChatRoomDialogHelper.showUnblockDialog(
+                                context: context,
+                                onConfirm: () {
+                                  widget.onUnblockUser!(widget.receiverId!);
+                                },
+                              );
+                            }
+                          }
+                        },
+                        itemBuilder: (BuildContext context) =>
+                            <PopupMenuEntry<String>>[
+                              PopupMenuItem<String>(
+                                value: 'report',
+                                height: 45,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      context.tr('report'),
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    const Icon(
+                                      Icons.info_outline,
+                                      color: Colors.black,
+                                      size: 22,
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const Spacer(),
-                              const Icon(
-                                Icons.info_outline,
-                                color: Colors.black,
-                                size: 22,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem<String>(
-                          enabled: false,
-                          height: 10,
-                          child: Divider(
-                            color: Colors.black12,
-                            thickness: 1,
-                            indent: 10,
-                            endIndent: 10,
-                          ),
-                        ),
-                        PopupMenuItem<String>(
-                          value: widget.isBlocked ? 'unblock' : 'block',
-                          height: 45,
-                          child: Row(
-                            children: [
-                              Text(
-                                widget.isBlocked
-                                    ? context.tr('unblock')
-                                    : context.tr('block'),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black87,
+                              const PopupMenuItem<String>(
+                                enabled: false,
+                                height: 10,
+                                child: Divider(
+                                  color: Colors.black12,
+                                  thickness: 1,
+                                  indent: 10,
+                                  endIndent: 10,
                                 ),
                               ),
-                              const Spacer(),
-                              Icon(
-                                widget.isBlocked
-                                    ? Icons.lock_open
-                                    : Icons.block,
-                                color: Colors.black,
-                                size: 22,
-                              ),
+                              if (!widget.isBlocked || widget.amIBlocker)
+                                PopupMenuItem<String>(
+                                  value: widget.isBlocked ? 'unblock' : 'block',
+                                  height: 45,
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        widget.isBlocked
+                                            ? context.tr('unblock')
+                                            : context.tr('block'),
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      Icon(
+                                        widget.isBlocked
+                                            ? Icons.lock_open
+                                            : Icons.block,
+                                        color: Colors.black,
+                                        size: 22,
+                                      ),
+                                    ],
+                                  ),
+                                ),
                             ],
-                          ),
-                        ),
-                      ],
-                ),
+                      ),
               ),
             ],
           ),

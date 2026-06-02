@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/widgets/chat_room_list_item/chat_room_list_item.dart';
 import 'package:tayseer/core/widgets/chat_room_list_item/helpers/chat_room_dialog_helper.dart';
@@ -19,25 +21,27 @@ class ChatListContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: () async {
-        context.read<ChatListCubit>().loadChatRooms();
-      },
-      color: const Color(0xFFE96E88),
-      child: ListView.separated(
-        padding: EdgeInsetsDirectional.only(
-          bottom: screenHeight * 0.12,
-          top: 0,
-        ),
-        itemCount: chatRooms.length,
-        separatorBuilder: (context, index) => Divider(
-          color: Colors.grey.shade200,
-          height: MediaQuery.of(context).size.width < 600 ? 0.5 : 1,
-        ),
-        itemBuilder: (context, index) {
-          final chatRoom = chatRooms[index];
-          return _buildChatRoomItem(context, chatRoom);
+    return SlidableAutoCloseBehavior(
+      child: RefreshIndicator(
+        onRefresh: () async {
+          context.read<ChatListCubit>().loadChatRooms();
         },
+        color: const Color(0xFFE96E88),
+        child: ListView.separated(
+          padding: EdgeInsetsDirectional.only(
+            bottom: screenHeight * 0.12,
+            top: 0,
+          ),
+          itemCount: chatRooms.length,
+          separatorBuilder: (context, index) => Divider(
+            color: Colors.grey.shade200,
+            height: MediaQuery.of(context).size.width < 600 ? 0.5 : 1,
+          ),
+          itemBuilder: (context, index) {
+            final chatRoom = chatRooms[index];
+            return _buildChatRoomItem(context, chatRoom);
+          },
+        ),
       ),
     );
   }
@@ -47,22 +51,48 @@ class ChatListContent extends StatelessWidget {
         ? chatRoom.participants.first
         : null;
     final displayName = otherUser?.name ?? '';
-    final displayImage = otherUser?.image;
+    final displayImage = chatRoom.isSystemChat
+        ? chatRoom.systemChatImage
+        : otherUser?.image;
+
+    // ✅ System chat: Delete فقط — لا Archive ولا Report ولا Block
+    if (chatRoom.isSystemChat) {
+      return ChatRoomListItem(
+        key: ValueKey('chat_room_${chatRoom.id}'),
+        id: chatRoom.id,
+        title: displayName,
+        subtitle: ChatRoomListItem.formatLastMessage(
+          context,
+          chatRoom.lastMessage?.content ?? context.tr('no_messages'),
+        ),
+        imageUrl: displayImage,
+        lastUpdate: chatRoom.lastMessage?.sentAt,
+        unreadCount: chatRoom.unreadCount,
+        isBlocked: false,
+        fallbackAsset: AssetsData.kAppLogotayseerImage,
+        onTap: () => _handleTap(context, chatRoom, otherUser),
+        onDelete: () => _handleDelete(context, chatRoom),
+      );
+    }
 
     return ChatRoomListItem(
       key: ValueKey('chat_room_${chatRoom.id}'),
       id: chatRoom.id,
       title: displayName,
-      subtitle: ChatRoomListItem.formatLastMessage(context, chatRoom.lastMessage?.content ?? context.tr('no_messages')),
+      subtitle: ChatRoomListItem.formatLastMessage(
+        context,
+        chatRoom.lastMessage?.content ?? context.tr('no_messages'),
+      ),
       imageUrl: displayImage,
       lastUpdate: chatRoom.lastMessage?.sentAt,
       unreadCount: chatRoom.unreadCount,
       isBlocked: chatRoom.isBlocked,
+      amIBlocker: false, // advisor side — block من جانب الـ advisor مش موجود
       fallbackAsset: AssetsData.defaultProfileImage,
       onTap: () => _handleTap(context, chatRoom, otherUser),
       onArchive: () => _handleArchive(context, chatRoom),
       onDelete: () => _handleDelete(context, chatRoom),
-      onReport: () => _handleReport(context, chatRoom),
+      onReport: () => _handleReport(context, chatRoom, otherUser),
       onBlock: () => _handleBlock(context, chatRoom, otherUser),
       blockLabel: chatRoom.isBlocked
           ? context.tr('unblock')
@@ -103,14 +133,19 @@ class ChatListContent extends StatelessWidget {
         .then((result) {
           if (context.mounted) {
             context.read<ChatListCubit>().setActiveChatRoom(null);
-            // ✅ لو رجع بآخر رسالة، حدّث الـ list بدون reload كامل
-            if (result is Map<String, dynamic> &&
-                result['lastMessage'] != null) {
-              context.read<ChatListCubit>().updateLastMessage(
-                chatRoomId: chatRoom.id,
-                content: result['lastMessage'] as String,
-                sentAt: result['sentAt'] as DateTime? ?? DateTime.now(),
-              );
+            if (result is Map<String, dynamic>) {
+              if (result['deleted'] == true) {
+                // ✅ الشات اتحذف من جوه — شيله محلياً فقط (الـ API تم بالفعل)
+                context.read<ChatListCubit>().removeChatRoomLocally(
+                  chatRoom.id,
+                );
+              } else if (result['lastMessage'] != null) {
+                context.read<ChatListCubit>().updateLastMessage(
+                  chatRoomId: chatRoom.id,
+                  content: result['lastMessage'] as String,
+                  sentAt: result['sentAt'] as DateTime? ?? DateTime.now(),
+                );
+              }
             }
           }
         });
@@ -138,11 +173,20 @@ class ChatListContent extends StatelessWidget {
     );
   }
 
-  void _handleReport(BuildContext context, ChatRoom chatRoom) {
+  void _handleReport(
+    BuildContext context,
+    ChatRoom chatRoom,
+    ChatUser? otherUser,
+  ) {
     ChatRoomDialogHelper.showReportDialog(
       context: context,
       onConfirm: () {
-        // TODO: Implement report logic
+        if (otherUser?.id != null && otherUser!.id.isNotEmpty) {
+          context.pushNamed(
+            AppRouter.kReportsView,
+            arguments: {'type': ReportType.user, 'id': otherUser.id},
+          );
+        }
       },
     );
   }

@@ -21,6 +21,10 @@ class ChatRoomListItem extends StatelessWidget {
   final DateTime? lastUpdate;
   final int unreadCount;
   final bool isBlocked;
+  // ✅ true = أنت الحاظر → يظهر "إلغاء الحظر" فقط
+  // false + isBlocked = true → أنت المحظور → لا يظهر block/unblock
+  // false + isBlocked = false → لا يوجد block → يظهر "حظر"
+  final bool amIBlocker;
 
   // Actions
   final VoidCallback? onTap;
@@ -49,6 +53,7 @@ class ChatRoomListItem extends StatelessWidget {
     this.lastUpdate,
     this.unreadCount = 0,
     this.isBlocked = false,
+    this.amIBlocker = false,
     this.onTap,
     this.onArchive,
     this.onDelete,
@@ -77,6 +82,19 @@ class ChatRoomListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ حساب الـ effective block/report actions:
+    // - لو أنت الحاظر (amIBlocker=true) → يظهر "إلغاء الحظر" + Report (المستخدم يقدر يبلّغ حتى لو هو اللي بلّك)
+    // - لو هو الحاظر (isBlocked=true, amIBlocker=false) → لا block ولا unblock لكن يظهر Report
+    // - لو مفيش block → يظهر Report + Block
+    final effectiveOnBlock = amIBlocker
+        ? onBlock // أنت الحاظر → إلغاء الحظر
+        : (isBlocked ? null : onBlock); // هو الحاظر أو مفيش block
+    // ✅ Report يظهر دايماً للشاتات العادية — حتى لو أنت الحاظر
+    final effectiveOnReport = onReport;
+    final effectiveBlockLabel = amIBlocker
+        ? blockLabel
+        : (isBlocked ? null : blockLabel);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Slidable(
@@ -90,14 +108,18 @@ class ChatRoomListItem extends StatelessWidget {
         endActionPane: ChatRoomSlidableActions.buildEndActions(
           context: context,
           onDelete: onDelete,
-          onReport: onReport,
-          onBlock: onBlock,
-          blockLabel: blockLabel,
+          onReport: effectiveOnReport,
+          onBlock: effectiveOnBlock,
+          blockLabel: effectiveBlockLabel,
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: onTap,
+            onTap: () {
+              // ✅ أغلق الـ slider عند أي ضغطة على الـ item
+              Slidable.of(context)?.close();
+              onTap?.call();
+            },
             borderRadius: BorderRadius.circular(12),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),

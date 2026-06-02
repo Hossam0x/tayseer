@@ -860,6 +860,7 @@ abstract class AppRouter {
         final args = settings.arguments as Map<String, dynamic>?;
         final isSystemChat = args?['isSystemChat'] as bool? ?? false;
         final bool hasSystem = args?['system'] as bool? ?? false;
+        final amIBlocker = args?['amIBlocker'] as bool? ?? false;
 
         return defaultTargetPlatform == TargetPlatform.iOS
             ? CupertinoPageRoute(
@@ -872,6 +873,7 @@ abstract class AppRouter {
                   username: args?['username'] as String?,
                   userimage: args?['userimage'] as String?,
                   isBlocked: args?['isBlocked'] as bool? ?? false,
+                  amIBlocker: amIBlocker,
                   isHaveSession: args?['isHaveSession'] as bool? ?? true,
                   isSystemChat: isSystemChat || hasSystem,
                   onBlockStatusChanged:
@@ -888,6 +890,7 @@ abstract class AppRouter {
                   username: args?['username'] as String?,
                   userimage: args?['userimage'] as String?,
                   isBlocked: args?['isBlocked'] as bool? ?? false,
+                  amIBlocker: amIBlocker,
                   isHaveSession: args?['isHaveSession'] as bool? ?? true,
                   isSystemChat: isSystemChat || hasSystem,
                   onBlockStatusChanged:
@@ -910,6 +913,7 @@ abstract class AppRouter {
                   blurMyImageFromOtherUser:
                       userArgs?['blurMyImageFromOtherUser'] as bool? ?? true,
                   isBlocked: userArgs?['isBlocked'] as bool? ?? false,
+                  amIBlocker: userArgs?['amIBlocker'] as bool? ?? false,
                 ),
               )
             : MaterialPageRoute(
@@ -924,6 +928,7 @@ abstract class AppRouter {
                   blurMyImageFromOtherUser:
                       userArgs?['blurMyImageFromOtherUser'] as bool? ?? true,
                   isBlocked: userArgs?['isBlocked'] as bool? ?? false,
+                  amIBlocker: userArgs?['amIBlocker'] as bool? ?? false,
                 ),
               );
       case notification:

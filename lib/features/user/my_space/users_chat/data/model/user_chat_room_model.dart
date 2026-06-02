@@ -6,10 +6,19 @@ class UserChatRoomModel {
   final bool otherUserOnlineStatus;
   final int unreadCount;
   final bool blockExists;
+  // ✅ isMe: true = أنت المحظور (هو بلّكك)، false = أنت الحاظر (أنت بلّكته)
+  // بييجي من الـ backend في حالة وجود block
+  final bool isBlockedByOther;
   // ✅ بييجي على مستوى الـ room مش جوه otherUser
   // false = سمحنا لهذا الشخص يشوف صورتنا (exception مفعّل)
   // true  = صورتنا مبلورة عنده (exception مش مفعّل)
   final bool blurMyImageFromOtherUser;
+
+  /// هل أنا الحاظر؟ (أنت بلّكته)
+  bool get amIBlocker => blockExists && !isBlockedByOther;
+
+  /// هل أنا المحظور؟ (هو بلّكك)
+  bool get amIBlocked => blockExists && isBlockedByOther;
 
   UserChatRoomModel({
     required this.id,
@@ -19,10 +28,22 @@ class UserChatRoomModel {
     required this.otherUserOnlineStatus,
     required this.unreadCount,
     required this.blockExists,
+    this.isBlockedByOther = false,
     this.blurMyImageFromOtherUser = true,
   });
 
   factory UserChatRoomModel.fromJson(Map<String, dynamic> json) {
+    // ✅ من الـ API:
+    // blockExists: true  + isMe: true  = أنت بلّكته (أنت الحاظر)
+    // blockExists: true  + isMe: false = هو بلّكك   (أنت المحظور)
+    // blockExists: false + isMe: false = مفيش block
+    final blockExists = json['blockExists'] as bool? ?? false;
+    final isMe = json['isMe'] as bool? ?? false;
+
+    // isBlockedByOther: true = هو بلّكك (blockExists=true + isMe=false)
+    // isBlockedByOther: false = أنت الحاظر (blockExists=true + isMe=true) أو مفيش block
+    final isBlockedByOther = blockExists && !isMe;
+
     return UserChatRoomModel(
       id: json['id']?.toString() ?? '',
       otherUser: OtherUserModel.fromJson(
@@ -34,9 +55,32 @@ class UserChatRoomModel {
           : null,
       otherUserOnlineStatus: json['otherUserOnlineStatus'] ?? false,
       unreadCount: json['unreadCount'] ?? 0,
-      blockExists: json['blockExists'] ?? false,
-      // ✅ على مستوى الـ room — null يعني مش مفعّل (true = مبلور)
+      blockExists: blockExists,
+      isBlockedByOther: isBlockedByOther,
       blurMyImageFromOtherUser: json['blurMyImageFromOtherUser'] ?? true,
+    );
+  }
+
+  UserChatRoomModel copyWith({
+    bool? blockExists,
+    bool? isBlockedByOther,
+    UserLastMessageModel? lastMessage,
+    int? unreadCount,
+    bool? otherUserOnlineStatus,
+    bool? blurMyImageFromOtherUser,
+  }) {
+    return UserChatRoomModel(
+      id: id,
+      otherUser: otherUser,
+      otherUserType: otherUserType,
+      lastMessage: lastMessage ?? this.lastMessage,
+      otherUserOnlineStatus:
+          otherUserOnlineStatus ?? this.otherUserOnlineStatus,
+      unreadCount: unreadCount ?? this.unreadCount,
+      blockExists: blockExists ?? this.blockExists,
+      isBlockedByOther: isBlockedByOther ?? this.isBlockedByOther,
+      blurMyImageFromOtherUser:
+          blurMyImageFromOtherUser ?? this.blurMyImageFromOtherUser,
     );
   }
 }
@@ -66,7 +110,9 @@ class OtherUserModel {
       image: json['image']?.toString(),
       imageBlur: json['imageBlur'] ?? false,
       globalImageBlur: json['globalImageBlur'] ?? json['imageBlur'] ?? false,
-      lastActiveAt: _parseLastActiveAt(json['lastActiveAt'] ?? json['last_active_at']),
+      lastActiveAt: _parseLastActiveAt(
+        json['lastActiveAt'] ?? json['last_active_at'],
+      ),
     );
   }
 
@@ -100,9 +146,11 @@ class UserLastMessageModel {
     // السيرفر بيرجع الـ URL الفعلي للـ audio/image/video في الـ content
     // لازم نحوّله لـ keyword عشان formatLastMessage يعرضه صح (🎤 / 📷 / 🎥)
     final rawContent = json['content']?.toString() ?? '';
-    final contentType = (json['contentType'] ?? json['messageType'])
-        ?.toString()
-        .toLowerCase() ?? '';
+    final contentType =
+        (json['contentType'] ?? json['messageType'])
+            ?.toString()
+            .toLowerCase() ??
+        '';
     final displayContent = _normalizeContent(rawContent, contentType);
 
     return UserLastMessageModel(
@@ -138,16 +186,25 @@ class UserLastMessageModel {
         return 'file';
       default:
         // text أو غير معروف — تحقق من الـ URL
-        if (rawContent.startsWith('http://') || rawContent.startsWith('https://')) {
+        if (rawContent.startsWith('http://') ||
+            rawContent.startsWith('https://')) {
           final lower = rawContent.toLowerCase();
-          if (lower.contains('.mp3') || lower.contains('.m4a') ||
-              lower.contains('.wav') || lower.contains('.ogg') ||
-              lower.contains('.aac')) return 'audio';
-          if (lower.contains('.mp4') || lower.contains('.mov') ||
-              lower.contains('.avi')) return 'video';
-          if (lower.contains('.jpg') || lower.contains('.jpeg') ||
-              lower.contains('.png') || lower.contains('.gif') ||
-              lower.contains('.webp')) return 'image';
+          if (lower.contains('.mp3') ||
+              lower.contains('.m4a') ||
+              lower.contains('.wav') ||
+              lower.contains('.ogg') ||
+              lower.contains('.aac'))
+            return 'audio';
+          if (lower.contains('.mp4') ||
+              lower.contains('.mov') ||
+              lower.contains('.avi'))
+            return 'video';
+          if (lower.contains('.jpg') ||
+              lower.contains('.jpeg') ||
+              lower.contains('.png') ||
+              lower.contains('.gif') ||
+              lower.contains('.webp'))
+            return 'image';
         }
         return rawContent;
     }
@@ -188,7 +245,8 @@ class UserChatRoomsResponse {
           innerData['chatRooms'] as List? ?? innerData['data'] as List? ?? [];
       paginationData = innerData['pagination'] as Map<String, dynamic>? ?? {};
       slotLimit = innerData['slotLimit'] ?? data['slotLimit'] ?? 4;
-      myImageBlur = innerData['myImageBlur'] ?? data['myImageBlur'] ?? false; // ✅ added
+      myImageBlur =
+          innerData['myImageBlur'] ?? data['myImageBlur'] ?? false; // ✅ added
     } else {
       chatRoomsList = data['chatRooms'] as List? ?? [];
       paginationData = data['pagination'] as Map<String, dynamic>? ?? {};

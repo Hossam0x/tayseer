@@ -213,15 +213,15 @@ class MySpaceCubit extends Cubit<MySpaceState> {
         );
 
         // ✅ ثبّت system chat في الأول دايماً
-        final sortedRooms = List<AdvisorChatRoomModel>.from(
-          advisorChatModel.data.chatRooms,
-        )..sort((a, b) {
-          if (a.isSystemChat && !b.isSystemChat) return -1;
-          if (!a.isSystemChat && b.isSystemChat) return 1;
-          final aTime = a.lastMessageAt ?? DateTime(1970);
-          final bTime = b.lastMessageAt ?? DateTime(1970);
-          return bTime.compareTo(aTime);
-        });
+        final sortedRooms =
+            List<AdvisorChatRoomModel>.from(advisorChatModel.data.chatRooms)
+              ..sort((a, b) {
+                if (a.isSystemChat && !b.isSystemChat) return -1;
+                if (!a.isSystemChat && b.isSystemChat) return 1;
+                final aTime = a.lastMessageAt ?? DateTime(1970);
+                final bTime = b.lastMessageAt ?? DateTime(1970);
+                return bTime.compareTo(aTime);
+              });
 
         final sortedModel = AdvisorChatModel(
           success: advisorChatModel.success,
@@ -547,7 +547,9 @@ class MySpaceCubit extends Cubit<MySpaceState> {
   /// Extract content from message for display
   /// ✅ يرجع keywords موحدة ('audio', 'image', 'video') — الترجمة والـ emoji في formatLastMessage
   String _extractContentForDisplay(dynamic content, String messageType) {
-    log('🔍 [$_listenerId] _extractContentForDisplay - messageType: $messageType');
+    log(
+      '🔍 [$_listenerId] _extractContentForDisplay - messageType: $messageType',
+    );
 
     if (messageType == 'image' || messageType == 'images/videos') {
       return 'image';
@@ -571,16 +573,22 @@ class MySpaceCubit extends Cubit<MySpaceState> {
     if (content is String) {
       // ✅ لو URL، حوّله لـ keyword موحد
       final lowerContent = content.toLowerCase();
-      if (lowerContent.startsWith('http://') || lowerContent.startsWith('https://')) {
-        if (lowerContent.contains('.mp3') || lowerContent.contains('.wav') ||
-            lowerContent.contains('.m4a') || lowerContent.contains('.aac') ||
+      if (lowerContent.startsWith('http://') ||
+          lowerContent.startsWith('https://')) {
+        if (lowerContent.contains('.mp3') ||
+            lowerContent.contains('.wav') ||
+            lowerContent.contains('.m4a') ||
+            lowerContent.contains('.aac') ||
             lowerContent.contains('.ogg')) {
           return 'audio';
-        } else if (lowerContent.contains('.mp4') || lowerContent.contains('.mov') ||
+        } else if (lowerContent.contains('.mp4') ||
+            lowerContent.contains('.mov') ||
             lowerContent.contains('.avi')) {
           return 'video';
-        } else if (lowerContent.contains('.jpg') || lowerContent.contains('.jpeg') ||
-            lowerContent.contains('.png') || lowerContent.contains('.gif') ||
+        } else if (lowerContent.contains('.jpg') ||
+            lowerContent.contains('.jpeg') ||
+            lowerContent.contains('.png') ||
+            lowerContent.contains('.gif') ||
             lowerContent.contains('.webp')) {
           return 'image';
         }
@@ -593,14 +601,19 @@ class MySpaceCubit extends Cubit<MySpaceState> {
             first['media']?.toString() ?? first['url']?.toString() ?? '';
         if (mediaUrl.isNotEmpty) {
           final lowerUrl = mediaUrl.toLowerCase();
-          if (lowerUrl.contains('.mp3') || lowerUrl.contains('.wav') ||
-              lowerUrl.contains('.m4a') || lowerUrl.contains('.aac')) {
+          if (lowerUrl.contains('.mp3') ||
+              lowerUrl.contains('.wav') ||
+              lowerUrl.contains('.m4a') ||
+              lowerUrl.contains('.aac')) {
             return 'audio';
-          } else if (lowerUrl.contains('.mp4') || lowerUrl.contains('.mov') ||
+          } else if (lowerUrl.contains('.mp4') ||
+              lowerUrl.contains('.mov') ||
               lowerUrl.contains('.avi')) {
             return 'video';
-          } else if (lowerUrl.contains('.jpg') || lowerUrl.contains('.jpeg') ||
-              lowerUrl.contains('.png') || lowerUrl.contains('.gif')) {
+          } else if (lowerUrl.contains('.jpg') ||
+              lowerUrl.contains('.jpeg') ||
+              lowerUrl.contains('.png') ||
+              lowerUrl.contains('.gif')) {
             return 'image';
           }
         }
@@ -767,6 +780,150 @@ class MySpaceCubit extends Cubit<MySpaceState> {
         return true;
       },
     );
+  }
+
+  /// Remove a chat room from the local list without making an API call
+  /// Used when deletion was already performed (e.g., from inside the chat screen)
+  void removeChatRoomLocally(String chatRoomId) {
+    _handleChatDeleted(chatRoomId);
+  }
+
+  /// Block user (optimistic update on isBlocked)
+  Future<bool> blockUser({
+    required String blockedId,
+    required String chatRoomId,
+  }) async {
+    final currentChatData = state.advisorChatModel?.data;
+    if (currentChatData == null) return false;
+
+    // Optimistic: update isBlocked = true for this room (no re-sort)
+    final updatedRooms = currentChatData.chatRooms.map((room) {
+      if (room.id == chatRoomId) {
+        return AdvisorChatRoomModel(
+          id: room.id,
+          isBlocked: true,
+          isHaveSession: room.isHaveSession,
+          users: room.users,
+          lastMessage: room.lastMessage,
+          lastMessageAt: room.lastMessageAt,
+          status: room.status,
+          sender: room.sender,
+          createdAt: room.createdAt,
+          updatedAt: room.updatedAt,
+          unreadCount: room.unreadCount,
+          isSystemChat: room.isSystemChat,
+          systemChatImage: room.systemChatImage,
+        );
+      }
+      return room;
+    }).toList();
+
+    _safeEmit(
+      state.copyWith(
+        advisorChatModel: AdvisorChatModel(
+          success: state.advisorChatModel!.success,
+          message: state.advisorChatModel!.message,
+          data: AdvisorChatData(
+            chatRooms: updatedRooms,
+            pagination: currentChatData.pagination,
+          ),
+        ),
+        lastUpdateTime: DateTime.now(),
+      ),
+    );
+
+    try {
+      final response = await getIt<ApiService>().post(
+        endPoint: ApiEndPoint.blockuser,
+        data: {'blockedId': blockedId},
+      );
+      return response['success'] == true;
+    } catch (_) {
+      // Revert on error
+      _safeEmit(
+        state.copyWith(
+          advisorChatModel: AdvisorChatModel(
+            success: state.advisorChatModel!.success,
+            message: state.advisorChatModel!.message,
+            data: AdvisorChatData(
+              chatRooms: currentChatData.chatRooms,
+              pagination: currentChatData.pagination,
+            ),
+          ),
+          lastUpdateTime: DateTime.now(),
+        ),
+      );
+      return false;
+    }
+  }
+
+  /// Unblock user (optimistic update on isBlocked)
+  Future<bool> unblockUser({
+    required String blockedId,
+    required String chatRoomId,
+  }) async {
+    final currentChatData = state.advisorChatModel?.data;
+    if (currentChatData == null) return false;
+
+    // Optimistic: update isBlocked = false for this room (no re-sort)
+    final updatedRooms = currentChatData.chatRooms.map((room) {
+      if (room.id == chatRoomId) {
+        return AdvisorChatRoomModel(
+          id: room.id,
+          isBlocked: false,
+          isHaveSession: room.isHaveSession,
+          users: room.users,
+          lastMessage: room.lastMessage,
+          lastMessageAt: room.lastMessageAt,
+          status: room.status,
+          sender: room.sender,
+          createdAt: room.createdAt,
+          updatedAt: room.updatedAt,
+          unreadCount: room.unreadCount,
+          isSystemChat: room.isSystemChat,
+          systemChatImage: room.systemChatImage,
+        );
+      }
+      return room;
+    }).toList();
+
+    _safeEmit(
+      state.copyWith(
+        advisorChatModel: AdvisorChatModel(
+          success: state.advisorChatModel!.success,
+          message: state.advisorChatModel!.message,
+          data: AdvisorChatData(
+            chatRooms: updatedRooms,
+            pagination: currentChatData.pagination,
+          ),
+        ),
+        lastUpdateTime: DateTime.now(),
+      ),
+    );
+
+    try {
+      final response = await getIt<ApiService>().delete(
+        endPoint: ApiEndPoint.unblockuser,
+        data: {'blockedId': blockedId},
+      );
+      return response['success'] == true;
+    } catch (_) {
+      // Revert on error
+      _safeEmit(
+        state.copyWith(
+          advisorChatModel: AdvisorChatModel(
+            success: state.advisorChatModel!.success,
+            message: state.advisorChatModel!.message,
+            data: AdvisorChatData(
+              chatRooms: currentChatData.chatRooms,
+              pagination: currentChatData.pagination,
+            ),
+          ),
+          lastUpdateTime: DateTime.now(),
+        ),
+      );
+      return false;
+    }
   }
 
   /// Reset State

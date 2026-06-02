@@ -65,6 +65,8 @@ class AdvisorChatData {
 class AdvisorChatRoomModel {
   final String id;
   final bool isBlocked;
+  // ✅ true = أنت الحاظر (أنت بلّكته)، false = هو الحاظر أو مفيش block
+  final bool isBlockedByOther;
   final bool isHaveSession;
   final List<ChatUserModel> users;
   final LastMessageModel? lastMessage;
@@ -77,9 +79,16 @@ class AdvisorChatRoomModel {
   final bool isSystemChat;
   final String? systemChatImage;
 
+  /// هل أنا الحاظر؟ (أنت بلّكته)
+  bool get amIBlocker => isBlocked && !isBlockedByOther;
+
+  /// هل أنا المحظور؟ (هو بلّكك)
+  bool get amIBlocked => isBlocked && isBlockedByOther;
+
   AdvisorChatRoomModel({
     required this.id,
     required this.isBlocked,
+    this.isBlockedByOther = false,
     required this.isHaveSession,
     required this.users,
     this.lastMessage,
@@ -156,9 +165,16 @@ class AdvisorChatRoomModel {
           );
     }
 
+    // ✅ isMe: true = أنت بلّكته (أنت الحاظر) — نفس منطق UserChatRoomModel
+    final blockExists = json['blockExists'] as bool? ?? json['isBlocked'] as bool? ?? false;
+    final isMe = json['isMe'] as bool? ?? false;
+    // isBlockedByOther: true = هو بلّكك (blockExists=true + isMe=false)
+    final isBlockedByOther = blockExists && !isMe;
+
     return AdvisorChatRoomModel(
       id: extractString(json['id'] ?? json['_id']),
-      isBlocked: json['blockExists'] ?? json['isBlocked'] ?? false,
+      isBlocked: blockExists,
+      isBlockedByOther: isBlockedByOther,
       isHaveSession: json['isHaveSession'] ?? false,
       users: users,
       lastMessage: json['lastMessage'] is Map<String, dynamic>
@@ -191,6 +207,7 @@ class AdvisorChatRoomModel {
       '_id': id,
       'isBlocked': isBlocked,
       'blockExists': isBlocked,
+      'isMe': !isBlockedByOther && isBlocked, // ✅ true = أنت الحاظر
       'isHaveSession': isHaveSession,
       'users': users.map((u) => u.toJson()).toList(),
       'lastMessage': lastMessage?.toJson(),

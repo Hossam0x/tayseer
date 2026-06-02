@@ -30,7 +30,9 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   bool _hasJoinedRoom = false;
   int _joinAttempts = 0;
   DateTime? _chatExpiresAt;
-  bool _isSystemChat = false; // ✅ NEW: احفظ نوع الـ chat عشان الـ rejoin يعرفه
+  bool _isSystemChat = false;
+  // ✅ لو الـ socket أكّد الـ block status من chatRoomJoined، لا تـ override من الـ messages API
+  bool _blockStatusConfirmedBySocket = false;
 
   // ✅ FIX 3: احفظ الـ receiverId الأصلي اللي جاء من الـ navigation
   // منفصل عن _currentReceiverId عشان لو _currentChatRoomId اتغيّر،
@@ -51,24 +53,49 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     String chatRoomId, {
     String? receiverId,
     bool isSystemChat = false,
+    bool isBlocked = false,
+    bool amIBlocker = false,
   }) async {
     // ✅ FIX 3: احفظ كل الـ IDs كأول خطوة قبل أي حاجة
     _currentChatRoomId = chatRoomId;
     _currentReceiverId = receiverId;
-    _originalReceiverId = receiverId; // ✅ احفظ نسخة ثابتة من الـ receiverId
-    _isSystemChat = isSystemChat; // ✅ NEW: احفظ نوع الـ chat
+    _originalReceiverId = receiverId;
+    _isSystemChat = isSystemChat;
+
+    // ✅ اضبط الـ block state فوراً من الـ navigation args
+    // عشان ما يكونش في تأخير قبل chatRoomJoined
+    _isBlocked = isBlocked;
+    _amIBlocker = amIBlocker;
+    _blockStatusConfirmedBySocket = false; // reset عند كل room جديد
 
     _joinAttempts = 0;
     _hasJoinedRoom = false;
 
     log('🏠 loadInitialMessages: roomId=$chatRoomId, receiverId=$receiverId');
 
+    // ✅ setup listeners أولاً عشان نستقبل chatRoomJoined بدون miss
+    if (!_listenersSetup) {
+      _listenersSetup = true;
+      setupSocketListeners();
+    }
+
+    // ✅ ابعت joinChatRoom بعد الـ listeners بالتوازي مع جلب الـ messages
+    // لو مش متصل، سجّل callback يتنادى لما يتصل
+    if (_socketHelper.isConnected) {
+      _sendJoinRequest(isSystemChat: isSystemChat, receiverId: receiverId);
+    } else {
+      _waitForSocketAndJoin(isSystemChat: isSystemChat, receiverId: receiverId);
+    }
+
     // 1. عرض الكاش فوراً لو موجود
     final cachedMessages = _cacheService.getCachedMessages(
       chatRoomId: chatRoomId,
     );
     if (cachedMessages != null && cachedMessages.isNotEmpty) {
-      _isBlocked = _checkBlockStatusFromMessages(cachedMessages);
+      final cacheBlock = _checkBlockStatusFromMessages(cachedMessages);
+      if (cacheBlock) {
+        _isBlocked = true;
+      }
       emit(
         ChatMessagesState.loaded(
           messages: cachedMessages,
@@ -77,14 +104,25 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         ),
       );
     } else {
-      emit(const ChatMessagesState.loading());
+      emit(ChatMessagesState.loading(isBlocked: _isBlocked));
     }
 
     // 2. جلب من السيرفر وتحديث
     try {
       final messages = await _repo.loadMessages(chatRoomId);
 
-      _isBlocked = _checkBlockStatusFromMessages(messages);
+      // ✅ لو الـ socket أكّد الـ block status بالفعل، لا نـ override
+      // لو مفيش تأكيد من الـ socket بعد، نأخذ من الـ messages
+      if (!_blockStatusConfirmedBySocket) {
+        final blockFromMessages = _checkBlockStatusFromMessages(messages);
+        if (blockFromMessages ||
+            messages.any(
+              (m) => m.messageType == 'system' && m.action.isUnblock,
+            )) {
+          _isBlocked = blockFromMessages;
+        }
+        // لو مفيش system messages → احتفظ بـ _isBlocked الأصلي من navigation
+      }
 
       emit(
         ChatMessagesState.loaded(
@@ -94,28 +132,13 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
         ),
       );
 
-      if (!_listenersSetup) {
-        _listenersSetup = true;
-        setupSocketListeners();
-      }
-
       // 3. حفظ في الكاش
       await _cacheService.saveMessages(
         chatRoomId: chatRoomId,
         messages: messages,
       );
 
-      // 4. انتظر الـ socket وبعدين join
-      // ✅ لازم _setupReconnectHandler يتنادى بعد _waitForSocketAndJoin
-      // عشان لو الـ socket مش متصل، _waitForSocketAndJoin يسجّل الـ callback أولاً
-      // وبعدين _setupReconnectHandler يكتب عليه بالـ handler الدائم للـ reconnect
-      await _waitForSocketAndJoin(
-        isSystemChat: isSystemChat,
-        receiverId: receiverId,
-      );
-
-      // ✅ سجّل الـ reconnect handler الدائم بعد الـ join الأول
-      // (بيكتب على الـ temporary callback اللي سجّله _waitForSocketAndJoin)
+      // ✅ سجّل الـ reconnect handler الدائم
       _setupReconnectHandler();
     } catch (e) {
       log('❌ Error loading messages: $e');
@@ -151,10 +174,12 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     required bool isSystemChat,
     String? receiverId,
   }) async {
-    // ✅ لو الـ socket متصل فعلاً، join فوراً
+    // ✅ لو بعتنا join بالفعل في البداية، مش محتاجين نبعت تاني
+    if (_hasJoinedRoom || _joinAttempts > 0) return;
+
+    // ✅ لو الـ socket متصل فعلاً، join فوراً بدون delay
     if (_socketHelper.isConnected) {
-      await Future.delayed(const Duration(milliseconds: 300));
-      log('✅ Socket connected, joining room: $_currentChatRoomId');
+      log('✅ Socket connected, joining room (deferred): $_currentChatRoomId');
       _sendJoinRequest(isSystemChat: isSystemChat, receiverId: receiverId);
       return;
     }
@@ -167,7 +192,6 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     _socketHelper.addReconnectCallback(waitId, () {
       if (isClosed || _hasJoinedRoom) return;
       log('🔄 Socket connected — joining room: $_currentChatRoomId');
-      // ✅ شيل الـ wait callback بعد ما اتنادى مرة واحدة
       _socketHelper.removeReconnectCallback(waitId);
       _sendJoinRequest(isSystemChat: isSystemChat, receiverId: receiverId);
     });
@@ -251,8 +275,15 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
   bool _checkBlockStatusFromMessages(List<ChatMessage> messages) {
     for (final msg in messages.reversed) {
       if (msg.messageType == 'system') {
-        if (msg.action.isBlock) return true;
-        if (msg.action.isUnblock) return false;
+        if (msg.action.isBlock) {
+          // ✅ لو الـ system message block وكان `isMe: true` = أنت الحاظر
+          _amIBlocker = msg.isMe;
+          return true;
+        }
+        if (msg.action.isUnblock) {
+          _amIBlocker = false;
+          return false;
+        }
       }
     }
     return false;
@@ -598,6 +629,16 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
       _freeChatMinsLeft = data['freeChatMinsLeft'] as int?;
       _isBlocked = blockExists;
 
+      // ✅ isMe: true = أنت الحاظر (أنت بلّكته)
+      // isMe: false = أنت المحظور (هو بلّكك)
+      if (blockExists && isMe != null) {
+        _amIBlocker = isMe; // true = أنا الحاظر
+      } else if (!blockExists) {
+        _amIBlocker = false;
+      }
+      // ✅ الـ socket أكّد الـ block status — لا تـ override من messages API
+      _blockStatusConfirmedBySocket = true;
+
       final expiresStr = data['chatExpiresAt']?.toString();
       if (expiresStr != null) {
         final utc = DateTime.tryParse(expiresStr);
@@ -721,8 +762,14 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     }
 
     if (message.messageType == 'system') {
-      if (message.action.isBlock) _isBlocked = true;
-      if (message.action.isUnblock) _isBlocked = false;
+      if (message.action.isBlock) {
+        _isBlocked = true;
+        _amIBlocker = message.isMe; // ✅ isMe: true = أنت الحاظر
+      }
+      if (message.action.isUnblock) {
+        _isBlocked = false;
+        _amIBlocker = false;
+      }
 
       final localIndex = currentMessages.indexWhere(
         (m) =>
@@ -1151,8 +1198,9 @@ class ChatMessagesCubit extends Cubit<ChatMessagesState> {
     return result;
   }
 
-  void setInitialBlocked(bool isBlocked) {
+  void setInitialBlocked(bool isBlocked, {bool amIBlocker = false}) {
     _isBlocked = isBlocked;
+    _amIBlocker = amIBlocker;
   }
 
   // ══════════════════════════════════════════════════════════════════════════

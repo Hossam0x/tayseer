@@ -18,8 +18,8 @@ final _privateConstructorUsedError = UnsupportedError(
 mixin _$ChatMessagesState {
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function() initial,
-    required TResult Function() loading,
+    required TResult Function(bool isBlocked) initial,
+    required TResult Function(bool isBlocked) loading,
     required TResult Function(
             List<ChatMessage> messages,
             bool hasMoreMessages,
@@ -51,8 +51,8 @@ mixin _$ChatMessagesState {
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? initial,
-    TResult? Function()? loading,
+    TResult? Function(bool isBlocked)? initial,
+    TResult? Function(bool isBlocked)? loading,
     TResult? Function(
             List<ChatMessage> messages,
             bool hasMoreMessages,
@@ -84,8 +84,8 @@ mixin _$ChatMessagesState {
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? initial,
-    TResult Function()? loading,
+    TResult Function(bool isBlocked)? initial,
+    TResult Function(bool isBlocked)? loading,
     TResult Function(
             List<ChatMessage> messages,
             bool hasMoreMessages,
@@ -169,6 +169,8 @@ abstract class _$$ChatMessagesInitialImplCopyWith<$Res> {
   factory _$$ChatMessagesInitialImplCopyWith(_$ChatMessagesInitialImpl value,
           $Res Function(_$ChatMessagesInitialImpl) then) =
       __$$ChatMessagesInitialImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({bool isBlocked});
 }
 
 /// @nodoc
@@ -178,33 +180,59 @@ class __$$ChatMessagesInitialImplCopyWithImpl<$Res>
   __$$ChatMessagesInitialImplCopyWithImpl(_$ChatMessagesInitialImpl _value,
       $Res Function(_$ChatMessagesInitialImpl) _then)
       : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? isBlocked = null,
+  }) {
+    return _then(_$ChatMessagesInitialImpl(
+      isBlocked: null == isBlocked
+          ? _value.isBlocked
+          : isBlocked // ignore: cast_nullable_to_non_nullable
+              as bool,
+    ));
+  }
 }
 
 /// @nodoc
 
 class _$ChatMessagesInitialImpl extends ChatMessagesInitial {
-  const _$ChatMessagesInitialImpl() : super._();
+  const _$ChatMessagesInitialImpl({this.isBlocked = false}) : super._();
+
+  @override
+  @JsonKey()
+  final bool isBlocked;
 
   @override
   String toString() {
-    return 'ChatMessagesState.initial()';
+    return 'ChatMessagesState.initial(isBlocked: $isBlocked)';
   }
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$ChatMessagesInitialImpl);
+            other is _$ChatMessagesInitialImpl &&
+            (identical(other.isBlocked, isBlocked) ||
+                other.isBlocked == isBlocked));
   }
 
   @override
-  int get hashCode => runtimeType.hashCode;
+  int get hashCode => Object.hash(runtimeType, isBlocked);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$ChatMessagesInitialImplCopyWith<_$ChatMessagesInitialImpl> get copyWith =>
+      __$$ChatMessagesInitialImplCopyWithImpl<_$ChatMessagesInitialImpl>(
+          this, _$identity);
 
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function() initial,
-    required TResult Function() loading,
+    required TResult Function(bool isBlocked) initial,
+    required TResult Function(bool isBlocked) loading,
     required TResult Function(
             List<ChatMessage> messages,
             bool hasMoreMessages,
@@ -233,14 +261,14 @@ class _$ChatMessagesInitialImpl extends ChatMessagesInitial {
     required TResult Function(String message, List<ChatMessage>? cachedMessages)
         failure,
   }) {
-    return initial();
+    return initial(isBlocked);
   }
 
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? initial,
-    TResult? Function()? loading,
+    TResult? Function(bool isBlocked)? initial,
+    TResult? Function(bool isBlocked)? loading,
     TResult? Function(
             List<ChatMessage> messages,
             bool hasMoreMessages,
@@ -269,14 +297,14 @@ class _$ChatMessagesInitialImpl extends ChatMessagesInitial {
     TResult? Function(String message, List<ChatMessage>? cachedMessages)?
         failure,
   }) {
-    return initial?.call();
+    return initial?.call(isBlocked);
   }
 
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? initial,
-    TResult Function()? loading,
+    TResult Function(bool isBlocked)? initial,
+    TResult Function(bool isBlocked)? loading,
     TResult Function(
             List<ChatMessage> messages,
             bool hasMoreMessages,
@@ -307,7 +335,7 @@ class _$ChatMessagesInitialImpl extends ChatMessagesInitial {
     required TResult orElse(),
   }) {
     if (initial != null) {
-      return initial();
+      return initial(isBlocked);
     }
     return orElse();
   }
@@ -354,8 +382,14 @@ class _$ChatMessagesInitialImpl extends ChatMessagesInitial {
 }
 
 abstract class ChatMessagesInitial extends ChatMessagesState {
-  const factory ChatMessagesInitial() = _$ChatMessagesInitialImpl;
+  const factory ChatMessagesInitial({final bool isBlocked}) =
+      _$ChatMessagesInitialImpl;
   const ChatMessagesInitial._() : super._();
+
+  bool get isBlocked;
+  @JsonKey(ignore: true)
+  _$$ChatMessagesInitialImplCopyWith<_$ChatMessagesInitialImpl> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
 /// @nodoc
@@ -363,6 +397,8 @@ abstract class _$$ChatMessagesLoadingImplCopyWith<$Res> {
   factory _$$ChatMessagesLoadingImplCopyWith(_$ChatMessagesLoadingImpl value,
           $Res Function(_$ChatMessagesLoadingImpl) then) =
       __$$ChatMessagesLoadingImplCopyWithImpl<$Res>;
+  @useResult
+  $Res call({bool isBlocked});
 }
 
 /// @nodoc
@@ -372,33 +408,59 @@ class __$$ChatMessagesLoadingImplCopyWithImpl<$Res>
   __$$ChatMessagesLoadingImplCopyWithImpl(_$ChatMessagesLoadingImpl _value,
       $Res Function(_$ChatMessagesLoadingImpl) _then)
       : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? isBlocked = null,
+  }) {
+    return _then(_$ChatMessagesLoadingImpl(
+      isBlocked: null == isBlocked
+          ? _value.isBlocked
+          : isBlocked // ignore: cast_nullable_to_non_nullable
+              as bool,
+    ));
+  }
 }
 
 /// @nodoc
 
 class _$ChatMessagesLoadingImpl extends ChatMessagesLoading {
-  const _$ChatMessagesLoadingImpl() : super._();
+  const _$ChatMessagesLoadingImpl({this.isBlocked = false}) : super._();
+
+  @override
+  @JsonKey()
+  final bool isBlocked;
 
   @override
   String toString() {
-    return 'ChatMessagesState.loading()';
+    return 'ChatMessagesState.loading(isBlocked: $isBlocked)';
   }
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$ChatMessagesLoadingImpl);
+            other is _$ChatMessagesLoadingImpl &&
+            (identical(other.isBlocked, isBlocked) ||
+                other.isBlocked == isBlocked));
   }
 
   @override
-  int get hashCode => runtimeType.hashCode;
+  int get hashCode => Object.hash(runtimeType, isBlocked);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$ChatMessagesLoadingImplCopyWith<_$ChatMessagesLoadingImpl> get copyWith =>
+      __$$ChatMessagesLoadingImplCopyWithImpl<_$ChatMessagesLoadingImpl>(
+          this, _$identity);
 
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function() initial,
-    required TResult Function() loading,
+    required TResult Function(bool isBlocked) initial,
+    required TResult Function(bool isBlocked) loading,
     required TResult Function(
             List<ChatMessage> messages,
             bool hasMoreMessages,
@@ -427,14 +489,14 @@ class _$ChatMessagesLoadingImpl extends ChatMessagesLoading {
     required TResult Function(String message, List<ChatMessage>? cachedMessages)
         failure,
   }) {
-    return loading();
+    return loading(isBlocked);
   }
 
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? initial,
-    TResult? Function()? loading,
+    TResult? Function(bool isBlocked)? initial,
+    TResult? Function(bool isBlocked)? loading,
     TResult? Function(
             List<ChatMessage> messages,
             bool hasMoreMessages,
@@ -463,14 +525,14 @@ class _$ChatMessagesLoadingImpl extends ChatMessagesLoading {
     TResult? Function(String message, List<ChatMessage>? cachedMessages)?
         failure,
   }) {
-    return loading?.call();
+    return loading?.call(isBlocked);
   }
 
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? initial,
-    TResult Function()? loading,
+    TResult Function(bool isBlocked)? initial,
+    TResult Function(bool isBlocked)? loading,
     TResult Function(
             List<ChatMessage> messages,
             bool hasMoreMessages,
@@ -501,7 +563,7 @@ class _$ChatMessagesLoadingImpl extends ChatMessagesLoading {
     required TResult orElse(),
   }) {
     if (loading != null) {
-      return loading();
+      return loading(isBlocked);
     }
     return orElse();
   }
@@ -548,8 +610,14 @@ class _$ChatMessagesLoadingImpl extends ChatMessagesLoading {
 }
 
 abstract class ChatMessagesLoading extends ChatMessagesState {
-  const factory ChatMessagesLoading() = _$ChatMessagesLoadingImpl;
+  const factory ChatMessagesLoading({final bool isBlocked}) =
+      _$ChatMessagesLoadingImpl;
   const ChatMessagesLoading._() : super._();
+
+  bool get isBlocked;
+  @JsonKey(ignore: true)
+  _$$ChatMessagesLoadingImplCopyWith<_$ChatMessagesLoadingImpl> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
 /// @nodoc
@@ -792,8 +860,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function() initial,
-    required TResult Function() loading,
+    required TResult Function(bool isBlocked) initial,
+    required TResult Function(bool isBlocked) loading,
     required TResult Function(
             List<ChatMessage> messages,
             bool hasMoreMessages,
@@ -840,8 +908,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? initial,
-    TResult? Function()? loading,
+    TResult? Function(bool isBlocked)? initial,
+    TResult? Function(bool isBlocked)? loading,
     TResult? Function(
             List<ChatMessage> messages,
             bool hasMoreMessages,
@@ -888,8 +956,8 @@ class _$ChatMessagesLoadedImpl extends ChatMessagesLoaded {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? initial,
-    TResult Function()? loading,
+    TResult Function(bool isBlocked)? initial,
+    TResult Function(bool isBlocked)? loading,
     TResult Function(
             List<ChatMessage> messages,
             bool hasMoreMessages,
@@ -1214,8 +1282,8 @@ class _$ChatMessagesLoadingMoreImpl extends ChatMessagesLoadingMore {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function() initial,
-    required TResult Function() loading,
+    required TResult Function(bool isBlocked) initial,
+    required TResult Function(bool isBlocked) loading,
     required TResult Function(
             List<ChatMessage> messages,
             bool hasMoreMessages,
@@ -1259,8 +1327,8 @@ class _$ChatMessagesLoadingMoreImpl extends ChatMessagesLoadingMore {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? initial,
-    TResult? Function()? loading,
+    TResult? Function(bool isBlocked)? initial,
+    TResult? Function(bool isBlocked)? loading,
     TResult? Function(
             List<ChatMessage> messages,
             bool hasMoreMessages,
@@ -1304,8 +1372,8 @@ class _$ChatMessagesLoadingMoreImpl extends ChatMessagesLoadingMore {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? initial,
-    TResult Function()? loading,
+    TResult Function(bool isBlocked)? initial,
+    TResult Function(bool isBlocked)? loading,
     TResult Function(
             List<ChatMessage> messages,
             bool hasMoreMessages,
@@ -1507,8 +1575,8 @@ class _$ChatMessagesFailureImpl extends ChatMessagesFailure {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
-    required TResult Function() initial,
-    required TResult Function() loading,
+    required TResult Function(bool isBlocked) initial,
+    required TResult Function(bool isBlocked) loading,
     required TResult Function(
             List<ChatMessage> messages,
             bool hasMoreMessages,
@@ -1543,8 +1611,8 @@ class _$ChatMessagesFailureImpl extends ChatMessagesFailure {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
-    TResult? Function()? initial,
-    TResult? Function()? loading,
+    TResult? Function(bool isBlocked)? initial,
+    TResult? Function(bool isBlocked)? loading,
     TResult? Function(
             List<ChatMessage> messages,
             bool hasMoreMessages,
@@ -1579,8 +1647,8 @@ class _$ChatMessagesFailureImpl extends ChatMessagesFailure {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
-    TResult Function()? initial,
-    TResult Function()? loading,
+    TResult Function(bool isBlocked)? initial,
+    TResult Function(bool isBlocked)? loading,
     TResult Function(
             List<ChatMessage> messages,
             bool hasMoreMessages,

@@ -18,7 +18,9 @@ class ChatListCubit extends Cubit<ChatListState> {
 
   ChatListCubit(this._repo) : super(const ChatListState.initial()) {
     // Listen to unarchive events
-    _unarchiveSubscription = ChatEventBus.instance.onChatUnarchived.listen((event) {
+    _unarchiveSubscription = ChatEventBus.instance.onChatUnarchived.listen((
+      event,
+    ) {
       _handleChatUnarchived(event.chatRoomId);
     });
 
@@ -44,7 +46,9 @@ class ChatListCubit extends Cubit<ChatListState> {
     final cachedRooms = _cacheService.getCachedChatRooms(userId: userId);
     if (cachedRooms != null && cachedRooms.isNotEmpty) {
       // تحويل من AdvisorChatRoomModel لـ ChatRoom
-      final chatRooms = _sortChatRooms(cachedRooms.map((room) => _convertToChatRoom(room)).toList());
+      final chatRooms = _sortChatRooms(
+        cachedRooms.map((room) => _convertToChatRoom(room)).toList(),
+      );
       emit(ChatListState.loaded(chatRooms: chatRooms, pendingRequestsCount: 0));
     } else {
       emit(const ChatListState.loading());
@@ -61,15 +65,22 @@ class ChatListCubit extends Cubit<ChatListState> {
       },
       (response) async {
         final sortedRooms = _sortChatRooms(response.rooms);
-        emit(ChatListState.loaded(
-          chatRooms: sortedRooms,
-          pendingRequestsCount: response.pendingRequestsCount,
-        ));
+        emit(
+          ChatListState.loaded(
+            chatRooms: sortedRooms,
+            pendingRequestsCount: response.pendingRequestsCount,
+          ),
+        );
         setupSocketListeners();
 
         // 3. حفظ في الكاش
-        final roomsToCache = sortedRooms.map((room) => _convertToAdvisorChatRoom(room)).toList();
-        await _cacheService.saveChatRooms(userId: userId, chatRooms: roomsToCache);
+        final roomsToCache = sortedRooms
+            .map((room) => _convertToAdvisorChatRoom(room))
+            .toList();
+        await _cacheService.saveChatRooms(
+          userId: userId,
+          chatRooms: roomsToCache,
+        );
       },
     );
   }
@@ -86,12 +97,16 @@ class ChatListCubit extends Cubit<ChatListState> {
           : null,
       unreadCount: model.unreadCount,
       isBlocked: model.isBlocked,
-      participants: model.users.map((u) => ChatUser(
-        id: u.id,
-        name: u.name,
-        image: u.image,
-        userType: u.userType,
-      )).toList(),
+      participants: model.users
+          .map(
+            (u) => ChatUser(
+              id: u.id,
+              name: u.name,
+              image: u.image,
+              userType: u.userType,
+            ),
+          )
+          .toList(),
       createdAt: model.createdAt,
       isSystemChat: model.isSystemChat,
       systemChatImage: model.systemChatImage,
@@ -104,12 +119,16 @@ class ChatListCubit extends Cubit<ChatListState> {
       id: room.id,
       isBlocked: room.isBlocked,
       isHaveSession: false,
-      users: room.participants.map((p) => ChatUserModel(
-        id: p.id,
-        name: p.name,
-        image: p.image,
-        userType: p.userType ?? '',
-      )).toList(),
+      users: room.participants
+          .map(
+            (p) => ChatUserModel(
+              id: p.id,
+              name: p.name,
+              image: p.image,
+              userType: p.userType ?? '',
+            ),
+          )
+          .toList(),
       lastMessage: room.lastMessage != null
           ? LastMessageModel(
               id: '',
@@ -146,21 +165,29 @@ class ChatListCubit extends Cubit<ChatListState> {
       _handleIncomingMessage(data);
     });
 
-    _socketHelper.listenWithId('messageDeleted', 'ChatListCubit_Listener', (data) {
+    _socketHelper.listenWithId('messageDeleted', 'ChatListCubit_Listener', (
+      data,
+    ) {
       // Reload is safest for list summary when a message is deleted
       loadChatRooms();
     });
 
-    _socketHelper.listenWithId('blockerStatus', 'ChatListCubit_Listener', (data) {
+    _socketHelper.listenWithId('blockerStatus', 'ChatListCubit_Listener', (
+      data,
+    ) {
       _handleBlockUpdate(data);
     });
 
-    _socketHelper.listenWithId('blockedStatus', 'ChatListCubit_Listener', (data) {
+    _socketHelper.listenWithId('blockedStatus', 'ChatListCubit_Listener', (
+      data,
+    ) {
       _handleBlockUpdate(data);
     });
 
     // Listen to message status updates
-    _socketHelper.listenWithId('newMessageState', 'ChatListCubit_Listener', (data) {
+    _socketHelper.listenWithId('newMessageState', 'ChatListCubit_Listener', (
+      data,
+    ) {
       _handleMessageStateUpdate(data);
     });
   }
@@ -202,10 +229,12 @@ class ChatListCubit extends Cubit<ChatListState> {
         .where((room) => room.id != chatRoomId)
         .toList();
 
-    emit(ChatListState.loaded(
-      chatRooms: updatedRooms,
-      pendingRequestsCount: currentState.pendingRequestsCount,
-    ));
+    emit(
+      ChatListState.loaded(
+        chatRooms: updatedRooms,
+        pendingRequestsCount: currentState.pendingRequestsCount,
+      ),
+    );
   }
 
   void _handleChatDeleted(String chatRoomId) {
@@ -221,10 +250,12 @@ class ChatListCubit extends Cubit<ChatListState> {
         .where((room) => room.id != chatRoomId)
         .toList();
 
-    emit(ChatListState.loaded(
-      chatRooms: updatedRooms,
-      pendingRequestsCount: currentState.pendingRequestsCount,
-    ));
+    emit(
+      ChatListState.loaded(
+        chatRooms: updatedRooms,
+        pendingRequestsCount: currentState.pendingRequestsCount,
+      ),
+    );
   }
 
   void _handleIncomingMessage(dynamic data) {
@@ -249,10 +280,12 @@ class ChatListCubit extends Cubit<ChatListState> {
           rooms.insert(0, updatedRoom);
         }
 
-        emit(ChatListState.loaded(
-          chatRooms: _sortChatRooms(rooms),
-          pendingRequestsCount: pendingRequestsCount,
-        ));
+        emit(
+          ChatListState.loaded(
+            chatRooms: _sortChatRooms(rooms),
+            pendingRequestsCount: pendingRequestsCount,
+          ),
+        );
       },
       orElse: () {},
     );
@@ -269,7 +302,7 @@ class ChatListCubit extends Cubit<ChatListState> {
 
   void _handleMessageStateUpdate(dynamic data) {
     if (data is! Map) return;
-    
+
     // Note: ChatRoom.lastMessage doesn't have an ID field to match against messageIds
     // This is a limitation of the current model structure
     // Status updates for advisor chat list are not implemented yet
@@ -289,19 +322,23 @@ class ChatListCubit extends Cubit<ChatListState> {
     final updatedRooms = currentState.chatRooms
         .where((room) => room.id != chatRoomId)
         .toList();
-    emit(ChatListState.loaded(
-      chatRooms: updatedRooms,
-      pendingRequestsCount: currentState.pendingRequestsCount,
-    ));
+    emit(
+      ChatListState.loaded(
+        chatRooms: updatedRooms,
+        pendingRequestsCount: currentState.pendingRequestsCount,
+      ),
+    );
 
     final result = await _repo.deleteChatRoom(chatRoomId);
     result.fold(
       (error) {
         // Revert on failure
-        emit(ChatListState.loaded(
-          chatRooms: currentState.chatRooms,
-          pendingRequestsCount: currentState.pendingRequestsCount,
-        ));
+        emit(
+          ChatListState.loaded(
+            chatRooms: currentState.chatRooms,
+            pendingRequestsCount: currentState.pendingRequestsCount,
+          ),
+        );
         emit(ChatListState.failure(error));
       },
       (success) {
@@ -322,21 +359,28 @@ class ChatListCubit extends Cubit<ChatListState> {
     final updatedRooms = currentState.chatRooms
         .where((room) => room.id != chatRoomId)
         .toList();
-    emit(ChatListState.loaded(
-      chatRooms: updatedRooms,
-      pendingRequestsCount: currentState.pendingRequestsCount,
-    ));
+    emit(
+      ChatListState.loaded(
+        chatRooms: updatedRooms,
+        pendingRequestsCount: currentState.pendingRequestsCount,
+      ),
+    );
 
     final result = await _repo.archiveChatRoom(chatRoomId);
-    result.fold((error) {
-      emit(ChatListState.loaded(
-        chatRooms: currentState.chatRooms,
-        pendingRequestsCount: currentState.pendingRequestsCount,
-      ));
-    }, (success) {
-      // Notify other parts of the app
-      ChatEventBus.instance.notifyChatArchived(chatRoomId);
-    });
+    result.fold(
+      (error) {
+        emit(
+          ChatListState.loaded(
+            chatRooms: currentState.chatRooms,
+            pendingRequestsCount: currentState.pendingRequestsCount,
+          ),
+        );
+      },
+      (success) {
+        // Notify other parts of the app
+        ChatEventBus.instance.notifyChatArchived(chatRoomId);
+      },
+    );
   }
 
   Future<void> blockUser({
@@ -375,13 +419,35 @@ class ChatListCubit extends Cubit<ChatListState> {
       return room;
     }).toList();
 
-    emit(ChatListState.loaded(
-      chatRooms: updatedRooms,
-      pendingRequestsCount: currentState.pendingRequestsCount,
-    ));
+    emit(
+      ChatListState.loaded(
+        chatRooms: updatedRooms,
+        pendingRequestsCount: currentState.pendingRequestsCount,
+      ),
+    );
   }
 
   void setActiveChatRoom(String? chatRoomId) {}
+
+  /// ✅ شيل الـ room محلياً بدون API call (لما الحذف تم بالفعل من جوه الشات)
+  void removeChatRoomLocally(String chatRoomId) {
+    final currentState = state.maybeMap(
+      loaded: (state) => state,
+      orElse: () => null,
+    );
+    if (currentState == null) return;
+
+    final updatedRooms = currentState.chatRooms
+        .where((room) => room.id != chatRoomId)
+        .toList();
+
+    emit(
+      ChatListState.loaded(
+        chatRooms: updatedRooms,
+        pendingRequestsCount: currentState.pendingRequestsCount,
+      ),
+    );
+  }
 
   /// ✅ تحديث آخر رسالة لغرفة معينة بدون إعادة تحميل كامل
   void updateLastMessage({
@@ -405,11 +471,14 @@ class ChatListCubit extends Cubit<ChatListState> {
       return room;
     }).toList();
 
-    emit(ChatListState.loaded(
-      chatRooms: _sortChatRooms(updatedRooms),
-      pendingRequestsCount: currentState.pendingRequestsCount,
-    ));
+    emit(
+      ChatListState.loaded(
+        chatRooms: _sortChatRooms(updatedRooms),
+        pendingRequestsCount: currentState.pendingRequestsCount,
+      ),
+    );
   }
+
   void markMessageRed(String chatRoomId) {
     final currentState = state.maybeMap(
       loaded: (state) => state,
@@ -425,10 +494,12 @@ class ChatListCubit extends Cubit<ChatListState> {
       return room;
     }).toList();
 
-    emit(ChatListState.loaded(
-      chatRooms: updatedRooms,
-      pendingRequestsCount: currentState.pendingRequestsCount,
-    ));
+    emit(
+      ChatListState.loaded(
+        chatRooms: updatedRooms,
+        pendingRequestsCount: currentState.pendingRequestsCount,
+      ),
+    );
   }
 
   void markChatAsRead(String chatRoomId) {}

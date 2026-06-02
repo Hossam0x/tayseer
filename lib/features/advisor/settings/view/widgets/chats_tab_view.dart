@@ -1,3 +1,4 @@
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_states.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/chats_tab_ui_cubit.dart';
@@ -124,30 +125,32 @@ class _ChatsTabViewBody extends StatelessWidget {
         onRefresh: () => context.read<ArchivedChatsCubit>().refresh(),
         color: AppColors.kprimaryColor,
         backgroundColor: AppColors.kWhiteColor,
-        child: ListView.separated(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-          itemCount: state.chatRooms.length + (state.hasMore ? 1 : 0),
-          separatorBuilder: (_, __) =>
-              Divider(color: AppColors.secondary100, height: 1),
-          itemBuilder: (context, index) {
-            if (index == state.chatRooms.length) {
-              return state.isLoadingMore
-                  ? Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16.h),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.kprimaryColor,
+        child: SlidableAutoCloseBehavior(
+          child: ListView.separated(
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+            itemCount: state.chatRooms.length + (state.hasMore ? 1 : 0),
+            separatorBuilder: (_, __) =>
+                Divider(color: AppColors.secondary100, height: 1),
+            itemBuilder: (context, index) {
+              if (index == state.chatRooms.length) {
+                return state.isLoadingMore
+                    ? Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16.h),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.kprimaryColor,
+                          ),
                         ),
-                      ),
-                    )
-                  : const SizedBox.shrink();
-            }
-            return ChatItemWidget(
-              key: ValueKey('chat_${state.chatRooms[index].id}'),
-              chatRoom: state.chatRooms[index],
-              currentUserId: currentUserId,
-            );
-          },
+                      )
+                    : const SizedBox.shrink();
+              }
+              return ChatItemWidget(
+                key: ValueKey('chat_${state.chatRooms[index].id}'),
+                chatRoom: state.chatRooms[index],
+                currentUserId: currentUserId,
+              );
+            },
+          ),
         ),
       ),
     );

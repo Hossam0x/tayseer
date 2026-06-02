@@ -25,6 +25,9 @@ import 'package:tayseer/features/advisor/chat/presentation/widget/conversation/s
 import 'package:tayseer/features/advisor/chat/presentation/manager/state/chat_messages_state.dart';
 import 'package:tayseer/features/advisor/chat/presentation/manager/scroll/chat_scroll_state.dart';
 import 'package:tayseer/features/user/interactions/data/Model/interaction_usermodel%20.dart';
+import 'package:tayseer/core/dependancy_injection/get_it.dart';
+import 'package:tayseer/core/utils/api_endpoint.dart';
+import 'package:tayseer/core/utils/api_service.dart';
 import 'package:tayseer/my_import.dart';
 
 class UserChatScreen extends StatelessWidget {
@@ -36,6 +39,7 @@ class UserChatScreen extends StatelessWidget {
   final bool myImageBlur;
   final bool blurMyImageFromOtherUser;
   final bool isBlocked;
+  final bool amIBlocker;
 
   const UserChatScreen({
     super.key,
@@ -47,6 +51,7 @@ class UserChatScreen extends StatelessWidget {
     this.myImageBlur = false,
     this.blurMyImageFromOtherUser = true,
     this.isBlocked = false,
+    this.amIBlocker = false,
   });
 
   @override
@@ -57,8 +62,12 @@ class UserChatScreen extends StatelessWidget {
           create: (context) {
             log('🚀 Creating ChatMessagesCubit for user room: $chatRoomId');
             final cubit = getIt<ChatMessagesCubit>(param1: chatRoomId);
-            cubit.setInitialBlocked(isBlocked);
-            cubit.loadInitialMessages(chatRoomId!, receiverId: receiverId);
+            cubit.loadInitialMessages(
+              chatRoomId!,
+              receiverId: receiverId,
+              isBlocked: isBlocked,
+              amIBlocker: amIBlocker,
+            );
             return cubit;
           },
         ),
@@ -163,19 +172,23 @@ class _UserChatContentState extends State<_UserChatContent> {
     _blurExceptionSubscription = getIt<ChatSocketService>()
         .onImageBlurExceptionToggled
         .listen((data) {
-      if (!mounted) return;
-      // السيرفر بيبعت: {blur: false/true, userWithBlurredImage: ..., exceptedUserId: ...}
-      // blur: false = سمحنا له يشوف صورتنا (exception مفعّل) → _isBlurExceptionEnabled = true
-      // blur: true  = صورتنا مبلورة عنده (exception مش مفعّل) → _isBlurExceptionEnabled = false
-      final blur = data['blur'] as bool? ?? true;
-      setState(() => _isBlurExceptionEnabled = !blur);
-      AppToast.success(
-        context,
-        blur
-            ? (isArabic ? 'تم إلغاء السماح برؤية صورتك' : 'Image blur restored')
-            : (isArabic ? 'تم السماح برؤية صورتك' : 'Image blur removed for this user'),
-      );
-    });
+          if (!mounted) return;
+          // السيرفر بيبعت: {blur: false/true, userWithBlurredImage: ..., exceptedUserId: ...}
+          // blur: false = سمحنا له يشوف صورتنا (exception مفعّل) → _isBlurExceptionEnabled = true
+          // blur: true  = صورتنا مبلورة عنده (exception مش مفعّل) → _isBlurExceptionEnabled = false
+          final blur = data['blur'] as bool? ?? true;
+          setState(() => _isBlurExceptionEnabled = !blur);
+          AppToast.success(
+            context,
+            blur
+                ? (isArabic
+                      ? 'تم إلغاء السماح برؤية صورتك'
+                      : 'Image blur restored')
+                : (isArabic
+                      ? 'تم السماح برؤية صورتك'
+                      : 'Image blur removed for this user'),
+          );
+        });
   }
 
   @override
@@ -229,9 +242,13 @@ class _UserChatContentState extends State<_UserChatContent> {
         return 'video'; // → 🎥
       case 'images/videos':
         // ✅ تحقق من الـ URL نفسه عشان نعرف image أو video
-        final url = msg.contentList.isNotEmpty ? msg.contentList.first.toLowerCase() : '';
-        if (url.contains('.mp4') || url.contains('.mov') ||
-            url.contains('.avi') || url.contains('.webm')) {
+        final url = msg.contentList.isNotEmpty
+            ? msg.contentList.first.toLowerCase()
+            : '';
+        if (url.contains('.mp4') ||
+            url.contains('.mov') ||
+            url.contains('.avi') ||
+            url.contains('.webm')) {
           return 'video';
         }
         return 'image';
@@ -261,6 +278,21 @@ class _UserChatContentState extends State<_UserChatContent> {
       });
     } else {
       Navigator.pop(context);
+    }
+  }
+
+  /// ✅ يحذف الشات من السيرفر ثم يخرج
+  Future<void> _deleteChatAndPop(BuildContext context) async {
+    if (widget.chatRoomId == null) return;
+    try {
+      final api = getIt<ApiService>();
+      await api.delete(
+        endPoint: ApiEndPoint.deleteChatRoom,
+        data: {'chatRoomId': widget.chatRoomId},
+      );
+    } catch (_) {}
+    if (context.mounted) {
+      Navigator.pop(context, {'deleted': true});
     }
   }
 
@@ -343,6 +375,7 @@ class _UserChatContentState extends State<_UserChatContent> {
                         selectionState: selectionState,
                         actionsHandler: _actionsHandler,
                         scrollHandler: _scrollHandler,
+                        onDeleteChat: () => _deleteChatAndPop(context),
                       ),
                     ],
                   ),
@@ -462,7 +495,6 @@ class _UserChatContentState extends State<_UserChatContent> {
                             image: widget.userimage ?? '',
                             isverified: false, // غير متاح في الشات
                             isImageBlurred: false, // غير متاح في الشات
-
                           ),
                         },
                       );
@@ -557,7 +589,11 @@ class _UserChatContentState extends State<_UserChatContent> {
                       );
                       break;
                     case 'block':
-                      if (chatState.isBlocked) {
+                      // ✅ أنت الحاظر (amIBlocker) → إلغاء الحظر
+                      // مفيش block → حظر
+                      // أنت المحظور → مش هيظهر الـ option ده أصلاً
+                      if (chatState.isBlocked &&
+                          context.read<ChatMessagesCubit>().amIBlocker) {
                         ChatRoomDialogHelper.showUnblockDialog(
                           context: context,
                           title: context.tr('unblock_label'),
@@ -568,7 +604,7 @@ class _UserChatContentState extends State<_UserChatContent> {
                             );
                           },
                         );
-                      } else {
+                      } else if (!chatState.isBlocked) {
                         ChatRoomDialogHelper.showBlockDialog(
                           context: context,
                           title: context.tr('block_label'),
@@ -620,21 +656,35 @@ class _UserChatContentState extends State<_UserChatContent> {
                       ],
                     ),
                   ),
-                  PopupMenuItem(
-                    value: 'block',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.block_outlined, size: 20),
-                        SizedBox(width: 8.w),
-                        Text(
-                          chatState.isBlocked
-                              ? context.tr('unblock_label')
-                              : context.tr('block_label'),
-                          style: TextStyle(fontSize: 14.sp),
-                        ),
-                      ],
+                  // ✅ لو أنت المحظور (isBlocked=true, amIBlocker=false) → لا تظهر block option
+                  if (!chatState.isBlocked ||
+                      context.read<ChatMessagesCubit>().amIBlocker)
+                    PopupMenuItem(
+                      value: 'block',
+                      child: Row(
+                        children: [
+                          Icon(
+                            (chatState.isBlocked &&
+                                    context
+                                        .read<ChatMessagesCubit>()
+                                        .amIBlocker)
+                                ? Icons.lock_open_outlined
+                                : Icons.block_outlined,
+                            size: 20,
+                          ),
+                          SizedBox(width: 8.w),
+                          Text(
+                            (chatState.isBlocked &&
+                                    context
+                                        .read<ChatMessagesCubit>()
+                                        .amIBlocker)
+                                ? context.tr('unblock_label')
+                                : context.tr('block_label'),
+                            style: TextStyle(fontSize: 14.sp),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
                   // ✅ شيل/أضف البلور لهذا المستخدم — بس لو صورته مبلورة أصلاً
                   if (widget.myImageBlur)
                     PopupMenuItem(
@@ -651,7 +701,9 @@ class _UserChatContentState extends State<_UserChatContent> {
                           Text(
                             _isBlurExceptionEnabled
                                 ? (isArabic ? 'إخفاء صورتي' : 'Hide my photo')
-                                : (isArabic ? 'إظهار صورتي له' : 'Show my photo'),
+                                : (isArabic
+                                      ? 'إظهار صورتي له'
+                                      : 'Show my photo'),
                             style: TextStyle(fontSize: 14.sp),
                           ),
                         ],

@@ -392,7 +392,10 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
                             key: ValueKey('matching_room_${room.id}'),
                             id: room.id,
                             title: room.otherUser.name,
-                            subtitle: ChatRoomListItem.formatLastMessage(context, room.lastMessage?.content ?? ''),
+                            subtitle: ChatRoomListItem.formatLastMessage(
+                              context,
+                              room.lastMessage?.content ?? '',
+                            ),
                             statusText: _roomStatusText(context, room),
                             imageUrl: room.otherUser.image,
                             isOnline: room.otherUserOnlineStatus,
@@ -401,12 +404,13 @@ class _UserChatMatchingListViewState extends State<UserChatMatchingListView> {
                             unreadCount: room.unreadCount,
                             isImageBlurred: room.otherUser.imageBlur,
                             isBlocked: room.blockExists,
+                            amIBlocker: room.amIBlocker,
                             fallbackAsset: AssetsData.defaultProfileImage,
                             onTap: () => _onRoomTap(context, room, data),
                             onDelete: () {},
                             onReport: () {},
                             onBlock: () {},
-                            blockLabel: room.blockExists
+                            blockLabel: room.amIBlocker
                                 ? context.tr('unblock_label')
                                 : context.tr('block_label'),
                           );

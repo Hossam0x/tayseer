@@ -107,6 +107,7 @@ class ChatItemWidget extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
+            Slidable.of(context)?.close();
             // Save cubit reference before dialog opens
             final cubit = context.read<ArchivedChatsCubit>();
             showConfirmationDialog(

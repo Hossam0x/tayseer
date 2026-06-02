@@ -7,6 +7,8 @@ import 'package:tayseer/core/constant/constans_keys.dart';
 import 'package:tayseer/core/dependancy_injection/get_it.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/services/secure_window_service.dart';
+import 'package:tayseer/core/utils/api_endpoint.dart';
+import 'package:tayseer/core/utils/api_service.dart';
 import 'package:tayseer/core/utils/assets.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/core/widgets/app_toast.dart';
@@ -35,6 +37,7 @@ class AdvisorChatScreen extends StatelessWidget {
   final String? username;
   final String? userimage;
   final bool isBlocked;
+  final bool amIBlocker;
   final bool isHaveSession;
   final bool isSystemChat;
   final void Function(bool isBlocked)? onBlockStatusChanged;
@@ -46,6 +49,7 @@ class AdvisorChatScreen extends StatelessWidget {
     this.username,
     this.userimage,
     this.isBlocked = false,
+    this.amIBlocker = false,
     this.isHaveSession = true,
     this.isSystemChat = false,
     this.onBlockStatusChanged,
@@ -59,15 +63,14 @@ class AdvisorChatScreen extends StatelessWidget {
           create: (context) {
             log('🚀 Creating ChatMessagesCubit for room: $chatRoomId');
             final cubit = getIt<ChatMessagesCubit>(param1: chatRoomId);
-            cubit.setInitialBlocked(isBlocked);
             // ✅ Ensure socket is connected before joining the room.
-            // Fire-and-forget — loadInitialMessages registers a reconnect
-            // callback internally so it will join once connected.
             _ensureSocketConnected();
             cubit.loadInitialMessages(
               chatRoomId!,
               receiverId: receiverId,
               isSystemChat: isSystemChat,
+              isBlocked: isBlocked,
+              amIBlocker: amIBlocker,
             );
             return cubit;
           },
@@ -241,6 +244,21 @@ class _ChatContentState extends State<_ChatContent> {
     }
   }
 
+  /// ✅ يحذف الشات من السيرفر ثم يخرج
+  Future<void> _deleteChatAndPop(BuildContext context) async {
+    if (widget.chatRoomId == null) return;
+    try {
+      final api = getIt<ApiService>();
+      await api.delete(
+        endPoint: ApiEndPoint.deleteChatRoom,
+        data: {'chatRoomId': widget.chatRoomId},
+      );
+    } catch (_) {}
+    if (context.mounted) {
+      Navigator.pop(context, {'deleted': true});
+    }
+  }
+
   /// ✅ يحوّل الـ messageType لـ keyword موحد للعرض في الـ chat list
   static String _contentForDisplay(ChatMessage msg) {
     switch (msg.messageType) {
@@ -346,6 +364,7 @@ class _ChatContentState extends State<_ChatContent> {
                           actionsHandler: _actionsHandler,
                           scrollHandler: _scrollHandler,
                           onBlockStatusChanged: widget.onBlockStatusChanged,
+                          onDeleteChat: () => _deleteChatAndPop(context),
                         ),
                       ],
                     ),

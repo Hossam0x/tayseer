@@ -60,14 +60,17 @@ class UserChatCubit extends Cubit<UserChatState> {
   StreamSubscription<ChatUnarchiveEvent>? _unarchiveSubscription;
 
   UserChatCubit(this._repo) : super(const UserChatState()) {
-    _listenerId = 'UserChatCubit_newMessage_${DateTime.now().millisecondsSinceEpoch}';
+    _listenerId =
+        'UserChatCubit_newMessage_${DateTime.now().millisecondsSinceEpoch}';
     _setupSocketListener();
     _setupEventBusListeners();
   }
 
   void _setupEventBusListeners() {
     // لما يتعمل unarchive لأي غرفة، حدّث الـ list بدون loading
-    _unarchiveSubscription = ChatEventBus.instance.onChatUnarchived.listen((event) {
+    _unarchiveSubscription = ChatEventBus.instance.onChatUnarchived.listen((
+      event,
+    ) {
       if (isClosed) return;
       _refreshChatRoomsQuietly();
     });
@@ -77,16 +80,13 @@ class UserChatCubit extends Cubit<UserChatState> {
   Future<void> _refreshChatRoomsQuietly() async {
     final result = await _repo.getUserChatRooms();
     if (isClosed) return;
-    result.fold(
-      (_) {},
-      (response) {
-        emit(state.copyWith(chatRooms: response.chatRooms));
-        final userId = kCurrentUserData?.id;
-        if (userId != null) {
-          _saveCacheFromCurrentState(response.chatRooms);
-        }
-      },
-    );
+    result.fold((_) {}, (response) {
+      emit(state.copyWith(chatRooms: response.chatRooms));
+      final userId = kCurrentUserData?.id;
+      if (userId != null) {
+        _saveCacheFromCurrentState(response.chatRooms);
+      }
+    });
   }
 
   void _setupSocketListener() {
@@ -97,24 +97,27 @@ class UserChatCubit extends Cubit<UserChatState> {
         final chatRoomData = data['chatRoom'] as Map<String, dynamic>?;
         if (chatRoomData == null) return;
         final roomId = chatRoomData['id']?.toString() ?? '';
-        final lastMsgData = chatRoomData['lastMessage'] as Map<String, dynamic>?;
+        final lastMsgData =
+            chatRoomData['lastMessage'] as Map<String, dynamic>?;
         if (roomId.isEmpty || lastMsgData == null) return;
 
         // ✅ حوّل الـ contentType لـ display content مناسب
         // السيرفر بيبعت الـ URL الفعلي في content لو audio/image/video
         // لازم نحوّله لـ 'audio'/'image'/'video' عشان formatLastMessage يعرضه صح
         final rawContent = lastMsgData['content']?.toString() ?? '';
-        final contentType = (lastMsgData['contentType'] ?? lastMsgData['messageType'])
-            ?.toString()
-            .toLowerCase() ?? '';
-        final displayContent = _normalizeContentForDisplay(rawContent, contentType);
+        final contentType =
+            (lastMsgData['contentType'] ?? lastMsgData['messageType'])
+                ?.toString()
+                .toLowerCase() ??
+            '';
+        final displayContent = _normalizeContentForDisplay(
+          rawContent,
+          contentType,
+        );
 
         final updatedRooms = state.chatRooms.map((room) {
           if (room.id == roomId) {
-            return UserChatRoomModel(
-              id: room.id,
-              otherUser: room.otherUser,
-              otherUserType: room.otherUserType,
+            return room.copyWith(
               lastMessage: UserLastMessageModel(
                 content: displayContent,
                 sentAt: lastMsgData['sentAt'] != null
@@ -122,9 +125,7 @@ class UserChatCubit extends Cubit<UserChatState> {
                     : null,
                 status: lastMsgData['status']?.toString(),
               ),
-              otherUserOnlineStatus: room.otherUserOnlineStatus,
               unreadCount: room.unreadCount + 1,
-              blockExists: room.blockExists,
             );
           }
           return room;
@@ -145,7 +146,10 @@ class UserChatCubit extends Cubit<UserChatState> {
 
   /// ✅ يحوّل الـ content الخام لـ display content مناسب للـ chat list
   /// لو الـ contentType يدل على media، يرجع keyword بدل الـ URL
-  static String _normalizeContentForDisplay(String rawContent, String contentType) {
+  static String _normalizeContentForDisplay(
+    String rawContent,
+    String contentType,
+  ) {
     switch (contentType) {
       case 'record':
       case 'audio':
@@ -215,15 +219,7 @@ class UserChatCubit extends Cubit<UserChatState> {
     if (isClosed) return;
     final updatedRooms = state.chatRooms.map((room) {
       if (room.id == chatRoomId && room.unreadCount > 0) {
-        return UserChatRoomModel(
-          id: room.id,
-          otherUser: room.otherUser,
-          otherUserType: room.otherUserType,
-          lastMessage: room.lastMessage,
-          otherUserOnlineStatus: room.otherUserOnlineStatus,
-          unreadCount: 0,
-          blockExists: room.blockExists,
-        );
+        return room.copyWith(unreadCount: 0);
       }
       return room;
     }).toList();
@@ -241,18 +237,13 @@ class UserChatCubit extends Cubit<UserChatState> {
     if (isClosed) return;
     final updatedRooms = state.chatRooms.map((room) {
       if (room.id == chatRoomId) {
-        return UserChatRoomModel(
-          id: room.id,
-          otherUser: room.otherUser,
-          otherUserType: room.otherUserType,
+        return room.copyWith(
           lastMessage: UserLastMessageModel(
             content: content,
             sentAt: sentAt,
             status: status,
           ),
-          otherUserOnlineStatus: room.otherUserOnlineStatus,
           unreadCount: 0,
-          blockExists: room.blockExists,
         );
       }
       return room;
@@ -273,7 +264,9 @@ class UserChatCubit extends Cubit<UserChatState> {
     final originalRooms = List<UserChatRoomModel>.from(state.chatRooms);
 
     // Optimistic: اشيل الغرفة فوراً
-    final updatedRooms = originalRooms.where((r) => r.id != chatRoomId).toList();
+    final updatedRooms = originalRooms
+        .where((r) => r.id != chatRoomId)
+        .toList();
     emit(state.copyWith(chatRooms: updatedRooms));
     _saveCacheFromCurrentState(updatedRooms);
 
@@ -313,11 +306,13 @@ class UserChatCubit extends Cubit<UserChatState> {
     if (userId != null) {
       final cached = _cacheService.getCachedUserChatRoomsSimple(userId: userId);
       if (cached != null && (cached['rooms'] as List).isNotEmpty) {
-        emit(state.copyWith(
-          status: CubitStates.success,
-          chatRooms: cached['rooms'] as List<UserChatRoomModel>,
-          slotLimit: (cached['slotLimit'] as int?) ?? state.slotLimit,
-        ));
+        emit(
+          state.copyWith(
+            status: CubitStates.success,
+            chatRooms: cached['rooms'] as List<UserChatRoomModel>,
+            slotLimit: (cached['slotLimit'] as int?) ?? state.slotLimit,
+          ),
+        );
       } else if (state.chatRooms.isEmpty) {
         // ✅ فقط اعرض loading لو مفيش data موجودة في الـ state الحالي
         // ده بيمنع اختفاء الـ system chat لما loadAll بيتنادى بعد الخروج من الشات
@@ -337,20 +332,37 @@ class UserChatCubit extends Cubit<UserChatState> {
     final requestsResult = results[1] as dynamic;
     final matchingResult = results[2] as dynamic;
 
-    final rooms = roomsResult.fold((_) => <UserChatRoomModel>[], (r) => r.chatRooms as List<UserChatRoomModel>);
-    final requests = requestsResult.fold((_) => <RegardRequestModel>[], (r) => r as List<RegardRequestModel>);
-    final slotLimit = roomsResult.fold((_) => 4, (r) => (r as dynamic).slotLimit as int? ?? 4);
-    final matchingCount = matchingResult.fold((_) => 0, (r) => (r as dynamic).totalCount as int? ?? 0);
-    final myImageBlur = roomsResult.fold((_) => state.myImageBlur, (r) => (r as dynamic).myImageBlur as bool? ?? false);
+    final rooms = roomsResult.fold(
+      (_) => <UserChatRoomModel>[],
+      (r) => r.chatRooms as List<UserChatRoomModel>,
+    );
+    final requests = requestsResult.fold(
+      (_) => <RegardRequestModel>[],
+      (r) => r as List<RegardRequestModel>,
+    );
+    final slotLimit = roomsResult.fold(
+      (_) => 4,
+      (r) => (r as dynamic).slotLimit as int? ?? 4,
+    );
+    final matchingCount = matchingResult.fold(
+      (_) => 0,
+      (r) => (r as dynamic).totalCount as int? ?? 0,
+    );
+    final myImageBlur = roomsResult.fold(
+      (_) => state.myImageBlur,
+      (r) => (r as dynamic).myImageBlur as bool? ?? false,
+    );
 
-    emit(state.copyWith(
-      status: CubitStates.success,
-      chatRooms: rooms,
-      requests: requests,
-      slotLimit: slotLimit,
-      matchingCount: matchingCount,
-      myImageBlur: myImageBlur,
-    ));
+    emit(
+      state.copyWith(
+        status: CubitStates.success,
+        chatRooms: rooms,
+        requests: requests,
+        slotLimit: slotLimit,
+        matchingCount: matchingCount,
+        myImageBlur: myImageBlur,
+      ),
+    );
 
     // ✅ حفظ في الكاش دايماً بعد الـ API (حتى لو فاضي عشان يمسح الـ cache القديم)
     if (userId != null) {
@@ -365,15 +377,19 @@ class UserChatCubit extends Cubit<UserChatState> {
   Future<void> loadChatRooms() async {
     final result = await _repo.getUserChatRooms();
     result.fold(
-      (failure) => emit(state.copyWith(
-        status: CubitStates.failure,
-        errorMessage: failure.message,
-      )),
+      (failure) => emit(
+        state.copyWith(
+          status: CubitStates.failure,
+          errorMessage: failure.message,
+        ),
+      ),
       (response) {
-        emit(state.copyWith(
-          status: CubitStates.success,
-          chatRooms: response.chatRooms,
-        ));
+        emit(
+          state.copyWith(
+            status: CubitStates.success,
+            chatRooms: response.chatRooms,
+          ),
+        );
         final userId = kCurrentUserData?.id;
         if (userId != null) {
           _saveCacheFromCurrentState(response.chatRooms);
@@ -384,19 +400,115 @@ class UserChatCubit extends Cubit<UserChatState> {
 
   Future<void> acceptRequest(String requestId) async {
     final result = await _repo.acceptRegardRequest(requestId);
-    result.fold(
-      (_) {},
-      (_) {
-        final newRequests = state.requests.where((r) => r.id != requestId).toList();
-        emit(state.copyWith(requests: newRequests));
-        loadChatRooms();
-      },
-    );
+    result.fold((_) {}, (_) {
+      final newRequests = state.requests
+          .where((r) => r.id != requestId)
+          .toList();
+      emit(state.copyWith(requests: newRequests));
+      loadChatRooms();
+    });
   }
 
   Future<void> rejectRequest(String requestId) async {
     await _repo.rejectRegardRequest(requestId);
     final newRequests = state.requests.where((r) => r.id != requestId).toList();
     emit(state.copyWith(requests: newRequests));
+  }
+
+  /// حذف غرفة محادثة (optimistic update)
+  Future<bool> deleteChatRoom(String chatRoomId) async {
+    final originalRooms = List<UserChatRoomModel>.from(state.chatRooms);
+
+    // Optimistic: اشيل الغرفة فوراً
+    final updatedRooms = originalRooms
+        .where((r) => r.id != chatRoomId)
+        .toList();
+    emit(state.copyWith(chatRooms: updatedRooms));
+    _saveCacheFromCurrentState(updatedRooms);
+
+    try {
+      final response = await getIt<ApiService>().delete(
+        endPoint: ApiEndPoint.deleteChatRoom,
+        data: {'chatRoomId': chatRoomId},
+      );
+      if (response['success'] == true) {
+        return true;
+      }
+      // Revert on failure
+      emit(state.copyWith(chatRooms: originalRooms));
+      _saveCacheFromCurrentState(originalRooms);
+      return false;
+    } catch (_) {
+      // Revert on error
+      emit(state.copyWith(chatRooms: originalRooms));
+      _saveCacheFromCurrentState(originalRooms);
+      return false;
+    }
+  }
+
+  /// حظر مستخدم من الـ list — يحدّث الـ blockExists بدون تحريك الغرفة
+  Future<bool> blockUser({
+    required String blockedId,
+    required String chatRoomId,
+  }) async {
+    try {
+      final response = await getIt<ApiService>().post(
+        endPoint: ApiEndPoint.blockuser,
+        data: {'blockedId': blockedId},
+      );
+      if (response['success'] == true) {
+        final updatedRooms = state.chatRooms.map((room) {
+          if (room.id == chatRoomId) {
+            // أنت الحاظر: blockExists = true, isBlockedByOther = false
+            return room.copyWith(blockExists: true, isBlockedByOther: false);
+          }
+          return room;
+        }).toList();
+        // ✅ لا نعمل sort — نحافظ على الترتيب الحالي
+        emit(state.copyWith(chatRooms: updatedRooms));
+        _saveCacheFromCurrentState(updatedRooms);
+        return true;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// إلغاء حظر مستخدم من الـ list
+  Future<bool> unblockUser({
+    required String blockedId,
+    required String chatRoomId,
+  }) async {
+    try {
+      final response = await getIt<ApiService>().delete(
+        endPoint: ApiEndPoint.unblockuser,
+        data: {'blockedId': blockedId},
+      );
+      if (response['success'] == true) {
+        final updatedRooms = state.chatRooms.map((room) {
+          if (room.id == chatRoomId) {
+            return room.copyWith(blockExists: false, isBlockedByOther: false);
+          }
+          return room;
+        }).toList();
+        emit(state.copyWith(chatRooms: updatedRooms));
+        _saveCacheFromCurrentState(updatedRooms);
+        return true;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// ✅ شيل الـ room محلياً بدون API call (لما الحذف تم بالفعل من جوه الشات)
+  void removeChatRoomLocally(String chatRoomId) {
+    if (isClosed) return;
+    final updatedRooms = state.chatRooms
+        .where((r) => r.id != chatRoomId)
+        .toList();
+    emit(state.copyWith(chatRooms: updatedRooms));
+    _saveCacheFromCurrentState(updatedRooms);
   }
 }

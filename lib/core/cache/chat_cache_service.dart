@@ -48,7 +48,10 @@ class ChatCacheService {
     try {
       final jsonList = jsonDecode(jsonString) as List;
       return jsonList
-          .map((json) => AdvisorChatRoomModel.fromJson(json as Map<String, dynamic>))
+          .map(
+            (json) =>
+                AdvisorChatRoomModel.fromJson(json as Map<String, dynamic>),
+          )
           .toList();
     } catch (e) {
       return null;
@@ -81,7 +84,10 @@ class ChatCacheService {
     try {
       final jsonList = jsonDecode(jsonString) as List;
       return jsonList
-          .map((json) => AdvisorChatRoomModel.fromJson(json as Map<String, dynamic>))
+          .map(
+            (json) =>
+                AdvisorChatRoomModel.fromJson(json as Map<String, dynamic>),
+          )
           .toList();
     } catch (e) {
       return null;
@@ -97,29 +103,36 @@ class ChatCacheService {
     if (_chatRoomsBox == null) return;
 
     final key = 'user_chat_rooms_simple_$userId';
-    final jsonList = chatRooms.map((room) => {
-      'id': room.id,
-      'otherUser': {
-        'userId': room.otherUser.userId,
-        'name': room.otherUser.name,
-        'image': room.otherUser.image,
-        'imageBlur': room.otherUser.imageBlur,
-      },
-      'otherUserType': room.otherUserType,
-      'lastMessage': room.lastMessage != null ? {
-        'content': room.lastMessage!.content,
-        'sentAt': room.lastMessage!.sentAt?.toUtc().toIso8601String(),
-        'status': room.lastMessage!.status,
-      } : null,
-      'otherUserOnlineStatus': room.otherUserOnlineStatus,
-      'unreadCount': room.unreadCount,
-      'blockExists': room.blockExists,
-    }).toList();
+    final jsonList = chatRooms
+        .map(
+          (room) => {
+            'id': room.id,
+            'otherUser': {
+              'userId': room.otherUser.userId,
+              'name': room.otherUser.name,
+              'image': room.otherUser.image,
+              'imageBlur': room.otherUser.imageBlur,
+            },
+            'otherUserType': room.otherUserType,
+            'lastMessage': room.lastMessage != null
+                ? {
+                    'content': room.lastMessage!.content,
+                    'sentAt': room.lastMessage!.sentAt
+                        ?.toUtc()
+                        .toIso8601String(),
+                    'status': room.lastMessage!.status,
+                  }
+                : null,
+            'otherUserOnlineStatus': room.otherUserOnlineStatus,
+            'unreadCount': room.unreadCount,
+            'blockExists': room.blockExists,
+            // ✅ نحفظ isMe: true = أنت الحاظر (amIBlocker)، false = هو بلّكك أو مفيش block
+            'isMe': room.amIBlocker,
+          },
+        )
+        .toList();
 
-    final wrapper = {
-      'slotLimit': slotLimit,
-      'rooms': jsonList,
-    };
+    final wrapper = {'slotLimit': slotLimit, 'rooms': jsonList};
     final jsonString = jsonEncode(wrapper);
 
     await _chatRoomsBox!.put(key, jsonString);
@@ -141,19 +154,21 @@ class ChatCacheService {
       // backward compat: لو الكاش القديم كان list مباشرة
       if (decoded is List) {
         final rooms = decoded
-            .map((json) => UserChatRoomModel.fromJson(json as Map<String, dynamic>))
+            .map(
+              (json) =>
+                  UserChatRoomModel.fromJson(json as Map<String, dynamic>),
+            )
             .toList();
         return {'rooms': rooms, 'slotLimit': null};
       }
 
       final wrapper = decoded as Map<String, dynamic>;
       final roomsList = (wrapper['rooms'] as List)
-          .map((json) => UserChatRoomModel.fromJson(json as Map<String, dynamic>))
+          .map(
+            (json) => UserChatRoomModel.fromJson(json as Map<String, dynamic>),
+          )
           .toList();
-      return {
-        'rooms': roomsList,
-        'slotLimit': wrapper['slotLimit'] as int?,
-      };
+      return {'rooms': roomsList, 'slotLimit': wrapper['slotLimit'] as int?};
     } catch (e) {
       return null;
     }
