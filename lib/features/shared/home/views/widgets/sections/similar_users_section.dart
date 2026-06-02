@@ -16,15 +16,15 @@ class SimilarUsersSection extends StatefulWidget {
     this.onLoadMore,
     this.onUserVisited,
     this.isLoadingMore = false,
+    this.onSeeMore,
   });
 
   final List<SimilarUserModel> users;
   final PaginationModel? pagination;
   final VoidCallback? onLoadMore;
-
-  /// يُستدعى بعد ما اليوزر يدخل على البروفايل — يشيل الكارت من الـ list
   final Function(String userId)? onUserVisited;
   final bool isLoadingMore;
+  final VoidCallback? onSeeMore;
 
   @override
   State<SimilarUsersSection> createState() => _SimilarUsersSectionState();
@@ -89,7 +89,7 @@ class _SimilarUsersSectionState extends State<SimilarUsersSection> {
     if (widget.users.isEmpty) return const SizedBox.shrink();
 
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 20.h),
+      margin: EdgeInsets.symmetric(vertical: 12.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -106,18 +106,23 @@ class _SimilarUsersSectionState extends State<SimilarUsersSection> {
                     letterSpacing: -0.5,
                   ),
                 ),
-                Text(
-                  context.tr('similar_users_desc'),
-                  style: Styles.textStyle12.copyWith(
-                    color: Colors.grey.shade600,
+                if (widget.onSeeMore != null)
+                  GestureDetector(
+                    onTap: widget.onSeeMore,
+                    child: Text(
+                      context.tr('see_more'),
+                      style: Styles.textStyle12.copyWith(
+                        color: AppColors.kprimaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
-          Gap(16.h),
+          Gap(10.h),
           SizedBox(
-            height: 200.h,
+            height: 170.h,
             child: PageView.builder(
               controller: _pageController,
               itemCount: widget.users.length,
@@ -219,12 +224,12 @@ class _SimilarUserCard extends StatelessWidget {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24.r),
             child: Padding(
-              padding: EdgeInsets.all(16.w),
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
               child: Row(
                 children: [
                   // ── Avatar ──
                   Container(
-                    padding: EdgeInsets.all(3.w),
+                    padding: EdgeInsets.all(2.w),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
@@ -237,25 +242,25 @@ class _SimilarUserCard extends StatelessWidget {
                         children: [
                           CachedNetworkImage(
                             imageUrl: user.image ?? '',
-                            memCacheWidth: 160,
-                            width: 80.r,
-                            height: 80.r,
+                            memCacheWidth: 140,
+                            width: 70.r,
+                            height: 70.r,
                             fit: BoxFit.cover,
                             placeholder: (_, __) => CircleAvatar(
-                              radius: 40.r,
+                              radius: 35.r,
                               backgroundColor: Colors.grey.shade100,
                               child: Icon(
                                 Icons.person,
-                                size: 36,
+                                size: 30,
                                 color: Colors.grey.shade400,
                               ),
                             ),
                             errorWidget: (_, __, ___) => CircleAvatar(
-                              radius: 40.r,
+                              radius: 35.r,
                               backgroundColor: Colors.grey.shade100,
                               child: Icon(
                                 Icons.person,
-                                size: 36,
+                                size: 30,
                                 color: Colors.grey.shade400,
                               ),
                             ),
@@ -273,30 +278,31 @@ class _SimilarUserCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Gap(16.w),
+                  Gap(12.w),
                   // ── Details ──
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // ── Name + verified badge ──
                         Row(
                           children: [
-                            Text(
-                              user.name ?? '',
-                              style: Styles.textStyle16SemiBold.copyWith(
-                                color: Colors.black87,
+                            Flexible(
+                              child: Text(
+                                user.name ?? '',
+                                style: Styles.textStyle16SemiBold.copyWith(
+                                  color: Colors.black87,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                             if (user.isVerified == true) ...[
                               Gap(4.w),
                               Icon(
                                 Icons.verified,
                                 color: Colors.blue,
-                                size: 16.sp,
+                                size: 15.sp,
                               ),
                             ],
                           ],
@@ -306,17 +312,17 @@ class _SimilarUserCard extends StatelessWidget {
                           children: [
                             if (user.age != null)
                               _Tag(label: '${user.age} ${context.tr('age')}'),
-                            if (user.age != null && user.city != null) Gap(6.w),
+                            if (user.age != null && user.city != null) Gap(5.w),
                             if (user.city != null)
                               Flexible(child: _Tag(label: user.city!)),
                           ],
                         ),
-                        Gap(8.h),
-                        if (user.similarityScore != null)
+                        if (user.similarityScore != null) ...[
+                          Gap(6.h),
                           Container(
                             padding: EdgeInsets.symmetric(
-                              horizontal: 10.w,
-                              vertical: 4.h,
+                              horizontal: 8.w,
+                              vertical: 3.h,
                             ),
                             decoration: BoxDecoration(
                               color: Colors.green.withValues(alpha: 0.1),
@@ -328,9 +334,9 @@ class _SimilarUserCard extends StatelessWidget {
                                 Icon(
                                   Icons.flash_on_rounded,
                                   color: Colors.green,
-                                  size: 12.sp,
+                                  size: 11.sp,
                                 ),
-                                Gap(4.w),
+                                Gap(3.w),
                                 Text(
                                   '${user.similarityScore}% ${context.tr('similarity')}',
                                   style: Styles.textStyle10.copyWith(
@@ -341,6 +347,7 @@ class _SimilarUserCard extends StatelessWidget {
                               ],
                             ),
                           ),
+                        ],
                       ],
                     ),
                   ),

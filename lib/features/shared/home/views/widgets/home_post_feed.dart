@@ -367,6 +367,10 @@ class HomePostFeed extends StatelessWidget {
             onFollowTap: (advisorId) =>
                 homeCubit.toggleFollowBestAdvisor(advisorId: advisorId),
             isLoadingMore: homeCubit.state.bestAdvisorsIsLoadingMore,
+            onSeeMore: () => Navigator.pushNamed(
+              context,
+              AppRouter.kConsultationStandaloneView,
+            ),
           ),
         );
         continue;
@@ -382,6 +386,7 @@ class HomePostFeed extends StatelessWidget {
               onLoadMore: () => homeCubit.loadMoreSimilarUsers(),
               onUserVisited: (userId) => homeCubit.removeSimilarUser(userId),
               isLoadingMore: homeCubit.state.similarUsersIsLoadingMore,
+              onSeeMore: () => context.read<LayoutCubit>().changeIndex(1),
             ),
           );
         }

@@ -18,6 +18,7 @@ class BestAdvisorSection extends StatefulWidget {
     this.onLoadMore,
     this.onFollowTap,
     this.isLoadingMore = false,
+    this.onSeeMore,
   });
 
   final List<BestAdvisorModel> advisors;
@@ -25,6 +26,7 @@ class BestAdvisorSection extends StatefulWidget {
   final VoidCallback? onLoadMore;
   final Function(String advisorId)? onFollowTap;
   final bool isLoadingMore;
+  final VoidCallback? onSeeMore;
 
   @override
   State<BestAdvisorSection> createState() => _BestAdvisorSectionState();
@@ -89,7 +91,7 @@ class _BestAdvisorSectionState extends State<BestAdvisorSection> {
     if (widget.advisors.isEmpty) return const SizedBox.shrink();
 
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 20.h),
+      margin: EdgeInsets.symmetric(vertical: 12.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -106,18 +108,22 @@ class _BestAdvisorSectionState extends State<BestAdvisorSection> {
                     letterSpacing: -0.5,
                   ),
                 ),
-                Text(
-                  context.tr('expert_guidance_for_you'),
-                  style: Styles.textStyle12.copyWith(
-                    color: Colors.grey.shade600,
+                GestureDetector(
+                  onTap: widget.onSeeMore,
+                  child: Text(
+                    context.tr('see_more'),
+                    style: Styles.textStyle12.copyWith(
+                      color: AppColors.kprimaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          Gap(16.h),
+          Gap(10.h),
           SizedBox(
-            height: 240.h,
+            height: 170.h,
             child: PageView.builder(
               controller: _pageController,
               itemCount: widget.advisors.length,
@@ -243,12 +249,10 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
       duration: const Duration(milliseconds: 400),
       scale: widget.isSelected ? 1.0 : 0.95,
       child: GestureDetector(
-        onTap: () {
-          context.pushNamed(
-            AppRouter.kUserProfileView,
-            arguments: {'advisorId': widget.advisor.id},
-          );
-        },
+        onTap: () => context.pushNamed(
+          AppRouter.kUserProfileView,
+          arguments: {'advisorId': widget.advisor.id},
+        ),
         child: Container(
           margin: EdgeInsets.symmetric(horizontal: 8.w),
           decoration: BoxDecoration(
@@ -266,30 +270,24 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24.r),
-            child: Stack(
-              children: [
-                Positioned(
-                  top: -50,
-                  right: -50,
-                  child: CircleAvatar(
-                    radius: 100,
-                    backgroundColor: AppColors.kprimaryColor.withValues(
-                      alpha: 0.03,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(16.w),
-                  child: Row(
+            child: Padding(
+              padding: EdgeInsets.all(14.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ══════════════════════════════
+                  // الجزء العلوي: صورة + معلومات
+                  // ══════════════════════════════
+                  Row(
                     children: [
                       // ── Avatar ──
                       Container(
-                        padding: EdgeInsets.all(3.w),
+                        padding: EdgeInsets.all(2.w),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: AppColors.kprimaryColor.withValues(
-                              alpha: 0.2,
+                              alpha: 0.25,
                             ),
                             width: 1.5,
                           ),
@@ -299,25 +297,25 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
                             children: [
                               CachedNetworkImage(
                                 imageUrl: widget.advisor.image ?? '',
-                                memCacheWidth: 180,
-                                width: 90.r,
-                                height: 90.r,
+                                memCacheWidth: 160,
+                                width: 70.r,
+                                height: 70.r,
                                 fit: BoxFit.cover,
                                 placeholder: (_, __) => CircleAvatar(
-                                  radius: 45.r,
+                                  radius: 35.r,
                                   backgroundColor: Colors.grey.shade100,
                                   child: Icon(
                                     Icons.person,
-                                    size: 40,
+                                    size: 32,
                                     color: Colors.grey.shade400,
                                   ),
                                 ),
                                 errorWidget: (_, __, ___) => CircleAvatar(
-                                  radius: 45.r,
+                                  radius: 35.r,
                                   backgroundColor: Colors.grey.shade100,
                                   child: Icon(
                                     Icons.person,
-                                    size: 40,
+                                    size: 32,
                                     color: Colors.grey.shade400,
                                   ),
                                 ),
@@ -338,21 +336,19 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
                           ),
                         ),
                       ),
-                      Gap(16.w),
+                      Gap(12.w),
                       // ── Details ──
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // ── Name + verified badge ──
+                            // اسم + تقييم
                             Row(
                               children: [
                                 Expanded(
                                   child: Text(
                                     widget.advisor.name ?? '',
-                                    style: Styles.textStyle18.copyWith(
-                                      fontWeight: FontWeight.bold,
+                                    style: Styles.textStyle16Bold.copyWith(
                                       color: Colors.black87,
                                     ),
                                     maxLines: 1,
@@ -360,11 +356,10 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
                                   ),
                                 ),
                                 Gap(4.w),
-                                // ── Rating badge ──
                                 Container(
                                   padding: EdgeInsets.symmetric(
-                                    horizontal: 8.w,
-                                    vertical: 4.h,
+                                    horizontal: 7.w,
+                                    vertical: 3.h,
                                   ),
                                   decoration: BoxDecoration(
                                     color: Colors.amber.withValues(alpha: 0.1),
@@ -376,7 +371,7 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
                                       Icon(
                                         Icons.star_rounded,
                                         color: Colors.amber,
-                                        size: 14.sp,
+                                        size: 13.sp,
                                       ),
                                       Gap(2.w),
                                       Text(
@@ -391,168 +386,165 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
                                 ),
                               ],
                             ),
-                            Gap(4.h),
+                            Gap(3.h),
+                            // سنوات الخبرة
                             Text(
                               TranslationHelper.translateYearsExperienceFromString(
                                 context,
                                 widget.advisor.yearsOfExperience,
                               ),
-                              style: Styles.textStyle14.copyWith(
+                              style: Styles.textStyle12.copyWith(
                                 color: AppColors.kprimaryColor,
                                 fontWeight: FontWeight.w600,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            Gap(8.h),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    TranslationHelper.translateAdvisorSubtitle(
-                                      context,
-                                      widget.advisor.subtitle,
-                                    ),
-                                    style: Styles.textStyle12.copyWith(
-                                      color: Colors.grey.shade600,
-                                      height: 1.3,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                // ── Follow button ──
-                                if (widget.onFollowTap != null)
-                                  GestureDetector(
-                                    onTap: _handleFollowTap,
-                                    child: ScaleTransition(
-                                      scale: _scaleAnim,
-                                      child: AnimatedSwitcher(
-                                        duration: const Duration(
-                                          milliseconds: 300,
-                                        ),
-                                        transitionBuilder: (child, animation) =>
-                                            ScaleTransition(
-                                              scale: animation,
-                                              child: FadeTransition(
-                                                opacity: animation,
-                                                child: child,
-                                              ),
-                                            ),
-                                        child: _isFollowing
-                                            ? Container(
-                                                key: const ValueKey(
-                                                  'following',
-                                                ),
-                                                padding: EdgeInsets.symmetric(
-                                                  horizontal: 12.w,
-                                                  vertical: 6.h,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.grey.shade100,
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                        16.r,
-                                                      ),
-                                                  border: Border.all(
-                                                    color: Colors.grey.shade300,
-                                                    width: 1,
-                                                  ),
-                                                ),
-                                                child: Text(
-                                                  context.tr('following'),
-                                                  style: Styles.textStyle10
-                                                      .copyWith(
-                                                        color: Colors
-                                                            .grey
-                                                            .shade600,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                      ),
-                                                ),
-                                              )
-                                            : Container(
-                                                key: const ValueKey('follow'),
-                                                padding: EdgeInsets.symmetric(
-                                                  horizontal: 12.w,
-                                                  vertical: 6.h,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color:
-                                                      AppColors.kprimaryColor,
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                        16.r,
-                                                      ),
-                                                ),
-                                                child: Text(
-                                                  context.tr('follow'),
-                                                  style: Styles.textStyle10
-                                                      .copyWith(
-                                                        color: Colors.white,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                      ),
-                                                ),
-                                              ),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            Gap(6.h),
-                            // ── Book Session button ──
-                            GestureDetector(
-                              onTap: () {
-                                context.pushNamed(
-                                  AppRouter.kChooseSessionView,
-                                  arguments: {
-                                    'title': context.tr('book_session'),
-                                    'advisorId': widget.advisor.id ?? '',
-                                  },
-                                );
-                              },
-                              child: Container(
-                                width: double.infinity,
-                                padding: EdgeInsets.symmetric(vertical: 6.h),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      AppColors.kprimaryColor,
-                                      AppColors.kprimaryColor.withValues(
-                                        alpha: 0.8,
-                                      ),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(12.r),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.calendar_month_rounded,
-                                      color: Colors.white,
-                                      size: 13.sp,
-                                    ),
-                                    Gap(4.w),
-                                    Text(
-                                      context.tr('book_session'),
-                                      style: Styles.textStyle10.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                            Gap(3.h),
+                            // subtitle
+                            Text(
+                              TranslationHelper.translateAdvisorSubtitle(
+                                context,
+                                widget.advisor.subtitle,
                               ),
+                              style: Styles.textStyle12.copyWith(
+                                color: Colors.grey.shade600,
+                                height: 1.3,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
+
+                  Gap(20.h),
+
+                  // ══════════════════════════════
+                  // الجزء السفلي: زرارين بنفس الحجم
+                  // ══════════════════════════════
+                  Row(
+                    children: [
+                      // ── Follow button ──
+                      if (widget.onFollowTap != null)
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: _handleFollowTap,
+                            child: ScaleTransition(
+                              scale: _scaleAnim,
+                              child: AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 300),
+                                transitionBuilder: (child, animation) =>
+                                    ScaleTransition(
+                                      scale: animation,
+                                      child: FadeTransition(
+                                        opacity: animation,
+                                        child: child,
+                                      ),
+                                    ),
+                                child: _isFollowing
+                                    ? Container(
+                                        key: const ValueKey('following'),
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: 8.h,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade100,
+                                          borderRadius: BorderRadius.circular(
+                                            12.r,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.grey.shade300,
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            context.tr('following'),
+                                            style: Styles.textStyle12.copyWith(
+                                              color: Colors.grey.shade600,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : Container(
+                                        key: const ValueKey('follow'),
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: 8.h,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                            color: AppColors.kprimaryColor,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            12.r,
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            context.tr('follow'),
+                                            style: Styles.textStyle12.copyWith(
+                                              color: AppColors.kprimaryColor,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (widget.onFollowTap != null) Gap(8.w),
+                      // ── Book Session button ──
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => context.pushNamed(
+                            AppRouter.kChooseSessionView,
+                            arguments: {
+                              'title': context.tr('book_session'),
+                              'advisorId': widget.advisor.id ?? '',
+                            },
+                          ),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(vertical: 8.h),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.kprimaryColor,
+                                  AppColors.kprimaryColor.withValues(
+                                    alpha: 0.8,
+                                  ),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.calendar_month_rounded,
+                                  color: Colors.white,
+                                  size: 13.sp,
+                                ),
+                                Gap(4.w),
+                                Text(
+                                  context.tr('book_session'),
+                                  style: Styles.textStyle12.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
