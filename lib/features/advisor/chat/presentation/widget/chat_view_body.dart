@@ -57,8 +57,8 @@ class _ChatViewBodyState extends State<ChatViewBody> {
             ],
           ),
         ),
-        floatingActionButton: hasChats ? const NewChatFloatingButton() : null,
-        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        // floatingActionButton: hasChats ? const NewChatFloatingButton() : null,
+        // floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       ),
     );
   }
