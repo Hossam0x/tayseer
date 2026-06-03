@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:intl/intl.dart';
 import 'package:tayseer/my_import.dart';
 
 typedef TimeChangedCallback = void Function(String start, String end);
@@ -25,44 +25,16 @@ class TimeSlotItem extends StatefulWidget {
   State<TimeSlotItem> createState() => _TimeSlotItemState();
 }
 
-class _TimeSlotItemState extends State<TimeSlotItem>
-    with SingleTickerProviderStateMixin {
-  late TextEditingController fromController;
-  late TextEditingController toController;
-  late AnimationController _animationController;
-  late Animation<double> heightAnimation;
-  late Animation<double> opacityAnimation;
+class _TimeSlotItemState extends State<TimeSlotItem> {
+  // 24h internal values for API
+  late String _from24h;
+  late String _to24h;
 
   @override
   void initState() {
     super.initState();
     _from24h = widget.initialFrom;
     _to24h = widget.initialTo;
-    fromController = TextEditingController(
-      text: _formatTo12Hour(widget.initialFrom),
-    );
-    toController = TextEditingController(
-      text: _formatTo12Hour(widget.initialTo),
-    );
-
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-
-    heightAnimation = Tween<double>(begin: 0, end: 70).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-
-    opacityAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-
-    if (widget.initialStatus) {
-      _animationController.forward();
-    } else {
-      _animationController.value = 0.0;
-    }
   }
 
   @override
@@ -70,25 +42,35 @@ class _TimeSlotItemState extends State<TimeSlotItem>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialFrom != widget.initialFrom) {
       _from24h = widget.initialFrom;
-      fromController.text = _formatTo12Hour(widget.initialFrom);
     }
     if (oldWidget.initialTo != widget.initialTo) {
       _to24h = widget.initialTo;
-      toController.text = _formatTo12Hour(widget.initialTo);
-    }
-    if (oldWidget.initialStatus != widget.initialStatus) {
-      if (widget.initialStatus) {
-        _animationController.forward();
-      } else {
-        _animationController.reverse();
-      }
     }
   }
 
+  /// Converts a 24h string like "14:30" → TimeOfDay(14, 30)
+  TimeOfDay _parseTime24(String time24) {
+    final parts = time24.split(':');
+    return TimeOfDay(
+      hour: int.tryParse(parts[0]) ?? 0,
+      minute: int.tryParse(parts[1]) ?? 0,
+    );
+  }
+
+  /// Formats a 24h string to a localised 12h display string: "09:00 AM"
+  String _format12h(String time24) {
+    final tod = _parseTime24(time24);
+    final now = DateTime.now();
+    final dt = DateTime(now.year, now.month, now.day, tod.hour, tod.minute);
+    final locale = isArabic ? 'ar' : 'en';
+    return DateFormat('hh:mm a', locale).format(dt);
+  }
+
   Future<void> _pickTime(bool isFrom) async {
+    final initial = _parseTime24(isFrom ? _from24h : _to24h);
     final TimeOfDay? picked = await showTimePicker(
       context: context,
-      initialTime: _parseTime(isFrom ? fromController.text : toController.text),
+      initialTime: initial,
       initialEntryMode: TimePickerEntryMode.dial,
       builder: (context, child) {
         return MediaQuery(
@@ -99,172 +81,162 @@ class _TimeSlotItemState extends State<TimeSlotItem>
     );
 
     if (picked != null) {
-      // Store as 24h internally for API, display as 12h
-      final formattedTime =
+      final formatted =
           '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
-
-      if (isFrom) {
-        fromController.text = _formatTo12Hour(formattedTime);
-        _from24h = formattedTime;
-      } else {
-        toController.text = _formatTo12Hour(formattedTime);
-        _to24h = formattedTime;
-      }
-
+      setState(() {
+        if (isFrom) {
+          _from24h = formatted;
+        } else {
+          _to24h = formatted;
+        }
+      });
       widget.onTimeChanged?.call(_from24h, _to24h);
     }
   }
 
-  // 24h internal values for API
-  late String _from24h;
-  late String _to24h;
-
-  TimeOfDay _parseTime(String time) {
-    // Handle both 12h display (e.g. "09:00") and 24h (e.g. "09:00")
-    final cleaned = time.replaceAll(RegExp(r'[APM\s]'), '');
-    final parts = cleaned.split(':');
-    return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
-  }
-
-  String _formatTo12Hour(String time24) {
-    final parts = time24.split(':');
-    int hour = int.parse(parts[0]);
-    final minute = int.parse(parts[1]);
-    if (hour > 12) hour -= 12;
-    if (hour == 0) hour = 12;
-    return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        // السطر العلوي: اليوم والتبديل (Switch)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              context.tr(widget.name),
-              style: Styles.textStyle20.copyWith(color: AppColors.primaryText),
-            ),
-            Transform.scale(
-              scaleX: 0.9.w,
-              scaleY: -0.9.w,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final screenWidth = MediaQuery.of(context).size.width;
-                  final scaleFactor = screenWidth > 600 ? 1.5 : 1.0;
-
-                  return Transform.scale(
-                    scale: scaleFactor,
-                    child: CupertinoSwitch(
-                      value: widget.initialStatus,
-                      onChanged: (val) {
-                        widget.onStatusChanged?.call(val);
-                      },
-                      activeColor: const Color(0xFFF06C88),
-                      trackColor: AppColors.inactiveColor,
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-
-        // الأنيميشن لظهور أو اختفاء حقول الوقت
-        AnimatedBuilder(
-          animation: _animationController,
-          builder: (context, child) {
-            return Align(
-              heightFactor: _animationController.value,
-              alignment: Alignment.topCenter,
-              child: Opacity(opacity: _animationController.value, child: child),
-            );
-          },
-          child: Column(
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16.r)),
+      child: Column(
+        children: [
+          /// Switch Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Gap(8.h),
-              Row(
-                children: [
-                  Text(
-                    context.tr('from'),
-                    style: Styles.textStyle16.copyWith(
-                      color: AppColors.secondaryText,
-                    ),
-                  ),
-                  Gap(8.w),
-                  Expanded(child: _buildTimeField(fromController, true)),
-                  Gap(8.w),
-                  Text(
-                    context.tr('to'),
-                    style: Styles.textStyle16.copyWith(
-                      color: AppColors.secondaryText,
-                    ),
-                  ),
-                  Gap(8.w),
-                  Expanded(child: _buildTimeField(toController, false)),
-                ],
+              Text(context.tr(widget.name), style: Styles.textStyle18),
+              Switch(
+                value: widget.initialStatus,
+                onChanged: widget.onStatusChanged,
+                activeTrackColor: AppColors.kprimaryColor,
+                inactiveTrackColor: HexColor('b3b3b3'),
+                activeColor: Colors.white,
+                inactiveThumbColor: Colors.white,
+                trackOutlineColor: const WidgetStatePropertyAll(
+                  Colors.transparent,
+                ),
+                trackOutlineWidth: const WidgetStatePropertyAll(0),
               ),
             ],
           ),
+
+          /// Animated time range fields
+          AnimatedSize(
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeInOut,
+            child: widget.initialStatus
+                ? Column(
+                    children: [
+                      SizedBox(height: context.responsiveHeight(5)),
+                      _TimeRangeFields(
+                        from24h: _from24h,
+                        to24h: _to24h,
+                        format12h: _format12h,
+                        onFromTap: () => _pickTime(true),
+                        onToTap: () => _pickTime(false),
+                      ),
+                    ],
+                  )
+                : const SizedBox(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Time range row: "From [field]  To [field]"
+// ─────────────────────────────────────────────
+class _TimeRangeFields extends StatelessWidget {
+  final String from24h;
+  final String to24h;
+  final String Function(String) format12h;
+  final VoidCallback onFromTap;
+  final VoidCallback onToTap;
+
+  const _TimeRangeFields({
+    required this.from24h,
+    required this.to24h,
+    required this.format12h,
+    required this.onFromTap,
+    required this.onToTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        Row(
+          children: [
+            Text(context.tr('from'), style: Styles.textStyle16),
+            _TimeField(value: format12h(from24h), onTap: onFromTap),
+          ],
+        ),
+        Row(
+          children: [
+            Text(context.tr('to'), style: Styles.textStyle16),
+            _TimeField(value: format12h(to24h), onTap: onToTap),
+          ],
         ),
       ],
     );
   }
+}
 
-  Widget _buildTimeField(TextEditingController controller, bool isFrom) {
-    return GestureDetector(
-      onTap: () => _pickTime(isFrom),
+// ─────────────────────────────────────────────
+// Single tappable time chip
+// ─────────────────────────────────────────────
+class _TimeField extends StatelessWidget {
+  final String value;
+  final VoidCallback onTap;
+
+  const _TimeField({required this.value, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12.r),
       child: Container(
-        height: 55.h,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: AppColors.inactiveColor),
+        padding: EdgeInsets.symmetric(
+          horizontal: context.responsiveWidth(10),
+          vertical: context.responsiveHeight(12),
         ),
-        padding: EdgeInsets.symmetric(horizontal: 16.w),
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          color: HexColor('fcffff'),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            width: 2,
+            color: HexColor('eb7a91').withOpacity(0.3),
+          ),
+        ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.access_time, color: AppColors.inactiveColor, size: 22.w),
-            Gap(8.w),
-            VerticalDivider(
-              indent: 15.h,
-              endIndent: 15.h,
-              width: 1.w,
-              color: AppColors.inactiveColor,
+            Icon(
+              Icons.access_time,
+              size: 18,
+              color: HexColor('eb7a91').withOpacity(0.5),
             ),
-            Gap(8.w),
-            Expanded(
-              child: AbsorbPointer(
-                child: TextField(
-                  controller: controller,
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    hintText: '09:00',
-                    hintStyle: Styles.textStyle16.copyWith(
-                      color: AppColors.primaryText,
-                    ),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 8.w),
-                  ),
-                  style: Styles.textStyle16.copyWith(
-                    color: AppColors.primaryText,
-                  ),
-                ),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+              width: 1.5,
+              height: context.height * 0.04,
+              color: Colors.grey.withOpacity(0.3),
+            ),
+            Text(
+              value,
+              style: Styles.textStyle14.copyWith(
+                color: HexColor('eb7a91').withOpacity(0.5),
               ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    fromController.dispose();
-    toController.dispose();
-    super.dispose();
   }
 }

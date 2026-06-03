@@ -107,8 +107,9 @@ class AppointmentsCubit extends Cubit<AppointmentsState> {
 
     for (int i = 0; i < currentAvailability.length; i++) {
       if (_normalizeDay(currentAvailability[i]) !=
-          _normalizeDay(originalAvailability[i]))
+          _normalizeDay(originalAvailability[i])) {
         return true;
+      }
     }
     return false;
   }
