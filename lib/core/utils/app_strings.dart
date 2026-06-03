@@ -122,6 +122,9 @@ class AppStrings {
   static const String genericError = "generic_error";
   static const String loadMoreFailed = "load_more_failed";
   static const String endOfFeed = "end_of_feed";
+  static const String noPostsYet = "no_posts_yet";
+  static const String offlineNoPostsCached = "offline_no_posts_cached";
+  static const String offlineNoPostsCachedSub = "offline_no_posts_cached_sub";
   static const String endOfCategoryFeed = "end_of_category_feed";
   static const String viewAllPosts = "view_all_posts";
   static const String noCategoryPosts = "no_category_posts";

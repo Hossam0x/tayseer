@@ -424,13 +424,28 @@ class HomePostFeed extends StatelessWidget {
     if (state.isLoadingMore) {
       items.add(const _LoadingMoreIndicator());
     } else if (state.isShowingCachedData && !state.hasMore) {
-      items.add(const EndOfCachedPosts());
+      items.add(
+        EndOfCachedPosts(
+          addTopPadding: state.postIds.isEmpty,
+          isEmpty: state.postIds.isEmpty,
+        ),
+      );
     } else if (state.isOffline && state.hasMore) {
-      items.add(const EndOfCachedPosts());
+      items.add(
+        EndOfCachedPosts(
+          addTopPadding: state.postIds.isEmpty,
+          isEmpty: state.postIds.isEmpty,
+        ),
+      );
     } else if (state.loadMoreServerFailed) {
       items.add(_LoadMoreFailedRetry(onRetry: () => homeCubit.retryLoadMore()));
     } else if (state.isAllCategory) {
-      items.add(const EndOfFeedIndicator());
+      items.add(
+        EndOfFeedIndicator(
+          addTopPadding: state.postIds.isEmpty,
+          isEmpty: state.postIds.isEmpty,
+        ),
+      );
     } else {
       items.add(_EndOfCategoryIndicator(onViewAllTap: _goToAllCategory));
     }
@@ -800,18 +815,32 @@ class _LoadMoreFailedRetry extends StatelessWidget {
 }
 
 class EndOfFeedIndicator extends StatelessWidget {
-  const EndOfFeedIndicator({super.key});
+  const EndOfFeedIndicator({
+    super.key,
+    this.addTopPadding = false,
+    this.isEmpty = false,
+  });
+
+  final bool addTopPadding;
+  final bool isEmpty;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 40.h, horizontal: 20.w),
+      padding: EdgeInsets.only(
+        top: addTopPadding ? 150.h : 32.h,
+        bottom: 40.h,
+        left: 20.w,
+        right: 20.w,
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           AppImage(AssetsData.postsEndIcon, height: 110.h),
           Text(
-            context.tr(AppStrings.endOfFeed),
+            isEmpty
+                ? context.tr(AppStrings.noPostsYet)
+                : context.tr(AppStrings.endOfFeed),
             style: Styles.textStyle14.copyWith(
               color: Colors.grey.shade500,
               fontWeight: FontWeight.w600,

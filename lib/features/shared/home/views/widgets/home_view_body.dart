@@ -176,7 +176,9 @@ class HomeViewBodyState extends State<HomeViewBody> {
           child: Stack(
             children: [
               CustomScrollView(
-                physics: const ClampingScrollPhysics(),
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: ClampingScrollPhysics(),
+                ),
                 cacheExtent:
                     1500, // ✅ زيادة الـ cache extent عشان الـ widgets تتبني مبكراً
                 controller: _scrollController,
