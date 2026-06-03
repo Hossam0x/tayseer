@@ -722,7 +722,17 @@ class UserPublicProfileCubit extends Cubit<UserPublicProfileState>
                 emit(state.copyWith(posts: rollback));
               }
             },
-            (_) {}, // success — optimistic update already applied
+            (_) {
+              // ✅ نجح - أبلّغ الـ bus
+              firePostEvent(
+                PostEvent(
+                  type: PostEventType.followToggled,
+                  postId: '',
+                  advisorId: advisorId,
+                  isFollowing: isAdding,
+                ),
+              );
+            },
           );
         });
   }

@@ -1803,7 +1803,7 @@ class HomeCubit extends Cubit<HomeState> {
     final isCurrentlyFollowing = currentPost.isFollowing;
     final isAdding = !isCurrentlyFollowing;
 
-    // Optimistic update across all categories
+    // Optimistic update across all categories + bestAdvisors
     final newMap = <String?, CategoryPostsData>{};
     for (final entry in state.categoryPostsMap.entries) {
       newMap[entry.key] = entry.value.copyWith(
@@ -1815,42 +1815,59 @@ class HomeCubit extends Cubit<HomeState> {
         }).toList(),
       );
     }
-    emit(state.copyWith(categoryPostsMap: newMap));
+    final updatedAdvisors = state.bestAdvisors.map((a) {
+      if (a.id == advisorId) return a.copyWith(isFollowing: isAdding);
+      return a;
+    }).toList();
+    emit(
+      state.copyWith(categoryPostsMap: newMap, bestAdvisors: updatedAdvisors),
+    );
 
     // API Call with rollback on failure
-    homeRepository.followAdvisor(advisorId: advisorId, isAdding: isAdding).then(
-      (result) {
-        result.fold(
-          (failure) {
-            // Rollback
-            final rollbackMap = <String?, CategoryPostsData>{};
-            for (final entry in state.categoryPostsMap.entries) {
-              rollbackMap[entry.key] = entry.value.copyWith(
-                posts: entry.value.posts.map((post) {
-                  if (post.advisorId == advisorId) {
-                    return post.copyWith(isFollowing: isCurrentlyFollowing);
-                  }
-                  return post;
-                }).toList(),
-              );
-            }
-            if (!isClosed) emit(state.copyWith(categoryPostsMap: rollbackMap));
-          },
-          (_) {
-            // ✅ أبلّغ كروت BestAdvisors بتغيير الـ follow
-            PostEventBus.instance.fire(
-              PostEvent(
-                type: PostEventType.followToggled,
-                postId: '',
-                sourceId: 'HomeCubit',
-                advisorId: advisorId,
-                isFollowing: isAdding,
+    homeRepository.followAdvisor(advisorId: advisorId, isAdding: isAdding).then((
+      result,
+    ) {
+      result.fold(
+        (failure) {
+          // Rollback
+          final rollbackMap = <String?, CategoryPostsData>{};
+          for (final entry in state.categoryPostsMap.entries) {
+            rollbackMap[entry.key] = entry.value.copyWith(
+              posts: entry.value.posts.map((post) {
+                if (post.advisorId == advisorId) {
+                  return post.copyWith(isFollowing: isCurrentlyFollowing);
+                }
+                return post;
+              }).toList(),
+            );
+          }
+          final rollbackAdvisors = state.bestAdvisors.map((a) {
+            if (a.id == advisorId)
+              return a.copyWith(isFollowing: isCurrentlyFollowing);
+            return a;
+          }).toList();
+          if (!isClosed)
+            emit(
+              state.copyWith(
+                categoryPostsMap: rollbackMap,
+                bestAdvisors: rollbackAdvisors,
               ),
             );
-          },
-        );
-      },
-    );
+        },
+        (_) {
+          // ✅ أبلّغ الـ cubits التانية (reels, profiles, etc.) بتغيير الـ follow
+          PostEventBus.instance.fire(
+            PostEvent(
+              type: PostEventType.followToggled,
+              postId: '',
+              sourceId: 'HomeCubit',
+              advisorId: advisorId,
+              isFollowing: isAdding,
+            ),
+          );
+        },
+      );
+    });
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

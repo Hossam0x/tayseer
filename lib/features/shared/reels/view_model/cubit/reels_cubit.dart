@@ -399,8 +399,17 @@ class ReelsCubit extends Cubit<ReelsState>
         log('❌ Follow Advisor Failed: ${failure.message} - Rolled back');
       },
       (message) {
-        // ✅ نجح - خلي التغييرات اللوكال زي ما هي
+        // ✅ نجح - خلي التغييرات اللوكال زي ما هي وأبلّغ الـ bus
         log('✅ Follow Advisor Success: $message');
+        PostEventBus.instance.fire(
+          PostEvent(
+            type: PostEventType.followToggled,
+            postId: '',
+            sourceId: cubitsourceId,
+            advisorId: advisorId,
+            isFollowing: isAdding,
+          ),
+        );
       },
     );
   }

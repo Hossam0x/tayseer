@@ -604,17 +604,30 @@ class SavedPostsCubit extends Cubit<SavedPostsState>
     _homeRepository
         .followAdvisor(advisorId: advisorId, isAdding: isAdding)
         .then((result) {
-          result.fold((failure) {
-            if (!isClosed) {
-              final rollback = state.posts.map((post) {
-                if (post.advisorId == advisorId) {
-                  return post.copyWith(isFollowing: isCurrentlyFollowing);
-                }
-                return post;
-              }).toList();
-              emit(state.copyWith(posts: rollback));
-            }
-          }, (_) {});
+          result.fold(
+            (failure) {
+              if (!isClosed) {
+                final rollback = state.posts.map((post) {
+                  if (post.advisorId == advisorId) {
+                    return post.copyWith(isFollowing: isCurrentlyFollowing);
+                  }
+                  return post;
+                }).toList();
+                emit(state.copyWith(posts: rollback));
+              }
+            },
+            (_) {
+              // ✅ نجح - أبلّغ الـ bus
+              firePostEvent(
+                PostEvent(
+                  type: PostEventType.followToggled,
+                  postId: '',
+                  advisorId: advisorId,
+                  isFollowing: isAdding,
+                ),
+              );
+            },
+          );
         });
   }
 }

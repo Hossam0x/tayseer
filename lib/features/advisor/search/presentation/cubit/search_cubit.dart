@@ -517,12 +517,26 @@ class SearchCubit extends Cubit<SearchState> {
       advisorId,
       isCurrentlyFollowing: isCurrentlyFollowing,
     );
-    result.fold((failure) {
-      // Rollback
-      if (!isClosed) {
-        emit(state.updateTab('posts', postsData).updateTab('all', allData));
-      }
-    }, (_) {});
+    result.fold(
+      (failure) {
+        // Rollback
+        if (!isClosed) {
+          emit(state.updateTab('posts', postsData).updateTab('all', allData));
+        }
+      },
+      (_) {
+        // ✅ نجح - أبلّغ الـ bus
+        PostEventBus.instance.fire(
+          PostEvent(
+            type: PostEventType.followToggled,
+            postId: '',
+            sourceId: 'SearchCubit',
+            advisorId: advisorId,
+            isFollowing: isAdding,
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _toggleFollowUser(String userId) async {

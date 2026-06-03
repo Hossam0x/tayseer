@@ -1137,17 +1137,31 @@ class ProfileCubit extends ProfilePostsCubitContract<ProfileState> {
     _homeRepository
         .followAdvisor(advisorId: advisorId, isAdding: isAdding)
         .then((result) {
-          result.fold((failure) {
-            if (!isClosed) {
-              final rollback = state.posts.map((post) {
-                if (post.advisorId == advisorId) {
-                  return post.copyWith(isFollowing: isCurrentlyFollowing);
-                }
-                return post;
-              }).toList();
-              emit(state.copyWith(posts: rollback));
-            }
-          }, (_) {});
+          result.fold(
+            (failure) {
+              if (!isClosed) {
+                final rollback = state.posts.map((post) {
+                  if (post.advisorId == advisorId) {
+                    return post.copyWith(isFollowing: isCurrentlyFollowing);
+                  }
+                  return post;
+                }).toList();
+                emit(state.copyWith(posts: rollback));
+              }
+            },
+            (_) {
+              // ✅ نجح - أبلّغ الـ bus
+              PostEventBus.instance.fire(
+                PostEvent(
+                  type: PostEventType.followToggled,
+                  postId: '',
+                  sourceId: 'ProfileCubit',
+                  advisorId: advisorId,
+                  isFollowing: isAdding,
+                ),
+              );
+            },
+          );
         });
   }
 }
