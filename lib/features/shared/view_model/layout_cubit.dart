@@ -1,12 +1,36 @@
 // features/advisor/layout/view_model/a_layout_cubit.dart
+import 'dart:async';
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class LayoutCubit extends Cubit<LayoutState> {
+  StreamSubscription<bool>? _marriageStatusSub;
+
   LayoutCubit({UserTypeEnum userType = UserTypeEnum.asConsultant})
     : super(LayoutState(userType: userType)) {
     _loadMarriageVisibility();
+    _listenToMarriageStream();
   }
+
+  /// Subscribe to UserProfileCubit.marriageStatusStream so that when
+  /// _loadInitialData() computes isMarriageDeactivated from the API and
+  /// writes it to SharedPreferences, LayoutCubit reacts immediately —
+  /// even on cold launch before the cache was populated.
+  void _listenToMarriageStream() {
+    _marriageStatusSub = UserProfileCubit.marriageStatusStream.stream.listen((
+      isDeactivated,
+    ) {
+      updateMarriageVisibility(!isDeactivated);
+    });
+  }
+
+  @override
+  Future<void> close() {
+    _marriageStatusSub?.cancel();
+    return super.close();
+  }
+
   Future<void> _loadMarriageVisibility() async {
     final prefs = await SharedPreferences.getInstance();
 

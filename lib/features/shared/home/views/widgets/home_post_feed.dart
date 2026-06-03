@@ -335,13 +335,23 @@ class HomePostFeed extends StatelessWidget {
 
   // ✅ CHANGED: O(1) indexMap + no KeepAlive
   Widget _buildPostList(BuildContext context, _FeedState state) {
+    // Wrap in BlocSelector<LayoutCubit> so the list rebuilds whenever
+    // isMarriageVisible changes (e.g. after cold-launch API response).
+    return BlocSelector<LayoutCubit, LayoutState, bool>(
+      selector: (layoutState) => layoutState.isMarriageVisible,
+      builder: (context, isMarriageVisible) =>
+          _buildPostListWithVisibility(context, state, isMarriageVisible),
+    );
+  }
+
+  Widget _buildPostListWithVisibility(
+    BuildContext context,
+    _FeedState state,
+    bool isMarriageVisible,
+  ) {
     // 1. Determine which sections to show
     final List<Widget> items = [];
     final Map<int, int> postIndexToItemIndex = {};
-
-    // Get feature flags from LayoutState
-    final layoutState = context.read<LayoutCubit>().state;
-    final bool isMarriageVisible = layoutState.isMarriageVisible;
 
     // RULE:
     // لو الزواج مفعل  → اظهر BestAdvisorSection + SimilarUsersSection
