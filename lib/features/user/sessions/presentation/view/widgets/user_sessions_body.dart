@@ -224,7 +224,7 @@ class _SessionCard extends StatelessWidget {
         // شارة حالة الدفع للجلسات المعلقة
         if (isPending && !isCancelled)
           Positioned(
-            top: 12.h,
+            top: 16.h,
             left: 24.w,
             child: _StatusBadge(
               label: context.tr('payment_pending'),

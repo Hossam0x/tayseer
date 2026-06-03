@@ -72,6 +72,7 @@ class SessionCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          SizedBox(height: 20.h),
           Row(
             children: [
               GestureDetector(
