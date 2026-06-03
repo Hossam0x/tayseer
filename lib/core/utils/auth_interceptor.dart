@@ -168,20 +168,20 @@ class AuthInterceptor extends Interceptor {
   }
 
   Future<_TokenPair?> _refreshTokens() async {
+    // Snapshot the refresh token BEFORE the async call so we can detect
+    // if another layer (e.g. SocketHelper) already refreshed while we waited.
+    final refreshTokenBefore = await SecureTokenStorage.getRefreshToken();
+    if (refreshTokenBefore == null || refreshTokenBefore.isEmpty) {
+      debugPrint('❌ AuthInterceptor: no refresh token stored, cannot refresh');
+      return null;
+    }
+
+    debugPrint('🔄 AuthInterceptor: calling /auth/refresh-token...');
+
     try {
-      final refreshToken = await SecureTokenStorage.getRefreshToken();
-      if (refreshToken == null || refreshToken.isEmpty) {
-        debugPrint(
-          '❌ AuthInterceptor: no refresh token stored, cannot refresh',
-        );
-        return null;
-      }
-
-      debugPrint('🔄 AuthInterceptor: calling /auth/refresh-token...');
-
       final response = await _dio.post(
         '$kbaseUrl/auth/refresh-token',
-        data: {'refreshToken': refreshToken},
+        data: {'refreshToken': refreshTokenBefore},
         options: Options(
           headers: {'lang': selectedLanguage ?? 'ar'},
           // Use default validateStatus so 4xx throws DioException
@@ -206,16 +206,41 @@ class AuthInterceptor extends Interceptor {
       debugPrint(
         '❌ AuthInterceptor: refresh failed — ${response.statusCode} ${response.data}',
       );
-      return null;
+      return _checkForRaceRefresh(refreshTokenBefore);
     } on DioException catch (e) {
       debugPrint(
         '❌ AuthInterceptor: refresh DioException — ${e.response?.statusCode} ${e.response?.data}',
       );
-      return null;
+      // Another layer (e.g. SocketHelper) may have already refreshed the
+      // token while our request was in-flight. If the stored refresh token
+      // has changed it means a fresh pair was saved — use it instead of
+      // forcing a logout.
+      return _checkForRaceRefresh(refreshTokenBefore);
     } catch (e) {
       debugPrint('❌ AuthInterceptor: refresh error — $e');
-      return null;
+      return _checkForRaceRefresh(refreshTokenBefore);
     }
+  }
+
+  /// Returns a valid [_TokenPair] if another concurrent refresh (e.g. from
+  /// [SocketHelper]) already stored new tokens while this interceptor's own
+  /// refresh request was in-flight, otherwise returns null.
+  Future<_TokenPair?> _checkForRaceRefresh(String? refreshTokenBefore) async {
+    final currentAccess = await SecureTokenStorage.getAccessToken();
+    final currentRefresh = await SecureTokenStorage.getRefreshToken();
+
+    // A different refresh succeeded if the stored refresh token changed AND
+    // we now have a non-empty access token.
+    if (currentAccess != null &&
+        currentAccess.isNotEmpty &&
+        currentRefresh != null &&
+        currentRefresh != refreshTokenBefore) {
+      debugPrint(
+        '✅ AuthInterceptor: detected race-refresh by another layer — reusing new tokens',
+      );
+      return _TokenPair(currentAccess, currentRefresh);
+    }
+    return null;
   }
 
   Future<Response> _retryRequest(
