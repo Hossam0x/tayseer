@@ -3,27 +3,47 @@ import 'package:tayseer/features/advisor/chat/data/model/chat_requests/chat_requ
 import 'package:tayseer/features/advisor/chat/presentation/manager/chat_requests_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
+/// Shared helper — single source of truth for the subscription-required dialog.
+///
+/// [pendingRequestsCount] — when provided, shows the pending-requests copy with
+/// the count injected; omit to fall back to the generic subscription copy.
+///
+/// [onAfterSubscribe] — optional callback invoked (if the context is still
+/// mounted) after returning from the packages screen. Callers that own a
+/// specific cubit (e.g. RequestListTile → ChatRequestsCubit) pass a reload
+/// here. Callers that don't have that cubit in their tree (e.g.
+/// NewChatFloatingButton) simply omit it.
+void showSubscriptionRequiredDialog(
+  BuildContext context, {
+  int? pendingRequestsCount,
+  void Function(BuildContext ctx)? onAfterSubscribe,
+}) {
+  final subtitle = pendingRequestsCount != null
+      ? context
+            .tr('pending_chat_requests_desc')
+            .replaceAll('{count}', '$pendingRequestsCount')
+      : context.tr('subscription_required_desc');
+
+  showLimitReachedDialog(
+    context,
+    title: context.tr('pending_requests_dialog_title'),
+    subtitle: subtitle,
+    subscribeText: context.tr('subscribe_now'),
+    laterText: context.tr('cancel'),
+    onSubscribe: () async {
+      await Navigator.pushNamed(context, AppRouter.kPackagesView);
+      if (context.mounted) {
+        onAfterSubscribe?.call(context);
+      }
+    },
+    onLater: () {},
+  );
+}
+
 class RequestListTile extends StatelessWidget {
   final ChatRequestModel item;
 
   const RequestListTile({super.key, required this.item});
-
-  void _showSubscriptionDialog(BuildContext context) {
-    showLimitReachedDialog(
-      context,
-      title: context.tr('subscription_required_title'),
-      subtitle: context.tr('subscription_required_desc'),
-      subscribeText: context.tr('subscribe_now'),
-      laterText: context.tr('cancel'),
-      onSubscribe: () async {
-        await Navigator.pushNamed(context, AppRouter.kPackagesView);
-        if (context.mounted) {
-          context.read<ChatRequestsCubit>().loadChatRequests();
-        }
-      },
-      onLater: () {},
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,9 +100,15 @@ class RequestListTile extends StatelessWidget {
 
           SizedBox(width: 8.w),
 
-          // زر العرض
+          // زر العرض — ChatRequestsCubit is always in the tree here
+          // because RequestListTile is only rendered inside requests.dart
+          // which provides ChatRequestsCubit via BlocProvider.
           GestureDetector(
-            onTap: () => _showSubscriptionDialog(context),
+            onTap: () => showSubscriptionRequiredDialog(
+              context,
+              onAfterSubscribe: (ctx) =>
+                  ctx.read<ChatRequestsCubit>().loadChatRequests(),
+            ),
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
               decoration: BoxDecoration(

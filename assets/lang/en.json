@@ -2127,7 +2127,7 @@
   "later": "Later",
   "regard_limit_title": "You can't view compliments sent to you",
   "regard_limit_subtitle": "Subscribe and get a free trial period to unlock all features in the app",
-  "subscribe_now": "Subscribe Now !",
+  "subscribe_now": "Subscribe",
   "filter_locked_title": "🔒 This Filter is for Subscribers Only",
   "filter_locked_subtitle": "Subscribe now to unlock all filters and enjoy a full experience with no limits",
   "purchase_success": "Purchase completed successfully",
@@ -2450,5 +2450,7 @@
   "tutorial_regard_desc": "Send a direct message greeting to capture their attention instantly and unlock direct chat.",
   "tutorial_dislike_title": "Skip / Dislike",
   "tutorial_dislike_desc": "Tap the cross button to skip this profile and see the next recommendation.",
-  "message_details_title": "Message Details"
+  "message_details_title": "Message Details",
+  "pending_chat_requests_desc": "You have {count} pending chat request(s). Subscribe to access them and connect with people who want to reach you.",
+  "pending_requests_dialog_title": "💬 You have pending requests"
 }
