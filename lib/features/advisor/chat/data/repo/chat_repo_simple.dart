@@ -1,8 +1,5 @@
-import 'dart:io';
-
 import 'package:dartz/dartz.dart';
-import 'package:tayseer/core/utils/api_endpoint.dart';
-import 'package:tayseer/core/utils/api_service.dart';
+import 'package:tayseer/features/advisor/chat/data/model/chat_message/message_details_model.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chatView/chat_item_model.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/chat_messages_response.dart';
 import 'package:tayseer/features/advisor/chat/data/model/chat_message/send_media_message_response.dart';
@@ -244,7 +241,6 @@ class ChatRepoSimple {
     }
   }
 
-
   Future<Either<String, bool>> deleteChatRoom(String chatRoomId) async {
     try {
       final response = await _apiService.delete(
@@ -299,8 +295,31 @@ class ChatRepoSimple {
     }
   }
 
-  // ==================== UNARCHIVE ====================
+  // ==================== MESSAGE DETAILS ====================
 
+  /// Fetch delivery and read timestamps for a single message.
+  Future<Either<String, MessageDetailsModel>> getMessageDetails({
+    required String messageId,
+  }) async {
+    try {
+      final response = await _apiService.get(
+        endPoint: ApiEndPoint.getChatMessageDetails,
+        data: {'chatMessageId': messageId},
+        contentType: 'application/x-www-form-urlencoded',
+      );
+      if (response['success'] == true) {
+        return Right(MessageDetailsModel.fromJson(response));
+      } else {
+        return Left(
+          response['message']?.toString() ?? 'Failed to load message details',
+        );
+      }
+    } catch (e) {
+      return Left('Failed to load message details: $e');
+    }
+  }
+
+  // ==================== UNARCHIVE ====================
   Future<Either<String, bool>> unarchiveChatRoom(String chatRoomId) async {
     try {
       final response = await _apiService.post(
@@ -328,10 +347,7 @@ class ChatRepoSimple {
     try {
       final response = await _apiService.get(
         endPoint: ApiEndPoint.searchChatRooms,
-        query: {
-          'searchKey': searchKey,
-          'chatRoomType': chatRoomType,
-        },
+        query: {'searchKey': searchKey, 'chatRoomType': chatRoomType},
       );
       if (response['success'] == true) {
         final chatRoomsResponse = ChatRoomsResponse.fromJson(response);

@@ -21,12 +21,14 @@ class ApiService {
     required String endPoint,
     Map<String, dynamic>? query,
     Map<String, dynamic>? data,
+    String? contentType,
   }) async {
     try {
       final response = await _dio.get(
         "$kbaseUrl$endPoint",
         queryParameters: query,
         options: Options(
+          contentType: contentType,
           headers: {
             'lang': selectedLanguage ?? 'ar',
             'Accept': 'application/json',

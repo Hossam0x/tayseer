@@ -27,6 +27,8 @@ class ConversationContextMenu extends StatelessWidget {
   final VoidCallback? onDeleteForMe;
   final VoidCallback? onDeleteForAll;
   final VoidCallback? onReact; // ✅ زر التفاعل
+  // ✅ لو في حظر بأي اتجاه → يُخفى Reply و React
+  final bool isBlocked;
 
   const ConversationContextMenu({
     super.key,
@@ -39,16 +41,19 @@ class ConversationContextMenu extends StatelessWidget {
     this.onDeleteForMe,
     this.onDeleteForAll,
     this.onReact, // ✅ زر التفاعل
+    this.isBlocked = false,
   });
 
   List<ContextMenuOption> _getMenuOptions(BuildContext context) {
     return [
-      ContextMenuOption(
-        icon: Icons.reply,
-        label: context.tr('reply'),
-        hasBorder: true,
-        onTap: onReply,
-      ),
+      // ✅ Reply و React مخفيّان عند وجود حظر بأي اتجاه
+      if (!isBlocked)
+        ContextMenuOption(
+          icon: Icons.reply,
+          label: context.tr('reply'),
+          hasBorder: true,
+          onTap: onReply,
+        ),
       // ✅ نسخ الرسالة - يظهر فقط لو الرسالة نص
       if (messageType == 'text')
         ContextMenuOption(
@@ -57,13 +62,14 @@ class ConversationContextMenu extends StatelessWidget {
           hasBorder: true,
           onTap: onCopy,
         ),
-      // ✅ زر التفاعل
-      ContextMenuOption(
-        icon: Icons.add_reaction_outlined,
-        label: context.tr('react_text'),
-        hasBorder: true,
-        onTap: onReact,
-      ),
+      // ✅ زر التفاعل — مخفي عند وجود حظر
+      if (!isBlocked)
+        ContextMenuOption(
+          icon: Icons.add_reaction_outlined,
+          label: context.tr('react_text'),
+          hasBorder: true,
+          onTap: onReact,
+        ),
       if (isMyMessage)
         ContextMenuOption(
           icon: Icons.info_outline,

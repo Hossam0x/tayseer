@@ -45,6 +45,9 @@ class _ChatContextMenuWrapperState extends State<ChatContextMenuWrapper> {
     final messagePosition = widget.overlayManager.messagePosition;
     final messageSize = widget.overlayManager.messageSize;
 
+    // ✅ قراءة حالة الحظر من الـ cubit — مصدر الحقيقة الوحيد لكلا الاتجاهين
+    final isBlocked = context.read<ChatMessagesCubit>().state.isBlocked;
+
     return Stack(
       children: [
         // Context Menu
@@ -56,24 +59,36 @@ class _ChatContextMenuWrapperState extends State<ChatContextMenuWrapper> {
             screenSize: widget.screenSize,
             isMobile: widget.isMobile,
             safeTopPadding: MediaQuery.of(context).padding.top,
+            isBlocked: isBlocked,
             onDismiss: () {
-              widget.overlayManager.hideOverlay(onStateChanged: widget.onStateChanged);
+              widget.overlayManager.hideOverlay(
+                onStateChanged: widget.onStateChanged,
+              );
             },
             onReply: () {
-              context.read<ChatInputCubit>().setReplyingToMessage(selectedMessage);
-              widget.overlayManager.hideOverlay(onStateChanged: widget.onStateChanged);
+              context.read<ChatInputCubit>().setReplyingToMessage(
+                selectedMessage,
+              );
+              widget.overlayManager.hideOverlay(
+                onStateChanged: widget.onStateChanged,
+              );
             },
             onCopy: () {
-              widget.overlayManager.hideOverlay(onStateChanged: widget.onStateChanged);
+              widget.overlayManager.hideOverlay(
+                onStateChanged: widget.onStateChanged,
+              );
               _copyMessageText(context, selectedMessage);
             },
             onDetails: () {
-              widget.overlayManager.hideOverlay(onStateChanged: widget.onStateChanged);
+              widget.overlayManager.hideOverlay(
+                onStateChanged: widget.onStateChanged,
+              );
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => MessageDetailsScreen(
                     chatMessage: selectedMessage,
+                    isBlocked: isBlocked,
                     readMessageIcon: AssetsData.readMessageIcon,
                     deliveredMessageIcon: AssetsData.readMessageIcon,
                   ),
@@ -82,19 +97,25 @@ class _ChatContextMenuWrapperState extends State<ChatContextMenuWrapper> {
             },
             onSelect: () {
               context.read<MessageSelectionCubit>().enterSelectionMode(
-                    selectedMessage,
-                  );
-              widget.overlayManager.hideOverlay(onStateChanged: widget.onStateChanged);
+                selectedMessage,
+              );
+              widget.overlayManager.hideOverlay(
+                onStateChanged: widget.onStateChanged,
+              );
             },
             onDeleteForMe: () {
-              widget.overlayManager.hideOverlay(onStateChanged: widget.onStateChanged);
+              widget.overlayManager.hideOverlay(
+                onStateChanged: widget.onStateChanged,
+              );
               widget.actionsHandler.showDeleteConfirmationForSingleMessage(
                 message: selectedMessage,
                 deleteType: 'me',
               );
             },
             onDeleteForAll: () {
-              widget.overlayManager.hideOverlay(onStateChanged: widget.onStateChanged);
+              widget.overlayManager.hideOverlay(
+                onStateChanged: widget.onStateChanged,
+              );
               widget.actionsHandler.showDeleteConfirmationForSingleMessage(
                 message: selectedMessage,
                 deleteType: 'everyone',
@@ -111,7 +132,9 @@ class _ChatContextMenuWrapperState extends State<ChatContextMenuWrapper> {
           GestureDetector(
             onTap: () {
               // لو ضغط في أي مكان برة الـ picker، يقفل
-              widget.overlayManager.hideOverlay(onStateChanged: widget.onStateChanged);
+              widget.overlayManager.hideOverlay(
+                onStateChanged: widget.onStateChanged,
+              );
               setState(() {
                 _showReactionPicker = false;
               });
@@ -123,11 +146,11 @@ class _ChatContextMenuWrapperState extends State<ChatContextMenuWrapper> {
                 children: [
                   Positioned(
                     top: messagePosition.dy - 60, // فوق الرسالة
-                    left: selectedMessage.isMe
-                        ? null
-                        : messagePosition.dx,
+                    left: selectedMessage.isMe ? null : messagePosition.dx,
                     right: selectedMessage.isMe
-                        ? widget.screenSize.width - messagePosition.dx - messageSize.width
+                        ? widget.screenSize.width -
+                              messagePosition.dx -
+                              messageSize.width
                         : null,
                     child: GestureDetector(
                       onTap: () {
@@ -136,16 +159,20 @@ class _ChatContextMenuWrapperState extends State<ChatContextMenuWrapper> {
                       child: ReactionPicker(
                         onReactionSelected: (emoji) {
                           context.read<ChatMessagesCubit>().reactToMessage(
-                                messageId: selectedMessage.id,
-                                emoji: emoji,
-                              );
-                          widget.overlayManager.hideOverlay(onStateChanged: widget.onStateChanged);
+                            messageId: selectedMessage.id,
+                            emoji: emoji,
+                          );
+                          widget.overlayManager.hideOverlay(
+                            onStateChanged: widget.onStateChanged,
+                          );
                           setState(() {
                             _showReactionPicker = false;
                           });
                         },
                         onDismiss: () {
-                          widget.overlayManager.hideOverlay(onStateChanged: widget.onStateChanged);
+                          widget.overlayManager.hideOverlay(
+                            onStateChanged: widget.onStateChanged,
+                          );
                           setState(() {
                             _showReactionPicker = false;
                           });
@@ -170,10 +197,7 @@ class _ChatContextMenuWrapperState extends State<ChatContextMenuWrapper> {
           content: const Text(
             'تم نسخ الرسالة',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'Cairo',
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w600),
           ),
           backgroundColor: ChatColors.bubbleSender,
           duration: const Duration(seconds: 2),

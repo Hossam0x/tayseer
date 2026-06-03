@@ -149,7 +149,12 @@ class ChatRoomListItem extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (statusText != null && statusText!.isNotEmpty)
+                            // ✅ Hide last seen / online status when the other
+                            // party is blocked (either direction). The online dot
+                            // in ChatRoomAvatar is already guarded by !isBlocked.
+                            if (!isBlocked &&
+                                statusText != null &&
+                                statusText!.isNotEmpty)
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 8,

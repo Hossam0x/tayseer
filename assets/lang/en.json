@@ -2405,10 +2405,9 @@
   "week": "week",
   "downgrade": "Downgrade",
   "image_message": "Image",
-"voice_message": "Voice message",
-"video_message": "Video",
-"file_message": "File",
-
+  "voice_message": "Voice message",
+  "video_message": "Video",
+  "file_message": "File",
   "my_sessions": "My Sessions",
   "filter_pending": "Pending",
   "filter_approved": "Approved",
@@ -2450,5 +2449,6 @@
   "tutorial_regard_title": "Send a Regard",
   "tutorial_regard_desc": "Send a direct message greeting to capture their attention instantly and unlock direct chat.",
   "tutorial_dislike_title": "Skip / Dislike",
-  "tutorial_dislike_desc": "Tap the cross button to skip this profile and see the next recommendation."
+  "tutorial_dislike_desc": "Tap the cross button to skip this profile and see the next recommendation.",
+  "message_details_title": "Message Details"
 }

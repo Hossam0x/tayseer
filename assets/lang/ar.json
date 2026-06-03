@@ -2408,7 +2408,6 @@
   "subscription_active": "نشط",
   "week": "أسبوع",
   "downgrade": "تخفيض",
-
   "my_sessions": "جلساتي",
   "filter_pending": "قيد الانتظار",
   "filter_approved": "مقبولة",
@@ -2450,5 +2449,6 @@
   "tutorial_regard_title": "زر التحية المميزة",
   "tutorial_regard_desc": "أرسل رسالة تحية مباشرة تلفت انتباه الطرف الآخر فوراً، وتفتح باب المحادثة مباشرة دون انتظار الإعجاب المتبادل.",
   "tutorial_dislike_title": "زر التخطي (الرفض)",
-  "tutorial_dislike_desc": "اضغط على علامة الخطأ لتخطي هذا الملف الشخصي وتصفح الترشيح التالي."
+  "tutorial_dislike_desc": "اضغط على علامة الخطأ لتخطي هذا الملف الشخصي وتصفح الترشيح التالي.",
+  "message_details_title": "تفاصيل الرسالة"
 }

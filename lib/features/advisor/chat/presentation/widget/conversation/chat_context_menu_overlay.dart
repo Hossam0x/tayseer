@@ -20,6 +20,8 @@ class ChatContextMenuOverlay extends StatelessWidget {
   final VoidCallback onDeleteForMe;
   final VoidCallback onDeleteForAll;
   final VoidCallback onReact; // ✅ زر التفاعل
+  // ✅ لو في حظر بأي اتجاه → يُخفى Reply و React في الـ menu
+  final bool isBlocked;
 
   const ChatContextMenuOverlay({
     super.key,
@@ -37,6 +39,7 @@ class ChatContextMenuOverlay extends StatelessWidget {
     required this.onDeleteForMe,
     required this.onDeleteForAll,
     required this.onReact, // ✅ زر التفاعل
+    this.isBlocked = false,
   });
 
   @override
@@ -90,6 +93,7 @@ class ChatContextMenuOverlay extends StatelessWidget {
         onDeleteForMe: onDeleteForMe,
         onDeleteForAll: onDeleteForAll,
         onReact: onReact, // ✅ زر التفاعل
+        isBlocked: isBlocked,
       ),
     );
   }
@@ -98,9 +102,13 @@ class ChatContextMenuOverlay extends StatelessWidget {
     // عدد العناصر: رد + نسخ (للنص) + تفاصيل + تحديد + تفاعل + حذف
     int menuItemCount;
     if (isMyMessage) {
-      menuItemCount = (selectedMessage.messageType == 'text') ? 7 : 6; // +1 للتفاعل
+      menuItemCount = (selectedMessage.messageType == 'text')
+          ? 7
+          : 6; // +1 للتفاعل
     } else {
-      menuItemCount = (selectedMessage.messageType == 'text') ? 5 : 4; // +1 للتفاعل
+      menuItemCount = (selectedMessage.messageType == 'text')
+          ? 5
+          : 4; // +1 للتفاعل
     }
 
     const menuItemHeight = 44.0;
