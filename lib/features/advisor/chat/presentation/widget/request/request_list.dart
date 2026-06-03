@@ -1,12 +1,29 @@
 import 'dart:ui';
 import 'package:tayseer/features/advisor/chat/data/model/chat_requests/chat_request_model.dart';
-import 'package:tayseer/core/utils/extensions/extensions.dart';
+import 'package:tayseer/features/advisor/chat/presentation/manager/chat_requests_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class RequestListTile extends StatelessWidget {
   final ChatRequestModel item;
 
   const RequestListTile({super.key, required this.item});
+
+  void _showSubscriptionDialog(BuildContext context) {
+    showLimitReachedDialog(
+      context,
+      title: context.tr('subscription_required_title'),
+      subtitle: context.tr('subscription_required_desc'),
+      subscribeText: context.tr('subscribe_now'),
+      laterText: context.tr('cancel'),
+      onSubscribe: () async {
+        await Navigator.pushNamed(context, AppRouter.kPackagesView);
+        if (context.mounted) {
+          context.read<ChatRequestsCubit>().loadChatRequests();
+        }
+      },
+      onLater: () {},
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,10 +82,7 @@ class RequestListTile extends StatelessWidget {
 
           // زر العرض
           GestureDetector(
-            onTap: () {
-              // أكشن عند الضغط على زر عرض
-              print("عرض الطلب: ${item.name}");
-            },
+            onTap: () => _showSubscriptionDialog(context),
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
               decoration: BoxDecoration(
