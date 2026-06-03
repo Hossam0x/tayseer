@@ -29,6 +29,12 @@ class _OtpViewBodyState extends State<OtpViewBody> {
           if (selectedUserType == UserTypeEnum.asConsultant) {
             if (kCurrentUserData?.compeletedData == true) {
               context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
+            } else if (state.isNew == true) {
+              // New advisor — go through phone number + OTP step first
+              context.pushReplacementNamed(
+                AppRouter.kAddPhoneView,
+                arguments: {'isAdvisorFlow': true},
+              );
             } else if (kCurrentUserData?.compeletedData == false &&
                 kCurrentUserData?.lastQuestionNumber == 1) {
               context.pushReplacementNamed(

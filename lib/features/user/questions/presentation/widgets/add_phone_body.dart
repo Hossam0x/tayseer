@@ -9,10 +9,16 @@ import 'package:tayseer/my_import.dart';
 /// وتستدعي [QuestionsCubit.sendPhoneNumber] عند الضغط على التالي.
 ///
 /// [onSuccessOverride] : لو مش null يُستدعى بدل الـ navigation الافتراضي.
+/// [isAdvisorFlow] : لو true، بعد النجاح يروح لـ OTP في الـ advisor flow.
 class AddPhoneBody extends StatefulWidget {
   final VoidCallback? onSuccessOverride;
+  final bool isAdvisorFlow;
 
-  const AddPhoneBody({super.key, this.onSuccessOverride});
+  const AddPhoneBody({
+    super.key,
+    this.onSuccessOverride,
+    this.isAdvisorFlow = false,
+  });
 
   @override
   State<AddPhoneBody> createState() => _AddPhoneBodyState();
@@ -187,6 +193,11 @@ class _AddPhoneBodyState extends State<AddPhoneBody> {
       context.pop();
       if (widget.onSuccessOverride != null) {
         widget.onSuccessOverride!();
+      } else if (widget.isAdvisorFlow) {
+        context.pushReplacementNamed(
+          AppRouter.kOtpPhoneUserQuestion,
+          arguments: {'isAdvisorFlow': true},
+        );
       } else {
         context.pushReplacementNamed(
           AppRouter.kOtpPhoneUserQuestion,

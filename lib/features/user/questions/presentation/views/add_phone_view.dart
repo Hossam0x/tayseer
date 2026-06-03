@@ -5,14 +5,17 @@ import 'package:tayseer/features/user/questions/presentation/manager/questions_c
 import 'package:tayseer/features/user/questions/presentation/widgets/add_phone_body.dart';
 
 class AddPhoneView extends StatelessWidget {
-  const AddPhoneView({super.key});
+  /// لو [isAdvisorFlow] == true، بعد نجاح إرسال الرقم يروح لـ phone OTP في الـ advisor flow
+  final bool isAdvisorFlow;
+
+  const AddPhoneView({super.key, this.isAdvisorFlow = false});
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: Colors.transparent,
       resizeToAvoidBottomInset: false,
-      body: AddPhoneBody(),
+      body: AddPhoneBody(isAdvisorFlow: isAdvisorFlow),
     );
   }
 }

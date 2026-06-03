@@ -1098,21 +1098,27 @@ abstract class AppRouter {
           ),
         );
       case kAddPhoneView:
+        final addPhoneArgs = settings.arguments as Map<String, dynamic>?;
+        final isAdvisorFlow = addPhoneArgs?['isAdvisorFlow'] as bool? ?? false;
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => BlocProvider.value(
             value: getIt<QuestionsCubit>(),
-            child: AddPhoneView(),
+            child: AddPhoneView(isAdvisorFlow: isAdvisorFlow),
           ),
         );
       case kOtpPhoneUserQuestion:
         final otpArgs = settings.arguments as Map<String, dynamic>?;
         final isOnboarding = otpArgs?['isOnboarding'] as bool? ?? false;
+        final isAdvisorOtpFlow = otpArgs?['isAdvisorFlow'] as bool? ?? false;
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => BlocProvider.value(
             value: getIt<QuestionsCubit>(),
-            child: OtpPhoneUserQuestion(isOnboarding: isOnboarding),
+            child: OtpPhoneUserQuestion(
+              isOnboarding: isOnboarding,
+              isAdvisorFlow: isAdvisorOtpFlow,
+            ),
           ),
         );
       // case kPartnerFilterView:

@@ -10,7 +10,14 @@ class OtpPhoneBodyInUser extends StatefulWidget {
   /// لو [isOnboarding] == true، بعد التحقق يروح مباشرةً لاختيار الجنس
   final bool isOnboarding;
 
-  const OtpPhoneBodyInUser({super.key, this.isOnboarding = false});
+  /// لو [isAdvisorFlow] == true، بعد التحقق يكمل الـ advisor onboarding flow
+  final bool isAdvisorFlow;
+
+  const OtpPhoneBodyInUser({
+    super.key,
+    this.isOnboarding = false,
+    this.isAdvisorFlow = false,
+  });
 
   @override
   State<OtpPhoneBodyInUser> createState() => _OtpPhoneBodyInUserState();
@@ -150,6 +157,36 @@ class _OtpPhoneBodyInUserState extends State<OtpPhoneBodyInUser> {
   void _handleOtpState(BuildContext context, QuestionsState state) {
     if (state.verifyOtpState == CubitStates.success) {
       if (!mounted) return;
+
+      // ── Advisor flow: continue advisor onboarding after phone OTP ──
+      if (widget.isAdvisorFlow) {
+        if (kCurrentUserData?.compeletedData == true) {
+          context.pushReplacementNamed(AppRouter.kAdvisorLayoutView);
+        } else if (kCurrentUserData?.compeletedData == false &&
+            kCurrentUserData?.lastQuestionNumber == 1) {
+          context.pushReplacementNamed(AppRouter.kPersonalInfoAsConsultantView);
+        } else if (kCurrentUserData?.compeletedData == false &&
+            kCurrentUserData?.lastQuestionNumber == 2) {
+          context.pushReplacementNamed(
+            AppRouter.kConsultantUploadCertificateView,
+          );
+        } else if (kCurrentUserData?.compeletedData == false &&
+            kCurrentUserData?.lastQuestionNumber == 3) {
+          context.pushReplacementNamed(AppRouter.kUploadNationalidView);
+        } else if (kCurrentUserData?.compeletedData == false &&
+            kCurrentUserData?.lastQuestionNumber == 4) {
+          context.pushReplacementNamed(AppRouter.kSelectLanguagesView);
+        } else if (kCurrentUserData?.compeletedData == false &&
+            kCurrentUserData?.lastQuestionNumber == 5) {
+          context.pushReplacementNamed(AppRouter.kSelectDaysView);
+        } else if (kCurrentUserData?.compeletedData == false &&
+            kCurrentUserData?.lastQuestionNumber == 6) {
+          context.pushReplacementNamed(AppRouter.kSelectDaysView);
+        } else {
+          context.pushReplacementNamed(AppRouter.kPersonalInfoAsConsultantView);
+        }
+        return;
+      }
 
       if (widget.isOnboarding) {
         context.pushReplacementNamed(AppRouter.kChooseGenderView);
