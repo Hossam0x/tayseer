@@ -49,6 +49,7 @@ class BestAdvisorModel {
   final List<String>? language;
   final bool? isFollowing;
   final bool? imageBlur;
+  final bool? hasAvailableSessions;
 
   BestAdvisorModel({
     this.id,
@@ -61,6 +62,7 @@ class BestAdvisorModel {
     this.language,
     this.isFollowing,
     this.imageBlur,
+    this.hasAvailableSessions,
   });
 
   factory BestAdvisorModel.fromJson(Map<String, dynamic> json) {
@@ -77,6 +79,7 @@ class BestAdvisorModel {
           : null,
       isFollowing: json['isFollowing'],
       imageBlur: json['imageBlur'],
+      hasAvailableSessions: json['hasAvailableSessions'],
     );
   }
 
@@ -91,6 +94,7 @@ class BestAdvisorModel {
     List<String>? language,
     bool? isFollowing,
     bool? imageBlur,
+    bool? hasAvailableSessions,
   }) {
     return BestAdvisorModel(
       id: id ?? this.id,
@@ -103,6 +107,7 @@ class BestAdvisorModel {
       language: language ?? this.language,
       isFollowing: isFollowing ?? this.isFollowing,
       imageBlur: imageBlur ?? this.imageBlur,
+      hasAvailableSessions: hasAvailableSessions ?? this.hasAvailableSessions,
     );
   }
 }

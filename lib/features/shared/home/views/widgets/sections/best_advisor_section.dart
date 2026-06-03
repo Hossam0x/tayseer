@@ -423,7 +423,7 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
                   Gap(20.h),
 
                   // ══════════════════════════════
-                  // الجزء السفلي: زرارين بنفس الحجم
+                  // الجزء السفلي: زرارين أو follow بالكامل
                   // ══════════════════════════════
                   Row(
                     children: [
@@ -496,51 +496,53 @@ class _AdvisorCarouselItemState extends State<_AdvisorCarouselItem>
                             ),
                           ),
                         ),
-                      if (widget.onFollowTap != null) Gap(8.w),
-                      // ── Book Session button ──
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => context.pushNamed(
-                            AppRouter.kChooseSessionView,
-                            arguments: {
-                              'title': context.tr('book_session'),
-                              'advisorId': widget.advisor.id ?? '',
-                            },
-                          ),
-                          child: Container(
-                            padding: EdgeInsets.symmetric(vertical: 8.h),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppColors.kprimaryColor,
-                                  AppColors.kprimaryColor.withValues(
-                                    alpha: 0.8,
+                      // ── Book Session button (فقط لو hasAvailableSessions == true) ──
+                      if (widget.advisor.hasAvailableSessions == true) ...[
+                        if (widget.onFollowTap != null) Gap(8.w),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => context.pushNamed(
+                              AppRouter.kChooseSessionView,
+                              arguments: {
+                                'title': context.tr('book_session'),
+                                'advisorId': widget.advisor.id ?? '',
+                              },
+                            ),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 8.h),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppColors.kprimaryColor,
+                                    AppColors.kprimaryColor.withValues(
+                                      alpha: 0.8,
+                                    ),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(12.r),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.calendar_month_rounded,
+                                    color: Colors.white,
+                                    size: 13.sp,
+                                  ),
+                                  Gap(4.w),
+                                  Text(
+                                    context.tr('book_session'),
+                                    style: Styles.textStyle12.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ],
                               ),
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.calendar_month_rounded,
-                                  color: Colors.white,
-                                  size: 13.sp,
-                                ),
-                                Gap(4.w),
-                                Text(
-                                  context.tr('book_session'),
-                                  style: Styles.textStyle12.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ],
