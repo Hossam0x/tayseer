@@ -379,18 +379,49 @@ class _RegisrationViewState extends State<RegisrationView> {
 
                                 SizedBox(height: context.height * 0.03),
 
-                                InkWell(
-                                  onTap: () {
-                                    context.read<AuthCubit>().guestLogin();
-                                    // ✅ الـ guest مش بيوصله deep link للـ marriage
-                                    // لأن الـ marriage يتطلب حساب مسجل
+                                BlocBuilder<AuthCubit, AuthState>(
+                                  buildWhen: (prev, curr) =>
+                                      prev.guestLoginState !=
+                                      curr.guestLoginState,
+                                  builder: (context, authState) {
+                                    final isLoading =
+                                        authState.guestLoginState ==
+                                        CubitStates.loading;
+                                    return InkWell(
+                                      onTap: isLoading
+                                          ? null
+                                          : () {
+                                              context
+                                                  .read<AuthCubit>()
+                                                  .guestLogin();
+                                              // ✅ الـ guest مش بيوصله deep link للـ marriage
+                                              // لأن الـ marriage يتطلب حساب مسجل
+                                            },
+                                      child: isLoading
+                                          ? SizedBox(
+                                              height: 20,
+                                              width: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(
+                                                      AppColors
+                                                          .kprimaryTextColor,
+                                                    ),
+                                              ),
+                                            )
+                                          : Text(
+                                              context.tr('user_guest'),
+                                              style: Styles.textStyle14Bold
+                                                  .copyWith(
+                                                    color: AppColors
+                                                        .kprimaryTextColor,
+                                                  ),
+                                            ),
+                                    );
                                   },
-                                  child: Text(
-                                    context.tr('user_guest'),
-                                    style: Styles.textStyle14Bold.copyWith(
-                                      color: AppColors.kprimaryTextColor,
-                                    ),
-                                  ),
                                 ),
 
                                 SizedBox(height: context.height * 0.03),

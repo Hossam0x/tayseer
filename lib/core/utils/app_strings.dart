@@ -181,4 +181,18 @@ class AppStrings {
       "force_update_button_app_store";
   static const String forceUpdateButtonGooglePlay =
       "force_update_button_google_play";
+
+  // Guest Lock
+  static const String createAccount = "create_account";
+  static const String guestLockMatchMessage = "guest_lock_match_message";
+  static const String guestLockMatchDescription =
+      "guest_lock_match_description";
+  static const String guestLockChatMessage = "guest_lock_chat_message";
+  static const String guestLockChatDescription = "guest_lock_chat_description";
+
+  // Media Upload
+  static const String uploading = "uploading";
+
+  // Map
+  static const String selectedLocation = "selected_location";
 }

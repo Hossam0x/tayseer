@@ -45,7 +45,8 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
   late final Widget _profileView;
 
   // ✅ Guest pages
-  late final List<Widget> _guestPages;
+  List<Widget>? _guestPages;
+  bool _guestPagesInitialized = false;
 
   @override
   void initState() {
@@ -68,7 +69,7 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
       }
     });
 
-    // User pages
+    // User pages — safe to build here (no inherited widget access)
     _homeView = HomeView(onScroll: _cubit.onScroll);
     _marriageView = MarriageView(key: _marriageKey, onScroll: _cubit.onScroll);
     _consultationTab = const _ConsultationTab();
@@ -76,33 +77,39 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
     _reelsView = const ReelsNavView(tabIndex: 3);
     _profileView = const UserProfileView();
 
-    // Guest pages (static, created once)
-    _guestPages = [
-      _homeView,
-      GuestLockWidget(
-        onTap: () => _guestAction(context),
-        message: 'فرص التوافق تبدأ بعد التسجيل',
-        description:
-            'أنشئ حسابك عشان تقدر تتعرف على أشخاص مناسبين ليك بطريقة آمنة ومُنظمة.',
-      ),
-      GuestLockWidget(
-        message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
-        description:
-            'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
-        onTap: () => _guestAction(context),
-      ),
-      const ReelsNavView(tabIndex: 3),
-      GuestLockWidget(
-        message: 'تواصل مباشر مع الاشخاص و مستشار علاقات ',
-        description:
-            'التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.',
-        onTap: () => _guestAction(context),
-      ),
-    ];
-
     // ✅ الـ layout جاهز — افتح أي pending deep link
     isMainLayoutReady = true;
     _consumePendingDeepLink();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ✅ Guest pages are built here because context.tr() reads AppLocalizations
+    // (an InheritedWidget), which must not be accessed inside initState().
+    // The guard ensures we only build them once.
+    if (!_guestPagesInitialized) {
+      _guestPagesInitialized = true;
+      _guestPages = [
+        _homeView,
+        GuestLockWidget(
+          onTap: () => _guestAction(context),
+          message: context.tr(AppStrings.guestLockMatchMessage),
+          description: context.tr(AppStrings.guestLockMatchDescription),
+        ),
+        GuestLockWidget(
+          message: context.tr(AppStrings.guestLockChatMessage),
+          description: context.tr(AppStrings.guestLockChatDescription),
+          onTap: () => _guestAction(context),
+        ),
+        const ReelsNavView(tabIndex: 3),
+        GuestLockWidget(
+          message: context.tr(AppStrings.guestLockChatMessage),
+          description: context.tr(AppStrings.guestLockChatDescription),
+          onTap: () => _guestAction(context),
+        ),
+      ];
+    }
   }
 
   /// Checks eligibility and shows a confirmation dialog before triggering
@@ -210,7 +217,7 @@ class _UserLayOutViewBodyState extends State<UserLayOutViewBody> {
           _profileView,
         ];
       case UserTypeEnum.guest:
-        return _guestPages;
+        return _guestPages ?? [];
       case UserTypeEnum.asConsultant:
         return [];
       default:

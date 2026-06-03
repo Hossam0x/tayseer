@@ -1698,7 +1698,6 @@
   "generic_error": "حدث خطأ ما",
   "load_more_failed": "فشل تحميل المزيد",
   "end_of_feed": "تم الوصول لنهاية المنشورات",
-  "no_posts_yet": "لا توجد منشورات بعد",
   "offline_no_posts_cached": "لا توجد منشورات محفوظة",
   "offline_no_posts_cached_sub": "اتصل بالإنترنت لتحميل المنشورات",
   "end_of_category_feed": "تم الوصول لنهاية المنشورات في هذه الفئة",
@@ -2452,5 +2451,12 @@
   "tutorial_dislike_desc": "اضغط على علامة الخطأ لتخطي هذا الملف الشخصي وتصفح الترشيح التالي.",
   "message_details_title": "تفاصيل الرسالة",
   "pending_chat_requests_desc": "لديك {count} طلب محادثة في الانتظار. قم بالاشتراك للوصول إليها والرد على من يريد التواصل معك.",
-  "pending_requests_dialog_title": "💬 طلبات في انتظارك"
+  "pending_requests_dialog_title": "💬 طلبات في انتظارك",
+  "create_account": "إنشاء حساب",
+  "guest_lock_match_message": "فرص التوافق تبدأ بعد التسجيل",
+  "guest_lock_match_description": "أنشئ حسابك عشان تقدر تتعرف على أشخاص مناسبين ليك بطريقة آمنة ومُنظمة.",
+  "guest_lock_chat_message": "تواصل مباشر مع الاشخاص و مستشار علاقات",
+  "guest_lock_chat_description": "التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.",
+  "uploading": "جاري الرفع...",
+  "selected_location": "الموقع المختار"
 }

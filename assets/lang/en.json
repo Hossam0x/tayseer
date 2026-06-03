@@ -1716,7 +1716,6 @@
   "generic_error": "Something went wrong",
   "load_more_failed": "Failed to load more",
   "end_of_feed": "You've reached the end of posts",
-  "no_posts_yet": "No posts yet",
   "offline_no_posts_cached": "No saved posts available",
   "offline_no_posts_cached_sub": "Connect to the internet to load posts",
   "end_of_category_feed": "You've reached the end of posts in this category",
@@ -2452,5 +2451,12 @@
   "tutorial_dislike_desc": "Tap the cross button to skip this profile and see the next recommendation.",
   "message_details_title": "Message Details",
   "pending_chat_requests_desc": "You have {count} pending chat request(s). Subscribe to access them and connect with people who want to reach you.",
-  "pending_requests_dialog_title": "💬 You have pending requests"
+  "pending_requests_dialog_title": "💬 You have pending requests",
+  "create_account": "Create Account",
+  "guest_lock_match_message": "Compatibility opportunities start after registration",
+  "guest_lock_match_description": "Create your account so you can meet people who are suitable for you in a safe and organized way.",
+  "guest_lock_chat_message": "Direct communication with people and a relationship advisor",
+  "guest_lock_chat_description": "Registering allows you to message advisors and book private sessions that suit your situation.",
+  "uploading": "Uploading...",
+  "selected_location": "Selected Location"
 }

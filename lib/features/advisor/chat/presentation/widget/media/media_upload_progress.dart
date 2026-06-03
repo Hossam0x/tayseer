@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:tayseer/core/utils/app_strings.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 
 /// Media Upload Progress Indicator
 ///
@@ -45,16 +47,19 @@ class MediaUploadProgress extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           // Upload text
-          const Text(
-            'جاري الرفع...',
-            style: TextStyle(color: Colors.white, fontSize: 12),
+          Text(
+            context.tr(AppStrings.uploading),
+            style: const TextStyle(color: Colors.white, fontSize: 12),
           ),
           // Cancel button (optional)
           if (onCancel != null) ...[
             const SizedBox(height: 8),
             TextButton(
               onPressed: onCancel,
-              child: const Text('إلغاء', style: TextStyle(color: Colors.white)),
+              child: Text(
+                context.tr(AppStrings.cancel),
+                style: const TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ],

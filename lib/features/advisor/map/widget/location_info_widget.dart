@@ -24,7 +24,10 @@ class LocationInfoWidget extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('الموقع المختار', style: Styles.textStyle18Bold),
+              Text(
+                context.tr(AppStrings.selectedLocation),
+                style: Styles.textStyle18Bold,
+              ),
               Gap(context.responsiveHeight(6)),
               AddressTextWidget(state: state),
             ],

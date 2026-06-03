@@ -6,13 +6,13 @@ class GuestLockWidget extends StatelessWidget {
     required this.message,
     required this.description,
     this.onTap,
-    this.titleBott = 'إنشاء حساب',
+    this.titleBott,
     this.showBackgroundImage = true,
   });
   final String message;
   final String description;
   final VoidCallback? onTap;
-  final String titleBott;
+  final String? titleBott;
   final bool showBackgroundImage;
 
   @override
@@ -66,7 +66,7 @@ class GuestLockWidget extends StatelessWidget {
                   CustomBotton(
                     radius: 16,
                     useGradient: true,
-                    title: titleBott,
+                    title: titleBott ?? context.tr(AppStrings.createAccount),
                     onPressed: onTap,
                   ),
                 ],
