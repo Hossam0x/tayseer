@@ -56,9 +56,23 @@ class ChatRoomSlidableActions {
     VoidCallback? onBlock,
     String? blockLabel,
   }) {
+    final showReport = onReport != null;
     final showBlock = onBlock != null;
-    final endExtentRatio = showBlock ? 0.62 : 0.42;
-    final endPanelWidth = showBlock ? 175.0 : 120.0;
+
+    // Width: Delete (always) + Report (optional) + Block (optional)
+    // Each button ≈ 55px, dividers ≈ negligible
+    double endPanelWidth;
+    double endExtentRatio;
+    if (showReport && showBlock) {
+      endPanelWidth = 175.0;
+      endExtentRatio = 0.62;
+    } else if (showReport || showBlock) {
+      endPanelWidth = 120.0;
+      endExtentRatio = 0.42;
+    } else {
+      endPanelWidth = 65.0;
+      endExtentRatio = 0.22;
+    }
 
     return ActionPane(
       motion: const ScrollMotion(),
@@ -84,16 +98,18 @@ class ChatRoomSlidableActions {
                     onDelete?.call();
                   },
                 ),
-                const _VerticalDivider(),
-                SlidableActionButton(
-                  svgIcon: AssetsData.reportIcon,
-                  label: context.tr('report'),
-                  color: Colors.orange,
-                  onTap: () {
-                    Slidable.of(context)?.close();
-                    onReport?.call();
-                  },
-                ),
+                if (showReport) ...[
+                  const _VerticalDivider(),
+                  SlidableActionButton(
+                    svgIcon: AssetsData.reportIcon,
+                    label: context.tr('report'),
+                    color: Colors.orange,
+                    onTap: () {
+                      Slidable.of(context)?.close();
+                      onReport.call();
+                    },
+                  ),
+                ],
                 if (showBlock) ...[
                   const _VerticalDivider(),
                   SlidableActionButton(

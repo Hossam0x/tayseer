@@ -25,6 +25,8 @@ class ChatRoomListItem extends StatelessWidget {
   // false + isBlocked = true → أنت المحظور → لا يظهر block/unblock
   // false + isBlocked = false → لا يوجد block → يظهر "حظر"
   final bool amIBlocker;
+  // ✅ System chat → Report option is hidden
+  final bool isSystemChat;
 
   // Actions
   final VoidCallback? onTap;
@@ -54,6 +56,7 @@ class ChatRoomListItem extends StatelessWidget {
     this.unreadCount = 0,
     this.isBlocked = false,
     this.amIBlocker = false,
+    this.isSystemChat = false,
     this.onTap,
     this.onArchive,
     this.onDelete,
@@ -89,8 +92,8 @@ class ChatRoomListItem extends StatelessWidget {
     final effectiveOnBlock = amIBlocker
         ? onBlock // أنت الحاظر → إلغاء الحظر
         : (isBlocked ? null : onBlock); // هو الحاظر أو مفيش block
-    // ✅ Report يظهر دايماً للشاتات العادية — حتى لو أنت الحاظر
-    final effectiveOnReport = onReport;
+    // ✅ Report يظهر فقط للشاتات غير الـ system — حتى لو أنت الحاظر
+    final effectiveOnReport = isSystemChat ? null : onReport;
     final effectiveBlockLabel = amIBlocker
         ? blockLabel
         : (isBlocked ? null : blockLabel);

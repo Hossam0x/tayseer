@@ -296,8 +296,6 @@ class _MessageDetailsBody extends StatelessWidget {
                                 height: 1,
                                 thickness: 1,
                               ),
-                              const SizedBox(height: 24),
-                              _buildActionRow(context),
                             ],
                             const SizedBox(height: 20),
                           ],
@@ -341,8 +339,6 @@ class _MessageDetailsBody extends StatelessWidget {
                             height: 1,
                             thickness: 1,
                           ),
-                          const SizedBox(height: 24),
-                          _buildActionRow(context),
                         ],
                         const SizedBox(height: 20),
                       ],
@@ -420,66 +416,6 @@ class _MessageDetailsBody extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  /// ✅ صف أزرار React و Reply — يُعرض فقط عندما لا يوجد حظر
-  Widget _buildActionRow(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildActionButton(
-            context: context,
-            icon: Icons.reply_rounded,
-            label: context.tr('reply'),
-            onTap: () => Navigator.pop(context, {'action': 'reply'}),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildActionButton(
-            context: context,
-            icon: Icons.add_reaction_outlined,
-            label: context.tr('react_text'),
-            onTap: () => Navigator.pop(context, {'action': 'react'}),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButton({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        decoration: BoxDecoration(
-          color: _kPrimaryColor.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _kPrimaryColor.withOpacity(0.2)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: _kPrimaryColor, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                color: _kPrimaryColor,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Cairo',
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
