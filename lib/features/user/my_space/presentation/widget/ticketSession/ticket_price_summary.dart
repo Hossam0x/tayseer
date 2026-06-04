@@ -109,7 +109,7 @@ class TicketPriceSummary extends StatelessWidget {
                     ),
                   // السعر النهائي
                   Text(
-                    "$finalTotal ${sessionData.currency}",
+                    "${finalTotal.toStringAsFixed(2)} ${sessionData.currency}",
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.bold,

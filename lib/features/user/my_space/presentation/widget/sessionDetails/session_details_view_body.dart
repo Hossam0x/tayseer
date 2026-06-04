@@ -177,7 +177,12 @@ class _SuccessContent extends StatelessWidget {
               CardWrapper(child: StatusCard(status: status)),
               SizedBox(height: 20.h),
 
-              // ─── 3. Session Data or Package Details ───
+              // ─── 3. Price Section ───
+              SectionLabel(title: context.tr('price_info_label')),
+              CardWrapper(child: PriceDetailsCard(pricing: data.pricing)),
+              SizedBox(height: 20.h),
+
+              // ─── 4. Session Data or Package Details ───
               if (isPackage) ...[
                 SectionLabel(title: context.tr('package_details_label')),
                 CardWrapper(
@@ -210,11 +215,6 @@ class _SuccessContent extends StatelessWidget {
                   ),
                 ),
               ],
-              SizedBox(height: 20.h),
-
-              // ─── 4. Price Section ───
-              SectionLabel(title: context.tr('price_info_label')),
-              CardWrapper(child: PriceDetailsCard(pricing: data.pricing)),
               SizedBox(height: 20.h),
 
               // ─── 5. Payment Method (single session only) ───
