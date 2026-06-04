@@ -62,7 +62,6 @@ class _PackageSessionRow extends StatelessWidget {
                 fontWeight: FontWeight.w500,
                 color: Colors.black87,
               ),
-              textAlign: TextAlign.right,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -70,7 +69,7 @@ class _PackageSessionRow extends StatelessWidget {
 
           SizedBox(width: 12.w),
           CustomBotton(
-            width: context.width * 0.25,
+            width: context.width * 0.30,
             useGradient: true,
             title: context.tr('schedule_appointment'),
             onPressed: onSchedule,
