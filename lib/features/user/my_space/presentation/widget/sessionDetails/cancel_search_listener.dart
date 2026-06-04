@@ -14,12 +14,12 @@ class CancelSearchListener extends StatelessWidget {
         if (state.cancelSession == CubitStates.loading) {
         } else if (state.cancelSession == CubitStates.success) {
           log('Session cancelled successfully');
-          AppToast.success(context, 'تم إلغاء الجلسة بنجاح');
+          AppToast.success(context, context.tr('session_cancelled_success'));
           context.popUntil(routeName: AppRouter.advisorchatprofile);
         } else if (state.cancelSession == CubitStates.failure) {
           AppToast.error(
             context,
-            state.errorMessage ?? 'حدث خطأ ما، يرجى المحاولة مرة أخرى',
+            state.errorMessage ?? context.tr('error_occurred'),
           );
         }
       },

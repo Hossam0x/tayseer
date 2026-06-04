@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/features/user/my_space/data/enum/session_enum.dart';
 import 'package:tayseer/features/user/my_space/data/helper/session_detailes_helper.dart';
 
@@ -19,11 +20,11 @@ class StatusCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12.r),
       ),
-      child: _buildStatusBadge(statusInfo),
+      child: _buildStatusBadge(context, statusInfo),
     );
   }
 
-  Widget _buildStatusBadge(SessionStatusInfo info) {
+  Widget _buildStatusBadge(BuildContext context, SessionStatusInfo info) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 10.w),
       decoration: BoxDecoration(
@@ -37,7 +38,7 @@ class StatusCard extends StatelessWidget {
           SizedBox(width: 8.w),
           Flexible(
             child: Text(
-              info.text,
+              context.tr(info.textKey),
               style: TextStyle(
                 color: info.iconColor,
                 fontSize: 12.sp,

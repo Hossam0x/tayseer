@@ -1,20 +1,15 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/session_detailes_model.dart';
 import 'package:tayseer/my_import.dart';
 
 class PriceDetailsCard extends StatelessWidget {
   final PricingModelResponse pricing;
-  final String currency;
+  final String? currency;
 
-  const PriceDetailsCard({
-    super.key,
-    required this.pricing,
-    this.currency = "ر.س",
-  });
+  const PriceDetailsCard({super.key, required this.pricing, this.currency});
 
   @override
   Widget build(BuildContext context) {
+    final currencyLabel = currency ?? context.tr('currency_sar');
     return Container(
       padding: EdgeInsets.all(15.r),
       decoration: BoxDecoration(
@@ -25,16 +20,19 @@ class PriceDetailsCard extends StatelessWidget {
         children: [
           _PriceRow(
             label: context.tr('session_price'),
-            value: "${pricing.sessionPrice} $currency",
+            value: "${pricing.sessionPrice} $currencyLabel",
           ),
-          _PriceRow(label: context.tr('taxes'), value: "${pricing.taxes} $currency"),
+          _PriceRow(
+            label: context.tr('taxes'),
+            value: "${pricing.taxes} $currencyLabel",
+          ),
           _PriceRow(
             label: context.tr('discount'),
-            value: "-${pricing.discount} $currency",
+            value: "-${pricing.discount} $currencyLabel",
             isDiscount: true,
           ),
           _buildDivider(),
-          _buildTotalRow(context),
+          _buildTotalRow(context, currencyLabel),
         ],
       ),
     );
@@ -44,7 +42,7 @@ class PriceDetailsCard extends StatelessWidget {
     return Divider(height: 30.h, color: Colors.grey[300]);
   }
 
-  Widget _buildTotalRow(BuildContext context) {
+  Widget _buildTotalRow(BuildContext context, String currencyLabel) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -53,7 +51,7 @@ class PriceDetailsCard extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp),
         ),
         Text(
-          "${pricing.total} $currency",
+          "${pricing.total} $currencyLabel",
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16.sp,

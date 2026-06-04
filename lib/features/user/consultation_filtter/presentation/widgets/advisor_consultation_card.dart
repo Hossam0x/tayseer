@@ -156,7 +156,10 @@ class AdvisorConsultationCard extends StatelessWidget {
                   onPressed: () {
                     context.pushNamed(
                       AppRouter.kChooseSessionView,
-                      arguments: {"title": "حجز جلسه", "advisorId": advisor.id},
+                      arguments: {
+                        "title": context.tr("book_session"),
+                        "advisorId": advisor.id,
+                      },
                     );
                   },
                   height: 50.h,

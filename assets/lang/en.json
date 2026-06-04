@@ -2458,5 +2458,14 @@
   "guest_lock_chat_message": "Direct communication with people and a relationship advisor",
   "guest_lock_chat_description": "Registering allows you to message advisors and book private sessions that suit your situation.",
   "uploading": "Uploading...",
-  "selected_location": "Selected Location"
+  "selected_location": "Selected Location",
+  "session_details_title": "Session Details",
+  "session_cancelled_success": "Session cancelled successfully",
+  "error_loading_session": "An error occurred while loading data",
+  "try_again": "Try Again",
+  "status_confirmed_text": "Confirmed - Appointment confirmed by advisor",
+  "status_completed_text": "Completed",
+  "status_pending_text": "Pending - Awaiting advisor confirmation",
+  "status_cancelled_text": "Rejected - Please choose another time",
+  "payment_method_vodafone_cash": "Vodafone Cash"
 }

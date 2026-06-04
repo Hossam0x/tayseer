@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 
 class ErrorStateWidget extends StatelessWidget {
   final String? errorMessage;
@@ -30,7 +31,7 @@ class ErrorStateWidget extends StatelessWidget {
             ),
             SizedBox(height: 16.h),
             Text(
-              errorMessage ?? 'حدث خطأ في تحميل البيانات',
+              errorMessage ?? context.tr('error_loading_session'),
               style: TextStyle(fontSize: 16.sp, color: Colors.grey[700]),
               textAlign: TextAlign.center,
             ),
@@ -38,7 +39,7 @@ class ErrorStateWidget extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: Text(retryButtonText ?? 'إعادة المحاولة'),
+              label: Text(retryButtonText ?? context.tr('try_again')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFD65A73),
                 foregroundColor: Colors.white,

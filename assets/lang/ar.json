@@ -2458,5 +2458,14 @@
   "guest_lock_chat_message": "تواصل مباشر مع الاشخاص و مستشار علاقات",
   "guest_lock_chat_description": "التسجيل يتيح لك مراسلة المستشارين وحجز جلسات خاصة تناسب حالتك.",
   "uploading": "جاري الرفع...",
-  "selected_location": "الموقع المختار"
+  "selected_location": "الموقع المختار",
+  "session_details_title": "تفاصيل الجلسة",
+  "session_cancelled_success": "تم إلغاء الجلسة بنجاح",
+  "error_loading_session": "حدث خطأ في تحميل البيانات",
+  "try_again": "إعادة المحاولة",
+  "status_confirmed_text": "مؤكدة - تم التأكيد الموعد من الاستشاري",
+  "status_completed_text": "مكتملة",
+  "status_pending_text": "قيد المراجعة - بانتظار تأكيد المستشار للموعد",
+  "status_cancelled_text": "مرفوضة - يرجى اختيار موعد آخر",
+  "payment_method_vodafone_cash": "فودافون كاش"
 }

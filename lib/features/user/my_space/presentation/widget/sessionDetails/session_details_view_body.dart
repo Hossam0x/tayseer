@@ -161,7 +161,7 @@ class _SuccessContent extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ─── 1. Person Info Section (مشترك) ───
+              // ─── 1. Person Info Section ───
               SectionLabel(title: context.tr('person_info_label')),
               CardWrapper(
                 child: PersonInfoCard(
@@ -172,35 +172,34 @@ class _SuccessContent extends StatelessWidget {
               ),
               SizedBox(height: 20.h),
 
-              // ─── 2. Status Section (مشترك) ───
+              // ─── 2. Status Section ───
               SectionLabel(title: context.tr('booking_status_label')),
               CardWrapper(child: StatusCard(status: status)),
               SizedBox(height: 20.h),
 
-              // ─── 3. Session Data أو Package Details (حسب النوع) ───
+              // ─── 3. Session Data or Package Details ───
               if (isPackage) ...[
-                // ✅ باكدج: تفاصيل الباكدج
                 SectionLabel(title: context.tr('package_details_label')),
                 CardWrapper(
                   child: PackageDetailsCard(
                     sessionCredit: data.sessionCredit!,
                     onScheduleSession: () {
+                      // ✅ fromWallet: false  →  triggers Paymob WebView flow
+                      // (same path as ChooseSessionView → UserReschedule → TicketSession)
                       context.pushNamed(
                         AppRouter.kUserRescheduleView,
                         arguments: {
-                          // 'title': context.tr('book_consultation'),
                           'advisorId': data.advisor.id,
                           'duration': data.duration.toString(),
-                          'fromWallet': true,
+                          'fromWallet': false,
                           'offeringId': data.sessionCredit?.offerId ?? '',
-                          'type': data.isPackage ? 'package' : 'session',
+                          'type': 'package',
                         },
                       );
                     },
                   ),
                 ),
               ] else ...[
-                // ✅ جلسة فردية: بيانات الجلسة العادية
                 SectionLabel(title: context.tr('session_data_label')),
                 CardWrapper(
                   child: SessionDataCard(
@@ -213,12 +212,12 @@ class _SuccessContent extends StatelessWidget {
               ],
               SizedBox(height: 20.h),
 
-              // ─── 4. Price Section (مشترك) ───
+              // ─── 4. Price Section ───
               SectionLabel(title: context.tr('price_info_label')),
               CardWrapper(child: PriceDetailsCard(pricing: data.pricing)),
               SizedBox(height: 20.h),
 
-              // ─── 5. Payment Method (للجلسة الفردية فقط) ───
+              // ─── 5. Payment Method (single session only) ───
               if (!isPackage) ...[
                 SectionLabel(title: context.tr('payment_method_label')),
                 CardWrapper(
@@ -227,17 +226,19 @@ class _SuccessContent extends StatelessWidget {
                 SizedBox(height: 30.h),
               ],
 
-              // ─── 6. Action Buttons (للجلسة الفردية فقط) ───
+              // ─── 6. Action Buttons (single session only) ───
               if (!isPackage) ...[
                 ActionButtons(
                   status: status,
                   sessionData: data,
                   onReschedule: () {
+                    // ✅ Navigate directly to ChooseSessionView (same as booking flow)
+                    // so the user picks an offering → schedule → Paymob payment
                     context.pushNamed(
                       AppRouter.kChooseSessionView,
                       arguments: {
-                        "oldBookingData": data,
-                        "advisorId": data.advisor.id,
+                        'title': context.tr('book_consultation'),
+                        'advisorId': data.advisor.id,
                       },
                     );
                   },

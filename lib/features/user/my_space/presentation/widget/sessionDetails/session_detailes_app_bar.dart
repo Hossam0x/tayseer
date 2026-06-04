@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 
 class SessionDetailsAppBar extends StatelessWidget {
-  final String title;
+  final String? title;
   final VoidCallback? onBack;
   final List<Widget>? actions;
 
   const SessionDetailsAppBar({
     super.key,
-    this.title = "تفاصيل الجلسة",
+    this.title,
     this.onBack,
     this.actions,
   });
@@ -25,7 +26,7 @@ class SessionDetailsAppBar extends StatelessWidget {
             onPressed: onBack ?? () => Navigator.pop(context),
           ),
           Text(
-            title,
+            title ?? context.tr('session_details_title'),
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.bold,

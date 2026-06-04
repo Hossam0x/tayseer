@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:tayseer/core/utils/colors.dart';
+import 'package:tayseer/core/utils/extensions/extensions.dart';
 import 'package:tayseer/core/widgets/custom_app_image.dart';
 import 'package:tayseer/features/user/my_space/data/helper/session_detailes_helper.dart';
 
@@ -14,6 +15,10 @@ class PaymentMethodCard extends StatelessWidget {
     final paymentInfo = SessionDetailsHelper.getPaymentMethodInfo(
       paymentMethod,
     );
+
+    final displayText = paymentInfo.displayTextKey != null
+        ? context.tr(paymentInfo.displayTextKey!)
+        : paymentInfo.rawText ?? paymentMethod;
 
     return Container(
       padding: EdgeInsets.all(15.r),
@@ -30,7 +35,7 @@ class PaymentMethodCard extends StatelessWidget {
           ),
           SizedBox(width: 10.w),
           Text(
-            paymentInfo.displayText,
+            displayText,
             style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
           ),
         ],
