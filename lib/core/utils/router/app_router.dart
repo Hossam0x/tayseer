@@ -1015,6 +1015,7 @@ abstract class AppRouter {
         final advisorName = args['advisorName'] as String? ?? '';
         final advisorAvatarUrl = args['advisorAvatarUrl'] as String? ?? '';
         final isUserSide = args['isUserSide'] as bool? ?? true;
+        final isAnonymous = args['isAnonymous'] as bool? ?? false;
 
         final rawParticipants = args['participants'] as List<dynamic>? ?? [];
         final participants = rawParticipants
@@ -1033,6 +1034,7 @@ abstract class AppRouter {
             advisorName: advisorName,
             advisorAvatarUrl: advisorAvatarUrl,
             isUserSide: isUserSide,
+            isAnonymous: isAnonymous,
           ),
         );
 

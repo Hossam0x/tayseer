@@ -25,6 +25,9 @@ class ActionButtons extends StatelessWidget {
   final VoidCallback? onRateAdvisor;
   final VoidCallback? onReschedule;
   final VoidCallback? onCancel;
+  final String? currentUserId;
+  final String? currentUserName;
+  final String? currentUserAvatarUrl;
 
   const ActionButtons({
     super.key,
@@ -34,6 +37,9 @@ class ActionButtons extends StatelessWidget {
     this.onRateAdvisor,
     this.onReschedule,
     this.onCancel,
+    this.currentUserId,
+    this.currentUserName,
+    this.currentUserAvatarUrl,
   });
 
   @override
@@ -58,17 +64,63 @@ class ActionButtons extends StatelessWidget {
   }
 
   Widget _buildJoinButton(BuildContext context) {
+    // ✅ Show join button only when session time has started (same logic as SessionCard)
+    final now = DateTime.now();
+    final sessionDateTime = DateTime(
+      sessionData.date.year,
+      sessionData.date.month,
+      sessionData.date.day,
+      int.parse(sessionData.timeRange.from.split(':')[0]),
+      int.parse(sessionData.timeRange.from.split(':')[1]),
+    );
+
+    final bool isNow =
+        now.isAfter(sessionDateTime) || now.isAtSameMomentAs(sessionDateTime);
+
+    if (!isNow) {
+      return const SizedBox.shrink();
+    }
+
     return SizedBox(
       width: double.infinity,
       child: CustomBotton(
         useGradient: true,
         title: context.tr('join_session'),
-        onPressed:
-            onJoinSession ??
-            () {
-              // Navigate to video call
-            },
+        onPressed: onJoinSession ?? () => _handleJoinSession(context),
       ),
+    );
+  }
+
+  void _handleJoinSession(BuildContext context) {
+    // ✅ Use provided user info or fallback to placeholder
+    final userId = currentUserId ?? 'user_${sessionData.sessionId}';
+    final userName = sessionData.isAnonymous
+        ? context.tr('anonymous')
+        : (currentUserName ?? 'User');
+    final userAvatar = sessionData.isAnonymous
+        ? ''
+        : (currentUserAvatarUrl ?? '');
+
+    context.pushNamed(
+      AppRouter.voiceCallView,
+      arguments: {
+        'callID': sessionData.sessionId,
+        'currentUserID': userId,
+        'currentUserName': userName,
+        'currentUserAvatarUrl': userAvatar,
+        'advisorId': sessionData.advisor.id,
+        'advisorName': sessionData.advisor.name,
+        'advisorAvatarUrl': sessionData.advisor.image,
+        'isUserSide': true,
+        'isAnonymous': sessionData.isAnonymous,
+        'participants': [
+          {
+            'id': sessionData.advisor.id,
+            'name': sessionData.advisor.name,
+            'avatarUrl': sessionData.advisor.image,
+          },
+        ],
+      },
     );
   }
 

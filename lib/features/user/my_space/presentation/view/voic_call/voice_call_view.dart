@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/voic_call/call_summary_page.dart';
 import 'package:zego_uikit/zego_uikit.dart';
@@ -18,6 +19,7 @@ class CallPage extends StatelessWidget {
     required this.advisorName,
     required this.advisorAvatarUrl,
     required this.isUserSide,
+    this.isAnonymous = false,
   });
 
   final String callID;
@@ -34,6 +36,9 @@ class CallPage extends StatelessWidget {
   /// true = المستخدم العادي (يشوف التقييم والإبلاغ)
   /// false = الـ advisor (ما يشوفش التقييم)
   final bool isUserSide;
+
+  /// true = anonymous session (hide real user identity)
+  final bool isAnonymous;
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +75,7 @@ class CallPage extends StatelessWidget {
           advisorName: advisorName,
           advisorAvatarUrl: advisorAvatarUrl,
           isUserSide: isUserSide,
+          isAnonymous: isAnonymous,
         ),
       ),
     );
@@ -103,9 +109,13 @@ class CallPage extends StatelessWidget {
           advisorId: advisorId,
           advisorName: advisorName,
           advisorAvatarUrl: advisorAvatarUrl,
+          currentUserId: userID,
+          currentUserName: userName,
+          currentUserAvatarUrl: avatarUrl,
           durationSeconds: durationSeconds,
           endReason: endReason,
           isUserSide: isUserSide,
+          isAnonymous: isAnonymous,
         ),
       ),
     );
@@ -127,6 +137,7 @@ class _CallView extends StatefulWidget {
     required this.advisorName,
     required this.advisorAvatarUrl,
     required this.isUserSide,
+    required this.isAnonymous,
   });
 
   final String callID;
@@ -138,6 +149,7 @@ class _CallView extends StatefulWidget {
   final String advisorName;
   final String advisorAvatarUrl;
   final bool isUserSide;
+  final bool isAnonymous;
 
   @override
   State<_CallView> createState() => _CallViewState();
@@ -145,7 +157,9 @@ class _CallView extends StatefulWidget {
 
 class _CallViewState extends State<_CallView> {
   Timer? _durationTimer;
+  Timer? _networkLossTimer;
   int _elapsedSeconds = 0;
+  bool _showingNetworkOverlay = false;
 
   @override
   void initState() {
@@ -165,46 +179,159 @@ class _CallViewState extends State<_CallView> {
   @override
   void dispose() {
     _durationTimer?.cancel();
+    _networkLossTimer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<CallCubit, CallState>(
-      buildWhen: (previous, current) =>
-          previous.zegoCredentialsState != current.zegoCredentialsState,
-      builder: (context, state) {
-        // Show loading while fetching credentials
-        if (state.zegoCredentialsState == CubitStates.loading) {
-          return _buildLoadingState();
-        }
-
-        // Show error if credentials fetch failed
-        if (state.zegoCredentialsState == CubitStates.failure) {
-          return _buildErrorState(
-            context,
-            state.zegoErrorMessage ?? 'فشل في تحميل بيانات المكالمة',
-          );
-        }
-
-        // Show Zego call when credentials are loaded
-        if (state.zegoCredentialsState == CubitStates.success &&
-            state.zegoAppId != null &&
-            state.zegoAppSign != null) {
-          return ZegoUIKitPrebuiltCall(
-            appID: state.zegoAppId!,
-            appSign: state.zegoAppSign!,
-            userID: widget.userID,
-            userName: widget.userName,
-            callID: widget.callID,
-            config: _buildCallConfig(context),
-            events: _buildCallEvents(context),
-          );
-        }
-
-        // Fallback loading state
-        return _buildLoadingState();
+    return BlocListener<ConnectivityCubit, ConnectivityState>(
+      listener: (context, connectivityState) {
+        _handleNetworkChange(context, connectivityState.isConnected);
       },
+      child: BlocBuilder<CallCubit, CallState>(
+        buildWhen: (previous, current) =>
+            previous.zegoCredentialsState != current.zegoCredentialsState,
+        builder: (context, state) {
+          // Show loading while fetching credentials
+          if (state.zegoCredentialsState == CubitStates.loading) {
+            return _buildLoadingState();
+          }
+
+          // Show error if credentials fetch failed
+          if (state.zegoCredentialsState == CubitStates.failure) {
+            return _buildErrorState(
+              context,
+              state.zegoErrorMessage ?? 'فشل في تحميل بيانات المكالمة',
+            );
+          }
+
+          // Show Zego call when credentials are loaded
+          if (state.zegoCredentialsState == CubitStates.success &&
+              state.zegoAppId != null &&
+              state.zegoAppSign != null) {
+            return Stack(
+              children: [
+                ZegoUIKitPrebuiltCall(
+                  appID: state.zegoAppId!,
+                  appSign: state.zegoAppSign!,
+                  userID: widget.userID,
+                  userName: widget.userName,
+                  callID: widget.callID,
+                  config: _buildCallConfig(context),
+                  events: _buildCallEvents(context),
+                ),
+                // ✅ Network reconnecting overlay
+                if (_showingNetworkOverlay) _buildNetworkOverlay(context),
+              ],
+            );
+          }
+
+          // Fallback loading state
+          return _buildLoadingState();
+        },
+      ),
+    );
+  }
+
+  void _handleNetworkChange(BuildContext context, bool isConnected) {
+    if (!isConnected && !_showingNetworkOverlay) {
+      // Network lost - show overlay and start timeout timer
+      setState(() => _showingNetworkOverlay = true);
+
+      _networkLossTimer?.cancel();
+      _networkLossTimer = Timer(const Duration(seconds: 30), () {
+        // Network did not restore within 30 seconds - end call
+        if (mounted && _showingNetworkOverlay) {
+          _endCallDueToNetworkLoss(context);
+        }
+      });
+    } else if (isConnected && _showingNetworkOverlay) {
+      // Network restored - dismiss overlay
+      _networkLossTimer?.cancel();
+      setState(() => _showingNetworkOverlay = false);
+
+      // Show brief success message
+      if (mounted) {
+        AppToast.success(context, context.tr('network_reconnected'));
+      }
+    }
+  }
+
+  Future<void> _endCallDueToNetworkLoss(BuildContext context) async {
+    final cubit = context.read<CallCubit>();
+    final durationSeconds = cubit.state.callDurationSeconds;
+
+    try {
+      await ZegoUIKitPrebuiltCallController().hangUp(context);
+    } catch (e) {
+      debugPrint('Error hanging up due to network loss: $e');
+    }
+
+    if (mounted) {
+      cubit.resetState();
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => CallSummaryPage(
+            advisorId: widget.advisorId,
+            advisorName: widget.advisorName,
+            advisorAvatarUrl: widget.advisorAvatarUrl,
+            currentUserId: widget.userID,
+            currentUserName: widget.userName,
+            currentUserAvatarUrl: widget.avatarUrl,
+            durationSeconds: durationSeconds,
+            endReason: context.tr('call_ended_network_loss'),
+            isUserSide: widget.isUserSide,
+            isAnonymous: widget.isAnonymous,
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildNetworkOverlay(BuildContext context) {
+    return Container(
+      color: Colors.black.withOpacity(0.8),
+      child: Center(
+        child: Container(
+          margin: EdgeInsets.symmetric(horizontal: 40.w),
+          padding: EdgeInsets.all(32.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                color: AppColors.kprimaryColor,
+                strokeWidth: 3,
+              ),
+              SizedBox(height: 24.h),
+              Text(
+                context.tr('reconnecting_network'),
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.secondary800,
+                  decoration: TextDecoration.none,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 12.h),
+              Text(
+                context.tr('network_lost_message'),
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: AppColors.secondary600,
+                  decoration: TextDecoration.none,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -324,9 +451,13 @@ class _CallViewState extends State<_CallView> {
                 advisorId: widget.advisorId,
                 advisorName: widget.advisorName,
                 advisorAvatarUrl: widget.advisorAvatarUrl,
+                currentUserId: widget.userID,
+                currentUserName: widget.userName,
+                currentUserAvatarUrl: widget.avatarUrl,
                 durationSeconds: durationSeconds,
                 endReason: '',
                 isUserSide: widget.isUserSide,
+                isAnonymous: widget.isAnonymous,
               ),
             ),
           );
@@ -354,6 +485,11 @@ class _CallViewState extends State<_CallView> {
         (BuildContext ctx, Size size, ZegoUIKitUser? user, Map extraInfo) {
           if (user == null) return const SizedBox.shrink();
           final avatar = cubit.getAvatar(user.id);
+          final isCurrentUser = user.id == widget.userID;
+          final displayName = isCurrentUser
+              ? '${user.name} (${ctx.tr('you')})'
+              : user.name;
+
           return Container(
             width: size.width,
             height: size.height,
@@ -391,7 +527,7 @@ class _CallViewState extends State<_CallView> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      user.name,
+                      displayName,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 14,

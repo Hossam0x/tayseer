@@ -12,20 +12,30 @@ class CallSummaryPage extends StatefulWidget {
     required this.advisorId,
     required this.advisorName,
     required this.advisorAvatarUrl,
+    required this.currentUserId,
+    required this.currentUserName,
+    required this.currentUserAvatarUrl,
     required this.durationSeconds,
     required this.endReason,
     required this.isUserSide,
+    this.isAnonymous = false,
   });
 
   final String advisorId;
   final String advisorName;
   final String advisorAvatarUrl;
+  final String currentUserId;
+  final String currentUserName;
+  final String currentUserAvatarUrl;
   final int durationSeconds;
   final String endReason;
 
   /// true = المستخدم العادي (يشوف التقييم والإبلاغ)
   /// false = الـ advisor (ما يشوفش التقييم)
   final bool isUserSide;
+
+  /// true = anonymous session
+  final bool isAnonymous;
 
   @override
   State<CallSummaryPage> createState() => _CallSummaryPageState();
@@ -73,7 +83,7 @@ class _CallSummaryPageState extends State<CallSummaryPage> {
                   padding: EdgeInsets.symmetric(horizontal: 24.w),
                   child: Column(
                     children: [
-                      Gap(32.h),
+                      Gap(150.h),
                       _buildAvatar(),
                       Gap(16.h),
                       _buildAdvisorName(),
@@ -130,6 +140,12 @@ class _CallSummaryPageState extends State<CallSummaryPage> {
   }
 
   Widget _buildAvatar() {
+    // ✅ Correct mapping: User sees Advisor's photo, Advisor sees User's photo
+    final displayAvatarUrl = widget.isUserSide
+        ? widget
+              .advisorAvatarUrl // User sees advisor's photo
+        : widget.currentUserAvatarUrl; // Advisor sees user's photo
+
     return Container(
       width: 100.w,
       height: 100.w,
@@ -138,9 +154,9 @@ class _CallSummaryPageState extends State<CallSummaryPage> {
         border: Border.all(color: AppColors.kprimaryColor, width: 3),
       ),
       child: ClipOval(
-        child: widget.advisorAvatarUrl.isNotEmpty
+        child: displayAvatarUrl.isNotEmpty
             ? Image.network(
-                widget.advisorAvatarUrl,
+                displayAvatarUrl,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) =>
                     const Icon(Icons.person, size: 50, color: Colors.grey),
@@ -151,8 +167,14 @@ class _CallSummaryPageState extends State<CallSummaryPage> {
   }
 
   Widget _buildAdvisorName() {
+    // ✅ Correct mapping: User sees Advisor's name, Advisor sees User's name
+    final displayName = widget.isUserSide
+        ? widget
+              .advisorName // User sees advisor's name
+        : widget.currentUserName; // Advisor sees user's name
+
     return Text(
-      widget.advisorName,
+      displayName,
       style: Styles.textStyle20Meduim.copyWith(color: AppColors.secondary800),
       textAlign: TextAlign.center,
     );

@@ -2473,5 +2473,11 @@
   "status_completed_text": "مكتملة",
   "status_pending_text": "قيد المراجعة - بانتظار تأكيد المستشار للموعد",
   "status_cancelled_text": "مرفوضة - يرجى اختيار موعد آخر",
-  "payment_method_vodafone_cash": "فودافون كاش"
+  "payment_method_vodafone_cash": "فودافون كاش",
+  "reconnecting_network": "جاري إعادة الاتصال...",
+  "network_lost_message": "انقطع الاتصال بالشبكة، جاري إعادة المحاولة",
+  "call_ended_network_loss": "انتهت المكالمة بسبب انقطاع الاتصال",
+  "network_reconnected": "تم استعادة الاتصال بنجاح",
+  "anonymous": "مجهول",
+  "you": "أنت"
 }

@@ -2473,5 +2473,11 @@
   "status_completed_text": "Completed",
   "status_pending_text": "Pending - Awaiting advisor confirmation",
   "status_cancelled_text": "Rejected - Please choose another time",
-  "payment_method_vodafone_cash": "Vodafone Cash"
+  "payment_method_vodafone_cash": "Vodafone Cash",
+  "reconnecting_network": "Reconnecting...",
+  "network_lost_message": "Network connection lost, retrying",
+  "call_ended_network_loss": "Call ended due to network disconnection",
+  "network_reconnected": "Connection restored successfully",
+  "anonymous": "Anonymous",
+  "you": "You"
 }
