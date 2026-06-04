@@ -4,24 +4,27 @@ import 'package:tayseer/my_import.dart';
 
 class TicketPriceSummary extends StatelessWidget {
   final SessionData sessionData;
-  final int discountPercentage;
+  final double discountPercentage;
+  final double? newTotalPrice;
   final bool isLoading;
   const TicketPriceSummary({
     super.key,
     required this.sessionData,
     this.discountPercentage = 0,
+    this.newTotalPrice,
     required this.isLoading,
   });
 
   @override
   Widget build(BuildContext context) {
-    // حساب قيمة الخصم
-    final discountAmount = discountPercentage > 0
-        ? (sessionData.total * discountPercentage / 100).round()
-        : 0;
+    // استخدام newTotalPrice من الـ API إذا كان متاحاً، وإلا احسبها محلياً
+    final bool hasDiscount = discountPercentage > 0 && newTotalPrice != null;
+    final double finalTotal = newTotalPrice ?? sessionData.total;
 
-    // حساب الإجمالي بعد الخصم
-    final finalTotal = sessionData.total - discountAmount;
+    // حساب قيمة الخصم للعرض (من الـ API أو محلياً)
+    final double discountAmount = hasDiscount
+        ? (sessionData.total - finalTotal)
+        : 0;
 
     return Container(
       width: double.infinity,
@@ -67,11 +70,11 @@ class TicketPriceSummary extends StatelessWidget {
           SizedBox(height: 10.h),
 
           // الخصم (يظهر فقط لو في خصم)
-          if (discountPercentage > 0) ...[
+          if (hasDiscount) ...[
             _buildPriceRow(
               context,
               "${context.tr("discount")} ($discountPercentage%)",
-              "-$discountAmount ${sessionData.currency}",
+              "-${discountAmount.toStringAsFixed(2)} ${sessionData.currency}",
               valueColor: Colors.green,
             ),
             SizedBox(height: 10.h),
@@ -98,7 +101,7 @@ class TicketPriceSummary extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   // السعر الأصلي (مشطوب) لو في خصم
-                  if (discountPercentage > 0)
+                  if (hasDiscount)
                     Text(
                       "${sessionData.total} ${sessionData.currency}",
                       style: TextStyle(

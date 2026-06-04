@@ -151,13 +151,14 @@ class MySpaceRepo {
     }
   }
 
-  Future<Either<Failure, DiscountResponseModel>> validateDiscountCode(
-    String code,
-  ) async {
+  Future<Either<Failure, DiscountResponseModel>> validateDiscountCode({
+    required String code,
+    required String sessionId,
+  }) async {
     try {
       final response = await apiService.post(
         endPoint: ApiEndPoint.discountcodeValidate,
-        data: {'code': code},
+        data: {'code': code, 'sessionId': sessionId},
       );
       return Right(DiscountResponseModel.fromJson(response));
     } on DioError catch (e) {

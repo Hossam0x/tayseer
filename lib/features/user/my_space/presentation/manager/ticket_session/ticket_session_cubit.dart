@@ -15,6 +15,16 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
 
   // ==================== التحقق من كود الخصم ====================
   Future<void> validateDiscountCode(String code) async {
+    if (state.sessionId == null) {
+      emit(
+        state.copyWith(
+          validateDiscountState: CubitStates.failure,
+          errorMessage: 'Session ID is required',
+        ),
+      );
+      return;
+    }
+
     emit(
       state.copyWith(
         validateDiscountState: CubitStates.loading,
@@ -28,7 +38,10 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
       state: CubitStates.loading,
     );
 
-    final result = await mySpaceRepo.validateDiscountCode(code);
+    final result = await mySpaceRepo.validateDiscountCode(
+      code: code,
+      sessionId: state.sessionId!,
+    );
 
     result.fold(
       (failure) {
@@ -40,7 +53,7 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
           state.copyWith(
             validateDiscountState: CubitStates.failure,
             errorMessage: failure.message,
-            discountPercentage: 0,
+            discountPercentage: 0.0,
             appliedCode: null,
           ),
         );
@@ -54,7 +67,7 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
           state.copyWith(
             validateDiscountState: CubitStates.success,
             discountResponse: response,
-            discountPercentage: response.data.discount,
+            discountPercentage: response.data.discountPercentage,
             appliedCode: code,
             successMessage: response.message,
           ),
@@ -186,13 +199,18 @@ class TicketSessionCubit extends Cubit<TicketSessionState> {
     );
   }
 
+  // ==================== تعيين معرّف الجلسة ====================
+  void setSessionId(String sessionId) {
+    emit(state.copyWith(sessionId: sessionId));
+  }
+
   // ==================== إزالة كود الخصم ====================
   void removeDiscountCode() {
     emit(
       state.copyWith(
         validateDiscountState: CubitStates.initial,
         discountResponse: null,
-        discountPercentage: 0,
+        discountPercentage: 0.0,
         appliedCode: null,
         successMessage: null,
         errorMessage: null,

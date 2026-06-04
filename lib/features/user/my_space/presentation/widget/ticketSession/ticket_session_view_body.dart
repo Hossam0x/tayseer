@@ -123,9 +123,18 @@ class _TicketSessionViewBodyState extends State<TicketSessionViewBody> {
                   child: Column(
                     children: [
                       const Spacer(),
-                      BlocSelector<TicketSessionCubit, TicketSessionState, int>(
-                        selector: (state) => state.discountPercentage,
-                        builder: (context, discountPercentage) {
+                      BlocSelector<
+                        TicketSessionCubit,
+                        TicketSessionState,
+                        ({double discountPercentage, double? newTotalPrice})
+                      >(
+                        selector: (state) => (
+                          discountPercentage: state.discountPercentage,
+                          newTotalPrice: state.isDiscountApplied
+                              ? state.discountResponse?.data.newTotalPrice
+                              : null,
+                        ),
+                        builder: (context, discount) {
                           return TicketPriceSummary(
                             isLoading: context.select(
                               (TicketSessionCubit cubit) =>
@@ -133,7 +142,8 @@ class _TicketSessionViewBodyState extends State<TicketSessionViewBody> {
                                   CubitStates.loading,
                             ),
                             sessionData: widget.sessionData,
-                            discountPercentage: discountPercentage,
+                            discountPercentage: discount.discountPercentage,
+                            newTotalPrice: discount.newTotalPrice,
                           );
                         },
                       ),

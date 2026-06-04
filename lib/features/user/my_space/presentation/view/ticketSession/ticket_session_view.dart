@@ -25,7 +25,9 @@ class TicketSessionView extends StatelessWidget {
         ).pushNamedAndRemoveUntil(AppRouter.kUserLayoutView, (route) => false);
       },
       child: BlocProvider(
-        create: (context) => TicketSessionCubit(getIt.get<MySpaceRepo>()),
+        create: (context) =>
+            TicketSessionCubit(getIt.get<MySpaceRepo>())
+              ..setSessionId(sessionData.id),
         child: Scaffold(
           body: AdvisorBackground(
             child: TicketSessionViewBody(sessionData: sessionData),

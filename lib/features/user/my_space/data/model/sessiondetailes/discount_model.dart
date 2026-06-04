@@ -21,11 +21,25 @@ class DiscountResponseModel {
 }
 
 class DiscountData {
-  final int discount;
+  final double discountPercentage;
+  final double newPrice;
+  final double newTotalPrice;
+  final double discountAmount;
 
-  DiscountData({required this.discount});
+  DiscountData({
+    required this.discountPercentage,
+    required this.newPrice,
+    required this.newTotalPrice,
+    required this.discountAmount,
+  });
 
   factory DiscountData.fromJson(Map<String, dynamic> json) {
-    return DiscountData(discount: json['discount'] ?? 0);
+    return DiscountData(
+      discountPercentage:
+          (json['discountPercentage'] as num?)?.toDouble() ?? 0.0,
+      newPrice: (json['newPrice'] as num?)?.toDouble() ?? 0.0,
+      newTotalPrice: (json['newTotalPrice'] as num?)?.toDouble() ?? 0.0,
+      discountAmount: (json['discountAmount'] as num?)?.toDouble() ?? 0.0,
+    );
   }
 }

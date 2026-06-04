@@ -11,9 +11,12 @@ class TicketSessionState {
   // حالة profileIncomplete (رقم الهاتف مطلوب)
   bool profileIncomplete;
 
+  // معرّف الجلسة (من session/create response)
+  String? sessionId;
+
   // بيانات الخصم
   DiscountResponseModel? discountResponse;
-  int discountPercentage;
+  double discountPercentage;
   String? appliedCode;
 
   // رسالة الخطأ
@@ -26,8 +29,9 @@ class TicketSessionState {
     this.validateDiscountState = CubitStates.initial,
     this.paySessionState = CubitStates.initial,
     this.profileIncomplete = false,
+    this.sessionId,
     this.discountResponse,
-    this.discountPercentage = 0,
+    this.discountPercentage = 0.0,
     this.appliedCode,
     this.errorMessage,
     this.successMessage,
@@ -37,8 +41,9 @@ class TicketSessionState {
     CubitStates? validateDiscountState,
     CubitStates? paySessionState,
     bool? profileIncomplete,
+    String? sessionId,
     DiscountResponseModel? discountResponse,
-    int? discountPercentage,
+    double? discountPercentage,
     String? appliedCode,
     String? errorMessage,
     String? successMessage,
@@ -48,23 +53,13 @@ class TicketSessionState {
           validateDiscountState ?? this.validateDiscountState,
       paySessionState: paySessionState ?? this.paySessionState,
       profileIncomplete: profileIncomplete ?? this.profileIncomplete,
+      sessionId: sessionId ?? this.sessionId,
       discountResponse: discountResponse ?? this.discountResponse,
       discountPercentage: discountPercentage ?? this.discountPercentage,
       appliedCode: appliedCode ?? this.appliedCode,
       errorMessage: errorMessage,
       successMessage: successMessage,
     );
-  }
-
-  // حساب قيمة الخصم من الإجمالي
-  int calculateDiscountAmount(int total) {
-    if (discountPercentage == 0) return 0;
-    return (total * discountPercentage / 100).round();
-  }
-
-  // حساب الإجمالي بعد الخصم
-  int calculateFinalTotal(int total) {
-    return total - calculateDiscountAmount(total);
   }
 
   // هل الخصم مطبق؟
