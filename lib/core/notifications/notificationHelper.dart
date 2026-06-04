@@ -139,12 +139,7 @@ class NotificationHelper {
       // ─── SESSION ────────────────────────────────────────
 
       case 'session_paid':
-
-        //need session id
-        navigatorKey.currentState!.pushNamed(
-          AppRouter.incommingsessiondetails,
-          arguments: sessionId,
-        );
+        navigatorKey.currentState!.pushNamed(AppRouter.pendingsession);
         break;
 
       // ─── FOLLOW ─────────────────────────────────────────

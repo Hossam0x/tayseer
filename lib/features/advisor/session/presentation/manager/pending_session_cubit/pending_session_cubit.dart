@@ -15,11 +15,14 @@ class PendingSessionCubit extends Cubit<PendingSessionState> {
     emit(state.copyWith(getpendingsessionState: CubitStates.loading));
     try {
       final response = await advisorSessionRepository.getpendingsession();
+      if (isClosed) return;
       response.fold(
         (failure) {
+          if (isClosed) return;
           emit(state.copyWith(getpendingsessionState: CubitStates.failure));
         },
         (pendingSessionData) {
+          if (isClosed) return;
           emit(
             state.copyWith(
               getpendingsessionState: CubitStates.success,
@@ -29,6 +32,7 @@ class PendingSessionCubit extends Cubit<PendingSessionState> {
         },
       );
     } catch (e) {
+      if (isClosed) return;
       emit(state.copyWith(getpendingsessionState: CubitStates.failure));
     }
   }
@@ -57,8 +61,10 @@ class PendingSessionCubit extends Cubit<PendingSessionState> {
         status,
       );
 
+      if (isClosed) return;
       response.fold(
         (failure) {
+          if (isClosed) return;
           emit(
             state.copyWith(
               acceptsessionState: CubitStates.failure,
@@ -71,6 +77,7 @@ class PendingSessionCubit extends Cubit<PendingSessionState> {
           );
         },
         (acceptSessionData) {
+          if (isClosed) return;
           emit(
             state.copyWith(
               acceptsessionState: CubitStates.success,
@@ -85,6 +92,7 @@ class PendingSessionCubit extends Cubit<PendingSessionState> {
         },
       );
     } catch (e) {
+      if (isClosed) return;
       emit(
         state.copyWith(
           acceptsessionState: CubitStates.failure,

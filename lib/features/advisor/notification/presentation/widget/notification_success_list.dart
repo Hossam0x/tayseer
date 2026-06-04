@@ -216,10 +216,7 @@ class _NotificationSuccessListState extends State<NotificationSuccessList> {
         }
       }
     } else if (notification.type == NotificationType.sessionPaid) {
-      context.pushNamed(
-        AppRouter.incommingsessiondetails,
-        arguments: notification.data?.sessionId,
-      );
+      context.pushNamed(AppRouter.pendingsession);
     } else if (notification.type == NotificationType.storyLike ||
         notification.type == NotificationType.storyView) {
       final storyId = notification.data?.storyId;
