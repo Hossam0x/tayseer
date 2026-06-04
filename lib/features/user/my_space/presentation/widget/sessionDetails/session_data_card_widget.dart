@@ -36,11 +36,6 @@ class SessionDataCard extends StatelessWidget {
           _SessionDataRow(icon: AssetsData.durationIcon, text: time),
           SizedBox(height: 10.h),
           _SessionDataRow(icon: AssetsData.durationIcon, text: duration),
-          SizedBox(height: 10.h),
-          _SessionDataRow(
-            icon: AssetsData.videoIcon,
-            text: sessionType ?? context.tr('video_call'),
-          ),
           if (isAnonymous) ...[
             SizedBox(height: 10.h),
             _SessionDataRow(

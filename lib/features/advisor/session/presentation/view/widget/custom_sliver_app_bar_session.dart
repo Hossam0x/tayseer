@@ -13,7 +13,7 @@ class CustomSliverAppBarSession extends StatelessWidget {
   Widget build(BuildContext context) {
     return SliverToBoxAdapter(
       child: Container(
-        height: context.responsiveHeight(200),
+        height: context.responsiveHeight(105),
         width: context.width,
         decoration: BoxDecoration(
           image: DecorationImage(
@@ -36,13 +36,14 @@ class CustomSliverAppBarSession extends StatelessWidget {
                       alignment: Alignment.center,
                       child: Padding(
                         padding: EdgeInsets.only(
-                          top: context.height * 0.1,
+                          top: context.height * 0.06,
                           left: context.width * 0.1,
                         ),
                         child: Text(title, style: Styles.textStyle20Bold),
                       ),
                     ),
                   ),
+                  SizedBox(width: 90.w),
                 ],
               )
             : Center(

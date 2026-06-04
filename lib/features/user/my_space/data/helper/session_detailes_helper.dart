@@ -14,6 +14,8 @@ class SessionDetailsHelper {
         return SessionStatus.completed;
       case 'cancelled':
         return SessionStatus.cancelled;
+      case 'awaiting_payment':
+        return SessionStatus.awaitingPayment;
       case 'pending':
       default:
         return SessionStatus.pending;
@@ -64,6 +66,8 @@ class SessionDetailsHelper {
         return 'status_pending_text';
       case SessionStatus.cancelled:
         return 'status_cancelled_text';
+      case SessionStatus.awaitingPayment:
+        return 'status_awaiting_payment_text';
     }
   }
 
@@ -97,6 +101,13 @@ class SessionDetailsHelper {
           iconColor: const Color(0xFFDC3545),
           textKey: 'status_cancelled_text',
           icon: Icons.cancel_outlined,
+        );
+      case SessionStatus.awaitingPayment:
+        return SessionStatusInfo(
+          bgColor: const Color(0xFFF0F4FF),
+          iconColor: const Color(0xFF3A5BF0),
+          textKey: 'status_awaiting_payment_text',
+          icon: Icons.payment_outlined,
         );
     }
   }

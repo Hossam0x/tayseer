@@ -4,4 +4,5 @@ enum SessionStatus {
   completed, // مكتملة (الصورة الثانية)
   pending, // قيد المراجعة (الصورة الثالثة)
   cancelled, // مرفوضة (الصورة الرابعة)
+  awaitingPayment, // في انتظار الدفع
 }

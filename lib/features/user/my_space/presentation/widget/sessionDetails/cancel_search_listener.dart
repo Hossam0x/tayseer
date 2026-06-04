@@ -15,7 +15,8 @@ class CancelSearchListener extends StatelessWidget {
         } else if (state.cancelSession == CubitStates.success) {
           log('Session cancelled successfully');
           AppToast.success(context, context.tr('session_cancelled_success'));
-          context.popUntil(routeName: AppRouter.advisorchatprofile);
+          // Single pop back to the screen that opened session details
+          Navigator.of(context).pop(true);
         } else if (state.cancelSession == CubitStates.failure) {
           AppToast.error(
             context,

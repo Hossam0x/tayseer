@@ -119,4 +119,13 @@ class SesionDetailesCubit extends Cubit<SessionDetailesState> {
     _rescheduleController?.cancel();
     return super.close();
   }
+
+  /// Updates the local session status after a successful payment
+  void updateSessionStatusToApproved() {
+    if (state.sessionDetailsData == null) return;
+    final updatedSession = state.sessionDetailsData!.copyWith(
+      status: 'approved',
+    );
+    emit(state.copyWith(sessionDetailsData: updatedSession));
+  }
 }

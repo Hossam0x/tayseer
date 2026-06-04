@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -18,6 +19,24 @@ class PaymobWebViewScreen extends StatefulWidget {
 class _PaymobWebViewScreenState extends State<PaymobWebViewScreen> {
   bool _isLoading = true;
   bool _resultHandled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Suppress the flutter_inappwebview "unknown_view" PlatformException that
+    // fires when a touch gesture completes after the WebView route has been
+    // popped. The error is harmless — the view is already gone — but it would
+    // otherwise surface as an unhandled exception.
+    FlutterError.onError = (FlutterErrorDetails details) {
+      final exception = details.exception;
+      if (exception is PlatformException && exception.code == 'unknown_view') {
+        // Swallow silently — the WebView was already disposed.
+        return;
+      }
+      // Re-report everything else normally.
+      FlutterError.presentError(details);
+    };
+  }
 
   /// Paymob بيعمل redirect لـ URL فيه transaction_response بعد الدفع
   /// الـ URL بيحتوي على: success=true/false, pending=true/false
@@ -58,62 +77,66 @@ class _PaymobWebViewScreenState extends State<PaymobWebViewScreen> {
     Navigator.of(context).pop(result);
   }
 
+  void _closeWithResult(PaymobWebViewResult result) {
+    if (_resultHandled) return;
+    _resultHandled = true;
+    if (mounted) Navigator.of(context).pop(result);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black87),
-          onPressed: () {
-            if (!_resultHandled) {
-              _resultHandled = true;
-              Navigator.of(context).pop(PaymobWebViewResult.closed);
-            }
-          },
-        ),
-        title: Text(
-          context.tr('payment'),
-          style: const TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.w600,
+    return PopScope(
+      // Allow the back gesture/button — treat it the same as tapping ×
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _closeWithResult(PaymobWebViewResult.closed);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.close, color: Colors.black87),
+            onPressed: () => _closeWithResult(PaymobWebViewResult.closed),
           ),
-        ),
-        centerTitle: true,
-      ),
-      body: Stack(
-        children: [
-          InAppWebView(
-            initialUrlRequest: URLRequest(url: WebUri(widget.webviewUrl)),
-            initialSettings: InAppWebViewSettings(
-              javaScriptEnabled: true,
-              domStorageEnabled: true,
-              useHybridComposition: true,
-              disableDefaultErrorPage: true,
-              mediaPlaybackRequiresUserGesture: false,
-              allowsInlineMediaPlayback: true,
+          title: Text(
+            context.tr('payment'),
+            style: const TextStyle(
+              color: Colors.black87,
+              fontWeight: FontWeight.w600,
             ),
-            onWebViewCreated: (controller) {},
-            onLoadStart: (controller, url) {
-              if (url != null) {
-                _handleUrl(url.toString());
-              }
-            },
-            shouldOverrideUrlLoading: (controller, navigationAction) async {
-              final url = navigationAction.request.url?.toString() ?? '';
-              _handleUrl(url);
-              return NavigationActionPolicy.ALLOW;
-            },
-            onLoadStop: (controller, url) async {
-              setState(() => _isLoading = false);
-              if (url != null) {
-                _handleUrl(url.toString());
-              }
-            },
           ),
-          if (_isLoading) const Center(child: CircularProgressIndicator()),
-        ],
+          centerTitle: true,
+        ),
+        body: Stack(
+          children: [
+            InAppWebView(
+              initialUrlRequest: URLRequest(url: WebUri(widget.webviewUrl)),
+              initialSettings: InAppWebViewSettings(
+                javaScriptEnabled: true,
+                domStorageEnabled: true,
+                useHybridComposition: true,
+                disableDefaultErrorPage: true,
+                mediaPlaybackRequiresUserGesture: false,
+                allowsInlineMediaPlayback: true,
+              ),
+              onWebViewCreated: (controller) {},
+              onLoadStart: (controller, url) {
+                if (url != null) _handleUrl(url.toString());
+              },
+              shouldOverrideUrlLoading: (controller, navigationAction) async {
+                final url = navigationAction.request.url?.toString() ?? '';
+                _handleUrl(url);
+                return NavigationActionPolicy.ALLOW;
+              },
+              onLoadStop: (controller, url) async {
+                if (mounted) setState(() => _isLoading = false);
+                if (url != null) _handleUrl(url.toString());
+              },
+            ),
+            if (_isLoading) const Center(child: CircularProgressIndicator()),
+          ],
+        ),
       ),
     );
   }

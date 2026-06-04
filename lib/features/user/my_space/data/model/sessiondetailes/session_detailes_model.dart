@@ -26,10 +26,11 @@ class SessionDetailsModelResponse {
 
 class SessionDetailsDataResponse {
   final String sessionId;
+  final String offeringId;
   final String type;
   final AdvisorModel advisor;
   final String status;
-  final String paymentStatus; // ✅ جديد
+  final String paymentStatus;
   final DateTime date;
   final TimeRangeModel timeRange;
   final int duration;
@@ -40,6 +41,7 @@ class SessionDetailsDataResponse {
 
   SessionDetailsDataResponse({
     required this.sessionId,
+    this.offeringId = '',
     required this.type,
     required this.advisor,
     required this.status,
@@ -183,6 +185,7 @@ class SessionDetailsDataResponse {
   factory SessionDetailsDataResponse.fromJson(Map<String, dynamic> json) {
     return SessionDetailsDataResponse(
       sessionId: json['sessionId'] ?? '',
+      offeringId: json['offeringId'] ?? '',
       type: json['type'] ?? 'single',
       advisor: AdvisorModel.fromJson(json['advisor'] ?? {}),
       status: json['status'] ?? '',
@@ -201,6 +204,7 @@ class SessionDetailsDataResponse {
 
   SessionDetailsDataResponse copyWith({
     String? sessionId,
+    String? offeringId,
     String? type,
     AdvisorModel? advisor,
     String? status,
@@ -215,6 +219,7 @@ class SessionDetailsDataResponse {
   }) {
     return SessionDetailsDataResponse(
       sessionId: sessionId ?? this.sessionId,
+      offeringId: offeringId ?? this.offeringId,
       type: type ?? this.type,
       advisor: advisor ?? this.advisor,
       status: status ?? this.status,
