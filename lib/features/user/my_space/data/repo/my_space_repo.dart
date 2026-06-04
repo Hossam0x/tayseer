@@ -8,6 +8,7 @@ import 'package:tayseer/features/user/my_space/data/model/create_session/get_ava
 import 'package:tayseer/features/user/my_space/data/model/paymob/payment_intention_model.dart';
 import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/discount_model.dart';
 import 'package:tayseer/features/user/my_space/data/model/sessiondetailes/session_detailes_model.dart';
+import 'package:tayseer/features/user/my_space/data/model/zego_credentials_model.dart';
 import 'package:tayseer/my_import.dart';
 
 class MySpaceRepo {
@@ -342,6 +343,18 @@ class MySpaceRepo {
       }
       final message = data?['message'] ?? e.message ?? 'فشل في بدء الدفع';
       return Left(ServerFailure(message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  // ==================== Zego Credentials ====================
+  Future<Either<Failure, ZegoCredentialsResponse>> getZegoCredentials() async {
+    try {
+      final response = await apiService.get(
+        endPoint: ApiEndPoint.zegoCredentials,
+      );
+      return Right(ZegoCredentialsResponse.fromJson(response));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

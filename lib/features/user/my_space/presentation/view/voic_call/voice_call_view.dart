@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/view/voic_call/call_summary_page.dart';
 import 'package:zego_uikit/zego_uikit.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
@@ -37,7 +38,8 @@ class CallPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => CallCubit()
+      create: (_) => CallCubit(getIt<MySpaceRepo>())
+        ..fetchZegoCredentials()
         ..init(
           myUserId: userID,
           myAvatar: avatarUrl,
@@ -168,15 +170,135 @@ class _CallViewState extends State<_CallView> {
 
   @override
   Widget build(BuildContext context) {
-    return ZegoUIKitPrebuiltCall(
-      appID: 1096376707,
-      appSign:
-          'bdd8e431ea191cfbf6b43e7842d78601aa8325f8e2259fd9ed85680a768dcef7',
-      userID: widget.userID,
-      userName: widget.userName,
-      callID: widget.callID,
-      config: _buildCallConfig(context),
-      events: _buildCallEvents(context),
+    return BlocBuilder<CallCubit, CallState>(
+      buildWhen: (previous, current) =>
+          previous.zegoCredentialsState != current.zegoCredentialsState,
+      builder: (context, state) {
+        // Show loading while fetching credentials
+        if (state.zegoCredentialsState == CubitStates.loading) {
+          return _buildLoadingState();
+        }
+
+        // Show error if credentials fetch failed
+        if (state.zegoCredentialsState == CubitStates.failure) {
+          return _buildErrorState(
+            context,
+            state.zegoErrorMessage ?? 'فشل في تحميل بيانات المكالمة',
+          );
+        }
+
+        // Show Zego call when credentials are loaded
+        if (state.zegoCredentialsState == CubitStates.success &&
+            state.zegoAppId != null &&
+            state.zegoAppSign != null) {
+          return ZegoUIKitPrebuiltCall(
+            appID: state.zegoAppId!,
+            appSign: state.zegoAppSign!,
+            userID: widget.userID,
+            userName: widget.userName,
+            callID: widget.callID,
+            config: _buildCallConfig(context),
+            events: _buildCallEvents(context),
+          );
+        }
+
+        // Fallback loading state
+        return _buildLoadingState();
+      },
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Container(
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage(AssetsData.homeBackgroundImage),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              color: AppColors.kprimaryColor,
+              strokeWidth: 3,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'جاري تجهيز المكالمة...',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, String errorMessage) {
+    return Container(
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage(AssetsData.homeBackgroundImage),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, color: Colors.red[300], size: 60),
+              const SizedBox(height: 16),
+              Text(
+                errorMessage,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () {
+                  context.read<CallCubit>().fetchZegoCredentials();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.kprimaryColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
+                ),
+                child: const Text(
+                  'إعادة المحاولة',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text(
+                  'العودة',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

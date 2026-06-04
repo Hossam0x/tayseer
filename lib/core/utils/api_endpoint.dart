@@ -129,4 +129,7 @@ class ApiEndPoint {
 
   // User Sessions
   static const String getUserSessions = '/session/get-all-for-user';
+
+  // Zego Credentials
+  static const String zegoCredentials = '/session/zego-cred';
 }

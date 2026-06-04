@@ -8,6 +8,12 @@ class CallState {
   final String sessionEndMessage;
   final int callDurationSeconds;
 
+  // ✅ Zego credentials fetch state
+  final CubitStates zegoCredentialsState;
+  final int? zegoAppId;
+  final String? zegoAppSign;
+  final String? zegoErrorMessage;
+
   const CallState({
     this.avatarsCache = const {},
     this.sessionCancelledModel,
@@ -15,6 +21,10 @@ class CallState {
     this.sessionId = '',
     this.sessionEndMessage = '',
     this.callDurationSeconds = 0,
+    this.zegoCredentialsState = CubitStates.initial,
+    this.zegoAppId,
+    this.zegoAppSign,
+    this.zegoErrorMessage,
   });
 
   CallState copyWith({
@@ -24,6 +34,10 @@ class CallState {
     String? sessionId,
     String? sessionEndMessage,
     int? callDurationSeconds,
+    CubitStates? zegoCredentialsState,
+    int? zegoAppId,
+    String? zegoAppSign,
+    String? zegoErrorMessage,
   }) {
     return CallState(
       avatarsCache: avatarsCache ?? this.avatarsCache,
@@ -33,6 +47,10 @@ class CallState {
       sessionId: sessionId ?? this.sessionId,
       sessionEndMessage: sessionEndMessage ?? this.sessionEndMessage,
       callDurationSeconds: callDurationSeconds ?? this.callDurationSeconds,
+      zegoCredentialsState: zegoCredentialsState ?? this.zegoCredentialsState,
+      zegoAppId: zegoAppId ?? this.zegoAppId,
+      zegoAppSign: zegoAppSign ?? this.zegoAppSign,
+      zegoErrorMessage: zegoErrorMessage ?? this.zegoErrorMessage,
     );
   }
 

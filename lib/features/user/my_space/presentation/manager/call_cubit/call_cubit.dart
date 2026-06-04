@@ -1,13 +1,15 @@
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/user/my_space/data/model/session_cancel_model.dart';
+import 'package:tayseer/features/user/my_space/data/repo/my_space_repo.dart';
 import 'package:tayseer/features/user/my_space/presentation/manager/call_cubit/session_call_cancel_event_bus.dart';
 import 'package:tayseer/my_import.dart';
 
 part 'call_state.dart';
 
 class CallCubit extends Cubit<CallState> {
-  CallCubit() : super(const CallState());
+  CallCubit(this._repo) : super(const CallState());
 
+  final MySpaceRepo _repo;
   final tayseerSocketHelper socketHelper = getIt.get<tayseerSocketHelper>();
 
   void init({
@@ -78,6 +80,37 @@ class CallCubit extends Cubit<CallState> {
   void removeListeners() {
     socketHelper.off('sessionCancelled');
     socketHelper.off('sessionEnd');
+  }
+
+  // ✅ Fetch Zego credentials from backend
+  Future<void> fetchZegoCredentials() async {
+    if (isClosed) return;
+
+    emit(state.copyWith(zegoCredentialsState: CubitStates.loading));
+
+    final result = await _repo.getZegoCredentials();
+
+    if (isClosed) return;
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            zegoCredentialsState: CubitStates.failure,
+            zegoErrorMessage: failure.message,
+          ),
+        );
+      },
+      (response) {
+        emit(
+          state.copyWith(
+            zegoCredentialsState: CubitStates.success,
+            zegoAppId: response.data.appIdAsInt,
+            zegoAppSign: response.data.zegoAppSign,
+          ),
+        );
+      },
+    );
   }
 
   @override
