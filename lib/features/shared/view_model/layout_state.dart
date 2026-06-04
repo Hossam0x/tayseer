@@ -11,6 +11,7 @@ class LayoutState extends Equatable {
   final bool isHomeAtTop;
   final int refreshHomeTrigger;
   final int marriageToggleTrigger;
+  final Map<String, dynamic>? sessionStartData;
 
   const LayoutState({
     this.currentIndex = 0,
@@ -21,6 +22,7 @@ class LayoutState extends Equatable {
     this.refreshHomeTrigger = 0,
     this.isMarriageVisible = true,
     this.marriageToggleTrigger = 0,
+    this.sessionStartData,
   });
 
   LayoutState copyWith({
@@ -32,6 +34,7 @@ class LayoutState extends Equatable {
     int? refreshHomeTrigger,
     bool? isMarriageVisible,
     int? marriageToggleTrigger,
+    Map<String, dynamic>? sessionStartData,
   }) {
     return LayoutState(
       currentIndex: currentIndex ?? this.currentIndex,
@@ -41,7 +44,9 @@ class LayoutState extends Equatable {
       isHomeAtTop: isHomeAtTop ?? this.isHomeAtTop,
       refreshHomeTrigger: refreshHomeTrigger ?? this.refreshHomeTrigger,
       isMarriageVisible: isMarriageVisible ?? this.isMarriageVisible,
-      marriageToggleTrigger: marriageToggleTrigger ?? this.marriageToggleTrigger,
+      marriageToggleTrigger:
+          marriageToggleTrigger ?? this.marriageToggleTrigger,
+      sessionStartData: sessionStartData ?? this.sessionStartData,
     );
   }
 
@@ -55,5 +60,6 @@ class LayoutState extends Equatable {
     isHomeAtTop,
     refreshHomeTrigger,
     marriageToggleTrigger,
+    sessionStartData,
   ];
 }

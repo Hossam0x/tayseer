@@ -1,16 +1,22 @@
 // features/advisor/layout/view_model/a_layout_cubit.dart
 import 'dart:async';
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/user_profile/user_profile_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
 class LayoutCubit extends Cubit<LayoutState> {
   StreamSubscription<bool>? _marriageStatusSub;
+  final tayseerSocketHelper _socketHelper;
 
-  LayoutCubit({UserTypeEnum userType = UserTypeEnum.asConsultant})
-    : super(LayoutState(userType: userType)) {
+  LayoutCubit({
+    UserTypeEnum userType = UserTypeEnum.asConsultant,
+    required tayseerSocketHelper socketHelper,
+  }) : _socketHelper = socketHelper,
+       super(LayoutState(userType: userType)) {
     _loadMarriageVisibility();
     _listenToMarriageStream();
+    _setupGlobalSessionStartListener();
   }
 
   /// Subscribe to UserProfileCubit.marriageStatusStream so that when
@@ -28,7 +34,45 @@ class LayoutCubit extends Cubit<LayoutState> {
   @override
   Future<void> close() {
     _marriageStatusSub?.cancel();
+    _socketHelper.offAllForListener('LayoutCubit_sessionStarted');
     return super.close();
+  }
+
+  /// Setup global sessionStarted socket listener
+  void _setupGlobalSessionStartListener() {
+    _socketHelper.listenWithId('sessionStarted', 'LayoutCubit_sessionStarted', (
+      data,
+    ) {
+      if (isClosed) return;
+
+      try {
+        final sessionId = data['sessionId'] as String? ?? '';
+        final participantName = data['participant'] as String? ?? 'User';
+        final duration = data['duration'] as int? ?? 0;
+        final participantId = data['participantId'] as String? ?? '';
+
+        // Emit event to trigger dialog in UI
+        emit(
+          state.copyWith(
+            sessionStartData: {
+              'sessionId': sessionId,
+              'participantName': participantName,
+              'duration': duration,
+              'participantId': participantId,
+            },
+          ),
+        );
+
+        // Reset after a short delay
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (!isClosed) {
+            emit(state.copyWith(sessionStartData: null));
+          }
+        });
+      } catch (e) {
+        debugPrint('Error parsing sessionStarted event: $e');
+      }
+    });
   }
 
   Future<void> _loadMarriageVisibility() async {

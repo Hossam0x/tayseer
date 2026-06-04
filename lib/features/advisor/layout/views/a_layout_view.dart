@@ -2,6 +2,7 @@
 import 'dart:developer';
 
 import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/advisor/layout/views/widgets/a_layout_view_body.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -18,7 +19,10 @@ class ALayoutView extends StatelessWidget {
     log("ALayoutView with userType: $currentUserType");
     return Scaffold(
       body: BlocProvider(
-        create: (context) => LayoutCubit(userType: currentUserType),
+        create: (context) => LayoutCubit(
+          userType: currentUserType,
+          socketHelper: getIt<tayseerSocketHelper>(),
+        ),
         child: const ALayOutViewBody(),
       ),
     );

@@ -1,4 +1,6 @@
 // features/advisor/layout/views/a_layout_view.dart
+import 'package:tayseer/core/enum/user_type.dart';
+import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/features/user/layout/view/widgets/user_layout_view_body.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -9,7 +11,8 @@ class UserLayoutView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: BlocProvider(
-        create: (context) => LayoutCubit(),
+        create: (context) =>
+            LayoutCubit(socketHelper: getIt<tayseerSocketHelper>()),
         child: const UserLayOutViewBody(),
       ),
       // زر اختبار الأصوات - مؤقت للتطوير

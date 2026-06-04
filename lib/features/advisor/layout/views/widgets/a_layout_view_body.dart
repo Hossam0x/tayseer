@@ -9,6 +9,7 @@ import 'package:tayseer/features/advisor/settings/view/cubit/settings_cubit.dart
 import 'package:tayseer/features/shared/rating/services/rating_service.dart';
 import 'package:tayseer/features/shared/reels/views/reels_nav_view.dart';
 import 'package:tayseer/features/shared/home/views/home_view.dart';
+import 'package:tayseer/features/shared/session_start_global_dialog.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
 import 'package:tayseer/main.dart';
 import 'package:tayseer/my_import.dart';
@@ -114,8 +115,23 @@ class _ALayOutViewBodyState extends State<ALayOutViewBody> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<LayoutCubit, LayoutState>(
-      listenWhen: (prev, curr) => prev.currentIndex != curr.currentIndex,
+      listenWhen: (prev, curr) =>
+          prev.currentIndex != curr.currentIndex ||
+          prev.sessionStartData != curr.sessionStartData,
       listener: (context, state) {
+        // Show session start dialog when socket event fires
+        if (state.sessionStartData != null) {
+          final data = state.sessionStartData!;
+          showSessionStartDialog(
+            context: context,
+            sessionId: data['sessionId'] as String? ?? '',
+            participantName: data['participantName'] as String? ?? 'User',
+            duration: data['duration'] as int? ?? 0,
+            participantId: data['participantId'] as String? ?? '',
+          );
+          return;
+        }
+
         // وقف كل الفيديوهات لما تتغير الـ tab (بدون dispose)
         VideoManager.instance.pauseAll();
       },

@@ -2332,7 +2332,6 @@
   "reinitialize": "إعادة تهيئة",
   "select_time_after_current": "الرجاء اختيار وقت لاحق من الوقت الحالي",
   "join_btn": "انضم",
-  "session_details_title": "تفاصيل الجلسة",
   "personal_data_section": "بيانات الشخص",
   "session_data_section": "بيانات الجلسة",
   "price_data_section": "بيانات السعر",
@@ -2478,6 +2477,9 @@
   "network_lost_message": "انقطع الاتصال بالشبكة، جاري إعادة المحاولة",
   "call_ended_network_loss": "انتهت المكالمة بسبب انقطاع الاتصال",
   "network_reconnected": "تم استعادة الاتصال بنجاح",
-  "anonymous": "مجهول",
-  "you": "أنت"
+  "you": "أنت",
+  "session_ready": "الجلسة جاهزة",
+  "session_ready_message": "جلستك مع {participant} جاهزة الآن",
+  "session_duration": "المدة: {duration} دقيقة",
+  "fetching_call_credentials": "جاري تحضير المكالمة..."
 }

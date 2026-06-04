@@ -2478,6 +2478,9 @@
   "network_lost_message": "Network connection lost, retrying",
   "call_ended_network_loss": "Call ended due to network disconnection",
   "network_reconnected": "Connection restored successfully",
-  "anonymous": "Anonymous",
-  "you": "You"
+  "you": "You",
+  "session_ready": "Session Ready",
+  "session_ready_message": "Your session with {participant} is ready now",
+  "session_duration": "Duration: {duration} minutes",
+  "fetching_call_credentials": "Preparing call..."
 }
