@@ -272,6 +272,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
   int _remainingSeconds = 0;
   int _closeCountdown = 5;
   bool _canClose = false;
+  bool _goldFeaturesExpanded = false; // expand/collapse gold feature list
 
   bool get _isRegards => widget.type == PurchaseType.regards;
   bool get _isGold => widget.type == PurchaseType.gold;
@@ -569,204 +570,509 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                 color: _goldBg,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
               ),
-              padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 32.h),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // ── زر الإغلاق ──
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: SizedBox(
-                      width: 36.w,
-                      height: 36.w,
-                      child: _canClose
-                          ? GestureDetector(
-                              onTap: () => Navigator.pop(context),
-                              child: Icon(
-                                Icons.close,
-                                size: 22.w,
-                                color: Colors.black54,
-                              ),
-                            )
-                          : Container(
-                              decoration: BoxDecoration(
-                                color: _goldCircle,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  '$_closeCountdown',
-                                  style: TextStyle(
-                                    fontSize: 13.sp,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black54,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(20.w, 50.h, 20.w, 32.h),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // ── زر الإغلاق ──
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: SizedBox(
+                        width: 36.w,
+                        height: 36.w,
+                        child: _canClose
+                            ? GestureDetector(
+                                onTap: () => Navigator.pop(context),
+                                child: Icon(
+                                  Icons.close,
+                                  size: 22.w,
+                                  color: Colors.black54,
+                                ),
+                              )
+                            : Container(
+                                decoration: BoxDecoration(
+                                  color: _goldCircle,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '$_closeCountdown',
+                                    style: TextStyle(
+                                      fontSize: 13.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black54,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 8.h),
 
-                  // ── Crown Badge ──
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 20.w,
-                      vertical: 10.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        AppImage(
-                          AssetsData.goldIcon,
-                          width: 33.w,
-                          height: 33.w,
-                        ),
-                        SizedBox(width: 6.w),
-                        Text(
-                          context.tr('gold_membership'),
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w700,
-                            color: _goldDark,
+                    // ── Crown Badge ──
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20.w,
+                        vertical: 10.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 18.h),
-
-                  // ── Title ──
-                  Text(
-                    context.tr(widget.titleKey ?? 'gold_title'),
-                    style: TextStyle(
-                      fontSize: 22.sp,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black,
-                      height: 1.4,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 10.h),
-
-                  // ── Subtitle ذهبي ──
-                  Text(
-                    context.tr(widget.subtitleKey ?? 'gold_subtitle'),
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w500,
-                      color: _goldMid,
-                      height: 1.5,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 24.h),
-
-                  // ── الباقات ──
-                  if (isLoading)
-                    Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24.h),
-                      child: const CircularProgressIndicator(color: _goldMid),
-                    )
-                  else
-                    ...packages.asMap().entries.map(
-                      (e) => Padding(
-                        padding: EdgeInsets.only(bottom: 10.h),
-                        child: _buildGoldPackageCard(e.key, e.value),
+                        ],
                       ),
-                    ),
-
-                  SizedBox(height: 16.h),
-
-                  // ── زر الاشتراك ──
-                  SizedBox(
-                    width: double.infinity,
-                    height: 54.h,
-                    child: ElevatedButton(
-                      onPressed: isPurchasing || packages.isEmpty
-                          ? null
-                          : () => _onPayGold(context, allSubs),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _goldDark,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(28.r),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: isPurchasing
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : Text(
-                              selectedPkg != null
-                                  ? _buildSubscribeLabel(context, selectedPkg)
-                                  : context.tr('subscribe'),
-                              style: TextStyle(
-                                fontSize: 15.sp,
-                                fontWeight: FontWeight.w700,
-                              ),
-                              textAlign: TextAlign.center,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AppImage(
+                            AssetsData.goldIcon,
+                            width: 33.w,
+                            height: 33.w,
+                          ),
+                          SizedBox(width: 6.w),
+                          Text(
+                            context.tr('gold_membership'),
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w700,
+                              color: _goldDark,
                             ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 10.h),
+                    SizedBox(height: 18.h),
 
-                  // ── تجديد تلقائي (iOS only) ──
-                  if (Platform.isIOS)
+                    // ── Title ──
                     Text(
-                      context.tr('auto_renew_note'),
-                      style: TextStyle(fontSize: 11.sp, color: Colors.black38),
+                      context.tr(widget.titleKey ?? 'gold_title'),
+                      style: TextStyle(
+                        fontSize: 22.sp,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black,
+                        height: 1.4,
+                      ),
                       textAlign: TextAlign.center,
                     ),
+                    SizedBox(height: 10.h),
 
-                  // ── Save Card Note (Android only) ──
-                  if (Platform.isAndroid) ...[
-                    SizedBox(height: 4.h),
-                    SaveCardNote(),
-                  ],
-
-                  // ── Restore Purchases ──
-                  if (Platform.isIOS) ...[
-                    SizedBox(height: 4.h),
-                    _GoldSheetRestoreButton(
-                      onNeedsTransfer: (purchaseId) {
-                        showRestoreConflictDialog(
-                          context,
-                          message: context.tr('restore_conflict_desc'),
-                          onTransfer: () => context
-                              .read<UserSubscriptionCubit>()
-                              .transferSubscription(purchaseId),
-                        );
-                      },
-                      onSuccess: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          CustomSnackBar(
-                            context,
-                            text: context.tr('subscription_activated'),
-                            isSuccess: true,
-                          ),
-                        );
-                      },
+                    // ── Subtitle ذهبي ──
+                    Text(
+                      context.tr(widget.subtitleKey ?? 'gold_subtitle'),
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w500,
+                        color: _goldMid,
+                        height: 1.5,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
+                    SizedBox(height: 24.h),
+
+                    // ── Features list (expandable) ──
+                    if (!isLoading) ...[
+                      _buildGoldFeatureList(context, allSubs, packages),
+                      SizedBox(height: 20.h),
+                    ],
+
+                    // ── الباقات ──
+                    if (isLoading)
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24.h),
+                        child: const CircularProgressIndicator(color: _goldMid),
+                      )
+                    else
+                      ...packages.asMap().entries.map(
+                        (e) => Padding(
+                          padding: EdgeInsets.only(bottom: 10.h),
+                          child: _buildGoldPackageCard(e.key, e.value),
+                        ),
+                      ),
+
+                    SizedBox(height: 16.h),
+
+                    // ── زر الاشتراك ──
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54.h,
+                      child: ElevatedButton(
+                        onPressed: isPurchasing || packages.isEmpty
+                            ? null
+                            : () => _onPayGold(context, allSubs),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _goldDark,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28.r),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: isPurchasing
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : Text(
+                                selectedPkg != null
+                                    ? _buildSubscribeLabel(context, selectedPkg)
+                                    : context.tr('subscribe'),
+                                style: TextStyle(
+                                  fontSize: 15.sp,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                      ),
+                    ),
+                    SizedBox(height: 10.h),
+
+                    // ── تجديد تلقائي (iOS only) ──
+                    if (Platform.isIOS)
+                      Text(
+                        context.tr('auto_renew_note'),
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: Colors.black38,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+
+                    // ── Save Card Note (Android only) ──
+                    if (Platform.isAndroid) ...[
+                      SizedBox(height: 4.h),
+                      SaveCardNote(),
+                    ],
+
+                    // ── Restore Purchases ──
+                    if (Platform.isIOS) ...[
+                      SizedBox(height: 4.h),
+                      _GoldSheetRestoreButton(
+                        onNeedsTransfer: (purchaseId) {
+                          showRestoreConflictDialog(
+                            context,
+                            message: context.tr('restore_conflict_desc'),
+                            onTransfer: () => context
+                                .read<UserSubscriptionCubit>()
+                                .transferSubscription(purchaseId),
+                          );
+                        },
+                        onSuccess: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            CustomSnackBar(
+                              context,
+                              text: context.tr('subscription_activated'),
+                              isSuccess: true,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ],
-                ],
-              ),
+                ),
+              ), // SingleChildScrollView
             );
           },
         );
       },
     );
+  }
+
+  // ── قائمة المزايا الذهبية (قابلة للتوسعة) ──
+  Widget _buildGoldFeatureList(
+    BuildContext context,
+    List<NewUserSubModel> allSubs,
+    List<PurchasePackage> packages,
+  ) {
+    // Pick the sub matching the currently selected package card
+    final goldSubs = allSubs
+        .where((s) => s.subscriptionType == 'gold')
+        .toList();
+    goldSubs.sort((a, b) {
+      const order = {'weekly': 0, 'monthly': 1, 'threemonths': 2};
+      return (order[a.subscriptionDurationType] ?? 3).compareTo(
+        order[b.subscriptionDurationType] ?? 3,
+      );
+    });
+    final activeSub = (goldSubs.isNotEmpty && _selectedIndex < goldSubs.length)
+        ? goldSubs[_selectedIndex]
+        : goldSubs.firstOrNull;
+
+    final allFeatures = _buildGoldAllFeatureItems(context, activeSub);
+    const staticCount = 3;
+    final extraCount = allFeatures.length - staticCount;
+    final hasExtra = extraCount > 0;
+
+    const goldDark = Color(0xFF8B6914);
+    const goldGradient = [Color(0xFFBD8F14), Color(0xFFF5C003)];
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: goldDark.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16.r),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // First 3 features — always visible
+            Padding(
+              padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0.h),
+              child: Column(
+                children: allFeatures
+                    .take(staticCount)
+                    .map(
+                      (f) => Padding(
+                        padding: EdgeInsets.only(bottom: 10.h),
+                        child: _buildGoldFeatureRow(context, f, goldGradient),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+            if (hasExtra) ...[
+              // "See more" toggle row
+              GestureDetector(
+                onTap: () => setState(
+                  () => _goldFeaturesExpanded = !_goldFeaturesExpanded,
+                ),
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 12.h,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Divider(
+                          color: const Color(0xFFE8C547).withOpacity(0.5),
+                          thickness: 1,
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Text(
+                        context.tr('see_more_features'),
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: goldDark,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(width: 6.w),
+                      // +N badge
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 7.w,
+                          vertical: 3.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: goldDark,
+                          borderRadius: BorderRadius.circular(20.r),
+                        ),
+                        child: Text(
+                          '+$extraCount',
+                          style: TextStyle(
+                            fontSize: 11.sp,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: Divider(
+                          color: const Color(0xFFE8C547).withOpacity(0.5),
+                          thickness: 1,
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      AnimatedRotation(
+                        turns: _goldFeaturesExpanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOutCubic,
+                        child: Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: goldDark,
+                          size: 20.w,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // Animated expand section
+              ClipRect(
+                child: AnimatedSize(
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeInOutCubic,
+                  child: _goldFeaturesExpanded
+                      ? Padding(
+                          padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
+                          child: Column(
+                            children: allFeatures
+                                .skip(staticCount)
+                                .map(
+                                  (f) => Padding(
+                                    padding: EdgeInsets.only(bottom: 10.h),
+                                    child: _buildGoldFeatureRow(
+                                      context,
+                                      f,
+                                      goldGradient,
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                        )
+                      : const SizedBox(width: double.infinity),
+                ),
+              ),
+            ] else
+              SizedBox(height: 8.h),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGoldFeatureRow(
+    BuildContext context,
+    Map<String, String> feature,
+    List<Color> gradient,
+  ) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            colors: gradient,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ).createShader(bounds),
+          child: SvgPicture.asset(
+            AssetsData.checkPackageItems,
+            width: 20.w,
+            height: 20.h,
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          ),
+        ),
+        SizedBox(width: 10.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                feature['title']!,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              if ((feature['desc'] ?? '').isNotEmpty) ...[
+                SizedBox(height: 2.h),
+                Text(
+                  feature['desc']!,
+                  style: TextStyle(fontSize: 12.sp, color: Colors.black54),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Dynamic API features + static premium perks (no boosts).
+  List<Map<String, String>> _buildGoldAllFeatureItems(
+    BuildContext context,
+    NewUserSubModel? sub,
+  ) {
+    final chatRooms = sub?.numberOfChatRooms ?? 0;
+    final chatMins = sub?.numberOfChatRoomMins ?? 0;
+    final greetings = sub?.numberOfDailyGreetings ?? 0;
+    final renables = sub?.numberOfFreeMatchingRenables ?? 0;
+    // numberOfFreeWeeklyReinforcements → skipped (no boosts per spec)
+
+    final dynamic = <Map<String, String>>[
+      {
+        'title': context.tr('feature_unlimited_likes'),
+        'desc': context.tr('feature_unlimited_likes_desc'),
+      },
+      {
+        'title': context
+            .tr('feature_chat_rooms')
+            .replaceAll('{count}', '$chatRooms'),
+        'desc': context.tr('feature_chat_rooms_desc'),
+      },
+      {
+        'title': context
+            .tr('feature_chat_mins')
+            .replaceAll('{count}', '$chatMins'),
+        'desc': context
+            .tr('feature_chat_mins_desc')
+            .replaceAll('{count}', '$chatMins'),
+      },
+      {
+        'title': context
+            .tr('feature_daily_greetings')
+            .replaceAll('{count}', '$greetings'),
+        'desc': context.tr('feature_daily_greetings_desc'),
+      },
+      {
+        'title': context
+            .tr('feature_matching_renables')
+            .replaceAll('{count}', '$renables'),
+        'desc': context.tr('feature_matching_renables_desc'),
+      },
+    ];
+
+    final staticFeatures = <Map<String, String>>[
+      {
+        'title': context.tr('feature_see_who_liked_you'),
+        'desc': context.tr('feature_see_who_liked_you_desc'),
+      },
+      {
+        'title': context.tr('feature_advanced_filters'),
+        'desc': context.tr('feature_advanced_filters_desc'),
+      },
+      {
+        'title': context.tr('feature_read_receipts'),
+        'desc': context.tr('feature_read_receipts_desc'),
+      },
+      {
+        'title': context.tr('feature_invisible_mode'),
+        'desc': context.tr('feature_invisible_mode_desc'),
+      },
+      {
+        'title': context.tr('feature_priority_search'),
+        'desc': context.tr('feature_priority_search_desc'),
+      },
+      {
+        'title': context.tr('feature_change_mind'),
+        'desc': context.tr('feature_change_mind_desc'),
+      },
+      {
+        'title': context.tr('feature_vip_badge'),
+        'desc': context.tr('feature_vip_badge_desc'),
+      },
+    ];
+
+    return [...dynamic, ...staticFeatures];
   }
 
   // ── كارد الباقة الذهبية ──
@@ -776,7 +1082,10 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     final isBestValue = index == 2;
 
     return GestureDetector(
-      onTap: () => setState(() => _selectedIndex = index),
+      onTap: () => setState(() {
+        _selectedIndex = index;
+        _goldFeaturesExpanded = false; // reset expansion when plan changes
+      }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),

@@ -71,10 +71,7 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
   final _getPackageData = GetPackageDisplayData();
 
   bool _initialPageSet = false;
-  int?
-  _expandedSubIndex; // accordion: index of the currently expanded duration card
-  // ✅ تم إزالة _subscriptionSubscription — الـ UserPackagesCubit بيعمل refresh تلقائياً
-  // عن طريق SubscriptionEventBus listener الداخلي، مش محتاجين listener تاني هنا
+  int? _expandedSubIndex; // accordion: index of the currently expanded card
 
   // Animation controllers for balloon effect on tab buttons
   late AnimationController _basicScaleController;
@@ -82,7 +79,7 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
   late Animation<double> _basicScaleAnim;
   late Animation<double> _proScaleAnim;
 
-  // Entrance animation for auto-scroll to Pro
+  // Entrance animation
   late AnimationController _entranceController;
   late Animation<double> _entranceFadeAnim;
   late Animation<Offset> _entranceSlideAnim;
@@ -96,7 +93,6 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
       keepPage: true,
     );
 
-    // Balloon scale animations
     _basicScaleController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 350),
@@ -123,7 +119,6 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
           CurvedAnimation(parent: _proScaleController, curve: Curves.easeInOut),
         );
 
-    // Entrance animation
     _entranceController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -141,10 +136,6 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
 
     _entranceController.forward();
     _jumpToCachedPage();
-
-    // ✅ لا نستمع للـ SubscriptionEventBus هنا — الـ UserPackagesCubit بيعمل ده تلقائياً
-    // الـ double refresh كان بيحصل لأن الـ cubit بيعمل getPackages() من الـ event bus
-    // والـ view كانت بتعمله تاني — ده كان يسبب 2 API calls متتاليين
   }
 
   Future<void> _jumpToCachedPage() async {
@@ -184,6 +175,10 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
     super.dispose();
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // BUILD
+  // ════════════════════════════════════════════════════════════════
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocListener(
@@ -214,12 +209,11 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
                 }
               }
             } else if (currentPkg == null) {
-              // Not subscribed → animate to Pro (gold) page
               Future.delayed(const Duration(milliseconds: 400), () {
                 if (!mounted) return;
-                // ✅ safe: mounted check is done before context.read
-                final selectionCubit = context.read<PackageSelectionCubit>();
-                selectionCubit.selectPackage(PackageType.pro);
+                context.read<PackageSelectionCubit>().selectPackage(
+                  PackageType.pro,
+                );
                 if (_pageController.hasClients) {
                   _pageController.animateToPage(
                     1,
@@ -302,22 +296,19 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
                     Expanded(flex: 30, child: _buildPageView()),
                     const Spacer(),
                     _buildTabSelector(),
-                    Gap(20.h),
                     _buildActionButton(),
-                    Gap(12.h),
+                    Gap(5.h),
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 24.w),
+                      padding: EdgeInsets.symmetric(horizontal: 40.w),
                       child: const AgreementText(),
                     ),
                     if (Platform.isIOS) ...[
-                      Gap(4.h),
+                      Gap(2.h),
                       RestorePurchasesButton(
                         textColor: AppColors.kprimaryTextColor,
                       ),
                     ],
-                    Gap(20.h),
-                    _buildViewAllBenefitsButton(),
-                    Gap(20.h),
+                    Gap(10.h),
                   ],
                 ),
               ),
@@ -333,7 +324,6 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
       controller: _pageController,
       onPageChanged: _onPageChanged,
       physics: const BouncingScrollPhysics(),
-      reverse: false,
       pageSnapping: true,
       itemCount: 2,
       itemBuilder: (context, index) {
@@ -343,17 +333,75 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // PAGE CONTENT
+  // ════════════════════════════════════════════════════════════════
+
+  Widget _buildPage(PackageType packageType) {
+    return BlocBuilder<UserPackagesCubit, UserPackagesState>(
+      buildWhen: (prev, curr) => prev.subscriptions != curr.subscriptions,
+      builder: (context, state) {
+        final packageData = _getPackageData(
+          context: context,
+          packageType: packageType,
+          apiPackages: state.subscriptions
+              .map((s) => s.toAdvisorSubModel())
+              .toList(),
+        );
+        return RepaintBoundary(
+          child: Column(
+            children: [
+              Gap(10.h),
+              SizedBox(
+                height: 40.h,
+                child: _buildPackageTitle(packageData, packageType),
+              ),
+              Gap(20.h),
+              Expanded(
+                child: _buildContentSection(context, packageType, state),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPackageTitle(
+    PackageDisplayModel package,
+    PackageType packageType,
+  ) {
+    switch (packageType) {
+      case PackageType.pro:
+        return Text(
+          package.packageTitle,
+          textAlign: TextAlign.center,
+          style: Styles.textStyle24Meduim.copyWith(color: Colors.black87),
+        );
+      case PackageType.basic:
+        return Text(
+          package.packageTitle,
+          textAlign: TextAlign.center,
+          style: Styles.textStyle24Bold.copyWith(
+            color: const Color(0xFFE91E63),
+          ),
+        );
+      case PackageType.elite:
+        return const SizedBox.shrink();
+    }
+  }
+
   Widget _buildContentSection(
     BuildContext context,
     PackageType selectedPackage,
     UserPackagesState packagesState,
   ) {
-    // ✅ لو Basic، اعرض الـ benefits القديمة
+    // Basic: show the benefits icons section
     if (selectedPackage == PackageType.basic) {
       return _buildBenefitsSection(context, selectedPackage);
     }
 
-    // ✅ لو Pro، اعرض الـ 3 durations كـ accordion
+    // Pro: accordion cards — each card has its own features when expanded
     final subs = packagesState.subscriptions
         .where((s) => s.subscriptionType == 'gold')
         .toList();
@@ -382,7 +430,7 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
       );
     }
 
-    // افتح الـ current sub تلقائياً لو أول مرة بتفتح الصفحة
+    // Auto-open the current subscription card on first load
     if (_expandedSubIndex == null) {
       final currentIndex = orderedSubs.indexWhere((s) => s.isCurrentSub);
       if (currentIndex >= 0) {
@@ -390,7 +438,6 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
           if (mounted) setState(() => _expandedSubIndex = currentIndex);
         });
       }
-      // لو مفيش current sub، كل الـ cards مقفولة
     }
 
     return SingleChildScrollView(
@@ -412,6 +459,11 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
       ),
     );
   }
+
+  // ════════════════════════════════════════════════════════════════
+  // DURATION ACCORDION CARD
+  // Each card shows its own 3 features when expanded + "See more" dialog
+  // ════════════════════════════════════════════════════════════════
 
   Widget _buildDurationCard(
     BuildContext context,
@@ -462,7 +514,7 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header (tap to toggle) ──
+            // ── Header row — tap to toggle accordion ──
             GestureDetector(
               onTap: () {
                 setState(() {
@@ -471,7 +523,7 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
               },
               behavior: HitTestBehavior.opaque,
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 14.h),
+                padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 8.h),
                 decoration: BoxDecoration(
                   gradient: isCurrentSub || isExpanded
                       ? const LinearGradient(
@@ -512,7 +564,6 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
                       ),
                     ),
                     Gap(8.w),
-                    // Price + badges
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -570,7 +621,6 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
                       ],
                     ),
                     Gap(8.w),
-                    // Chevron
                     AnimatedRotation(
                       turns: isExpanded ? 0.5 : 0,
                       duration: const Duration(milliseconds: 300),
@@ -587,20 +637,22 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
                 ),
               ),
             ),
-            // ── Expandable body ──
-            AnimatedCrossFade(
-              duration: const Duration(milliseconds: 300),
-              sizeCurve: Curves.easeInOutCubic,
-              firstCurve: Curves.easeOut,
-              secondCurve: Curves.easeIn,
-              crossFadeState: isExpanded
-                  ? CrossFadeState.showFirst
-                  : CrossFadeState.showSecond,
-              firstChild: Padding(
-                padding: EdgeInsets.fromLTRB(18.w, 14.h, 18.w, 16.h),
-                child: _buildFeaturesGrid(context, sub),
+
+            // ── Expandable body — features + "See more" ──
+            ClipRect(
+              child: AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOutCubic,
+                child: isExpanded
+                    ? _buildCardFeaturesBody(
+                        context,
+                        sub,
+                        durationLabel,
+                        price,
+                        currency,
+                      )
+                    : const SizedBox(width: double.infinity),
               ),
-              secondChild: const SizedBox(width: double.infinity),
             ),
           ],
         ),
@@ -608,49 +660,259 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
     );
   }
 
-  Widget _buildFeaturesGrid(BuildContext context, NewUserSubModel? sub) {
-    final features = _buildFeatureItems(context, sub);
-    return Wrap(
-      spacing: 16.w,
-      runSpacing: 10.h,
-      children: features.map((f) => _buildFeatureChip(context, f)).toList(),
+  // ── Body rendered inside an expanded card ──
+  Widget _buildCardFeaturesBody(
+    BuildContext context,
+    NewUserSubModel? sub,
+    String planLabel,
+    num? price,
+    String currency,
+  ) {
+    final allFeatures = _buildAllFeatureItems(context, sub);
+    const staticCount = 3;
+    final extraCount = allFeatures.length - staticCount;
+
+    return Container(
+      color: Colors.white,
+      padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 16.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // First 3 features — always visible inside the card
+          ...allFeatures
+              .take(staticCount)
+              .map(
+                (f) => Padding(
+                  padding: EdgeInsets.only(bottom: 10.h),
+                  child: _buildFeatureRow(context, f),
+                ),
+              ),
+
+          // "See more +N" row
+          if (extraCount > 0) ...[
+            const SizedBox(height: 4),
+            GestureDetector(
+              onTap: () => _showAllFeaturesDialog(
+                context,
+                sub: sub,
+                planLabel: planLabel,
+                price: price,
+                currency: currency,
+              ),
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.h),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Divider(
+                        color: const Color(0xFFE8C547).withOpacity(0.5),
+                        thickness: 1,
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Text(
+                      context.tr('see_more_features'),
+                      style: Styles.textStyle12.copyWith(
+                        color: const Color(0xFF8B6914),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(width: 6.w),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 7.w,
+                        vertical: 3.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B6914),
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                      child: Text(
+                        '+$extraCount',
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: Divider(
+                        color: const Color(0xFFE8C547).withOpacity(0.5),
+                        thickness: 1,
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Icon(
+                      Icons.open_in_new_rounded,
+                      color: const Color(0xFF8B6914),
+                      size: 16.r,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
-  Widget _buildFeatureChip(BuildContext context, Map<String, String> feature) {
-    const checkColors = [Color(0xFFBD8F14), Color(0xFFF5C003)];
+  // ════════════════════════════════════════════════════════════════
+  // ALL FEATURES DIALOG
+  // ════════════════════════════════════════════════════════════════
+
+  void _showAllFeaturesDialog(
+    BuildContext context, {
+    required NewUserSubModel? sub,
+    required String planLabel,
+    required num? price,
+    required String currency,
+  }) {
+    final allFeatures = _buildAllFeatureItems(context, sub);
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 48.h),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24.r),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // ── Dialog header ──
+                Container(
+                  padding: EdgeInsets.fromLTRB(20.w, 16.h, 12.w, 16.h),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFBD8F14), Color(0xFFF5C003)],
+                      begin: Alignment.centerRight,
+                      end: Alignment.centerLeft,
+                    ),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(24.r),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              planLabel,
+                              style: Styles.textStyle16SemiBold.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (price != null) ...[
+                              Gap(2.h),
+                              Text(
+                                '${price.toStringAsFixed(0)} $currency',
+                                style: Styles.textStyle12.copyWith(
+                                  color: Colors.white.withOpacity(0.85),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      // X close button
+                      GestureDetector(
+                        onTap: () => Navigator.pop(dialogContext),
+                        child: Container(
+                          width: 32.w,
+                          height: 32.w,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.25),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            color: Colors.white,
+                            size: 18.r,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ── Scrollable features list ──
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 20.h),
+                    child: Column(
+                      children: allFeatures
+                          .map(
+                            (f) => Padding(
+                              padding: EdgeInsets.only(bottom: 14.h),
+                              child: _buildFeatureRow(context, f),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // FEATURE ROW
+  // ════════════════════════════════════════════════════════════════
+
+  Widget _buildFeatureRow(BuildContext context, Map<String, String> feature) {
+    const goldGradient = [Color(0xFFBD8F14), Color(0xFFF5C003)];
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ShaderMask(
           shaderCallback: (bounds) => const LinearGradient(
-            colors: checkColors,
+            colors: goldGradient,
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ).createShader(bounds),
           child: SvgPicture.asset(
             AssetsData.checkPackageItems,
-            width: 16.w,
-            height: 16.h,
+            width: 18.w,
+            height: 18.h,
             colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
           ),
         ),
-        Gap(6.w),
-        RichText(
-          text: TextSpan(
+        SizedBox(width: 4.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextSpan(
-                text: feature['value']!,
-                style: Styles.textStyle12SemiBold.copyWith(
-                  color: const Color(0xFF8B6914),
+              Text(
+                feature['title']!,
+                style: Styles.textStyle14SemiBold.copyWith(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              TextSpan(
-                text: ' ${feature['label']!}',
-                style: Styles.textStyle12.copyWith(
-                  color: AppColors.secondary700,
+              if ((feature['desc'] ?? '').isNotEmpty) ...[
+                Text(
+                  feature['desc']!,
+                  style: Styles.textStyle12.copyWith(color: Colors.black54),
                 ),
-              ),
+              ],
             ],
           ),
         ),
@@ -658,7 +920,12 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
     );
   }
 
-  List<Map<String, String>> _buildFeatureItems(
+  // ════════════════════════════════════════════════════════════════
+  // FEATURES DATA
+  // First 5: dynamic from API (no boosts), Next 7: static premium perks
+  // ════════════════════════════════════════════════════════════════
+
+  List<Map<String, String>> _buildAllFeatureItems(
     BuildContext context,
     NewUserSubModel? sub,
   ) {
@@ -666,15 +933,75 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
     final chatMins = sub?.numberOfChatRoomMins ?? 0;
     final greetings = sub?.numberOfDailyGreetings ?? 0;
     final renables = sub?.numberOfFreeMatchingRenables ?? 0;
+    // numberOfFreeWeeklyReinforcements → skipped (no boosts)
 
     return [
-      {'value': '', 'label': context.tr('unlimited_number_of_likes')},
-      {'value': '$chatRooms', 'label': context.tr('chat_rooms')},
-      {'value': '$chatMins', 'label': context.tr('minutes')},
-      {'value': '$greetings', 'label': context.tr('daily_greetings')},
-      {'value': '$renables', 'label': context.tr('free_matching_renables')},
+      // — Dynamic features from API —
+      {
+        'title': context.tr('feature_unlimited_likes'),
+        'desc': context.tr('feature_unlimited_likes_desc'),
+      },
+      {
+        'title': context
+            .tr('feature_chat_rooms')
+            .replaceAll('{count}', '$chatRooms'),
+        'desc': context.tr('feature_chat_rooms_desc'),
+      },
+      {
+        'title': context
+            .tr('feature_chat_mins')
+            .replaceAll('{count}', '$chatMins'),
+        'desc': context
+            .tr('feature_chat_mins_desc')
+            .replaceAll('{count}', '$chatMins'),
+      },
+      {
+        'title': context
+            .tr('feature_daily_greetings')
+            .replaceAll('{count}', '$greetings'),
+        'desc': context.tr('feature_daily_greetings_desc'),
+      },
+      {
+        'title': context
+            .tr('feature_matching_renables')
+            .replaceAll('{count}', '$renables'),
+        'desc': context.tr('feature_matching_renables_desc'),
+      },
+      // — Static premium perks —
+      {
+        'title': context.tr('feature_see_who_liked_you'),
+        'desc': context.tr('feature_see_who_liked_you_desc'),
+      },
+      {
+        'title': context.tr('feature_advanced_filters'),
+        'desc': context.tr('feature_advanced_filters_desc'),
+      },
+      {
+        'title': context.tr('feature_read_receipts'),
+        'desc': context.tr('feature_read_receipts_desc'),
+      },
+      {
+        'title': context.tr('feature_invisible_mode'),
+        'desc': context.tr('feature_invisible_mode_desc'),
+      },
+      {
+        'title': context.tr('feature_priority_search'),
+        'desc': context.tr('feature_priority_search_desc'),
+      },
+      {
+        'title': context.tr('feature_change_mind'),
+        'desc': context.tr('feature_change_mind_desc'),
+      },
+      {
+        'title': context.tr('feature_vip_badge'),
+        'desc': context.tr('feature_vip_badge_desc'),
+      },
     ];
   }
+
+  // ════════════════════════════════════════════════════════════════
+  // HELPERS
+  // ════════════════════════════════════════════════════════════════
 
   String _getDurationLabel(BuildContext context, String? durationType) {
     switch (durationType?.toLowerCase()) {
@@ -694,7 +1021,6 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
     PackageType selectedPackage,
   ) {
     final benefits = _getBenefitsForPackage(selectedPackage);
-
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w),
       child: Row(
@@ -720,10 +1046,6 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
             'icon': AssetsData.youNotSeeWhoLiked,
             'title': 'you_cannot_see_who_liked',
           },
-          // {
-          //   'icon': AssetsData.thereAreNoFreeBoosts,
-          //   'title': 'there_are_no_free_boosts',
-          // },
           {
             'icon': AssetsData.limitedNumberOfLikes,
             'title': 'limited_number_of_likes',
@@ -735,16 +1057,12 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
             'icon': AssetsData.youCanSeeWhoLiked,
             'title': 'you_can_see_who_liked',
           },
-          // {
-          //   'icon': AssetsData.twoFreeCondolencesEveryWeek,
-          //   'title': 'two_free_boosts_every_week',
-          // },
           {
             'icon': AssetsData.unlimitedNumberOfLikes,
             'title': 'unlimited_number_of_likes',
           },
         ];
-      case PackageType.elite: // ✅ لن يتم الوصول إليه أبداً
+      case PackageType.elite:
         return [];
     }
   }
@@ -761,7 +1079,6 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
     >(
       selector: (state) => state.selectedPackage,
       builder: (context, selectedPackage) {
-        // ✅ لا يوجد elite بعد الآن، كل النصوص سوداء
         return Expanded(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -784,61 +1101,9 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
     );
   }
 
-  Widget _buildPage(PackageType packageType) {
-    return BlocBuilder<UserPackagesCubit, UserPackagesState>(
-      buildWhen: (prev, curr) => prev.subscriptions != curr.subscriptions,
-      builder: (context, state) {
-        final packageData = _getPackageData(
-          context: context,
-          packageType: packageType,
-          apiPackages: state.subscriptions
-              .map((s) => s.toAdvisorSubModel())
-              .toList(),
-        );
-        return RepaintBoundary(
-          child: Column(
-            children: [
-              Gap(20.h),
-              SizedBox(
-                height: 80.h,
-                child: _buildPackageTitle(packageData, packageType),
-              ),
-              Gap(20.h),
-              Expanded(
-                child: _buildContentSection(context, packageType, state),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildPackageTitle(
-    PackageDisplayModel package,
-    PackageType packageType,
-  ) {
-    switch (packageType) {
-      case PackageType.pro:
-        return Text(
-          package.packageTitle,
-          textAlign: TextAlign.center,
-          style: Styles.textStyle24Meduim.copyWith(color: Colors.black87),
-        );
-
-      case PackageType.basic:
-        return Text(
-          package.packageTitle,
-          textAlign: TextAlign.center,
-          style: Styles.textStyle24Bold.copyWith(
-            color: const Color(0xFFE91E63),
-          ),
-        );
-
-      case PackageType.elite: // ✅ لن يتم الوصول إليه أبداً
-        return const SizedBox.shrink();
-    }
-  }
+  // ════════════════════════════════════════════════════════════════
+  // TAB SELECTOR
+  // ════════════════════════════════════════════════════════════════
 
   Widget _buildTabSelector() {
     return BlocSelector<
@@ -847,10 +1112,8 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
       PackageType
     >(
       selector: (state) => state.selectedPackage,
-      builder: (context, selectedPackage) {
-        // ✅ Custom tab selector لـ Basic و Pro فقط
-        return _buildCustomTabSelector(selectedPackage);
-      },
+      builder: (context, selectedPackage) =>
+          _buildCustomTabSelector(selectedPackage),
     );
   }
 
@@ -863,18 +1126,15 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
             builder: (context, constraints) {
               final sectionWidth = constraints.maxWidth / 2;
               const barColor = Color(0xFFD9D9D9);
-
               return Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  // Horizontal line
                   Positioned(
                     top: 35.h,
                     left: 0,
                     right: 0,
                     child: Container(height: 5.h, color: barColor),
                   ),
-                  // Static triangles
                   Stack(
                     children: [
                       _buildTriangleAt(
@@ -887,9 +1147,7 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
                       ),
                     ],
                   ),
-                  // Selected indicator with balloon scale
                   _buildSelectedIndicator(sectionWidth, selectedPackage),
-                  // Clickable overlays
                   Row(
                     children: [
                       _buildClickOverlay(PackageType.basic),
@@ -902,7 +1160,6 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
           ),
         ),
         Gap(10.h),
-        // Tab labels with balloon scale
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -932,7 +1189,6 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
     final config = _getPackageConfig(selectedPackage);
     final visualIndex = isArabic ? (1 - config.index) : config.index;
     final centerX = sectionWidth * (visualIndex + 0.5);
-
     final scaleAnim = selectedPackage == PackageType.basic
         ? _basicScaleAnim
         : _proScaleAnim;
@@ -1021,39 +1277,29 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
         return _PackageConfig(
           index: 0,
           colors: [AppColors.primary300, AppColors.primary500],
-          label: "basic_package",
+          label: 'basic_package',
           isVertical: true,
         );
       case PackageType.pro:
         return _PackageConfig(
           index: 1,
           colors: const [Color(0xFFBD8F14), Color(0xFFF5C003)],
-          label: "gold_package",
+          label: 'gold_package',
           isVertical: false,
         );
       case PackageType.elite:
         return _PackageConfig(
           index: 2,
           colors: const [Color(0xFF4BB8F9), Color(0xFF6284FF)],
-          label: "elite_package",
+          label: 'elite_package',
           isVertical: true,
         );
     }
   }
 
-  Widget _buildViewAllBenefitsButton() {
-    return BlocSelector<
-      PackageSelectionCubit,
-      PackageSelectionState,
-      PackageType
-    >(
-      selector: (state) => state.selectedPackage,
-      builder: (context, selectedPackage) {
-        // ✅ اخفي الزر لأن المحتوى موجود بالفعل
-        return const SizedBox.shrink();
-      },
-    );
-  }
+  // ════════════════════════════════════════════════════════════════
+  // ACTION BUTTON & OTHER WIDGETS
+  // ════════════════════════════════════════════════════════════════
 
   Widget _buildActionButton() {
     return BlocBuilder<UserPackagesCubit, UserPackagesState>(
@@ -1070,13 +1316,11 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
           builder: (context, selectionState) {
             final selectedPackage = selectionState.selectedPackage;
 
-            // Hide basic button if user has an active subscription
             if (selectedPackage == PackageType.basic) {
               if (isLoading) return const SizedBox.shrink();
               if (currentPkg != null) return const SizedBox.shrink();
             }
 
-            // Android: لو عنده اشتراك نشط → مفيش زرار تغيير الباقة من هنا
             if (Platform.isAndroid &&
                 !isLoading &&
                 currentPkg != null &&
@@ -1108,6 +1352,10 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
     );
   }
 
+  // ════════════════════════════════════════════════════════════════
+  // EVENT HANDLERS
+  // ════════════════════════════════════════════════════════════════
+
   void _onPageChanged(int index) {
     const packages = [PackageType.basic, PackageType.pro];
     final pkg = packages[index];
@@ -1135,8 +1383,6 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
   void _onActionButtonPressed(BuildContext context, PackageType packageType) {
     if (packageType == PackageType.basic) {
       if (widget.fromPartnerFilter || widget.fromOnboarding) {
-        // ✅ حدّث kCurrentUserData بـ compeletedData = true قبل الانتقال
-        // عشان MarriageView يشوف إن البيانات اكتملت
         if (widget.fromOnboarding) {
           kCurrentUserData = kCurrentUserData?.copyWith(compeletedData: true);
         }
@@ -1151,7 +1397,6 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
       return;
     }
 
-    // لو عنده اشتراك مدفوع → افتح Apple subscription management مباشرة
     final currentPkg = context
         .read<UserPackagesCubit>()
         .currentSubscribedPackage;
@@ -1199,11 +1444,15 @@ class _UserPackagesViewContentState extends State<_UserPackagesViewContent>
         return SelectedPackage.basic;
       case PackageType.pro:
         return SelectedPackage.pro;
-      case PackageType.elite: // ✅ لن يتم الوصول إليه أبداً
+      case PackageType.elite:
         return SelectedPackage.elite;
     }
   }
 }
+
+// ════════════════════════════════════════════════════════════════
+// HELPER CLASSES
+// ════════════════════════════════════════════════════════════════
 
 class _PackageConfig {
   final int index;
@@ -1242,7 +1491,6 @@ class _TrianglePainter extends CustomPainter {
 
     final path = Path();
     const radius = 2.0;
-
     path.moveTo(radius, 0);
     path.lineTo(size.width - radius, 0);
     path.arcToPoint(
