@@ -808,15 +808,7 @@ class _PostMediaState extends State<_PostMedia> {
   }
 
   void _handleReelTap(VideoPlayerController? controller) {
-    if (widget.isDetailsView) {
-      if (controller != null && controller.value.isInitialized) {
-        controller.value.isPlaying
-            ? controller.pause()
-            : _playVideo(controller);
-      }
-      return;
-    }
-
+    // Always open fullscreen reels — same behavior in feed and details view.
     if (controller != null && controller.value.isInitialized) {
       try {
         controller.pause();

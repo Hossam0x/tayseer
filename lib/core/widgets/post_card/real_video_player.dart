@@ -1225,6 +1225,8 @@ class _MuteButton extends StatelessWidget {
       builder: (context, isMuted, _) {
         return GestureDetector(
           onTap: onTap,
+          // Prevent tap from bubbling up to the video's tap handler
+          behavior: HitTestBehavior.opaque,
           child: DecoratedBox(
             decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.6),
