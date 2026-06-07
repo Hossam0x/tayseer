@@ -74,6 +74,7 @@ class HomeRepositoryImpl implements HomeRepository {
               response.posts,
               nextCursor: response.nextCursor,
               page: page,
+              isAllCategory: true,
             )
             .catchError((_) {});
       }

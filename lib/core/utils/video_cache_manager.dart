@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
 
 class VideoCacheManager {
   static const key = 'videoCache';
@@ -26,7 +27,7 @@ class VideoCacheManager {
     Config(
       key,
       stalePeriod: const Duration(days: 14),
-      maxNrOfCacheObjects: 200,
+      maxNrOfCacheObjects: 50, // تقليص من 200 إلى 50
       repo: JsonCacheInfoRepository(databaseName: key),
       fileService: HttpFileService(),
     ),
@@ -98,11 +99,29 @@ class VideoCacheManager {
       _pathCache[url] = file.path;
       _failedDownloads.remove(url);
       completer.complete(file);
-    } catch (e) {
+    } on SocketException catch (e) {
+      debugPrint('⚠️ Network unavailable for video download: $e');
       _failedDownloads[url] = (_failedDownloads[url] ?? 0) + 1;
-      debugPrint(
-        '❌ Download failed (${_failedDownloads[url]}/$_maxDownloadRetries): $e',
-      );
+      completer.complete(null);
+    } on HttpException catch (e) {
+      debugPrint('⚠️ HTTP error for video download: $e');
+      _failedDownloads[url] = (_failedDownloads[url] ?? 0) + 1;
+      completer.complete(null);
+    } catch (e) {
+      // Catch ClientException from http package and all other errors
+      final msg = e.toString();
+      if (msg.contains('SocketException') ||
+          msg.contains('ClientException') ||
+          msg.contains('Failed host lookup') ||
+          msg.contains('Connection refused') ||
+          msg.contains('timed out')) {
+        debugPrint('⚠️ Network error downloading video (silent): $e');
+      } else {
+        debugPrint(
+          '❌ Download failed (${(_failedDownloads[url] ?? 0) + 1}/$_maxDownloadRetries): $e',
+        );
+      }
+      _failedDownloads[url] = (_failedDownloads[url] ?? 0) + 1;
       completer.complete(null);
     } finally {
       _activeDownloads.remove(url);
@@ -156,7 +175,7 @@ class VideoCacheManager {
                   completer.complete(fileInfo.file);
                 })
                 .catchError((e) {
-                  debugPrint('❌ Background download failed: $e');
+                  _silentNetworkError('Background download', url, e);
                   _failedDownloads[url] = (_failedDownloads[url] ?? 0) + 1;
                   _activeDownloads.remove(url);
                   completer.complete(null);
@@ -164,9 +183,27 @@ class VideoCacheManager {
           }
         })
         .catchError((e) {
+          _silentNetworkError('Cache check', url, e);
           _activeDownloads.remove(url);
           completer.complete(null);
         });
+  }
+
+  /// Silently log network errors without rethrowing.
+  void _silentNetworkError(String context, String url, Object e) {
+    final msg = e.toString();
+    if (msg.contains('SocketException') ||
+        msg.contains('ClientException') ||
+        msg.contains('Failed host lookup') ||
+        msg.contains('Connection refused') ||
+        msg.contains('HttpException') ||
+        msg.contains('timed out')) {
+      debugPrint(
+        '⚠️ $context offline/network error (silent): ${_getFileName(url)}',
+      );
+    } else {
+      debugPrint('❌ $context error for ${_getFileName(url)}: $e');
+    }
   }
 
   /// تحميل قائمة فيديوهات في الخلفية
@@ -196,6 +233,46 @@ class VideoCacheManager {
   /// إعادة تعيين كل حالات الفشل (تُستدعى عند العودة للتطبيق)
   void resetAllFailedStatuses() {
     _failedDownloads.clear();
+  }
+
+  /// يرجع مجلد الـ disk cache الخاص بالـ videoCache key (لحساب حجمه)
+  Future<Directory?> getCacheDirectory() async {
+    try {
+      final base = await getTemporaryDirectory();
+      // flutter_cache_manager يضع ملفاته في مجلد باسم الـ key داخل tmp
+      final keyDir = Directory('${base.path}/$key');
+      if (await keyDir.exists()) return keyDir;
+      return base;
+    } catch (e) {
+      debugPrint('⚠️ VideoCacheManager.getCacheDirectory: $e');
+      return null;
+    }
+  }
+
+  /// تحقق من إجمالي حجم الـ disk cache — إذا تجاوز [maxBytes] يُفرغه
+  Future<void> trimCacheIfNeeded({
+    int maxBytes = 500 * 1024 * 1024, // 500 MB default
+  }) async {
+    try {
+      final dir = await getCacheDirectory();
+      if (dir == null) return;
+      int total = 0;
+      await for (final entity in dir.list(recursive: true)) {
+        if (entity is File) {
+          try {
+            total += await entity.length();
+          } catch (_) {}
+        }
+      }
+      if (total > maxBytes) {
+        debugPrint(
+          '🧹 VideoCacheManager: cache ${(total / (1024 * 1024)).toStringAsFixed(1)} MB > ${maxBytes ~/ (1024 * 1024)} MB — clearing',
+        );
+        await clearCache();
+      }
+    } catch (e) {
+      debugPrint('⚠️ VideoCacheManager.trimCacheIfNeeded: $e');
+    }
   }
 
   /// مسح الكاش

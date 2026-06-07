@@ -113,6 +113,22 @@ class StoriesCubit extends Cubit<StoriesState> {
     return super.close();
   }
 
+  // ── Task 3.5 ─────────────────────────────────────────────────────────────
+  /// Release advisorSpecialStories memory when the user navigates away from
+  /// an advisor profile screen. Emits an empty list so the UI can GC the data.
+  void clearAdvisorStories() {
+    if (isClosed) return;
+    if (state.advisorSpecialStories.isEmpty) return;
+    emit(
+      state.copyWith(
+        advisorSpecialStories: const [],
+        advisorSpecialCurrentPage: 1,
+        advisorSpecialHasMore: true,
+      ),
+    );
+    debugPrint('🗑️ StoriesCubit: advisorSpecialStories cleared');
+  }
+
   Future<void> fetchStories({
     bool loadMore = false,
     String? advisorId,
@@ -220,8 +236,17 @@ class StoriesCubit extends Cubit<StoriesState> {
                 advisorId: effectiveAdvisorId,
               ),
             );
-            // Preload newly loaded stories in the background
-            StoryVideoPreloader.instance.preloadFromStories(newStories);
+            // Preload newly loaded stories in the background.
+            // Task 3.3: on loadMore only kick off background file downloads
+            // for NEW URLs — do NOT call preloadFromStories which would
+            // re-init controllers and reset the window.
+            for (final user in newStories) {
+              for (final story in user.stories) {
+                if (!story.isPostStory && story.video?.isNotEmpty == true) {
+                  StoryVideoPreloader.instance.preloadVideoUrl(story.video!);
+                }
+              }
+            }
           }
         },
       );

@@ -26,6 +26,9 @@ class VideoStateManager {
   // الحد الأقصى لعدد المواضع المخزنة
   static const int _maxPositionEntries = 200;
 
+  // الحد الأقصى لعدد الإدخالات في خرائط الأخطاء والتحميل الناجح
+  static const int _maxErrorEntries = 200;
+
   /// حفظ موضع الفيديو قبل الـ dispose
   void savePosition(String videoId, Duration position) {
     if (position.inSeconds > 0) {
@@ -58,6 +61,14 @@ class VideoStateManager {
     _loadedVideos[videoId] = true;
     _errorCounts.remove(videoId);
     _lastSuccessfulLoad[videoId] = DateTime.now();
+
+    // FIFO eviction لـ _lastSuccessfulLoad
+    if (_lastSuccessfulLoad.length > _maxErrorEntries) {
+      final oldestKey = _lastSuccessfulLoad.keys.first;
+      _lastSuccessfulLoad.remove(oldestKey);
+      _loadedVideos.remove(oldestKey);
+    }
+
     debugPrint('✅ Marked as loaded: $videoId');
   }
 
@@ -65,6 +76,12 @@ class VideoStateManager {
   /// يرجع true إذا يمكن إعادة المحاولة
   bool recordError(String videoId) {
     _errorCounts[videoId] = (_errorCounts[videoId] ?? 0) + 1;
+
+    // FIFO eviction لـ _errorCounts
+    if (_errorCounts.length > _maxErrorEntries) {
+      _errorCounts.remove(_errorCounts.keys.first);
+    }
+
     final canRetry = _errorCounts[videoId]! < _maxRetries;
     debugPrint(
       '❌ Error recorded for $videoId (${_errorCounts[videoId]}/$_maxRetries) - Can retry: $canRetry',

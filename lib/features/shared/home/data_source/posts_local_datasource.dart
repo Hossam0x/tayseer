@@ -31,8 +31,9 @@ class PostsLocalDatasource {
   // أقصى عمر للكاش (7 أيام)
   static const Duration _maxCacheAge = Duration(days: 7);
 
-  // أقصى عدد بوستات في الكاش
+  // أقصى عدد بوستات في الكاش — للـ "All" category نحتفظ بـ 10 فقط للعرض أوفلاين
   static const int _maxCachedPosts = 50;
+  static const int _maxOfflinePosts = 10;
 
   PostsLocalDatasource(this._hiveService);
 
@@ -50,15 +51,21 @@ class PostsLocalDatasource {
   // ═══════════════════════════════════════════════════════════════════════════
 
   /// حفظ البوستات في الكاش — يحذف القديم ثم يكتب الجديد
+  /// بالنسبة لـ "All" category (categoryId == null): نحتفظ بـ 10 بوستات آخر فقط
+  /// بالنسبة للباقي: نحتفظ بـ 50 كالمعتاد
   Future<void> cachePosts(
     List<PostModel> posts, {
     double? nextCursor,
     required int page,
+    bool isAllCategory = true,
   }) async {
     try {
-      // تقليم البوستات — نحتفظ بأحدث 50 فقط
-      final trimmedPosts = posts.length > _maxCachedPosts
-          ? posts.sublist(posts.length - _maxCachedPosts)
+      // تقليم البوستات:
+      // - "All" category: نحتفظ بآخر 10 بوستات فقط (Overwrite strategy للعرض أوفلاين)
+      // - غيرها: نحتفظ بأحدث 50
+      final int limit = isAllCategory ? _maxOfflinePosts : _maxCachedPosts;
+      final trimmedPosts = posts.length > limit
+          ? posts.sublist(posts.length - limit)
           : posts;
 
       final box = await _hiveService.openBox(_boxName);
@@ -90,7 +97,7 @@ class PostsLocalDatasource {
       await box.put(_writeCompleteKey, true);
 
       debugPrint(
-        '✅ PostsLocalDatasource: Cached ${trimmedPosts.length} posts (page $page, limit $_maxCachedPosts)',
+        '✅ PostsLocalDatasource: Cached ${trimmedPosts.length} posts (page $page, limit $limit)',
       );
     } catch (e) {
       debugPrint('❌ PostsLocalDatasource: Error caching posts: $e');

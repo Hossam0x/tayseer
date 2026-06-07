@@ -68,6 +68,15 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
     VideoManager.instance.stopAll();
     StoryVideoPreloader.instance.clear();
     _page.dispose();
+    // Task 3.4: clear ImageCache only if it exceeds 80 MB
+    final cacheBytes = PaintingBinding.instance.imageCache.currentSizeBytes;
+    if (cacheBytes > 80 * 1024 * 1024) {
+      PaintingBinding.instance.imageCache.clear();
+      debugPrint(
+        '🧹 StoryDetailsView: ImageCache cleared '
+        '(was ${(cacheBytes / (1024 * 1024)).toStringAsFixed(1)} MB)',
+      );
+    }
     super.dispose();
   }
 
@@ -126,27 +135,14 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
     );
   }
 
-  /// Preload video files for the current user and the next user's stories.
-  /// This runs in the background so by the time the user swipes, videos are
-  /// already cached on disk and the controller is pre-initialized.
+  /// Preload video controllers for the current user and the next one.
+  /// Uses the new (userId, storyIndex) keyed pool (Task 3.2).
   void _preloadAdjacentUserVideos(int currentIndex) {
-    final preloader = StoryVideoPreloader.instance;
-
-    // Collect video URLs for current + next user
-    final urls = <String>[];
-    for (int offset = 0; offset <= 1; offset++) {
-      final idx = currentIndex + offset;
-      if (idx >= _usersStories.length) break;
-      for (final story in _usersStories[idx].stories) {
-        if (!story.isPostStory && story.video?.isNotEmpty == true) {
-          urls.add(story.video!);
-        }
-      }
-    }
-
-    if (urls.isNotEmpty) {
-      preloader.preloadForUser(urls, startIndex: 0);
-    }
+    // Update the preloader's full user list so it knows the window
+    StoryVideoPreloader.instance.preloadFromStories(_usersStories);
+    // Signal which user is now visible — initialises index-0 immediately
+    // and queues index-1 in the background
+    StoryVideoPreloader.instance.onUserVisible(currentIndex);
   }
 
   void _onArchiveState(BuildContext ctx, ArchivedStoriesState s) {

@@ -244,8 +244,24 @@ class LocalNotification {
       NotificationHelper.handleNotificationClick(message: message);
     });
 
-    String? token = await FirebaseMessaging.instance.getToken();
-    print("📱 FCM TOKEN: $token");
+    // Wrap getToken in try/catch — silently ignore offline/unknown errors
+    // (FirebaseException code 'unknown' when device has no internet at launch)
+    try {
+      String? token = await FirebaseMessaging.instance.getToken();
+      print("📱 FCM TOKEN: $token");
+    } on FirebaseException catch (e) {
+      if (e.code == 'unknown' &&
+          (e.message?.contains('offline') == true ||
+              e.message?.contains('Internet') == true ||
+              e.message?.contains('network') == true)) {
+        debugPrint('⚠️ FCM getToken skipped — device is offline: ${e.message}');
+      } else {
+        debugPrint('⚠️ FCM getToken error (${e.code}): ${e.message}');
+      }
+    } catch (e) {
+      // Catches PlatformException and any other errors silently
+      debugPrint('⚠️ FCM getToken failed (silent): $e');
+    }
   }
 
   void _printFullMessage(RemoteMessage message) {

@@ -1,19 +1,27 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:video_player/video_player.dart';
 import 'package:tayseer/core/models/post_model.dart';
 import 'package:tayseer/core/utils/video_cache_manager.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════════
-/// FeedVideoPreloader — Facebook Newsfeed strategy
+/// FeedVideoPreloader — Disk-cache-only strategy (no VideoPlayerController)
 ///
-/// بيعمل pre-initialize للـ VideoPlayerControllers للفيديوهات القادمة في الـ feed
-/// عشان لما اليوزر يوصل للفيديو يلاقيه جاهز فوراً بدون أي تأخير.
+/// Previously this class pre-initialized VideoPlayerControllers which consumed
+/// hardware AVC decoder slots on Android.  Qualcomm devices have a pool of
+/// only 4-6 concurrent hardware decoders; pre-initializing 5 feed controllers
+/// plus 6 reels controllers exhausted the pool and caused
+///   DecoderInitializationException: c2.qti.avc.decoder start failed
 ///
-/// Strategy:
-/// - بيحتفظ بـ window من الـ controllers (current ± preloadAhead)
-/// - بيعمل dispose للـ controllers البعيدة عن الـ window
-/// - بيستخدم Completer dedup لمنع double-init لنفس الفيديو
+/// New strategy:
+///   • Pre-download the video file to flutter_cache_manager disk cache so
+///     RealVideoPlayer can open a local File instead of a network URL.
+///   • RealVideoPlayer already reads the cache first (getCachedFile) so it
+///     gets the fast "from cache" path with zero additional latency.
+///   • Zero VideoPlayerControllers are held here → zero hardware decoder slots
+///     consumed → no more DecoderInitializationException.
+///
+/// getReadyController() always returns null.  RealVideoPlayer handles that
+/// gracefully — it creates its own controller from the cached file.
 /// ═══════════════════════════════════════════════════════════════════════════
 class FeedVideoPreloader {
   static final FeedVideoPreloader instance = FeedVideoPreloader._internal();
@@ -21,326 +29,92 @@ class FeedVideoPreloader {
 
   final VideoCacheManager _cacheManager = VideoCacheManager();
 
-  // الـ controllers الجاهزة — key: postId
-  final Map<String, _PreloadedController> _controllers = {};
-
-  // Completers لمنع double-init
-  final Map<String, Completer<VideoPlayerController?>> _pending = {};
-
-  // الـ posts الحالية في الـ feed
+  // The posts currently in the feed
   List<PostModel> _feedPosts = [];
 
-  // عدد الفيديوهات اللي نحملها قدام
+  // How many videos ahead to pre-download (file only)
   static const int _preloadAhead = 3;
 
-  // عدد الفيديوهات اللي نحتفظ بيها ورا (عشان لو رجع)
+  // How many behind to keep warm
   static const int _keepBehind = 1;
 
-  // الحد الأقصى للـ controllers في الذاكرة
-  static const int _maxControllers = 5;
-
-  // آخر index شافه اليوزر
+  // Last visible index
   int _lastVisibleIndex = -1;
 
   bool _isDisposed = false;
+
+  // Offline flag — background downloads are suppressed when true
+  bool _isOffline = false;
 
   // ═══════════════════════════════════════════════════════════════════
   // Public API
   // ═══════════════════════════════════════════════════════════════════
 
-  /// تحديث قائمة الـ posts في الـ feed
+  /// Set offline state — when true, background file downloads are no-ops.
+  void setOffline(bool offline) {
+    _isOffline = offline;
+  }
+
+  /// Update the feed post list.
   void updateFeedPosts(List<PostModel> posts) {
     if (_isDisposed) return;
     _feedPosts = posts;
-
-    // ابدأ preload للفيديوهات الأولى فوراً
     if (_lastVisibleIndex == -1 && posts.isNotEmpty) {
       _triggerPreload(0);
     }
   }
 
-  /// اليوزر وصل لـ post معين — trigger preload للقادمين
+  /// Called when a post becomes visible — triggers background file downloads
+  /// for the upcoming posts.
   void onPostVisible(String postId) {
     if (_isDisposed) return;
-
     final index = _feedPosts.indexWhere((p) => p.postId == postId);
-    if (index == -1) return;
-
-    if (index == _lastVisibleIndex) return;
+    if (index == -1 || index == _lastVisibleIndex) return;
     _lastVisibleIndex = index;
-
     _triggerPreload(index);
   }
 
-  /// الحصول على controller جاهز لـ post معين (لو موجود)
-  VideoPlayerController? getReadyController(String postId) {
-    final preloaded = _controllers[postId];
-    if (preloaded == null) return null;
+  /// Always returns null — controller creation is delegated to RealVideoPlayer.
+  /// Kept for API compatibility; callers handle null gracefully.
+  VideoPlayerController? getReadyController(String postId) => null;
 
-    // ✅ Guard: verify the controller hasn't been disposed externally
-    try {
-      if (!preloaded.controller.value.isInitialized) return null;
-      // Probe addListener to confirm the controller is still alive
-      void probe() {}
-      preloaded.controller.addListener(probe);
-      preloaded.controller.removeListener(probe);
-    } catch (e) {
-      // Controller was disposed — clean it up and return null
-      debugPrint(
-        '⚠️ Preloaded controller for $postId was disposed externally, removing: $e',
-      );
-      _controllers.remove(postId);
-      return null;
-    }
+  /// Always returns false — no controllers are held.
+  bool isReady(String postId) => false;
 
-    return preloaded.controller;
-  }
+  /// No-op (no controllers to pause).
+  void pauseAll() {}
 
-  /// هل الـ controller جاهز؟
-  bool isReady(String postId) {
-    return _controllers[postId]?.controller.value.isInitialized == true;
-  }
-
-  /// إيقاف كل الفيديوهات الشغالة (لما التطبيق يروح للخلفية)
-  void pauseAll() {
-    if (_isDisposed) return;
-    for (final preloaded in _controllers.values) {
-      try {
-        final ctrl = preloaded.controller;
-        if (ctrl.value.isInitialized && ctrl.value.isPlaying) {
-          ctrl.pause();
-          debugPrint('⏸️ Preloader paused: ${preloaded.postId}');
-        }
-      } catch (_) {}
-    }
-  }
-
-  /// إعادة تعيين عند الـ refresh
+  /// Reset state.
   Future<void> reset() async {
-    _isDisposed = false; // إعادة تفعيل بعد الـ reset
+    _isDisposed = false;
     _lastVisibleIndex = -1;
     _feedPosts = [];
-    await _disposeAll();
   }
 
-  /// تنظيف كامل
+  /// Dispose.
   Future<void> dispose() async {
     _isDisposed = true;
-    await _disposeAll();
   }
 
+  /// Check disk cache size and evict if over 500 MB.
+  Future<void> trimCacheIfNeeded() => _cacheManager.trimCacheIfNeeded();
+
   // ═══════════════════════════════════════════════════════════════════
-  // Internal Logic
+  // Internal
   // ═══════════════════════════════════════════════════════════════════
 
   void _triggerPreload(int visibleIndex) {
-    if (_isDisposed) return;
+    if (_isDisposed || _isOffline) return;
 
-    // حدد الـ window
     final start = (visibleIndex - _keepBehind).clamp(0, _feedPosts.length - 1);
     final end = (visibleIndex + _preloadAhead).clamp(0, _feedPosts.length - 1);
 
-    // dispose الـ controllers خارج الـ window
-    _evictOutOfWindow(start, end);
-
-    // preload الـ controllers في الـ window
     for (int i = start; i <= end; i++) {
       final post = _feedPosts[i];
-      if (_isVideoPost(post)) {
-        _preloadController(post);
+      final url = post.videoData?.video ?? post.videoUrl ?? '';
+      if (url.isNotEmpty) {
+        _cacheManager.preloadVideoInBackground(url);
       }
     }
   }
-
-  bool _isVideoPost(PostModel post) {
-    final url = post.videoData?.video ?? post.videoUrl ?? '';
-    return url.isNotEmpty &&
-        (post.contentType == PostContentType.reel ||
-            post.contentType == PostContentType.post);
-  }
-
-  Future<void> _preloadController(PostModel post) async {
-    if (_isDisposed) return;
-
-    final postId = post.postId;
-    final url = post.videoData?.video ?? post.videoUrl ?? '';
-    if (url.isEmpty) return;
-
-    // موجود بالفعل؟
-    if (_controllers.containsKey(postId)) return;
-
-    // بيتحمل حالياً؟
-    if (_pending.containsKey(postId)) return;
-
-    // تجاوز الحد الأقصى؟
-    if (_controllers.length >= _maxControllers) return;
-
-    final completer = Completer<VideoPlayerController?>();
-    _pending[postId] = completer;
-
-    // helper آمن — بيتحقق قبل ما يعمل complete
-    void safeComplete(VideoPlayerController? value) {
-      if (!completer.isCompleted) completer.complete(value);
-    }
-
-    VideoPlayerController? createdController;
-
-    try {
-      // حمّل الملف في الخلفية أولاً (بدون انتظار)
-      _cacheManager.preloadVideoInBackground(url);
-
-      // حاول تجيب الملف من الكاش
-      final cachedFile = await _cacheManager.getCachedFile(url);
-
-      // تحقق بعد كل await — ممكن يكون اتعمل evict أو dispose في الأثناء
-      if (_isDisposed || !_pending.containsKey(postId)) {
-        safeComplete(null);
-        _pending.remove(postId);
-        return;
-      }
-
-      VideoPlayerController controller;
-      if (cachedFile != null) {
-        controller = VideoPlayerController.file(
-          cachedFile,
-          videoPlayerOptions: VideoPlayerOptions(
-            mixWithOthers: false,
-            allowBackgroundPlayback: false,
-          ),
-        );
-        debugPrint('📁 Preloading from cache: $postId');
-      } else {
-        controller = VideoPlayerController.networkUrl(
-          Uri.parse(url),
-          videoPlayerOptions: VideoPlayerOptions(
-            mixWithOthers: false,
-            allowBackgroundPlayback: false,
-          ),
-        );
-        debugPrint('🌐 Preloading from network: $postId');
-      }
-
-      createdController = controller;
-      await controller.initialize();
-
-      // تحقق تاني بعد initialize (أطول عملية)
-      if (_isDisposed || !_pending.containsKey(postId)) {
-        try {
-          controller.dispose();
-        } catch (_) {}
-        createdController = null;
-        safeComplete(null);
-        _pending.remove(postId);
-        return;
-      }
-
-      // إعداد الـ controller
-      await controller.setLooping(true);
-      await controller.setVolume(0.0); // صامت حتى يبدأ التشغيل الفعلي
-      await controller.pause(); // متوقف حتى يظهر على الشاشة
-
-      // تحقق أخير قبل الحفظ
-      if (_isDisposed || !_pending.containsKey(postId)) {
-        try {
-          controller.dispose();
-        } catch (_) {}
-        createdController = null;
-        safeComplete(null);
-        _pending.remove(postId);
-        return;
-      }
-
-      _controllers[postId] = _PreloadedController(
-        controller: controller,
-        postId: postId,
-        createdAt: DateTime.now(),
-      );
-
-      safeComplete(controller);
-      debugPrint('✅ Preloaded controller ready: $postId');
-    } catch (e) {
-      debugPrint('⚠️ Failed to preload controller for $postId: $e');
-      // dispose الـ controller لو اتعمل قبل الخطأ
-      if (createdController != null) {
-        try {
-          createdController.dispose();
-        } catch (_) {}
-        createdController = null;
-      }
-      safeComplete(null);
-    } finally {
-      _pending.remove(postId);
-    }
-  }
-
-  void _evictOutOfWindow(int windowStart, int windowEnd) {
-    final windowIds = <String>{};
-    for (int i = windowStart; i <= windowEnd; i++) {
-      windowIds.add(_feedPosts[i].postId);
-    }
-
-    final toEvict = _controllers.keys
-        .where((id) => !windowIds.contains(id))
-        .toList();
-
-    for (final id in toEvict) {
-      _disposeController(id);
-    }
-
-    // كمان cancel الـ pending اللي خارج الـ window
-    final pendingToCancel = _pending.keys
-        .where((id) => !windowIds.contains(id))
-        .toList();
-    for (final id in pendingToCancel) {
-      final c = _pending.remove(id);
-      if (c != null && !c.isCompleted) c.complete(null);
-    }
-  }
-
-  void _disposeController(String postId) {
-    final preloaded = _controllers.remove(postId);
-    if (preloaded == null) return;
-
-    try {
-      final ctrl = preloaded.controller;
-      if (ctrl.value.isInitialized) {
-        ctrl.setVolume(0.0);
-        if (ctrl.value.isPlaying) ctrl.pause();
-      }
-      ctrl.dispose();
-      debugPrint('🗑️ Evicted preloaded controller: $postId');
-    } catch (e) {
-      debugPrint('⚠️ Error evicting controller $postId: $e');
-    }
-  }
-
-  Future<void> _disposeAll() async {
-    // Cancel all pending — safe check قبل complete
-    final pendingEntries = Map<String, Completer<VideoPlayerController?>>.from(
-      _pending,
-    );
-    _pending.clear();
-    for (final completer in pendingEntries.values) {
-      if (!completer.isCompleted) completer.complete(null);
-    }
-
-    // Dispose all controllers
-    final ids = _controllers.keys.toList();
-    for (final id in ids) {
-      _disposeController(id);
-    }
-    _controllers.clear();
-  }
-}
-
-class _PreloadedController {
-  final VideoPlayerController controller;
-  final String postId;
-  final DateTime createdAt;
-
-  _PreloadedController({
-    required this.controller,
-    required this.postId,
-    required this.createdAt,
-  });
 }

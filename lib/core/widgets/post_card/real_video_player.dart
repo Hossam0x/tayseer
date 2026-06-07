@@ -45,6 +45,10 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
   bool _isInPlayZone = false;
   bool _isPageActive = true;
 
+  // Task 4: Black flash prevention — thumbnail is shown until the first frame
+  // is rendered. Fades out with AnimatedOpacity once ready.
+  bool _isVideoReady = false;
+
   // ✅ Incremented every time _controller is replaced.
   // Used as the key for _SafeVideoPlayer so Flutter remounts the VideoPlayer
   // widget (and its internal platform listener) instead of calling
@@ -368,6 +372,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
       _isInitialized = false;
       _isBuffering = false;
       _isUsingPreloadedController = false;
+      _isVideoReady = false; // Task 4: reset on eviction
       _initCompleter = null;
       debugPrint('🧹 Eviction: cleared controller ref for ${widget.postId}');
       // Trigger a rebuild so the placeholder shows immediately.
@@ -492,6 +497,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
     _controllerVersion++; // ← forces _SafeVideoPlayer to remount on next build
     _isInitialized = false;
     _isBuffering = false;
+    _isVideoReady = false; // Task 4: reset so thumbnail shows on next init
 
     if (controller == null) return;
 
@@ -560,6 +566,9 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
         _controller = preloadedController;
         _isUsingPreloadedController = true;
         await _controller!.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
+        // Task 4.3: controller already initialized — mark video ready immediately
+        // (no seekTo delay needed; first frame is already decoded)
+        _isVideoReady = true;
         _setupController();
         widget.onControllerCreated?.call(_controller!);
         await _restorePosition();
@@ -616,6 +625,9 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
       await _controller!.setLooping(true);
       await _controller!.setVolume(_muteManager.isMuted.value ? 0.0 : 1.0);
 
+      // Task 4.1: seek to first frame to force decode before showing video
+      await _controller!.seekTo(Duration.zero);
+
       _setupController();
       widget.onControllerCreated?.call(_controller!);
       await _restorePosition();
@@ -623,6 +635,18 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
       _stateManager.markAsLoaded(widget.postId);
       _retryCount = 0;
       _autoRetryTimer?.cancel();
+
+      // Task 4.2 & 4.6: wait for the first frame via listener (max 50 ms cap)
+      await _waitForFirstFrame();
+
+      // Task 4.4: guard — widget may have been disposed during the wait
+      if (!mounted || _isDisposed) {
+        safeComplete();
+        return;
+      }
+
+      // Task 4.2: flip ready flag so AnimatedOpacity fades the thumbnail out
+      setState(() => _isVideoReady = true);
 
       if (_canPlay) {
         VideoManager.instance.playVideo(widget.postId);
@@ -692,6 +716,44 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
       _controllerVersion++;
       _isInitialized = false;
       _isBuffering = false;
+    }
+  }
+
+  // ─── Task 4.6: Wait for first frame without a fixed delay ───────────────
+  /// Resolves as soon as the controller reports isInitialized &&
+  /// !isBuffering, with a hard cap of 50 ms to avoid stalling.
+  Future<void> _waitForFirstFrame() async {
+    final ctrl = _controller;
+    if (ctrl == null) return;
+
+    final completer = Completer<void>();
+
+    void listener() {
+      if (completer.isCompleted) return;
+      final v = ctrl.value;
+      if (v.isInitialized && !v.isBuffering) {
+        completer.complete();
+      }
+    }
+
+    try {
+      ctrl.addListener(listener);
+      // Check synchronously first — may already be ready
+      final v = ctrl.value;
+      if (v.isInitialized && !v.isBuffering) {
+        completer.complete();
+      }
+      // Hard cap: 50 ms maximum wait (Task 4.1 requirement)
+      await completer.future.timeout(
+        const Duration(milliseconds: 50),
+        onTimeout: () {},
+      );
+    } catch (_) {
+      // Silently ignore — if controller was disposed, we don't wait
+    } finally {
+      try {
+        ctrl.removeListener(listener);
+      } catch (_) {}
     }
   }
 
@@ -923,18 +985,23 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // ✅ FIXED: Thumbnail يختفي لما الفيديو يكون initialized
-                    if (!_isInitialized &&
-                        thumbnail != null &&
-                        thumbnail.isNotEmpty)
+                    // Task 4.2: Thumbnail shown until _isVideoReady is true,
+                    // then fades out with AnimatedOpacity (150 ms easeOut).
+                    // This completely hides the black flash on first frame.
+                    if (thumbnail != null && thumbnail.isNotEmpty)
                       Positioned.fill(
-                        child: CachedNetworkImage(
-                          imageUrl: thumbnail,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) =>
-                              const ColoredBox(color: Colors.black),
-                          errorWidget: (context, url, error) =>
-                              const ColoredBox(color: Colors.black),
+                        child: AnimatedOpacity(
+                          opacity: _isVideoReady ? 0.0 : 1.0,
+                          duration: const Duration(milliseconds: 150),
+                          curve: Curves.easeOut,
+                          child: CachedNetworkImage(
+                            imageUrl: thumbnail,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) =>
+                                const ColoredBox(color: Colors.black),
+                            errorWidget: (context, url, error) =>
+                                const ColoredBox(color: Colors.black),
+                          ),
                         ),
                       ),
 

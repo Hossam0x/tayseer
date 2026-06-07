@@ -189,19 +189,11 @@ class _UserStoryPageState extends State<UserStoryPage> with RouteAware {
     }
 
     // ── Preload videos for this user's stories ────────────────────────────
-    final videoUrls = sorted
-        .where((s) => !s.isPostStory && s.video?.isNotEmpty == true)
-        .map((s) => s.video!)
-        .toList();
-    if (videoUrls.isNotEmpty) {
-      StoryVideoPreloader.instance.preloadForUser(
-        videoUrls,
-        startIndex: videoUrls
-            .indexWhere(
-              (u) => start < sorted.length && u == sorted[start].video,
-            )
-            .clamp(0, videoUrls.length - 1),
-      );
+    // Task 3.2: signal the current story index to the (userId, storyIndex) pool.
+    // StoryDetailsView already called onUserVisible which seeded index-0 and
+    // index-1. We fire onStoryVisible here to advance the window if needed.
+    if (start < sorted.length) {
+      StoryVideoPreloader.instance.onStoryVisible(start);
     }
 
     // ── Precache images for this user's stories via CachedNetworkImage ───────
@@ -315,21 +307,11 @@ class _UserStoryPageState extends State<UserStoryPage> with RouteAware {
                     }
                   });
                   _markViewed();
-                  // Notify preloader so it shifts the preload window
+                  // Task 3.2: notify preloader so it shifts the preload window
                   if (i < _stories.length &&
+                      !_stories[i].isPostStory &&
                       _stories[i].video?.isNotEmpty == true) {
-                    final videoUrls = _stories
-                        .where(
-                          (s) => !s.isPostStory && s.video?.isNotEmpty == true,
-                        )
-                        .map((s) => s.video!)
-                        .toList();
-                    final videoIndex = videoUrls.indexWhere(
-                      (u) => u == _stories[i].video,
-                    );
-                    if (videoIndex != -1) {
-                      StoryVideoPreloader.instance.onStoryVisible(videoIndex);
-                    }
+                    StoryVideoPreloader.instance.onStoryVisible(i);
                   }
                 });
               },

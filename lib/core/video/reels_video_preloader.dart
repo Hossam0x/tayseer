@@ -9,13 +9,16 @@ import 'package:tayseer/core/utils/video_cache_manager.dart';
 /// ReelsVideoPreloader — Sliding Window Strategy
 ///
 /// بيحتفظ بـ sliding window من الـ initialized controllers:
-///   [current-keepBehind  ...  current  ...  current+preloadAhead]
+///   [current  ...  current+preloadAhead]  (_keepBehind = 0)
 ///
 /// لما اليوزر يقلب للأمام:
-///   - يضيف controller جديد في آخر الـ window
-///   - يشيل الـ controller الأقدم ورا (اللي بعيد عن الـ current)
+///   - يضيف controller واحد جديد في آخر الـ window
+///   - يشيل الـ controller الأقدم فوراً
 ///
-/// النتيجة: اليوزر دايماً بيلاقي الفيديو الجاي جاهز فوراً.
+/// ⚠️ Hardware decoder budget:
+///   Qualcomm devices allow ~4-6 concurrent AVC decoder instances.
+///   _preloadAhead = 1 → max 2 initialized controllers (current + 1 next).
+///   This leaves room for an active feed video on the home screen.
 /// ═══════════════════════════════════════════════════════════════════════════
 class ReelsVideoPreloader {
   static final ReelsVideoPreloader instance = ReelsVideoPreloader._internal();
@@ -37,10 +40,13 @@ class ReelsVideoPreloader {
 
   // ─── Window Settings ───────────────────────────────────────────────
   // عدد الفيديوهات اللي نحملها قدام الـ current
-  static const int _preloadAhead = 4;
+  // ⚠️ Android hardware AVC decoder pool is typically 4-6 slots.
+  // Keeping this at 1 (current + 1 preloaded = 2 total for reels) leaves
+  // enough slots for the active feed video and the story player.
+  static const int _preloadAhead = 1;
 
   // عدد الفيديوهات اللي نحتفظ بيها ورا الـ current (للرجوع)
-  static const int _keepBehind = 1;
+  static const int _keepBehind = 0;
 
   // الحد الأقصى للـ controllers في الذاكرة = preloadAhead + keepBehind + 1 (current)
   static const int _maxControllers = _preloadAhead + _keepBehind + 1;
@@ -161,7 +167,7 @@ class ReelsVideoPreloader {
   void _triggerPreload(int visibleIndex) {
     if (_isDisposed) return;
 
-    // حدد الـ window الجديدة
+    // ── Controller window (1 ahead only — hardware decoder budget) ──────────
     final windowStart = (visibleIndex - _keepBehind).clamp(
       0,
       _reels.length - 1,
@@ -176,18 +182,30 @@ class ReelsVideoPreloader {
       windowIds.add(_reels[i].postId);
     }
 
-    // ─── Evict: شيل الـ controllers اللي خارج الـ window ───
-    // بنستخدم الـ _loadOrder عشان نشيل الأقدم أولاً
+    // Evict controllers outside the window
     _evictOutsideWindow(windowIds);
 
-    // ─── Preload: حمّل الـ controllers الجديدة في الـ window ───
-    // نبدأ من الـ current وروح للأمام (الأولوية للقادمين)
+    // Pre-initialize controllers only within the tight window
     for (int i = visibleIndex; i <= windowEnd; i++) {
       _preloadController(_reels[i]);
     }
-    // بعدين الـ keepBehind (أولوية أقل)
     for (int i = windowStart; i < visibleIndex; i++) {
       _preloadController(_reels[i]);
+    }
+
+    // ── Wider file-download window (3 ahead) — no controller init ───────────
+    // Pre-download files to disk so claimController can use a local File
+    // even for reels beyond the 1-controller window.
+    const int _filePreloadAhead = 3;
+    final fileEnd = (visibleIndex + _filePreloadAhead).clamp(
+      0,
+      _reels.length - 1,
+    );
+    for (int i = windowEnd + 1; i <= fileEnd; i++) {
+      final url = _reels[i].videoUrl ?? '';
+      if (url.isNotEmpty) {
+        _cacheManager.preloadVideoInBackground(url);
+      }
     }
   }
 

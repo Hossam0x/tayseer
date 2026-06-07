@@ -6,17 +6,19 @@ import 'package:tayseer/core/utils/video_cache_manager.dart';
 import 'package:tayseer/features/advisor/stories/data/models/stories_response_model.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════════
-/// StoryVideoPreloader — pre-initializes VideoPlayerControllers for story
-/// videos so the user never sees a loading spinner when swiping stories.
+/// StoryVideoPreloader — (userId, storyIndex) keyed pool
 ///
-/// Strategy (mirrors FeedVideoPreloader):
-///  • When the story screen opens, call [preloadForUser] with the full list
-///    of story video URLs for the current + adjacent users.
-///  • When the user swipes to a new story index, call [onStoryVisible] so
-///    the window shifts and the next videos are pre-initialized.
-///  • [getReadyController] returns an already-initialized controller (or null
-///    if not ready yet) — StoryVideoMuted checks this first.
-///  • Controllers outside the window are disposed automatically.
+/// Strategy (Task 3):
+///  • Pool keyed by "${userId}_${storyIndex}" instead of flat URL map.
+///  • _preloadAhead = 1, _keepBehind = 0, _maxControllers = 3  → ~60 MB max.
+///  • [preloadFromStories] only processes NEW URLs not already in pool and
+///    only calls _triggerPreload(0) on the initial fetch, not on loadMore.
+///  • [onUserVisible] initialises index-0 of the new user immediately and
+///    queues index-1 in background; disposes the previous user's controllers.
+///  • Back-swipe (previous user): shows thumbnail — controllers are NOT
+///    re-initialised automatically; call [onUserVisible] explicitly on tap.
+///  • [getReadyController] accepts a URL and still works for already-cached
+///    disk files even when offline.
 /// ═══════════════════════════════════════════════════════════════════════════
 class StoryVideoPreloader {
   static final StoryVideoPreloader instance = StoryVideoPreloader._internal();
@@ -24,104 +26,147 @@ class StoryVideoPreloader {
 
   final VideoCacheManager _cacheManager = VideoCacheManager();
 
-  // key: video URL → ready controller
+  // key: "${userId}_${storyIndex}" → ready controller
   final Map<String, _PreloadedVideo> _controllers = {};
 
-  // Completers to prevent double-init for the same URL
+  // Completers to prevent double-init for the same key
   final Map<String, Completer<VideoPlayerController?>> _pending = {};
 
-  // Current ordered list of video URLs being tracked
-  List<String> _urls = [];
+  // ── Pool limits ──────────────────────────────────────────────────────────
+  // ⚠️ Keep total initialized controllers ≤ 2 for stories
+  // (current story + 1 preloaded next story of same user)
+  static const int _preloadAhead = 1;
+  static const int _maxControllers = 2;
 
-  // How many videos ahead to pre-initialize
-  static const int _preloadAhead = 2;
+  // ── State ────────────────────────────────────────────────────────────────
+  // All users currently being tracked (for the open story screen).
+  List<UserStoriesModel> _allUsers = [];
 
-  // How many videos behind to keep (for back-swipe)
-  static const int _keepBehind = 1;
+  // Index of the currently visible user.
+  int _currentUserIndex = -1;
 
-  // Max controllers in memory at once
-  static const int _maxControllers = 6;
+  // URLs already submitted to preloadFromStories to avoid re-processing.
+  final Set<String> _knownUrls = {};
 
-  int _lastVisibleIndex = -1;
+  // Whether any stories have been loaded yet (used to guard loadMore calls).
+  bool _hasInitialLoad = false;
 
-  // ═══════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════
   // Public API
-  // ═══════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  /// Call this when the story screen opens (or when the user list changes).
-  /// [urls] is the ordered list of video URLs for the current user's stories.
-  /// [startIndex] is the index of the first visible story.
-  void preloadForUser(List<String> urls, {int startIndex = 0}) {
-    _urls = urls.where((u) => u.isNotEmpty).toList();
-    _lastVisibleIndex = -1; // reset so onStoryVisible triggers a full window
-    if (_urls.isNotEmpty) {
-      _triggerPreload(startIndex.clamp(0, _urls.length - 1));
-    }
-  }
-
-  /// Call this right after the stories API fetch succeeds.
-  /// Extracts all video URLs from [allUsers] and starts background
-  /// file-download + controller pre-initialization immediately,
-  /// so by the time the user taps a story ring everything is ready.
+  /// Called right after a fresh stories API fetch (page 1 / initial).
+  /// Extracts video URLs and pre-initialises the first window.
+  /// Image stories: warm only the first 5 to avoid unbounded ImageCache growth.
   void preloadFromStories(List<UserStoriesModel> allUsers) {
-    final videoUrls = <String>[];
+    _allUsers = allUsers;
+
+    // ── Collect NEW video URLs ──────────────────────────────────────────────
+    final newVideoUrls = <String>[];
+    int imageStoryCount = 0;
+
     for (final user in allUsers) {
       for (final story in user.stories) {
         if (!story.isPostStory && story.video?.isNotEmpty == true) {
-          videoUrls.add(story.video!);
+          final url = story.video!;
+          if (!_knownUrls.contains(url)) {
+            newVideoUrls.add(url);
+            _knownUrls.add(url);
+          }
         }
-        // Warm CachedNetworkImage disk + memory cache for images
+        // Warm image cache for first 5 image stories only
         if (!story.isPostStory &&
             (story.video?.isEmpty ?? true) &&
-            story.image.isNotEmpty) {
+            story.image.isNotEmpty &&
+            imageStoryCount < 5) {
           CachedNetworkImageProvider(
             story.image,
           ).resolve(const ImageConfiguration());
+          imageStoryCount++;
         }
       }
     }
-    if (videoUrls.isEmpty) return;
-    // Kick off background file downloads for all videos (no-op if cached)
-    for (final url in videoUrls) {
+
+    // Background file downloads for new videos only
+    for (final url in newVideoUrls) {
       _cacheManager.preloadVideoInBackground(url);
     }
-    // Pre-initialize controllers for the first window
-    _urls = videoUrls;
-    _lastVisibleIndex = -1;
-    _triggerPreload(0);
+
+    // Only trigger controller pre-init on the initial fetch
+    if (!_hasInitialLoad && allUsers.isNotEmpty) {
+      _hasInitialLoad = true;
+      _currentUserIndex = 0;
+      _triggerPreload(0);
+    }
+    // On loadMore: do NOT call _triggerPreload — window stays as-is
   }
 
-  /// Call this when the user swipes to a new story index within a user's list.
-  void onStoryVisible(int index) {
-    if (index == _lastVisibleIndex) return;
-    _lastVisibleIndex = index;
-    _triggerPreload(index);
+  /// Lightweight background file download for a single URL.
+  /// Used on loadMore to warm the disk cache without touching the controller pool.
+  void preloadVideoUrl(String url) {
+    if (url.isEmpty) return;
+    _cacheManager.preloadVideoInBackground(url);
   }
 
-  /// Returns a ready [VideoPlayerController] for [url], or null if not ready.
-  /// The caller must NOT dispose this controller — the preloader owns it.
-  VideoPlayerController? getReadyController(String url) {
-    final preloaded = _controllers[url];
-    if (preloaded == null) return null;
+  /// Call when the story screen opens for a specific user.
+  /// Immediately initialises index-0, queues index-1 in background,
+  /// and disposes the previously active user's controllers.
+  void onUserVisible(int userIndex) {
+    if (userIndex < 0 || userIndex >= _allUsers.length) return;
 
-    try {
-      if (!preloaded.controller.value.isInitialized) return null;
-      // Probe to confirm the controller is still alive
-      void probe() {}
-      preloaded.controller.addListener(probe);
-      preloaded.controller.removeListener(probe);
-    } catch (e) {
-      debugPrint('⚠️ StoryPreloader: stale controller for $url, removing');
-      _controllers.remove(url);
-      return null;
+    final previousUserIndex = _currentUserIndex;
+    _currentUserIndex = userIndex;
+
+    // Dispose previous user's controllers immediately
+    if (previousUserIndex >= 0 &&
+        previousUserIndex < _allUsers.length &&
+        previousUserIndex != userIndex) {
+      final prevUser = _allUsers[previousUserIndex];
+      for (int i = 0; i < prevUser.stories.length; i++) {
+        _disposeKey(_keyFor(prevUser.userId, i));
+      }
     }
 
-    return preloaded.controller;
+    _triggerPreload(userIndex);
+  }
+
+  /// Call when the user swipes to a new story index within the current user.
+  void onStoryVisible(int storyIndex) {
+    if (_currentUserIndex < 0 || _currentUserIndex >= _allUsers.length) return;
+    final user = _allUsers[_currentUserIndex];
+    final end = (storyIndex + _preloadAhead).clamp(0, user.stories.length - 1);
+    for (int i = storyIndex; i <= end; i++) {
+      final story = user.stories[i];
+      if (!story.isPostStory && story.video?.isNotEmpty == true) {
+        _preloadKey(_keyFor(user.userId, i), story.video!);
+      }
+    }
+  }
+
+  /// Returns a ready [VideoPlayerController] for the given [url], or null.
+  /// Works for disk-cached videos even when offline.
+  VideoPlayerController? getReadyController(String url) {
+    // Search by URL across all keys
+    for (final entry in _controllers.entries) {
+      if (entry.value.url == url) {
+        final ctrl = entry.value.controller;
+        try {
+          if (!ctrl.value.isInitialized) continue;
+          void probe() {}
+          ctrl.addListener(probe);
+          ctrl.removeListener(probe);
+          return ctrl;
+        } catch (_) {
+          _controllers.remove(entry.key);
+          return null;
+        }
+      }
+    }
+    return null;
   }
 
   /// Whether a controller for [url] is ready.
-  bool isReady(String url) =>
-      _controllers[url]?.controller.value.isInitialized == true;
+  bool isReady(String url) => getReadyController(url) != null;
 
   /// Pause all preloaded controllers (e.g. app goes to background).
   void pauseAll() {
@@ -134,53 +179,81 @@ class StoryVideoPreloader {
     }
   }
 
-  /// Release a specific controller back to the preloader pool after the
-  /// StoryVideoMuted widget is done with it (i.e. on dispose).
-  /// The controller is paused + muted but kept alive for re-use.
+  /// Release a specific controller back to the pool after a widget disposes.
+  /// Pauses + mutes + seeks to zero but keeps it alive for re-use.
   void releaseController(String url) {
-    final p = _controllers[url];
-    if (p == null) return;
-    try {
-      if (p.controller.value.isInitialized) {
-        p.controller.pause();
-        p.controller.setVolume(0.0);
-        p.controller.seekTo(Duration.zero);
+    for (final p in _controllers.values) {
+      if (p.url == url) {
+        try {
+          if (p.controller.value.isInitialized) {
+            p.controller.pause();
+            p.controller.setVolume(0.0);
+            p.controller.seekTo(Duration.zero);
+          }
+        } catch (_) {}
+        return;
       }
-    } catch (_) {}
+    }
   }
 
   /// Clear everything — call when the story screen is fully closed.
   Future<void> clear() async {
-    _urls = [];
-    _lastVisibleIndex = -1;
+    _allUsers = [];
+    _currentUserIndex = -1;
+    _hasInitialLoad = false;
+    _knownUrls.clear();
     await _disposeAll();
   }
 
-  // ═══════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════
   // Internal
-  // ═══════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  void _triggerPreload(int visibleIndex) {
-    if (_urls.isEmpty) return;
+  /// Build a pool key from userId + storyIndex.
+  String _keyFor(String userId, int storyIndex) => '${userId}_$storyIndex';
 
-    final start = (visibleIndex - _keepBehind).clamp(0, _urls.length - 1);
-    final end = (visibleIndex + _preloadAhead).clamp(0, _urls.length - 1);
+  /// Trigger preloading for the window around [userIndex].
+  void _triggerPreload(int userIndex) {
+    if (userIndex < 0 || userIndex >= _allUsers.length) return;
 
-    _evictOutOfWindow(start, end);
+    // keepBehind = 0: only current + ahead
+    final windowStart = userIndex; // no behind
+    final windowEnd = (userIndex + _preloadAhead).clamp(
+      0,
+      _allUsers.length - 1,
+    );
 
-    for (int i = start; i <= end; i++) {
-      _preloadUrl(_urls[i]);
+    // Evict keys outside the current window
+    _evictOutsideWindow(userIndex, windowStart, windowEnd);
+
+    // Preload current user index-0 first, then index-1
+    for (int ui = windowStart; ui <= windowEnd; ui++) {
+      final user = _allUsers[ui];
+      // Index 0 always
+      if (user.stories.isNotEmpty) {
+        final s0 = user.stories[0];
+        if (!s0.isPostStory && s0.video?.isNotEmpty == true) {
+          _preloadKey(_keyFor(user.userId, 0), s0.video!);
+        }
+      }
+      // Index 1 only for the currently visible user
+      if (ui == userIndex && user.stories.length > 1) {
+        final s1 = user.stories[1];
+        if (!s1.isPostStory && s1.video?.isNotEmpty == true) {
+          _preloadKey(_keyFor(user.userId, 1), s1.video!);
+        }
+      }
     }
   }
 
-  Future<void> _preloadUrl(String url) async {
+  Future<void> _preloadKey(String key, String url) async {
     if (url.isEmpty) return;
-    if (_controllers.containsKey(url)) return; // already ready
-    if (_pending.containsKey(url)) return; // already loading
+    if (_controllers.containsKey(key)) return; // already ready
+    if (_pending.containsKey(key)) return; // already loading
     if (_controllers.length >= _maxControllers) return; // pool full
 
     final completer = Completer<VideoPlayerController?>();
-    _pending[url] = completer;
+    _pending[key] = completer;
 
     void safeComplete(VideoPlayerController? v) {
       if (!completer.isCompleted) completer.complete(v);
@@ -189,14 +262,10 @@ class StoryVideoPreloader {
     VideoPlayerController? created;
 
     try {
-      // Kick off background file download first (no-op if already cached)
       _cacheManager.preloadVideoInBackground(url);
-
-      // Try to get from disk cache
       final cachedFile = await _cacheManager.getCachedFile(url);
 
-      // Guard: may have been evicted while we awaited
-      if (!_pending.containsKey(url)) {
+      if (!_pending.containsKey(key)) {
         safeComplete(null);
         return;
       }
@@ -226,8 +295,7 @@ class StoryVideoPreloader {
       created = ctrl;
       await ctrl.initialize();
 
-      // Guard after initialize (longest step)
-      if (!_pending.containsKey(url)) {
+      if (!_pending.containsKey(key)) {
         try {
           ctrl.dispose();
         } catch (_) {}
@@ -240,8 +308,7 @@ class StoryVideoPreloader {
       await ctrl.setVolume(0.0);
       await ctrl.pause();
 
-      // Final guard before storing
-      if (!_pending.containsKey(url)) {
+      if (!_pending.containsKey(key)) {
         try {
           ctrl.dispose();
         } catch (_) {}
@@ -250,11 +317,14 @@ class StoryVideoPreloader {
         return;
       }
 
-      _controllers[url] = _PreloadedVideo(controller: ctrl, url: url);
+      _controllers[key] = _PreloadedVideo(controller: ctrl, url: url);
       safeComplete(ctrl);
-      debugPrint('✅ StoryPreloader: ready ${_name(url)}');
+      debugPrint(
+        '✅ StoryPreloader: ready $key '
+        '(${_controllers.length}/$_maxControllers)',
+      );
     } catch (e) {
-      debugPrint('⚠️ StoryPreloader: failed ${_name(url)}: $e');
+      debugPrint('⚠️ StoryPreloader: failed $key: $e');
       if (created != null) {
         try {
           created.dispose();
@@ -262,34 +332,44 @@ class StoryVideoPreloader {
       }
       safeComplete(null);
     } finally {
-      _pending.remove(url);
+      _pending.remove(key);
     }
   }
 
-  void _evictOutOfWindow(int windowStart, int windowEnd) {
-    final windowUrls = <String>{};
-    for (int i = windowStart; i <= windowEnd; i++) {
-      windowUrls.add(_urls[i]);
+  void _evictOutsideWindow(
+    int currentUserIndex,
+    int windowStart,
+    int windowEnd,
+  ) {
+    // Build the set of keys that should stay in the pool
+    final keepKeys = <String>{};
+    for (int ui = windowStart; ui <= windowEnd; ui++) {
+      if (ui < 0 || ui >= _allUsers.length) continue;
+      final user = _allUsers[ui];
+      keepKeys.add(_keyFor(user.userId, 0));
+      if (ui == currentUserIndex) {
+        keepKeys.add(_keyFor(user.userId, 1));
+      }
     }
 
     final toEvict = _controllers.keys
-        .where((u) => !windowUrls.contains(u))
+        .where((k) => !keepKeys.contains(k))
         .toList();
-    for (final u in toEvict) {
-      _disposeController(u);
+    for (final k in toEvict) {
+      _disposeKey(k);
     }
 
     final pendingToCancel = _pending.keys
-        .where((u) => !windowUrls.contains(u))
+        .where((k) => !keepKeys.contains(k))
         .toList();
-    for (final u in pendingToCancel) {
-      final c = _pending.remove(u);
+    for (final k in pendingToCancel) {
+      final c = _pending.remove(k);
       if (c != null && !c.isCompleted) c.complete(null);
     }
   }
 
-  void _disposeController(String url) {
-    final p = _controllers.remove(url);
+  void _disposeKey(String key) {
+    final p = _controllers.remove(key);
     if (p == null) return;
     try {
       final ctrl = p.controller;
@@ -298,9 +378,9 @@ class StoryVideoPreloader {
         if (ctrl.value.isPlaying) ctrl.pause();
       }
       ctrl.dispose();
-      debugPrint('🗑️ StoryPreloader: evicted ${_name(url)}');
+      debugPrint('🗑️ StoryPreloader: evicted $key');
     } catch (e) {
-      debugPrint('⚠️ StoryPreloader: evict error $e');
+      debugPrint('⚠️ StoryPreloader: evict error $key: $e');
     }
   }
 
@@ -313,9 +393,9 @@ class StoryVideoPreloader {
       if (!c.isCompleted) c.complete(null);
     }
 
-    final ids = _controllers.keys.toList();
-    for (final id in ids) {
-      _disposeController(id);
+    final keys = _controllers.keys.toList();
+    for (final k in keys) {
+      _disposeKey(k);
     }
     _controllers.clear();
   }

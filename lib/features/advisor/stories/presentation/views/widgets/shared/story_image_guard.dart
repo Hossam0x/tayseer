@@ -71,12 +71,9 @@ class _StoryImageGuardState extends State<StoryImageGuard> {
         WidgetsBinding.instance.addPostFrameCallback((_) => _onImageReady());
         return Image(image: imageProvider, fit: BoxFit.contain);
       },
-      progressIndicatorBuilder: (_, __, progress) {
-        final value = progress.totalSize != null && progress.totalSize! > 0
-            ? progress.downloaded / progress.totalSize!
-            : null;
-        return _StoryLoadingRing(value: value);
-      },
+      // Task 3.2: no loading shimmer — solid black placeholder while image loads
+      progressIndicatorBuilder: (_, __, ___) =>
+          const ColoredBox(color: Colors.black),
       errorWidget: (_, __, ___) {
         // Even on error, unblock the progress bar
         WidgetsBinding.instance.addPostFrameCallback((_) => _onImageReady());

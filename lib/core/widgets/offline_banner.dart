@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/my_import.dart';
 
-/// بانر أوفلاين — يظهر/يختفي بأنميشن ناعمة
-/// لما النت يرجع → يتحول لونه أخضر لمدة ثانية ونص ثم يختفي
+/// OfflineBanner — appears/disappears with smooth animation
+/// When connection returns → turns green for 1.5 seconds then disappears
 class OfflineBanner extends StatefulWidget {
   const OfflineBanner({super.key});
 
@@ -20,7 +20,7 @@ class _OfflineBannerState extends State<OfflineBanner> {
   @override
   void initState() {
     super.initState();
-    // فحص حالة الاتصال عند بداية التطبيق
+    // Check connection status at app start
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final isConnected = context.read<ConnectivityCubit>().state.isConnected;
       if (!isConnected && mounted) {
@@ -43,10 +43,10 @@ class _OfflineBannerState extends State<OfflineBanner> {
         _hideTimer?.cancel();
 
         if (!state.isConnected) {
-          // النت فصل → بانر أوفلاين فوراً
+          // Connection lost → offline banner immediately
           setState(() => _mode = _BannerMode.offline);
         } else {
-          // النت رجع → بانر أخضر لمدة 1.5 ثانية ثم اختفاء
+          // Connection restored → green banner for 1.5 seconds then disappears
           if (_mode == _BannerMode.offline) {
             setState(() => _mode = _BannerMode.restored);
             _hideTimer = Timer(const Duration(milliseconds: 1500), () {

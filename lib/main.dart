@@ -113,11 +113,10 @@ void main() async {
     return false; // اتركه للـ default handler
   };
 
-  // ✅ زود حجم الـ ImageCache — الـ default (100 صورة / 100MB) قليل جداً
-  // للـ social media feed. بدونها الصور بتتطرد من الـ memory cache
-  // ولما ترجع بـ pop بتتحمل من الـ disk cache → flicker
+  // ✅ زود حجم الـ ImageCache — Task 1.4: cap at 150 MB
   PaintingBinding.instance.imageCache.maximumSize = 500;
-  PaintingBinding.instance.imageCache.maximumSizeBytes = 300 << 20; // 300 MB
+  PaintingBinding.instance.imageCache.maximumSizeBytes =
+      150 * 1024 * 1024; // 150 MB
 
   // ✅ أولاً runApp عشان الـ Navigator يكون جاهز
   runApp(const AppRestarter(child: TayseerApp()));

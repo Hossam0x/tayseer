@@ -2,6 +2,7 @@ import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/utils/video_playback_manager.dart';
 import 'package:tayseer/core/video/feed_video_preloader.dart';
 import 'package:tayseer/core/services/connectivity_cubit.dart';
+import 'package:tayseer/core/widgets/offline_banner.dart';
 import 'package:tayseer/features/advisor/add_post/view/widget/upload_post_banner.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/upload_post/upload_post_cubit.dart';
 import 'package:tayseer/features/advisor/add_post/view_model/upload_post/upload_post_state.dart';
@@ -115,8 +116,33 @@ class HomeViewBodyState extends State<HomeViewBody> {
 
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent * 0.8) {
+      // Task 2.1: when offline and NOT showing cached data, show a brief snackbar
+      if (getIt<ConnectivityCubit>().isOffline &&
+          !homeCubit.state.isShowingCachedData) {
+        _showOfflineLoadMoreSnackbar();
+        return;
+      }
       homeCubit.loadMorePosts();
     }
+  }
+
+  // Debounce flag so the snackbar doesn't spam on every scroll pixel
+  bool _offlineSnackbarShown = false;
+
+  void _showOfflineLoadMoreSnackbar() {
+    if (_offlineSnackbarShown) return;
+    _offlineSnackbarShown = true;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(context.tr(AppStrings.offlineConnectForMore)),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.black87,
+      ),
+    );
+    Future.delayed(const Duration(seconds: 4), () {
+      _offlineSnackbarShown = false;
+    });
   }
 
   Future<void> scrollToTopAndRefresh() async {
@@ -217,6 +243,13 @@ class HomeViewBodyState extends State<HomeViewBody> {
                 ],
               ),
               SessionStartedListener(),
+              // // Task 2.2: Offline banner — positioned at the top of the feed
+              // const Positioned(
+              //   top: 0,
+              //   left: 0,
+              //   right: 0,
+              //   child: OfflineBanner(),
+              // ),
             ],
           ),
         ),

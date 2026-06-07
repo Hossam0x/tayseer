@@ -8,6 +8,8 @@ import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/core/utils/subscription_cache.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
+import 'package:tayseer/core/video/feed_video_preloader.dart';
+import 'package:tayseer/core/utils/video_cache_manager.dart';
 import 'package:tayseer/features/shared/home/data_source/posts_local_datasource.dart';
 import 'package:tayseer/features/shared/home/model/image_and_name_model.dart';
 import 'package:tayseer/features/shared/home/model/best_advisor_model.dart';
@@ -386,6 +388,9 @@ class HomeCubit extends Cubit<HomeState> {
     final isCurrentlyOnline = connectivityCubit.isOnline;
     _isPaginationEnabled = isCurrentlyOnline;
 
+    // Sync FeedVideoPreloader offline flag
+    FeedVideoPreloader.instance.setOffline(!isCurrentlyOnline);
+
     // ✅ مزامنة حالة الاتصال الأولية — لو التطبيق اتفتح أوفلاين
     // Stream الـ ConnectivityCubit بيبعت التغييرات بس، مش الحالة الحالية
     if (!isCurrentlyOnline) {
@@ -399,6 +404,9 @@ class HomeCubit extends Cubit<HomeState> {
 
       // تحديث علم التصفح
       _isPaginationEnabled = isNowOnline;
+
+      // Sync FeedVideoPreloader offline flag
+      FeedVideoPreloader.instance.setOffline(isNowOffline);
 
       // تحديث حالة الاتصال في الـ state
       emit(state.copyWith(isOffline: isNowOffline));
@@ -1013,7 +1021,11 @@ class HomeCubit extends Cubit<HomeState> {
       },
       (response) {
         final isFromCache = response.message == 'from_cache';
-        final allPosts = [...currentData.posts, ...response.posts];
+        final rawPosts = [...currentData.posts, ...response.posts];
+        // ── Task 1.1: 60-post in-memory cap per category ──────────────────
+        // Drop oldest entries from the front when the list exceeds 60.
+        // Pagination state is NOT reset — only visible memory is trimmed.
+        final allPosts = _trimPostsCap(rawPosts);
         final hasMorePages = response.posts.length >= _pageSize;
 
         emit(
@@ -1053,6 +1065,7 @@ class HomeCubit extends Cubit<HomeState> {
                 allPosts,
                 nextCursor: response.nextCursor,
                 page: nextPage,
+                isAllCategory: true,
               )
               .catchError((_) {});
         }
@@ -1094,7 +1107,10 @@ class HomeCubit extends Cubit<HomeState> {
       },
       (response) {
         final isFromCache = response.message == 'from_cache';
-        final allPosts = [...currentData.posts, ...response.posts];
+        final allPosts = _trimPostsCap([
+          ...currentData.posts,
+          ...response.posts,
+        ]);
         final hasMorePages = response.posts.length >= _pageSize;
 
         if (!isFromCache) {
@@ -1205,6 +1221,12 @@ class HomeCubit extends Cubit<HomeState> {
               )
               .copyWith(isShowingCachedData: isFromCache),
         );
+
+        // Task 2.1: pre-warm video files for the first 10 "All" category posts
+        // so they are available on disk when the user opens the app offline.
+        if (!isFromCache && categoryId == null) {
+          _preloadPostMediaToCache(response.posts);
+        }
       },
     );
   }
@@ -2046,10 +2068,41 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
+  /// Task 2.1: Pre-warm video and image files for the first 10 posts of the
+  /// "All" category after a successful online page-1 fetch.
+  /// Fire-and-forget — never awaited in the cubit.
+  void _preloadPostMediaToCache(List<PostModel> posts) {
+    final top10 = posts.take(10);
+    for (final post in top10) {
+      // Pre-download video files via VideoCacheManager
+      final videoUrl = post.videoData?.video ?? post.videoUrl ?? '';
+      if (videoUrl.isNotEmpty) {
+        FeedVideoPreloader.instance.updateFeedPosts(posts.toList());
+        VideoCacheManager().preloadVideoInBackground(videoUrl);
+      }
+    }
+  }
+
   /// إزالة البوستات المكررة بالـ postId
   List<PostModel> _deduplicatePosts(List<PostModel> posts) {
     final seen = <String>{};
     return posts.where((p) => seen.add(p.postId)).toList();
+  }
+
+  // ── Task 1.1: 60-post in-memory cap ──────────────────────────────────────
+  /// Cap the combined posts list at 60 entries per category.
+  /// Drops the OLDEST entries (front of list) so only the most recent
+  /// 60 posts stay in memory. Pagination state is unchanged.
+  static const int _maxPostsInMemory = 60;
+
+  List<PostModel> _trimPostsCap(List<PostModel> posts) {
+    if (posts.length <= _maxPostsInMemory) return posts;
+    final trimmed = posts.sublist(posts.length - _maxPostsInMemory);
+    debugPrint(
+      '✂️ HomeCubit: trimmed post list '
+      '${posts.length} → ${trimmed.length}',
+    );
+    return trimmed;
   }
 
   /// مزامنة بوست محدد مع الكاش بعد تفاعل ناجح
