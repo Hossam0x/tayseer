@@ -45,6 +45,13 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
   bool _isInPlayZone = false;
   bool _isPageActive = true;
 
+  // ✅ Incremented every time _controller is replaced.
+  // Used as the key for _SafeVideoPlayer so Flutter remounts the VideoPlayer
+  // widget (and its internal platform listener) instead of calling
+  // didUpdateWidget with a stale/disposed controller reference — which is the
+  // root cause of "Bad state: No active player with ID X".
+  int _controllerVersion = 0;
+
   // ✅ NEW: حفظ حالة الـ play zone قبل الانتقال لصفحة تانية
   bool _wasInPlayZoneBeforeNav = false;
 
@@ -77,6 +84,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
     VideoManager.instance.currentlyPlayingPostId.addListener(
       _videoManagerListener,
     );
+    VideoManager.instance.evictionGeneration.addListener(_onEviction);
     _muteManager.isMuted.addListener(_onGlobalMuteChanged);
   }
 
@@ -171,6 +179,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
     VideoManager.instance.currentlyPlayingPostId.removeListener(
       _videoManagerListener,
     );
+    VideoManager.instance.evictionGeneration.removeListener(_onEviction);
     _muteManager.isMuted.removeListener(_onGlobalMuteChanged);
     videoRouteObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
@@ -194,6 +203,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
     VideoManager.instance.currentlyPlayingPostId.removeListener(
       _videoManagerListener,
     );
+    VideoManager.instance.evictionGeneration.removeListener(_onEviction);
   }
 
   // ✅ FIXED: addPostFrameCallback + استعادة play zone
@@ -211,6 +221,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
     VideoManager.instance.currentlyPlayingPostId.addListener(
       _videoManagerListener,
     );
+    VideoManager.instance.evictionGeneration.addListener(_onEviction);
     if (_controller != null) {
       _controller!.removeListener(_videoListener);
       _controller!.addListener(_videoListener);
@@ -333,6 +344,37 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
   // Listeners
   // ═══════════════════════════════════════════════════════════════════
 
+  /// Called when VideoManager.stopAll() is about to dispose all controllers.
+  /// Immediately null our reference so no pending build frame passes a dead
+  /// controller to _SafeVideoPlayer / VideoPlayer.
+  void _onEviction() {
+    if (_isDisposed || !mounted) return;
+
+    // Only act if we own the controller (not a shared parent controller).
+    // Preloaded and self-created controllers are all disposed by disposeAll().
+    if (widget.videoController != null) return; // parent-owned, skip
+
+    final hadController = _controller != null;
+    if (hadController) {
+      // Detach listener first to silence any in-flight callbacks.
+      try {
+        _controller!.removeListener(_videoListener);
+      } catch (_) {}
+      // ✅ Null the reference and bump version BEFORE the next frame renders.
+      // This guarantees _SafeVideoPlayer sees _controller == null and returns
+      // SizedBox.shrink() instead of building VideoPlayer with a dead ID.
+      _controller = null;
+      _controllerVersion++;
+      _isInitialized = false;
+      _isBuffering = false;
+      _isUsingPreloadedController = false;
+      _initCompleter = null;
+      debugPrint('🧹 Eviction: cleared controller ref for ${widget.postId}');
+      // Trigger a rebuild so the placeholder shows immediately.
+      _scheduleSetState(() {});
+    }
+  }
+
   void _onGlobalMuteChanged() {
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized || _isDisposed) {
@@ -447,6 +489,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
   void _disposeLocalController() {
     final controller = _controller;
     _controller = null;
+    _controllerVersion++; // ← forces _SafeVideoPlayer to remount on next build
     _isInitialized = false;
     _isBuffering = false;
 
@@ -631,6 +674,11 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
       controller.removeListener(_videoListener); // منع double-attach
       controller.addListener(_videoListener);
 
+      // ✅ Bump version so _SafeVideoPlayer remounts with the new controller
+      // instead of Flutter calling didUpdateWidget on the existing VideoPlayer
+      // state with a different controller — which is what causes the crash.
+      _controllerVersion++;
+
       // ✅ تعيين volume بشكل synchronous
       final volume = _muteManager.isMuted.value ? 0.0 : 1.0;
       controller.setVolume(volume);
@@ -641,6 +689,7 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
       debugPrint('⚠️ Controller disposed during setup: $e');
       // ✅ لو الـ controller جاي من parent، مش بنعمله dispose — بس بنشيله
       _controller = null;
+      _controllerVersion++;
       _isInitialized = false;
       _isBuffering = false;
     }
@@ -892,7 +941,19 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
                     // Video Player
                     if (_isInitialized && _controller != null)
                       Positioned.fill(
-                        child: _SafeVideoPlayer(controller: _controller!),
+                        child: _SafeVideoPlayer(
+                          // ✅ ValueKey forces a full remount whenever the
+                          // controller is replaced (version incremented in
+                          // _setupController / _disposeLocalController).
+                          // This prevents Flutter from calling didUpdateWidget
+                          // on the existing VideoPlayer state with a stale
+                          // platform-disposed controller — the root cause of
+                          // "Bad state: No active player with ID X".
+                          key: ValueKey(
+                            '${widget.postId}_v$_controllerVersion',
+                          ),
+                          controller: _controller!,
+                        ),
                       ),
 
                     // Error State
@@ -980,35 +1041,108 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
   }
 }
 
-class _SafeVideoPlayer extends StatelessWidget {
+class _SafeVideoPlayer extends StatefulWidget {
   final VideoPlayerController controller;
 
-  const _SafeVideoPlayer({required this.controller});
+  const _SafeVideoPlayer({super.key, required this.controller});
+
+  @override
+  State<_SafeVideoPlayer> createState() => _SafeVideoPlayerState();
+}
+
+class _SafeVideoPlayerState extends State<_SafeVideoPlayer> {
+  bool _isAlive = false;
+
+  /// Returns true if [ctrl] is still usable (not disposed, still initialized).
+  static bool _probe(VideoPlayerController ctrl) {
+    try {
+      void noop() {}
+      ctrl.addListener(noop);
+      ctrl.removeListener(noop);
+      return ctrl.value.isInitialized;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void _onControllerUpdate() {
+    // Called by the VideoPlayerController's ChangeNotifier.
+    // If the controller is unexpectedly torn down, the next value access may
+    // throw — so we re-probe and hide the widget before that happens.
+    if (!mounted) return;
+    final alive = _probe(widget.controller);
+    if (alive != _isAlive) {
+      setState(() => _isAlive = alive);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _isAlive = _probe(widget.controller);
+    if (_isAlive) {
+      widget.controller.addListener(_onControllerUpdate);
+    }
+  }
+
+  @override
+  void didUpdateWidget(_SafeVideoPlayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The parent sets a ValueKey tied to _controllerVersion so this widget is
+    // always remounted (not updated) when the controller changes. But guard
+    // defensively anyway.
+    if (oldWidget.controller != widget.controller) {
+      try {
+        oldWidget.controller.removeListener(_onControllerUpdate);
+      } catch (_) {}
+      _isAlive = _probe(widget.controller);
+      if (_isAlive) {
+        widget.controller.addListener(_onControllerUpdate);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    try {
+      widget.controller.removeListener(_onControllerUpdate);
+    } catch (_) {}
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Guard against a disposed controller reaching the VideoPlayer widget.
-    // VideoPlayer calls addListener in didUpdateWidget which throws on disposed controllers.
-    bool isAlive = false;
+    if (!_isAlive) return const SizedBox.shrink();
+
+    // Extra safety: re-probe in build in case the controller was disposed
+    // between the listener firing and this frame being rendered.
+    if (!_probe(widget.controller)) return const SizedBox.shrink();
+
+    final size = widget.controller.value.size;
+    if (size.width == 0 || size.height == 0) return const SizedBox.shrink();
+
     try {
-      void probe() {}
-      controller.addListener(probe);
-      controller.removeListener(probe);
-      isAlive = controller.value.isInitialized;
-    } catch (_) {
-      isAlive = false;
+      return FittedBox(
+        fit: BoxFit.cover,
+        child: SizedBox(
+          width: size.width,
+          height: size.height,
+          // ✅ ValueKey on the controller ensures Flutter creates a brand-new
+          // VideoPlayer element when the controller instance changes, rather
+          // than reusing the existing platform texture registration.
+          child: VideoPlayer(widget.controller),
+        ),
+      );
+    } catch (e) {
+      // Catches "Bad state: No active player with ID X" if the platform
+      // texture was destroyed between the probe and the VideoPlayer build.
+      debugPrint('⚠️ _SafeVideoPlayer caught crash, hiding: $e');
+      // Schedule a state update so the widget rebuilds as SizedBox next frame.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _isAlive = false);
+      });
+      return const SizedBox.shrink();
     }
-
-    if (!isAlive) return const SizedBox.shrink();
-
-    return FittedBox(
-      fit: BoxFit.cover,
-      child: SizedBox(
-        width: controller.value.size.width,
-        height: controller.value.size.height,
-        child: VideoPlayer(controller),
-      ),
-    );
   }
 }
 

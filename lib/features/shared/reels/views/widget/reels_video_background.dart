@@ -897,22 +897,46 @@ class _VideoSeekBarState extends State<_VideoSeekBar> {
   double _progress = 0.0;
   Duration _duration = Duration.zero;
 
+  /// Returns true if the controller is still alive and initialized.
+  bool _isControllerValid() {
+    try {
+      void probe() {}
+      widget.controller.addListener(probe);
+      widget.controller.removeListener(probe);
+      return widget.controller.value.isInitialized;
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    widget.controller.addListener(_onVideoProgress);
+    // Guard: only attach if the controller is still alive
+    if (_isControllerValid()) {
+      widget.controller.addListener(_onVideoProgress);
+    }
   }
 
   @override
   void dispose() {
-    widget.controller.removeListener(_onVideoProgress);
+    // Guard: removeListener can throw on a disposed controller
+    try {
+      widget.controller.removeListener(_onVideoProgress);
+    } catch (_) {}
     super.dispose();
   }
 
   void _onVideoProgress() {
     if (!mounted || _isDragging) return;
 
-    final value = widget.controller.value;
+    // Guard: the controller may have been disposed between frames
+    VideoPlayerValue value;
+    try {
+      value = widget.controller.value;
+    } catch (_) {
+      return;
+    }
     if (value.duration.inMilliseconds == 0) return;
 
     final newProgress =
@@ -928,7 +952,15 @@ class _VideoSeekBarState extends State<_VideoSeekBar> {
 
   @override
   Widget build(BuildContext context) {
-    final duration = _isDragging ? _duration : widget.controller.value.duration;
+    // Guard: do not render if the controller has been disposed
+    if (!_isControllerValid()) return const SizedBox.shrink();
+
+    Duration duration;
+    try {
+      duration = _isDragging ? _duration : widget.controller.value.duration;
+    } catch (_) {
+      return const SizedBox.shrink();
+    }
     if (duration.inMilliseconds == 0) return const SizedBox.shrink();
     final progress = _isDragging ? _dragValue! : _progress;
 
@@ -938,7 +970,13 @@ class _VideoSeekBarState extends State<_VideoSeekBar> {
         behavior: HitTestBehavior.opaque,
         onHorizontalDragStart: (details) {
           _isDragging = true;
-          _duration = widget.controller.value.duration;
+          // Guard: controller may have been disposed between frames
+          try {
+            _duration = widget.controller.value.duration;
+          } catch (_) {
+            _isDragging = false;
+            return;
+          }
           widget.onDragStart();
           _updateDragPosition(details.localPosition.dx, context);
         },

@@ -13,6 +13,11 @@ class VideoManager {
   bool _isRefreshing = false;
   bool get isRefreshing => _isRefreshing;
 
+  // ✅ Incremented every time stopAll() disposes all controllers.
+  // RealVideoPlayer listens to this notifier and immediately nulls its
+  // _controller reference so no stale platform ID reaches VideoPlayer.build().
+  final ValueNotifier<int> evictionGeneration = ValueNotifier<int>(0);
+
   // نستخدم ValueNotifier لنخبر الجميع من هو البوست الذي يعمل حالياً
   ValueNotifier<String?> get currentlyPlayingPostId =>
       _controllerManager.currentlyPlayingVideoId;
@@ -47,6 +52,12 @@ class VideoManager {
   Future<void> stopAll() async {
     _isRefreshing = true;
     debugPrint('🔒 VideoManager: Refresh lock ON');
+
+    // ✅ Notify all RealVideoPlayer widgets that their controllers are about
+    // to be destroyed. They listen to evictionGeneration and will null their
+    // _controller reference before the next build frame, preventing
+    // "Bad state: No active player with ID X" during the subsequent rebuild.
+    evictionGeneration.value++;
 
     // ✅ تعيين null بدون إطلاق الـ listeners — الـ listeners هتتجاهل الـ event
     // لأن isRefreshing = true، لكن نضمن إن الـ value محدّث قبل disposeAll

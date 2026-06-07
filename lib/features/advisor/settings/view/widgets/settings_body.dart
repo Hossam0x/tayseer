@@ -106,19 +106,19 @@ class _SettingsList extends StatelessWidget {
     return CustomScrollView(
       physics: const BouncingScrollPhysics(),
       slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 10.h),
-            child: ReferralShareCard(
-              points: state.points,
-              referralLink: state.referralLink,
-              onShare: () => context.read<SettingsCubit>().shareApp(
-                context.tr('share_app_message'),
-                context.tr('share_app_subject'),
-              ),
-            ),
-          ),
-        ),
+        // SliverToBoxAdapter(
+        //   child: Padding(
+        //     padding: EdgeInsets.only(left: 20.w, right: 20.w, top: 10.h),
+        //     child: ReferralShareCard(
+        //       points: state.points,
+        //       referralLink: state.referralLink,
+        //       onShare: () => context.read<SettingsCubit>().shareApp(
+        //         context.tr('share_app_message'),
+        //         context.tr('share_app_subject'),
+        //       ),
+        //     ),
+        //   ),
+        // ),
         SliverPadding(
           padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
           sliver: SliverList(
