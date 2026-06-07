@@ -108,6 +108,10 @@ class _IosSecureImageState extends State<_IosSecureImage> {
 
   UiKitView _buildUiKitView() {
     return UiKitView(
+      // ✅ propagate the widget key so Flutter fully disposes the old native
+      // view before creating a new one (prevents recreating_view on hot restart
+      // and when imageUrl changes)
+      key: widget.key,
       viewType: 'secure_image_view',
       layoutDirection: TextDirection.ltr,
       // ✅ بنبعت الـ fit للـ native عشان يعرف يستخدم scaleAspectFit أو scaleAspectFill

@@ -74,8 +74,44 @@ class _MarriageTutorialOverlayState extends State<MarriageTutorialOverlay>
 
     final isRTL = Localizations.localeOf(context).languageCode == 'ar';
 
+    // Bottom action button Y coordinate (shared by steps 0, 1, 2)
+    final double buttonY =
+        screenHeight - (widget.isNavVisible ? 130.h : 30.h) - 35.r;
+
     switch (step) {
-      case 0: // Section Toggle (Top Center)
+      // ── Step 0: Like button ──────────────────────────────────────────────
+      // LTR: Like is the leftmost button  (~21% from left)
+      // RTL: Flutter mirrors the Row, so Like ends up on the right (~79%)
+      case 0:
+        return SpotlightTarget(
+          center: Offset(
+            isRTL ? screenWidth * 0.79 : screenWidth * 0.21,
+            buttonY,
+          ),
+          radius: 34.r,
+        );
+
+      // ── Step 1: Regard button (always center) ────────────────────────────
+      case 1:
+        return SpotlightTarget(
+          center: Offset(screenWidth * 0.50, buttonY),
+          radius: 34.r,
+        );
+
+      // ── Step 2: Dislike button ───────────────────────────────────────────
+      // LTR: Dislike is the rightmost button (~78% from left)
+      // RTL: Dislike ends up on the left (~22%)
+      case 2:
+        return SpotlightTarget(
+          center: Offset(
+            isRTL ? screenWidth * 0.21 : screenWidth * 0.78,
+            buttonY,
+          ),
+          radius: 34.r,
+        );
+
+      // ── Step 3: Section Toggle (Top Center) ─────────────────────────────
+      case 3:
         return SpotlightTarget(
           rect: Rect.fromCenter(
             center: Offset(screenWidth / 2, statusBarHeight + 36.h),
@@ -83,42 +119,25 @@ class _MarriageTutorialOverlayState extends State<MarriageTutorialOverlay>
             height: 48.h,
           ),
         );
-      case 1: // Filter Button (Top Right in Arabic, Top Left in English)
+
+      // ── Step 4: Filter Button ────────────────────────────────────────────
+      // LTR: top-left  |  RTL: top-right
+      case 4:
         final x = isRTL ? screenWidth - 16.w - 20.r : 16.w + 20.r;
         return SpotlightTarget(
           center: Offset(x, statusBarHeight + 36.h),
           radius: 26.r,
         );
-      case 2: // Be First / Premium Button (Top Left in Arabic, Top Right in English)
+
+      // ── Step 5: Be First / Premium Button ───────────────────────────────
+      // LTR: top-right  |  RTL: top-left
+      case 5:
         final x = isRTL ? 16.w + 20.w : screenWidth - 5.w - 35.w;
         return SpotlightTarget(
           center: Offset(x, statusBarHeight + 36.h),
           radius: 30.r,
         );
-      case 3: // Like Button (Bottom Left-ish)
-        return SpotlightTarget(
-          center: Offset(
-            screenWidth * 0.21,
-            screenHeight - (widget.isNavVisible ? 130.h : 30.h) - 35.r,
-          ),
-          radius: 34.r,
-        );
-      case 4: // Regard Button (Bottom Center)
-        return SpotlightTarget(
-          center: Offset(
-            screenWidth * 0.50,
-            screenHeight - (widget.isNavVisible ? 130.h : 30.h) - 35.r,
-          ),
-          radius: 34.r,
-        );
-      case 5: // Dislike Button (Bottom Right-ish)
-        return SpotlightTarget(
-          center: Offset(
-            screenWidth * 0.78,
-            screenHeight - (widget.isNavVisible ? 130.h : 30.h) - 35.r,
-          ),
-          radius: 34.r,
-        );
+
       default:
         return SpotlightTarget(
           center: Offset(screenWidth / 2, screenHeight / 2),
@@ -154,17 +173,17 @@ class _MarriageTutorialOverlayState extends State<MarriageTutorialOverlay>
   String _getTitleKeyForStep(int step) {
     switch (step) {
       case 0:
-        return 'tutorial_toggle_title';
-      case 1:
-        return 'tutorial_filter_title';
-      case 2:
-        return 'tutorial_befirst_title';
-      case 3:
         return 'tutorial_like_title';
-      case 4:
+      case 1:
         return 'tutorial_regard_title';
-      case 5:
+      case 2:
         return 'tutorial_dislike_title';
+      case 3:
+        return 'tutorial_toggle_title';
+      case 4:
+        return 'tutorial_filter_title';
+      case 5:
+        return 'tutorial_befirst_title';
       default:
         return '';
     }
@@ -173,17 +192,17 @@ class _MarriageTutorialOverlayState extends State<MarriageTutorialOverlay>
   String _getDescKeyForStep(int step) {
     switch (step) {
       case 0:
-        return 'tutorial_toggle_desc';
-      case 1:
-        return 'tutorial_filter_desc';
-      case 2:
-        return 'tutorial_befirst_desc';
-      case 3:
         return 'tutorial_like_desc';
-      case 4:
+      case 1:
         return 'tutorial_regard_desc';
-      case 5:
+      case 2:
         return 'tutorial_dislike_desc';
+      case 3:
+        return 'tutorial_toggle_desc';
+      case 4:
+        return 'tutorial_filter_desc';
+      case 5:
+        return 'tutorial_befirst_desc';
       default:
         return '';
     }
@@ -199,8 +218,8 @@ class _MarriageTutorialOverlayState extends State<MarriageTutorialOverlay>
     final target = _endTarget;
     if (target == null) return null;
 
-    // For top area targets (steps 0,1,2) place the card below the spotlight
-    if (step <= 2) {
+    // For top area targets (steps 3, 4, 5) place the card below the spotlight
+    if (step >= 3) {
       if (target.rect != null) {
         return target.rect!.bottom + 20.h;
       }
@@ -215,8 +234,8 @@ class _MarriageTutorialOverlayState extends State<MarriageTutorialOverlay>
     final target = _endTarget;
     if (target == null) return null;
 
-    // For bottom area targets (steps 3,4,5) place the card above the spotlight
-    if (step >= 3) {
+    // For bottom action button targets (steps 0, 1, 2) place the card above the spotlight
+    if (step <= 2) {
       if (target.center != null && target.radius != null) {
         final topOfTarget = target.center!.dy - target.radius!;
         return screenHeight - topOfTarget + 20.h;

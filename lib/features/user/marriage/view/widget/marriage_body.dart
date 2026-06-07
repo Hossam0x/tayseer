@@ -1,12 +1,10 @@
 import 'dart:async';
-import 'dart:developer';
 import 'package:tayseer/core/enum/male_female.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/services/deep_link_service.dart';
 import 'package:tayseer/core/widgets/simple_app_bar.dart';
 import 'package:tayseer/core/enum/report_type.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
-import 'package:tayseer/features/shared/view_model/layout_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_cubit.dart';
 import 'package:tayseer/features/user/interactions/presentation/Interactions_cubit/interactions_state.dart';
 import 'package:tayseer/features/user/interactions/presentation/view/widget/animated_history_button.dart';
@@ -76,6 +74,7 @@ class MarriageBodyState extends State<MarriageBody>
   bool _navHiddenByMarriage = false;
   bool _showTutorial = false;
   StreamSubscription? _layoutSubscription;
+  StreamSubscription? _tutorialLayoutSubscription; // ✅ waits for nav to settle
   bool _isInLayout = false;
   bool _isShowingGoldSheet = false; // ✅ true لو الـ widget جوه الـ UserLayout
   StreamSubscription?
@@ -209,14 +208,49 @@ class MarriageBodyState extends State<MarriageBody>
     // 3. لم يظهر من قبل (SharedPreferences)
     // 4. مش بيشوف profile شخص معين
     // 5. جوه الـ UserLayout (مش route مستقل)
-    if (completed &&
-        !isGuest &&
-        !isConsultant &&
-        !alreadyShown &&
-        widget.personId == null &&
-        _isInLayout) {
-      setState(() => _showTutorial = true);
+    if (!completed ||
+        isGuest ||
+        isConsultant ||
+        alreadyShown ||
+        widget.personId != null ||
+        !_isInLayout) {
+      return;
     }
+
+    // ✅ انتظر حتى يتحقق شرطان معاً قبل إظهار الـ tutorial:
+    //   أ. LayoutCubit يكون على الـ marriage tab (index == 1)
+    //   ب. isNavVisible == false — يعني _hideNavOnce() اتنفذت والـ layout استقر
+    //
+    // بنستخدم stream بدل postFrameCallback عشان نتأكد إن الـ layout
+    // اتحدث فعلاً ولم نقيس المواضع قبل انتهاء الـ nav animation.
+    final layoutCubit = context.read<LayoutCubit>();
+
+    // لو الـ nav مخفي بالفعل — ابدأ فوراً (عند re-entry للـ tab مثلاً)
+    if (layoutCubit.state.currentIndex == 1 &&
+        !layoutCubit.state.isNavVisible) {
+      // نضيف postFrameCallback واحد إضافي عشان الـ render tree يكون committed
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() => _showTutorial = true);
+      });
+      return;
+    }
+
+    // وإلا: استمع للـ stream وانتظر أول emission تحقق الشرطين
+    _tutorialLayoutSubscription?.cancel();
+    _tutorialLayoutSubscription = layoutCubit.stream.listen((s) {
+      if (!mounted) return;
+      if (s.currentIndex == 1 && !s.isNavVisible) {
+        _tutorialLayoutSubscription?.cancel();
+        _tutorialLayoutSubscription = null;
+        // postFrameCallback يضمن إن الـ frame المتعلق بـ nav collapse
+        // اتـrender بالكامل قبل ما نبدأ قياس مواضع الـ buttons
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          setState(() => _showTutorial = true);
+        });
+      }
+    });
   }
 
   String _translateYesNo(
@@ -283,6 +317,7 @@ class MarriageBodyState extends State<MarriageBody>
   void dispose() {
     _scrollIdleTimer?.cancel();
     _layoutSubscription?.cancel();
+    _tutorialLayoutSubscription?.cancel();
     _subscriptionSubscription?.cancel();
     _regardController.dispose();
     _regardFocusNode.dispose();

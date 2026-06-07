@@ -101,11 +101,13 @@ void main() async {
 
   Bloc.observer = SimpleBlocObserver();
 
-  // ✅ تجاهل PlatformException(unknown_view) — بيجي من UiKitView على iOS
-  // لما الـ gesture arena يبعت events لـ platform view اتـدispose بالفعل
-  // ده race condition معروف في Flutter ومش بيأثر على الـ UX
+  // ✅ تجاهل PlatformException المعروفة من UiKitView على iOS:
+  //   • unknown_view   — gesture arena يبعت event لـ platform view اتـdispose
+  //   • recreating_view — hot restart يحاول يعمل view جديد بنفس الـ id القديم
+  // كلهم race conditions معروفة في Flutter ومش بيأثروا على الـ UX
   PlatformDispatcher.instance.onError = (error, stack) {
-    if (error is PlatformException && error.code == 'unknown_view') {
+    if (error is PlatformException &&
+        (error.code == 'unknown_view' || error.code == 'recreating_view')) {
       return true; // تجاهل بصمت
     }
     return false; // اتركه للـ default handler
