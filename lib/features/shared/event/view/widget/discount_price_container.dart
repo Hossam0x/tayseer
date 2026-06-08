@@ -39,7 +39,9 @@ class DiscountPriceContainer extends StatelessWidget {
               /// النص التوضيحي
               Text(
                 context.tr('after_application_discount'),
-                style: Styles.textStyle16Bold.copyWith(color: Colors.grey.shade600),
+                style: Styles.textStyle16Bold.copyWith(
+                  color: Colors.grey.shade600,
+                ),
               ),
 
               Row(
@@ -53,7 +55,7 @@ class DiscountPriceContainer extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    CurrencyHelper.getCurrencySymbolFromContext(context),
+                    CurrencyHelper.getEventCurrencySymbol(),
                     style: Styles.textStyle14Bold.copyWith(
                       color: AppColors.kprimaryColor,
                     ),

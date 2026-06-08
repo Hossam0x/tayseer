@@ -204,6 +204,11 @@ class CurrencyHelper {
         : getCurrencySymbolEnByCountryKey(countryKey);
   }
 
+  /// ★ رمز عملة الجنيه المصري حسب لغة التطبيق (ج.م / EGP)
+  static String getEventCurrencySymbol() {
+    return isArabic ? 'ج.م' : 'EGP';
+  }
+
   // ═══════════════════════════════════════════════════════════
   // ✅ جلب كود البلد من الجهاز
   // ═══════════════════════════════════════════════════════════

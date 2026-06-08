@@ -1,4 +1,4 @@
-import 'package:tayseer/core/constant/constans.dart';
+import 'package:tayseer/core/utils/helper/currency_helper.dart';
 import 'package:tayseer/core/utils/helper/video_picker_helper.dart';
 import 'package:tayseer/core/utils/helper/image_picker_helper.dart';
 import 'package:tayseer/core/widgets/custtom_time_pic.dart';
@@ -360,7 +360,7 @@ class _CreatEventBodyState extends State<CreatEventBody> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    isArabic ? 'ج.م' : 'EGP',
+                                    CurrencyHelper.getEventCurrencySymbol(),
                                     style: Styles.textStyle14Bold.copyWith(
                                       color: Colors.grey,
                                     ),
@@ -381,7 +381,7 @@ class _CreatEventBodyState extends State<CreatEventBody> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    isArabic ? 'ج.م' : 'EGP',
+                                    CurrencyHelper.getEventCurrencySymbol(),
                                     style: Styles.textStyle14Bold.copyWith(
                                       color: Colors.grey,
                                     ),
