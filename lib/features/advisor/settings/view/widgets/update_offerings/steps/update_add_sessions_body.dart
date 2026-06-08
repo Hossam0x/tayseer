@@ -96,7 +96,7 @@ class _UpdateAddSessionsBodyState extends State<UpdateAddSessionsBody> {
         final bool showForm = _isIndividualSelected || _isPackageSelected;
 
         final currencySymbol = countryKey.isNotEmpty
-            ? CurrencyHelper.getCurrencySymbolByCountryKey(countryKey)
+            ? CurrencyHelper.getCurrencySymbolLocalized(countryKey)
             : CurrencyHelper.getCurrencySymbolFromContext(context);
 
         return Column(

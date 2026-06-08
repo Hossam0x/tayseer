@@ -26,6 +26,7 @@ class AddSessionsAddedCard extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           InkWell(
             onTap: () => cubit.removeOffering(index),
@@ -40,32 +41,41 @@ class AddSessionsAddedCard extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              item.name,
-              style: Styles.textStyle14.copyWith(fontWeight: FontWeight.w600),
-            ),
-          ),
-          Wrap(
-            spacing: 4,
-            children: [
-              OfferingsItemChip(
-                text:
-                    '${item.price} ${context.tr('currency_${item.currency.toLowerCase()}')}',
-                isGreen: true,
-              ),
-              OfferingsItemChip(
-                text: '${item.duration}${context.tr('minute_shortcut')}',
-              ),
-              if (item.type == 'package' && item.numberOfSessions != null)
-                OfferingsItemChip(
-                  text:
-                      '${item.numberOfSessions} ${context.tr('sessions_count')}',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name,
+                  style: Styles.textStyle14.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              OfferingsItemChip(
-                text: context.tr('session_type_${item.type}'),
-                isPink: true,
-              ),
-            ],
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: [
+                    OfferingsItemChip(
+                      text:
+                          '${item.price} ${context.tr('currency_${item.currency.toLowerCase()}')}',
+                      isGreen: true,
+                    ),
+                    OfferingsItemChip(
+                      text: '${item.duration}${context.tr('minute_shortcut')}',
+                    ),
+                    if (item.type == 'package' && item.numberOfSessions != null)
+                      OfferingsItemChip(
+                        text:
+                            '${item.numberOfSessions} ${context.tr('sessions_count')}',
+                      ),
+                    OfferingsItemChip(
+                      text: context.tr('session_type_${item.type}'),
+                      isPink: true,
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
