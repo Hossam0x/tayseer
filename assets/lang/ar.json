@@ -2506,5 +2506,23 @@
   "feature_change_mind": "غيّر رأيك",
   "feature_change_mind_desc": "تراجع عن تجاهل ملف شخصي كنت قد تخطيته",
   "feature_vip_badge": "شارة VIP",
-  "feature_vip_badge_desc": "شارة مميزة على ملفك الشخصي تظهر لجميع الأعضاء"
+  "feature_vip_badge_desc": "شارة مميزة على ملفك الشخصي تظهر لجميع الأعضاء",
+
+  "ads.sponsored": "محتوى مدعوم",
+  "ads.badge": "إعلان",
+  "ads.watch_to_unlock": "شاهد إعلاناً للحصول على المزيد",
+  "ads.no_thanks": "لا، شكراً",
+  "ads.reward_granted": "تم منح المكافأة بنجاح",
+  "ads.reward_not_available": "لا يوجد إعلان متاح الآن، حاول لاحقاً",
+  "ads.loading": "جاري تحميل الإعلان...",
+  "ads.loading_title": "إعلان",
+  "ads.consent_title": "إذن الإعلانات",
+  "ads.consent_body": "نستخدم الإعلانات لدعم الخدمة مجاناً. هل توافق على عرض إعلانات مخصصة؟",
+  "ads.consent_accept": "أوافق",
+  "ads.consent_decline": "لا أوافق",
+  "ads.error_load": "تعذّر تحميل الإعلان",
+  "ads.retry": "إعادة المحاولة",
+  "ads.sponsored_post": "منشور مدعوم",
+  "ads.sponsored_profile": "ملف مدعوم",
+  "ads.sponsored_story": "قصة مدعومة"
 }

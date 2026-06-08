@@ -1,6 +1,8 @@
 import 'package:tayseer/core/cubits/int_cubit.dart';
 import 'package:tayseer/core/cubits/toggle_cubit.dart';
 import 'package:tayseer/core/enum/report_type.dart';
+import 'package:tayseer/core/widgets/ads/interstitial_loading_overlay.dart';
+import 'package:tayseer/core/services/ad_service.dart';
 import 'package:tayseer/features/shared/profile/cubit/ratings/ratings_cubit.dart';
 import 'package:tayseer/features/shared/profile/data/repositories/ratings_repository.dart';
 import 'package:tayseer/my_import.dart';
@@ -50,6 +52,20 @@ class _CallSummaryPageState extends State<CallSummaryPage> {
     super.initState();
     _reviewController = TextEditingController();
     _ratingsCubit = RatingsCubit(getIt<RatingsRepository>());
+
+    // Show interstitial when User side (not Advisor) after call ends.
+    if (widget.isUserSide) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await Future.delayed(const Duration(milliseconds: 600));
+        if (!mounted) return;
+        await InterstitialLoadingOverlay.show(
+          context,
+          message: context.tr('ads.loading'),
+          duration: const Duration(milliseconds: 500),
+        );
+        await getIt<AdService>().showInterstitial();
+      });
+    }
   }
 
   @override

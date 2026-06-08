@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- CTA button background — matches the app's primary gradient pill -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:startColor="#EB7A91"
+        android:endColor="#AC1A37"
+        android:angle="135"/>
+    <corners android:radius="20dp"/>
+</shape>

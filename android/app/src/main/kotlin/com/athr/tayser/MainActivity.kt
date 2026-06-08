@@ -12,6 +12,7 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugins.googlemobileads.GoogleMobileAdsPlugin
 
 class MainActivity : FlutterActivity() {
 
@@ -28,6 +29,22 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        // ── Native Ad Factories ──────────────────────────────────────────────
+        // Factory IDs MUST match AdContext.factoryId values in Dart exactly.
+        GoogleMobileAdsPlugin.registerNativeAdFactory(
+            flutterEngine, "listTile",    ListTileNativeAdFactory(this)
+        )
+        GoogleMobileAdsPlugin.registerNativeAdFactory(
+            flutterEngine, "postCard",    PostCardNativeAdFactory(this)
+        )
+        GoogleMobileAdsPlugin.registerNativeAdFactory(
+            flutterEngine, "profileCard", ProfileCardNativeAdFactory(this)
+        )
+        GoogleMobileAdsPlugin.registerNativeAdFactory(
+            flutterEngine, "storyCircle", StoryCircleNativeAdFactory(this)
+        )
+        // ────────────────────────────────────────────────────────────────────
 
         // ✅ Register SecureImageView platform view
         flutterEngine.platformViewsController.registry.registerViewFactory(
@@ -69,9 +86,7 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-    }
-
-    private fun startWatchingScreenshots() {
+    }    private fun startWatchingScreenshots() {
         contentObserver = object : ContentObserver(handler) {
             override fun onChange(selfChange: Boolean, uri: Uri?) {
                 super.onChange(selfChange, uri)
@@ -94,5 +109,14 @@ class MainActivity : FlutterActivity() {
     private fun stopWatchingScreenshots() {
         contentObserver?.let { contentResolver.unregisterContentObserver(it) }
         contentObserver = null
+    }
+
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        // Unregister Native Ad factories to prevent memory leaks on engine teardown
+        GoogleMobileAdsPlugin.unregisterNativeAdFactory(flutterEngine, "listTile")
+        GoogleMobileAdsPlugin.unregisterNativeAdFactory(flutterEngine, "postCard")
+        GoogleMobileAdsPlugin.unregisterNativeAdFactory(flutterEngine, "profileCard")
+        GoogleMobileAdsPlugin.unregisterNativeAdFactory(flutterEngine, "storyCircle")
+        super.cleanUpFlutterEngine(flutterEngine)
     }
 }

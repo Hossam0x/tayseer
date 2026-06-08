@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:tayseer/core/video/feed_video_preloader.dart';
+import 'package:tayseer/core/widgets/ads/ads.dart';
 import 'package:tayseer/core/widgets/post_card/post_callbacks.dart';
 import 'package:tayseer/core/widgets/post_card/post_card.dart';
 import 'package:tayseer/core/models/post_model.dart';
@@ -417,6 +418,21 @@ class HomePostFeed extends StatelessWidget {
             showGap: currentPostIndex < state.postIds.length - 1,
           ),
         );
+
+        // Inject a native ad every 5 posts — shown for both User and Advisor
+        // in shared screens. Only Guests are excluded (no account = no ads).
+        // AdService.shouldSuppressAds handles the kill-switch check internally.
+        if (!isGuest &&
+            currentPostIndex > 0 &&
+            (currentPostIndex + 1) % 5 == 0) {
+          items.add(
+            NativeAdWidget(
+              key: ValueKey('native_ad_${currentPostIndex ~/ 5}'),
+              adContext: AdContext.post,
+            ),
+          );
+        }
+
         currentPostIndex++;
       } else if ((showAdvisors && items.length < 2) ||
           (showMarriageContent && items.length < 8)) {

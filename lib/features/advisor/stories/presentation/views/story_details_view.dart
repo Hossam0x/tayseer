@@ -6,6 +6,8 @@ import 'package:tayseer/features/advisor/stories/stories.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_cubits.dart';
 import 'package:tayseer/features/advisor/profille/views/cubit/archive/archive_states.dart';
 import 'package:tayseer/features/advisor/stories/presentation/views/widgets/shared/story_page_widget.dart';
+import 'package:tayseer/core/services/ad_service.dart';
+import 'package:tayseer/core/widgets/ads/interstitial_loading_overlay.dart';
 import 'package:tayseer/my_import.dart' hide Direction;
 
 /// Outer shell: drag-to-dismiss + horizontal page swipe between users.
@@ -41,6 +43,12 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
 
   // Live list that grows as the cubit loads more stories
   late List<UserStoriesModel> _usersStories;
+
+  // ── Ad counter ────────────────────────────────────────────────────────────
+  // Show an interstitial after every 3 complete user-story sequences.
+  int _completedUserStories = 0;
+  static const int _adEvery = 3;
+  bool _adPending = false;
 
   @override
   void initState() {
@@ -173,6 +181,32 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
     }
   }
 
+  // ── Ad helper ─────────────────────────────────────────────────────────────
+
+  /// Called every time the user finishes all stories for one person.
+  /// Shows an interstitial every [_adEvery] completions.
+  Future<void> _onStoriesComplete() async {
+    if (_adPending) return;
+    if (isGuest) return;
+
+    _completedUserStories++;
+    if (_completedUserStories % _adEvery != 0) return;
+
+    final adService = getIt<AdService>();
+    if (adService.shouldSuppressAds) return;
+    if (!mounted) return;
+
+    _adPending = true;
+    // Brief branded overlay so the transition isn't a jarring blank screen
+    await InterstitialLoadingOverlay.show(
+      context,
+      message: context.tr('ads.loading'),
+      duration: const Duration(milliseconds: 400),
+    );
+    await adService.showInterstitial();
+    _adPending = false;
+  }
+
   Widget _buildBody(double opacity) {
     return Scaffold(
       backgroundColor: Colors.black,
@@ -234,7 +268,10 @@ class _StoryDetailsViewState extends State<StoryDetailsView> with RouteAware {
                   isActive: _current == i,
                   isDragging: _isDragging,
                   newestFirst: widget.newestFirst,
-                  onAllStoriesComplete: () {
+                  onAllStoriesComplete: () async {
+                    // Show ad every N user-story completions
+                    await _onStoriesComplete();
+                    if (!mounted) return;
                     if (_current < _usersStories.length - 1) {
                       _page.nextPage(
                         duration: const Duration(milliseconds: 400),

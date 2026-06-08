@@ -29,6 +29,8 @@ import 'package:tayseer/features/user/marriage/view/widget/compatibility.dart';
 import 'package:tayseer/features/user/marriage/view/widget/education.dart';
 import 'package:tayseer/features/user/marriage/view/widget/interests_section.dart';
 import 'package:tayseer/core/constant/marriage_constants.dart';
+import 'package:tayseer/core/services/ad_service.dart';
+import 'package:tayseer/core/widgets/ads/ads.dart';
 import 'package:tayseer/features/user/marriage/view/widget/religious.dart';
 import 'package:tayseer/features/user/marriage/view/widget/sliver_profile_header.dart';
 import 'package:tayseer/features/user/marriage/view/widget/video_section.dart';
@@ -84,6 +86,69 @@ class MarriageBodyState extends State<MarriageBody>
   String? _regardControllerId;
   bool _showInlineRegard = false;
   final FocusNode _regardFocusNode = FocusNode();
+
+  // ── Ad swipe counter ───────────────────────────────────────────────────
+  int _swipeCount = 0;
+  static const int _adEveryNSwipes = 5;
+  bool _adOverlayShowing = false;
+
+  // ── Ad swipe counter helpers ──────────────────────────────────────────────
+
+  /// Call after every like / dislike / favorite swipe.
+  /// Every [_adEveryNSwipes] swipes shows a native ad in a dialog overlay.
+  Future<void> _onSwipe() async {
+    if (_adOverlayShowing) return;
+    if (isGuest) return;
+
+    _swipeCount++;
+    if (_swipeCount % _adEveryNSwipes != 0) return;
+
+    final adService = getIt<AdService>();
+    if (adService.shouldSuppressAds) return;
+
+    _adOverlayShowing = true;
+    if (mounted) {
+      await _showNativeAdDialog();
+    }
+    _adOverlayShowing = false;
+  }
+
+  Future<void> _showNativeAdDialog() async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black54,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 40.h),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Native ad card
+            NativeAdWidget(adContext: AdContext.profileCard, height: 240),
+            SizedBox(height: 12.h),
+            // Close button
+            GestureDetector(
+              onTap: () => Navigator.of(context, rootNavigator: true).pop(),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 10.h),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24.r),
+                ),
+                child: Text(
+                  context.tr('ads.no_thanks'),
+                  style: Styles.textStyle14SemiBold.copyWith(
+                    color: AppColors.secondary800,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   bool get _isConsultantViewingProfile =>
       widget.personId != null && selectedUserType == UserTypeEnum.asConsultant;
@@ -2305,6 +2370,8 @@ class MarriageBodyState extends State<MarriageBody>
                         if (widget.personId != null && mounted) {
                           context.pop();
                         }
+                        // Show ad overlay every N swipes
+                        await _onSwipe();
                       }
                     }),
                     Icons.check,
@@ -2369,6 +2436,8 @@ class MarriageBodyState extends State<MarriageBody>
                         if (widget.personId != null && mounted) {
                           context.pop();
                         }
+                        // Show ad overlay every N swipes
+                        await _onSwipe();
                       }
                     }),
                     Icons.close,

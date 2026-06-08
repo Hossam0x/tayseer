@@ -127,6 +127,7 @@ import 'package:tayseer/features/advisor/settings/data/repositories/language_rep
 import 'package:tayseer/features/user/sessions/data/repo/user_sessions_repo.dart';
 
 import 'package:tayseer/core/services/groq_service.dart';
+import 'package:tayseer/core/services/ad_service.dart';
 import 'package:tayseer/features/advisor/notification/presentation/manager/notification_cubit.dart';
 import '../../my_import.dart';
 
@@ -657,6 +658,12 @@ Future<void> setupGetIt() async {
   getIt.registerFactory<ForceUpdateCubit>(
     () => ForceUpdateCubit(getIt<ForceUpdateRepo>()),
   );
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // AdService
+  // ══════════════════════════════════════════════════════════════════════════
+  // ignore: invalid_use_of_visible_for_testing_member
+  getIt.registerLazySingleton<AdService>(() => AdService.create());
 
   // ══════════════════════════════════════════════════════════════════════════
   // User Sessions

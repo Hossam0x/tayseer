@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import GoogleMaps
+import GoogleMobileAds
 import AVFoundation
 import PaymobSDK
 import StoreKit
@@ -94,6 +95,8 @@ class IosScreenshotStreamHandler: NSObject, FlutterStreamHandler {
     }
 }
 
+// MARK: - AppDelegate
+
 @main
 @objc class AppDelegate: FlutterAppDelegate {
 
@@ -109,7 +112,27 @@ class IosScreenshotStreamHandler: NSObject, FlutterStreamHandler {
 
         GMSServices.provideAPIKey("AIzaSyBwj3AABMp5Sw9qpkfR1ByoBdrF1djZzFQ")
 
+        // ── Step 1: Register all plugins first ───────────────────────────────
+        // FLTGoogleMobileAdsPlugin is registered here — factories must come AFTER
         GeneratedPluginRegistrant.register(with: self)
+
+        // ── Step 2: AdMob SDK init + Native Ad Factory registration ──────────
+        // Factories MUST be registered AFTER GeneratedPluginRegistrant so that
+        // FLTGoogleMobileAdsPlugin exists and can store the factory references.
+        GADMobileAds.sharedInstance().start(completionHandler: nil)
+        FLTGoogleMobileAdsPlugin.registerNativeAdFactory(
+            self, factoryId: "listTile",    nativeAdFactory: ListTileNativeAdFactory()
+        )
+        FLTGoogleMobileAdsPlugin.registerNativeAdFactory(
+            self, factoryId: "postCard",    nativeAdFactory: PostCardNativeAdFactory()
+        )
+        FLTGoogleMobileAdsPlugin.registerNativeAdFactory(
+            self, factoryId: "profileCard", nativeAdFactory: ProfileCardNativeAdFactory()
+        )
+        FLTGoogleMobileAdsPlugin.registerNativeAdFactory(
+            self, factoryId: "storyCircle", nativeAdFactory: StoryCircleNativeAdFactory()
+        )
+        // ────────────────────────────────────────────────────────────────────
 
         // ✅ تسجيل الـ SecureImageView للحماية من الـ screenshot
         let registrar = self.registrar(forPlugin: "SecureImagePlugin")

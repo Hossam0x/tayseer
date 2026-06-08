@@ -49,6 +49,18 @@
 	<true/>
 	<key>GMSApiKey</key>
 	<string>AIzaSyBwj3AABMp5Sw9qpkfR1ByoBdrF1djZzFQ</string>
+	<!-- Google Mobile Ads (AdMob) App ID -->
+	<!-- ⚠️ Replace with your real AdMob App ID before release -->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<!-- Required: opt-in to SKAdNetwork measurement -->
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cstr6suwn9.skadnetwork</string>
+		</dict>
+	</array>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>https</string>

@@ -4,6 +4,7 @@ import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/services/secure_window_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
 import 'package:tayseer/core/utils/video_playback_manager.dart';
+import 'package:tayseer/core/widgets/ads/ads.dart';
 import 'package:tayseer/core/widgets/offline_banner.dart';
 import 'package:tayseer/features/shared/rating/services/rating_service.dart';
 import 'package:tayseer/features/shared/reels/views/reels_nav_view.dart';

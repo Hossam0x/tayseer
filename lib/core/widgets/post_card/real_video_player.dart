@@ -138,9 +138,14 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
       if (_controller != null) {
         _controller!.removeListener(_videoListener);
         if (oldWidget.videoController == null && !_isUsingPreloadedController) {
-          try {
-            _controller!.dispose();
-          } catch (_) {}
+          // ✅ Defer dispose to post-frame to avoid "No active player" crash
+          // if _players.remove() runs during the current build cycle.
+          final oldCtrl = _controller!;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            try {
+              oldCtrl.dispose();
+            } catch (_) {}
+          });
         }
         _controller = null;
         _isInitialized = false;
@@ -375,8 +380,13 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
       _isVideoReady = false; // Task 4: reset on eviction
       _initCompleter = null;
       debugPrint('🧹 Eviction: cleared controller ref for ${widget.postId}');
-      // Trigger a rebuild so the placeholder shows immediately.
-      _scheduleSetState(() {});
+      // ✅ Use synchronous setState (not postFrameCallback) so the null/version
+      // bump is visible to the very next build pass in the current frame.
+      // Using _scheduleSetState (postFrameCallback) left a window where a
+      // sibling-triggered rebuild could still see the old non-null _controller
+      // and pass the dead platform ID into VideoPlayer.build(), causing
+      // "Bad state: No active player with ID X".
+      if (mounted) setState(() {});
     }
   }
 
@@ -514,18 +524,25 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
       return;
     }
 
-    try {
-      if (controller.value.isInitialized) {
-        controller.setVolume(0.0);
-        if (controller.value.isPlaying) {
-          controller.pause();
+    // ✅ Defer the actual platform dispose to after the current frame.
+    // This prevents "Bad state: No active player with ID X" which happens when
+    // _players.remove() runs (inside controller.dispose()) during an active
+    // build cycle — e.g., when _videoListener triggers _handleSilentRetry
+    // while the sliver is rebuilding its children.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        if (controller.value.isInitialized) {
+          controller.setVolume(0.0);
+          if (controller.value.isPlaying) {
+            controller.pause();
+          }
         }
+        controller.dispose();
+        debugPrint('🗑️ Disposed local controller for ${widget.postId}');
+      } catch (e) {
+        debugPrint('⚠️ Error disposing controller: $e');
       }
-      controller.dispose();
-      debugPrint('🗑️ Disposed local controller for ${widget.postId}');
-    } catch (e) {
-      debugPrint('⚠️ Error disposing controller: $e');
-    }
+    });
   }
 
   Future<void> _initializeVideo() async {
@@ -808,15 +825,34 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
       _retryCount++;
       debugPrint('🔄 Silent auto-retry #$_retryCount for ${widget.postId}');
 
-      try {
-        _controller?.removeListener(_videoListener);
-        if (widget.videoController == null) {
-          _controller?.dispose();
-        }
-      } catch (_) {}
+      final controllerToDispose = _controller;
+      final isOwned = widget.videoController == null;
+
+      // ✅ Null the reference and bump version FIRST (synchronously) so that
+      // any pending build frame sees null and skips VideoPlayer. Then dispose
+      // the controller deferred to after the current frame to avoid the race
+      // where _players.remove() runs during a build cycle, causing
+      // "Bad state: No active player with ID X".
       _controller = null;
+      _controllerVersion++;
       _isInitialized = false;
+      _isVideoReady = false;
       _initCompleter = null;
+
+      // Trigger a synchronous rebuild so the current/next frame shows the
+      // thumbnail/loading placeholder instead of the dead VideoPlayer.
+      if (mounted) setState(() {});
+
+      // Dispose AFTER the frame so the platform player is not removed from
+      // _players while VideoPlayer.build() may still be executing.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          controllerToDispose?.removeListener(_videoListener);
+          if (isOwned && controllerToDispose != null) {
+            controllerToDispose.dispose();
+          }
+        } catch (_) {}
+      });
 
       final delay = Duration(milliseconds: 800 * _retryCount);
       _autoRetryTimer?.cancel();
@@ -862,8 +898,11 @@ class _RealVideoPlayerState extends State<RealVideoPlayer>
 
         if (_controller == null && !_hasError) {
           _initializeVideo().then((_) {
-            if (!_canPlay || _isDisposed || VideoManager.instance.isRefreshing)
+            if (!_canPlay ||
+                _isDisposed ||
+                VideoManager.instance.isRefreshing) {
               return;
+            }
             final ctrl = _controller;
             if (ctrl == null || !_isInitialized) return;
             try {
@@ -1120,13 +1159,22 @@ class _SafeVideoPlayer extends StatefulWidget {
 class _SafeVideoPlayerState extends State<_SafeVideoPlayer> {
   bool _isAlive = false;
 
-  /// Returns true if [ctrl] is still usable (not disposed, still initialized).
+  /// Returns true if [ctrl] is still usable (not disposed, still initialized,
+  /// and the platform player is still registered).
   static bool _probe(VideoPlayerController ctrl) {
     try {
+      // addListener throws StateError("...was used after being disposed") on a
+      // disposed ChangeNotifier — this is our primary disposal guard.
       void noop() {}
       ctrl.addListener(noop);
       ctrl.removeListener(noop);
-      return ctrl.value.isInitialized;
+
+      if (!ctrl.value.isInitialized) return false;
+
+      return true;
+    } on StateError {
+      // Controller was disposed (ChangeNotifier).
+      return false;
     } catch (_) {
       return false;
     }
@@ -1188,28 +1236,17 @@ class _SafeVideoPlayerState extends State<_SafeVideoPlayer> {
     final size = widget.controller.value.size;
     if (size.width == 0 || size.height == 0) return const SizedBox.shrink();
 
-    try {
-      return FittedBox(
-        fit: BoxFit.cover,
-        child: SizedBox(
-          width: size.width,
-          height: size.height,
-          // ✅ ValueKey on the controller ensures Flutter creates a brand-new
-          // VideoPlayer element when the controller instance changes, rather
-          // than reusing the existing platform texture registration.
-          child: VideoPlayer(widget.controller),
-        ),
-      );
-    } catch (e) {
-      // Catches "Bad state: No active player with ID X" if the platform
-      // texture was destroyed between the probe and the VideoPlayer build.
-      debugPrint('⚠️ _SafeVideoPlayer caught crash, hiding: $e');
-      // Schedule a state update so the widget rebuilds as SizedBox next frame.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() => _isAlive = false);
-      });
-      return const SizedBox.shrink();
-    }
+    return FittedBox(
+      fit: BoxFit.cover,
+      child: SizedBox(
+        width: size.width,
+        height: size.height,
+        // ✅ ValueKey on the controller ensures Flutter creates a brand-new
+        // VideoPlayer element when the controller instance changes, rather
+        // than reusing the existing platform texture registration.
+        child: VideoPlayer(widget.controller),
+      ),
+    );
   }
 }
 

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Badge pill background — primary50 fill, primary border -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#FCE9ED"/>
+    <stroke android:color="#AC1A37" android:width="0.5dp"/>
+    <corners android:radius="4dp"/>
+</shape>

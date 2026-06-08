@@ -2507,5 +2507,23 @@
   "feature_change_mind": "Change your mind",
   "feature_change_mind_desc": "Undo a pass on a profile you previously skipped",
   "feature_vip_badge": "VIP Badge",
-  "feature_vip_badge_desc": "A distinctive badge on your profile visible to all members"
+  "feature_vip_badge_desc": "A distinctive badge on your profile visible to all members",
+
+  "ads.sponsored": "Sponsored Content",
+  "ads.badge": "Ad",
+  "ads.watch_to_unlock": "Watch an ad to get more",
+  "ads.no_thanks": "No, thanks",
+  "ads.reward_granted": "Reward granted successfully",
+  "ads.reward_not_available": "No ad available right now, try again later",
+  "ads.loading": "Loading ad...",
+  "ads.loading_title": "Advertisement",
+  "ads.consent_title": "Ad Permission",
+  "ads.consent_body": "We use ads to keep the service free. Do you agree to see personalized ads?",
+  "ads.consent_accept": "I agree",
+  "ads.consent_decline": "I decline",
+  "ads.error_load": "Failed to load ad",
+  "ads.retry": "Retry",
+  "ads.sponsored_post": "Sponsored Post",
+  "ads.sponsored_profile": "Sponsored Profile",
+  "ads.sponsored_story": "Sponsored Story"
 }

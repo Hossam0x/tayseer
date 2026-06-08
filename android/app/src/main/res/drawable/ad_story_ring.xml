@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Story circle gradient ring — matches primary gradient (EB7A91 → AC1A37) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <gradient
+        android:startColor="#EB7A91"
+        android:endColor="#AC1A37"
+        android:type="sweep"/>
+</shape>

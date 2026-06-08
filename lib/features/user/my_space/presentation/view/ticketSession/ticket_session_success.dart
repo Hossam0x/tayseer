@@ -1,7 +1,26 @@
+import 'package:tayseer/core/widgets/ads/interstitial_ad_mixin.dart';
 import 'package:tayseer/my_import.dart';
 
-class BookingSuccessView extends StatelessWidget {
+class BookingSuccessView extends StatefulWidget {
   const BookingSuccessView({super.key});
+
+  @override
+  State<BookingSuccessView> createState() => _BookingSuccessViewState();
+}
+
+class _BookingSuccessViewState extends State<BookingSuccessView>
+    with InterstitialAdMixin {
+  @override
+  void initState() {
+    super.initState();
+    // Show an interstitial after the booking success screen mounts.
+    // Delayed slightly so the UI is fully rendered first.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (!mounted) return;
+      await showInterstitialAd(overlayMessage: context.tr('ads.loading'));
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
