@@ -1,4 +1,4 @@
-import 'package:tayseer/core/utils/helper/currency_helper.dart';
+import 'package:tayseer/core/constant/constans.dart';
 import 'package:tayseer/core/utils/helper/video_picker_helper.dart';
 import 'package:tayseer/core/utils/helper/image_picker_helper.dart';
 import 'package:tayseer/core/widgets/custtom_time_pic.dart';
@@ -29,6 +29,7 @@ class _CreatEventBodyState extends State<CreatEventBody> {
 
   final _videoPicker = VideoPickerHelper();
   final _imagePicker = ImagePickerHelper();
+  bool _isLoadingDialogShown = false;
 
   @override
   Widget build(BuildContext context) {
@@ -49,15 +50,20 @@ class _CreatEventBodyState extends State<CreatEventBody> {
           );
           context.popUntil(routeName: AppRouter.kAdvisorLayoutView);
         } else if (state.advisorEventsState == CubitStates.failure) {
-          context.pop();
+          // Only pop if the loading dialog was previously shown
+          if (_isLoadingDialogShown) {
+            _isLoadingDialogShown = false;
+            context.pop();
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             CustomSnackBar(
               context,
-              text: state.errorMessage ?? "😔",
+              text: context.tr(state.errorMessage ?? "😔"),
               isError: true,
             ),
           );
         } else if (state.advisorEventsState == CubitStates.loading) {
+          _isLoadingDialogShown = true;
           showDialog(
             context: context,
             barrierDismissible: false,
@@ -354,9 +360,7 @@ class _CreatEventBodyState extends State<CreatEventBody> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    CurrencyHelper.getCurrencySymbolFromContext(
-                                      context,
-                                    ),
+                                    isArabic ? 'ج.م' : 'EGP',
                                     style: Styles.textStyle14Bold.copyWith(
                                       color: Colors.grey,
                                     ),
@@ -377,9 +381,7 @@ class _CreatEventBodyState extends State<CreatEventBody> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    CurrencyHelper.getCurrencySymbolFromContext(
-                                      context,
-                                    ),
+                                    isArabic ? 'ج.م' : 'EGP',
                                     style: Styles.textStyle14Bold.copyWith(
                                       color: Colors.grey,
                                     ),

@@ -2525,5 +2525,6 @@
   "ads.retry": "Retry",
   "ads.sponsored_post": "Sponsored Post",
   "ads.sponsored_profile": "Sponsored Profile",
-  "ads.sponsored_story": "Sponsored Story"
+  "ads.sponsored_story": "Sponsored Story",
+  "price_after_discount_error": "Price after discount must be less than price before discount"
 }

@@ -451,6 +451,25 @@ class EventsCubit extends Cubit<EventsState> {
       return;
     }
 
+    // Validate that priceAfterDiscount is strictly less than priceBeforeDiscount
+    final beforeText = eventPriceBeforeDiscountController.text.trim();
+    final afterText = eventPriceAfterDiscountController.text.trim();
+    if (beforeText.isNotEmpty && afterText.isNotEmpty) {
+      final priceBefore = double.tryParse(beforeText);
+      final priceAfter = double.tryParse(afterText);
+      if (priceBefore != null &&
+          priceAfter != null &&
+          priceAfter >= priceBefore) {
+        emit(
+          state.copyWith(
+            advisorEventsState: CubitStates.failure,
+            errorMessage: 'price_after_discount_error',
+          ),
+        );
+        return;
+      }
+    }
+
     try {
       emit(state.copyWith(advisorEventsState: CubitStates.loading));
 

@@ -2524,5 +2524,6 @@
   "ads.retry": "إعادة المحاولة",
   "ads.sponsored_post": "منشور مدعوم",
   "ads.sponsored_profile": "ملف مدعوم",
-  "ads.sponsored_story": "قصة مدعومة"
+  "ads.sponsored_story": "قصة مدعومة",
+  "price_after_discount_error": "يجب أن يكون السعر بعد الخصم أقل من السعر قبل الخصم"
 }
