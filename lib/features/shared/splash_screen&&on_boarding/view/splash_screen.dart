@@ -2,6 +2,8 @@ import 'dart:developer';
 import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/notifications/notificationHelper.dart';
+import 'package:tayseer/core/utils/otp_resumption_service.dart';
+import 'package:tayseer/core/utils/otp_screen_guard.dart';
 import 'package:tayseer/core/services/appsflyer_events/appsflyer_events.dart';
 import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
@@ -204,6 +206,46 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 4800));
     if (!mounted) return;
 
+    // ── Soft-resume guard (in-memory) ───────────────────────────────────────
+    // The OS kept the Dart isolate alive. The OTP screen is still mounted.
+    // Nothing to do — the user will see exactly the screen they left.
+    if (OtpScreenGuard.isActive) {
+      log('🛡️ Splash: OTP screen active in memory — skipping navigation');
+      return;
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
+    // ── Process-death resume (SharedPreferences) ─────────────────────────────
+    // The OS killed the Dart isolate while the app was backgrounded.
+    // The token is still valid, but all in-memory state is gone.
+    // Restore the user to the correct OTP screen.
+    final otpCtx = await OtpResumptionService.instance.load();
+    if (otpCtx != null) {
+      // Only restore if the user still has a valid token — an expired session
+      // will be caught by the API on the OTP screen itself (toast + can resend).
+      final token = CachNetwork.getStringData(key: ktoken);
+      if (token.isNotEmpty) {
+        log(
+          '🛡️ Splash: restoring OTP screen after process death '
+          '(type=${otpCtx.screenType.name})',
+        );
+        // Clear the record — it will be re-saved by the screen's initState.
+        await OtpResumptionService.instance.clear();
+        if (!mounted) return;
+        _restoreOtpScreen(otpCtx);
+        return;
+      } else {
+        // No token — session is gone. Clear the stale record and fall through
+        // to the normal "no token → registration" path.
+        log(
+          '🛡️ Splash: OTP context found but no token — clearing and '
+          'proceeding to registration',
+        );
+        await OtpResumptionService.instance.clear();
+      }
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     // ── Force Update Check ──────────────────────────────────────────────────
     final forceUpdateRepo = getIt<ForceUpdateRepo>();
     final updateRequired = await forceUpdateRepo.isUpdateRequired();
@@ -281,6 +323,27 @@ class _SplashScreenState extends State<SplashScreen>
       log('⚠️ No token found, navigating to registration');
       if (!mounted) return;
       context.pushReplacementNamed(AppRouter.kRegisrationView);
+    }
+  }
+
+  /// Navigates to the appropriate OTP screen after a process-death resume.
+  void _restoreOtpScreen(OtpResumptionContext ctx) {
+    if (!mounted) return;
+    switch (ctx.screenType) {
+      case OtpScreenType.authOtp:
+        // Registration/login email OTP — the AuthCubit is a LazySingleton,
+        // so it still holds the phone/email in its controllers.
+        context.pushReplacementNamed(AppRouter.kOtpView);
+
+      case OtpScreenType.phoneOtp:
+        // Phone OTP in the onboarding / questions flow.
+        context.pushReplacementNamed(
+          AppRouter.kOtpPhoneUserQuestion,
+          arguments: {
+            'isOnboarding': ctx.isOnboarding,
+            'isAdvisorFlow': ctx.isAdvisorFlow,
+          },
+        );
     }
   }
 

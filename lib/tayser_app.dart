@@ -51,49 +51,47 @@ class TayseerApp extends StatefulWidget {
   State<TayseerApp> createState() => _TayseerAppState();
 }
 
-class _TayseerAppState extends State<TayseerApp> with WidgetsBindingObserver {
+class _TayseerAppState extends State<TayseerApp> {
+  /// AppLifecycleListener (Flutter 3.13+) — replaces the legacy
+  /// WidgetsBindingObserver approach for cleaner lifecycle handling.
+  late final AppLifecycleListener _lifecycleListener;
+
   @override
   void initState() {
     super.initState();
-    // Add app lifecycle observer for AudioService
-    WidgetsBinding.instance.addObserver(this);
     // ✅ الـ Warm Start بيتهندل في main.dart عبر _listenToWarmStartLinks()
     // بيستخدم navigatorKey مباشرة — مش محتاج حاجة هنا
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-
-    switch (state) {
-      case AppLifecycleState.inactive:
-        // ✅ بس نوقف الـ audio — الـ RealVideoPlayer بيتعامل مع الفيديو بنفسه
+    _lifecycleListener = AppLifecycleListener(
+      onInactive: () {
+        // بس نوقف الـ audio — الـ RealVideoPlayer بيتعامل مع الفيديو بنفسه
         AudioService.instance.onAppPaused();
-        break;
-      case AppLifecycleState.paused:
-      case AppLifecycleState.hidden:
-        // ✅ التطبيق راح للخلفية فعلاً — نوقف كل حاجة
+      },
+      onPause: () {
+        // التطبيق راح للخلفية فعلاً — نوقف كل حاجة
         AudioService.instance.onAppPaused();
         FeedVideoPreloader.instance.pauseAll();
-        break;
-      case AppLifecycleState.resumed:
+      },
+      onHide: () {
+        // iOS/macOS: app is hidden (same as paused on mobile)
+        AudioService.instance.onAppPaused();
+        FeedVideoPreloader.instance.pauseAll();
+      },
+      onResume: () {
         AudioService.instance.onAppResumed();
-        // ✅ لما التطبيق يرجع من الخلفية، تحقق من الـ socket
+        // لما التطبيق يرجع من الخلفية، تحقق من الـ socket
         // لو مش متصل (ممكن النت قطع وهو في الخلفية)، حاول reconnect
         final socketHelper = getIt<tayseerSocketHelper>();
         if (!socketHelper.isConnected) {
           socketHelper.connect();
         }
-        break;
-      case AppLifecycleState.detached:
-        break;
-    }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycleListener.dispose();
+    super.dispose();
   }
 
   @override
