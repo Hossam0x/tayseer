@@ -12,7 +12,8 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugins.googlemobileads.GoogleMobileAdsPlugin
+// ⚠️ ADS TEMPORARILY DISABLED — uncomment when Google Ads account is ready.
+// import io.flutter.plugins.googlemobileads.GoogleMobileAdsPlugin
 
 class MainActivity : FlutterActivity() {
 
@@ -31,19 +32,19 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
 
         // ── Native Ad Factories ──────────────────────────────────────────────
-        // Factory IDs MUST match AdContext.factoryId values in Dart exactly.
-        GoogleMobileAdsPlugin.registerNativeAdFactory(
-            flutterEngine, "listTile",    ListTileNativeAdFactory(this)
-        )
-        GoogleMobileAdsPlugin.registerNativeAdFactory(
-            flutterEngine, "postCard",    PostCardNativeAdFactory(this)
-        )
-        GoogleMobileAdsPlugin.registerNativeAdFactory(
-            flutterEngine, "profileCard", ProfileCardNativeAdFactory(this)
-        )
-        GoogleMobileAdsPlugin.registerNativeAdFactory(
-            flutterEngine, "storyCircle", StoryCircleNativeAdFactory(this)
-        )
+        // ⚠️ ADS TEMPORARILY DISABLED — uncomment when Google Ads account is ready.
+        // GoogleMobileAdsPlugin.registerNativeAdFactory(
+        //     flutterEngine, "listTile",    ListTileNativeAdFactory(this)
+        // )
+        // GoogleMobileAdsPlugin.registerNativeAdFactory(
+        //     flutterEngine, "postCard",    PostCardNativeAdFactory(this)
+        // )
+        // GoogleMobileAdsPlugin.registerNativeAdFactory(
+        //     flutterEngine, "profileCard", ProfileCardNativeAdFactory(this)
+        // )
+        // GoogleMobileAdsPlugin.registerNativeAdFactory(
+        //     flutterEngine, "storyCircle", StoryCircleNativeAdFactory(this)
+        // )
         // ────────────────────────────────────────────────────────────────────
 
         // ✅ Register SecureImageView platform view
@@ -52,9 +53,7 @@ class MainActivity : FlutterActivity() {
             SecureImageFactory(flutterEngine.dartExecutor.binaryMessenger)
         )
 
-        // ✅ FLAG_SECURE channel — لحماية شاشة الزواج من الـ screenshot
-        // ⚠️ ملاحظة: FLAG_SECURE يمنع ExoPlayer من عرض الفيديو على بعض الأجهزة
-        // لذلك يجب تفعيله فقط في الشاشات التي تحتاجه وليس بشكل عام
+        // ✅ FLAG_SECURE channel
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SECURE_CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -86,7 +85,9 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-    }    private fun startWatchingScreenshots() {
+    }
+
+    private fun startWatchingScreenshots() {
         contentObserver = object : ContentObserver(handler) {
             override fun onChange(selfChange: Boolean, uri: Uri?) {
                 super.onChange(selfChange, uri)
@@ -112,11 +113,11 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
-        // Unregister Native Ad factories to prevent memory leaks on engine teardown
-        GoogleMobileAdsPlugin.unregisterNativeAdFactory(flutterEngine, "listTile")
-        GoogleMobileAdsPlugin.unregisterNativeAdFactory(flutterEngine, "postCard")
-        GoogleMobileAdsPlugin.unregisterNativeAdFactory(flutterEngine, "profileCard")
-        GoogleMobileAdsPlugin.unregisterNativeAdFactory(flutterEngine, "storyCircle")
+        // ⚠️ ADS TEMPORARILY DISABLED — uncomment when Google Ads account is ready.
+        // GoogleMobileAdsPlugin.unregisterNativeAdFactory(flutterEngine, "listTile")
+        // GoogleMobileAdsPlugin.unregisterNativeAdFactory(flutterEngine, "postCard")
+        // GoogleMobileAdsPlugin.unregisterNativeAdFactory(flutterEngine, "profileCard")
+        // GoogleMobileAdsPlugin.unregisterNativeAdFactory(flutterEngine, "storyCircle")
         super.cleanUpFlutterEngine(flutterEngine)
     }
 }

@@ -1,7 +1,8 @@
 import Flutter
 import UIKit
 import GoogleMaps
-import GoogleMobileAds
+// ⚠️ ADS TEMPORARILY DISABLED — import GoogleMobileAds
+// import GoogleMobileAds
 import AVFoundation
 import PaymobSDK
 import StoreKit
@@ -117,21 +118,20 @@ class IosScreenshotStreamHandler: NSObject, FlutterStreamHandler {
         GeneratedPluginRegistrant.register(with: self)
 
         // ── Step 2: AdMob SDK init + Native Ad Factory registration ──────────
-        // Factories MUST be registered AFTER GeneratedPluginRegistrant so that
-        // FLTGoogleMobileAdsPlugin exists and can store the factory references.
-        GADMobileAds.sharedInstance().start(completionHandler: nil)
-        FLTGoogleMobileAdsPlugin.registerNativeAdFactory(
-            self, factoryId: "listTile",    nativeAdFactory: ListTileNativeAdFactory()
-        )
-        FLTGoogleMobileAdsPlugin.registerNativeAdFactory(
-            self, factoryId: "postCard",    nativeAdFactory: PostCardNativeAdFactory()
-        )
-        FLTGoogleMobileAdsPlugin.registerNativeAdFactory(
-            self, factoryId: "profileCard", nativeAdFactory: ProfileCardNativeAdFactory()
-        )
-        FLTGoogleMobileAdsPlugin.registerNativeAdFactory(
-            self, factoryId: "storyCircle", nativeAdFactory: StoryCircleNativeAdFactory()
-        )
+        // ⚠️ ADS TEMPORARILY DISABLED — uncomment when Google Ads account is ready.
+        // GADMobileAds.sharedInstance().start(completionHandler: nil)
+        // FLTGoogleMobileAdsPlugin.registerNativeAdFactory(
+        //     self, factoryId: "listTile",    nativeAdFactory: ListTileNativeAdFactory()
+        // )
+        // FLTGoogleMobileAdsPlugin.registerNativeAdFactory(
+        //     self, factoryId: "postCard",    nativeAdFactory: PostCardNativeAdFactory()
+        // )
+        // FLTGoogleMobileAdsPlugin.registerNativeAdFactory(
+        //     self, factoryId: "profileCard", nativeAdFactory: ProfileCardNativeAdFactory()
+        // )
+        // FLTGoogleMobileAdsPlugin.registerNativeAdFactory(
+        //     self, factoryId: "storyCircle", nativeAdFactory: StoryCircleNativeAdFactory()
+        // )
         // ────────────────────────────────────────────────────────────────────
 
         // ✅ تسجيل الـ SecureImageView للحماية من الـ screenshot

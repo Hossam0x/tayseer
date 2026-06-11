@@ -20,8 +20,9 @@ import 'package:tayseer/core/utils/app_navigator.dart';
 import 'package:tayseer/tayser_app.dart';
 import 'package:tayseer/core/utils/simple_bloc_observer.dart';
 import 'package:tayseer/core/video/video_controller_manager.dart';
-import 'package:tayseer/core/services/ad_service.dart';
-import 'package:tayseer/core/services/ads_config.dart';
+// ⚠️ ADS TEMPORARILY DISABLED
+// import 'package:tayseer/core/services/ad_service.dart';
+// import 'package:tayseer/core/services/ads_config.dart';
 import 'package:tayseer/my_import.dart';
 
 // ─────────────────────────────────────────────
@@ -85,14 +86,10 @@ void main() async {
   await CachNetwork.cacheInitializaion();
   await setupGetIt();
 
-  // Load persisted ad kill-switch flags before SDK init
-  await AdsConfig.instance.load();
-
-  // Initialize AdMob SDK — must happen before runApp and after setupGetIt
-  await getIt<AdService>().initialize();
-
-  // Dump full ad state to console for debugging
-  getIt<AdService>().debugAdState();
+  // ⚠️ ADS TEMPORARILY DISABLED — uncomment when Google Ads account is ready.
+  // await AdsConfig.instance.load();
+  // await getIt<AdService>().initialize();
+  // getIt<AdService>().debugAdState();
 
   // Initialize ChatCacheService
   await getIt<ChatCacheService>().init();
