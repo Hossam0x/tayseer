@@ -13,6 +13,7 @@ import 'package:tayseer/features/shared/packages/presentation/widgets/selectable
 import 'package:tayseer/features/shared/packages/presentation/widgets/subscription_purchasing_button.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/subscription_success_dialog.dart';
 import 'package:tayseer/features/shared/packages/presentation/widgets/upgrade_sub_card.dart';
+import 'package:tayseer/features/shared/packages/presentation/widgets/payment_method_sheet.dart';
 import 'package:tayseer/features/user/questions/presentation/views/add_phone_view.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -24,8 +25,27 @@ const _goldBg2 = Color(0xFFD4A017);
 const _eliteDark = Color(0xFF4A1A8C);
 const _eliteBg2 = Color(0xFF6A1FC2);
 
-class AdvisorSubscriptionView extends StatelessWidget {
-  const AdvisorSubscriptionView({super.key});
+class AdvisorSubscriptionView extends StatefulWidget {
+  const AdvisorSubscriptionView({
+    super.key,
+    this.firstName,
+    this.lastName,
+    this.phone,
+  });
+
+  /// Paymob billing info collected upfront (Android only).
+  /// When provided the Android payment flow starts automatically once packages load.
+  final String? firstName;
+  final String? lastName;
+  final String? phone;
+
+  @override
+  State<AdvisorSubscriptionView> createState() =>
+      _AdvisorSubscriptionViewState();
+}
+
+class _AdvisorSubscriptionViewState extends State<AdvisorSubscriptionView> {
+  bool _autoTriggered = false;
 
   static final _skeletonSub = NewAdvisorSubModel(
     id: '',
@@ -42,6 +62,31 @@ class AdvisorSubscriptionView extends StatelessWidget {
     price: 99,
     currency: 'EGP',
   );
+
+  /// Called once packages have loaded — triggers Android Paymob flow directly
+  /// when name/phone were collected upfront from the payment sheet.
+  void _maybeAutoTriggerAndroid(
+    BuildContext context,
+    List<NewAdvisorSubModel> allSubs,
+  ) {
+    if (_autoTriggered) return;
+    if (!Platform.isAndroid) return;
+    if (widget.firstName == null ||
+        widget.lastName == null ||
+        widget.phone == null)
+      return;
+    _autoTriggered = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<AdvisorSubscriptionCubit>().purchaseSubscriptionAndroid(
+        allSubs,
+        context: context,
+        firstName: widget.firstName,
+        lastName: widget.lastName,
+        phone: widget.phone,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,8 +159,11 @@ class AdvisorSubscriptionView extends StatelessWidget {
 
         return BlocConsumer<PackagesCubit, PackagesState>(
           listenWhen: (p, c) => p.isLoading && !c.isLoading,
-          listener: (context, packagesState) =>
-              cubit.initSelection(packagesState.subscriptions),
+          listener: (context, packagesState) {
+            cubit.initSelection(packagesState.subscriptions);
+            // ✅ Auto-trigger Android Paymob when name/phone were pre-collected
+            _maybeAutoTriggerAndroid(context, packagesState.subscriptions);
+          },
           builder: (context, packagesState) {
             final isLoading = packagesState.isLoading;
             final subs = cubit.getSubscriptionsForPackage(
@@ -283,20 +331,23 @@ class AdvisorSubscriptionView extends StatelessWidget {
                                           (isLoading ||
                                               (!hasCurrentSub && subs.isEmpty))
                                           ? null
-                                          : () {
-                                              if (Platform.isAndroid) {
-                                                cubit
-                                                    .purchaseSubscriptionAndroid(
-                                                      packagesState
-                                                          .subscriptions,
-                                                      context: context,
-                                                    );
-                                              } else {
-                                                cubit.purchaseSubscription(
-                                                  packagesState.subscriptions,
-                                                );
-                                              }
-                                            },
+                                          : () => showPaymentMethodSheet(
+                                              context,
+                                              onInAppPurchase: () =>
+                                                  cubit.purchaseSubscription(
+                                                    packagesState.subscriptions,
+                                                  ),
+                                              onPaymobSelected: (fn, ln, ph) =>
+                                                  cubit
+                                                      .purchaseSubscriptionAndroid(
+                                                        packagesState
+                                                            .subscriptions,
+                                                        context: context,
+                                                        firstName: fn,
+                                                        lastName: ln,
+                                                        phone: ph,
+                                                      ),
+                                            ),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: accentDark,
                                         foregroundColor: Colors.white,

@@ -110,6 +110,9 @@ class OneTimePaymentCubit extends Cubit<OneTimePaymentState> {
     required String productId,
     required OneTimeProductType productType,
     String? chatRoomId,
+    String? firstName,
+    String? lastName,
+    String? phone,
   }) async {
     if (isClosed) return;
     emit(state.copyWith(status: OneTimePaymentStatus.loading));
@@ -130,6 +133,9 @@ class OneTimePaymentCubit extends Cubit<OneTimePaymentState> {
         'productType': productType.value,
         if (chatRoomId != null && chatRoomId.isNotEmpty)
           'chatRoomId': chatRoomId,
+        if (firstName != null && firstName.isNotEmpty) 'firstName': firstName,
+        if (lastName != null && lastName.isNotEmpty) 'lastName': lastName,
+        if (phone != null && phone.isNotEmpty) 'phone': phone,
       };
 
       final response = await _apiService.post(

@@ -20,9 +20,18 @@ class RegardsPackagePurchaseCubit extends Cubit<RegardsPackagePurchaseState> {
   Future<void> purchasePackage(
     RegardsPackageModel package, {
     BuildContext? context,
+    String? firstName,
+    String? lastName,
+    String? phone,
   }) async {
     if (Platform.isAndroid) {
-      await _purchaseAndroid(package, context: context);
+      await _purchaseAndroid(
+        package,
+        context: context,
+        firstName: firstName,
+        lastName: lastName,
+        phone: phone,
+      );
     } else {
       await _purchaseIOS(package);
     }
@@ -33,6 +42,9 @@ class RegardsPackagePurchaseCubit extends Cubit<RegardsPackagePurchaseState> {
   Future<void> _purchaseAndroid(
     RegardsPackageModel package, {
     BuildContext? context,
+    String? firstName,
+    String? lastName,
+    String? phone,
   }) async {
     if (context == null || !context.mounted) {
       emit(
@@ -57,6 +69,9 @@ class RegardsPackagePurchaseCubit extends Cubit<RegardsPackagePurchaseState> {
       context: context,
       productId: package.id,
       productType: OneTimeProductType.regardsPackage,
+      firstName: firstName,
+      lastName: lastName,
+      phone: phone,
     );
 
     if (isClosed) {

@@ -15,6 +15,7 @@ import 'package:tayseer/features/user/user_profile/presentation/view_model/user_
 import 'package:tayseer/features/user/user_profile/presentation/view_model/user_subscription_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/regards_package_cubit/regards_package_cubit.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/regards_package_cubit/regards_package_state.dart';
+import 'package:tayseer/features/shared/packages/presentation/widgets/payment_method_sheet.dart';
 import 'package:tayseer/features/user/questions/presentation/views/add_phone_view.dart';
 import 'package:tayseer/my_import.dart';
 
@@ -356,22 +357,34 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
       currency: selected.currency,
       priceForOne: selected.priceForOne,
     );
-    // ✅ Android → Paymob WebView  |  iOS → Apple IAP (SK2 consumable)
-    context.read<RegardsPackagePurchaseCubit>().purchasePackage(
-      rawPackage,
-      context: Platform.isAndroid ? context : null,
+    final cubit = context.read<RegardsPackagePurchaseCubit>();
+    showPaymentMethodSheet(
+      context,
+      onInAppPurchase: () => cubit.purchasePackage(rawPackage),
+      onPaymobSelected: (fn, ln, ph) => cubit.purchasePackage(
+        rawPackage,
+        context: context,
+        firstName: fn,
+        lastName: ln,
+        phone: ph,
+      ),
     );
   }
 
   void _onPayGold(BuildContext context, List<NewUserSubModel> allSubs) {
     final cubit = context.read<UserSubscriptionCubit>();
     cubit.selectDuration(_selectedIndex, allSubs);
-    // ✅ Android → Paymob WebView  |  iOS → Apple IAP flow
-    if (Platform.isAndroid) {
-      cubit.purchaseSubscriptionAndroid(allSubs, context: context);
-    } else {
-      cubit.purchaseSubscription(allSubs);
-    }
+    showPaymentMethodSheet(
+      context,
+      onInAppPurchase: () => cubit.purchaseSubscription(allSubs),
+      onPaymobSelected: (fn, ln, ph) => cubit.purchaseSubscriptionAndroid(
+        allSubs,
+        context: context,
+        firstName: fn,
+        lastName: ln,
+        phone: ph,
+      ),
+    );
   }
 
   // ════════════════════════════════════

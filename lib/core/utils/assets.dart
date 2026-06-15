@@ -16,6 +16,8 @@ abstract class AssetsData {
       "assets/images/home_bar_background.png";
   static const String icNoContentSeach = "assets/images/icNoContentSeach.png";
   static const String instaPay = "assets/images/instaPay.png";
+  static const String paymob = "assets/images/paymob.png";
+  static const String playStore = "assets/images/playStore.png";
   static const String kAccountActivationPendingImage =
       "assets/images/account_activation_pending_image.png";
   static const String kAppLogo = "assets/images/topAppLogo.png";

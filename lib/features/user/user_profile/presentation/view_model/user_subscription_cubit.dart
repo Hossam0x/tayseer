@@ -507,9 +507,13 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
   void setSaveCard(bool value) => emit(state.copyWith(saveCard: value));
 
   /// Android flow: يبدأ دفع الباقة عبر Paymob WebView
+  /// [firstName], [lastName], [phone] — بيانات المستخدم المطلوبة لـ Paymob
   Future<void> purchaseSubscriptionAndroid(
     List<NewUserSubModel> allSubs, {
     required BuildContext context,
+    String? firstName,
+    String? lastName,
+    String? phone,
   }) async {
     final subs = getSubscriptionsForPackage(allSubs);
     if (subs.isEmpty) return;
@@ -554,6 +558,9 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
             subscriptionId: targetSub.id,
             subscriptionType: 'UserSubscription',
             saveCard: false,
+            firstName: firstName,
+            lastName: lastName,
+            phone: phone,
           );
 
       if (isClosed) return;

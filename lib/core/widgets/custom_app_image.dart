@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:tayseer/core/services/connectivity_cubit.dart';
 import 'package:vector_graphics/vector_graphics.dart';
 import '../../my_import.dart';

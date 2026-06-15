@@ -23,11 +23,15 @@ abstract class MembershipRepository {
 
   /// Initiates a Google/Paymob subscription payment.
   /// Returns [PaymentIntentionData] with clientSecret and publicKey for the SDK.
+  /// [firstName], [lastName], [phone] are collected upfront and sent to Paymob.
   Future<Either<Failure, PaymentIntentionData>>
   initiateGoogleSubscriptionPayment({
     required String subscriptionId,
     required String subscriptionType,
     required bool saveCard,
+    String? firstName,
+    String? lastName,
+    String? phone,
   });
 
   /// Cancels Android auto-renewal via Paymob backend.
@@ -205,20 +209,33 @@ class MembershipRepositoryImpl implements MembershipRepository {
     required String subscriptionId,
     required String subscriptionType,
     required bool saveCard,
+    String? firstName,
+    String? lastName,
+    String? phone,
   }) async {
     try {
       log('[MembershipRepo] initiateGoogleSubscriptionPayment');
       log('[MembershipRepo]   subscriptionId   : $subscriptionId');
       log('[MembershipRepo]   subscriptionType : $subscriptionType');
       log('[MembershipRepo]   saveCard         : $saveCard');
+      if (firstName != null)
+        log('[MembershipRepo]   firstName        : $firstName');
+      if (lastName != null)
+        log('[MembershipRepo]   lastName         : $lastName');
+      if (phone != null) log('[MembershipRepo]   phone            : $phone');
+
+      final body = <String, dynamic>{
+        'subscriptionId': subscriptionId,
+        'subscriptionType': subscriptionType,
+        'saveCard': saveCard,
+        if (firstName != null && firstName.isNotEmpty) 'firstName': firstName,
+        if (lastName != null && lastName.isNotEmpty) 'lastName': lastName,
+        if (phone != null && phone.isNotEmpty) 'phone': phone,
+      };
 
       final response = await _apiService.post(
         endPoint: ApiEndPoint.initiateGoogleSubscriptionPayment,
-        data: {
-          'subscriptionId': subscriptionId,
-          'subscriptionType': subscriptionType,
-          'saveCard': saveCard,
-        },
+        data: body,
       );
 
       if (response['success'] == true) {

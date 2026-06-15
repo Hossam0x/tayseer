@@ -2480,7 +2480,6 @@
   "you": "أنت",
   "session_ready": "الجلسة جاهزة",
   "session_ready_message": "جلستك مع {participant} جاهزة الآن",
-  "session_duration": "المدة: {duration} دقيقة",
   "fetching_call_credentials": "جاري تحضير المكالمة...",
   "see_more_features": "عرض المزيد من مزايا الذهبي",
   "feature_unlimited_likes": "إعجابات غير محدودة يومياً",
@@ -2507,7 +2506,6 @@
   "feature_change_mind_desc": "تراجع عن تجاهل ملف شخصي كنت قد تخطيته",
   "feature_vip_badge": "شارة VIP",
   "feature_vip_badge_desc": "شارة مميزة على ملفك الشخصي تظهر لجميع الأعضاء",
-
   "ads.sponsored": "محتوى مدعوم",
   "ads.badge": "إعلان",
   "ads.watch_to_unlock": "شاهد إعلاناً للحصول على المزيد",
@@ -2525,5 +2523,21 @@
   "ads.sponsored_post": "منشور مدعوم",
   "ads.sponsored_profile": "ملف مدعوم",
   "ads.sponsored_story": "قصة مدعومة",
-  "price_after_discount_error": "يجب أن يكون السعر بعد الخصم أقل من السعر قبل الخصم"
+  "price_after_discount_error": "يجب أن يكون السعر بعد الخصم أقل من السعر قبل الخصم",
+  "choose_payment_method": "اختر طريقة الدفع",
+  "paymob": "Paymob",
+  "paymob_subtitle": "ادفع بأمان عبر Paymob",
+  "in_app_purchase": "الدفع باستخدام متجر التطبيقات",
+  "in_app_purchase_subtitle": "الدفع الآمن من خلال حسابك في Apple",
+  "google_play_subtitle": "الدفع الآمن من خلال حسابك في Google Play",
+  "name_required_for_payment": "اسمك مطلوب لإتمام عملية الدفع",
+  "last_name": "اسم العائلة",
+  "first_name_hint": "مثال: أحمد",
+  "last_name_hint": "مثال: علي",
+  "continue": "متابعة",
+  "enter_your_phone": "أدخل رقم هاتفك",
+  "phone_required_for_payment": "رقم هاتفك المصري مطلوب لإتمام الدفع",
+  "phone_number": "رقم الهاتف",
+  "proceed_to_payment": "المتابعة للدفع",
+  "choose_subscription_plan": "اختر خطة اشتراكك"
 }

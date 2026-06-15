@@ -379,13 +379,21 @@ abstract class AppRouter {
         );
 
       case AppRouter.kAdvisorSubscriptionView:
-        final packageType = settings.arguments as SelectedPackage;
+        final advisorSubArgs = settings.arguments is Map<String, dynamic>
+            ? settings.arguments as Map<String, dynamic>
+            : null;
+        final advisorPackageType = advisorSubArgs != null
+            ? advisorSubArgs['packageType'] as SelectedPackage
+            : settings.arguments as SelectedPackage;
+        final advisorFirstName = advisorSubArgs?['firstName'] as String?;
+        final advisorLastName = advisorSubArgs?['lastName'] as String?;
+        final advisorPhone = advisorSubArgs?['phone'] as String?;
         return SlideLeftRoute(
           page: MultiBlocProvider(
             providers: [
               BlocProvider(
                 create: (context) => AdvisorSubscriptionCubit(
-                  packageType,
+                  advisorPackageType,
                   getIt<IAPService>(),
                   getIt<MembershipRepository>(),
                 ),
@@ -394,7 +402,11 @@ abstract class AppRouter {
                 create: (context) => getIt<PackagesCubit>()..getPackages(),
               ),
             ],
-            child: const AdvisorSubscriptionView(),
+            child: AdvisorSubscriptionView(
+              firstName: advisorFirstName,
+              lastName: advisorLastName,
+              phone: advisorPhone,
+            ),
           ),
           routeSettings: settings,
         );
@@ -1279,13 +1291,21 @@ abstract class AppRouter {
         );
 
       case AppRouter.kUserSubscriptionView:
-        final packageType = settings.arguments as SelectedPackage;
+        final userSubArgs = settings.arguments is Map<String, dynamic>
+            ? settings.arguments as Map<String, dynamic>
+            : null;
+        final userPackageType = userSubArgs != null
+            ? userSubArgs['packageType'] as SelectedPackage
+            : settings.arguments as SelectedPackage;
+        final userFirstName = userSubArgs?['firstName'] as String?;
+        final userLastName = userSubArgs?['lastName'] as String?;
+        final userPhone = userSubArgs?['phone'] as String?;
         return SlideLeftRoute(
           page: MultiBlocProvider(
             providers: [
               BlocProvider(
                 create: (context) => UserSubscriptionCubit(
-                  packageType,
+                  userPackageType,
                   getIt<IAPService>(),
                   getIt<MembershipRepository>(),
                 ),
@@ -1294,7 +1314,11 @@ abstract class AppRouter {
                 create: (context) => getIt<UserPackagesCubit>()..getPackages(),
               ),
             ],
-            child: const UserSubscriptionView(),
+            child: UserSubscriptionView(
+              firstName: userFirstName,
+              lastName: userLastName,
+              phone: userPhone,
+            ),
           ),
           routeSettings: settings,
         );
