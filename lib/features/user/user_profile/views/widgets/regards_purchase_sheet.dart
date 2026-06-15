@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
+import 'package:tayseer/core/services/google_iap/google_iap_service.dart';
 import 'package:tayseer/core/services/iap_service.dart';
 import 'package:tayseer/core/utils/subscription_cache.dart';
 import 'package:tayseer/core/utils/subscription_event_bus.dart';
@@ -25,6 +26,7 @@ import 'package:tayseer/my_import.dart';
 class PurchasePackage {
   final String id;
   final String appleProductId;
+  final String androidProductId;
   final int count;
   final double price;
   final double? pricePerMonth;
@@ -38,6 +40,7 @@ class PurchasePackage {
   const PurchasePackage({
     required this.id,
     required this.appleProductId,
+    this.androidProductId = '',
     required this.count,
     required this.price,
     this.pricePerMonth,
@@ -61,6 +64,7 @@ class PurchasePackage {
       return PurchasePackage(
         id: pkg.id,
         appleProductId: pkg.appleProductId,
+        androidProductId: pkg.androidProductId,
         count: pkg.amount,
         price: pkg.price,
         priceForOne: pkg.priceForOne,
@@ -200,6 +204,7 @@ void showGoldPurchaseSheet(BuildContext context, {VoidCallback? onDismiss}) {
           create: (_) => UserSubscriptionCubit(
             SelectedPackage.pro,
             getIt<IAPService>(),
+            getIt<GoogleIAPService>(),
             getIt<MembershipRepository>(),
           ),
         ),
@@ -227,6 +232,7 @@ void showViewLimitPurchaseSheet(
           create: (_) => UserSubscriptionCubit(
             SelectedPackage.pro,
             getIt<IAPService>(),
+            getIt<GoogleIAPService>(),
             getIt<MembershipRepository>(),
           ),
         ),
@@ -352,6 +358,7 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
     final rawPackage = RegardsPackageModel(
       id: selected.id,
       appleProductId: selected.appleProductId,
+      androidProductId: selected.androidProductId,
       amount: selected.count,
       price: selected.price,
       currency: selected.currency,

@@ -114,6 +114,10 @@ class ApiEndPoint {
   static const String cancelAndroidAutoRenewal =
       '/new-paymob/cancel-auto-renewal';
 
+  // Google Play consumable verification
+  static const String verifyGoogleConsumable =
+      '/iap/verify-google-consumable';
+
   // Paymob Android one-time purchases (regards, chat duration, etc.)
   static const String initiateOneTimePayment =
       '/new-paymob/initiate-one-time-payment';

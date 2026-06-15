@@ -1,8 +1,9 @@
 import 'dart:developer';
 
-import 'package:flutter/material.dart';
+import 'package:tayseer/core/services/google_iap/google_iap_service.dart';
 import 'package:tayseer/core/services/iap_service.dart';
 import 'package:tayseer/core/services/one_time_payment/one_time_payment_cubit.dart';
+import 'package:tayseer/features/advisor/membership/data/repositories/membership_repository.dart';
 import 'package:tayseer/features/user/marriage/model/regards_package_model.dart';
 import 'package:tayseer/features/user/marriage/view_model/marriage_event_bus.dart';
 import 'package:tayseer/features/user/user_profile/views/cubit/regards_package_cubit/regards_package_state.dart';
@@ -10,10 +11,16 @@ import 'package:tayseer/my_import.dart';
 
 class RegardsPackagePurchaseCubit extends Cubit<RegardsPackagePurchaseState> {
   final IAPService _iapService;
+  final GoogleIAPService _googleIAPService;
+  final MembershipRepository _membershipRepository;
   final ApiService _apiService;
 
-  RegardsPackagePurchaseCubit(this._iapService, this._apiService)
-    : super(const RegardsPackagePurchaseState());
+  RegardsPackagePurchaseCubit(
+    this._iapService,
+    this._googleIAPService,
+    this._membershipRepository,
+    this._apiService,
+  ) : super(const RegardsPackagePurchaseState());
 
   void resetStatus() => emit(const RegardsPackagePurchaseState());
 
@@ -25,13 +32,18 @@ class RegardsPackagePurchaseCubit extends Cubit<RegardsPackagePurchaseState> {
     String? phone,
   }) async {
     if (Platform.isAndroid) {
-      await _purchaseAndroid(
-        package,
-        context: context,
-        firstName: firstName,
-        lastName: lastName,
-        phone: phone,
-      );
+      // context provided → Paymob WebView; no context → Google Play IAP
+      if (context != null) {
+        await _purchaseAndroid(
+          package,
+          context: context,
+          firstName: firstName,
+          lastName: lastName,
+          phone: phone,
+        );
+      } else {
+        await _purchaseAndroidGooglePlay(package);
+      }
     } else {
       await _purchaseIOS(package);
     }
@@ -113,6 +125,71 @@ class RegardsPackagePurchaseCubit extends Cubit<RegardsPackagePurchaseState> {
             error: 'unexpected_error',
           ),
         );
+    }
+  }
+
+  // ── Android: Google Play IAP (consumable) ────────────────────────────────
+
+  Future<void> _purchaseAndroidGooglePlay(RegardsPackageModel package) async {
+    final androidProductId = package.androidProductId;
+    if (androidProductId.isEmpty) {
+      emit(
+        state.copyWith(
+          status: RegardsPackagePurchaseStatus.error,
+          error: 'purchase_invalid_product',
+        ),
+      );
+      return;
+    }
+
+    emit(state.copyWith(status: RegardsPackagePurchaseStatus.purchasing));
+
+    log('[RegardsPurchase-Android] ════════════════════════════════════════');
+    log('[RegardsPurchase-Android] 🛒 GOOGLE PLAY IAP');
+    log('[RegardsPurchase-Android]   androidProductId : $androidProductId');
+    log('[RegardsPurchase-Android]   packageId        : ${package.id}');
+    log('[RegardsPurchase-Android] ════════════════════════════════════════');
+
+    try {
+      final result = await _googleIAPService.buyConsumable(androidProductId);
+      if (isClosed) return;
+
+      log('[RegardsPurchase-Android] ✅ Purchased token length: ${result.purchaseToken.length}');
+      log('[RegardsPurchase-Android] 📤 Verifying with backend...');
+
+      final verifyResult = await _membershipRepository.verifyGoogleConsumable(
+        productId: result.productId,
+        purchaseToken: result.purchaseToken,
+      );
+      if (isClosed) return;
+
+      verifyResult.fold(
+        (failure) {
+          log('[RegardsPurchase-Android] ❌ Verify failed: ${failure.message}');
+          emit(
+            state.copyWith(
+              status: RegardsPackagePurchaseStatus.error,
+              error: failure.message,
+            ),
+          );
+        },
+        (_) {
+          log('[RegardsPurchase-Android] ✅ Verified — success');
+          MarriageEventBus.instance.refreshRegards();
+          emit(state.copyWith(status: RegardsPackagePurchaseStatus.success));
+        },
+      );
+    } catch (e) {
+      if (isClosed) return;
+      final err = IAPErrorHandler.handle(e);
+      emit(
+        state.copyWith(
+          status: err.isCanceled
+              ? RegardsPackagePurchaseStatus.canceled
+              : RegardsPackagePurchaseStatus.error,
+          error: err.isCanceled ? null : err.messageKey,
+        ),
+      );
     }
   }
 

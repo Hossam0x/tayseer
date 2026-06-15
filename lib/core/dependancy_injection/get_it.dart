@@ -110,6 +110,7 @@ import 'package:tayseer/features/user/user_profile/views/cubit/user_public_profi
 import 'package:tayseer/features/advisor/search/data/repos/search_repository.dart';
 import 'package:tayseer/features/advisor/settings/data/repositories/order_management_repository.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/order_management/order_management_cubit.dart';
+import 'package:tayseer/core/services/google_iap/google_iap_service.dart';
 import 'package:tayseer/core/services/iap_service.dart';
 import 'package:tayseer/features/advisor/wallet/data/datasources/wallet_remote_data_source.dart';
 import 'package:tayseer/features/advisor/wallet/data/repos/wallet_repo.dart';
@@ -579,6 +580,7 @@ Future<void> setupGetIt() async {
     () => WalletRepo(getIt<WalletRemoteDataSource>()),
   );
   getIt.registerLazySingleton<IAPService>(() => IAPService());
+  getIt.registerLazySingleton<GoogleIAPService>(() => GoogleIAPService());
   getIt.registerFactory<WalletCubit>(
     () => WalletCubit(getIt<WalletRepo>(), getIt<tayseerSocketHelper>()),
   );
@@ -640,7 +642,12 @@ Future<void> setupGetIt() async {
     () => RegardsPackagesCubit(getIt<ApiService>()),
   );
   getIt.registerFactory<RegardsPackagePurchaseCubit>(
-    () => RegardsPackagePurchaseCubit(getIt<IAPService>(), getIt<ApiService>()),
+    () => RegardsPackagePurchaseCubit(
+      getIt<IAPService>(),
+      getIt<GoogleIAPService>(),
+      getIt<MembershipRepository>(),
+      getIt<ApiService>(),
+    ),
   );
   getIt.registerFactory<ChatDurationPackagesCubit>(
     () => ChatDurationPackagesCubit(getIt<ApiService>()),

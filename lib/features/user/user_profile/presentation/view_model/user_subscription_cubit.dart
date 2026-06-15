@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:tayseer/core/constant/constans_keys.dart';
+import 'package:tayseer/core/services/google_iap/google_iap_service.dart';
 import 'package:tayseer/core/services/iap_service.dart';
 import 'package:tayseer/core/services/paymob_service/paymob_webview_screen.dart';
 import 'package:tayseer/core/shared/network/local_network.dart';
@@ -77,11 +78,13 @@ class UserSubscriptionState extends Equatable {
 
 class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
   final IAPService _iapService;
+  final GoogleIAPService _googleIAPService;
   final MembershipRepository _membershipRepository;
 
   UserSubscriptionCubit(
     SelectedPackage packageType,
     this._iapService,
+    this._googleIAPService,
     this._membershipRepository,
   ) : super(UserSubscriptionState(packageType: packageType));
 
@@ -230,7 +233,9 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
     }
 
     // ── Step 2: التحقق من الـ product ID ──────────────────────────────────
-    final productId = targetSub.appleProductId;
+    final productId = Platform.isAndroid
+        ? targetSub.androidProductId
+        : targetSub.appleProductId;
     if (productId.isEmpty) {
       emit(
         state.copyWith(
@@ -243,8 +248,6 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
 
     emit(state.copyWith(status: UserSubStatus.purchasing));
 
-    // تهيئة الـ IAP service قبل الشراء — iOS فقط
-    // على Android الـ Paymob flow مش محتاج IAPService
     if (Platform.isIOS) {
       try {
         await _iapService.init();
@@ -324,36 +327,34 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
       }
       pendingId = initiateCheck;
 
-      log('[UserSub] 📲 applicationUserName → Apple: $pendingId');
+      log('[UserSub] 📲 pendingId: $pendingId');
       log('[UserSub] ════════════════════════════════════════');
 
-      // ── Step 3: Apple IAP ─────────────────────────────────────────────────
-      final purchase = await _iapService.buyProduct(
-        productId,
-        uniqueNumber: pendingId,
-      );
-      if (isClosed) return;
+      if (Platform.isAndroid) {
+        // ── Step 3: Google Play IAP ───────────────────────────────────────────
+        await _googleIAPService.buySubscription(
+          productId,
+          pendingId: pendingId,
+        );
+        if (isClosed) return;
+        log('[UserSub] ✅ Google Play subscription success');
+        // backend receives S2S notification from Google Play with pendingId
+      } else {
+        // ── Step 3: Apple IAP ─────────────────────────────────────────────────
+        final purchase = await _iapService.buyProduct(
+          productId,
+          uniqueNumber: pendingId,
+        );
+        if (isClosed) return;
 
-      log('[UserSub] ✅ Apple purchase success:');
-      log('[UserSub]   purchaseID (transactionId): ${purchase.purchaseID}');
-      log('[UserSub]   productID                 : ${purchase.productID}');
-      log(
-        '[UserSub]   transactionDate           : ${purchase.transactionDate}',
-      );
-      log('[UserSub]   status                    : ${purchase.status}');
+        log('[UserSub] ✅ Apple purchase: ${purchase.purchaseID}');
 
-      // ── Step 3: Restore على الباك-إند عشان نتحقق من الـ ownership ──────────
-      // Apple بتكلم الباك مباشرة عن طريق server-to-server notifications
-      // لكن لو الاشتراك كان على account تاني (CONFLICT)، لازم نعمل transfer
-      final restoreResult = await _tryRestoreAfterPurchase(purchase);
-      if (isClosed) return;
+        final restoreResult = await _tryRestoreAfterPurchase(purchase);
+        if (isClosed) return;
 
-      if (restoreResult == _RestoreOutcome.conflict) {
-        // الـ UI هيعرض dialog للـ transfer — مش نعتبره success لسه
-        return;
+        if (restoreResult == _RestoreOutcome.conflict) return;
       }
 
-      // NEW_LINK أو مفيش restore (Apple server-to-server هيتكلم) → success
       SubscriptionEventBus.instance.fire(
         SubscriptionChangedEvent(subscriptionType: targetSub.subscriptionType),
       );

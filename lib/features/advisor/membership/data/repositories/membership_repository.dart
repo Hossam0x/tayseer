@@ -40,6 +40,12 @@ abstract class MembershipRepository {
   /// Checks Paymob payment status by orderId.
   /// Returns status string: pending | processing | completed | failed | canceled | refunded
   Future<Either<Failure, String>> checkPaymobPurchaseStatus(int orderId);
+
+  /// Verifies a Google Play consumable purchase with the backend.
+  Future<Either<Failure, void>> verifyGoogleConsumable({
+    required String productId,
+    required String purchaseToken,
+  });
 }
 
 class MembershipRepositoryImpl implements MembershipRepository {
@@ -281,6 +287,30 @@ class MembershipRepositoryImpl implements MembershipRepository {
       return Left(
         ServerFailure(
           response['message']?.toString() ?? 'فشل إلغاء التجديد التلقائي',
+        ),
+      );
+    } on DioException catch (e) {
+      return Left(ServerFailure.fromDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> verifyGoogleConsumable({
+    required String productId,
+    required String purchaseToken,
+  }) async {
+    try {
+      log('[MembershipRepo] verifyGoogleConsumable productId: $productId');
+      final response = await _apiService.post(
+        endPoint: ApiEndPoint.verifyGoogleConsumable,
+        data: {'productId': productId, 'purchaseToken': purchaseToken},
+      );
+      if (response['success'] == true) return const Right(null);
+      return Left(
+        ServerFailure(
+          response['message']?.toString() ?? 'فشل التحقق من عملية الشراء',
         ),
       );
     } on DioException catch (e) {

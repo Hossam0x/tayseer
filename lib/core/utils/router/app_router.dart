@@ -52,6 +52,7 @@ import 'package:tayseer/features/shared/packages/presentation/views/advisor_subs
 import 'package:tayseer/features/shared/packages/presentation/view_model/advisor_subscription_cubit.dart';
 import 'package:tayseer/features/shared/packages/presentation/view_model/packages_cubit.dart';
 import 'package:tayseer/features/shared/packages/domain/entities/package_type.dart';
+import 'package:tayseer/core/services/google_iap/google_iap_service.dart';
 import 'package:tayseer/core/services/iap_service.dart';
 import 'package:tayseer/features/user/user_profile/presentation/view_model/user_packages_cubit.dart';
 import 'package:tayseer/features/user/user_profile/presentation/view_model/user_subscription_cubit.dart';
@@ -395,6 +396,7 @@ abstract class AppRouter {
                 create: (context) => AdvisorSubscriptionCubit(
                   advisorPackageType,
                   getIt<IAPService>(),
+                  getIt<GoogleIAPService>(),
                   getIt<MembershipRepository>(),
                 ),
               ),
@@ -1307,6 +1309,7 @@ abstract class AppRouter {
                 create: (context) => UserSubscriptionCubit(
                   userPackageType,
                   getIt<IAPService>(),
+                  getIt<GoogleIAPService>(),
                   getIt<MembershipRepository>(),
                 ),
               ),
