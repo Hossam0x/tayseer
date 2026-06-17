@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 
 typedef GooglePurchaseResult = ({String productId, String purchaseToken});
 
@@ -44,8 +45,9 @@ class GoogleIAPService {
   }
 
   /// Android subscription purchase.
-  /// [pendingId] is sent as applicationUserName → obfuscatedAccountId in Google Play.
-  /// Backend receives it via S2S notification to link the purchase.
+  /// [pendingId] from /iap/initiate-purchase is sent as obfuscatedAccountId.
+  /// Google includes it in the S2S webhook (obfuscatedExternalAccountId) so the
+  /// backend knows which user to activate the subscription for.
   Future<PurchaseDetails> buySubscription(
     String productId, {
     required String pendingId,
@@ -63,7 +65,7 @@ class GoogleIAPService {
     _completers[pendingId] = completer;
 
     final started = await _iap.buyNonConsumable(
-      purchaseParam: PurchaseParam(
+      purchaseParam: GooglePlayPurchaseParam(
         productDetails: product,
         applicationUserName: pendingId,
       ),
