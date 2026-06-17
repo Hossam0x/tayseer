@@ -3,6 +3,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tayseer/core/functions/get_language_code_name.dart';
 import 'package:tayseer/core/services/audio_service.dart';
+import 'package:tayseer/core/services/paymob_config_service.dart';
 import 'package:tayseer/core/services/cache_cleanup_service.dart';
 import 'package:tayseer/core/services/chat_socket_service.dart';
 import 'package:tayseer/core/utils/helper/socket_helper.dart';
@@ -679,11 +680,10 @@ class UserProfileCubit extends Cubit<UserProfileState> {
 
   Future<void> _shareAppLink() async {
     try {
-      const String playStoreLink =
-          'https://play.google.com/store/apps/details?id=com.athr.tayser';
-      const String appStoreLink =
-          'https://apps.apple.com/eg/app/tayseer-community/id6756886227';
-      const String message =
+      final service = getIt<PaymobConfigService>();
+      final String playStoreLink = service.androidLink;
+      final String appStoreLink = service.iosLink;
+      final String message =
           'جرب تطبيق تيسير الآن! 😊\n🤖 Android: $playStoreLink\n🍎 iOS: $appStoreLink';
 
       await Share.share(message, subject: 'دعوة لتطبيق تيسير');

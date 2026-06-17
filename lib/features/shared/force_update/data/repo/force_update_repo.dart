@@ -2,14 +2,16 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:tayseer/core/services/paymob_config_service.dart';
 import 'package:tayseer/core/utils/api_endpoint.dart';
 import 'package:tayseer/core/utils/api_service.dart';
 import 'package:tayseer/features/shared/force_update/data/models/app_version_model.dart';
 
 class ForceUpdateRepo {
   final ApiService _apiService;
+  final PaymobConfigService _paymobConfig;
 
-  ForceUpdateRepo(this._apiService);
+  ForceUpdateRepo(this._apiService, this._paymobConfig);
 
   Future<AppVersionModel?> fetchVersionInfo() async {
     try {
@@ -58,9 +60,8 @@ class ForceUpdateRepo {
   }
 
   String _defaultStoreUrl() {
-    if (Platform.isIOS) {
-      return 'https://apps.apple.com/eg/app/tayseer-community/id6756886227';
-    }
-    return 'https://play.google.com/store/apps/details?id=com.athr.tayser';
+    return Platform.isIOS
+        ? _paymobConfig.iosLink
+        : _paymobConfig.androidLink;
   }
 }

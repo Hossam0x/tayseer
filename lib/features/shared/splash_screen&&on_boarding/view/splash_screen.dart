@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'package:app_tracking_transparency/app_tracking_transparency.dart';
+import 'package:flutter/foundation.dart';
 import 'package:tayseer/core/enum/user_type.dart';
 import 'package:tayseer/core/notifications/notificationHelper.dart';
 import 'package:tayseer/core/utils/otp_resumption_service.dart';
@@ -248,7 +249,9 @@ class _SplashScreenState extends State<SplashScreen>
 
     // ── Force Update Check ──────────────────────────────────────────────────
     final forceUpdateRepo = getIt<ForceUpdateRepo>();
-    final updateRequired = await forceUpdateRepo.isUpdateRequired();
+    final updateRequired = kDebugMode
+        ? false
+        : await forceUpdateRepo.isUpdateRequired();
 
     if (updateRequired) {
       if (!mounted) return;

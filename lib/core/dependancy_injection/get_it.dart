@@ -664,7 +664,7 @@ Future<void> setupGetIt() async {
   // Force Update
   // ══════════════════════════════════════════════════════════════════════════
   getIt.registerLazySingleton<ForceUpdateRepo>(
-    () => ForceUpdateRepo(getIt<ApiService>()),
+    () => ForceUpdateRepo(getIt<ApiService>(), getIt<PaymobConfigService>()),
   );
   getIt.registerFactory<ForceUpdateCubit>(
     () => ForceUpdateCubit(getIt<ForceUpdateRepo>()),

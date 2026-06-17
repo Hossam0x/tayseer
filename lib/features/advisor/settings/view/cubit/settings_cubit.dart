@@ -2,6 +2,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tayseer/core/functions/get_language_code_name.dart';
 import 'package:tayseer/core/services/audio_service.dart';
+import 'package:tayseer/core/services/paymob_config_service.dart';
 import 'package:tayseer/features/shared/settings/models/setting_item_model.dart';
 import 'package:tayseer/features/advisor/settings/view/cubit/settings_state.dart';
 import 'package:tayseer/features/user/user_profile/data/repositories/user_profile_repository.dart';
@@ -163,10 +164,9 @@ class SettingsCubit extends Cubit<SettingsState> {
         ),
       ];
 
-      // Use user ID to generate a placeholder referral link
-      // final userId = kCurrentUserData?.id ?? 'user';
-      final referralLink =
-          'https://apps.apple.com/eg/app/tayseer-community/id6756886227';
+      final referralLink = Platform.isIOS
+          ? getIt<PaymobConfigService>().iosLink
+          : getIt<PaymobConfigService>().androidLink;
 
       if (!isClosed) {
         emit(
@@ -231,11 +231,9 @@ class SettingsCubit extends Cubit<SettingsState> {
 
   Future<void> shareApp(String message, String subject) async {
     try {
-      // روابط التطبيق
-      const String playStoreLink =
-          'https://play.google.com/store/apps/details?id=com.athr.tayser';
-      const String appStoreLink =
-          'https://apps.apple.com/eg/app/tayseer-community/id6756886227';
+      final service = getIt<PaymobConfigService>();
+      final String playStoreLink = service.androidLink;
+      final String appStoreLink = service.iosLink;
       String fullMessage =
           '$message\n🤖 Android: $playStoreLink\n🍎 iOS: $appStoreLink';
 
