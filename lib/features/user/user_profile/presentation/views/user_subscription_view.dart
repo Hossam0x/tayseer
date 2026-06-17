@@ -316,13 +316,7 @@ class _UserSubscriptionViewState extends State<UserSubscriptionView> {
                                     ),
                                   ),
                                 Gap(30.h),
-                                // ── Save Card Note (Android only) ──
-                                if (Platform.isAndroid &&
-                                    !isPurchasing &&
-                                    !(hasCurrentSub && changeSub == null)) ...[
-                                  const SaveCardNote(),
-                                  Gap(16.h),
-                                ],
+                                
                                 if (isPurchasing)
                                   SubscriptionPurchasingButton(
                                     backgroundColor: accentDark,

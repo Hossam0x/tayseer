@@ -761,12 +761,6 @@ class _PurchaseSheetState extends State<_PurchaseSheet> {
                         textAlign: TextAlign.center,
                       ),
 
-                    // ── Save Card Note (Android only) ──
-                    if (Platform.isAndroid) ...[
-                      SizedBox(height: 4.h),
-                      SaveCardNote(),
-                    ],
-
                     // ── Restore Purchases ──
                     if (Platform.isIOS) ...[
                       SizedBox(height: 4.h),

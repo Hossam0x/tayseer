@@ -310,13 +310,7 @@ class _AdvisorSubscriptionViewState extends State<AdvisorSubscriptionView> {
                                     ),
                                   ),
                                 Gap(30.h),
-                                // ── Save Card Note (Android only) ──
-                                if (Platform.isAndroid &&
-                                    !isPurchasing &&
-                                    !(hasCurrentSub && changeSub == null)) ...[
-                                  const SaveCardNote(),
-                                  Gap(16.h),
-                                ],
+
                                 if (isPurchasing)
                                   SubscriptionPurchasingButton(
                                     backgroundColor: accentDark,
