@@ -112,6 +112,7 @@ import 'package:tayseer/features/advisor/settings/data/repositories/order_manage
 import 'package:tayseer/features/advisor/settings/view/cubit/order_management/order_management_cubit.dart';
 import 'package:tayseer/core/services/google_iap/google_iap_service.dart';
 import 'package:tayseer/core/services/iap_service.dart';
+import 'package:tayseer/core/services/paymob_config_service.dart';
 import 'package:tayseer/features/advisor/wallet/data/datasources/wallet_remote_data_source.dart';
 import 'package:tayseer/features/advisor/wallet/data/repos/wallet_repo.dart';
 import 'package:tayseer/features/advisor/wallet/view/cubit/wallet_cubit.dart';
@@ -581,6 +582,9 @@ Future<void> setupGetIt() async {
   );
   getIt.registerLazySingleton<IAPService>(() => IAPService());
   getIt.registerLazySingleton<GoogleIAPService>(() => GoogleIAPService());
+  getIt.registerLazySingleton<PaymobConfigService>(
+    () => PaymobConfigService(getIt<ApiService>()),
+  );
   getIt.registerFactory<WalletCubit>(
     () => WalletCubit(getIt<WalletRepo>(), getIt<tayseerSocketHelper>()),
   );

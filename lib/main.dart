@@ -10,6 +10,7 @@ import 'package:tayseer/core/cache/chat_cache_service.dart';
 import 'package:tayseer/core/notifications/message_config.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:tayseer/core/services/appsflyer_service.dart';
+import 'package:tayseer/core/services/paymob_config_service.dart';
 import 'package:tayseer/core/services/audio_service.dart';
 import 'package:tayseer/core/services/connectivity_service.dart';
 import 'package:tayseer/core/services/deep_link_service.dart';
@@ -93,6 +94,9 @@ void main() async {
 
   // Initialize ChatCacheService
   await getIt<ChatCacheService>().init();
+
+  // Fire-and-forget: refresh Paymob status + store links in background
+  getIt<PaymobConfigService>().fetchAndUpdateStatus();
 
   await getIt<ConnectivityService>().initialize();
   await _initializeVideoSystem();

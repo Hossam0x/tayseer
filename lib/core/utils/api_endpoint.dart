@@ -126,6 +126,9 @@ class ApiEndPoint {
   static String paymobPurchaseStatus(int orderId) =>
       '/new-paymob/purchase-status/$orderId';
 
+  // Paymob status (paymobActive flag + store links)
+  static const String paymobStatus = '/new-paymob/status';
+
   // Force Update
   static const String checkForUpdateIos = '/version/check-for-update';
   static const String checkForUpdateAndroid =

@@ -1,23 +1,30 @@
 import 'package:flutter/services.dart';
+import 'package:tayseer/core/services/paymob_config_service.dart';
 import 'package:tayseer/my_import.dart';
 
 // ─── Public entry point ────────────────────────────────────────────────────────
 
 /// Shows a bottom sheet that asks the user to choose a payment method.
 ///
-/// On **iOS** — only "In-App Purchase" is shown (Apple policy).
-/// On **Android** — only "Paymob" is shown; the user must fill in their name
-///                  and phone before the WebView is opened.
+/// Fetches fresh Paymob status before showing. If [paymobActive] comes back
+/// true, both Paymob and IAP options are shown with a title. Otherwise only
+/// the IAP option is shown with no title.
 ///
-/// [onInAppPurchase]   — called when the user picks the IAP option (iOS).
+/// [onInAppPurchase]   — called when the user picks the IAP option.
 /// [onPaymobSelected]  — called with (firstName, lastName, phone) after the
-///                       user completes the name + phone collection steps (Android).
-void showPaymentMethodSheet(
+///                       user completes the name + phone collection steps.
+Future<void> showPaymentMethodSheet(
   BuildContext context, {
   required VoidCallback onInAppPurchase,
   required void Function(String firstName, String lastName, String phone)
   onPaymobSelected,
-}) {
+}) async {
+  final service = getIt<PaymobConfigService>();
+  await service.fetchAndUpdateStatus();
+  final paymobActive = service.isPaymobActive;
+
+  if (!context.mounted) return;
+
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -25,6 +32,7 @@ void showPaymentMethodSheet(
     builder: (_) => _PaymentMethodSheet(
       onInAppPurchase: onInAppPurchase,
       onPaymobSelected: onPaymobSelected,
+      paymobActive: paymobActive,
     ),
   );
 }
@@ -35,29 +43,28 @@ class _PaymentMethodSheet extends StatefulWidget {
   final VoidCallback onInAppPurchase;
   final void Function(String firstName, String lastName, String phone)
   onPaymobSelected;
+  final bool paymobActive;
 
   const _PaymentMethodSheet({
     required this.onInAppPurchase,
     required this.onPaymobSelected,
+    required this.paymobActive,
   });
 
   @override
   State<_PaymentMethodSheet> createState() => _PaymentMethodSheetState();
 }
 
-// Which "page" of the sheet we're on.
 enum _SheetStep { methodSelection, collectName, collectPhone }
 
 class _PaymentMethodSheetState extends State<_PaymentMethodSheet> {
   _SheetStep _step = _SheetStep.methodSelection;
 
-  // Name fields
   final _firstNameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
   final _nameFocus1 = FocusNode();
   final _nameFocus2 = FocusNode();
 
-  // Phone field (Egypt – always +20)
   final _phoneCtrl = TextEditingController();
   final _phoneFocus = FocusNode();
 
@@ -71,8 +78,6 @@ class _PaymentMethodSheetState extends State<_PaymentMethodSheet> {
     _phoneFocus.dispose();
     super.dispose();
   }
-
-  // ── helpers ──
 
   bool get _nameValid =>
       _firstNameCtrl.text.trim().isNotEmpty &&
@@ -94,8 +99,6 @@ class _PaymentMethodSheetState extends State<_PaymentMethodSheet> {
       '+20${_phoneCtrl.text.trim()}',
     );
   }
-
-  // ─── BUILD ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +134,6 @@ class _PaymentMethodSheetState extends State<_PaymentMethodSheet> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle bar
           Center(
             child: Container(
               width: 40.w,
@@ -142,24 +144,25 @@ class _PaymentMethodSheetState extends State<_PaymentMethodSheet> {
               ),
             ),
           ),
-          Gap(20.h),
-          Text(
-            context.tr('choose_payment_method'),
-            style: Styles.textStyle20Meduim.copyWith(
-              fontWeight: FontWeight.w700,
-              color: AppColors.kscandryTextColor,
+          if (widget.paymobActive) ...[
+            Gap(20.h),
+            Text(
+              context.tr('choose_payment_method'),
+              style: Styles.textStyle20Meduim.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.kscandryTextColor,
+              ),
             ),
-          ),
+          ],
           Gap(24.h),
-
-          _PaymentOption(
-            iconWidget: AppImage(AssetsData.paymob, fit: BoxFit.contain),
-            iconColor: const Color(0xFF1A6DD6),
-            title: context.tr('paymob'),
-            subtitle: context.tr('paymob_subtitle'),
-            onTap: () => setState(() => _step = _SheetStep.collectName),
-          ),
-
+          if (widget.paymobActive)
+            _PaymentOption(
+              iconWidget: AppImage(AssetsData.paymob, fit: BoxFit.contain),
+              iconColor: const Color(0xFF1A6DD6),
+              title: context.tr('paymob'),
+              subtitle: context.tr('paymob_subtitle'),
+              onTap: () => setState(() => _step = _SheetStep.collectName),
+            ),
           _PaymentOption(
             icon: Platform.isIOS ? Icons.apple : null,
             iconWidget: Platform.isIOS
@@ -168,7 +171,8 @@ class _PaymentMethodSheetState extends State<_PaymentMethodSheet> {
                     padding: EdgeInsets.all(4.0.w),
                     child: AppImage(AssetsData.playStore, fit: BoxFit.cover),
                   ),
-            iconColor: Platform.isIOS ? Colors.black : const Color(0xFF01875F),
+            iconColor:
+                Platform.isIOS ? Colors.black : const Color(0xFF01875F),
             title: context.tr('in_app_purchase'),
             subtitle: context.tr(
               Platform.isIOS
@@ -180,7 +184,6 @@ class _PaymentMethodSheetState extends State<_PaymentMethodSheet> {
               widget.onInAppPurchase();
             },
           ),
-
           Gap(8.h),
         ],
       ),
@@ -205,7 +208,6 @@ class _PaymentMethodSheetState extends State<_PaymentMethodSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header row with back button
             Row(
               children: [
                 GestureDetector(
@@ -233,8 +235,6 @@ class _PaymentMethodSheetState extends State<_PaymentMethodSheet> {
               style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
             ),
             Gap(20.h),
-
-            // First name
             _buildField(
               controller: _firstNameCtrl,
               focusNode: _nameFocus1,
@@ -244,8 +244,6 @@ class _PaymentMethodSheetState extends State<_PaymentMethodSheet> {
               textInputAction: TextInputAction.next,
             ),
             Gap(14.h),
-
-            // Last name
             _buildField(
               controller: _lastNameCtrl,
               focusNode: _nameFocus2,
@@ -255,14 +253,12 @@ class _PaymentMethodSheetState extends State<_PaymentMethodSheet> {
               onSubmitted: (_) => _onContinueName(),
             ),
             Gap(24.h),
-
-            // Continue button
             ValueListenableBuilder<TextEditingValue>(
               valueListenable: _firstNameCtrl,
-              builder: (_, __, ___) {
+              builder: (ctx, a, b) {
                 return ValueListenableBuilder<TextEditingValue>(
                   valueListenable: _lastNameCtrl,
-                  builder: (_, __, ___) {
+                  builder: (ctx2, c, d) {
                     return _ContinueButton(
                       enabled: _nameValid,
                       label: context.tr('continue'),
@@ -296,7 +292,6 @@ class _PaymentMethodSheetState extends State<_PaymentMethodSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header row with back button
             Row(
               children: [
                 GestureDetector(
@@ -323,19 +318,15 @@ class _PaymentMethodSheetState extends State<_PaymentMethodSheet> {
               style: Styles.textStyle14.copyWith(color: AppColors.secondary400),
             ),
             Gap(20.h),
-
-            // Egypt phone field with +20 prefix
             _EgyptPhoneField(
               controller: _phoneCtrl,
               focusNode: _phoneFocus,
               onSubmitted: (_) => _onContinuePhone(),
             ),
             Gap(24.h),
-
-            // Continue / Pay button
             ValueListenableBuilder<TextEditingValue>(
               valueListenable: _phoneCtrl,
-              builder: (_, __, ___) {
+              builder: (ctx, val, child) {
                 return _ContinueButton(
                   enabled: _phoneValid,
                   label: context.tr('proceed_to_payment'),
