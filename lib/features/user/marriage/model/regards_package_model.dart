@@ -23,7 +23,7 @@ class RegardsPackageModel {
     return RegardsPackageModel(
       id: json['id'] as String? ?? '',
       appleProductId: json['appleProductId'] as String? ?? '',
-      androidProductId: json['androidProductId'] as String? ?? '',
+      androidProductId: json['googleProductId'] as String? ?? json['androidProductId'] as String? ?? '',
       amount: (json['amount'] as num?)?.toInt() ?? 0,
       price: (json['price'] as num?)?.toDouble() ?? 0,
       currency: json['currency'] as String? ?? 'EGP',

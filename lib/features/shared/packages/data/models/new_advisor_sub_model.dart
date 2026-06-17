@@ -45,7 +45,7 @@ class NewAdvisorSubModel {
     return NewAdvisorSubModel(
       id: json['id'] ?? '',
       appleProductId: json['appleProductId'] ?? '',
-      androidProductId: json['androidProductId'] ?? '',
+      androidProductId: json['googleProductId'] as String? ?? json['androidProductId'] as String? ?? '',
       subscriptionType: (json['subscriptionType'] ?? '')
           .toString()
           .toLowerCase(),

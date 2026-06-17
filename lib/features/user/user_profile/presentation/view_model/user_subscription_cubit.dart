@@ -233,8 +233,11 @@ class UserSubscriptionCubit extends Cubit<UserSubscriptionState> {
     }
 
     // ── Step 2: التحقق من الـ product ID ──────────────────────────────────
+    // androidProductId لا يُرجعه الـ API حالياً — نستخدم appleProductId كـ fallback
     final productId = Platform.isAndroid
-        ? targetSub.androidProductId
+        ? (targetSub.androidProductId.isNotEmpty
+            ? targetSub.androidProductId
+            : targetSub.appleProductId)
         : targetSub.appleProductId;
     if (productId.isEmpty) {
       emit(
