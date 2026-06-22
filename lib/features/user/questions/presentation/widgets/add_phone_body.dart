@@ -177,7 +177,7 @@ class _AddPhoneBodyState extends State<AddPhoneBody> {
     final questionsCubit = context.read<QuestionsCubit>();
     questionsCubit.phoneController.text = phoneState.phoneNumber;
     questionsCubit.countryCodeController.text = phoneState.selectedCountry.code;
-    questionsCubit.sendPhoneNumber();
+    questionsCubit.sendPhoneNumber(otpMethod: phoneState.otpMethod);
   }
 
   void _handleQuestionsState(BuildContext context, QuestionsState state) {

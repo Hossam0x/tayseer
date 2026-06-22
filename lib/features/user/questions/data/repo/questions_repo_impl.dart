@@ -223,6 +223,7 @@ class QuestionsRepoImpl implements QuestionsRepo {
   Future<Either<Failure, void>> phoneNumber({
     required String phoneNumber,
     required String countryCode,
+    String otpMethod = 'whatsapp',
   }) {
     return _safeApiCall(() async {
       final response = await apiService.post(
@@ -230,6 +231,7 @@ class QuestionsRepoImpl implements QuestionsRepo {
         data: {
           'countryCode': countryCode,
           'phone': phoneNumber,
+          'otpMethod': otpMethod,
           "updateQuestionNumber": true,
         },
       );

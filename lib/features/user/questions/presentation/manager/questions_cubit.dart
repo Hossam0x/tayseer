@@ -272,12 +272,13 @@ class QuestionsCubit extends Cubit<QuestionsState> {
   // Phone Number
   // ─────────────────────────────────────────────────────
 
-  Future<void> sendPhoneNumber() async {
+  Future<void> sendPhoneNumber({String otpMethod = 'whatsapp'}) async {
     emit(state.copyWith(phoneNumberState: CubitStates.loading));
 
     final result = await _repo.phoneNumber(
       phoneNumber: phoneController.text,
       countryCode: countryCodeController.text,
+      otpMethod: otpMethod,
     );
     result.fold(
       (failure) {

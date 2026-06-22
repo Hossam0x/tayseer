@@ -24,6 +24,7 @@ abstract class QuestionsRepo {
   Future<Either<Failure, void>> phoneNumber({
     required String phoneNumber,
     required String countryCode,
+    String otpMethod = 'whatsapp',
   });
 
   Future<Either<Failure, void>> verifyOtp({required String otp});

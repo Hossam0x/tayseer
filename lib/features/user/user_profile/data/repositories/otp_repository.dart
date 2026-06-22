@@ -1,5 +1,4 @@
 import 'package:dartz/dartz.dart';
-import 'package:tayseer/core/utils/api_service.dart';
 import 'package:tayseer/my_import.dart';
 
 abstract class OtpRepository {
