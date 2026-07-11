@@ -49,3 +49,6 @@ app.*.map.json
 
 # Kiro AI (local development only)
 .kiro/
+# Play upload key certificate (public, but keep out of repo)
+upload_certificate.pem
+*.pem
